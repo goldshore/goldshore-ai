@@ -57,7 +57,7 @@ jobs:
       release_label: ${{ steps.metadata.outputs.release_label }}
 
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           ref: ${{ inputs.deploy_ref != '' && inputs.deploy_ref || github.sha }}
 
