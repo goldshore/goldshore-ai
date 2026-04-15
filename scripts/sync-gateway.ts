@@ -46,7 +46,7 @@ const MASTER_CONFIG: MasterConfig = {
     last_sync: new Date().toISOString(),
   },
   AI_ORCHESTRATION: {
-    preferred_model: 'gpt-4-turbo',
+    preferred_model: 'gpt-5-mini',
     agent_modules: ['operator-assist', 'market-intel'],
     queue_concurrency: 10,
     retry_attempts: 2,
