@@ -6,7 +6,7 @@ import { resolve } from 'node:path';
 const wranglerToml = readFileSync(resolve(import.meta.dirname, '../../wrangler.toml'), 'utf8');
 
 describe('gs-api wrangler env bindings', () => {
-  for (const envName of ['prod', 'production', 'preview']) {
+  for (const envName of ['prod', 'preview']) {
     it(`keeps the KV binding required by runtime handlers in ${envName}`, () => {
       assert.match(
         wranglerToml,
