@@ -7,12 +7,6 @@ const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
 const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID ?? DEFAULT_ACCOUNT_ID;
 const NAMESPACE_ID = process.env.GS_KV_NAMESPACE_ID ?? DEFAULT_NAMESPACE_ID;
 
-type MasterConfig = {
-  ROUTING_TABLE: z.infer<typeof RoutingTableSchema>;
-  SERVICE_STATUS: z.infer<typeof ServiceStatusSchema>;
-  AI_ORCHESTRATION: z.infer<typeof AiOrchestrationSchema>;
-};
-
 /**
  * MASTER_CONFIG - Authoritative system configuration.
  * Merged from both versions found in the original file to ensure no data loss and full system coverage.
@@ -49,15 +43,43 @@ function assertEnvironment(): void {
 async function putKvValue(key: string, value: unknown): Promise<{ key: string; ok: boolean; status: number; detail?: string }> {
   const url = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/workers/kv/namespaces/${NAMESPACE_ID}/values/${encodeURIComponent(key)}`;
 
-      if (response.ok) {
-        console.log(`✅ ${key} synchronized successfully.`);
-      } else {
-        const error = await response.text();
-        console.error(`❌ Failed to sync ${key}: ${error}`);
-      }
-    } catch (error) {
-      console.error(`🚨 Network Error syncing ${key}:`, error);
+  try {
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${CLOUDFLARE_API_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(value),
+    });
+
+    if (response.ok) {
+      return { key, ok: true, status: response.status };
     }
+
+    const error = await response.text();
+    return { key, ok: false, status: response.status, detail: error.slice(0, 500) };
+  } catch (error) {
+    return { key, ok: false, status: 0, detail: String(error) };
+  }
+}
+
+async function syncConfig(config: MasterConfig): Promise<void> {
+  console.log('🚀 Starting GoldShore System Sync (Concurrent)...');
+
+  const entries = Object.entries(config);
+  const results = await Promise.all(entries.map(([key, value]) => putKvValue(key, value)));
+
+  for (const result of results) {
+    if (result.ok) {
+      console.log(`✅ ${result.key} synchronized successfully (HTTP ${result.status}).`);
+    } else {
+      console.error(`❌ Failed to sync ${result.key} (HTTP ${result.status}): ${result.detail}`);
+    }
+  }
+
+  if (results.some(result => !result.ok)) {
+    throw new Error('Some keys failed to synchronize.');
   }
 }
 
@@ -66,11 +88,22 @@ async function runFinalVerification(): Promise<void> {
 
   try {
     const finalVerify = await fetch('https://api.goldshore.ai/internal/inbox-status');
-    const data = (await finalVerify.json()) as { success?: boolean; inbox?: { count?: number } };
+    const data = (await finalVerify.json()) as { success?: boolean; inbox?: { count?: number }; message?: string };
 
-    if (response.ok) {
-      return { key, ok: true, status: response.status };
+    if (finalVerify.ok) {
+      console.log(
+        `🎉 Verification successful (HTTP ${finalVerify.status})${
+          typeof data?.inbox?.count === 'number' ? ` — inbox count: ${data.inbox.count}` : ''
+        }.`,
+      );
+      return;
     }
+
+    console.error(
+      `⚠️ Verification endpoint returned HTTP ${finalVerify.status}${
+        data?.message ? `: ${data.message}` : ''
+      }`,
+    );
   } catch (error) {
     console.error('⚠️ Final verification failed due to network/auth issue:', error);
   }
