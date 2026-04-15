@@ -5,64 +5,96 @@ export const prerender = true;
 
 const sections = [
   {
-    title: 'What we do',
-    body: 'We design high-trust systems across decision support, workflow orchestration, and applied AI.',
+    title: 'What GoldShore does',
+    points: [
+      'Builds operator-grade AI systems for decision support, workflow orchestration, and risk visibility.',
+      'Designs for explainability so teams can audit outcomes, not just outputs.',
+    ],
   },
   {
-    title: 'How we work',
-    body: 'Signal over spectacle. Systems that explain themselves.',
+    title: 'How engagements run',
+    points: [
+      'Start with a focused scope, success criteria, and week-one execution plan.',
+      'Deliver in short checkpoints with transparent progress, risk tracking, and practical handoff.',
+    ],
   },
   {
-    title: 'Why GoldShore',
-    body: 'Most software is optimized for demos. GoldShore is optimized for use.',
+    title: 'Why this model is lower risk',
+    points: [
+      'Senior-led delivery reduces communication drag and keeps decisions close to implementation.',
+      'Measured rollout patterns and clear controls limit surprises in production environments.',
+    ],
   },
 ];
 ---
 
-<BaseLayout title="About | GoldShore" description="What GoldShore builds and how the team works.">
+<BaseLayout
+  title="About | GoldShore"
+  description="How GoldShore designs and delivers operational AI systems."
+  canonicalPath="/about"
+  ogTitle="About GoldShore | Operators Behind Mission-Critical AI"
+  ogDescription="Learn how GoldShore works, what we build, and why high-trust teams use our systems-first delivery model."
+>
   <section class="page-shell gs-shell-section info-page">
     <p class="gs-eyebrow">About</p>
-    <h1>High-trust systems built for use, not theater.</h1>
-    <p class="page-intro">GoldShore works at the intersection of resilient operations, decision support, and applied intelligence.</p>
+    <h1>A practical operating model for high-stakes AI delivery.</h1>
+    <p class="page-intro">
+      GoldShore helps decision-makers move from strategy to reliable execution with systems that stay clear,
+      auditable, and usable under pressure.
+    </p>
 
     <div class="info-grid">
       {sections.map((section) => (
         <article class="info-card">
           <h2>{section.title}</h2>
-          <p>{section.body}</p>
+          <ul>
+            {section.points.map((point) => (
+              <li>{point}</li>
+            ))}
+          </ul>
         </article>
       ))}
     </div>
+
+    <aside class="about-transition" aria-label="Next step">
+      <p class="gs-eyebrow">Next step</p>
+      <h2>When you are ready, continue to Contact for a tailored first-week plan.</h2>
+      <p>
+        Share your priorities and constraints, and GoldShore will outline an engagement path with scope,
+        sequence, and ownership.
+      </p>
+      <a href="/contact" class="about-cta">Go to Contact</a>
+    </aside>
   </section>
 
   <style>
     .info-page {
-      padding: 4.5rem 0 5rem;
+      padding: var(--gs-space-9) 0 calc(var(--gs-space-10) + var(--gs-space-1));
     }
 
     .info-page h1 {
-      max-width: 12ch;
+      max-width: 14ch;
       margin: 0.75rem 0 1rem;
-      font-size: clamp(2.5rem, 6vw, 4.6rem);
-      line-height: 0.98;
-      letter-spacing: -0.04em;
+      font-size: clamp(2.3rem, 5.6vw, 4.2rem);
+      line-height: 1;
+      letter-spacing: -0.035em;
     }
 
     .page-intro {
-      max-width: 60ch;
+      max-width: 64ch;
       color: var(--gs-text-dim);
-      line-height: 1.75;
+      line-height: 1.7;
     }
 
     .info-grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 1rem;
       margin-top: 2rem;
     }
 
     .info-card {
-      padding: 1.4rem;
+      padding: 1.3rem;
       border-radius: 20px;
       border: 1px solid rgba(255, 255, 255, 0.06);
       background: rgba(10, 18, 36, 0.72);
@@ -71,14 +103,58 @@ const sections = [
 
     .info-card h2 {
       margin-top: 0;
-      margin-bottom: 0.75rem;
-      font-size: 1.3rem;
+      margin-bottom: 0.7rem;
+      font-size: 1.2rem;
     }
 
-    .info-card p {
+    .info-card ul {
       margin: 0;
+      padding-left: 1.05rem;
       color: var(--gs-text-dim);
-      line-height: 1.7;
+      line-height: 1.6;
+      display: grid;
+      gap: 0.55rem;
+    }
+
+    .about-transition {
+      margin-top: 1.4rem;
+      padding: 1.35rem;
+      border-radius: 22px;
+      border: 1px solid rgba(131, 197, 255, 0.28);
+      background: linear-gradient(145deg, rgba(12, 28, 56, 0.85), rgba(8, 17, 33, 0.95));
+      box-shadow: var(--gs-shadow);
+    }
+
+    .about-transition h2 {
+      margin: 0.45rem 0 0.7rem;
+      font-size: clamp(1.2rem, 2.2vw, 1.55rem);
+    }
+
+    .about-transition p {
+      margin: 0;
+      max-width: 66ch;
+      color: var(--gs-text-dim);
+      line-height: 1.65;
+    }
+
+    .about-cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 0.95rem;
+      padding: 0.7rem 1.05rem;
+      border-radius: 999px;
+      background: rgba(0, 193, 255, 0.16);
+      border: 1px solid rgba(145, 222, 255, 0.45);
+      color: var(--gs-text);
+      font-weight: 600;
+      text-decoration: none;
+      transition: transform 120ms ease, background 120ms ease;
+    }
+
+    .about-cta:hover {
+      transform: translateY(-1px);
+      background: rgba(0, 193, 255, 0.24);
     }
 
     @media (max-width: 900px) {
