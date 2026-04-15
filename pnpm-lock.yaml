@@ -29,21 +29,6 @@ importers:
       '@astrojs/sitemap':
         specifier: ^3.6.0
         version: 3.7.0
-<<<<<<< main-HEAD-2
-=======
-        specifier: ^2.8.9
-        version: 2.8.9
-    devDependencies:
-      '@astrojs/mdx':
-        specifier: ^4.0.8
-        version: 4.3.13(astro@5.18.0(@types/node@25.3.3)(jiti@1.21.7)(rollup@4.59.0)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2))
-      '@astrojs/sitemap':
-        specifier: ^3.6.0
-        version: 3.7.0
-<<<<<<< chore/working-copy-upstream
-=======
->>>>>>> chore/working-copy
->>>>>>> main-HEAD-2
       '@astrojs/tailwind':
         specifier: ^6.0.2
         version: 6.0.2(astro@5.18.0(@types/node@25.3.3)(jiti@1.21.7)(rollup@4.59.0)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2))(tailwindcss@3.4.19(tsx@4.21.0)(yaml@2.8.2))
@@ -1211,17 +1196,9 @@ packages:
   '@types/unist@2.0.11':
     resolution: {integrity: sha512-CmBKiL6NNo/OqgmMn95Fk9Whlp2mtvIv+KNpQKN2F4SjvrEesubTRWGYSg+BnWZOnlCaSTU1sMpsBOzgbYhnsA==}
 
-  '@types/sax@1.2.7':
-    resolution: {integrity: sha512-rO73L89PJxeYM3s3pPPjiPgVVcymqU490g0YO5n5By0k2Erzj6tay/4lr1CHAAU4JyOWd1rpQ8bCf6cZfHU96A==}
 
-  '@types/unist@2.0.11':
-    resolution: {integrity: sha512-CmBKiL6NNo/OqgmMn95Fk9Whlp2mtvIv+KNpQKN2F4SjvrEesubTRWGYSg+BnWZOnlCaSTU1sMpsBOzgbYhnsA==}
 
-  '@types/sax@1.2.7':
-    resolution: {integrity: sha512-rO73L89PJxeYM3s3pPPjiPgVVcymqU490g0YO5n5By0k2Erzj6tay/4lr1CHAAU4JyOWd1rpQ8bCf6cZfHU96A==}
 
-  '@types/unist@2.0.11':
-    resolution: {integrity: sha512-CmBKiL6NNo/OqgmMn95Fk9Whlp2mtvIv+KNpQKN2F4SjvrEesubTRWGYSg+BnWZOnlCaSTU1sMpsBOzgbYhnsA==}
 
   '@types/unist@3.0.3':
     resolution: {integrity: sha512-ko/gIFJRv177XgZsZcBwnqJN5x/Gien8qNOn0D5bQU/zAzVf9Zt3BlcUiLqhV9y4ARk0GbT3tnUiPNgnTXzc/Q==}
@@ -2128,21 +2105,6 @@ packages:
   is-alphanumerical@2.0.1:
     resolution: {integrity: sha512-hmbYhX/9MUMF5uh7tOXyK/n0ZvWpad5caBA17GsC6vyuCqaWliRG5K1qS9inmUhEMaOBIW7/whAnSwveW/LtZw==}
 
-<<<<<<< main-HEAD-2
-=======
-  iron-webcrypto@1.2.1:
-    resolution: {integrity: sha512-feOM6FaSr6rEABp/eDfVseKyTMDt+KGpeB35SkVn9Tyn0CqvVsY3EwI0v5i8nMHyJnzCIQf7nsy3p41TPkJZhg==}
-
-  is-alphabetical@2.0.1:
-    resolution: {integrity: sha512-FWyyY60MeTNyeSRpkM2Iry0G9hpr7/9kD40mD/cGQEuilcZYS4okz8SN2Q6rLCJ8gbCt6fN+rC+6tMGS99LaxQ==}
-
-  is-alphanumerical@2.0.1:
-    resolution: {integrity: sha512-hmbYhX/9MUMF5uh7tOXyK/n0ZvWpad5caBA17GsC6vyuCqaWliRG5K1qS9inmUhEMaOBIW7/whAnSwveW/LtZw==}
-
-<<<<<<< chore/working-copy-upstream
-=======
->>>>>>> chore/working-copy
->>>>>>> main-HEAD-2
   is-binary-path@2.1.0:
     resolution: {integrity: sha512-ZMERYes6pDydyuGidse7OsHxtbI7WVeUEozgR/g7rd0xUimYNlvZRE/K2MgZTjWy725IfelLeVcEM97mmtRGXw==}
     engines: {node: '>=8'}
@@ -4382,17 +4344,9 @@ snapshots:
 
   '@types/unist@2.0.11': {}
 
-  '@types/sax@1.2.7':
-    dependencies:
-      '@types/node': 25.3.3
 
-  '@types/unist@2.0.11': {}
 
-  '@types/sax@1.2.7':
-    dependencies:
-      '@types/node': 25.3.3
 
-  '@types/unist@2.0.11': {}
 
   '@types/unist@3.0.3': {}
 
@@ -6712,16 +6666,6 @@ snapshots:
 
   stream-replace-string@2.0.0: {}
 
-<<<<<<< main-HEAD-2
-=======
-  space-separated-tokens@2.0.2: {}
-
-  stream-replace-string@2.0.0: {}
-
-<<<<<<< chore/working-copy-upstream
-=======
->>>>>>> chore/working-copy
->>>>>>> main-HEAD-2
   string-width@4.2.3:
     dependencies:
       emoji-regex: 8.0.0
