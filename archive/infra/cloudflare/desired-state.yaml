@@ -35,6 +35,20 @@ cloudflare:
       # E. Control Worker (Internal only - no public DNS)
 
   access:
+    identity_providers:
+      - name: "GoldShore Deploy"
+        type: "github"
+        config:
+          client_id: "Iv23lijhVvQ1K7zY6PVn"
+          redirect_url: "https://goldshore.cloudflareaccess.com/cdn-cgi/access/callback"
+        scim_config:
+          scim_base_url: "https://goldshore.cloudflareaccess.com/scim/791bdc72-1ced-462f-a3d1-fbd35d2a0798"
+          enabled: false
+          user_deprovision: false
+          seat_deprovision: false
+          group_member_deprovision: false
+          identity_update_behavior: "no_action"
+
     policies:
       - name: "GoldShore-Admin-ZT"
         domain: "admin.goldshore.ai"
