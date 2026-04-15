@@ -22,14 +22,6 @@ id = "gs_control_logs_001"
 ENV = "production"
 CONTROL_SERVICE = "true"
 
-[[env.prod.kv_namespaces]]
-binding = "GS_CONFIG"
-id = "gs_config_001"
-
-[[env.prod.kv_namespaces]]
-binding = "CONTROL_LOGS"
-id = "gs_control_logs_001"
-
 [env.preview]
 routes = [
   { pattern = "ops-preview.goldshore.ai/*", zone_name = "goldshore.ai" }
@@ -45,11 +37,3 @@ id = "gs_control_logs_preview"
 
 [env.preview.vars]
 ENV = "preview"
-
-[[env.preview.kv_namespaces]]
-binding = "GS_CONFIG"
-id = "gs_config_preview"
-
-[[env.preview.kv_namespaces]]
-binding = "CONTROL_LOGS"
-id = "gs_control_logs_preview"

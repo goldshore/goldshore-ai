@@ -6,6 +6,11 @@ import {
   statusSnapshot,
 } from '../data/status';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import {
+  getStatusLabel,
+  getStatusSummary,
+  statusSnapshot,
+} from '../data/status';
 
 const snapshot = statusSnapshot;
 const summary = getStatusSummary(snapshot.components);
