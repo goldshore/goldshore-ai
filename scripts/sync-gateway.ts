@@ -11,18 +11,20 @@ const MASTER_CONFIG: MasterConfig = {
   ROUTING_TABLE: {
     'gateway.goldshore.ai': { role: 'ingress', worker: 'gs-gateway' },
     'agent.goldshore.ai': { role: 'alias', target: 'gateway.goldshore.ai' },
+    'agent.internal.goldshore.ai': { role: 'backend', worker: 'gs-agent' },
     'api.goldshore.ai': { role: 'backend', worker: 'gs-api' },
     'admin.goldshore.ai': { role: 'frontend', project: 'gs-admin-pages' },
     'mail.goldshore.ai': { role: 'mx-only', provider: 'cloudflare-email' },
   },
   SERVICE_STATUS: {
     maintenance_mode: false,
-    active_services: ['gateway', 'api', 'agent', 'admin'],
+    active_services: ['gs-gateway', 'gs-api', 'gs-agent', 'gs-admin'],
   },
   AI_ORCHESTRATION: {
-    preferred_model: 'gpt-4-turbo',
+    preferred_model: 'gpt-5-mini',
     agent_modules: ['operator-assist', 'market-intel'],
     queue_concurrency: 10,
+    retry_attempts: 2,
   },
 };
 
@@ -64,7 +66,7 @@ async function runFinalVerification(): Promise<void> {
   console.log('\n📬 Checking /internal/inbox-status...');
   try {
     const finalVerify = await fetch('https://api.goldshore.ai/internal/inbox-status');
-    const data = await finalVerify.json() as { success?: boolean; inbox?: { count?: number } };
+    const data = (await finalVerify.json()) as { success?: boolean; inbox?: { count?: number } };
 
     if (data.success) {
       console.log(`🎉 SYSTEM ONLINE: ${data.inbox?.count ?? 0} emails logged in KV.`);
