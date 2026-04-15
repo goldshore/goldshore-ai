@@ -167,7 +167,9 @@ export const createApp = () => {
 const app = createApp();
 
 export default {
-  fetch: app.fetch,
+  async fetch(request: Request, env: ControlEnv, ctx: ExecutionContext): Promise<Response> {
+    return app.fetch(request, env, ctx);
+  },
   async scheduled(
     _controller: ScheduledController,
     env: ControlEnv,
