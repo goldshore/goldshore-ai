@@ -1,3 +1,20 @@
+const redactionPatterns: { re: RegExp; replacement: string }[] = [
+  // Common secret-like key names
+  { re: /(token|secret|password)\s*[:=]\s*["']?([A-Za-z0-9_\-\.]{4,})["']?/gi, replacement: "$1: [REDACTED]" },
+  // Bearer tokens and long opaque values
+  { re: /\bBearer\s+[A-Za-z0-9_\-\.+=\/]{8,}\b/gi, replacement: "Bearer [REDACTED]" },
+];
+
+const sensitiveKeyPattern = /(token|secret|password|authorization|api[_-]?key|client[_-]?secret|access[_-]?key)/i;
+
+function redactString(input: string): string {
+  let out = input;
+  for (const { re, replacement } of redactionPatterns) {
+    out = out.replace(re, replacement);
+  }
+  return out;
+}
+
 function sanitizeValue(value: any): any {
   if (value instanceof Error) {
     // Avoid logging full error objects which may contain sensitive data such as
@@ -15,33 +32,39 @@ function sanitizeValue(value: any): any {
     }
     return safe;
   }
+
+  if (typeof value === "string") {
+    return redactString(value);
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => sanitizeValue(item));
+  }
+
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (sensitiveKeyPattern.test(k)) {
+        out[k] = "[REDACTED]";
+      } else {
+        out[k] = sanitizeValue(v);
+      }
+    }
+    return out;
+  }
+
   return value;
 }
 
 function sanitizeArgs(args: any[]): any[] {
-  const redactionPatterns: { re: RegExp; replacement: string }[] = [
-    // Common secret-like key names
-    { re: /(token|secret|password)\s*[:=]\s*["']?([A-Za-z0-9_\-\.]{4,})["']?/gi, replacement: "$1: [REDACTED]" },
-    // Bearer tokens and long opaque values
-    { re: /\bBearer\s+[A-Za-z0-9_\-\.+=\/]{8,}\b/gi, replacement: "Bearer [REDACTED]" },
-  ];
-
   return args.map((arg) => {
     const sanitized = sanitizeValue(arg);
     if (typeof sanitized === "string") {
-      let out = sanitized;
-      for (const { re, replacement } of redactionPatterns) {
-        out = out.replace(re, replacement);
-      }
-      return out;
+      return sanitized;
     }
     if (sanitized && typeof sanitized === "object") {
       try {
-        let json = JSON.stringify(sanitized);
-        for (const { re, replacement } of redactionPatterns) {
-          json = json.replace(re, replacement);
-        }
-        return json;
+        return JSON.stringify(sanitized);
       } catch {
         return "[Unserializable object]";
       }
