@@ -38,8 +38,10 @@ environment = "prod"
 [vars]
 ENV = "production"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-# Cloudflare Zero Trust protects admin.goldshore.ai via the GoldShore-Admin-ZT
-# Access policy (GitHub IdP, goldshore.ai email domain required).
+# AUD tag for the GoldShore-Admin-ZT Access application.
+# Public identifier used to verify Cloudflare Access JWTs — not a secret.
+# Rotate via: Cloudflare Access → gs-admin application → Revoke Token.
+CLOUDFLARE_ACCESS_AUDIENCE = "8b6e1890f664c52ad265a240948a1f3315a757e19b4a0fa180ffe952b81a0daf"
 
 # ── Preview bindings ───────────────────────────────────────────────────────────
 
@@ -70,5 +72,4 @@ ENV = "preview"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 
 # ── Secret bindings (set via CLI or dashboard, never committed) ────────────────
-# wrangler pages secret put CLOUDFLARE_ACCESS_AUDIENCE --project-name gs-admin
-# wrangler pages secret put ADMIN_API_KEY             --project-name gs-admin
+# wrangler pages secret put ADMIN_API_KEY --project-name gs-admin
