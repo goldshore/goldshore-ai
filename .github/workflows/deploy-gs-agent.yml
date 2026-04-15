@@ -16,6 +16,7 @@ on:
 
 jobs:
   deploy:
+    if: ${{ false }} # Phase 0: keep gs-agent production deploy disabled
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
