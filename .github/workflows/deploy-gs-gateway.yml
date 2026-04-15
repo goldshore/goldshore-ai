@@ -1,12 +1,4 @@
-<<<<<<< chore/working-copy-upstream
-name: Deploy API Gateway (gw.goldshore.ai)
-=======
-<<<<<<< main-HEAD-2
 name: Deploy GS Gateway Worker (gw.goldshore.ai)
-=======
-name: Deploy API Gateway (gw.goldshore.ai)
->>>>>>> chore/working-copy
->>>>>>> main-HEAD-2
 
 permissions:
   contents: read

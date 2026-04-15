@@ -3,7 +3,6 @@ name: Deploy Agent Worker (gs-agent)
 permissions:
   contents: read
 
-<<<<<<< Updated upstream:.github/workflows/deploy-gs-agent.yml
 on:
   push:
     branches:
@@ -14,27 +13,10 @@ on:
       - "packages/**"
       - "package.json"
       - "pnpm-lock.yaml"
-=======
-# on:
-#   push:
-#     branches:
-#       - main
-#     paths:
-#       - "apps/gs-agent/**"
-#       - "infra/cloudflare/gs-agent.wrangler.toml"
-#       - "packages/**"
-#       - "package.json"
-#       - "pnpm-lock.yaml"
->>>>>>> Stashed changes:.github/workflows/deploy-agent.yml
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-<<<<<<< Updated upstream:.github/workflows/deploy-gs-agent.yml
-=======
-    if: false # Explicitly disable job
-
->>>>>>> Stashed changes:.github/workflows/deploy-agent.yml
     steps:
       - uses: actions/checkout@v4
 

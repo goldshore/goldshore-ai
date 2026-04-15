@@ -1,12 +1,4 @@
-<<<<<<< HEAD
-name: Preview gs-admin
-=======
-<<<<<<< HEAD
 name: Preview GS Admin (admin.goldshore.ai)
-=======
-name: Preview gs-admin
->>>>>>> 9a7cd1bf7c1ad35699a74d37fff8bae63408bf13
->>>>>>> 2513239f97c889fa6a258a9de2085481dc7def4c
 
 permissions:
   contents: read
@@ -34,29 +26,13 @@ jobs:
       (github.event.action == 'ready_for_review' && github.event.pull_request.base.ref == 'main')
 
     steps:
-<<<<<<< HEAD
       - uses: actions/checkout@3df4d485d8ce6d2b61b8d12e8f44cdfffbea301e
-=======
-<<<<<<< HEAD
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
-=======
-      - uses: actions/checkout@3df4d485d8ce6d2b61b8d12e8f44cdfffbea301e
->>>>>>> 9a7cd1bf7c1ad35699a74d37fff8bae63408bf13
->>>>>>> 2513239f97c889fa6a258a9de2085481dc7def4c
 
       - uses: pnpm/action-setup@v4
         with:
           run_install: false
 
       - uses: actions/setup-node@v6
-<<<<<<< HEAD
-      - uses: actions/setup-node@v6
-=======
-<<<<<<< HEAD
-=======
-      - uses: actions/setup-node@v6
->>>>>>> 9a7cd1bf7c1ad35699a74d37fff8bae63408bf13
->>>>>>> 2513239f97c889fa6a258a9de2085481dc7def4c
         with:
           node-version: 22
           cache: pnpm
@@ -73,42 +49,20 @@ jobs:
       - name: Validate canonical worker names
         run: pnpm validate:names
 
-<<<<<<< HEAD
-      - name: Build admin cockpit (preview)
-=======
-<<<<<<< HEAD
       - name: Build GS admin cockpit (preview)
-=======
-      - name: Build admin cockpit (preview)
->>>>>>> 9a7cd1bf7c1ad35699a74d37fff8bae63408bf13
->>>>>>> 2513239f97c889fa6a258a9de2085481dc7def4c
         working-directory: apps/gs-admin
         env:
           PUBLIC_API: https://api-preview.goldshore.ai
           PUBLIC_GATEWAY: https://gw-preview.goldshore.ai
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
           PUBLIC_ENV: preview
           PUBLIC_BUILD_TIMESTAMP: ${{ github.run_started_at }}
           PUBLIC_COMMIT_HASH: ${{ github.sha }}
-=======
->>>>>>> 9a7cd1bf7c1ad35699a74d37fff8bae63408bf13
->>>>>>> 2513239f97c889fa6a258a9de2085481dc7def4c
         run: pnpm build
 
       - name: Deploy to Cloudflare Pages (preview)
         uses: cloudflare/pages-action@v1
         with:
-<<<<<<< HEAD
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-=======
-<<<<<<< HEAD
           apiToken: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN || secrets.CLOUDFLARE_API_TOKEN }}
-=======
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
->>>>>>> 9a7cd1bf7c1ad35699a74d37fff8bae63408bf13
->>>>>>> 2513239f97c889fa6a258a9de2085481dc7def4c
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: preview-admin
           directory: apps/gs-admin/dist
