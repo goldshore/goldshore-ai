@@ -4,18 +4,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node ./scripts/dev.mjs",
-    "deploy": "wrangler deploy",
-    "build": "node ./scripts/build.mjs",
+    "dev": "wrangler dev src/index.ts",
+    "deploy": "wrangler deploy --env prod",
+    "build": "wrangler deploy --env prod --dry-run --outdir=dist",
     "test": "tsx src/repro_cors.test.ts"
   },
   "dependencies": {
     "@goldshore/auth": "workspace:*",
     "hono": "^4.12.4",
     "zod": "^4.3.6"
-    "dev": "wrangler dev src/index.ts",
-    "deploy": "wrangler deploy --env prod",
-    "build": "wrangler deploy --env prod --dry-run --outdir=dist"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260329.1",
