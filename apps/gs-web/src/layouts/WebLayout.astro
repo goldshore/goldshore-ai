@@ -3,9 +3,9 @@ import '@goldshore/theme/styles/tokens';
 import '@goldshore/theme/styles/base';
 import '@goldshore/theme/styles/components';
 import '@goldshore/theme/styles/layout';
-import { GSButton } from '@goldshore/ui';
-import SiteFooter from '../components/SiteFooter.astro';
+import Logo from '../components/brand/Logo.astro';
 import { HTML_CSP_META_FALLBACK } from '../security/policy';
+import { WEB_META_CSP } from '../utils/csp';
 
 const navLinks = [
   { href: '/', label: 'Home' },
@@ -16,9 +16,13 @@ const navLinks = [
   { href: '/apps/risk-radar', label: 'Risk Radar' },
   { href: '/developer', label: 'Developer Hub' },
 ];
+const footerLinks = [
+  { href: '/legal/privacy', label: 'Privacy' },
+  { href: '/legal/terms', label: 'Terms' },
+];
+const mobileNavId = 'mobile-navigation';
 
 const { title = 'GoldShore', description = 'GoldShore AI', currentPath = Astro.url.pathname } = Astro.props;
-const logoSrc = '/logo.svg';
 const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
 ---
 
