@@ -18,7 +18,7 @@ CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 [[env.prod.services]]
 binding = "API"
 service = "gs-api"
-environment = "production"
+environment = "prod"
 
 [[env.prod.services]]
 binding = "AGENT"

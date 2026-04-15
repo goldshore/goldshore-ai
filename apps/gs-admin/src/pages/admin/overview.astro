@@ -1,0 +1,348 @@
+---
+/**
+ * Admin dashboard — Overview
+ *
+ * Cloudflare bindings available on `Astro.locals.runtime.env`:
+ *   KV            — gs_admin_kv_001   (admin state, feature flags)
+ *   DB            — goldshore (D1)    (read-only metrics queries)
+ *   ASSETS        — gs-assets (R2)   (brand / media assets)
+ *   API_SERVICE   — gs-api (service binding, env: prod)
+ *
+ * These are declared in apps/gs-admin/wrangler.toml and provisioned in
+ * Cloudflare dashboard under the gs-admin Pages project → Settings → Bindings.
+ */
+
+export const prerender = false;
+
+import AdminLayout from '../../layouts/AdminLayout.astro';
+
+// ── Pull live data from KV / service binding ─────────────────────────────────
+// `runtime` is injected by @astrojs/cloudflare when deployed to Pages Functions.
+const runtime = (Astro.locals as Record<string, unknown>).runtime as {
+  env: {
+    KV?: KVNamespace;
+    API_SERVICE?: Fetcher;
+  };
+} | undefined;
+
+// Fetch system status from the API worker via service binding (no network hop)
+let systemStatus: { status: string; uptime: string; version: string } = {
+  status: 'unknown',
+  uptime: '—',
+  version: '—',
+};
+
+let recentDeploys: Array<{ label: string; time: string; env: string; ok: boolean }> = [];
+
+if (runtime?.env?.API_SERVICE) {
+  try {
+    const res = await runtime.env.API_SERVICE.fetch('https://internal/health');
+    if (res.ok) {
+      const json = await res.json() as typeof systemStatus;
+      systemStatus = json;
+    }
+  } catch {
+    // API unreachable — show defaults
+  }
+}
+
+if (runtime?.env?.KV) {
+  try {
+    const raw = await runtime.env.KV.get('admin:recent_deploys', 'json');
+    if (Array.isArray(raw)) recentDeploys = raw as typeof recentDeploys;
+  } catch {
+    // KV not yet populated
+  }
+}
+
+const statusColor = {
+  operational: '#22c55e',
+  degraded:    '#f59e0b',
+  incident:    '#ef4444',
+  unknown:     '#64748b',
+}[systemStatus.status] ?? '#64748b';
+
+const metrics = [
+  { label: 'System status',   value: systemStatus.status,  context: 'Live',         color: statusColor },
+  { label: 'Uptime',          value: systemStatus.uptime,  context: 'Last 30 days', color: null },
+  { label: 'Worker version',  value: systemStatus.version, context: 'gs-api prod',  color: null },
+  { label: 'Active agents',   value: '—',                  context: 'gs-agent',     color: null },
+];
+---
+
+<AdminLayout title="Overview" currentPath="/admin/overview">
+  <div class="overview">
+
+    <header class="overview__header">
+      <div>
+        <p class="overview__eyebrow">Control surface</p>
+        <h1 class="overview__title">Overview</h1>
+      </div>
+      <div class="overview__status-pill" style={`--status-color: ${statusColor}`}>
+        <span class="overview__status-dot"></span>
+        {systemStatus.status === 'unknown' ? 'Connecting…' : systemStatus.status}
+      </div>
+    </header>
+
+    <!-- Metric cards -->
+    <section class="overview__metrics" aria-label="System metrics">
+      {metrics.map(m => (
+        <article class="metric-card">
+          <span class="metric-card__label">{m.label}</span>
+          <strong class="metric-card__value" style={m.color ? `color:${m.color}` : ''}>
+            {m.value}
+          </strong>
+          <span class="metric-card__context">{m.context}</span>
+        </article>
+      ))}
+    </section>
+
+    <!-- Recent deploys -->
+    <section class="overview__section" aria-labelledby="deploys-title">
+      <h2 class="overview__section-title" id="deploys-title">Recent Deployments</h2>
+      {recentDeploys.length === 0 ? (
+        <div class="empty-state">
+          <p>No deployment records in KV yet.</p>
+          <p class="empty-state__hint">
+            Records are written to <code>admin:recent_deploys</code> by the deploy workflows.
+          </p>
+        </div>
+      ) : (
+        <table class="deploy-table">
+          <thead>
+            <tr>
+              <th>Service</th><th>Time</th><th>Env</th><th>Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            {recentDeploys.map(d => (
+              <tr>
+                <td>{d.label}</td>
+                <td>{d.time}</td>
+                <td><code>{d.env}</code></td>
+                <td class={d.ok ? 'ok' : 'fail'}>{d.ok ? 'Success' : 'Failed'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </section>
+
+    <!-- Bindings reference -->
+    <section class="overview__section" aria-labelledby="bindings-title">
+      <h2 class="overview__section-title" id="bindings-title">Cloudflare Bindings</h2>
+      <table class="bindings-table">
+        <thead>
+          <tr><th>Binding</th><th>Type</th><th>Resource</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>KV</code></td>
+            <td>KV Namespace</td>
+            <td>gs_admin_kv_001</td>
+            <td class={runtime?.env?.KV ? 'ok' : 'warn'}>{runtime?.env?.KV ? 'Bound' : 'Not bound'}</td>
+          </tr>
+          <tr>
+            <td><code>API_SERVICE</code></td>
+            <td>Service binding</td>
+            <td>gs-api (prod)</td>
+            <td class={runtime?.env?.API_SERVICE ? 'ok' : 'warn'}>{runtime?.env?.API_SERVICE ? 'Bound' : 'Not bound'}</td>
+          </tr>
+          <tr>
+            <td><code>DB</code></td>
+            <td>D1 Database</td>
+            <td>goldshore (gs_db_001)</td>
+            <td class="info">Via API service</td>
+          </tr>
+          <tr>
+            <td><code>ASSETS</code></td>
+            <td>R2 Bucket</td>
+            <td>gs-assets</td>
+            <td class="info">Via API service</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+  </div>
+</AdminLayout>
+
+<style>
+  .overview {
+    padding: 32px 36px;
+    max-width: 1100px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .overview__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .overview__eyebrow {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(90,162,255,0.75);
+    margin-bottom: 6px;
+  }
+
+  .overview__title {
+    font-size: 26px;
+    font-weight: 700;
+    color: rgba(226,232,240,0.97);
+  }
+
+  .overview__status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--status-color) 30%, transparent);
+    background: color-mix(in srgb, var(--status-color) 10%, transparent);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: capitalize;
+    color: var(--status-color);
+    white-space: nowrap;
+  }
+
+  .overview__status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--status-color);
+    box-shadow: 0 0 8px var(--status-color);
+  }
+
+  /* Metric cards */
+  .overview__metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 14px;
+  }
+
+  .metric-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 18px 20px;
+    border-radius: 12px;
+    border: 1px solid rgba(90,162,255,0.10);
+    background: rgba(11,15,24,0.65);
+    backdrop-filter: blur(8px);
+  }
+
+  .metric-card__label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(100,116,139,0.80);
+  }
+
+  .metric-card__value {
+    font-size: 26px;
+    font-weight: 700;
+    color: rgba(226,232,240,0.97);
+    line-height: 1;
+    text-transform: capitalize;
+  }
+
+  .metric-card__context {
+    font-size: 11px;
+    color: rgba(100,116,139,0.65);
+  }
+
+  /* Sections */
+  .overview__section {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .overview__section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(148,163,184,0.70);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-size: 11px;
+    border-bottom: 1px solid rgba(90,162,255,0.08);
+    padding-bottom: 10px;
+  }
+
+  /* Tables */
+  .deploy-table,
+  .bindings-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .deploy-table th,
+  .bindings-table th {
+    text-align: left;
+    padding: 8px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: rgba(100,116,139,0.70);
+    border-bottom: 1px solid rgba(90,162,255,0.08);
+  }
+
+  .deploy-table td,
+  .bindings-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(90,162,255,0.05);
+    color: rgba(148,163,184,0.85);
+    vertical-align: middle;
+  }
+
+  .deploy-table tr:last-child td,
+  .bindings-table tr:last-child td { border-bottom: none; }
+
+  td code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px;
+    background: rgba(90,162,255,0.08);
+    border-radius: 4px;
+    padding: 2px 6px;
+    color: rgba(90,162,255,0.90);
+  }
+
+  td.ok   { color: #22c55e; font-weight: 600; }
+  td.warn { color: #f59e0b; font-weight: 600; }
+  td.fail { color: #ef4444; font-weight: 600; }
+  td.info { color: rgba(90,162,255,0.70); font-style: italic; }
+
+  /* Empty state */
+  .empty-state {
+    padding: 24px 20px;
+    border-radius: 10px;
+    border: 1px dashed rgba(90,162,255,0.15);
+    color: rgba(100,116,139,0.70);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .empty-state__hint {
+    margin-top: 6px;
+    font-size: 12px;
+    color: rgba(100,116,139,0.50);
+  }
+
+  .empty-state code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: rgba(90,162,255,0.65);
+  }
+</style>
