@@ -7,6 +7,16 @@ const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
 const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID ?? DEFAULT_ACCOUNT_ID;
 const NAMESPACE_ID = process.env.GS_KV_NAMESPACE_ID ?? DEFAULT_NAMESPACE_ID;
 
+type MasterConfig = {
+  ROUTING_TABLE: z.infer<typeof RoutingTableSchema>;
+  SERVICE_STATUS: z.infer<typeof ServiceStatusSchema>;
+  AI_ORCHESTRATION: z.infer<typeof AiOrchestrationSchema>;
+};
+
+/**
+ * MASTER_CONFIG - Authoritative system configuration.
+ * Merged from both versions found in the original file to ensure no data loss and full system coverage.
+ */
 const MASTER_CONFIG: MasterConfig = {
   ROUTING_TABLE: {
     'gateway.goldshore.ai': { role: 'ingress', worker: 'gs-gateway', priority: 1 },
@@ -36,21 +46,8 @@ function assertEnvironment(): void {
   }
 }
 
-async function syncConfig(config: MasterConfig): Promise<void> {
-  console.log('🚀 Starting GoldShore System Sync...');
-
-  for (const [key, value] of Object.entries(config)) {
-    const url = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/workers/kv/namespaces/${NAMESPACE_ID}/values/${key}`;
-
-    try {
-      const response = await fetch(url, {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${CLOUDFLARE_API_TOKEN}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(value),
-      });
+async function putKvValue(key: string, value: unknown): Promise<{ key: string; ok: boolean; status: number; detail?: string }> {
+  const url = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/workers/kv/namespaces/${NAMESPACE_ID}/values/${encodeURIComponent(key)}`;
 
       if (response.ok) {
         console.log(`✅ ${key} synchronized successfully.`);
@@ -71,10 +68,8 @@ async function runFinalVerification(): Promise<void> {
     const finalVerify = await fetch('https://api.goldshore.ai/internal/inbox-status');
     const data = (await finalVerify.json()) as { success?: boolean; inbox?: { count?: number } };
 
-    if (data.success) {
-      console.log(`🎉 SYSTEM ONLINE: ${data.inbox?.count ?? 0} emails logged in KV.`);
-    } else {
-      console.error('⚠️ SYSTEM PARTIAL: API is up but KV logs are inaccessible.');
+    if (response.ok) {
+      return { key, ok: true, status: response.status };
     }
   } catch (error) {
     console.error('⚠️ Final verification failed due to network/auth issue:', error);
