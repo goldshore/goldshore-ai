@@ -5,12 +5,20 @@
     "admin.goldshore.ai",
     "preview.goldshore.ai"
   ],
-  "required_routes": [
-    "api.goldshore.ai/*",
-    "admin.goldshore.ai/*",
-    "preview.goldshore.ai/*"
+  "required_worker_routes": [
+    "api.goldshore.ai/*"
   ],
-  "forbidden_routes": [
+  "required_pages_domains": [
+    {
+      "project": "gs-admin",
+      "domain": "admin.goldshore.ai"
+    },
+    {
+      "project": "preview-web",
+      "domain": "preview.goldshore.ai"
+    }
+  ],
+  "forbidden_worker_routes": [
     "goldshore.ai/*",
     "www.goldshore.ai/*"
   ],
