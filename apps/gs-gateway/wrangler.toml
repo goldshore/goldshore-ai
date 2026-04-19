@@ -1,6 +1,6 @@
 name = "gs-gateway"
 main = "src/index.ts"
-compatibility_date = "2024-11-01"
+compatibility_date = "2026-04-18"
 compatibility_flags = ["nodejs_compat"]
 
 workers_dev = false
@@ -14,9 +14,14 @@ routes = [
 [env.prod.vars]
 ENV = "production"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
+TUNNEL = "goldshore-prod-tunnel-id"
+
+[[env.prod.kv_namespaces]]
+binding = "AI_CACHE"
+id = "gs-ai-cache"
 
 [[env.prod.services]]
-binding = "API"
+binding = "API_SERVICE"
 service = "gs-api"
 environment = "prod"
 
