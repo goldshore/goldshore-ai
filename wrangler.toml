@@ -1,5 +1,51 @@
-# Root Worker project used by Cloudflare Workers Builds (repo root: /)
-# Keep this file aligned with Cloudflare Dashboard Worker settings.
-name = "goldshore-ai"
-compatibility_date = "2026-04-15"
+# ============================================================
+# ⛔ DO NOT DEPLOY FROM THIS FILE
+# This is a legacy root-level wrangler config kept only for
+# reference and local `wrangler dev` convenience.
+#
+# The CANONICAL deploy config for gs-gateway is:
+#   apps/gs-gateway/wrangler.toml
+#
+# All CI deploys target apps/gs-gateway/wrangler.toml via
+# .github/workflows/deploy-gs-gateway.yml.
+#
+# Deploying from here will produce a gateway with EMPTY
+# Cloudflare Access audience — auth will NOT be enforced.
+# ============================================================
+name = "gs-gateway"
+main = "apps/gs-gateway/src/index.ts"
+compatibility_date = "2026-04-18"
+compatibility_flags = ["nodejs_compat"]
+
+workers_dev = false
+routes = [
+  { pattern = "gw.goldshore.ai/*", zone_name = "goldshore.ai" }
+]
+
+[vars]
+ENV = "production"
+API_ORIGIN = "https://api.goldshore.ai"
+# Sentinel: These MUST be set to real values before any production deploy.
+# An empty string here means Cloudflare Access audience checks are DISABLED.
+CLOUDFLARE_ACCESS_AUDIENCE = "NOT_SET__SEE_apps/gs-gateway/wrangler.toml"
+CLOUDFLARE_TEAM_DOMAIN = "NOT_SET__SEE_apps/gs-gateway/wrangler.toml"
+
+[[kv_namespaces]]
+binding = "GATEWAY_KV"
+id = "goldshore-gw-kv"
+
+[[queues.producers]]
+binding = "JOB_QUEUE"
+queue = "goldshore-jobs"
+
+[[services]]
+binding = "API"
+service = "gs-api"
+environment = "prod"
+
+[ai]
+binding = "AI"
+
+[env.preview]
+name = "gs-gateway-preview"
 workers_dev = true
