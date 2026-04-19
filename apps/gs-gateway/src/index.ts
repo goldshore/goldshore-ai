@@ -4,15 +4,29 @@ import { secureHeaders } from "hono/secure-headers";
 import { verifyAccess } from "@goldshore/auth";
 
 interface GatewayEnv {
-  API?: Fetcher;
+  API_SERVICE?: Fetcher;
   AGENT?: Fetcher;
+  AI_CACHE?: KVNamespace;
   API_ORIGIN?: string;
+  ACCESS_CLIENT_SECRET?: string;
   ENV?: string;
 }
 
 const app = new Hono<{ Bindings: GatewayEnv }>();
+const requiredBindings = ["API_SERVICE", "AI_CACHE"] as const;
+const requiredSecrets = ["ACCESS_CLIENT_SECRET"] as const;
 
 app.use("*", secureHeaders());
+app.use("*", async (c, next) => {
+  if (c.env.ENV === "production") {
+    for (const key of [...requiredBindings, ...requiredSecrets]) {
+      if (!c.env[key]) {
+        throw new Error(`CRITICAL_MISSING: ${key}. Terminating.`);
+      }
+    }
+  }
+  await next();
+});
 app.use(
   "*",
   cors({
@@ -51,8 +65,8 @@ app.all("*", async (c) => {
     return c.env.AGENT.fetch(c.req.raw);
   }
 
-  if (c.env.API) {
-    return c.env.API.fetch(c.req.raw);
+  if (c.env.API_SERVICE) {
+    return c.env.API_SERVICE.fetch(c.req.raw);
   }
 
   if (c.env.API_ORIGIN) {

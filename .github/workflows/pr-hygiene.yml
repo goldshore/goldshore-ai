@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3df4d485d8ce6d2b61b8d12e8f44cdfffbea301e
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
       - name: Close stale PRs with conflicts/red CI
