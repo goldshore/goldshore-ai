@@ -13,6 +13,8 @@ routes = [
 [env.prod.vars]
 ENV = "production"
 CONTROL_SERVICE = "true"
+CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
+CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 
 [env.preview]
 routes = [
@@ -21,3 +23,4 @@ routes = [
 
 [env.preview.vars]
 ENV = "preview"
+CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"

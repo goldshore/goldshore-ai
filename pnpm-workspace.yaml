@@ -6,5 +6,6 @@ packages:
   - 'apps/gs-gateway'
   - 'apps/gs-agent'
   - 'apps/gs-mail'
+  - 'apps/gs-www-redirect'
   - 'packages/*'
   - 'infra/*'

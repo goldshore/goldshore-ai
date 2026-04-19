@@ -16,9 +16,9 @@ jobs:
     runs-on: ubuntu-latest
     name: Preview
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v5
+      - uses: pnpm/action-setup@v4
         with:
           run_install: false
 

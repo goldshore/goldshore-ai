@@ -1,0 +1,376 @@
+---
+import AdminLayout from "../layouts/AdminLayout.astro";
+import StatCard from '../components/StatCard.astro';
+import { createAdminService } from '@goldshore/integrations';
+
+const API_BASE = import.meta.env.PUBLIC_API;
+const AUTH_TOKEN_URL = import.meta.env.PUBLIC_AUTH_TOKEN_URL;
+const AUTH_CLIENT_ID = import.meta.env.PUBLIC_AUTH_CLIENT_ID;
+
+const AUTH_CLIENT_SECRET = import.meta.env.AUTH_CLIENT_SECRET;
+
+const AUDIT_ENDPOINT = import.meta.env.PUBLIC_ADMIN_AUDIT_ENDPOINT;
+
+const authConfig = AUTH_TOKEN_URL && AUTH_CLIENT_ID && AUTH_CLIENT_SECRET
+  ? {
+      tokenUrl: AUTH_TOKEN_URL,
+      clientId: AUTH_CLIENT_ID,
+      clientSecret: AUTH_CLIENT_SECRET
+    }
+  : undefined;
+
+const adminService = createAdminService({
+  apiBaseUrl: API_BASE,
+  auth: authConfig,
+  auditEndpoint: AUDIT_ENDPOINT,
+  actor: 'admin-dashboard'
+});
+
+const systemInfo = await adminService.getSystemInfo();
+---
+
+<AdminLayout title="Overview">
+  <!-- Top Stats Row -->
+  <div class="dashboard-grid">
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">●</span> Active Nodes
+      </div>
+      <div class="stat-value">142</div>
+      <div class="stat-label text-green">All systems operational</div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">⚡</span> Network Load
+      </div>
+      <div class="stat-value text-orange">45%</div>
+      <div class="stat-label">Optimal efficiency zone</div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">⇄</span> Transactions (24h)
+      </div>
+      <div class="stat-value">8,432</div>
+      <div class="stat-label text-silver">+12% vs previous period</div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">⚠</span> System Alerts
+      </div>
+      <div class="stat-value text-yellow">0</div>
+      <div class="stat-label">No active alerts</div>
+    </div>
+  </div>
+
+  <section class="gs-grid">
+    <StatCard
+      label="API Status"
+      value={systemInfo ? 'Online' : 'Unknown'}
+      help={systemInfo ? `Timestamp: ${systemInfo.timestamp}` : 'No response'}
+    />
+
+    <StatCard
+      label="Gateway"
+      value="Configured"
+      help="Routing /api/* through gs-gateway"
+    />
+
+    <StatCard
+      label="Workers"
+      value="gs-api, gs-gateway, gs-control, gs-mail"
+      help="See Systems tab for detailed health."
+    />
+  </section>
+
+  <div class="content-split">
+    <!-- Main Chart / Activity Area -->
+    <div class="card main-panel">
+      <div class="panel-header">
+        <h3>Real-time Traffic Analysis</h3>
+        <div class="controls">
+          <button class="btn-xs active">1H</button>
+          <button class="btn-xs">24H</button>
+          <button class="btn-xs">7D</button>
+        </div>
+      </div>
+      <div class="chart-placeholder">
+        <!-- Simulating a chart visualization -->
+        <div class="chart-line"></div>
+        <div class="chart-line"></div>
+        <div class="chart-line"></div>
+        <div class="chart-bars">
+          <div class="bar" style="height: 40%"></div>
+          <div class="bar" style="height: 60%"></div>
+          <div class="bar" style="height: 45%"></div>
+          <div class="bar" style="height: 80%"></div>
+          <div class="bar" style="height: 55%"></div>
+          <div class="bar" style="height: 70%"></div>
+          <div class="bar" style="height: 90%"></div>
+          <div class="bar" style="height: 65%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Activity Log -->
+    <div class="card side-panel">
+      <div class="panel-header">
+        <h3>Recent Activity</h3>
+      </div>
+      <div class="activity-list">
+        <div class="activity-item">
+          <div class="time">10:42:05</div>
+          <div class="event">Node synchronization complete</div>
+          <div class="status text-green">SUCCESS</div>
+        </div>
+        <div class="activity-item">
+          <div class="time">10:40:12</div>
+          <div class="event">Admin login: marzton</div>
+          <div class="status text-green">SUCCESS</div>
+        </div>
+        <div class="activity-item">
+          <div class="time">10:35:00</div>
+          <div class="event">Daily backup routine started</div>
+          <div class="status text-yellow">PENDING</div>
+        </div>
+        <div class="activity-item">
+          <div class="time">10:15:22</div>
+          <div class="event">API Rate limit warning (IP: 192.168.x.x)</div>
+          <div class="status text-orange">WARNING</div>
+        </div>
+        <div class="activity-item">
+          <div class="time">09:55:10</div>
+          <div class="event">Gateway configuration updated</div>
+          <div class="status text-green">SUCCESS</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="gs-panel">
+    <h2>Quick Links</h2>
+    <div class="gs-link-grid">
+      <a href="/systems" class="gs-link-tile">Systems</a>
+      <a href="/trading" class="gs-link-tile">Trading</a>
+      <a href="/settings" class="gs-link-tile">Settings</a>
+      <a href="/admin/systems" class="gs-link-tile">Systems Detail</a>
+    </div>
+  </section>
+</AdminLayout>
+
+<style>
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+  }
+
+  .card {
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius-sm);
+    padding: var(--space-4);
+    transition: all 0.3s ease;
+  }
+
+  .card:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(34, 211, 238, 0.2);
+    transform: translateY(-2px);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: var(--space-2);
+    font-family: var(--font-family-mono);
+  }
+
+  .stat-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: var(--space-1);
+    font-family: var(--font-family-mono);
+    letter-spacing: -0.05em;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+  }
+
+  .content-split {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: var(--space-4);
+  }
+
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-4);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding-bottom: var(--space-4);
+  }
+
+  .panel-header h3 {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    text-transform: uppercase;
+    color: var(--color-text-primary);
+    font-family: var(--font-family-mono);
+  }
+
+  .btn-xs {
+    background: transparent;
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    cursor: pointer;
+    font-family: var(--font-family-mono);
+  }
+
+  .btn-xs.active {
+    background: var(--color-utility-orange);
+    color: #000;
+    border-color: var(--color-utility-orange);
+  }
+
+  /* Chart Simulation */
+  .chart-placeholder {
+    height: 300px;
+    position: relative;
+    background: linear-gradient(180deg, rgba(34, 211, 238, 0.02) 0%, transparent 100%);
+    border: 1px dashed rgba(255,255,255,0.1);
+    display: flex;
+    align-items: flex-end;
+    padding: 0 var(--space-4);
+    gap: var(--space-4);
+  }
+
+  .chart-bars {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    width: 100%;
+    height: 100%;
+    padding-top: var(--space-8);
+  }
+
+  .bar {
+    width: 100%;
+    background: var(--color-utility-orange);
+    opacity: 0.8;
+    margin: 0 4px;
+    border-top: 2px solid var(--color-neon-yellow);
+    box-shadow: 0 0 10px rgba(255, 165, 0, 0.2);
+  }
+
+  /* Activity List */
+  .activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .activity-item {
+    padding: var(--space-3);
+    background-color: rgba(255,255,255,0.02);
+    border-left: 2px solid rgba(255,255,255,0.1);
+    transition: all 0.2s;
+  }
+
+  .activity-item:hover {
+    background-color: rgba(255,255,255,0.05);
+    border-left-color: var(--color-utility-orange);
+  }
+
+  .time {
+    font-family: var(--font-family-mono);
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
+    margin-bottom: 2px;
+  }
+
+  .event {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+    margin-bottom: 2px;
+  }
+
+  .status {
+    font-family: var(--font-family-mono);
+    font-size: 0.65rem;
+    font-weight: bold;
+  }
+
+  /* Helper Classes */
+  .text-green { color: var(--color-sports-car-green) !important; text-shadow: 0 0 8px rgba(0, 255, 0, 0.3); }
+  .text-orange { color: var(--color-utility-orange) !important; text-shadow: 0 0 8px rgba(255, 165, 0, 0.3); }
+  .text-yellow { color: var(--color-neon-yellow) !important; }
+  .text-silver { color: var(--color-silver) !important; }
+
+  @media (max-width: 1024px) {
+    .dashboard-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .content-split {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .gs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .gs-panel {
+    border-radius: 1rem;
+    padding: 1.25rem 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(5, 5, 5, 0.5);
+    backdrop-filter: blur(10px);
+  }
+
+  .gs-panel h2 {
+    margin-top: 0;
+    font-size: 1rem;
+    color: #fff;
+  }
+
+  .gs-link-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+
+  .gs-link-tile {
+    display: block;
+    text-decoration: none;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    color: #e5e7eb;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+  }
+
+  .gs-link-tile:hover {
+    border-color: #22d3ee;
+    background: rgba(34, 211, 238, 0.05);
+    color: #fff;
+  }
+</style>

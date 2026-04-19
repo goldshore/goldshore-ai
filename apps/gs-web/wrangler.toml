@@ -1,2 +1,16 @@
 name = "gs-web"
 pages_build_output_dir = "./dist"
+
+[env.prod]
+routes = [
+  { pattern = "goldshore.ai", custom_domain = true },
+  { pattern = "goldshore.org", custom_domain = true },
+  { pattern = "rmarston.com", custom_domain = true }
+]
+
+[env.production]
+routes = [
+  { pattern = "goldshore.ai", custom_domain = true },
+  { pattern = "goldshore.org", custom_domain = true },
+  { pattern = "rmarston.com", custom_domain = true }
+]

@@ -1,0 +1,371 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { GSButton } from '@goldshore/ui';
+import scanResults from '../../data/pii-scan-results.json';
+import InboxDashboard from '../../components/InboxDashboard.astro';
+
+// Initial UI state
+const initialStatus = { health: 'Unknown', status: 'Unknown', version: 'Unknown', lastSync: 'N/A' };
+const { summary, generatedAt, alerts } = scanResults;
+const formattedScanDate = new Date(generatedAt).toLocaleString('en-US', {
+  dateStyle: 'medium',
+  timeStyle: 'short'
+});
+---
+<AdminLayout title="Admin | Operational Overview">
+    <div class="max-w-7xl mx-auto p-8 space-y-8">
+        <h1 class="text-4xl gs-heading gs-text-accent">Operational Overview</h1>
+        <p class="text-lg gs-text-subtle">Protected access to monitor Workers, Data, and System Health.</p>
+
+        <!-- Status & Bindings -->
+        <div class="grid md:grid-cols-4 gap-6">
+            <div class="gs-card space-y-3">
+                <h2 class="text-xl font-semibold">gs-api Health</h2>
+                <p id="api-health" class="text-2xl font-bold gs-text-info">{initialStatus.health}</p>
+                <p class="text-sm gs-text-subtle">Last checked: <span id="api-health-sync">{initialStatus.lastSync}</span></p>
+                <GSButton variant="secondary" id="check-api-health">Check Health</GSButton>
+            </div>
+
+            <div class="gs-card space-y-3">
+                <h2 class="text-xl font-semibold">Active Workers</h2>
+                <p class="text-2xl font-bold gs-text-success">3/3</p>
+                <p class="text-sm gs-text-subtle">API, Gateway, Control are online.</p>
+                <GSButton href="/admin/workers" variant="secondary">View Bindings</GSButton>
+            </div>
+
+            <div class="gs-card space-y-3">
+                <h2 class="text-xl font-semibold">Git Conflicts</h2>
+                <p id="conflict-count" class="text-2xl font-bold gs-text-danger">7 Open</p>
+                <p class="text-sm gs-text-subtle">Requires immediate SOP-001 execution.</p>
+                <GSButton variant="primary" id="run-sop">Execute Git Repair</GSButton>
+            </div>
+
+            <div class="gs-card space-y-3">
+                <h2 class="text-xl font-semibold">PII Scan Status</h2>
+                <p class="text-2xl font-bold gs-text-warning">{summary.status}</p>
+                <p class="text-sm gs-text-subtle">Last scan: {formattedScanDate}</p>
+                <p class="text-sm gs-text-subtle">Alert routing: {alerts.status}</p>
+                <GSButton href="/admin/pii-scans" variant="secondary">View PII Results</GSButton>
+            </div>
+        </div>
+
+        <InboxDashboard />
+
+        <div class="grid md:grid-cols-3 gap-6">
+            <div class="gs-card space-y-3">
+                <h2 class="text-xl font-semibold">gs-api Status</h2>
+                <p id="api-status" class="text-2xl font-bold gs-text-info">{initialStatus.status}</p>
+                <p class="text-sm gs-text-subtle">Uptime: <span id="api-uptime">Loading...</span></p>
+                <p class="text-sm gs-text-subtle">Last checked: <span id="api-status-sync">{initialStatus.lastSync}</span></p>
+                <GSButton variant="secondary" id="check-api-status">Refresh Status</GSButton>
+            </div>
+
+            <div class="gs-card space-y-3">
+                <h2 class="text-xl font-semibold">gs-api Version</h2>
+                <p id="api-version" class="text-2xl font-bold gs-text-info">{initialStatus.version}</p>
+                <p class="text-sm gs-text-subtle">Deploy SHA: <span id="api-deploy-sha">—</span></p>
+                <p class="text-sm gs-text-subtle">Last checked: <span id="api-version-sync">{initialStatus.lastSync}</span></p>
+                <GSButton variant="secondary" id="check-api-version">Refresh Version</GSButton>
+            </div>
+
+            <div class="gs-card space-y-3">
+                <h2 class="text-xl font-semibold">gs-api Config Access</h2>
+                <p class="text-sm gs-text-subtle">Requires admin roles to view or modify configuration.</p>
+                <p id="api-config-access" class="text-2xl font-bold gs-text-info">Pending</p>
+                <p class="text-sm gs-text-subtle">Last checked: <span id="api-config-sync">{initialStatus.lastSync}</span></p>
+                <GSButton variant="secondary" id="check-api-config">Validate Access</GSButton>
+            </div>
+        </div>
+
+        <div class="gs-card space-y-4">
+            <div>
+                <h2 class="text-2xl font-semibold">gs-api Configuration</h2>
+                <p class="text-sm gs-text-subtle">Update runtime configuration values for gs-api via the secured proxy.</p>
+            </div>
+            <div class="grid gap-4 md:grid-cols-3">
+                <label class="flex items-center gap-3 text-sm gs-text-subtle">
+                    <input id="api-maintenance" type="checkbox" class="h-4 w-4" />
+                    Maintenance mode
+                </label>
+                <label class="text-sm gs-text-subtle">
+                    Max concurrency
+                    <input id="api-max-concurrency" type="number" min="1" class="gs-input mt-2" />
+                </label>
+                <label class="text-sm gs-text-subtle md:col-span-3">
+                    Notes
+                    <textarea id="api-config-notes" class="gs-input mt-2 w-full min-h-[120px]"></textarea>
+                </label>
+            </div>
+            <div class="flex flex-wrap gap-3">
+                <GSButton variant="secondary" id="api-config-refresh">Refresh Config</GSButton>
+                <GSButton variant="primary" id="api-config-save">Save Config</GSButton>
+            </div>
+            <p id="api-config-message" class="text-sm gs-text-subtle"></p>
+        </div>
+
+        <!-- Deployment Actions (Simulated Frontend Controls) -->
+        <div class="gs-card space-y-4">
+            <h2 class="text-2xl font-semibold">Deployment Actions</h2>
+            <p class="text-sm gs-text-subtle">Initiate a controlled preview deployment or production rollback (UI only; backend triggers to be wired later).</p>
+            <div class="flex space-x-4">
+                <GSButton variant="primary" id="preview-deploy">Run Preview Deploy</GSButton>
+                <GSButton variant="secondary" id="prod-rollback" disabled>Production Rollback</GSButton>
+            </div>
+        </div>
+    </div>
+
+    <script is:inline>
+        document.addEventListener('DOMContentLoaded', () => {
+            const toneClasses = ['gs-text-success', 'gs-text-warning', 'gs-text-danger', 'gs-text-info'];
+            const setTone = (el, tone) => {
+                if (!el) return;
+                toneClasses.forEach((cls) => el.classList.remove(cls));
+                if (tone) {
+                    el.classList.add(tone);
+                }
+            };
+
+            const apiHealthEl = document.getElementById('api-health');
+            const apiHealthSyncEl = document.getElementById('api-health-sync');
+            const apiStatusEl = document.getElementById('api-status');
+            const apiStatusSyncEl = document.getElementById('api-status-sync');
+            const apiStatusUptimeEl = document.getElementById('api-uptime');
+            const apiVersionEl = document.getElementById('api-version');
+            const apiVersionSyncEl = document.getElementById('api-version-sync');
+            const apiDeployShaEl = document.getElementById('api-deploy-sha');
+            const apiConfigAccessEl = document.getElementById('api-config-access');
+            const apiConfigSyncEl = document.getElementById('api-config-sync');
+            const apiConfigMessageEl = document.getElementById('api-config-message');
+            const apiMaintenanceEl = document.getElementById('api-maintenance');
+            const apiMaxConcurrencyEl = document.getElementById('api-max-concurrency');
+            const apiConfigNotesEl = document.getElementById('api-config-notes');
+
+            const setTimestamp = (el) => {
+                if (el) {
+                    el.textContent = new Date().toLocaleTimeString();
+                }
+            };
+
+            const fetchJson = async (url, options = {}) => {
+                const response = await fetch(url, {
+                    headers: { 'Content-Type': 'application/json' },
+                    ...options
+                });
+                const data = await response.json().catch(() => null);
+                return { response, data };
+            };
+
+            const handleAccessError = (response) => {
+                if (!response) {
+                    return 'Network error.';
+                }
+                if (response.status === 401) {
+                    return 'Access token missing.';
+                }
+                if (response.status === 403) {
+                    return 'Insufficient role for access.';
+                }
+                return `Request failed (${response.status}).`;
+            };
+
+            const checkApiHealth = async () => {
+                if (apiHealthEl) {
+                    apiHealthEl.textContent = 'Checking...';
+                    setTone(apiHealthEl, 'gs-text-info');
+                }
+
+                const { response, data } = await fetchJson('/api/gs-api/health');
+                if (!response?.ok) {
+                    if (apiHealthEl) {
+                        apiHealthEl.textContent = 'Unavailable';
+                        setTone(apiHealthEl, 'gs-text-danger');
+                    }
+                    setTimestamp(apiHealthSyncEl);
+                    return;
+                }
+
+                const status = data?.status === 'ok' ? 'HEALTHY' : String(data?.status || 'UNKNOWN').toUpperCase();
+                if (apiHealthEl) {
+                    apiHealthEl.textContent = status;
+                    setTone(apiHealthEl, status === 'HEALTHY' ? 'gs-text-success' : 'gs-text-warning');
+                }
+                setTimestamp(apiHealthSyncEl);
+            };
+
+            const checkApiStatus = async () => {
+                if (apiStatusEl) {
+                    apiStatusEl.textContent = 'Checking...';
+                    setTone(apiStatusEl, 'gs-text-info');
+                }
+
+                const { response, data } = await fetchJson('/api/gs-api/status');
+                if (!response?.ok) {
+                    if (apiStatusEl) {
+                        apiStatusEl.textContent = 'Unavailable';
+                        setTone(apiStatusEl, 'gs-text-danger');
+                    }
+                    if (apiStatusUptimeEl) apiStatusUptimeEl.textContent = '—';
+                    setTimestamp(apiStatusSyncEl);
+                    return;
+                }
+
+                const statusValue = String(data?.status || 'unknown').toUpperCase();
+                if (apiStatusEl) {
+                    apiStatusEl.textContent = statusValue;
+                    setTone(apiStatusEl, statusValue === 'ONLINE' ? 'gs-text-success' : 'gs-text-warning');
+                }
+                if (apiStatusUptimeEl) {
+                    apiStatusUptimeEl.textContent = data?.uptime ?? '—';
+                }
+                setTimestamp(apiStatusSyncEl);
+            };
+
+            const checkApiVersion = async () => {
+                if (apiVersionEl) {
+                    apiVersionEl.textContent = 'Checking...';
+                    setTone(apiVersionEl, 'gs-text-info');
+                }
+
+                const { response, data } = await fetchJson('/api/gs-api/version');
+                if (!response?.ok) {
+                    if (apiVersionEl) {
+                        apiVersionEl.textContent = 'Unavailable';
+                        setTone(apiVersionEl, 'gs-text-danger');
+                    }
+                    if (apiDeployShaEl) apiDeployShaEl.textContent = '—';
+                    setTimestamp(apiVersionSyncEl);
+                    return;
+                }
+
+                if (apiVersionEl) {
+                    apiVersionEl.textContent = data?.version ?? 'unknown';
+                    setTone(apiVersionEl, 'gs-text-info');
+                }
+                if (apiDeployShaEl) {
+                    apiDeployShaEl.textContent = data?.deploySha ?? '—';
+                }
+                setTimestamp(apiVersionSyncEl);
+            };
+
+            const setConfigDisabled = (disabled) => {
+                if (apiMaintenanceEl) apiMaintenanceEl.disabled = disabled;
+                if (apiMaxConcurrencyEl) apiMaxConcurrencyEl.disabled = disabled;
+                if (apiConfigNotesEl) apiConfigNotesEl.disabled = disabled;
+            };
+
+            const refreshConfig = async () => {
+                if (apiConfigMessageEl) {
+                    apiConfigMessageEl.textContent = 'Loading...';
+                }
+
+                const { response, data } = await fetchJson('/api/gs-api/config');
+                if (!response?.ok) {
+                    const message = handleAccessError(response);
+                    if (apiConfigAccessEl) {
+                        apiConfigAccessEl.textContent = 'Restricted';
+                        setTone(apiConfigAccessEl, 'gs-text-danger');
+                    }
+                    if (apiConfigMessageEl) {
+                        apiConfigMessageEl.textContent = message;
+                    }
+                    setConfigDisabled(true);
+                    setTimestamp(apiConfigSyncEl);
+                    return;
+                }
+
+                const config = data?.config ?? {};
+                if (apiMaintenanceEl) apiMaintenanceEl.checked = Boolean(config.maintenanceMode);
+                if (apiMaxConcurrencyEl) apiMaxConcurrencyEl.value = config.maxConcurrency ?? '';
+                if (apiConfigNotesEl) apiConfigNotesEl.value = config.notes ?? '';
+                if (apiConfigAccessEl) {
+                    apiConfigAccessEl.textContent = 'Authorized';
+                    setTone(apiConfigAccessEl, 'gs-text-success');
+                }
+                if (apiConfigMessageEl) apiConfigMessageEl.textContent = 'Configuration loaded.';
+                setConfigDisabled(false);
+                setTimestamp(apiConfigSyncEl);
+            };
+
+            const saveConfig = async () => {
+                if (apiConfigMessageEl) {
+                    apiConfigMessageEl.textContent = 'Saving...';
+                }
+
+                const payload = {
+                    maintenanceMode: Boolean(apiMaintenanceEl?.checked),
+                    maxConcurrency: apiMaxConcurrencyEl?.value ? Number(apiMaxConcurrencyEl.value) : undefined,
+                    notes: apiConfigNotesEl?.value ?? ''
+                };
+
+                const { response } = await fetchJson('/api/gs-api/config', {
+                    method: 'PUT',
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response?.ok) {
+                    if (apiConfigMessageEl) {
+                        apiConfigMessageEl.textContent = handleAccessError(response);
+                    }
+                    return;
+                }
+
+                if (apiConfigMessageEl) {
+                    apiConfigMessageEl.textContent = 'Configuration updated.';
+                }
+            };
+
+            document.getElementById('check-api-health')?.addEventListener('click', (e) => {
+                e.preventDefault();
+                checkApiHealth();
+            });
+
+            document.getElementById('check-api-status')?.addEventListener('click', (e) => {
+                e.preventDefault();
+                checkApiStatus();
+            });
+
+            document.getElementById('check-api-version')?.addEventListener('click', (e) => {
+                e.preventDefault();
+                checkApiVersion();
+            });
+
+            document.getElementById('check-api-config')?.addEventListener('click', (e) => {
+                e.preventDefault();
+                refreshConfig();
+            });
+
+            document.getElementById('api-config-refresh')?.addEventListener('click', (e) => {
+                e.preventDefault();
+                refreshConfig();
+            });
+
+            document.getElementById('api-config-save')?.addEventListener('click', (e) => {
+                e.preventDefault();
+                saveConfig();
+            });
+
+            const runSopBtn = document.getElementById('run-sop');
+            const conflictCountEl = document.getElementById('conflict-count');
+
+            runSopBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                runSopBtn.textContent = 'Running SOP-001...';
+                runSopBtn.disabled = true;
+
+                // Simulate Agent execution time
+                setTimeout(() => {
+                    conflictCountEl.textContent = '0 Resolved';
+                    conflictCountEl.style.color = 'var(--gs-success)';
+                    runSopBtn.textContent = 'Git Repair Complete';
+                    runSopBtn.disabled = false;
+                }, 3000);
+            });
+
+            // Initial check on load
+            checkApiHealth();
+            checkApiStatus();
+            checkApiVersion();
+            refreshConfig();
+        });
+    </script>
+</AdminLayout>

@@ -1,0 +1,60 @@
+<div class="gs-card space-y-4 lg:col-span-2">
+  <div class="flex items-center justify-between">
+    <div>
+      <h2 class="text-xl font-semibold">Inbox Status</h2>
+      <p class="text-sm gs-text-subtle">Recent emails logged by gs-mail from <code>mail.goldshore.ai</code>.</p>
+    </div>
+    <span id="inbox-count" class="text-sm gs-text-subtle">Loading…</span>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="w-full text-left">
+      <thead>
+        <tr class="text-sm gs-text-subtle border-b border-[var(--gs-color-border)]">
+          <th class="pb-2">Timestamp</th>
+          <th class="pb-2">Sender</th>
+          <th class="pb-2">Subject</th>
+        </tr>
+      </thead>
+      <tbody id="inbox-table-body">
+        <tr><td class="py-3 text-sm gs-text-subtle" colspan="3">Loading inbox logs…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  const body = document.getElementById('inbox-table-body');
+  const count = document.getElementById('inbox-count');
+
+  const renderRow = (mail) => {
+    return `<tr class="border-b border-[var(--gs-color-border)]/50">
+      <td class="py-2 text-xs gs-text-subtle">${new Date(mail.timestamp).toLocaleString()}</td>
+      <td class="py-2">${mail.from}</td>
+      <td class="py-2 gs-text-subtle">${mail.subject}</td>
+    </tr>`;
+  };
+
+  const renderError = (message) => {
+    if (body) body.innerHTML = `<tr><td class="py-3 text-sm gs-text-danger" colspan="3">${message}</td></tr>`;
+    if (count) count.textContent = 'Unavailable';
+  };
+
+  fetch('https://api.goldshore.ai/internal/inbox-status')
+    .then((res) => res.json())
+    .then((data) => {
+      const recent = data?.inbox?.recent ?? [];
+      const total = data?.inbox?.count ?? 0;
+      if (count) count.textContent = `${total} logged`;
+
+      if (!recent.length) {
+        if (body) body.innerHTML = '<tr><td class="py-3 text-sm gs-text-subtle" colspan="3">No incoming messages detected.</td></tr>';
+        return;
+      }
+
+      if (body) body.innerHTML = recent.map(renderRow).join('');
+    })
+    .catch(() => {
+      renderError('Failed to load inbox logs.');
+    });
+</script>

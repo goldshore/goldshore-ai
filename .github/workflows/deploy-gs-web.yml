@@ -57,7 +57,7 @@ jobs:
       release_label: ${{ steps.metadata.outputs.release_label }}
 
     steps:
-      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.deploy_ref != '' && inputs.deploy_ref || github.sha }}
 
@@ -89,7 +89,7 @@ jobs:
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - uses: pnpm/action-setup@v5
+      - uses: pnpm/action-setup@v4
         with:
           run_install: false
 
