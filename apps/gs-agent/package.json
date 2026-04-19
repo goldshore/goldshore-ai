@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev src/index.ts",
-    "deploy": "wrangler deploy --env prod",
-    "build": "wrangler deploy --env prod --dry-run --outdir=dist"
+    "dev": "wrangler dev src/index.ts --bundle",
+    "deploy": "wrangler deploy --env prod --bundle",
+    "build": "wrangler deploy --env prod --dry-run --outdir=dist --bundle"
   },
   "dependencies": {
     "@goldshore/auth": "workspace:*",
