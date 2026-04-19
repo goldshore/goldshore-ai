@@ -14,7 +14,7 @@
 # ============================================================
 name = "gs-gateway"
 main = "apps/gs-gateway/src/index.ts"
-compatibility_date = "2025-01-10"
+compatibility_date = "2026-04-18"
 compatibility_flags = ["nodejs_compat"]
 
 workers_dev = false

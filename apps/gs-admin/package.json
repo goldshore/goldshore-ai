@@ -17,7 +17,7 @@
   },
   "devDependencies": {
     "@astrojs/cloudflare": "^12.6.12",
-    "@astrojs/tailwind": "^5.1.0",
+    "@astrojs/tailwind": "^6.0.2",
     "@cloudflare/workers-types": "^4.20260329.1",
     "typescript": "^5.4.0"
   }
