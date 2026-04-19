@@ -19,6 +19,7 @@
     "@astrojs/cloudflare": "^12.6.12",
     "@astrojs/tailwind": "^5.1.0",
     "@cloudflare/workers-types": "^4.20260329.1",
+    "tailwindcss": "^3.4.17",
     "typescript": "^5.4.0"
   }
 }
