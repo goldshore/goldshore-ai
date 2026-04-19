@@ -49,26 +49,3 @@ binding = "AI"
 [env.preview]
 name = "gs-gateway-preview"
 workers_dev = true
-
-[env.preview.vars]
-ENV = "preview"
-API_ORIGIN = "https://api.goldshore.ai"
-CLOUDFLARE_ACCESS_AUDIENCE = "NOT_SET__SEE_apps/gs-gateway/wrangler.toml"
-CLOUDFLARE_TEAM_DOMAIN = "NOT_SET__SEE_apps/gs-gateway/wrangler.toml"
-
-[[env.preview.kv_namespaces]]
-binding = "GATEWAY_KV"
-id = "goldshore-gw-kv"
-
-[[env.preview.queues.producers]]
-binding = "JOB_QUEUE"
-queue = "goldshore-jobs"
-
-[[env.preview.services]]
-binding = "API"
-service = "gs-api"
-environment = "preview"
-
-[env.preview.ai]
-binding = "AI"
-

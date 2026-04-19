@@ -28,3 +28,17 @@ The legacy `infra/Cloudflare/legacy/goldshore-api.wrangler.toml` file remains fo
 ## Selection policy
 
 Do **not** glob `infra/Cloudflare/*.wrangler.toml` in scripts/docs. Use the explicit canonical paths above.
+
+## CI Secret Contract (Canonical)
+
+Cloudflare worker deploy workflows and infra guard checks use the following canonical GitHub Actions secrets:
+
+| Secret name | Required for | Ownership |
+|---|---|---|
+| `CLOUDFLARE_ACCOUNT_ID` | All worker deploy jobs and Cloudflare infra guard checks | Cloudflare account owner / platform ops |
+| `CLOUDFLARE_BUILD_API_TOKEN` | All worker deploy jobs (`gs-api`, `gs-agent`, `gs-gateway`, `gs-control`) and Cloudflare infra guard API calls | `gs-control` service token owner (platform ops) |
+
+Policy:
+
+- `CLOUDFLARE_BUILD_API_TOKEN` is the single canonical deploy token secret for worker CI.
+- Do not add fallback expressions (for example `secretA || secretB`) in worker deploy workflows unless a documented exception is added to Cloudflare runbooks.
