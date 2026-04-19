@@ -1,0 +1,67 @@
+name: Cloudflare Account Guard
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "ops/cloudflare-account-required.json"
+      - "ops/cloudflare-deploy-targets.json"
+      - "ops/cloudflare-required.json"
+      - ".github/workflows/cloudflare-account-guard.yml"
+      - ".github/workflows/cloudflare-infra-guard.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-manifests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate canonical Cloudflare manifests
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          account_path = Path('ops/cloudflare-account-required.json')
+          targets_path = Path('ops/cloudflare-deploy-targets.json')
+          legacy_path = Path('ops/cloudflare-required.json')
+
+          for path in (account_path, targets_path, legacy_path):
+              if not path.exists():
+                  raise SystemExit(f"Missing required manifest: {path}")
+
+          account = json.loads(account_path.read_text(encoding='utf-8'))
+          targets = json.loads(targets_path.read_text(encoding='utf-8'))
+          legacy = json.loads(legacy_path.read_text(encoding='utf-8'))
+
+          if account.get('build_token_service') != 'gs-control':
+              raise SystemExit('build_token_service must remain gs-control')
+
+          for key in ('worker_owned_targets', 'pages_owned_targets'):
+              if not targets.get(key):
+                  raise SystemExit(f'Manifest must include at least one {key} entry')
+
+          worker_services = {t['service'] for t in targets['worker_owned_targets']}
+          declared_services = set(account.get('required_worker_services', []))
+          if worker_services != declared_services:
+              raise SystemExit(
+                  f"Service mismatch between manifests. worker_owned_targets={sorted(worker_services)} "
+                  f"required_worker_services={sorted(declared_services)}"
+              )
+
+          pages_projects = {t['project'] for t in targets['pages_owned_targets']}
+          declared_projects = set(account.get('required_pages_projects', []))
+          if pages_projects != declared_projects:
+              raise SystemExit(
+                  f"Pages project mismatch. pages_owned_targets={sorted(pages_projects)} "
+                  f"required_pages_projects={sorted(declared_projects)}"
+              )
+
+          if not legacy.get('deprecated'):
+              raise SystemExit('Legacy manifest must be marked deprecated=true')
+
+          print('Cloudflare account/deploy manifests are structurally valid.')
+          PY

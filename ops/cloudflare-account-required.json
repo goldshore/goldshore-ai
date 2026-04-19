@@ -1,0 +1,32 @@
+{
+  "schema_version": "2026-04-18",
+  "canonical": true,
+  "build_token_service": "gs-control",
+  "zone_name": "goldshore.ai",
+  "required_worker_services": [
+    "gs-api",
+    "gs-gateway",
+    "gs-mail",
+    "gs-control"
+  ],
+  "required_pages_projects": [
+    "gs-web",
+    "gs-admin"
+  ],
+  "required_secrets": [
+    "CLOUDFLARE_API_TOKEN",
+    "CLOUDFLARE_ACCOUNT_ID"
+  ],
+  "ownership_expectations": {
+    "worker_targets": "Worker-owned targets must be managed by Wrangler worker routes and zone DNS.",
+    "pages_targets": "Pages-owned targets must be managed by Cloudflare Pages custom domains and Pages preview subdomains."
+  },
+  "backward_compatibility": {
+    "legacy_manifest": "ops/cloudflare-required.json",
+    "mode": "bridge",
+    "notes": [
+      "Legacy route/DNS checks are synthesized from ops/cloudflare-deploy-targets.json at runtime.",
+      "Do not add new route or DNS policy entries to the legacy manifest."
+    ]
+  }
+}

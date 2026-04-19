@@ -1,18 +1,14 @@
 {
-  "zone_name": "goldshore.ai",
-  "required_dns": [
-    "api.goldshore.ai",
-    "admin.goldshore.ai",
-    "preview.goldshore.ai"
-  ],
-  "required_routes": [
-    "api.goldshore.ai/*",
-    "admin.goldshore.ai/*",
-    "preview.goldshore.ai/*"
-  ],
-  "forbidden_routes": [
-    "goldshore.ai/*",
-    "www.goldshore.ai/*"
-  ],
-  "required_kv_namespaces": []
+  "schema_version": "2026-04-18",
+  "deprecated": true,
+  "migration_status": "bridged-to-canonical-manifests",
+  "canonical_manifests": {
+    "account_required": "ops/cloudflare-account-required.json",
+    "deploy_targets": "ops/cloudflare-deploy-targets.json"
+  },
+  "backward_compatibility_notes": [
+    "This file is retained as a compatibility shim for legacy tooling.",
+    "Route and DNS enforcement now comes from ops/cloudflare-deploy-targets.json.",
+    "Do not duplicate policy paths in this file."
+  ]
 }

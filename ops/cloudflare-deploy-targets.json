@@ -1,0 +1,100 @@
+{
+  "schema_version": "2026-04-18",
+  "canonical": true,
+  "zone_name": "goldshore.ai",
+  "worker_owned_targets": [
+    {
+      "id": "api",
+      "service": "gs-api",
+      "environment": "prod",
+      "production_url": "https://api.goldshore.ai",
+      "preview_url": "https://api-preview.goldshore.ai",
+      "ownership_expectation": "Worker owns route matching and DNS for this API host.",
+      "required_dns": [
+        "api.goldshore.ai",
+        "api-preview.goldshore.ai"
+      ],
+      "required_routes": [
+        "api.goldshore.ai/*",
+        "api-preview.goldshore.ai/*"
+      ]
+    },
+    {
+      "id": "gateway",
+      "service": "gs-gateway",
+      "environment": "prod",
+      "production_url": "https://gw.goldshore.ai",
+      "preview_url": "https://gw-preview.goldshore.ai",
+      "ownership_expectation": "Worker owns gateway ingress routing and DNS.",
+      "required_dns": [
+        "gw.goldshore.ai",
+        "gw-preview.goldshore.ai",
+        "agent.goldshore.ai"
+      ],
+      "required_routes": [
+        "gw.goldshore.ai/*",
+        "gw-preview.goldshore.ai/*",
+        "agent.goldshore.ai/*"
+      ]
+    },
+    {
+      "id": "mail",
+      "service": "gs-mail",
+      "environment": "prod",
+      "production_url": "https://mail.goldshore.ai",
+      "preview_url": "https://mail-preview.goldshore.ai",
+      "ownership_expectation": "Worker owns mail ingress routing and DNS.",
+      "required_dns": [
+        "mail.goldshore.ai",
+        "mail-preview.goldshore.ai"
+      ],
+      "required_routes": [
+        "mail.goldshore.ai/*",
+        "mail-preview.goldshore.ai/*"
+      ]
+    },
+    {
+      "id": "control",
+      "service": "gs-control",
+      "environment": "prod",
+      "production_url": "https://ops.goldshore.ai",
+      "preview_url": "https://ops-preview.goldshore.ai",
+      "ownership_expectation": "Worker owns control-plane routing and DNS.",
+      "required_dns": [
+        "ops.goldshore.ai",
+        "ops-preview.goldshore.ai"
+      ],
+      "required_routes": [
+        "ops.goldshore.ai/*",
+        "ops-preview.goldshore.ai/*"
+      ]
+    }
+  ],
+  "pages_owned_targets": [
+    {
+      "id": "marketing-web",
+      "project": "gs-web",
+      "production_url": "https://goldshore.ai",
+      "preview_url": "https://<branch>.gs-web.pages.dev",
+      "ownership_expectation": "Pages owns production custom domains and Pages preview domains.",
+      "required_custom_domains": [
+        "goldshore.ai",
+        "www.goldshore.ai"
+      ]
+    },
+    {
+      "id": "admin-web",
+      "project": "gs-admin",
+      "production_url": "https://admin.goldshore.ai",
+      "preview_url": "https://<branch>.gs-admin.pages.dev",
+      "ownership_expectation": "Pages owns admin custom domain and Pages preview domains.",
+      "required_custom_domains": [
+        "admin.goldshore.ai"
+      ]
+    }
+  ],
+  "forbidden_worker_routes": [
+    "goldshore.ai/*",
+    "www.goldshore.ai/*"
+  ]
+}
