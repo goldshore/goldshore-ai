@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 400" width="110" height="100">
+  <defs>
+    <linearGradient id="gL" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2d5ea8"/>
+      <stop offset="100%" stop-color="#1a3c7a"/>
+    </linearGradient>
+    <linearGradient id="gR" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1a3c7a"/>
+      <stop offset="100%" stop-color="#0d2247"/>
+    </linearGradient>
+    <linearGradient id="gB" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#1e4a8c"/>
+      <stop offset="100%" stop-color="#0f2a55"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="4" dy="6" stdDeviation="6" flood-color="#00000044"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#shadow)">
+    <!-- LEFT FACE: top-left edge going down-left (GOLD) -->
+    <polygon points="220,20 50,330 110,330 160,240 160,140 220,20"
+             fill="url(#gL)"/>
+
+    <!-- RIGHT FACE: top-right edge going down-right (SHORE) -->  
+    <polygon points="220,20 280,140 280,240 330,330 390,330 220,20"
+             fill="url(#gR)"/>
+
+    <!-- BOTTOM FACE: full bottom bar (LABS) -->
+    <polygon points="50,330 110,330 110,310 330,310 330,330 390,330 390,360 50,360"
+             fill="url(#gB)"/>
+
+    <!-- Inner void triangle (white) -->
+    <polygon points="220,130 155,260 285,260" fill="white"/>
+
+    <!-- Depth: inner left edge dark -->
+    <polygon points="220,130 160,240 160,140" fill="#0d2247" opacity="0.5"/>
+    <polygon points="220,130 280,240 280,140" fill="#0d2247" opacity="0.3"/>
+  </g>
+
+  <!-- GOLD text on left face -->
+  <text transform="rotate(-60 140 210)" x="90" y="220"
+        font-family="'Arial Black',Helvetica,sans-serif"
+        font-size="38" font-weight="900"
+        fill="white" letter-spacing="2">GOLD</text>
+
+  <!-- SHORE text on right face -->
+  <text transform="rotate(60 300 140)" x="248" y="145"
+        font-family="'Arial Black',Helvetica,sans-serif"
+        font-size="26" font-weight="900"
+        fill="white" letter-spacing="1">SHORE</text>
+
+  <!-- LABS text on bottom face -->
+  <text x="220" y="352"
+        font-family="'Arial Black',Helvetica,sans-serif"
+        font-size="44" font-weight="900"
+        fill="white" text-anchor="middle"
+        letter-spacing="6">LABS</text>
+</svg>
