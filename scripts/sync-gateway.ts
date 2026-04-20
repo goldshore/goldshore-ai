@@ -60,7 +60,7 @@ function assertEnvironment(): void {
 }
 
 async function putKvValue(key: string, value: unknown): Promise<{ key: string; ok: boolean; status: number; detail?: string }> {
-  const url = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/workers/kv/namespaces/${NAMESPACE_ID}/values/${encodeURIComponent(key)}`;
+  const url = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/storage/kv/namespaces/${NAMESPACE_ID}/values/${encodeURIComponent(key)}`;
 
   try {
     const response = await fetch(url, {
