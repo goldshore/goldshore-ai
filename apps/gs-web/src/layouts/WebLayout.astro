@@ -3,8 +3,7 @@ import '@goldshore/theme/styles/tokens.css';
 import '@goldshore/theme/styles/base.css';
 import '@goldshore/theme/styles/components.css';
 import '@goldshore/theme/styles/layout.css';
-import { GSButton } from '@goldshore/ui';
-import SiteFooter from '../components/SiteFooter.astro';
+import Logo from '../components/brand/Logo.astro';
 import { HTML_CSP_META_FALLBACK } from '../security/policy';
 import { WEB_META_CSP } from '../utils/csp';
 
@@ -23,7 +22,18 @@ const footerLinks = [
 ];
 const mobileNavId = 'mobile-navigation';
 
-const { title = 'GoldShore', description = 'GoldShore AI', currentPath = Astro.url.pathname } = Astro.props;
+const CANONICAL_ORIGIN = 'https://goldshore.org';
+
+const {
+  title = 'GoldShore',
+  description = 'GoldShore AI',
+  currentPath = Astro.url.pathname,
+  canonicalPath = Astro.url.pathname,
+  ogTitle = title,
+  ogDescription = description,
+} = Astro.props;
+
+const canonicalUrl = new URL(canonicalPath, CANONICAL_ORIGIN).toString();
 const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
 ---
 
@@ -34,6 +44,15 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
     <meta http-equiv="Content-Security-Policy" content={WEB_META_CSP} />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:title" content={ogTitle} />
+    <meta property="og:description" content={ogDescription} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content={canonicalUrl} />
+    <meta name="twitter:title" content={ogTitle} />
+    <meta name="twitter:description" content={ogDescription} />
     <!-- Response headers from middleware/platform config are authoritative. Keep this meta CSP only as a fallback when headers are unavailable. -->
     {shouldRenderCspMeta && <meta http-equiv="Content-Security-Policy" content={HTML_CSP_META_FALLBACK} />}
     <link rel="icon" href="/favicon.png" type="image/png" />

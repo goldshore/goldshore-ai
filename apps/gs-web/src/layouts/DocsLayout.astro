@@ -3,11 +3,17 @@ import WebLayout from './WebLayout.astro';
 import DocsSidebar from '../components/DocsSidebar.astro';
 import DocsSearch from '../components/DocsSearch.astro';
 
-const { title, page } = Astro.props;
+const { title, page, canonicalPath, ogTitle, ogDescription } = Astro.props;
 const currentSlug = page ? page.slug : undefined;
 ---
 
-<WebLayout title={`${title} | Docs`} description="GoldShore developer documentation">
+<WebLayout
+  title={`${title} | Docs`}
+  description="GoldShore developer documentation"
+  canonicalPath={canonicalPath}
+  ogTitle={ogTitle}
+  ogDescription={ogDescription}
+>
   <section class="gs-section docs-shell">
     <aside class="gs-card docs-sidebar" aria-label="Documentation navigation">
       <DocsSearch />
