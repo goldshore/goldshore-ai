@@ -16,7 +16,7 @@
     "astro": "^6.1.7"
   },
   "devDependencies": {
-    "@astrojs/cloudflare": "^12.6.12",
+    "@astrojs/cloudflare": "^13.1.10",
     "@astrojs/tailwind": "^5.1.0",
     "@cloudflare/workers-types": "^4.20260329.1",
     "tailwindcss": "^3.4.17",

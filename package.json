@@ -57,13 +57,13 @@
     "zod": "^4.3.6"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "^12.6.12",
+    "@astrojs/cloudflare": "^13.1.10",
     "p-limit": "^7.3.0",
     "turbo": "^2.8.21"
   },
   "pnpm": {
     "overrides": {
-      "@astrojs/cloudflare": "12.6.12",
+      "@astrojs/cloudflare": "13.1.10",
       "@astrojs/adapter-cloudflare": "12.6.12",
       "postal-mime": "2.7.3",
       "wrangler": "^4.63.0",
