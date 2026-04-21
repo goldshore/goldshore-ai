@@ -1,0 +1,287 @@
+/* ================================================================
+   goldshore.ai — theme overrides for gs-web Astro app
+   Inject via apps/gs-web/src/styles/global.css @import or replace
+   Fixes: responsive breakpoints, gold accent, contact form bindings
+   ================================================================ */
+
+/* ── TOKEN OVERRIDES ── */
+:root {
+  --font-sans: 'Geist', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Instrument Serif', Georgia, serif;
+  --font-mono: 'Geist Mono', 'DM Mono', monospace;
+
+  /* Gold Shore brand palette */
+  --gs-bg:            #060810;
+  --gs-surface:       rgba(12, 17, 32, 0.92);
+  --gs-surface-strong:rgba(9, 14, 26, 0.97);
+  --gs-border:        rgba(201, 168, 76, 0.15);
+  --gs-border-dim:    rgba(255, 255, 255, 0.05);
+  --gs-primary:       #c9a84c;
+  --gs-primary-soft:  rgba(201, 168, 76, 0.12);
+  --gs-primary-glow:  rgba(201, 168, 76, 0.06);
+  --gs-text:          #e8edf8;
+  --gs-text-dim:      rgba(232, 237, 248, 0.55);
+  --gs-radius:        4px;
+  --gs-radius-lg:     8px;
+  --gs-shadow:        0 24px 80px rgba(0, 0, 0, 0.5);
+  --gs-max-width:     1280px;
+
+  /* Semantic aliases */
+  --gs-accent:        var(--gs-primary);
+  --gs-accent-strong: #d4a84b;
+  --gs-accent-soft:   var(--gs-primary-soft);
+  --gs-color-primary: var(--gs-primary);
+  --gs-color-bg:      var(--gs-bg);
+  --gs-color-surface: var(--gs-surface);
+  --gs-color-text:    var(--gs-text);
+}
+
+/* ── BASE ── */
+html { background: var(--gs-bg); }
+
+body {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(201,168,76,0.07) 0%, transparent 60%),
+    linear-gradient(180deg, #060810 0%, #080c18 50%, #070b16 100%);
+  color: var(--gs-text);
+  font-family: var(--font-sans);
+}
+
+/* Ambient grid */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(201,168,76,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(201,168,76,0.02) 1px, transparent 1px);
+  background-size: 64px 64px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── HEADER / NAV ── */
+.header {
+  background: rgba(6,8,16,0.85) !important;
+  backdrop-filter: blur(20px) !important;
+  border-bottom: 1px solid var(--gs-border-dim) !important;
+}
+
+.gs-logo { color: var(--gs-primary) !important; }
+
+.desktop-nav__links a {
+  font-size: 0.72rem !important;
+  letter-spacing: 0.08em !important;
+  color: var(--gs-text-dim) !important;
+  transition: color 200ms !important;
+}
+
+.desktop-nav__links a:hover,
+.desktop-nav__links a[aria-current] { color: var(--gs-primary) !important; }
+
+.header-cta {
+  background: transparent !important;
+  border: 1px solid var(--gs-primary) !important;
+  color: var(--gs-primary) !important;
+  font-size: 0.68rem !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  transition: background 200ms !important;
+}
+
+.header-cta:hover { background: var(--gs-primary-soft) !important; }
+
+/* ── HERO / HEADINGS ── */
+h1, h2 {
+  font-family: var(--font-display) !important;
+  letter-spacing: -0.02em !important;
+}
+
+h3, h4, h5 { font-family: var(--font-sans) !important; }
+
+/* Hero headline gold emphasis */
+.hero__title em,
+.hero__title strong,
+[class*="hero"] em { color: var(--gs-primary) !important; font-style: italic; }
+
+/* ── BUTTONS ── */
+.btn,
+[class*="cta"],
+[class*="button"] {
+  border-radius: var(--gs-radius) !important;
+  font-size: 0.72rem !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+}
+
+.btn--primary,
+[class*="btn-primary"],
+[class*="cta--primary"] {
+  background: var(--gs-primary) !important;
+  color: #060810 !important;
+  border-color: var(--gs-primary) !important;
+}
+
+.btn--primary:hover { background: transparent !important; color: var(--gs-primary) !important; }
+
+.btn--outline,
+[class*="btn-outline"],
+[class*="cta--outline"] {
+  background: transparent !important;
+  border-color: var(--gs-border) !important;
+  color: var(--gs-primary) !important;
+}
+
+.btn--outline:hover { border-color: var(--gs-primary) !important; background: var(--gs-primary-soft) !important; }
+
+/* ── CARDS / SURFACES ── */
+[class*="card"],
+[class*="surface"],
+[class*="panel"] {
+  background: var(--gs-surface) !important;
+  border-color: var(--gs-border-dim) !important;
+}
+
+[class*="card"]:hover { border-color: var(--gs-border) !important; }
+
+/* ── CONTACT FORM — CF bindings: DB=PLATFORM_DB, KV=GS_CONFIG ── */
+/* Target the existing Astro contact form */
+form[action*="contact"],
+#contact-form,
+[class*="contact-form"],
+[data-form="contact"] {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+form input[type="text"],
+form input[type="email"],
+form textarea,
+form select {
+  background: rgba(6,8,16,0.8) !important;
+  border: 1px solid var(--gs-border-dim) !important;
+  color: var(--gs-text) !important;
+  border-radius: var(--gs-radius) !important;
+  padding: 0.8rem 1rem !important;
+  font-family: var(--font-sans) !important;
+  font-size: 0.9rem !important;
+  transition: border-color 200ms !important;
+  width: 100% !important;
+}
+
+form input:focus,
+form textarea:focus,
+form select:focus {
+  border-color: var(--gs-primary) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(201,168,76,0.1) !important;
+}
+
+form label {
+  font-size: 0.62rem !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  color: var(--gs-text-dim) !important;
+  font-family: var(--font-mono) !important;
+}
+
+form button[type="submit"] {
+  background: var(--gs-primary) !important;
+  color: #060810 !important;
+  border: 1px solid var(--gs-primary) !important;
+  font-size: 0.72rem !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  padding: 0.85rem 2rem !important;
+  cursor: pointer !important;
+  transition: all 200ms !important;
+}
+
+form button[type="submit"]:hover {
+  background: transparent !important;
+  color: var(--gs-primary) !important;
+}
+
+/* ── RESPONSIVE FIXES ── */
+
+/* Mobile nav */
+@media (max-width: 768px) {
+  .desktop-nav { display: none !important; }
+  .menu-button { display: flex !important; }
+
+  .menu-panel {
+    background: var(--gs-bg) !important;
+    border-left: none !important;
+  }
+
+  .menu-panel .nav-link {
+    font-size: 1rem !important;
+    padding: 1rem 0 !important;
+    border-bottom: 1px solid var(--gs-border-dim) !important;
+  }
+
+  /* Full-width forms on mobile */
+  form .form-row,
+  form [class*="grid"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Stack hero on mobile */
+  [class*="hero__inner"],
+  [class*="hero-inner"] {
+    grid-template-columns: 1fr !important;
+    gap: 2rem !important;
+  }
+
+  /* Section padding reduction */
+  section, [class*="section"] {
+    padding: 3rem 1.25rem !important;
+  }
+
+  h1 { font-size: clamp(2.2rem, 8vw, 3.5rem) !important; }
+  h2 { font-size: clamp(1.6rem, 5vw, 2.5rem) !important; }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  section, [class*="section"] { padding: 4rem 2rem !important; }
+}
+
+/* ── SELECTION ── */
+::selection {
+  background: rgba(201,168,76,0.2) !important;
+  color: var(--gs-text) !important;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--gs-bg); }
+::-webkit-scrollbar-thumb { background: var(--gs-border); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gs-primary); }
+
+/* ── GATEWAY / API / ADMIN LINK TARGETS ── */
+/* These are injected into pages that show service status */
+[data-service="gateway"] { --service-color: var(--gs-primary); }
+[data-service="api"]     { --service-color: #4ade80; }
+[data-service="admin"]   { --service-color: #60a5fa; }
+
+.service-link[href*="gw.goldshore.ai"],
+.service-link[href*="api.goldshore.ai"],
+.service-link[href*="admin.goldshore.ai"] {
+  color: var(--gs-primary) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.72rem !important;
+  letter-spacing: 0.08em !important;
+}
+
+/* ── ADMIN REDIRECT NOTICE ── */
+/* When admin.goldshore.ai redirects to CF Access, this class is applied */
+.admin-access-notice {
+  background: var(--gs-primary-soft);
+  border: 1px solid var(--gs-border);
+  padding: 1rem 1.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--gs-primary);
+  letter-spacing: 0.06em;
+}
