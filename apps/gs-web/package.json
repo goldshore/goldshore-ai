@@ -18,7 +18,7 @@
     "check:release": "node scripts/release-quality-gate.mjs"
   },
   "dependencies": {
-    "@astrojs/react": "^5.0.2",
+    "@astrojs/react": "^5.0.3",
     "@astrojs/tailwind": "^6.0.2",
     "@goldshore/auth": "workspace:^",
     "@goldshore/brand": "workspace:^",
