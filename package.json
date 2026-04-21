@@ -32,14 +32,15 @@
     "repo:health": "node scripts/repo-health.mjs",
     "audit": "pnpm run repo:health",
     "build:api": "turbo run build --filter=@goldshore/gs-api",
-    "build:control": "turbo run build --filter=@goldshore/gs-control"
+    "build:control": "turbo run build --filter=@goldshore/gs-control",
+    "check:cloudflare-drift": "node scripts/check-cloudflare-drift.mjs"
   },
   "devDependencies": {
     "@astrojs/mdx": "^4.0.8",
     "@astrojs/sitemap": "^3.7.2",
     "@astrojs/tailwind": "^6.0.2",
     "@types/node": "^25.3.3",
-    "@typescript-eslint/eslint-plugin": "^8.54.0",
+    "@typescript-eslint/eslint-plugin": "^8.57.2",
     "@typescript-eslint/parser": "^8.57.2",
     "astro": "^6.1.7",
     "eslint": "^10.1.0",
@@ -57,13 +58,13 @@
     "zod": "^4.3.6"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "^12.6.12",
+    "@astrojs/cloudflare": "^13.1.10",
     "p-limit": "^7.3.0",
     "turbo": "^2.8.21"
   },
   "pnpm": {
     "overrides": {
-      "@astrojs/cloudflare": "12.6.12",
+      "@astrojs/cloudflare": "13.1.10",
       "@astrojs/adapter-cloudflare": "12.6.12",
       "postal-mime": "2.7.3",
       "wrangler": "^4.63.0",
