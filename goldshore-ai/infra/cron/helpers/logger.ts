@@ -82,8 +82,14 @@ export function createLogger(context: string) {
   };
 
   return {
-    info: (...args: any[]) => console.log(...format("INFO", ...args)),
-    warn: (...args: any[]) => console.warn(...format("WARN", ...args)),
+    info: (...args: any[]) => {
+      const safeArgs = sanitizeArgs(args);
+      console.log(...format("INFO", ...safeArgs));
+    },
+    warn: (...args: any[]) => {
+      const safeArgs = sanitizeArgs(args);
+      console.warn(...format("WARN", ...safeArgs));
+    },
     error: (...args: any[]) => {
       const safeArgs = sanitizeArgs(args);
       console.error(...format("ERROR", ...safeArgs));
