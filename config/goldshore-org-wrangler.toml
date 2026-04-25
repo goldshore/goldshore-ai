@@ -1,0 +1,41 @@
+name = "goldshore-org"
+main = "src/router.ts"
+compatibility_date = "2024-12-18"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = false
+
+[env.production]
+name = "goldshore-org"
+routes = [
+  { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "www.goldshore.org/*", zone_name = "goldshore.org" }
+]
+
+[[env.production.services]]
+binding = "API"
+service = "gs-api"
+environment = "prod"
+
+[[env.production.r2_buckets]]
+binding = "ASSETS"
+bucket_name = "gs-assets"
+
+[env.production.vars]
+ENV = "production"
+
+# ── CORS Configuration ──────────────────────────────────────
+# This router proxies requests to gs-api for the .org domain.
+# CORS headers are handled by gs-api upstream.
+# The gs-web Pages project owns .ai domain — this router does NOT claim .ai routes.
+# IMPORTANT: Do NOT add routes for .ai domains here. They belong to gs-web (Astro Pages).
+
+# ── Rationale for CORS-only approach ────────────────────────
+# Previous patch added:
+#   routes = [..., "goldshore.ai/*", "www.goldshore.ai/*"]
+# But this creates a conflict with gs-web Pages on the same domains.
+# Pages project routing takes precedence, so those routes would be ignored.
+# Instead, if .ai requests need to reach .org services, handle via:
+#   1. Explicit subdomain routing (api.goldshore.ai, gw.goldshore.ai, etc.)
+#   2. CORS allowlist in gs-api responses
+#   3. Cross-origin fetch from frontend
+# This config keeps .org domain isolated to this router, preventing ambiguity.
