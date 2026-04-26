@@ -11,33 +11,19 @@ permissions:
 jobs:
   validate-cloudflare-secrets:
     runs-on: ubuntu-latest
-    outputs:
-      has_secrets: ${{ steps.check-secrets.outputs.has_secrets }}
     steps:
       - name: Verify required Cloudflare account and build token secrets
-        id: check-secrets
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_BUILD_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
         run: |
-          if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
-            echo "Missing required secret: CLOUDFLARE_ACCOUNT_ID"
-            echo "has_secrets=false" >> "$GITHUB_OUTPUT"
-          elif [ -z "$CLOUDFLARE_BUILD_API_TOKEN" ]; then
-            echo "Missing required secret: CLOUDFLARE_BUILD_API_TOKEN"
-            echo "has_secrets=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_secrets=true" >> "$GITHUB_OUTPUT"
-          fi
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "Missing required secret: CLOUDFLARE_ACCOUNT_ID" && exit 1)
+          test -n "$CLOUDFLARE_BUILD_API_TOKEN" || (echo "Missing required secret: CLOUDFLARE_BUILD_API_TOKEN" && exit 1)
 
   validate-worker-token-policy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install ripgrep
-        run: sudo apt-get update && sudo apt-get install -y ripgrep
-
       - name: Enforce canonical build token usage in worker deploy workflows
         run: |
           worker_deploy_workflows=(
@@ -48,9 +34,9 @@ jobs:
           )
 
           for workflow in "${worker_deploy_workflows[@]}"; do
-            grep -q "CLOUDFLARE_API_TOKEN: \${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}" "$workflow" \
+            rg -q "CLOUDFLARE_API_TOKEN:\s+\$\{\{\s*secrets\.CLOUDFLARE_BUILD_API_TOKEN\s*\}\}" "$workflow" \
               || (echo "Workflow must set CLOUDFLARE_API_TOKEN from secrets.CLOUDFLARE_BUILD_API_TOKEN: $workflow" && exit 1)
-            ! grep -q "secrets.CLOUDFLARE_BUILD_API_TOKEN ||" "$workflow" \
+            ! rg -q "secrets\.CLOUDFLARE_BUILD_API_TOKEN\s*\|\|" "$workflow" \
               || (echo "Fallback token source is not allowed: $workflow" && exit 1)
           done
 
@@ -58,14 +44,9 @@ jobs:
     needs:
       - validate-cloudflare-secrets
       - validate-worker-token-policy
-    if: needs.validate-cloudflare-secrets.outputs.has_secrets == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install ripgrep
-        run: sudo apt-get update && sudo apt-get install -y ripgrep
-
       - run: test -f ops/cloudflare-required.json
       - name: Verify Cloudflare deploy token is present
         env:

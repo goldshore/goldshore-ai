@@ -4,7 +4,6 @@ import {
   verifyAccessWithClaims,
   type Env as AccessEnv,
 } from '@goldshore/auth';
-import { isSameOriginRequest } from '../../../utils/security';
 
 const allowedStatuses = new Set(['new', 'read', 'archived']);
 
@@ -51,6 +50,30 @@ const hasPermission = async (
 
   const session = buildAdminSession(claims);
   return session.permissions.includes(permission);
+};
+
+const isSameOriginRequest = (request: Request) => {
+  const expectedOrigin = new URL(request.url).origin;
+  const originHeader = request.headers.get('origin');
+  if (originHeader) {
+    return originHeader === expectedOrigin;
+  }
+
+  const refererHeader = request.headers.get('referer');
+  if (refererHeader) {
+    try {
+      return new URL(refererHeader).origin === expectedOrigin;
+    } catch {
+      return false;
+    }
+  }
+
+  const fetchSite = request.headers.get('sec-fetch-site');
+  if (fetchSite) {
+    return fetchSite === 'same-origin' || fetchSite === 'none';
+  }
+
+  return false;
 };
 
 export const GET: APIRoute = async ({ request, locals }) => {
@@ -163,4 +186,5 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
 export const __testing = {
   buildCsv,
+  isSameOriginRequest,
 };
