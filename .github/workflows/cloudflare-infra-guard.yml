@@ -34,6 +34,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+
       - name: Enforce canonical build token usage in worker deploy workflows
         run: |
           worker_deploy_workflows=(
@@ -44,13 +48,10 @@ jobs:
           )
 
           for workflow in "${worker_deploy_workflows[@]}"; do
-            # Ensure CLOUDFLARE_API_TOKEN is set to secrets.CLOUDFLARE_BUILD_API_TOKEN without fallback
-            grep "CLOUDFLARE_API_TOKEN:" "$workflow" | grep -q "secrets.CLOUDFLARE_BUILD_API_TOKEN" \
+            grep -q "CLOUDFLARE_API_TOKEN: \${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}" "$workflow" \
               || (echo "Workflow must set CLOUDFLARE_API_TOKEN from secrets.CLOUDFLARE_BUILD_API_TOKEN: $workflow" && exit 1)
-
-            # Check for fallback patterns like secrets.CLOUDFLARE_BUILD_API_TOKEN || secrets.SOMETHING_ELSE
-            ! grep "CLOUDFLARE_API_TOKEN:" "$workflow" | grep -q "||" \
-              || (echo "Fallback token source is not allowed in CLOUDFLARE_API_TOKEN: $workflow" && exit 1)
+            ! grep -q "secrets.CLOUDFLARE_BUILD_API_TOKEN ||" "$workflow" \
+              || (echo "Fallback token source is not allowed: $workflow" && exit 1)
           done
 
   verify-cloudflare:
@@ -61,6 +62,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+
       - run: test -f ops/cloudflare-required.json
       - name: Verify Cloudflare deploy token is present
         env:
