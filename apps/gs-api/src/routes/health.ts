@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { Env, Variables } from '../types';
+import { getRuntimeVersion, withContractHeaders } from './contract';
 
 const health = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -33,7 +34,10 @@ health.get('/', async (c) => {
     }
   }
 
-  return c.json(healthData, healthData.status === 'ok' ? 200 : 500);
+  return c.json(
+    withContractHeaders(healthData, getRuntimeVersion(c.env)),
+    healthData.status === 'ok' ? 200 : 500
+  );
 });
 
 export default health;

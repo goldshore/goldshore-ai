@@ -1,4 +1,8 @@
-name: Jules Nightly
+# Manual operations guide:
+# - Use this workflow to manually trigger the same automation sweep normally started by the nightly schedule.
+# - Prefer manual runs when operators need the downstream automation jobs immediately rather than waiting for the next cron window.
+name: "Ops: Automation Sweep"
+run-name: "Automation sweep • ${{ github.event_name == 'workflow_dispatch' && format('manual • @{0}', github.actor) || 'nightly schedule' }}"
 
 on:
   schedule:
@@ -6,41 +10,61 @@ on:
   workflow_dispatch:
 
 jobs:
-  jules-daily-guardian:
-    permissions:
-      contents: write
-      pull-requests: write
-      issues: write
-    uses: ./.github/workflows/jules-daily.yml
-
-  jules-nightly-clean:
-    permissions:
-      contents: read
-      actions: write
-    uses: ./.github/workflows/jules-nightly-clean.yml
-
-  palette-daily:
-    permissions:
-      contents: read
-      pull-requests: write
-    uses: ./.github/workflows/palette-daily.yml
-
-  sentinel-nightly:
-    permissions:
-      contents: write
-      pull-requests: write
-      issues: write
-    uses: ./.github/workflows/sentinel-nightly.yml
-
-  conflict-sweeper-nightly:
-    permissions:
-      contents: read
-      pull-requests: write
-    uses: ./.github/workflows/conflict-sweeper-nightly.yml
-  noop:
+  stabilization-sync:
+    name: Dispatch stabilization sync
     runs-on: ubuntu-latest
     permissions:
+      actions: write
       contents: read
     steps:
-      - name: Sweepers removed
-        run: echo "No sweeper jobs are configured in this workflow."
+      - name: Trigger stabilization-task.yml
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run .github/workflows/stabilization-task.yml --ref "${{ github.ref_name }}"
+
+  workflow-run-cleanup:
+    name: Dispatch workflow-run cleanup
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Trigger cleanup-workflow-runs.yml
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run .github/workflows/cleanup-workflow-runs.yml \
+            --ref "${{ github.ref_name }}" \
+            -f status_filter=startup_failure,failure,cancelled \
+            -f workflow_name= \
+            -f max_runs=500 \
+            -f dry_run=false
+
+  palette-dispatch:
+    name: Dispatch Palette agent
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Trigger palette-manual repository dispatch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            "/repos/${GH_REPO}/dispatches" \
+            -f event_type='PALETTE_RUN'
+
+  stale-conflict-pr-cleanup:
+    name: Dispatch stale conflict PR cleanup
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Trigger close-stale-prs.yml
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run .github/workflows/close-stale-prs.yml --ref "${{ github.ref_name }}"

@@ -15,7 +15,10 @@ function generateKey(prefix: string, length: number): string {
 
 export async function rotateKeys(env: ControlEnv) {
   const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] Starting scheduled API key rotation...`);
+  console.info({
+    event: "key_rotation_started",
+    timestamp
+  });
 
   const auditLog: {
     action: string;
@@ -39,11 +42,20 @@ export async function rotateKeys(env: ControlEnv) {
       // 3. Archive the rotation event
       await env.CONTROL_LOGS.put(`secrets:${config.name}:history:${timestamp}`, newKey);
 
-      console.log(`Successfully rotated key: ${config.name}`);
+      console.info({
+        event: "key_rotated",
+        name: config.name,
+        timestamp: new Date().toISOString()
+      });
       auditLog.results.push({ name: config.name, status: "success" });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error(`Failed to rotate key for ${config.name}:`, errorMessage);
+      console.error({
+        event: "key_rotation_failed",
+        name: config.name,
+        error: errorMessage,
+        timestamp: new Date().toISOString()
+      });
       auditLog.results.push({
         name: config.name,
         status: "error",
@@ -51,10 +63,40 @@ export async function rotateKeys(env: ControlEnv) {
       });
     }
   }
+  auditLog.results = await Promise.all(
+    ROTATION_CONFIG.map(async (config) => {
+      try {
+        // 1. Generate new key
+        const newKey = generateKey(config.prefix, config.length);
+
+        // 2. Store new key as active and archive the rotation event in parallel
+        // In a real system, this would update a secure store or service configuration
+        await Promise.all([
+          env.CONTROL_LOGS.put(`secrets:${config.name}:active`, newKey),
+          env.CONTROL_LOGS.put(`secrets:${config.name}:history:${timestamp}`, newKey)
+        ]);
+
+        console.log(`Successfully rotated key: ${config.name}`);
+        return { name: config.name, status: "success" as const };
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error(`Failed to rotate key for ${config.name}:`, errorMessage);
+        return {
+          name: config.name,
+          status: "error" as const,
+          error: errorMessage
+        };
+      }
+    })
+  );
 
   // 4. Log the full audit trail
   const auditKey = `audit:rotation:${timestamp}`;
   await env.CONTROL_LOGS.put(auditKey, JSON.stringify(auditLog));
 
-  console.log(`[${timestamp}] Key rotation complete. Audit log stored at: ${auditKey}`);
+  console.info({
+    event: "key_rotation_complete",
+    auditKey,
+    timestamp: new Date().toISOString()
+  });
 }

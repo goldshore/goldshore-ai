@@ -16,8 +16,28 @@ import { offerings } from '../data/site-content';
     <Header />
     <main>
       <section class="hero" id="hero">
-        <canvas id="starfield" aria-hidden="true"></canvas>
+        <canvas id="wave-field" aria-hidden="true"></canvas>
         <div class="hero-glow" aria-hidden="true"></div>
+        <div class="hero-mark-wrap" aria-hidden="true">
+          <svg
+            class="gs-logo-reactive"
+            viewBox="0 0 128 160"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linejoin="round"
+            stroke-linecap="square"
+            vector-effect="non-scaling-stroke"
+            shape-rendering="geometricPrecision"
+          >
+            <path
+              class="gs-logo-path"
+              d="M64 20 L17 93 H103 L64 20 M64 20 L103 93 M64 20 L17 93 M64 58 L49 83 H79 L64 58"
+            ></path>
+            <path class="gs-logo-seam" d="M64 58 L49 83"></path>
+          </svg>
+        </div>
         <div class="hero-content">
           <p class="eyebrow">
             Operational systems, engineered for reliability.
@@ -67,120 +87,190 @@ import { offerings } from '../data/site-content';
     </main>
     <Footer />
 
-    <script>
+    <script type="module">
       const hero = document.getElementById('hero');
-      const canvas = document.getElementById('starfield');
+      const canvas = document.getElementById('wave-field');
       const ctx = canvas?.getContext('2d');
+      const logo = document.querySelector('.gs-logo-reactive');
+      const seam = document.querySelector('.gs-logo-seam');
+      const reduceMotion = window.matchMedia(
+        '(prefers-reduced-motion: reduce)',
+      );
 
-      if (hero && canvas && ctx) {
-        const stars = [];
-        const shootingStars = [];
+      if (hero && canvas && ctx && logo) {
+        let rafId = 0;
+        let fadeTicking = false;
+        let time = 0;
+        let width = 0;
+        let height = 0;
+        let cssWidth = 0;
+        let cssHeight = 0;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-        const random = (min, max) => Math.random() * (max - min) + min;
+        const state = {
+          energy: 0,
+          dx: 0,
+          dy: 0,
+          rot: 0,
+          glow: 4,
+          glowAlpha: 0.18,
+          opacity: 0.88,
+          seamOpacity: 0.26,
+        };
 
         const resize = () => {
-          canvas.width = hero.clientWidth;
-          canvas.height = hero.clientHeight;
+          cssWidth = hero.clientWidth;
+          cssHeight = hero.clientHeight;
+          width = Math.max(1, Math.floor(cssWidth * dpr));
+          height = Math.max(1, Math.floor(cssHeight * dpr));
+          canvas.width = width;
+          canvas.height = height;
+          canvas.style.width = `${cssWidth}px`;
+          canvas.style.height = `${cssHeight}px`;
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.scale(dpr, dpr);
         };
 
-        const createStars = () => {
-          const starCount = Math.floor((canvas.width * canvas.height) / 8500);
-          stars.length = 0;
-          for (let index = 0; index < starCount; index += 1) {
-            stars.push({
-              x: Math.random() * canvas.width,
-              y: Math.random() * canvas.height,
-              radius: random(0.5, 1.6),
-              alpha: random(0.3, 0.95),
-              twinkle: random(0.002, 0.01),
-            });
-          }
+        const sampleWave = (x, y, currentTime) =>
+          Math.sin(x * 0.0105 + currentTime * 1.08) * 7 +
+          Math.cos(y * 0.017 + currentTime * 0.74) * 4 +
+          Math.sin((x + y) * 0.0042 + currentTime * 0.49) * 3;
+
+        const sampleWaveEnergy = (currentTime) => {
+          const heroRect = hero.getBoundingClientRect();
+          const logoRect = logo.getBoundingClientRect();
+          const sx = Math.min(
+            Math.max(logoRect.left + logoRect.width * 0.5 - heroRect.left, 0),
+            cssWidth,
+          );
+          const sy = Math.min(
+            Math.max(logoRect.top + logoRect.height * 0.5 - heroRect.top, 0),
+            cssHeight,
+          );
+
+          const wave = sampleWave(sx, sy, currentTime);
+          return Math.min(1, Math.abs(wave) / 14);
         };
 
-        const spawnShootingStar = () => {
-          shootingStars.push({
-            x: random(0, canvas.width * 0.7),
-            y: random(-40, canvas.height * 0.45),
-            length: random(130, 230),
-            speed: random(7, 10.5),
-            life: 0,
-            ttl: random(38, 52),
-          });
-        };
-
-        const draw = () => {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+        const drawWaveField = (currentTime) => {
+          ctx.clearRect(0, 0, cssWidth, cssHeight);
           ctx.fillStyle = '#050816';
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.fillRect(0, 0, cssWidth, cssHeight);
 
-          stars.forEach((star) => {
-            star.alpha += star.twinkle;
-            if (star.alpha >= 1 || star.alpha <= 0.2) {
-              star.twinkle *= -1;
+          const step = cssWidth < 720 ? 12 : 10;
+          for (let y = 0; y <= cssHeight + step; y += step) {
+            ctx.beginPath();
+
+            for (let x = 0; x <= cssWidth + step; x += step) {
+              const wave = sampleWave(x, y, currentTime);
+              if (x === 0) {
+                ctx.moveTo(x, y + wave);
+              } else {
+                ctx.lineTo(x, y + wave);
+              }
             }
 
-            ctx.beginPath();
-            ctx.fillStyle = `rgba(235, 244, 255, ${star.alpha})`;
-            ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
-            ctx.fill();
-          });
-
-          if (Math.random() < 0.02 && shootingStars.length < 3) {
-            spawnShootingStar();
-          }
-
-          shootingStars.forEach((shootingStar, index) => {
-            shootingStar.x += shootingStar.speed;
-            shootingStar.y += shootingStar.speed * 0.5;
-            shootingStar.life += 1;
-
-            const opacity = 1 - shootingStar.life / shootingStar.ttl;
-            const gradient = ctx.createLinearGradient(
-              shootingStar.x,
-              shootingStar.y,
-              shootingStar.x - shootingStar.length,
-              shootingStar.y - shootingStar.length * 0.4,
-            );
-            gradient.addColorStop(0, `rgba(166, 220, 255, ${opacity})`);
-            gradient.addColorStop(1, 'rgba(166, 220, 255, 0)');
-
-            ctx.strokeStyle = gradient;
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(shootingStar.x, shootingStar.y);
-            ctx.lineTo(
-              shootingStar.x - shootingStar.length,
-              shootingStar.y - shootingStar.length * 0.4,
-            );
+            const alpha = 0.035 + (y / cssHeight) * 0.08;
+            ctx.strokeStyle = `rgba(90, 162, 255, ${alpha.toFixed(3)})`;
+            ctx.lineWidth = 1;
             ctx.stroke();
-
-            if (shootingStar.life > shootingStar.ttl) {
-              shootingStars.splice(index, 1);
-            }
-          });
-
-          window.requestAnimationFrame(draw);
+          }
         };
 
-        resize();
-        createStars();
-        draw();
+        const applyLogoState = () => {
+          logo.style.transform = `translate(${state.dx.toFixed(2)}px, ${state.dy.toFixed(2)}px) rotate(${state.rot.toFixed(2)}deg)`;
+          logo.style.filter = `drop-shadow(0 0 ${state.glow.toFixed(1)}px rgba(90, 162, 255, ${state.glowAlpha.toFixed(3)}))`;
+          logo.style.opacity = state.opacity.toFixed(3);
 
-        window.addEventListener('resize', () => {
-          resize();
-          createStars();
-        });
+          if (seam) {
+            seam.style.opacity = state.seamOpacity.toFixed(3);
+          }
+        };
+
+        const updateLogo = (currentTime) => {
+          const targetEnergy = sampleWaveEnergy(currentTime);
+          state.energy += (targetEnergy - state.energy) * 0.08;
+
+          const targetX = Math.sin(currentTime * 1.18) * 1.15 * state.energy;
+          const targetY = Math.cos(currentTime * 0.93) * 1.55 * state.energy;
+          const targetRot = Math.sin(currentTime * 0.67) * 0.8 * state.energy;
+
+          state.dx += (targetX - state.dx) * 0.12;
+          state.dy += (targetY - state.dy) * 0.12;
+          state.rot += (targetRot - state.rot) * 0.12;
+
+          state.glow += (4 + state.energy * 7.5 - state.glow) * 0.14;
+          state.glowAlpha +=
+            (0.16 + state.energy * 0.28 - state.glowAlpha) * 0.14;
+          state.opacity += (0.84 + state.energy * 0.13 - state.opacity) * 0.12;
+          state.seamOpacity +=
+            (0.22 +
+              state.energy * 0.38 +
+              Math.sin(currentTime * 1.8) * 0.04 -
+              state.seamOpacity) *
+            0.12;
+
+          applyLogoState();
+        };
 
         const handleFade = () => {
+          fadeTicking = false;
           const heroHeight = hero.clientHeight;
           const progress = Math.min(window.scrollY / (heroHeight * 0.75), 1);
           hero.style.opacity = String(1 - progress);
           hero.style.transform = `translateY(${progress * 28}px)`;
         };
 
+        const onScroll = () => {
+          if (fadeTicking) return;
+          fadeTicking = true;
+          window.requestAnimationFrame(handleFade);
+        };
+
+        const renderStatic = () => {
+          drawWaveField(0);
+          state.dx = 0;
+          state.dy = 0;
+          state.rot = 0;
+          state.glow = 5.5;
+          state.glowAlpha = 0.2;
+          state.opacity = 0.92;
+          state.seamOpacity = 0.3;
+          applyLogoState();
+        };
+
+        const frame = () => {
+          time += 0.016;
+          drawWaveField(time);
+          updateLogo(time);
+          rafId = window.requestAnimationFrame(frame);
+        };
+
+        resize();
         handleFade();
-        window.addEventListener('scroll', handleFade, { passive: true });
+        window.addEventListener('resize', resize);
+        window.addEventListener('scroll', onScroll, { passive: true });
+
+        if (reduceMotion.matches) {
+          renderStatic();
+        } else {
+          frame();
+        }
+
+        reduceMotion.addEventListener('change', (event) => {
+          if (event.matches) {
+            if (rafId) {
+              window.cancelAnimationFrame(rafId);
+              rafId = 0;
+            }
+            renderStatic();
+            return;
+          }
+
+          if (!rafId) {
+            frame();
+          }
+        });
       }
     </script>
   </body>
@@ -201,10 +291,14 @@ import { offerings } from '../data/site-content';
       transform 180ms linear;
   }
 
-  #starfield,
+  #wave-field,
   .hero-glow {
     position: absolute;
     inset: 0;
+  }
+
+  #wave-field {
+    z-index: 0;
   }
 
   .hero-glow {
@@ -222,9 +316,39 @@ import { offerings } from '../data/site-content';
     z-index: 0;
   }
 
+  .hero-mark-wrap {
+    position: absolute;
+    left: clamp(1.5rem, 8vw, 6rem);
+    top: clamp(1.75rem, 18vh, 9rem);
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .gs-logo-reactive {
+    width: clamp(72px, 10vw, 132px);
+    height: auto;
+    color: #5aa2ff;
+    transform-origin: 50% 50%;
+    will-change: transform, filter, opacity;
+    transition:
+      transform 120ms linear,
+      filter 160ms linear,
+      opacity 160ms linear;
+  }
+
+  .gs-logo-path,
+  .gs-logo-seam {
+    vector-effect: non-scaling-stroke;
+  }
+
+  .gs-logo-seam {
+    opacity: 0.26;
+    transition: opacity 160ms linear;
+  }
+
   .hero-content {
     position: relative;
-    z-index: 1;
+    z-index: 2;
     width: min(42rem, calc(100% - 2.5rem));
     text-align: center;
     color: #e8edf7;
@@ -261,7 +385,7 @@ import { offerings } from '../data/site-content';
 
   .scroll-cue {
     position: absolute;
-    z-index: 1;
+    z-index: 2;
     left: 50%;
     transform: translateX(-50%);
     bottom: 1.1rem;
@@ -293,6 +417,11 @@ import { offerings } from '../data/site-content';
   @media (max-width: 720px) {
     .hero {
       min-height: 82vh;
+    }
+
+    .hero-mark-wrap {
+      top: clamp(1.5rem, 11vh, 3rem);
+      left: clamp(1rem, 7vw, 2rem);
     }
   }
 </style>

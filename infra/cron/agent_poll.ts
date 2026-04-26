@@ -48,41 +48,60 @@ async function ensurePagesOutputDirRule() {
 }
 
 async function checkCloudflare() {
-  for (const check of (cfg.cloudflare.checks as any[])) {
-    if (check.type === "pages_build_status") {
-      const status = await getPagesProjectBuildStatus(check.project);
-      if (!["success", "completed"].includes(status)) {
-        await openOpsIssue(cfg.github.org, "goldshore", `Pages build issue: ${check.project}`,
-          `Latest build stage status: \`${status}\`. Trigger rebuild or inspect Pages logs.`, cfg.ai_agent.triage_labels);
-      }
-    }
-    if (check.type === "dns_records") {
-      const dns = await getDNSRecords();
-      const dnsIndex = new Map<string, any[]>();
-      for (const d of dns as any[]) {
-        const key = `${d.name}|${d.type}`;
-        if (!dnsIndex.has(key)) dnsIndex.set(key, []);
-        dnsIndex.get(key)!.push(d);
-      }
-      for (const req of check.required) {
-        const key = `${req.name}|${req.type}`;
-        const records = dnsIndex.get(key) || [];
-        const hit = records.find((d: any) => (req.contains ? (String(d.content || "").includes(req.contains)) : true));
-        if (!hit) {
-          await openOpsIssue(cfg.github.org, "goldshore", `DNS missing/invalid: ${req.name} (${req.type})`,
-            `Record is missing or does not match required constraints.\n\nRequired: \`${JSON.stringify(req)}\``, cfg.ai_agent.triage_labels);
+  const maxConcurrent = cfg.max_parallel_checks || 6;
+  const checks = cfg.cloudflare.checks as any[];
+  const executing = new Set<Promise<void>>();
+
+  for (const check of checks) {
+    const p = Promise.resolve().then(async () => {
+      try {
+        if (check.type === "pages_build_status") {
+          const status = await getPagesProjectBuildStatus(check.project);
+          if (!["success", "completed"].includes(status)) {
+            await openOpsIssue(cfg.github.org, "goldshore", `Pages build issue: ${check.project}`,
+              `Latest build stage status: \`${status}\`. Trigger rebuild or inspect Pages logs.`, cfg.ai_agent.triage_labels);
+          }
+        } else if (check.type === "dns_records") {
+          const dns = await getDNSRecords();
+          const dnsIndex = new Map<string, any[]>();
+          for (const d of dns as any[]) {
+            const key = `${d.name}|${d.type}`;
+            if (!dnsIndex.has(key)) dnsIndex.set(key, []);
+            dnsIndex.get(key)!.push(d);
+          }
+          for (const req of check.required) {
+            const key = `${req.name}|${req.type}`;
+            const records = dnsIndex.get(key) || [];
+            const hit = records.find((d: any) => (req.contains ? (String(d.content || "").includes(req.contains)) : true));
+            if (!hit) {
+              await openOpsIssue(cfg.github.org, "goldshore", `DNS missing/invalid: ${req.name} (${req.type})`,
+                `Record is missing or does not match required constraints.\n\nRequired: \`${JSON.stringify(req)}\``, cfg.ai_agent.triage_labels);
+            }
+          }
+        } else if (check.type === "worker_health") {
+          const bindings = await getWorkerBindings(check.script);
+          const hasEnv = (bindings as any[]).length > 0;
+          if (!hasEnv) {
+            await openOpsIssue(cfg.github.org, "goldshore", `Worker missing bindings: ${check.script}`,
+              `No bindings returned for Worker \`${check.script}\`. Verify wrangler.toml and deployment.`, cfg.ai_agent.triage_labels);
+          }
         }
+      } catch (err: any) {
+        logger.error(`Error processing check ${check.type}:`, err);
       }
-    }
-    if (check.type === "worker_health") {
-      const bindings = await getWorkerBindings(check.script);
-      const hasEnv = (bindings as any[]).length > 0;
-      if (!hasEnv) {
-        await openOpsIssue(cfg.github.org, "goldshore", `Worker missing bindings: ${check.script}`,
-          `No bindings returned for Worker \`${check.script}\`. Verify wrangler.toml and deployment.`, cfg.ai_agent.triage_labels);
-      }
+    });
+
+    executing.add(p);
+    const clean = () => executing.delete(p);
+    p.then(clean).catch(clean);
+
+    if (executing.size >= maxConcurrent) {
+      await Promise.race(executing);
     }
   }
+
+  // Wait for the remaining checks to complete
+  await Promise.all(executing);
 }
 
 async function scanGitConflicts() {

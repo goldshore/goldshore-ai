@@ -6,12 +6,7 @@ const { title, session } = Astro.props as {
   title: string;
   session: AdminSession & { actor?: string; isAuthenticated: boolean };
 };
-const envLabel =
-  import.meta.env.PUBLIC_ENV === 'preview'
-    ? 'Preview'
-    : import.meta.env.PUBLIC_ENV === 'development'
-    ? 'Development'
-    : 'Production';
+const envLabel = import.meta.env.PUBLIC_API?.includes('preview') ? 'Preview' : 'Production';
 ---
 <header class="gs-admin-topbar">
   <div class="gs-row">

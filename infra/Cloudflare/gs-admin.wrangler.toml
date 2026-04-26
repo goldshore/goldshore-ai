@@ -1,4 +1,5 @@
-# wrangler.toml for the goldshore-admin Astro Pages app (for Pages Functions)
+# Worker Builds token for this service must be the gs-control build token.
+# wrangler.toml for the gs-admin Astro Pages app (for Pages Functions; formerly goldshore-admin)
 
 name = "gs-admin" # Base name for Pages project
 
@@ -29,3 +30,9 @@ name = "gs-admin" # Base name for Pages project
 
 [env.prod]
 # Production bindings for Pages Functions
+
+
+# Route boundary: admin worker must own only admin hostnames
+routes = [
+  { pattern = "admin.goldshore.ai/*", zone_name = "goldshore.ai" }
+]

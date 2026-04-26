@@ -5,8 +5,10 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
     "lib": ["ES2022"],
-    "types": ["@cloudflare/workers-types"]
+    "types": ["@cloudflare/workers-types", "node"]
   },
   "include": ["src/**/*"]
 }

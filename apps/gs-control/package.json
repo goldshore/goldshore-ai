@@ -7,14 +7,14 @@
     "dev": "wrangler dev src/index.ts",
     "deploy": "wrangler deploy",
     "run-task": "wrangler dev src/index.ts --test-scheduled",
-    "test": "tsx --test src/routes/*.test.ts",
+    "test": "tsx --test src/**/*.test.ts",
     "build": "wrangler deploy --dry-run --outdir=dist"
   },
   "dependencies": {
     "@goldshore/auth": "workspace:*",
     "@goldshore/utils": "workspace:*",
     "@hono/zod-validator": "^0.7.6",
-    "hono": "^4.0.0",
+    "hono": "^4.12.4",
     "zod": "^4.3.6",
     "@goldshore/schema": "workspace:*"
   },
@@ -22,6 +22,6 @@
     "@cloudflare/workers-types": "^4.20260301.1",
     "tsx": "^4.7.1",
     "typescript": "^5.4.0",
-    "wrangler": "^4.63.0"
+    "wrangler": "^4.75.0"
   }
 }

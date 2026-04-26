@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 
-const result = spawnSync('npx', ['wrangler', 'deploy', '--dry-run', '--outdir=dist'], {
+const result = spawnSync('npx', ['wrangler', 'deploy', '--dry-run', '--outdir=dist', '--env', 'prod'], {
   stdio: 'inherit',
   shell: process.platform === 'win32',
 });

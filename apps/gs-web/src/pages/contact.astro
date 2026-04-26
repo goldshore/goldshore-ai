@@ -1,45 +1,52 @@
 ---
-import WebLayout from '../layouts/WebLayout.astro';
+import { GSButton } from '@goldshore/ui';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import FlowSection from '../components/FlowSection.astro';
 
 export const prerender = true;
 ---
 
-<WebLayout
+<BaseLayout
   title="Contact | Gold Shore"
-  description="Start a guided engagement intake."
+  description="Contact the Gold Shore team."
 >
-  <section class="gs-section">
-    <div class="gs-container">
-      <h1>Contact</h1>
+  <FlowSection variant="hero">
+    <div>
+      <p class="gs-eyebrow">Contact</p>
+      <h1>Open a direct line with Gold Shore.</h1>
       <p>
         Start with the guided intake to receive a tailored service
         recommendation and week-one engagement outline.
       </p>
+      <p>
+        Prefer a structured intake? Use our
+        <a href="/intake">project qualification form</a>.
+      </p>
+    </div>
 
-      <form
-        class="contact-form"
-        id="contact-form"
-        action="/api/contact"
-        method="post"
-        novalidate
-      >
-        <input type="hidden" name="redirectTo" value="/thank-you" />
-        <label for="name">Name</label>
-        <p id="name-help" class="field-help">
-          Enter your full name so we know how to address you.
-        </p>
+    <form id="contact-form" class="gs-card" action="/api/contact" method="post">
+      <input type="hidden" name="formType" value="contact" />
+      <input type="hidden" name="redirectTo" value="/thank-you" />
+      <input type="hidden" name="formStartedAt" value="" />
+
+      <div class="gs-honeypot" aria-hidden="true">
+        <label for="companyWebsite">Company website</label>
         <input
-          id="name"
-          name="name"
+          id="companyWebsite"
+          name="companyWebsite"
           type="text"
-          placeholder="e.g., Alex Morgan"
-          autocomplete="name"
-          required
-          aria-required="true"
-          aria-describedby="name-help"
+          autocomplete="off"
+          tabindex="-1"
         />
+      </div>
 
-        <label for="email">Email</label>
+      <div class="gs-input-group">
+        <label for="name">Name</label>
+        <input id="name" name="name" type="text" autocomplete="name" required />
+      </div>
+
+      <div class="gs-input-group">
+        <label for="email">Work email</label>
         <p id="email-help" class="field-help">
           Use the best email for project follow-up.
         </p>
@@ -47,195 +54,243 @@ export const prerender = true;
           id="email"
           name="email"
           type="email"
-          placeholder="you@company.com"
           autocomplete="email"
-          required
-          aria-required="true"
+          spellcheck="false"
           aria-describedby="email-help"
+          required
         />
+      </div>
 
-        <label for="brief">Project Brief</label>
-        <p id="brief-help" class="field-help">
-          Share a short summary of your goals, timeline, and budget.
+      <div class="gs-input-group">
+        <label for="inquiry">Inquiry type</label>
+        <p id="inquiry-help" class="field-help">
+          Choose the path that best matches the engagement you want to start.
+        </p>
+        <select id="inquiry" name="inquiry" aria-describedby="inquiry-help">
+          <option value="general">General inquiry</option>
+          <option value="strategy-call">Strategy call</option>
+          <option value="project-scope">Project scoping</option>
+          <option value="support">Support</option>
+        </select>
+      </div>
+
+      <div class="gs-input-group">
+        <label for="message">Project brief</label>
+        <p id="message-help" class="field-help">
+          Share a short summary of your goals, timeline, and budget. We read
+          every request, so please avoid sensitive data.
         </p>
         <textarea
-          id="brief"
-          name="brief"
+          id="message"
+          name="message"
           rows="5"
           placeholder="We need support with cloud architecture and security hardening over the next 8 weeks."
-          autocomplete="off"
-          required
-          aria-required="true"
-          aria-describedby="brief-help"></textarea>
+          aria-describedby="message-help"
+          required></textarea>
+      </div>
 
-        <div
-          id="form-status"
-          class="form-status gs-banner"
-          aria-live="polite"
-          aria-atomic="true"
-          role="status"
+      <div
+        id="form-status"
+        class="form-status"
+        aria-live="polite"
+        role="status"
+      >
+      </div>
+
+      <GSButton type="submit">
+        <span id="submit-text">Send message</span>
+      </GSButton>
+    </form>
+  </FlowSection>
+
+  <FlowSection>
+    <div class="gs-grid columns-2">
+      <div>
+        <h2>Snapshot</h2>
+        <p class="gs-text-lg">
+          Direct, senior-led delivery that keeps programs steady and fast.
+        </p>
+        <GSButton href="#contact-form" variant="secondary"
+          >Send your brief</GSButton
         >
-        </div>
-
-        <button type="submit" class="gs-button" id="submit-button">
-          <span id="submit-text">Send</span>
-        </button>
-      </form>
-      <div class="grid gap-4 md:grid-cols-2" style="margin: 1rem 0;">
-        <article class="gs-card">
-          <h2>Guided intake</h2>
-          <p>
-            Best for active projects that need architecture, security, or
-            operational support.
-          </p>
-          <a class="gs-button gs-button-solid" href="/intake"
-            >Launch intake wizard</a
-          >
-        </article>
-
-        <article class="gs-card">
-          <h2>General inquiry</h2>
-          <p>For media, partnerships, or lightweight requests.</p>
-          <a
-            class="gs-button gs-button-outline"
-            href="mailto:hello@goldshore.ai">Email hello@goldshore.ai</a
-          >
-        </article>
+      </div>
+      <div class="gs-card">
+        <h3 class="section-title"><span>◆</span>Snapshot</h3>
+        <ul>
+          <li>
+            <strong>Current Focus:</strong> Automation layers, resilient infrastructure,
+            and AI-assisted operations.
+          </li>
+          <li>
+            <strong>What I build:</strong> End-to-end platforms, secure integrations,
+            and operator-facing tooling.
+          </li>
+          <li>
+            <strong>How I work:</strong> Clear scope, weekly checkpoints, and transparent
+            delivery metrics.
+          </li>
+          <li>
+            <strong>Availability:</strong> Full-time or contract engagements.
+          </li>
+        </ul>
+        <p class="gs-text-sm">
+          Have a scope in mind? Send the brief and I’ll respond with a plan.
+        </p>
       </div>
     </div>
-  </section>
-</WebLayout>
+  </FlowSection>
 
-<script>
-  const form = document.querySelector('#contact-form');
-  const submitButton = document.querySelector('#submit-button');
-  const submitText = document.querySelector('#submit-text');
-  const formStatus = document.querySelector('#form-status');
+  <script>
+    const form = document.getElementById('contact-form');
+    const button = form?.querySelector('button[type="submit"]');
+    const submitText = form?.querySelector('#submit-text');
+    const formStatus = document.getElementById('form-status');
 
-  const setStatus = (message, type) => {
-    if (!formStatus) return;
-    formStatus.textContent = message;
-    formStatus.classList.remove('success', 'error', 'progress');
+    const setStatus = (message, type) => {
+      if (!(formStatus instanceof HTMLElement)) return;
+      formStatus.textContent = message;
+      formStatus.classList.remove('success', 'error', 'progress');
+      if (type) {
+        formStatus.classList.add(type);
+      }
+    };
 
-    if (type) {
-      formStatus.classList.add(type);
-    }
-  };
-
-  if (!(form instanceof HTMLFormElement)) {
-    throw new Error('Contact form not found.');
-  }
-
-  if (!(submitButton instanceof HTMLButtonElement)) {
-    throw new Error('Contact submit button not found.');
-  }
-
-  if (!(submitText instanceof HTMLElement)) {
-    throw new Error('Contact submit text element not found.');
-  }
-
-  form.addEventListener('submit', async (event) => {
-    event.preventDefault();
-
-    if (!form.checkValidity()) {
-      form.reportValidity();
-      setStatus(
-        'Please complete all required fields before submitting.',
-        'error',
-      );
-      return;
-    }
-
-    submitButton.disabled = true;
-    submitButton.classList.add('is-loading');
-    submitButton.setAttribute('aria-busy', 'true');
-    submitText.textContent = 'Sending…';
-    setStatus('Sending your message…', 'progress');
-
-    try {
-      const response = await fetch(form.action, {
-        method: form.method,
-        body: new FormData(form),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Request failed: ${response.status}`);
+    if (
+      form instanceof HTMLFormElement &&
+      button instanceof HTMLButtonElement
+    ) {
+      const startedAtField = form.querySelector('[name="formStartedAt"]');
+      if (startedAtField instanceof HTMLInputElement) {
+        startedAtField.value = String(Date.now());
       }
 
-      form.reset();
-      setStatus('Thanks! Your message has been sent successfully.', 'success');
-    } catch {
-      setStatus(
-        'Something went wrong while sending your message. Please try again.',
-        'error',
+      const inquiryField = form.querySelector('#inquiry');
+      const inquiryParam = new URLSearchParams(window.location.search).get(
+        'inquiry',
       );
-    } finally {
-      submitButton.disabled = false;
-      submitButton.classList.remove('is-loading');
-      submitButton.removeAttribute('aria-busy');
-      submitText.textContent = 'Send';
+      const allowedInquiryTypes = new Set([
+        'general',
+        'strategy-call',
+        'project-scope',
+        'support',
+      ]);
+
+      if (
+        inquiryField instanceof HTMLSelectElement &&
+        inquiryParam &&
+        allowedInquiryTypes.has(inquiryParam)
+      ) {
+        inquiryField.value = inquiryParam;
+      }
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (button.disabled) return;
+
+        if (!form.checkValidity()) {
+          form.reportValidity();
+          setStatus(
+            'Please complete all required fields before submitting.',
+            'error',
+          );
+          return;
+        }
+
+        const originalText =
+          submitText instanceof HTMLElement
+            ? submitText.textContent
+            : button.textContent;
+        button.disabled = true;
+        button.setAttribute('aria-busy', 'true');
+        if (submitText instanceof HTMLElement) {
+          submitText.textContent = 'Sending...';
+        }
+        setStatus('Sending your message...', 'progress');
+
+        try {
+          const response = await fetch(
+            form.getAttribute('action') || '/api/contact',
+            {
+              method: form.getAttribute('method') || 'POST',
+              body: new FormData(form),
+            },
+          );
+
+          if (!response.ok && !response.redirected) {
+            throw new Error(`Submission failed: ${response.status}`);
+          }
+
+          const redirectToField = form.querySelector('[name="redirectTo"]');
+          const redirectTarget =
+            response.redirected && response.url
+              ? response.url
+              : redirectToField instanceof HTMLInputElement &&
+                  redirectToField.value
+                ? redirectToField.value
+                : '/thank-you';
+
+          window.location.href = redirectTarget;
+        } catch (error) {
+          console.error(error);
+          button.disabled = false;
+          button.removeAttribute('aria-busy');
+          if (submitText instanceof HTMLElement) {
+            submitText.textContent = originalText || 'Send message';
+          }
+          setStatus(
+            'Unable to send message right now. Please try again or email hello@goldshore.ai.',
+            'error',
+          );
+        }
+      });
     }
-  });
-</script>
+  </script>
 
-<style>
-  .field-help {
-    margin: 0.25rem 0 0.5rem;
-    color: var(--gs-color-subtle);
-    font-size: 0.95rem;
-  }
+  <style is:global>
+    .gs-honeypot {
+      position: absolute;
+      left: -10000px;
+      top: auto;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
 
-  .form-status {
-    margin: 0.75rem 0;
-    padding: 0.75rem 1rem;
-    min-height: 1.25rem;
-    transition:
-      border-color var(--gs-transition),
-      background var(--gs-transition),
-      color var(--gs-transition);
-  }
+    .field-help {
+      margin: 0.25rem 0 0.5rem;
+      color: var(--gs-color-text-muted, #94a3b8);
+      font-size: 0.95rem;
+    }
 
-  .form-status.progress {
-    background: color-mix(in srgb, var(--gs-accent-soft) 70%, transparent);
-    border-color: color-mix(
-      in srgb,
-      var(--gs-accent) 42%,
-      var(--gs-color-border)
-    );
-    color: var(--gs-color-text);
-  }
+    .form-status {
+      margin: 0.75rem 0;
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      border: 1px solid transparent;
+      min-height: 1.25rem;
+    }
 
-  .form-status.success {
-    background: color-mix(in srgb, var(--gs-accent-strong) 16%, transparent);
-    border-color: color-mix(
-      in srgb,
-      var(--gs-accent-strong) 36%,
-      var(--gs-color-border)
-    );
-    color: var(--gs-color-text);
-  }
+    .form-status.progress {
+      background: rgba(37, 52, 138, 0.12);
+      border-color: rgba(96, 116, 211, 0.45);
+      color: #c7d2fe;
+    }
 
-  .form-status.error {
-    background: color-mix(in srgb, var(--gs-color-subtle) 18%, transparent);
-    border-color: color-mix(
-      in srgb,
-      var(--gs-color-subtle) 50%,
-      var(--gs-color-border)
-    );
-    color: var(--gs-color-text);
-  }
+    .form-status.success {
+      background: rgba(10, 95, 37, 0.14);
+      border-color: rgba(110, 231, 183, 0.35);
+      color: #bbf7d0;
+    }
 
-  #submit-button:disabled {
-    opacity: 0.65;
-    cursor: not-allowed;
-    box-shadow: none;
-  }
+    .form-status.error {
+      background: rgba(143, 23, 23, 0.14);
+      border-color: rgba(248, 113, 113, 0.35);
+      color: #fecaca;
+    }
 
-  #submit-button.is-loading {
-    border-color: color-mix(
-      in srgb,
-      var(--gs-accent) 45%,
-      var(--gs-color-border)
-    );
-  }
-</style>
+    #contact-form button[disabled] {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+  </style>
+</BaseLayout>

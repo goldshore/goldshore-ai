@@ -100,4 +100,21 @@ describe('Cloudflare Routes Security', () => {
     const url = fetchMock.mock.calls[0].arguments[0];
     assert.match(url.toString(), new RegExp(`/zones/mock-zone/dns_records/${validRecordId}$`));
   });
+
+  it('VULNERABILITY FIX: should filter out unvalidated query parameters', async () => {
+    const maliciousQuery = 'malicious=true&page=1';
+
+    const response = await createRequest({
+      email: 'admin@example.com',
+      roles: ['admin'],
+    }, `/dns/records?${maliciousQuery}`, 'GET');
+
+    assert.strictEqual(response.status, 200);
+
+    // Check that fetch WAS called WITHOUT the malicious query parameter
+    assert.strictEqual(fetchMock.mock.calls.length, 1);
+    const url = fetchMock.mock.calls[0].arguments[0];
+    assert.ok(!url.toString().includes('malicious=true'), 'Should NOT contain malicious query param');
+    assert.ok(url.toString().includes('page=1'), 'Should contain page query param');
+  });
 });

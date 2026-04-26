@@ -1,73 +1,11 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-
-// Placeholder for user state (integrate with your auth provider later)
-const user = {
-  email: "admin@goldshore.ai",
-  role: "System Architect",
-  lastSync: new Date().toLocaleTimeString()
-};
 ---
-
 <BaseLayout title="Profile | GoldShore">
-    <section class="max-w-4xl mx-auto py-16 px-6">
-        <header class="mb-12">
-            <h1 class="text-4xl font-bold gs-heading mb-4">Profile Settings</h1>
-            <p class="text-lg text-[var(--gs-text-secondary)]">
-                Manage your administrative identity and system access levels.
-            </p>
-        </header>
-
-        <div class="space-y-12">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 border-b border-[var(--gs-border-primary)] pb-12">
-                <div>
-                    <h2 class="text-xl font-semibold">Account Details</h2>
-                    <p class="text-sm text-[var(--gs-text-secondary)]">Basic identity information used across GoldShore apps.</p>
-                </div>
-                <div class="md:col-span-2 space-y-4">
-                    <div class="p-4 rounded-lg bg-[var(--gs-bg-secondary)] border border-[var(--gs-border-primary)]">
-                        <label class="block text-xs font-medium uppercase tracking-wider text-[var(--gs-text-secondary)] mb-1">Email Address</label>
-                        <p class="font-mono text-sm">{user.email}</p>
-                    </div>
-                    <div class="p-4 rounded-lg bg-[var(--gs-bg-secondary)] border border-[var(--gs-border-primary)]">
-                        <label class="block text-xs font-medium uppercase tracking-wider text-[var(--gs-text-secondary)] mb-1">Assigned Role</label>
-                        <p class="font-medium text-blue-600">{user.role}</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div>
-                    <h2 class="text-xl font-semibold">Security & Access</h2>
-                    <p class="text-sm text-[var(--gs-text-secondary)]">Last CI synchronization: <span class="font-mono">{user.lastSync}</span></p>
-                </div>
-                <div class="md:col-span-2">
-                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-6">
-                        <h3 class="text-amber-800 font-semibold mb-2 flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                            </svg>
-                            Governance Notice
-                        </h3>
-                        <p class="text-sm text-amber-700 leading-relaxed">
-                            Modification of root-level environment variables or CI workflows from this interface is <strong>strictly prohibited</strong> by the <code>stabilization-check.mjs</code> policy. Escalations must be handled via repository PRs.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <section class="max-w-4xl mx-auto py-24 px-6">
+        <h1 class="text-4xl gs-heading mb-4">Profile Settings</h1>
+        <p class="text-[var(--gs-text-secondary)]">
+            Account and user configuration options will appear here.
+        </p>
     </section>
 </BaseLayout>
-
-<style>
-    /* Local variable fallback for standalone testing */
-    :root {
-        --gs-text-secondary: #4b5563;
-        --gs-border-primary: #d1d5db;
-        --gs-bg-secondary: #f9fafb;
-    }
-    .gs-heading {
-        letter-spacing: -0.025em;
-        color: #111827;
-    }
-</style>

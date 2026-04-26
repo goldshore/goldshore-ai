@@ -5,6 +5,7 @@ import { verifyAccess } from '@goldshore/auth';
 
 interface Env {
 	AI: any;
+	ENV?: string;
 	CLOUDFLARE_ACCESS_AUDIENCE?: string;
 	CLOUDFLARE_TEAM_DOMAIN?: string;
 	// Added binding for our shared JSON config
@@ -23,10 +24,15 @@ app.use('*', cors({
 
 // 2. Auth Guard (Public vs Protected)
 app.use('*', async (c, next) => {
-	const publicPaths = ['/', '/health', '/templates'];
+	const publicPaths = ['/', '/health'];
 	if (publicPaths.includes(c.req.path)) {
 		await next();
 		return;
+	}
+
+	if (c.env.ENV === 'production' && !c.env.CLOUDFLARE_ACCESS_AUDIENCE) {
+		console.error('SECURITY ERROR: CLOUDFLARE_ACCESS_AUDIENCE must be configured for protected gs-agent routes in production.');
+		return c.json({ error: 'Service auth misconfigured' }, 500);
 	}
 
 	const authorized = await verifyAccess(c.req.raw, c.env);
@@ -65,13 +71,8 @@ app.get('/health', (c) => c.json({ status: 'ok', service: 'gs-agent' }));
 
 // 4. Template Engine with KV integration
 app.get('/templates', async (c) => {
-	// Retrieve your custom JSON list from the KV store
-	const rawConfig = await c.env.AGENT_KV.get("GATEWAY_SETTINGS");
-	const activeConfig = rawConfig ? JSON.parse(rawConfig) : [];
-
 	return c.json({
 		service: 'gs-agent',
-		config_snapshot: activeConfig,
 		modules: [
 			{ name: 'operator-assist', purpose: 'Human-in-the-loop review queues.' },
 			{ name: 'ai-routing', purpose: 'Gemini/GPT orchestration.' },
@@ -85,10 +86,13 @@ export default {
 	fetch: app.fetch,
 	async queue(batch: MessageBatch<any>, env: Env): Promise<void> {
 		for (const message of batch.messages) {
+			const jobType = typeof message.body === 'object' && message.body && 'type' in message.body
+				? String((message.body as { type?: unknown }).type ?? 'unknown')
+				: 'unknown';
 			console.info({
 				event: 'job_processed',
 				id: message.id,
-				body: message.body,
+				jobType,
 				timestamp: new Date().toISOString(),
 			});
 			message.ack(); // Complete the job

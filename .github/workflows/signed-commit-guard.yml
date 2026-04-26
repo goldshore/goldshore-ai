@@ -1,0 +1,49 @@
+name: Signed Commit Guard
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  verify-signatures:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check all PR commits are verified
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          commits_json="$(gh api \
+            -H 'Accept: application/vnd.github+json' \
+            "/repos/${GH_REPO}/pulls/${PR_NUMBER}/commits?per_page=250")"
+
+          total="$(echo "$commits_json" | jq 'length')"
+          if [ "$total" -eq 0 ]; then
+            echo "No commits found on PR #${PR_NUMBER}."
+            exit 0
+          fi
+
+          failing="$(echo "$commits_json" | jq -r '
+            .[]
+            | select((.commit.verification.verified // false) != true)
+            | select(.commit.author.name != "jules-bot" and .commit.author.name != "google-labs-jules[bot]")
+            | "\(.sha) :: verified=\(.commit.verification.verified // false) :: reason=\(.commit.verification.reason // "unknown")"
+          ')"
+
+          if [ -n "$failing" ]; then
+            echo "Found unverified commit(s):"
+            echo "$failing"
+            echo
+            echo "Branch protection requires verified signatures."
+            echo "Please re-sign and re-push these commit(s) with a key linked to your GitHub account."
+            exit 1
+          fi
+
+          echo "All ${total} commit(s) on PR #${PR_NUMBER} are verified."

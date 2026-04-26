@@ -7,7 +7,7 @@ const DEFAULT_VARIANT = 'orbital';
 const HERO_VARIANT_KEY = 'hero_variant';
 
 type HeroConfigEnv = {
-  HERO_CONFIG_KV?: {
+  GS_CONFIG?: {
     get(key: string): Promise<string | null>;
     put(key: string, value: string): Promise<void>;
   };
@@ -21,13 +21,15 @@ const buildErrorResponse = (status: number, message: string) =>
 
 export const GET: APIRoute = async ({ request, locals }) => {
   const env = getServerEnv(locals as Record<string, unknown>) as HeroConfigEnv;
-  const access = await requireAdminAccess(request, env);
+  const access = await requireAdminAccess(request, env, {
+    requiredPermission: 'content:read',
+  });
 
   if (!access.ok) {
     return buildErrorResponse(access.status, access.error ?? 'Unauthorized');
   }
 
-  const variant = (await env.HERO_CONFIG_KV?.get(HERO_VARIANT_KEY)) ?? DEFAULT_VARIANT;
+  const variant = (await env.GS_CONFIG?.get(HERO_VARIANT_KEY)) ?? DEFAULT_VARIANT;
 
   return Response.json({
     variant: ALLOWED_VARIANTS.has(variant) ? variant : DEFAULT_VARIANT,
@@ -36,7 +38,9 @@ export const GET: APIRoute = async ({ request, locals }) => {
 
 export const POST: APIRoute = async ({ request, locals }) => {
   const env = getServerEnv(locals as Record<string, unknown>) as HeroConfigEnv;
-  const access = await requireAdminAccess(request, env);
+  const access = await requireAdminAccess(request, env, {
+    requiredPermission: 'content:write',
+  });
 
   if (!access.ok) {
     return buildErrorResponse(access.status, access.error ?? 'Unauthorized');
@@ -49,11 +53,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return buildErrorResponse(400, 'Invalid hero variant.');
   }
 
-  if (!env.HERO_CONFIG_KV) {
-    return buildErrorResponse(503, 'HERO_CONFIG_KV binding missing.');
+  if (!env.GS_CONFIG) {
+    return buildErrorResponse(503, 'GS_CONFIG binding missing.');
   }
 
-  await env.HERO_CONFIG_KV.put(HERO_VARIANT_KEY, variant);
+  await env.GS_CONFIG.put(HERO_VARIANT_KEY, variant);
 
   return Response.json({ variant });
 };

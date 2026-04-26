@@ -1,3 +1,6 @@
+# Manual operations guide:
+# - Use this workflow to re-run SonarCloud analysis on demand when operators need fresh code quality or security findings.
+# - Manual runs supplement the normal push, pull request, and scheduled analysis cadence.
 # This workflow uses actions that are not certified by GitHub.
 # They are provided by a third-party and are governed by
 # separate terms of service, privacy policy, and support
@@ -26,7 +29,8 @@
 # Feel free to take a look at our documentation (https://docs.sonarcloud.io/getting-started/github/)
 # or reach out to our community forum if you need some help (https://community.sonarsource.com/c/help/sc/9)
 
-name: SonarCloud analysis
+name: "Security: SonarCloud Analysis"
+run-name: "SonarCloud • ${{ github.event_name == 'workflow_dispatch' && format('manual • @{0}', github.actor) || github.ref_name }}"
 
 on:
   push:
@@ -47,7 +51,7 @@ jobs:
 
         # You can pin the exact commit or the version.
         # uses: SonarSource/sonarcloud-github-action@v2.2.0
-        uses: SonarSource/sonarcloud-github-action@ffc3010689be73b8e5ae0c57ce35968afd7909e8
+        uses: SonarSource/sonarcloud-github-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}   # Generate a token on Sonarcloud.io, add it to the secrets of this repo with the name SONAR_TOKEN (Settings > Secrets > Actions > add new repository secret)
         with:

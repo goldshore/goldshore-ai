@@ -5,10 +5,11 @@
   "type": "module",
   "main": "src/index.ts",
   "scripts": {
-    "dev": "wrangler dev src/index.ts --env dev --config ../../infra/cloudflare/gs-agent.wrangler.toml",
-    "deploy": "wrangler deploy src/index.ts --env prod --minify --config ../../infra/cloudflare/gs-agent.wrangler.toml",
-    "deploy:preview": "wrangler deploy src/index.ts --env preview --config ../../infra/cloudflare/gs-agent.wrangler.toml",
-    "build": "wrangler deploy src/index.ts --dry-run --outdir=dist --env prod --config ../../infra/cloudflare/gs-agent.wrangler.toml"
+    "dev": "wrangler dev src/index.ts --config ../../infra/Cloudflare/gs-agent.wrangler.toml",
+    "deploy": "wrangler deploy --minify src/index.ts --config ../../infra/Cloudflare/gs-agent.wrangler.toml",
+    "deploy:preview": "wrangler deploy --env preview --config ../../infra/Cloudflare/gs-agent.wrangler.toml",
+    "build": "wrangler deploy src/index.ts --dry-run --outdir=dist --config ../../infra/Cloudflare/gs-agent.wrangler.toml",
+    "test": "tsx src/index.test.ts"
   },
   "dependencies": {
     "@goldshore/auth": "workspace:*",
@@ -17,6 +18,6 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260301.1",
     "typescript": "^5.4.0",
-    "wrangler": "^4.63.0"
+    "wrangler": "^4.75.0"
   }
 }

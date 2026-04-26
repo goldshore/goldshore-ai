@@ -1,4 +1,4 @@
-name: Deploy Agent Worker (gs-agent)
+name: Deploy GS Agent Worker (gs-agent)
 
 permissions:
   contents: read
@@ -24,6 +24,16 @@ jobs:
       - uses: pnpm/action-setup@v4
         with:
           version: 9
+  deploy-agent:
+    runs-on: ubuntu-latest
+    name: Deploy
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061
+        with:
+          run_install: false
 
       - uses: actions/setup-node@v6
         with:

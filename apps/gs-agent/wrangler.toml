@@ -1,17 +1,16 @@
 name = "gs-agent"
 main = "src/index.ts"
-compatibility_date = "2025-01-10"
+compatibility_date = "2024-11-01"
 compatibility_flags = ["nodejs_compat"]
 tsconfig = "tsconfig.json"
 
 [vars]
 ENV = "production"
+CLOUDFLARE_TEAM_DOMAIN = "gsl-ops"
 
 [ai]
 binding = "AI"
 
-# This Worker is a Consumer, not a Producer. 
-# It listens for jobs sent by gs-gateway and gs-api.
 [[queues.consumers]]
 queue = "goldshore-jobs"
 max_batch_size = 10
@@ -19,19 +18,49 @@ max_batch_timeout = 5
 
 [[kv_namespaces]]
 binding = "AGENT_KV"
-id = "9cc2209906a94851b704be57543987a9" # Shared GS_API_DATA for config
-
-# --- Environment Configurations ---
+id = "9cc2209906a94851b704be57543987a9"
 
 [env.dev]
 name = "gs-agent-dev"
 [env.dev.vars]
-  ENV = "development"
+ENV = "development"
 
 [env.prod]
 name = "gs-agent"
+compatibility_date = "2024-11-01"
+
 [env.prod.vars]
-  ENV = "production"
+ENV = "production"
+CLOUDFLARE_TEAM_DOMAIN = "gsl-ops"
+
+[env.prod.ai]
+binding = "AI"
+
 [[env.prod.queues.consumers]]
-  queue = "goldshore-jobs"
-  max_batch_size = 10
+queue = "goldshore-jobs"
+max_batch_size = 10
+max_batch_timeout = 5
+
+[[env.prod.kv_namespaces]]
+binding = "AGENT_KV"
+id = "9cc2209906a94851b704be57543987a9"
+
+[env.production]
+name = "gs-agent"
+compatibility_date = "2024-11-01"
+
+[env.production.vars]
+ENV = "production"
+CLOUDFLARE_TEAM_DOMAIN = "gsl-ops"
+
+[env.production.ai]
+binding = "AI"
+
+[[env.production.queues.consumers]]
+queue = "goldshore-jobs"
+max_batch_size = 10
+max_batch_timeout = 5
+
+[[env.production.kv_namespaces]]
+binding = "AGENT_KV"
+id = "9cc2209906a94851b704be57543987a9"

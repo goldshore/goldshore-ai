@@ -6,28 +6,17 @@ order: 60
 
 # Gateway Routing
 
-`gs-gateway` is the public ingress worker for GoldShore edge traffic.
-`agent.goldshore.ai` is intentionally owned by the gateway and routed internally
-to downstream services (including `gs-agent`) when needed.
+The GoldShore Gateway handles routing for all incoming requests.
 
 ## Routing Rules
 
-Routes are defined in the gateway configuration and matched against the incoming request path.
+Routes are defined in the configuration and matched against the incoming request path.
 
-| Hostname | Entrypoint | Downstream |
-|------|---------|---------|
-| `gateway.goldshore.ai` | `gs-gateway` | `gs-api`, `gs-agent`, internal handlers |
-| `agent.goldshore.ai` | `gs-gateway` (alias ingress) | `gs-agent` |
-| `gw.goldshore.ai` | `gs-gateway` | `gs-api`, `gs-agent`, internal handlers |
-
-## Agent Ingress Model
-
-- **Gateway-owned hostname:** `agent.goldshore.ai`
-- **Entrypoint worker:** `gs-gateway`
-- **Downstream service:** `gs-agent`
-
-This avoids split hostname ownership and keeps auth, policy, and observability
-enforced at a single ingress layer.
+| Path | Service |
+|------|---------|
+| /api | API Service |
+| /auth | Auth Service |
+| /docs | Documentation |
 
 ## Load Balancing
 

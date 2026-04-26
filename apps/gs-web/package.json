@@ -17,18 +17,29 @@
     "verify:dist": "node ../../scripts/verify-web-dist.mjs"
   },
   "dependencies": {
+    "@astrojs/react": "^5.0.1",
+    "@astrojs/tailwind": "^6.0.2",
+    "@goldshore/auth": "workspace:*",
+    "@goldshore/brand": "workspace:*",
     "@goldshore/config": "workspace:^",
     "@goldshore/theme": "workspace:*",
     "@goldshore/ui": "workspace:*",
     "@goldshore/utils": "workspace:*",
-    "astro": "^5.18.0",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.5.0",
+    "@supabase/supabase-js": "^2.99.3",
+    "astro": "^6.1.1",
+    "framer-motion": "^12.38.0",
     "fuse.js": "^7.1.0",
-    "@goldshore/brand": "workspace:*"
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "tailwindcss": "^3.4.17",
+    "three": "^0.183.2",
+    "vanilla-tilt": "^1.8.1"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.6",
     "@astrojs/cloudflare": "^12.6.12",
-    "@astrojs/tailwind": "^6.0.2",
     "@playwright/test": "^1.55.0",
     "typescript": "^5.4.2"
   }

@@ -14,14 +14,14 @@ async function getDocs() {
   async function scan(dir) {
     try {
       const entries = await readdir(dir, { withFileTypes: true });
-      for (const entry of entries) {
+      await Promise.all(entries.map(async (entry) => {
         const fullPath = join(dir, entry.name);
         if (entry.isDirectory()) {
           await scan(fullPath);
         } else if (entry.isFile() && /\.(md|mdx)$/.test(entry.name)) {
           files.push(fullPath);
         }
-      }
+      }));
     } catch (err) {
       if (err.code === 'ENOENT') {
         console.warn(`Directory not found: ${dir}`);

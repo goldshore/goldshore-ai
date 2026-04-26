@@ -7,14 +7,7 @@ const API_BASE = import.meta.env.PUBLIC_API;
 const AUTH_TOKEN_URL = import.meta.env.PUBLIC_AUTH_TOKEN_URL;
 const AUTH_CLIENT_ID = import.meta.env.PUBLIC_AUTH_CLIENT_ID;
 
-// 🛡️ Sentinel: Security Hardening
-// Prioritize private environment variable for Client Secret to prevent client-side exposure.
-// Fallback to PUBLIC_ var ensures backward compatibility but logs a security warning.
-const AUTH_CLIENT_SECRET = import.meta.env.AUTH_CLIENT_SECRET || import.meta.env.PUBLIC_AUTH_CLIENT_SECRET;
-
-if (!import.meta.env.AUTH_CLIENT_SECRET && import.meta.env.PUBLIC_AUTH_CLIENT_SECRET) {
-  console.warn('🚨 SECURITY WARNING: AUTH_CLIENT_SECRET is configured via PUBLIC_ prefix. This exposes the secret to the client bundle. Please rename to AUTH_CLIENT_SECRET in your environment.');
-}
+const AUTH_CLIENT_SECRET = import.meta.env.AUTH_CLIENT_SECRET;
 
 const AUDIT_ENDPOINT = import.meta.env.PUBLIC_ADMIN_AUDIT_ENDPOINT;
 
@@ -159,7 +152,7 @@ const systemInfo = await adminService.getSystemInfo();
       <a href="/systems" class="gs-link-tile">Systems</a>
       <a href="/trading" class="gs-link-tile">Trading</a>
       <a href="/settings" class="gs-link-tile">Settings</a>
-      <a href="https://status.goldshore.ai" class="gs-link-tile">Status (ext)</a>
+      <a href="/admin/systems" class="gs-link-tile">Systems Detail</a>
     </div>
   </section>
 </AdminLayout>

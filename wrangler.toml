@@ -1,23 +1,34 @@
+# ============================================================
+# ⛔ DO NOT DEPLOY FROM THIS FILE
+# This is a legacy root-level wrangler config kept only for
+# reference and local `wrangler dev` convenience.
+#
+# The CANONICAL deploy config for gs-gateway is:
+#   apps/gs-gateway/wrangler.toml
+#
+# All CI deploys target apps/gs-gateway/wrangler.toml via
+# .github/workflows/deploy-gs-gateway.yml.
+#
+# Deploying from here will produce a gateway with EMPTY
+# Cloudflare Access audience — auth will NOT be enforced.
+# ============================================================
 name = "gs-gateway"
 main = "apps/gs-gateway/src/index.ts"
 compatibility_date = "2025-01-10"
 compatibility_flags = ["nodejs_compat"]
 
 workers_dev = false
-
-# Primary Route Alignment
 routes = [
-  { pattern = "gw.goldshore.ai/*", zone_id = "d86cd71f0d1c8b8e08928a32e0c95ae3" }
+  { pattern = "gw.goldshore.ai/*", zone_name = "goldshore.ai" }
 ]
 
 [vars]
 ENV = "production"
-NODE_ENV = "production"
-OTEL_SERVICE_NAME = "goldshore-gateway-prod"
 API_ORIGIN = "https://api.goldshore.ai"
-# From Unified Bundle
-CLOUDFLARE_ACCESS_AUDIENCE = "3ae67260bc738a42d4eeaf1525fd4941bf220375e5325c2cb76dbe653a2f8c25"
-CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
+# Sentinel: These MUST be set to real values before any production deploy.
+# An empty string here means Cloudflare Access audience checks are DISABLED.
+CLOUDFLARE_ACCESS_AUDIENCE = "NOT_SET__SEE_apps/gs-gateway/wrangler.toml"
+CLOUDFLARE_TEAM_DOMAIN = "NOT_SET__SEE_apps/gs-gateway/wrangler.toml"
 
 [[kv_namespaces]]
 binding = "GATEWAY_KV"
@@ -35,22 +46,15 @@ environment = "prod"
 [ai]
 binding = "AI"
 
-# --- Preview Environment Alignment ---
 [env.preview]
 name = "gs-gateway-preview"
-workers_dev = false # Set to false to use your custom preview domain
-
-routes = [
-  { pattern = "gateway-preview.goldshore.ai/*", zone_id = "d86cd71f0d1c8b8e08928a32e0c95ae3" }
-]
+workers_dev = true
 
 [env.preview.vars]
 ENV = "preview"
-NODE_ENV = "development"
-OTEL_SERVICE_NAME = "goldshore-gateway-preview"
-API_ORIGIN = "https://api-preview.goldshore.ai"
-CLOUDFLARE_ACCESS_AUDIENCE = "3ae67260bc738a42d4eeaf1525fd4941bf220375e5325c2cb76dbe653a2f8c25"
-CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
+API_ORIGIN = "https://api.goldshore.ai"
+CLOUDFLARE_ACCESS_AUDIENCE = "NOT_SET__SEE_apps/gs-gateway/wrangler.toml"
+CLOUDFLARE_TEAM_DOMAIN = "NOT_SET__SEE_apps/gs-gateway/wrangler.toml"
 
 [[env.preview.kv_namespaces]]
 binding = "GATEWAY_KV"
@@ -64,3 +68,7 @@ queue = "goldshore-jobs"
 binding = "API"
 service = "gs-api"
 environment = "preview"
+
+[env.preview.ai]
+binding = "AI"
+

@@ -1,0 +1,29 @@
+name: Setup Preview DNS
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (skip actual API calls)'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  setup-dns:
+    permissions:
+      contents: read
+    name: Configure preview.goldshore.ai DNS
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run DNS setup script
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: node scripts/setup-preview-dns.mjs

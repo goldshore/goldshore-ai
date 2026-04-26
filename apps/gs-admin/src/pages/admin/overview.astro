@@ -7,8 +7,6 @@ import InboxDashboard from '../../components/InboxDashboard.astro';
 // Initial UI state
 const initialStatus = { health: 'Unknown', status: 'Unknown', version: 'Unknown', lastSync: 'N/A' };
 const { summary, generatedAt, alerts } = scanResults;
-const apiHealthUrl = import.meta.env.PUBLIC_API ? `${import.meta.env.PUBLIC_API}/health` : '';
-const gatewayHealthUrl = import.meta.env.PUBLIC_GATEWAY ? `${import.meta.env.PUBLIC_GATEWAY}/health` : '';
 const formattedScanDate = new Date(generatedAt).toLocaleString('en-US', {
   dateStyle: 'medium',
   timeStyle: 'short'
@@ -20,25 +18,12 @@ const formattedScanDate = new Date(generatedAt).toLocaleString('en-US', {
         <p class="text-lg gs-text-subtle">Protected access to monitor Workers, Data, and System Health.</p>
 
         <!-- Status & Bindings -->
-        <div class="grid md:grid-cols-2 xl:grid-cols-5 gap-6">
+        <div class="grid md:grid-cols-4 gap-6">
             <div class="gs-card space-y-3">
-                <h2 class="text-xl font-semibold">API Health</h2>
+                <h2 class="text-xl font-semibold">gs-api Health</h2>
                 <p id="api-health" class="text-2xl font-bold gs-text-info">{initialStatus.health}</p>
-                <p class="text-sm gs-text-subtle">HTTP: <span id="api-health-http">—</span></p>
-                <p class="text-sm gs-text-subtle">Response time: <span id="api-health-response-time">—</span></p>
                 <p class="text-sm gs-text-subtle">Last checked: <span id="api-health-sync">{initialStatus.lastSync}</span></p>
-                <p id="api-health-error" class="text-sm gs-text-danger"></p>
-                <GSButton variant="secondary" id="check-api-health">Check API Health</GSButton>
-            </div>
-
-            <div class="gs-card space-y-3">
-                <h2 class="text-xl font-semibold">Gateway Health</h2>
-                <p id="gateway-health" class="text-2xl font-bold gs-text-info">{initialStatus.health}</p>
-                <p class="text-sm gs-text-subtle">HTTP: <span id="gateway-health-http">—</span></p>
-                <p class="text-sm gs-text-subtle">Response time: <span id="gateway-health-response-time">—</span></p>
-                <p class="text-sm gs-text-subtle">Last checked: <span id="gateway-health-sync">{initialStatus.lastSync}</span></p>
-                <p id="gateway-health-error" class="text-sm gs-text-danger"></p>
-                <GSButton variant="secondary" id="check-gateway-health">Check Gateway Health</GSButton>
+                <GSButton variant="secondary" id="check-api-health">Check Health</GSButton>
             </div>
 
             <div class="gs-card space-y-3">
@@ -129,7 +114,7 @@ const formattedScanDate = new Date(generatedAt).toLocaleString('en-US', {
         </div>
     </div>
 
-    <script is:inline define:vars={{ apiHealthUrl, gatewayHealthUrl }}>
+    <script is:inline>
         document.addEventListener('DOMContentLoaded', () => {
             const toneClasses = ['gs-text-success', 'gs-text-warning', 'gs-text-danger', 'gs-text-info'];
             const setTone = (el, tone) => {
@@ -141,15 +126,7 @@ const formattedScanDate = new Date(generatedAt).toLocaleString('en-US', {
             };
 
             const apiHealthEl = document.getElementById('api-health');
-            const apiHealthHttpEl = document.getElementById('api-health-http');
-            const apiHealthResponseTimeEl = document.getElementById('api-health-response-time');
             const apiHealthSyncEl = document.getElementById('api-health-sync');
-            const apiHealthErrorEl = document.getElementById('api-health-error');
-            const gatewayHealthEl = document.getElementById('gateway-health');
-            const gatewayHealthHttpEl = document.getElementById('gateway-health-http');
-            const gatewayHealthResponseTimeEl = document.getElementById('gateway-health-response-time');
-            const gatewayHealthSyncEl = document.getElementById('gateway-health-sync');
-            const gatewayHealthErrorEl = document.getElementById('gateway-health-error');
             const apiStatusEl = document.getElementById('api-status');
             const apiStatusSyncEl = document.getElementById('api-status-sync');
             const apiStatusUptimeEl = document.getElementById('api-uptime');
@@ -191,96 +168,28 @@ const formattedScanDate = new Date(generatedAt).toLocaleString('en-US', {
                 return `Request failed (${response.status}).`;
             };
 
-            const checkHealth = async ({ url, statusEl, httpEl, responseTimeEl, syncEl, errorEl }) => {
-                if (!url) {
-                    if (statusEl) {
-                        statusEl.textContent = 'Not configured';
-                        setTone(statusEl, 'gs-text-warning');
+            const checkApiHealth = async () => {
+                if (apiHealthEl) {
+                    apiHealthEl.textContent = 'Checking...';
+                    setTone(apiHealthEl, 'gs-text-info');
+                }
+
+                const { response, data } = await fetchJson('/api/gs-api/health');
+                if (!response?.ok) {
+                    if (apiHealthEl) {
+                        apiHealthEl.textContent = 'Unavailable';
+                        setTone(apiHealthEl, 'gs-text-danger');
                     }
-                    if (httpEl) httpEl.textContent = '—';
-                    if (responseTimeEl) responseTimeEl.textContent = '—';
-                    if (errorEl) errorEl.textContent = 'Missing PUBLIC_API or PUBLIC_GATEWAY env value.';
-                    setTimestamp(syncEl);
+                    setTimestamp(apiHealthSyncEl);
                     return;
                 }
 
-                if (statusEl) {
-                    statusEl.textContent = 'Checking...';
-                    setTone(statusEl, 'gs-text-info');
+                const status = data?.status === 'ok' ? 'HEALTHY' : String(data?.status || 'UNKNOWN').toUpperCase();
+                if (apiHealthEl) {
+                    apiHealthEl.textContent = status;
+                    setTone(apiHealthEl, status === 'HEALTHY' ? 'gs-text-success' : 'gs-text-warning');
                 }
-                if (httpEl) httpEl.textContent = '—';
-                if (responseTimeEl) responseTimeEl.textContent = '—';
-                if (errorEl) errorEl.textContent = '';
-
-                const startedAt = performance.now();
-
-                try {
-                    const { response, data } = await fetchJson(url);
-                    const elapsedMs = Math.round(performance.now() - startedAt);
-
-                    if (httpEl) {
-                        httpEl.textContent = response ? `${response.status} ${response.statusText}` : 'No response';
-                    }
-                    if (responseTimeEl) {
-                        responseTimeEl.textContent = `${elapsedMs}ms`;
-                    }
-
-                    if (!response?.ok) {
-                        if (statusEl) {
-                            statusEl.textContent = 'Unavailable';
-                            setTone(statusEl, 'gs-text-danger');
-                        }
-                        if (errorEl) {
-                            const errorMessage = data?.error || data?.message || 'Health check request failed.';
-                            errorEl.textContent = String(errorMessage);
-                        }
-                        setTimestamp(syncEl);
-                        return;
-                    }
-
-                    const isHealthy = data?.status === 'ok' || data?.healthy === true;
-                    const status = isHealthy ? 'HEALTHY' : String(data?.status || 'UNKNOWN').toUpperCase();
-                    if (statusEl) {
-                        statusEl.textContent = status;
-                        setTone(statusEl, isHealthy ? 'gs-text-success' : 'gs-text-warning');
-                    }
-                    setTimestamp(syncEl);
-                } catch (error) {
-                    if (statusEl) {
-                        statusEl.textContent = 'Error';
-                        setTone(statusEl, 'gs-text-danger');
-                    }
-                    if (httpEl) httpEl.textContent = 'Network error';
-                    if (responseTimeEl) {
-                        responseTimeEl.textContent = `${Math.round(performance.now() - startedAt)}ms`;
-                    }
-                    if (errorEl) {
-                        errorEl.textContent = error instanceof Error ? error.message : 'Unexpected error.';
-                    }
-                    setTimestamp(syncEl);
-                }
-            };
-
-            const checkApiHealth = async () => {
-                await checkHealth({
-                    url: apiHealthUrl,
-                    statusEl: apiHealthEl,
-                    httpEl: apiHealthHttpEl,
-                    responseTimeEl: apiHealthResponseTimeEl,
-                    syncEl: apiHealthSyncEl,
-                    errorEl: apiHealthErrorEl
-                });
-            };
-
-            const checkGatewayHealth = async () => {
-                await checkHealth({
-                    url: gatewayHealthUrl,
-                    statusEl: gatewayHealthEl,
-                    httpEl: gatewayHealthHttpEl,
-                    responseTimeEl: gatewayHealthResponseTimeEl,
-                    syncEl: gatewayHealthSyncEl,
-                    errorEl: gatewayHealthErrorEl
-                });
+                setTimestamp(apiHealthSyncEl);
             };
 
             const checkApiStatus = async () => {
@@ -410,11 +319,6 @@ const formattedScanDate = new Date(generatedAt).toLocaleString('en-US', {
                 checkApiHealth();
             });
 
-            document.getElementById('check-gateway-health')?.addEventListener('click', (e) => {
-                e.preventDefault();
-                checkGatewayHealth();
-            });
-
             document.getElementById('check-api-status')?.addEventListener('click', (e) => {
                 e.preventDefault();
                 checkApiStatus();
@@ -459,7 +363,6 @@ const formattedScanDate = new Date(generatedAt).toLocaleString('en-US', {
 
             // Initial check on load
             checkApiHealth();
-            checkGatewayHealth();
             checkApiStatus();
             checkApiVersion();
             refreshConfig();

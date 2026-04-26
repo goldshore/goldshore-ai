@@ -1,48 +1,10 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
-import { Card, Table } from '@goldshore/ui';
-
-const mediaAssets = [
-  { id: 'asset-410', name: 'Brand hero video', type: 'video/mp4', status: 'approved' },
-  { id: 'asset-411', name: 'Partner logo pack', type: 'image/svg+xml', status: 'review' },
-  { id: 'asset-412', name: 'Platform screenshots', type: 'image/png', status: 'approved' }
-];
----
-<AdminLayout title="Media | GoldShore Admin" requiredPermission="media:read">
-  <section class="max-w-6xl mx-auto py-16 px-6">
-    <h1 class="text-3xl gs-heading mb-4">Media</h1>
-    <p class="text-[var(--gs-text-secondary)] mb-8">
-      Curate approved media assets with structured access controls for editors and viewers.
-    </p>
-
-    <Card class="gs-table-card">
-      <Table>
-        <thead>
-          <tr>
-            <th>Asset ID</th>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {mediaAssets.map((asset) => (
-            <tr>
-              <td>{asset.id}</td>
-              <td>{asset.name}</td>
-              <td>{asset.type}</td>
-              <td class="capitalize">{asset.status}</td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
-    </Card>
-  </section>
 import { GSButton } from '@goldshore/ui';
 
 const API_BASE = import.meta.env.PUBLIC_API;
 ---
-<AdminLayout title="Media Library | GoldShore Admin">
+<AdminLayout title="Media Library | GoldShore Admin" requiredPermission="media:read">
   <section class="max-w-6xl mx-auto py-16 px-6 space-y-10">
     <header class="space-y-3">
       <h1 class="text-3xl gs-heading">Media Library</h1>
@@ -140,8 +102,8 @@ const API_BASE = import.meta.env.PUBLIC_API;
     }
   </style>
 
-  <script>
-    const apiBase = `${API_BASE}`.replace(/\/$/, '');
+  <script define:vars={{ API_BASE }}>
+    const apiBase = `${API_BASE ?? ''}`.replace(/\/$/, '');
     const mediaGrid = document.getElementById('media-grid');
     const mediaCount = document.getElementById('media-count');
     const mediaStatus = document.getElementById('media-upload-status');
@@ -209,6 +171,10 @@ const API_BASE = import.meta.env.PUBLIC_API;
     };
 
     const loadMedia = async () => {
+      if (!apiBase) {
+        renderMedia([]);
+        return;
+      }
       try {
         const response = await fetch(`${apiBase}/media`);
         const data = await response.json();

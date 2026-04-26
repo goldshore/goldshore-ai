@@ -1,0 +1,30 @@
+{
+  "name": "@goldshore/broker-adapters",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "scripts": {
+    "test": "node --experimental-strip-types --test src/**/*.test.ts"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./tos": "./src/tos/index.js",
+    "./fidelity": "./src/fidelity/index.js",
+    "./robinhood": "./src/robinhood/index.js"
+  },
+  "scripts": {
+    "test": "tsx --test src/**/*.test.ts"
+  },
+  "dependencies": {
+    "@goldshore/core-schema": "workspace:*",
+    "@goldshore/integrations": "workspace:*"
+  },
+  "scripts": {
+    "test": "tsx --test src/*.test.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0",
+    "typescript": "^5.4.2"
+  }
+}

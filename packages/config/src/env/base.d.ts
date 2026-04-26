@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/triple-slash-reference */
-/// <reference path="../.astro/types.d.ts" />
 /// <reference types="astro/client" />
 
 // Type definitions for environment variables
@@ -17,13 +15,13 @@ interface ImportMeta {
 
 // Global Cloudflare Env types
 interface KVNamespace {
-    put(key: string, value: string | ReadableStream | ArrayBuffer, options?: any): Promise<void>;
-    get(key: string, options?: any): Promise<string | null>;
+    put(key: string, value: string | ReadableStream | ArrayBuffer, options?: unknown): Promise<void>;
+    get(key: string, options?: unknown): Promise<string | null>;
     // Add other methods as needed
 }
 
 interface D1Database {
-    prepare(query: string): any;
+    prepare(query: string): unknown;
     // Add other methods as needed
 }
 

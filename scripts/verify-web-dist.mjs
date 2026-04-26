@@ -2,7 +2,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 
-const distDir = path.resolve('apps/gs-web/dist');
+const distDir = path.resolve('dist');
 const astroDir = path.join(distDir, '_astro');
 const indexPath = path.join(distDir, 'index.html');
 
@@ -21,11 +21,11 @@ const cssFiles = astroFiles.filter((file) => file.endsWith('.css'));
 const jsFiles = astroFiles.filter((file) => file.endsWith('.js'));
 
 if (cssFiles.length === 0) {
-  errors.push('No CSS bundles found at apps/gs-web/dist/_astro/*.css');
+  errors.push('No CSS bundles found at dist/_astro/*.css');
 }
 
 if (jsFiles.length === 0) {
-  errors.push('No JS bundles found at apps/gs-web/dist/_astro/*.js');
+  errors.push('No JS bundles found at dist/_astro/*.js');
 }
 
 if (existsSync(indexPath)) {

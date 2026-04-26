@@ -1,7 +1,7 @@
 ---
 import AdminLayout from '../../../layouts/AdminLayout.astro';
 
-const API_BASE = import.meta.env.PUBLIC_API || '';
+const API_BASE = import.meta.env.PUBLIC_API || 'https://api.goldshore.dev';
 ---
 <AdminLayout title="Create Page | GoldShore Admin">
   <section class="max-w-4xl mx-auto py-12 px-6 space-y-6">
@@ -60,7 +60,7 @@ const API_BASE = import.meta.env.PUBLIC_API || '';
         }
         const payload = await response.json();
         window.location.href = `/admin/pages/${payload.id}`;
-      } catch (error) {
+      } catch {
         message.textContent = 'Failed to create page.';
       }
     });

@@ -20,6 +20,12 @@ cloudflare:
         content: "gs-admin.pages.dev"
         proxied: true
 
+      # C. Preview (gs-web preview builds)
+      - name: "preview"
+        type: CNAME
+        content: "preview-web.pages.dev"
+        proxied: true
+
       # C. API Gateway Worker
       - name: "gw"
         type: CNAME
@@ -32,55 +38,23 @@ cloudflare:
         content: "gs-api.goldshore-account.workers.dev"
         proxied: true
 
-      # E. Control Worker
-      - name: "control"
+      # E. Mail Worker
+      - name: "mail"
         type: CNAME
-        content: "gs-control.goldshore-account.workers.dev"
-        proxied: true
-      - name: "ops"
-        type: CNAME
-        content: "gs-control.goldshore-account.workers.dev"
+        content: "gs-mail.goldshore-account.workers.dev"
         proxied: true
 
-      # Gateway Preview
-      - name: "gateway-preview"
-        type: CNAME
-        content: "gs-gateway.goldshore-account.workers.dev"
-        proxied: true
-
-      # R2 Assets
-      - name: "assets"
-        type: CNAME
-        content: "public.goldshore.ai"
-        proxied: true
+      # F. Control Worker (Internal only - no public DNS)
 
   access:
     policies:
-      - name: "GoldShore-Control-ZT"
-        domain: "control.goldshore.ai"
-        action: "allow"
-        rules:
-          include:
-            - email_domain: "goldshore.ai"
-          require:
-            - identity_provider: "github"
-
-      - name: "GoldShore-Ops-ZT"
-        domain: "ops.goldshore.ai"
-        action: "allow"
-        rules:
-          include:
-            - email_domain: "goldshore.ai"
-          require:
-            - identity_provider: "github"
-
       - name: "GoldShore-Admin-ZT"
         domain: "admin.goldshore.ai"
         action: "allow"
         rules:
           include:
             - email_domain: "goldshore.ai"
-            - email: "your.personal@email.com" # Placeholder
+            - email: "your.personal@email.com" # TODO: replace with owner email address
           require:
             - identity_provider: "github"
 
@@ -97,17 +71,26 @@ cloudflare:
         repo: "astro-goldshore"
         root_dir: "/" # Run from repo root for monorepo support
         production_branch: "main"
-        build_command: "pnpm --filter @goldshore/web build"
+        build_command: "pnpm --filter @goldshore/gs-web build"
         output_dir: "apps/gs-web/dist"
         custom_domains:
           - "goldshore.ai"
           - "www.goldshore.ai"
 
+      - name: "preview-web"
+        repo: "astro-goldshore"
+        root_dir: "/"
+        production_branch: "main"
+        build_command: "pnpm --filter @goldshore/gs-web build"
+        output_dir: "apps/gs-web/dist"
+        custom_domains:
+          - "preview.goldshore.ai"
+
       - name: "gs-admin"
         repo: "astro-goldshore"
         root_dir: "/" # Run from repo root for monorepo support
         production_branch: "main"
-        build_command: "pnpm --filter @goldshore/admin build"
+        build_command: "pnpm --filter @goldshore/gs-admin build"
         output_dir: "apps/gs-admin/dist"
         custom_domains:
           - "admin.goldshore.ai"
@@ -121,13 +104,13 @@ cloudflare:
         bindings:
           kv:
             - name: "KV"
-              namespace: "goldshore-api-kv"
+              namespace: "goldshore-api-kv" # Historical resource name; gs-api canonical service prefix
           d1:
             - name: "DB"
-              database_name: "goldshore-api-db"
+              database_name: "goldshore-api-db" # Historical resource name; gs-api canonical service prefix
           r2:
             - name: "ASSETS"
-              bucket_name: "goldshore-api-assets"
+              bucket_name: "goldshore-api-assets" # Historical resource name; gs-api canonical service prefix
           ai:
             - name: "AI"
               gateway: "goldshore-ai-gateway"
@@ -147,7 +130,8 @@ cloudflare:
 
       - name: "gs-control"
         script_path: "apps/gs-control/dist/index.js"
-        # No public routes
+        routes:
+          - pattern: "ops.goldshore.ai/*"
         bindings:
           services:
             - binding: "API"
@@ -156,6 +140,27 @@ cloudflare:
           env_vars:
             CONTROL_SERVICE: "true"
 
+      - name: "gs-agent"
+        script_path: "apps/gs-agent/dist/index.js"
+        # No public route — queue-driven, internal only
+        bindings:
+          queues:
+            - name: "goldshore-jobs"
+              binding: "JOBS"
+          services:
+            - binding: "API"
+              service: "gs-api"
+              environment: "production"
+
+      - name: "gs-mail"
+        script_path: "apps/gs-mail/dist/index.js"
+        routes:
+          - pattern: "mail.goldshore.ai/*"
+        bindings:
+          env_vars:
+            MAIL_SERVICE: "true"
+            MAIL_ALLOWED_RECIPIENTS: "ops@goldshore.ai,inbox@goldshore.ai"
+
   email:
     routing:
       catch_all:
@@ -163,6 +168,6 @@ cloudflare:
         destination: "inbox@goldshore.ai"
       addresses:
         - address: "ops@goldshore.ai"
-          destination: "your.personal.email@goldshore.ai"
+          destination: "your.personal.email@goldshore.ai" # TODO: replace with real forwarding address
         - address: "support@goldshore.ai"
-          destination: "your.personal.email@goldshore.ai"
+          destination: "your.personal.email@goldshore.ai" # TODO: replace with real forwarding address

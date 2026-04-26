@@ -2,11 +2,28 @@ import assert from 'node:assert';
 import { describe, it } from 'node:test';
 import { Hono } from 'hono';
 import internal from './internal.ts';
+import { type AccessTokenPayload } from '@goldshore/auth';
+import { type Env, type Variables } from '../types.ts';
+
+const createApp = (claims: AccessTokenPayload | null) => {
+  const app = new Hono<{ Bindings: Env; Variables: Variables }>();
+  app.use('*', async (c, next) => {
+    c.set('accessClaims', claims);
+    await next();
+  });
+  app.route('/internal', internal);
+  return app;
+};
 
 describe('internal inbox status', () => {
+  it('requires system:read permission', async () => {
+    const app = createApp({ roles: ['viewer'] } as AccessTokenPayload);
+    const res = await app.request('/internal/inbox-status', {}, { KV: { get: async () => null } } as any);
+    assert.strictEqual(res.status, 403);
+  });
+
   it('returns inbox summary and service status', async () => {
-    const app = new Hono();
-    app.route('/internal', internal);
+    const app = createApp({ roles: ['admin'] } as AccessTokenPayload);
 
     const kv = {
       get: async (key: string) => {
@@ -54,8 +71,7 @@ describe('internal inbox status', () => {
   });
 
   it('returns dns sync telemetry and MASTER_CONFIG report fields', async () => {
-    const app = new Hono();
-    app.route('/internal', internal);
+    const app = createApp({ roles: ['admin'] } as AccessTokenPayload);
 
     const run = {
       runId: 'run-1',

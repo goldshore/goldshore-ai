@@ -117,7 +117,9 @@ const apiBase = import.meta.env.PUBLIC_API ?? '';
   </section>
 </AdminLayout>
 
-<script type="module">
+<script>
+  import { parseJson } from '@goldshore/utils';
+
   const apiStatus = document.getElementById('api-status');
   const apiBase = apiStatus?.dataset.apiBase ?? '';
 
@@ -126,15 +128,6 @@ const apiBase = import.meta.env.PUBLIC_API ?? '';
     if (!target) return;
     target.textContent = message;
     target.dataset.tone = tone;
-  };
-
-  const parseJson = (value) => {
-    if (!value) return null;
-    try {
-      return JSON.parse(value);
-    } catch (error) {
-      return null;
-    }
   };
 
   const request = async (path, options = {}) => {
@@ -181,7 +174,7 @@ const apiBase = import.meta.env.PUBLIC_API ?? '';
         <span>${item.slug ?? ''}</span>
         <em>${item.status ?? 'draft'}</em>
       `);
-    } catch (error) {
+    } catch {
       setStatus('content-status', 'Unable to load pages', 'error');
     }
   };
@@ -194,7 +187,7 @@ const apiBase = import.meta.env.PUBLIC_API ?? '';
         <span>${item.content_type ?? 'unknown type'}</span>
         <em>${item.r2_key ?? 'metadata only'}</em>
       `);
-    } catch (error) {
+    } catch {
       setStatus('media-status', 'Unable to load assets', 'error');
     }
   };
@@ -207,7 +200,7 @@ const apiBase = import.meta.env.PUBLIC_API ?? '';
         <span>${item.slug ?? ''}</span>
         <em>${item.status ?? 'draft'}</em>
       `);
-    } catch (error) {
+    } catch {
       setStatus('form-status', 'Unable to load forms', 'error');
     }
   };
@@ -227,7 +220,7 @@ const apiBase = import.meta.env.PUBLIC_API ?? '';
   document.getElementById('content-form')?.addEventListener('submit', async (event) => {
     event.preventDefault();
     const form = event.target;
-    const metadata = parseJson(form.metadata.value);
+    const metadata = parseJson(form.metadata.value, null);
     if (form.metadata.value && !metadata) {
       setStatus('content-status', 'Metadata JSON is invalid', 'error');
       return;
@@ -249,7 +242,7 @@ const apiBase = import.meta.env.PUBLIC_API ?? '';
       setStatus('content-status', 'Page saved', 'success');
       form.reset();
       await refreshContent();
-    } catch (error) {
+    } catch {
       setStatus('content-status', 'Save failed', 'error');
     }
   });
@@ -267,7 +260,7 @@ const apiBase = import.meta.env.PUBLIC_API ?? '';
       setStatus('media-status', 'Upload complete', 'success');
       form.reset();
       await refreshMedia();
-    } catch (error) {
+    } catch {
       setStatus('media-status', 'Upload failed', 'error');
     }
   });
@@ -275,8 +268,8 @@ const apiBase = import.meta.env.PUBLIC_API ?? '';
   document.getElementById('form-config')?.addEventListener('submit', async (event) => {
     event.preventDefault();
     const form = event.target;
-    const fields = parseJson(form.fields.value);
-    const settings = parseJson(form.settings.value);
+    const fields = parseJson(form.fields.value, null);
+    const settings = parseJson(form.settings.value, null);
     if (form.fields.value && !fields) {
       setStatus('form-status', 'Fields JSON is invalid', 'error');
       return;
@@ -303,7 +296,7 @@ const apiBase = import.meta.env.PUBLIC_API ?? '';
       setStatus('form-status', 'Form saved', 'success');
       form.reset();
       await refreshForms();
-    } catch (error) {
+    } catch {
       setStatus('form-status', 'Save failed', 'error');
     }
   });

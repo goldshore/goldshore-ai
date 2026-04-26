@@ -1,5 +1,6 @@
 // infra/cf/deploy.ts
 import fs from "node:fs";
+import path from "node:path";
 import YAML from "yaml";
 import FormData from "form-data";
 import { cf } from "./client";
@@ -78,8 +79,20 @@ async function deployWorker(w: any) {
     throw new Error(`[worker:${w.script}] No bindings found; aborting deploy`);
   }
 
+  if (!w.entry) {
+    throw new Error(`[worker:${w.script}] Missing worker entry in infra/cf/config.yaml`);
+  }
+
+  const entryPath = path.resolve(process.cwd(), w.entry);
+  if (!fs.existsSync(entryPath)) {
+    throw new Error(
+      `[worker:${w.script}] Worker entry not found: ${w.entry} (resolved: ${entryPath}). ` +
+      "Check infra/cf/config.yaml for stale worker paths.",
+    );
+  }
+
   const fd = new FormData();
-  fd.append("main", fs.createReadStream(w.entry), { filename: "index.js", contentType: "application/javascript" });
+  fd.append("main", fs.createReadStream(entryPath), { filename: "index.js", contentType: "application/javascript" });
 
   console.log(`[worker:${w.script}] Deploying…`);
   await cf.workers.deploy(w.script, fd);

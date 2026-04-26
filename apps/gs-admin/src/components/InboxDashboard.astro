@@ -35,29 +35,37 @@
   const tbody = document.getElementById('inbox-tbody');
   const countBadge = document.getElementById('inbox-count');
 
-  const escapeHtml = (value = '') =>
-    String(value)
-      .replaceAll('&', '&amp;')
-      .replaceAll('<', '&lt;')
-      .replaceAll('>', '&gt;')
-      .replaceAll('"', '&quot;')
-      .replaceAll("'", '&#39;');
-
   const renderMessage = (message) => {
-    const sentAt = message?.timestamp ? new Date(message.timestamp).toLocaleTimeString() : 'Unknown';
-    const from = escapeHtml(message?.from ?? 'Unknown sender');
-    const subject = escapeHtml(message?.subject ?? 'No subject');
+    const tr = document.createElement('tr');
 
-    return `<tr>
-      <td class="px-4 py-3 gs-text-subtle">${sentAt}</td>
-      <td class="px-4 py-3">${from}</td>
-      <td class="px-4 py-3">${subject}</td>
-    </tr>`;
+    const tdTime = document.createElement('td');
+    tdTime.className = 'px-4 py-3 gs-text-subtle';
+    tdTime.textContent = message?.timestamp ? new Date(message.timestamp).toLocaleTimeString() : 'Unknown';
+
+    const tdFrom = document.createElement('td');
+    tdFrom.className = 'px-4 py-3';
+    tdFrom.textContent = message?.from ?? 'Unknown sender';
+
+    const tdSubject = document.createElement('td');
+    tdSubject.className = 'px-4 py-3';
+    tdSubject.textContent = message?.subject ?? 'No subject';
+
+    tr.appendChild(tdTime);
+    tr.appendChild(tdFrom);
+    tr.appendChild(tdSubject);
+    return tr;
   };
 
   const setStatusRow = (message, toneClass = 'gs-text-subtle') => {
     if (!tbody) return;
-    tbody.innerHTML = `<tr><td colspan="3" class="px-4 py-6 text-center ${toneClass}">${message}</td></tr>`;
+    tbody.innerHTML = '';
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = 3;
+    td.className = `px-4 py-6 text-center ${toneClass}`;
+    td.textContent = message;
+    tr.appendChild(td);
+    tbody.appendChild(tr);
   };
 
   async function updateInbox() {
@@ -85,7 +93,10 @@
         return;
       }
 
-      tbody.innerHTML = recent.map(renderMessage).join('');
+      tbody.innerHTML = '';
+      recent.forEach((message) => {
+        tbody.appendChild(renderMessage(message));
+      });
     } catch {
       countBadge.textContent = 'Messages: --';
       setStatusRow('Unable to fetch inbox activity right now.', 'gs-text-danger');

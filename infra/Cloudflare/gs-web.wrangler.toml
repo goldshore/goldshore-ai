@@ -1,4 +1,5 @@
-# wrangler.toml for the goldshore-web Astro Pages app (for Pages Functions)
+# Worker Builds token for this service must be the gs-control build token.
+# wrangler.toml for the gs-web Astro Pages app (for Pages Functions; formerly goldshore-web)
 
 name = "gs-web" # Base name for Pages project
 
@@ -7,6 +8,14 @@ name = "gs-web" # Base name for Pages project
 
 [vars]
 # Shared environment variables can go here.
+# Runtime configuration note:
+# - `GS_CONFIG` is intentionally *not* bound to gs-web today.
+# - Current gs-web runtime consumers read mutable config indirectly via
+#   `PUBLIC_API`/content fetches or admin-generated content, not from the
+#   shared gs-control/gs-admin KV namespace.
+# - If a future Pages Function needs live runtime config, add a concrete
+#   read-only consumer in `apps/gs-web` first, then declare a `GS_CONFIG`
+#   binding in the target environment blocks below.
 
 [env.dev]
 # Dev bindings for Pages Functions

@@ -15,18 +15,18 @@ export const GET: APIRoute = async ({ request, locals }) => {
   const access = await requireAdminAccess(request, env);
 
   if (!access.ok) {
-    return buildErrorResponse(access.status, access.error);
+    return buildErrorResponse(access.status, access.error ?? 'Unknown error');
   }
 
-  const response = await fetch(`${getGsApiBaseUrl(env)}/system/config`, {
+  const response = await fetch(`${getGsApiBaseUrl(env as any)}/system/config`, {
     headers: buildGsApiHeaders(request)
   });
 
   const payload = await response.json().catch(() => null);
 
   return new Response(JSON.stringify({
-    config: normalizeApiRuntimeConfig(payload?.config),
-    source: payload?.source ?? { key: 'SERVICE_STATUS.api_config' }
+    config: normalizeApiRuntimeConfig(payload && typeof payload === 'object' && 'config' in payload ? payload.config : null),
+    source: (payload && typeof payload === 'object' && 'source' in payload ? payload.source : null) ?? { key: 'SERVICE_STATUS.api_config' }
   }), {
     status: response.status,
     headers: { 'Content-Type': 'application/json' }
@@ -38,7 +38,7 @@ export const PUT: APIRoute = async ({ request, locals }) => {
   const access = await requireAdminAccess(request, env);
 
   if (!access.ok) {
-    return buildErrorResponse(access.status, access.error);
+    return buildErrorResponse(access.status, access.error ?? 'Unknown error');
   }
 
   const body = await request.json().catch(() => null);
@@ -46,7 +46,7 @@ export const PUT: APIRoute = async ({ request, locals }) => {
     return buildErrorResponse(400, 'Invalid configuration payload.');
   }
 
-  const response = await fetch(`${getGsApiBaseUrl(env)}/system/config`, {
+  const response = await fetch(`${getGsApiBaseUrl(env as any)}/system/config`, {
     method: 'PUT',
     headers: buildGsApiHeaders(request),
     body: JSON.stringify(body)
@@ -55,8 +55,8 @@ export const PUT: APIRoute = async ({ request, locals }) => {
   const payload = await response.json().catch(() => null);
 
   return new Response(JSON.stringify({
-    config: normalizeApiRuntimeConfig(payload?.config),
-    source: payload?.source ?? { key: 'SERVICE_STATUS.api_config' }
+    config: normalizeApiRuntimeConfig(payload && typeof payload === 'object' && 'config' in payload ? payload.config : null),
+    source: (payload && typeof payload === 'object' && 'source' in payload ? payload.source : null) ?? { key: 'SERVICE_STATUS.api_config' }
   }), {
     status: response.status,
     headers: { 'Content-Type': 'application/json' }

@@ -1,43 +1,80 @@
 import { test } from 'node:test';
-import assert from 'node:assert';
+import * as assert from 'node:assert/strict';
+
 import { escapeHtml, isValidEmail, sanitizeInput } from '../../src/utils/security.ts';
 
-test('escapeHtml should escape special characters', () => {
-  assert.strictEqual(escapeHtml('<script>alert("xss")</script>'), '&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;');
-  assert.strictEqual(escapeHtml('&'), '&amp;');
-  assert.strictEqual(escapeHtml('foo & bar'), 'foo &amp; bar');
-  assert.strictEqual(escapeHtml("'"), '&#039;');
+// escapeHtml
+
+test('escapeHtml escapes ampersands', () => {
+  assert.equal(escapeHtml('a & b'), 'a &amp; b');
 });
 
-test('escapeHtml should handle empty string', () => {
-  assert.strictEqual(escapeHtml(''), '');
+test('escapeHtml escapes less-than and greater-than characters', () => {
+  assert.equal(escapeHtml('<script>'), '&lt;script&gt;');
 });
 
-test('escapeHtml should handle string with no special characters', () => {
-  assert.strictEqual(escapeHtml('hello world'), 'hello world');
+test('escapeHtml escapes double quotes', () => {
+  assert.equal(escapeHtml('"hello"'), '&quot;hello&quot;');
 });
 
-test('isValidEmail should validate correct emails', () => {
-  assert.strictEqual(isValidEmail('test@example.com'), true);
-  assert.strictEqual(isValidEmail('user.name+tag@example.co.uk'), true);
+test('escapeHtml escapes single quotes', () => {
+  assert.equal(escapeHtml("it's"), 'it&#039;s');
 });
 
-test('isValidEmail should invalidate incorrect emails', () => {
-  assert.strictEqual(isValidEmail('plainaddress'), false);
-  assert.strictEqual(isValidEmail('@missingusername.com'), false);
-  assert.strictEqual(isValidEmail('username@.com'), false);
-  assert.strictEqual(isValidEmail('username@com'), false); // Assuming domain must have a dot
-  assert.strictEqual(isValidEmail(''), false);
+test('escapeHtml returns empty string for empty input', () => {
+  assert.equal(escapeHtml(''), '');
 });
 
-test('sanitizeInput should trim and escape', () => {
-  assert.strictEqual(sanitizeInput('  <script>  '), '&lt;script&gt;');
-  assert.strictEqual(sanitizeInput(' hello '), 'hello');
+test('escapeHtml does not alter plain text with no special characters', () => {
+  assert.equal(escapeHtml('hello world'), 'hello world');
 });
 
-test('sanitizeInput should handle non-string input gracefully', () => {
-  // TypeScript might prevent this, but runtime check handles it
-  assert.strictEqual(sanitizeInput(null as any), '');
-  assert.strictEqual(sanitizeInput(undefined as any), '');
-  assert.strictEqual(sanitizeInput(123 as any), '');
+// isValidEmail
+
+test('isValidEmail returns true for a standard valid email', () => {
+  assert.equal(isValidEmail('user@example.com'), true);
+});
+
+test('isValidEmail returns true for an email with a subdomain', () => {
+  assert.equal(isValidEmail('user@mail.example.com'), true);
+});
+
+test('isValidEmail returns false for an address missing the @ symbol', () => {
+  assert.equal(isValidEmail('userexample.com'), false);
+});
+
+test('isValidEmail returns false for an address missing the domain', () => {
+  assert.equal(isValidEmail('user@'), false);
+});
+
+test('isValidEmail returns false for an address with spaces', () => {
+  assert.equal(isValidEmail('user @example.com'), false);
+});
+
+test('isValidEmail returns false for an empty string', () => {
+  assert.equal(isValidEmail(''), false);
+});
+
+// sanitizeInput
+
+test('sanitizeInput trims leading and trailing whitespace', () => {
+  assert.equal(sanitizeInput('  hello  '), 'hello');
+});
+
+test('sanitizeInput escapes HTML in the trimmed string', () => {
+  assert.equal(sanitizeInput('  <b>hi</b>  '), '&lt;b&gt;hi&lt;/b&gt;');
+});
+
+test('sanitizeInput returns empty string for non-string input', () => {
+  // @ts-expect-error testing runtime behaviour with wrong type
+  assert.equal(sanitizeInput(42), '');
+});
+
+test('sanitizeInput returns empty string for null input', () => {
+  // @ts-expect-error testing runtime behaviour with wrong type
+  assert.equal(sanitizeInput(null), '');
+});
+
+test('sanitizeInput handles an already-clean string with no changes', () => {
+  assert.equal(sanitizeInput('hello'), 'hello');
 });

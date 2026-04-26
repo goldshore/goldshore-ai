@@ -1,3 +1,6 @@
+## 2025-03-09 - Code Snippet Copy Accessibility
+**Learning:** The simple `<button onclick="...">Copy</button>` pattern used for code blocks provides no state feedback and leaves screen reader users blind to success/failure. Using event delegation combined with dynamic `aria-label` swaps (e.g., from "Copy code to clipboard" to "Copied to clipboard") and managing `setTimeout` to revert state correctly ensures accessible micro-interactions.
+**Action:** When adding copy mechanisms, always implement a visual and aria-label state change that reverts back using a managed timeout identifier. Ensure buttons have base type="button" and robust DOM selection techniques instead of fragile sibling references.
 # Palette's Journal
 
 ## 2025-12-14 - Polymorphic Button Accessibility

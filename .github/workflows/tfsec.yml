@@ -24,7 +24,7 @@ jobs:
 
     steps:
       - name: Clone repo
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        uses: actions/checkout@v6
 
       - name: Run tfsec
         uses: aquasecurity/tfsec-sarif-action@21ded20e8ca120cd9d3d6ab04ef746477542a608

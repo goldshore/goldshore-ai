@@ -1,35 +1,90 @@
 ---
-import WebLayout from '../layouts/WebLayout.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
 
 export const prerender = true;
+
+const sections = [
+  {
+    title: 'What we do',
+    body: 'We design high-trust systems across decision support, workflow orchestration, and applied AI.',
+  },
+  {
+    title: 'How we work',
+    body: 'Signal over spectacle. Systems that explain themselves.',
+  },
+  {
+    title: 'Why GoldShore',
+    body: 'Most software is optimized for demos. GoldShore is optimized for use.',
+  },
+];
 ---
 
-<WebLayout title="About | Gold Shore" description="Gold Shore builds operator-grade infrastructure for resilient operations.">
-  <section class="gs-section">
-    <div class="gs-container">
-      <h1>Our Approach</h1>
-      <p>
-        We do not chase buzzwords or fashionable patterns. We solve real operational problems with thoughtful
-        engineering, disciplined design, and predictable execution.
-      </p>
+<BaseLayout title="About | GoldShore" description="What GoldShore builds and how the team works.">
+  <section class="page-shell gs-shell-section info-page">
+    <p class="gs-eyebrow">About</p>
+    <h1>High-trust systems built for use, not theater.</h1>
+    <p class="page-intro">GoldShore works at the intersection of resilient operations, decision support, and applied intelligence.</p>
 
-      <ul>
-        <li><strong>Measured:</strong> performance and reliability you can verify.</li>
-        <li><strong>Predictable:</strong> designed for known outcomes instead of unknown side effects.</li>
-        <li><strong>Auditable:</strong> traceable deployments, observability, and status reporting.</li>
-        <li><strong>Responsible:</strong> security, compliance, and controlled access top-to-bottom.</li>
-      </ul>
+    <div class="info-grid">
+      {sections.map((section) => (
+        <article class="info-card">
+          <h2>{section.title}</h2>
+          <p>{section.body}</p>
+        </article>
+      ))}
     </div>
   </section>
 
-  <section class="gs-section">
-    <div class="gs-container">
-      <h2>Built for Operators &amp; Decision Makers</h2>
-      <p>
-        Whether you are an engineering organization scaling globally, a platform team seeking deterministic delivery,
-        or an operations leader demanding uptime under pressure, Gold Shore infrastructure delivers clarity where
-        others deliver complexity.
-      </p>
-    </div>
-  </section>
-</WebLayout>
+  <style>
+    .info-page {
+      padding: 4.5rem 0 5rem;
+    }
+
+    .info-page h1 {
+      max-width: 12ch;
+      margin: 0.75rem 0 1rem;
+      font-size: clamp(2.5rem, 6vw, 4.6rem);
+      line-height: 0.98;
+      letter-spacing: -0.04em;
+    }
+
+    .page-intro {
+      max-width: 60ch;
+      color: var(--gs-text-dim);
+      line-height: 1.75;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .info-card {
+      padding: 1.4rem;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(10, 18, 36, 0.72);
+      box-shadow: var(--gs-shadow);
+    }
+
+    .info-card h2 {
+      margin-top: 0;
+      margin-bottom: 0.75rem;
+      font-size: 1.3rem;
+    }
+
+    .info-card p {
+      margin: 0;
+      color: var(--gs-text-dim);
+      line-height: 1.7;
+    }
+
+    @media (max-width: 900px) {
+      .info-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</BaseLayout>

@@ -9,14 +9,14 @@ permissions:
   contents: read
 
 jobs:
-  audit:
+  repo-health:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061
         with:
           version: 9
 

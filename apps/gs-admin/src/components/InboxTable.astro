@@ -28,19 +28,45 @@
   const count = document.getElementById('inbox-count');
 
   const renderRow = (mail) => {
-    return `<tr class="border-b border-[var(--gs-color-border)]/50">
-      <td class="py-2 text-xs gs-text-subtle">${new Date(mail.timestamp).toLocaleString()}</td>
-      <td class="py-2">${mail.from}</td>
-      <td class="py-2 gs-text-subtle">${mail.subject}</td>
-    </tr>`;
+    const tr = document.createElement('tr');
+    tr.className = 'border-b border-[var(--gs-color-border)]/50';
+
+    const tdTime = document.createElement('td');
+    tdTime.className = 'py-2 text-xs gs-text-subtle';
+    tdTime.textContent = new Date(mail.timestamp).toLocaleString();
+
+    const tdSender = document.createElement('td');
+    tdSender.className = 'py-2';
+    tdSender.textContent = mail.from;
+
+    const tdSubject = document.createElement('td');
+    tdSubject.className = 'py-2 gs-text-subtle';
+    tdSubject.textContent = mail.subject;
+
+    tr.appendChild(tdTime);
+    tr.appendChild(tdSender);
+    tr.appendChild(tdSubject);
+    return tr;
+  };
+
+  const setStatusRow = (message, toneClass = 'gs-text-subtle') => {
+    if (!body) return;
+    body.innerHTML = '';
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.className = `py-3 text-sm ${toneClass}`;
+    td.colSpan = 3;
+    td.textContent = message;
+    tr.appendChild(td);
+    body.appendChild(tr);
   };
 
   const renderError = (message) => {
-    if (body) body.innerHTML = `<tr><td class="py-3 text-sm gs-text-danger" colspan="3">${message}</td></tr>`;
+    setStatusRow(message, 'gs-text-danger');
     if (count) count.textContent = 'Unavailable';
   };
 
-  fetch('/api/gs-api/inbox-status')
+  fetch('https://api.goldshore.ai/internal/inbox-status')
     .then((res) => res.json())
     .then((data) => {
       const recent = data?.inbox?.recent ?? [];
@@ -48,11 +74,16 @@
       if (count) count.textContent = `${total} logged`;
 
       if (!recent.length) {
-        if (body) body.innerHTML = '<tr><td class="py-3 text-sm gs-text-subtle" colspan="3">No incoming messages detected.</td></tr>';
+        setStatusRow('No incoming messages detected.');
         return;
       }
 
-      if (body) body.innerHTML = recent.map(renderRow).join('');
+      if (body) {
+        body.innerHTML = '';
+        recent.forEach((mail) => {
+          body.appendChild(renderRow(mail));
+        });
+      }
     })
     .catch(() => {
       renderError('Failed to load inbox logs.');

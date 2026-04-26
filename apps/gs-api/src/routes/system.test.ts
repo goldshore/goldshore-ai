@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import { parseConfig, DEFAULT_CONFIG, SystemConfig } from './system.config';
+import { parseConfig, DEFAULT_CONFIG, SystemConfig, loadSystemSyncSnapshot } from './system.config';
 
 describe('System Config Logic', () => {
   describe('parseConfig', () => {
@@ -93,5 +93,37 @@ describe('System Config Logic', () => {
         assert.strictEqual(parseConfig({ notes: null }).notes, DEFAULT_CONFIG.notes);
       });
     });
+  });
+});
+
+
+describe('loadSystemSyncSnapshot', () => {
+  it('preserves valid sections when one snapshot section is malformed', async () => {
+    const kv = {
+      get: async (key: string) => {
+        if (key === 'ROUTING_TABLE') {
+          return {
+            'example.com': { role: 'backend', target: 'https://origin.example.com', priority: 1 },
+          };
+        }
+        if (key === 'SERVICE_STATUS') {
+          return { maintenance_mode: false, active_services: ['api'], version: '2026.03.04' };
+        }
+        if (key === 'AI_ORCHESTRATION') {
+          return { preferred_model: 'gpt-5-mini', agent_modules: ['mail'], queue_concurrency: 5, retry_attempts: 2 };
+        }
+        if (key === 'EMAIL_INBOX_LOGS') {
+          return [{ id: 123, from: 'bad@example.com' }];
+        }
+        return null;
+      },
+    } as unknown as KVNamespace;
+
+    const snapshot = await loadSystemSyncSnapshot(kv);
+
+    assert.deepStrictEqual(snapshot.SERVICE_STATUS.active_services, ['api']);
+    assert.strictEqual(snapshot.SERVICE_STATUS.version, '2026.03.04');
+    assert.deepStrictEqual(snapshot.ROUTING_TABLE['example.com']?.target, 'https://origin.example.com');
+    assert.deepStrictEqual(snapshot.EMAIL_INBOX_LOGS, []);
   });
 });

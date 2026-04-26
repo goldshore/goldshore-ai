@@ -31,7 +31,7 @@ if (API_BASE && accessToken) {
     } else {
       loadError = `Failed to load audit logs (${response.status}).`;
     }
-  } catch (error) {
+  } catch {
     loadError = 'Unable to reach the admin audit endpoint.';
   }
 }

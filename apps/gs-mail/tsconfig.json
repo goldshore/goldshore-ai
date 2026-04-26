@@ -14,13 +14,12 @@
     "skipLibCheck": true,
     "paths": {
       "@goldshore/schema": [
-        "../../packages/schema/src/system.ts"
+        "../../packages/schema/src/index.ts"
       ]
     }
   },
   "include": [
-    "src",
-    "../../packages/schema/src"
+    "src"
   ],
   "exclude": [
     "src/**/*.test.ts"

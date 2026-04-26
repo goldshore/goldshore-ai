@@ -1,100 +1,88 @@
 ---
-import WebLayout from '../layouts/WebLayout.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
 
 export const prerender = true;
-
-const teamMembers = [
-  {
-    name: 'Maya Chen',
-    role: 'Principal Platform Architect',
-    specialization:
-      'Distributed systems reliability and cloud platform modernization.',
-    credibility: [
-      'Led multi-region migrations for regulated workloads.',
-      'Designed SLO programs adopted across three platform organizations.',
-    ],
-  },
-  {
-    name: 'Elias Navarro',
-    role: 'Head of Infrastructure Automation',
-    specialization:
-      'Delivery pipelines, infrastructure-as-code governance, and recovery orchestration.',
-    credibility: [
-      'Scaled release automation from weekly to hourly deploy cycles.',
-      'Built incident automation reducing MTTR for critical services.',
-    ],
-  },
-  {
-    name: 'Priya Raman',
-    role: 'Director of Security Engineering',
-    specialization:
-      'Identity controls, secure access architecture, and application security posture.',
-    credibility: [
-      'Implemented zero-trust access standards for hybrid engineering teams.',
-      'Advised audit-readiness and control mapping for high-compliance environments.',
-    ],
-  },
-  {
-    name: 'Jonas Feld',
-    role: 'Developer Experience Lead',
-    specialization:
-      'API productization, SDK ergonomics, and docs systems for engineering teams.',
-    credibility: [
-      'Launched developer portals supporting internal and partner integrations.',
-      'Created API governance frameworks that reduced integration defects.',
-    ],
-  },
-];
 ---
 
-<WebLayout title="Team | Gold Shore" description="Meet the Gold Shore team.">
-  <section class="gs-section">
-    <div class="gs-container">
-      <p class="gs-micro">Team</p>
-      <h1>Role-Based Leadership</h1>
-      <p>
-        We pair platform operators, security specialists, and
-        developer-experience leaders to deliver outcomes that hold up under real
-        production pressure.
-      </p>
-    </div>
+<BaseLayout title="Team | GoldShore" description="Meet the GoldShore team.">
+  <section class="page-shell gs-shell-section team-page">
+    <p class="gs-eyebrow">Team</p>
+    <h1>Resilient systems, applied intelligence, and high-trust execution.</h1>
+    <p class="page-intro">GoldShore is built by operators focused on resilient systems, applied intelligence, and high-trust execution.</p>
+
+    <section class="team-grid">
+      <div class="card founder">
+        <h3>Robert M.</h3>
+        <p>Leads product direction, systems strategy, and applied intelligence.</p>
+      </div>
+
+      <div class="card">
+        <h3>Systems</h3>
+        <p>Infrastructure, execution, observability.</p>
+      </div>
+
+      <div class="card">
+        <h3>Risk</h3>
+        <p>Monitoring, analytics, decision systems.</p>
+      </div>
+    </section>
   </section>
 
-  <section class="gs-section">
-    <div class="gs-container gs-grid-2">
-      {
-        teamMembers.map((member) => (
-          <article class="gs-panel">
-            <p class="gs-micro">{member.role}</p>
-            <h2>{member.name}</h2>
-            <p>{member.specialization}</p>
-            <h3>Credibility points</h3>
-            <ul>
-              {member.credibility.map((point) => (
-                <li>{point}</li>
-              ))}
-            </ul>
-          </article>
-        ))
+  <style>
+    .team-page {
+      padding: 4.5rem 0 5rem;
+    }
+
+    .team-page h1 {
+      max-width: 12ch;
+      margin: 0.75rem 0 1rem;
+      font-size: clamp(2.5rem, 6vw, 4.6rem);
+      line-height: 0.98;
+      letter-spacing: -0.04em;
+    }
+
+    .page-intro {
+      max-width: 60ch;
+      color: var(--gs-text-dim);
+      line-height: 1.75;
+    }
+
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .card {
+      padding: 1.4rem;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(10, 18, 36, 0.72);
+      box-shadow: var(--gs-shadow);
+    }
+
+    .founder {
+      border-color: rgba(90, 162, 255, 0.24);
+      background: rgba(90, 162, 255, 0.08);
+    }
+
+    .card h3 {
+      margin-top: 0;
+      margin-bottom: 0.75rem;
+      font-size: 1.3rem;
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--gs-text-dim);
+      line-height: 1.7;
+    }
+
+    @media (max-width: 900px) {
+      .team-grid {
+        grid-template-columns: 1fr;
       }
-    </div>
-  </section>
-
-  <section class="gs-section">
-    <div class="gs-container">
-      <aside class="gs-panel">
-        <p class="gs-micro">Work with the team</p>
-        <h2>Bring your challenge to an intake session</h2>
-        <p>
-          Start with a guided intake and we will align the right team roles to
-          your architecture, timeline, and operating model.
-        </p>
-        <p>
-          <a href="/intake">Launch intake wizard</a>
-          ·
-          <a href="/contact">Contact us directly</a>
-        </p>
-      </aside>
-    </div>
-  </section>
-</WebLayout>
+    }
+  </style>
+</BaseLayout>

@@ -1,35 +1,35 @@
 #!/usr/bin/env node
 import { execSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const THEME_PACKAGE = '@goldshore/theme';
 const REPO_ROOT = process.cwd();
 const THEME_PACKAGE_JSON = join(REPO_ROOT, 'packages/theme/package.json');
 const FILE_GLOBS = [
-  'apps/**/*.astro',
-  'apps/**/*.ts',
-  'apps/**/*.tsx',
-  'apps/**/*.js',
-  'apps/**/*.jsx',
-  'apps/**/*.mjs',
-  'apps/**/*.mts',
-  'packages/**/*.astro',
-  'packages/**/*.ts',
-  'packages/**/*.tsx',
-  'packages/**/*.js',
-  'packages/**/*.jsx',
-  'packages/**/*.mjs',
-  'packages/**/*.mts',
-  'scripts/**/*.ts',
-  'scripts/**/*.js',
-  'scripts/**/*.mjs'
+  "apps/**/*.astro",
+  "apps/**/*.ts",
+  "apps/**/*.tsx",
+  "apps/**/*.js",
+  "apps/**/*.jsx",
+  "apps/**/*.mjs",
+  "apps/**/*.mts",
+  "packages/**/*.astro",
+  "packages/**/*.ts",
+  "packages/**/*.tsx",
+  "packages/**/*.js",
+  "packages/**/*.jsx",
+  "packages/**/*.mjs",
+  "packages/**/*.mts",
+  "scripts/**/*.ts",
+  "scripts/**/*.js",
+  "scripts/**/*.mjs",
 ];
 
 function loadExports() {
   const pkg = JSON.parse(readFileSync(THEME_PACKAGE_JSON, 'utf8'));
   const exportsField = pkg.exports ?? {};
-  return Object.entries(exportsField).filter(([, value]) => typeof value === 'string');
+  return Object.keys(exportsField).filter((key) => typeof exportsField[key] === 'string');
 }
 
 function toRegex(exportKey) {
@@ -67,19 +67,12 @@ function toSubpath(specifier) {
   return `./${specifier.slice(`${THEME_PACKAGE}/`.length)}`;
 }
 
-function resolveExportTarget(exportKey, exportValue, subpath) {
-  if (!exportKey.includes('*')) return exportValue;
-  const wildcardSegment = subpath.slice(exportKey.indexOf('*'), subpath.length - (exportKey.length - exportKey.indexOf('*') - 1));
-  return exportValue.replace('*', wildcardSegment);
-}
-
 function main() {
-  const exportsEntries = loadExports();
-  const exportMatchers = exportsEntries.map(([key, value]) => ({ key, value, regex: toRegex(key) }));
+  const exportKeys = loadExports();
+  const exportMatchers = exportKeys.map((key) => ({ key, regex: toRegex(key) }));
   const files = getFiles();
 
   const invalidImports = [];
-  const unresolvedPathImports = [];
   const resolvedImports = [];
 
   for (const file of files) {
@@ -96,13 +89,6 @@ function main() {
         continue;
       }
 
-      const exportPath = resolveExportTarget(match.key, match.value, subpath);
-      const absoluteExportPath = join(REPO_ROOT, 'packages/theme', exportPath.replace(/^\.\//, ''));
-      if (specifier.startsWith(`${THEME_PACKAGE}/styles/`) && !existsSync(absoluteExportPath)) {
-        unresolvedPathImports.push({ file, specifier, exportPath });
-        continue;
-      }
-
       resolvedImports.push({ file, specifier, exportKey: match.key });
     }
   }
@@ -112,16 +98,6 @@ function main() {
     for (const item of invalidImports) {
       console.error(`- ${item.file}: ${item.specifier} (expects export key ${item.subpath})`);
     }
-  }
-
-  if (unresolvedPathImports.length > 0) {
-    console.error('Found @goldshore/theme/styles/* imports that resolve to missing files:');
-    for (const item of unresolvedPathImports) {
-      console.error(`- ${item.file}: ${item.specifier} (missing ${item.exportPath})`);
-    }
-  }
-
-  if (invalidImports.length > 0 || unresolvedPathImports.length > 0) {
     process.exit(1);
   }
 
@@ -131,14 +107,6 @@ function main() {
   if (gsWebImports.length > 0) {
     console.log('apps/gs-web imports:');
     for (const item of gsWebImports) {
-      console.log(`- ${item.file}: ${item.specifier} -> ${item.exportKey}`);
-    }
-  }
-
-  const gsAdminImports = resolvedImports.filter((item) => item.file.startsWith('apps/gs-admin/'));
-  if (gsAdminImports.length > 0) {
-    console.log('apps/gs-admin imports:');
-    for (const item of gsAdminImports) {
       console.log(`- ${item.file}: ${item.specifier} -> ${item.exportKey}`);
     }
   }

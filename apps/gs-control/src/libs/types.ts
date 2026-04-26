@@ -1,5 +1,6 @@
 export interface ControlEnv {
   CONTROL_LOGS: KVNamespace;
+  GS_CONFIG: KVNamespace;
   STATE: R2Bucket;
   API: Fetcher;
   GATEWAY: Fetcher;

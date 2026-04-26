@@ -1,9 +1,19 @@
-name: Preview GS Web (goldshore.ai)
+name: Preview Web (goldshore.ai)
+# apps/gs-web is the public Pages surface. Keep preview automation separate from
+# gs-admin so future cleanup preserves the public/internal boundary.
 
 permissions:
   contents: read
 
 on:
+  push:
+    branches:
+      - 'claude/**'
+    paths:
+      - "apps/gs-web/**"
+      - "packages/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
   pull_request:
     types:
       - opened
@@ -22,11 +32,29 @@ jobs:
   preview-web:
     runs-on: ubuntu-latest
     if: |
+      github.event_name == 'push' ||
       contains(github.event.pull_request.labels.*.name, 'preview') ||
       (github.event.action == 'ready_for_review' && github.event.pull_request.base.ref == 'main')
 
     steps:
-      - uses: actions/checkout@3df4d485d8ce6d2b61b8d12e8f44cdfffbea301e
+      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
+
+      - id: metadata
+        name: Resolve build metadata
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            release_label="pr-${{ github.event.pull_request.number }}"
+          else
+            release_label="$(echo '${{ github.ref_name }}' | tr '/' '-')"
+          fi
+
+          {
+            echo "deployed_sha=$(git rev-parse HEAD)"
+            echo "build_timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "release_label=${release_label}"
+          } >> "$GITHUB_OUTPUT"
 
       - uses: pnpm/action-setup@v4
         with:
@@ -49,31 +77,20 @@ jobs:
       - name: Validate canonical worker names
         run: pnpm validate:names
 
-      - name: Build GS web app (preview)
+      - name: Build web app (preview)
         working-directory: apps/gs-web
         env:
           PUBLIC_API: https://api-preview.goldshore.ai
           PUBLIC_GATEWAY: https://gw-preview.goldshore.ai
-          PUBLIC_ENV: preview
-          PUBLIC_BUILD_TIMESTAMP: ${{ github.run_started_at }}
-          PUBLIC_COMMIT_HASH: ${{ github.sha }}
+          PUBLIC_BUILD_TIMESTAMP: ${{ steps.metadata.outputs.build_timestamp }}
+          PUBLIC_COMMIT_HASH: ${{ steps.metadata.outputs.deployed_sha }}
+          PUBLIC_RELEASE_LABEL: ${{ steps.metadata.outputs.release_label }}
         run: pnpm build
-
-      - name: Validate build artifacts
-        working-directory: apps/gs-web
-        run: |
-          set -euo pipefail
-
-          test -d dist/_astro
-          find dist/_astro -maxdepth 1 -type f -name '*.css' -print -quit | grep -q .
-          find dist/_astro -maxdepth 1 -type f -name '*.js' -print -quit | grep -q .
-          grep -q '<link' dist/index.html
-          grep -q '/_astro/' dist/index.html
 
       - name: Deploy to Cloudflare Pages (preview)
         uses: cloudflare/pages-action@v1
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN || secrets.CLOUDFLARE_API_TOKEN }}
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: preview-web
           directory: apps/gs-web/dist

@@ -1,0 +1,113 @@
+/* @goldshore/theme — canonical design tokens */
+:root {
+  /* ── Backgrounds ─────────────────────────────────── */
+  --gs-bg-primary: #0b0f18;
+  --gs-bg-secondary: #0a0c12;
+  --gs-bg-surface: #0e121a;
+
+  /* ── Accent colours ──────────────────────────────── */
+  --gs-accent-blue: #5aa2ff;
+  --gs-accent-gold: #eab308;
+
+  /* ── Text ────────────────────────────────────────── */
+  --gs-text-primary: #e9eefc;
+  --gs-text-muted: #94a3b8;
+
+  /* ── Borders ─────────────────────────────────────── */
+  --gs-border-subtle: rgba(90, 162, 255, 0.18);
+
+  /* ── Border radius ───────────────────────────────── */
+  --gs-radius-sm: 8px;
+  --gs-radius-md: 12px;
+  --gs-radius-lg: 24px;
+  --gs-radius-pill: 9999px;
+
+  /* ── Spacing scale (4px base) ────────────────────── */
+  --gs-space-1: 4px;
+  --gs-space-2: 8px;
+  --gs-space-3: 12px;
+  --gs-space-4: 16px;
+  --gs-space-5: 20px;
+  --gs-space-6: 24px;
+  --gs-space-7: 28px;
+  --gs-space-8: 32px;
+  --gs-space-10: 48px;
+
+  /* ── Typography ──────────────────────────────────── */
+  --gs-font-body: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --gs-font-display: Fraunces, Georgia, 'Times New Roman', serif;
+  --gs-font-size-body: 1rem;
+  --gs-font-size-h1: clamp(2.2rem, 4vw, 3.5rem);
+  --gs-font-size-h2: clamp(1.6rem, 3vw, 2.4rem);
+  --gs-font-size-h3: clamp(1.25rem, 2vw, 1.75rem);
+  --gs-font-size-h4: 1.25rem;
+  --gs-font-size-h5: 1.1rem;
+  --gs-font-size-h6: 1rem;
+  --gs-line-height: 1.6;
+  --gs-line-height-heading: 1.2;
+  --gs-letter-wide: 0.08em;
+
+  /* ── Status colours ──────────────────────────────── */
+  --gs-success: #22c55e;
+  --gs-warning: #fbbf24;
+  --gs-danger: #ef4444;
+  --gs-info: #38bdf8;
+
+  /* ── Derived / interactive ───────────────────────── */
+  --gs-accent-soft: rgba(90, 162, 255, 0.15);
+  --gs-accent-contrast: #ffffff;
+  --gs-color-faint: rgba(148, 163, 184, 0.35);
+
+  /* ── Shadows ─────────────────────────────────────── */
+  --gs-shadow-soft: 0 4px 24px rgba(0, 0, 0, 0.25);
+  --gs-shadow-hard: 0 8px 40px rgba(0, 0, 0, 0.45);
+
+  /* ── Transitions ─────────────────────────────────── */
+  --gs-transition: 200ms ease;
+
+  /* ── Section / layout ────────────────────────────── */
+  --gs-section-spacing: 6rem;
+  --gs-section-padding-block: 5rem;
+  --gs-section-padding-inline: 1.5rem;
+  --gs-section-gap: 3rem;
+  --gs-section-max-width: 1200px;
+  --gs-content-width: 1200px;
+
+  /* ── Grid helpers ────────────────────────────────── */
+  --gs-grid-min-2: 320px;
+  --gs-grid-min-3: 260px;
+
+  /* ── Compatibility aliases ───────────────────────── */
+  --gs-color-bg: var(--gs-bg-primary);
+  --gs-color-surface: var(--gs-bg-secondary);
+  --gs-color-muted-surface: var(--gs-bg-surface);
+  --gs-color-text: var(--gs-text-primary);
+  --gs-color-subtle: var(--gs-text-muted);
+  --gs-color-border: var(--gs-border-subtle);
+  --gs-accent: var(--gs-accent-blue);
+  --gs-accent-strong: var(--gs-accent-gold);
+  /* app-level shorthands */
+  --gs-bg: var(--gs-bg-primary);
+  --gs-text: var(--gs-text-primary);
+  --gs-text-dim: rgba(233, 238, 252, 0.6);
+  --gs-border: var(--gs-border-subtle);
+  --gs-primary: var(--gs-accent-blue);
+  --gs-primary-soft: var(--gs-accent-soft);
+  --gs-surface: rgba(10, 18, 36, 0.85);
+  --gs-surface-strong: rgba(7, 14, 30, 0.96);
+  --gs-shadow: var(--gs-shadow-hard);
+  --gs-max-width: var(--gs-content-width);
+  --gs-radius: var(--gs-radius-md);
+
+  /* ── Hero and marketing effect tokens ───────────── */
+  --gs-hero-text-primary: #e5eefc;
+  --gs-hero-text-secondary: #bfccdf;
+  --gs-hero-mark: #f6cf7a;
+  --gs-hero-vignette-core: rgba(140, 176, 255, 0.16);
+  --gs-hero-vignette-fade-start: rgba(2, 6, 23, 0.18);
+  --gs-hero-vignette-fade-end: rgba(2, 6, 23, 0.78);
+  --gs-hero-depth-glow: rgba(90, 140, 255, 0.12);
+  --gs-divider-signal: rgba(90, 140, 255, 0.3);
+  --gs-divider-sweep: rgba(255, 107, 0, 0.15);
+  --gs-panel-border-subtle: rgba(255, 255, 255, 0.05);
+}

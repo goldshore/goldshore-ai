@@ -1,9 +1,9 @@
 # wrangler.toml for the API Worker
 
 name = "gs-api" # Base name, will be suffixed per environment
-main = "../../apps/api-worker/src/index.ts"
+main = "../../apps/gs-api/src/index.ts"
 compatibility_date = "2024-03-20"
-tsconfig = "../../apps/api-worker/tsconfig.json"
+tsconfig = "../../apps/gs-api/tsconfig.json"
 
 [env.dev]
 name = "gs-api-dev"

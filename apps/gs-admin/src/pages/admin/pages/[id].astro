@@ -2,7 +2,7 @@
 import AdminLayout from '../../../layouts/AdminLayout.astro';
 
 const { id } = Astro.params;
-const API_BASE = import.meta.env.PUBLIC_API || '';
+const API_BASE = import.meta.env.PUBLIC_API || 'https://api.goldshore.dev';
 ---
 <AdminLayout title="Edit Page | GoldShore Admin">
   <section class="max-w-4xl mx-auto py-12 px-6 space-y-6">
@@ -57,7 +57,7 @@ const API_BASE = import.meta.env.PUBLIC_API || '';
         form.body.value = page.body;
         form.status.value = page.status;
         message.textContent = '';
-      } catch (error) {
+      } catch {
         message.textContent = 'Failed to load page.';
       }
     };
@@ -75,7 +75,7 @@ const API_BASE = import.meta.env.PUBLIC_API || '';
         });
         const payload = await response.json();
         message.textContent = response.ok ? 'Changes saved.' : payload?.error || 'Failed to save.';
-      } catch (error) {
+      } catch {
         message.textContent = 'Failed to save.';
       }
     });

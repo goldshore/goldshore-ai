@@ -1,4 +1,4 @@
-import { test } from 'node:test';
+import { test, mock } from 'node:test';
 import assert from 'node:assert';
 import app from './index';
 
@@ -46,4 +46,26 @@ test('CORS Vulnerability Check', async (t) => {
   }, { ENV: 'production' } as any);
 
   assert.strictEqual(resLocalProd.headers.get('Access-Control-Allow-Origin'), null, 'Should block localhost in prod');
+});
+
+test('routes agent hostname traffic to the gs-agent service binding', async () => {
+  const agentFetch = mock.fn(async () =>
+    new Response(JSON.stringify({ service: 'gs-agent' }), {
+      headers: { 'content-type': 'application/json' }
+    })
+  );
+
+  const response = await app.request('https://agent.goldshore.ai/', {
+    method: 'GET',
+  }, {
+    ENV: 'production',
+    AGENT: {
+      fetch: agentFetch,
+    }
+  } as any);
+
+  assert.strictEqual(response.status, 200);
+  assert.deepStrictEqual(await response.json(), { service: 'gs-agent' });
+  assert.strictEqual(agentFetch.mock.callCount(), 1);
+  assert.ok(response.headers.get('X-Correlation-Id'));
 });

@@ -1,0 +1,90 @@
+name: Coordinate GS Pages Surfaces
+# This workflow coordinates gs-web and gs-admin without turning them into an
+# atomic release. gs-web remains the public Pages surface, while gs-admin stays
+# an internal, Access-protected surface with its own independent outcome.
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_ref:
+        description: Git ref to deploy to both Cloudflare Pages projects.
+        required: false
+        type: string
+      release_label:
+        description: Optional release label to embed in both builds.
+        required: false
+        type: string
+
+jobs:
+  deploy-web:
+    name: Deploy gs-web from shared ref
+    uses: ./.github/workflows/deploy-gs-web.yml
+    with:
+      deploy_ref: ${{ inputs.deploy_ref != '' && inputs.deploy_ref || github.sha }}
+      release_label: ${{ inputs.release_label }}
+    secrets: inherit
+
+  deploy-admin:
+    name: Deploy gs-admin from shared ref
+    uses: ./.github/workflows/deploy-gs-admin.yml
+    with:
+      deploy_ref: ${{ inputs.deploy_ref != '' && inputs.deploy_ref || github.sha }}
+      release_label: ${{ inputs.release_label }}
+    secrets: inherit
+
+  report:
+    name: Report coordinated deployment status
+    runs-on: ubuntu-latest
+    needs:
+      - deploy-web
+      - deploy-admin
+    if: always()
+    steps:
+      - name: Summarize app deployment results
+        env:
+          TARGET_REF: ${{ inputs.deploy_ref != '' && inputs.deploy_ref || github.sha }}
+          RELEASE_LABEL: ${{ inputs.release_label }}
+          WEB_RESULT: ${{ needs.deploy-web.result }}
+          WEB_SHA: ${{ needs.deploy-web.outputs.deployed_sha }}
+          WEB_TIMESTAMP: ${{ needs.deploy-web.outputs.build_timestamp }}
+          WEB_RELEASE_LABEL: ${{ needs.deploy-web.outputs.release_label }}
+          ADMIN_RESULT: ${{ needs.deploy-admin.result }}
+          ADMIN_SHA: ${{ needs.deploy-admin.outputs.deployed_sha }}
+          ADMIN_TIMESTAMP: ${{ needs.deploy-admin.outputs.build_timestamp }}
+          ADMIN_RELEASE_LABEL: ${{ needs.deploy-admin.outputs.release_label }}
+        run: |
+          set -euo pipefail
+
+          same_sha="unknown"
+          if [[ -n "${WEB_SHA}" && -n "${ADMIN_SHA}" ]]; then
+            if [[ "${WEB_SHA}" == "${ADMIN_SHA}" ]]; then
+              same_sha="yes"
+            else
+              same_sha="no"
+            fi
+          fi
+
+          {
+            echo "# GS Pages coordination report"
+            echo
+            echo "- Requested ref: \`${TARGET_REF}\`"
+            if [[ -n "${RELEASE_LABEL}" ]]; then
+              echo "- Requested release label: \`${RELEASE_LABEL}\`"
+            else
+              echo "- Requested release label: _(not set)_"
+            fi
+            echo "- Both deployed from same SHA: **${same_sha}**"
+            echo
+            echo "| App | Result | SHA | Build timestamp | Release label |"
+            echo "| --- | --- | --- | --- | --- |"
+            echo "| gs-web | ${WEB_RESULT} | ${WEB_SHA:-n/a} | ${WEB_TIMESTAMP:-n/a} | ${WEB_RELEASE_LABEL:-n/a} |"
+            echo "| gs-admin | ${ADMIN_RESULT} | ${ADMIN_SHA:-n/a} | ${ADMIN_TIMESTAMP:-n/a} | ${ADMIN_RELEASE_LABEL:-n/a} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [[ "${WEB_RESULT}" != "success" || "${ADMIN_RESULT}" != "success" ]]; then
+            echo "One or more surface deployments failed. See the summary table above."
+            exit 1
+          fi

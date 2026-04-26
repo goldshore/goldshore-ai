@@ -1,9 +1,8 @@
 export function enforcePreviewAuth(request: Request) {
   const url = new URL(request.url);
 
-  const isPreviewEnv = import.meta.env.PUBLIC_ENV === 'preview';
-  const isPreviewHostname = url.hostname.startsWith('preview.');
-  const isPreview = isPreviewEnv || isPreviewHostname;
+  const isPreview =
+    url.hostname.startsWith("preview.");
 
   if (!isPreview) return;
 

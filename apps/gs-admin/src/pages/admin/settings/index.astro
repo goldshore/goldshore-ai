@@ -80,10 +80,28 @@ const domains = [
 </AdminLayout>
 
 <script type="module">
-  import { loadThemeSettings, setTheme } from '@goldshore/theme/manager';
-
   const form = document.getElementById('theme-form');
   const reset = document.getElementById('reset-theme');
+  const key = 'gs-admin-theme-settings';
+
+  const defaults = { mode: 'dark', density: 'comfortable', accent: 'blue' };
+
+  const loadThemeSettings = () => {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? { ...defaults, ...JSON.parse(raw) } : defaults;
+    } catch {
+      return defaults;
+    }
+  };
+
+  const applyTheme = (settings) => {
+    document.documentElement.dataset.themeMode = settings.mode;
+    document.documentElement.dataset.themeDensity = settings.density;
+    document.documentElement.dataset.themeAccent = settings.accent;
+    localStorage.setItem(key, JSON.stringify(settings));
+  };
+
   const settings = loadThemeSettings();
 
   if (form) {
@@ -92,19 +110,22 @@ const domains = [
     form.accent.value = settings.accent;
 
     form.addEventListener('change', () => {
-      const mode = form.mode.value;
-      const density = form.density.value;
-      const accent = form.accent.value;
-      setTheme({ mode, density, accent });
+      applyTheme({
+        mode: form.mode.value,
+        density: form.density.value,
+        accent: form.accent.value
+      });
     });
   }
 
+  applyTheme(settings);
+
   reset?.addEventListener('click', () => {
-    setTheme({ mode: 'dark', density: 'comfortable', accent: 'blue' });
+    applyTheme(defaults);
     if (form) {
-      form.mode.value = 'dark';
-      form.density.value = 'comfortable';
-      form.accent.value = 'blue';
+      form.mode.value = defaults.mode;
+      form.density.value = defaults.density;
+      form.accent.value = defaults.accent;
     }
   });
 </script>

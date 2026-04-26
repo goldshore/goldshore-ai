@@ -2,8 +2,40 @@ name = "gs-control"
 main = "src/index.ts"
 compatibility_date = "2024-11-01"
 compatibility_flags = ["nodejs_compat"]
+tsconfig = "tsconfig.json"
 
 workers_dev = false
+routes = [
+  { pattern = "ops.goldshore.ai/*", zone_name = "goldshore.ai" }
+]
+
+[vars]
+ENV = "production"
+# CONTROL_SYNC_TOKEN is managed via Cloudflare Secret.
+CONTROL_SYNC_TOKEN = "SECRET_MANAGED"
+SYNC_TARGET_SUBDOMAIN = "api.goldshore.ai"
+
+[[kv_namespaces]]
+binding = "CONTROL_LOGS"
+id = "gs_control_logs_001"
+
+[[kv_namespaces]]
+binding = "GS_CONFIG"
+id = "9cc2209906a94851b704be57543987a9"
+
+[[r2_buckets]]
+binding = "STATE"
+bucket_name = "gs-control-state"
+
+[[services]]
+binding = "API"
+service = "gs-api"
+environment = "production"
+
+[[services]]
+binding = "GATEWAY"
+service = "gs-gateway"
+environment = "production"
 
 [env.preview]
 routes = [
@@ -12,16 +44,20 @@ routes = [
 
 [env.preview.vars]
 ENV = "preview"
-CONTROL_SYNC_TOKEN = "set-a-shared-secret"
+CONTROL_SYNC_TOKEN = "SECRET_MANAGED"
 SYNC_TARGET_SUBDOMAIN = "api-preview.goldshore.ai"
 
 [[env.preview.kv_namespaces]]
 binding = "CONTROL_LOGS"
-id = "gs_control_logs_preview_001"
+id = "gs_control_logs_preview"
+
+[[env.preview.kv_namespaces]]
+binding = "GS_CONFIG"
+id = "9cc2209906a94851b704be57543987a9"
 
 [[env.preview.r2_buckets]]
 binding = "STATE"
-bucket_name = "gs-control-state-preview"
+bucket_name = "gs-control-state"
 
 [[env.preview.services]]
 binding = "API"
@@ -35,20 +71,21 @@ environment = "preview"
 
 [env.prod]
 routes = [
-  { pattern = "ops.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "control.goldshore.ai/*", zone_name = "goldshore.ai" }
+  { pattern = "ops.goldshore.ai/*", zone_name = "goldshore.ai" }
 ]
 
 [env.prod.vars]
 ENV = "production"
-NODE_ENV = "production"
-OTEL_SERVICE_NAME = "goldshore-core-prod"
-CONTROL_SYNC_TOKEN = "set-a-shared-secret"
+CONTROL_SYNC_TOKEN = "SECRET_MANAGED"
 SYNC_TARGET_SUBDOMAIN = "api.goldshore.ai"
 
 [[env.prod.kv_namespaces]]
 binding = "CONTROL_LOGS"
 id = "gs_control_logs_001"
+
+[[env.prod.kv_namespaces]]
+binding = "GS_CONFIG"
+id = "9cc2209906a94851b704be57543987a9"
 
 [[env.prod.r2_buckets]]
 binding = "STATE"
@@ -57,9 +94,41 @@ bucket_name = "gs-control-state"
 [[env.prod.services]]
 binding = "API"
 service = "gs-api"
-environment = "prod"
+environment = "production"
 
 [[env.prod.services]]
 binding = "GATEWAY"
 service = "gs-gateway"
-environment = "prod"
+environment = "production"
+
+[env.production]
+routes = [
+  { pattern = "ops.goldshore.ai/*", zone_name = "goldshore.ai" }
+]
+
+[env.production.vars]
+ENV = "production"
+CONTROL_SYNC_TOKEN = "SECRET_MANAGED"
+SYNC_TARGET_SUBDOMAIN = "api.goldshore.ai"
+
+[[env.production.kv_namespaces]]
+binding = "CONTROL_LOGS"
+id = "gs_control_logs_001"
+
+[[env.production.kv_namespaces]]
+binding = "GS_CONFIG"
+id = "9cc2209906a94851b704be57543987a9"
+
+[[env.production.r2_buckets]]
+binding = "STATE"
+bucket_name = "gs-control-state"
+
+[[env.production.services]]
+binding = "API"
+service = "gs-api"
+environment = "production"
+
+[[env.production.services]]
+binding = "GATEWAY"
+service = "gs-gateway"
+environment = "production"

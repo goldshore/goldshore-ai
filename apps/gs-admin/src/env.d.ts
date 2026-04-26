@@ -1,12 +1,23 @@
 /// <reference types="astro/client" />
 import type { AdminSession } from "@goldshore/auth";
 
-declare namespace App {
-  interface Locals {
-    adminSession: AdminSession & {
-      actor?: string;
-      isAuthenticated: boolean;
-    };
+declare global {
+  namespace App {
+    interface Locals {
+      [key: string]: unknown;
+      adminSession: AdminSession & {
+        actor?: string;
+        isAuthenticated: boolean;
+      };
+      runtime: {
+        env: {
+          CLOUDFLARE_ACCESS_AUDIENCE?: string;
+          CLOUDFLARE_TEAM_DOMAIN?: string;
+          ADMIN_DEV_ROLE?: string;
+          [key: string]: string | undefined;
+        };
+      };
+    }
   }
 }
 
@@ -14,9 +25,9 @@ declare namespace App {
 interface ImportMetaEnv {
   readonly PUBLIC_API: string;
   readonly PUBLIC_GATEWAY: string;
-  readonly PUBLIC_ENV: 'production' | 'preview' | 'development';
   readonly PUBLIC_BUILD_TIMESTAMP: string;
   readonly PUBLIC_COMMIT_HASH: string;
+  readonly PUBLIC_RELEASE_LABEL?: string;
 
   // Auth Configuration
   readonly PUBLIC_AUTH_TOKEN_URL: string;

@@ -1,0 +1,11 @@
+{
+  "name": "@goldshore/admin-compat",
+  "private": true,
+  "scripts": {
+    "build": "pnpm --dir ../gs-admin build && node -e \"const fs=require('node:fs'); fs.rmSync('dist',{recursive:true,force:true}); fs.cpSync('../gs-admin/dist','dist',{recursive:true});\""
+  },
+  "devDependencies": {
+    "@astrojs/tailwind": "^6.0.2",
+    "tailwindcss": "^3.4.17"
+  }
+}
