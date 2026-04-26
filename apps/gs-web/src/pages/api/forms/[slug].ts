@@ -6,6 +6,7 @@ import {
   type Env as AccessEnv,
 } from '@goldshore/auth';
 import { parseJson } from '@goldshore/utils';
+import { isSameOriginRequest } from '../../../utils/security';
 
 /**
  * Admin UI form configuration item endpoint.
@@ -25,30 +26,6 @@ const normalizeRow = (row: Record<string, string>) => ({
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
-
-const isSameOriginRequest = (request: Request) => {
-  const expectedOrigin = new URL(request.url).origin;
-  const originHeader = request.headers.get('origin');
-  if (originHeader) {
-    return originHeader === expectedOrigin;
-  }
-
-  const refererHeader = request.headers.get('referer');
-  if (refererHeader) {
-    try {
-      return new URL(refererHeader).origin === expectedOrigin;
-    } catch {
-      return false;
-    }
-  }
-
-  const fetchSite = request.headers.get('sec-fetch-site');
-  if (fetchSite) {
-    return fetchSite === 'same-origin' || fetchSite === 'none';
-  }
-
-  return false;
-};
 
 const unauthorizedResponse = () =>
   Response.json({ error: 'Authentication required.' }, { status: 401 });
@@ -195,6 +172,5 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
 export const PATCH = PUT;
 
 export const __testing = {
-  isSameOriginRequest,
   requirePermission,
 };
