@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { buildLeadAutoResponder } from '../../emails/leadAutoResponder';
-import { isValidEmail } from '../../utils/security';
+import { isValidEmail, isSameOriginRequest } from '../../utils/security';
 import { parseJson } from '@goldshore/utils';
 
 // Default to 90 days if not set in environment
@@ -72,14 +72,6 @@ type ApiResponseBody = {
   submissionId?: string;
   redirectTo?: string;
 };
-
-const jsonResponse = (status: number, body: ApiResponseBody) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      'content-type': 'application/json; charset=utf-8',
-    },
-  });
 
 const requestExpectsJson = (request: Request) => {
   const accept = request.headers.get('accept') ?? '';
@@ -450,6 +442,10 @@ export const sendMail = async (
 export const POST: APIRoute = async ({ request, locals }) => {
   const respondJson = shouldReturnJson(request);
 
+  if (!isSameOriginRequest(request)) {
+    return buildError(403, 'csrf_check_failed', 'Forbidden: CSRF check failed.');
+  }
+
   if (!request.headers.get('content-type')?.includes('form')) {
     return buildError(415, 'unsupported_payload', 'Unsupported payload.');
   }
@@ -481,8 +477,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
     inquiry: extractString(formData.get('inquiry')),
     dedupeKey: extractString(formData.get('dedupeKey')),
   };
-
-  const env = locals.runtime?.env as Env | undefined;
 
   if (isSpam) {
     console.info('contact_submission_spam_blocked', {
@@ -694,8 +688,4 @@ export const POST: APIRoute = async ({ request, locals }) => {
 };
 
 export const GET: APIRoute = async () =>
-  jsonResponse(405, {
-    success: false,
-    code: 'METHOD_NOT_ALLOWED',
-    message: 'Method not allowed.',
-  });
+  buildError(405, 'METHOD_NOT_ALLOWED', 'Method not allowed.');
