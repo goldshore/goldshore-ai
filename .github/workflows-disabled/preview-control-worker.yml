@@ -1,4 +1,4 @@
-name: Preview Control Worker (ops-preview.goldshore.ai)
+name: Preview Control Worker (ops.goldshore.ai)
 
 permissions:
   contents: read
@@ -19,11 +19,9 @@ on:
       - "pnpm-lock.yaml"
 
 jobs:
-  deploy-preview-control:
+  preview-control:
     runs-on: ubuntu-latest
-    if: |
-      contains(github.event.pull_request.labels.*.name, 'preview') ||
-      (github.event.action == 'ready_for_review' && github.event.pull_request.base.ref == 'main')
+    if: false # Explicitly disable job
 
     steps:
       - uses: actions/checkout@3df4d485d8ce6d2b61b8d12e8f44cdfffbea301e
@@ -54,4 +52,14 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN || secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+<<<<<<< Updated upstream
         run: pnpm exec wrangler deploy --env preview --config wrangler.toml
+        run: pnpm run deploy:preview
+=======
+<<<<<<< chore/working-copy
+=======
+        run: pnpm exec wrangler deploy --env preview --config wrangler.toml
+        run: pnpm run deploy:preview
+>>>>>>>+origin/chore/wo
+>>>>>>> Stashed changes
+        run: pnpm exec wrangler deploy --env preview

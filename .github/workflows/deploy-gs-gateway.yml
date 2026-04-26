@@ -16,7 +16,8 @@ on:
 jobs:
   deploy-gateway:
     runs-on: ubuntu-latest
-    name: Deploy Gateway Worker
+    name: Deploy API Gateway
+    if: false # Explicitly disable job
 
     steps:
       - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98

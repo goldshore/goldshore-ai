@@ -1,3 +1,4 @@
+import { MasterConfigSchema, type MasterConfig } from '../packages/schema/src/system.ts';
 import {
   AiOrchestrationSchema,
   RoutingTableSchema,
@@ -24,6 +25,15 @@ type MasterConfig = {
  */
 const MASTER_CONFIG: MasterConfig = {
   ROUTING_TABLE: {
+    'gateway.goldshore.ai': { role: 'ingress', worker: 'gs-gateway' },
+    'agent.goldshore.ai': { role: 'alias', target: 'gateway.goldshore.ai' },
+    'api.goldshore.ai': { role: 'backend', worker: 'gs-api' },
+    'admin.goldshore.ai': { role: 'frontend', project: 'gs-admin-pages' },
+    'mail.goldshore.ai': { role: 'mx-only', provider: 'cloudflare-email' },
+  },
+  SERVICE_STATUS: {
+    maintenance_mode: false,
+    active_services: ['gateway', 'api', 'agent', 'admin'],
     // Service-level keys
     'api': { role: 'backend', worker: 'gs-api', priority: 1 },
     'gateway': { role: 'ingress', worker: 'gs-gateway', priority: 1 },
@@ -75,6 +85,20 @@ async function putKvValue(key: string, value: unknown): Promise<{ key: string; o
     if (response.ok) {
       return { key, ok: true, status: response.status };
     }
+  } catch (error) {
+    console.error('⚠️ Final verification failed due to network/auth issue:', error);
+  }
+}
+
+async function main(): Promise<void> {
+  assertEnvironment();
+  const parseResult = MasterConfigSchema.safeParse(MASTER_CONFIG);
+
+  if (!parseResult.success) {
+    console.error('❌ Invalid MASTER_CONFIG.');
+    console.error(parseResult.error.format());
+    process.exitCode = 1;
+    return;
 
     const error = await response.text();
     return { key, ok: false, status: response.status, detail: error.slice(0, 500) };
@@ -140,6 +164,12 @@ async function main() {
     console.error(`❌ sync:infra failed: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   }
+
+  await syncConfig(parseResult.data);
+  await runFinalVerification();
 }
 
-main();
+main().catch((error) => {
+  console.error('❌ System sync failed:', error);
+  process.exitCode = 1;
+});

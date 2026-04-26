@@ -1,8 +1,16 @@
 name = "gs-mail"
 main = "src/index.ts"
-compatibility_date = "2024-11-01"
+compatibility_date = "2026-03-03"
 compatibility_flags = ["nodejs_compat"]
-tsconfig = "tsconfig.json"
+workers_dev = false
+routes = [
+  { pattern = "mail.goldshore.ai/*", zone_name = "goldshore.ai" }
+]
+
+[[email]]
+bindings = [
+  { name = "MAIL", type = "inbound" }
+]
 
 [[kv_namespaces]]
 binding = "GS_CONFIG"
@@ -18,10 +26,25 @@ enabled = true
 
 [env.dev]
 name = "gs-mail-dev"
+
 [[env.dev.kv_namespaces]]
 binding = "GS_CONFIG"
 id = "9cc2209906a94851b704be57543987a9"
+
 [env.dev.vars]
+ENV = "dev"
+MAIL_FORWARD_TO = "ops+dev@goldshore.ai"
+
+[env.preview]
+name = "gs-mail-preview"
+
+[[env.preview.kv_namespaces]]
+binding = "GS_CONFIG"
+id = "9cc2209906a94851b704be57543987a9"
+
+[env.preview.vars]
+ENV = "preview"
+MAIL_FORWARD_TO = "ops+preview@goldshore.ai"
 ENV = "development"
 MAIL_ALLOWED_RECIPIENTS = "ops@goldshore.ai,inbox@goldshore.ai"
 

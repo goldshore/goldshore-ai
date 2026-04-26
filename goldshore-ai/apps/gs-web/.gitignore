@@ -1,0 +1,9 @@
+# Generated OpenAPI artifacts
+public/openapi/
+src/content/openapi/
+
+# Logs and Verification
+web_dev*.log
+verify_web.py
+verification*.png
+src/search-index.json

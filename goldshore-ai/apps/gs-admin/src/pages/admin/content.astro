@@ -1,0 +1,472 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+
+const apiBase = import.meta.env.PUBLIC_API ?? '';
+---
+
+<AdminLayout title="Content Studio">
+  <div class="content-header">
+    <div>
+      <h1>Content Studio</h1>
+      <p>Manage site pages, upload media assets, and configure custom forms.</p>
+    </div>
+    <div class="api-status" id="api-status" data-api-base={apiBase}>
+      {apiBase ? 'API connected' : 'API base missing'}
+    </div>
+  </div>
+
+  <section class="gs-panel">
+    <div class="panel-title">
+      <h2>Page Content</h2>
+      <span class="pill">Create &amp; edit</span>
+    </div>
+    <form id="content-form" class="form-grid">
+      <label>
+        Title
+        <input type="text" name="title" placeholder="GoldShore Summer Campaign" required />
+      </label>
+      <label>
+        Slug
+        <input type="text" name="slug" placeholder="/campaigns/summer-2025" required />
+      </label>
+      <label>
+        Status
+        <select name="status">
+          <option value="draft">Draft</option>
+          <option value="review">In review</option>
+          <option value="published">Published</option>
+        </select>
+      </label>
+      <label class="full">
+        Body
+        <textarea name="body" rows="5" placeholder="Write the primary body content..."></textarea>
+      </label>
+      <label class="full">
+        Metadata (JSON)
+        <textarea name="metadata" rows="3" placeholder='{"heroImage":"r2://...","seoTitle":"GoldShore"}'></textarea>
+      </label>
+      <button class="btn-primary" type="submit">Save page</button>
+      <span id="content-status" class="status-text">Awaiting changes</span>
+    </form>
+    <div class="list-section">
+      <h3>Recent pages</h3>
+      <div id="content-list" class="list-grid">Loading...</div>
+    </div>
+  </section>
+
+  <section class="gs-panel">
+    <div class="panel-title">
+      <h2>Media Library</h2>
+      <span class="pill">Uploads</span>
+    </div>
+    <form id="media-form" class="form-grid">
+      <label class="full">
+        File
+        <input type="file" name="file" required />
+      </label>
+      <label>
+        Alt text
+        <input type="text" name="altText" placeholder="Hero image of the GoldShore team" />
+      </label>
+      <label>
+        Tags
+        <input type="text" name="tags" placeholder="hero, website, campaign" />
+      </label>
+      <button class="btn-primary" type="submit">Upload asset</button>
+      <span id="media-status" class="status-text">Awaiting upload</span>
+    </form>
+    <div class="list-section">
+      <h3>Recent assets</h3>
+      <div id="media-list" class="list-grid">Loading...</div>
+    </div>
+  </section>
+
+  <section class="gs-panel">
+    <div class="panel-title">
+      <h2>Form Configuration</h2>
+      <span class="pill">Structured inputs</span>
+    </div>
+    <form id="form-config" class="form-grid">
+      <label>
+        Form name
+        <input type="text" name="name" placeholder="Investor Contact" required />
+      </label>
+      <label>
+        Slug
+        <input type="text" name="slug" placeholder="investor-contact" required />
+      </label>
+      <label class="full">
+        Description
+        <input type="text" name="description" placeholder="Inbound investor inquiries for the pipeline." />
+      </label>
+      <label class="full">
+        Fields (JSON)
+        <textarea name="fields" rows="4" placeholder='[{"id":"email","type":"email","label":"Email"}]'></textarea>
+      </label>
+      <label class="full">
+        Settings (JSON)
+        <textarea name="settings" rows="3" placeholder='{"notify":"ops@goldshore.ai"}'></textarea>
+      </label>
+      <button class="btn-primary" type="submit">Save form</button>
+      <span id="form-status" class="status-text">Awaiting changes</span>
+    </form>
+    <div class="list-section">
+      <h3>Active forms</h3>
+      <div id="form-list" class="list-grid">Loading...</div>
+    </div>
+  </section>
+</AdminLayout>
+
+<script type="module">
+  const apiStatus = document.getElementById('api-status');
+  const apiBase = apiStatus?.dataset.apiBase ?? '';
+
+  const setStatus = (id, message, tone = 'idle') => {
+    const target = document.getElementById(id);
+    if (!target) return;
+    target.textContent = message;
+    target.dataset.tone = tone;
+  };
+
+  const parseJson = (value) => {
+    if (!value) return null;
+    try {
+      return JSON.parse(value);
+    } catch (error) {
+      return null;
+    }
+  };
+
+  const request = async (path, options = {}) => {
+    if (!apiBase) {
+      throw new Error('Missing API base');
+    }
+    const response = await fetch(`${apiBase}${path}`, {
+      credentials: 'include',
+      ...options
+    });
+    if (!response.ok) {
+      const message = await response.text();
+      throw new Error(message || 'Request failed');
+    }
+    return response.json();
+  };
+
+  const ensureSession = async () => {
+    if (!apiBase) return;
+    await request('/admin/session', { method: 'POST' });
+  };
+
+  const renderList = (containerId, items, formatter) => {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    if (!items.length) {
+      container.textContent = 'No entries yet.';
+      return;
+    }
+    container.innerHTML = '';
+    items.slice(0, 6).forEach((item) => {
+      const card = document.createElement('div');
+      card.className = 'list-card';
+      card.innerHTML = formatter(item);
+      container.appendChild(card);
+    });
+  };
+
+  const refreshContent = async () => {
+    try {
+      const data = await request('/admin/content');
+      renderList('content-list', data.items ?? [], (item) => `
+        <strong>${item.title ?? 'Untitled'}</strong>
+        <span>${item.slug ?? ''}</span>
+        <em>${item.status ?? 'draft'}</em>
+      `);
+    } catch (error) {
+      setStatus('content-status', 'Unable to load pages', 'error');
+    }
+  };
+
+  const refreshMedia = async () => {
+    try {
+      const data = await request('/admin/media');
+      renderList('media-list', data.items ?? [], (item) => `
+        <strong>${item.file_name ?? 'Asset'}</strong>
+        <span>${item.content_type ?? 'unknown type'}</span>
+        <em>${item.r2_key ?? 'metadata only'}</em>
+      `);
+    } catch (error) {
+      setStatus('media-status', 'Unable to load assets', 'error');
+    }
+  };
+
+  const refreshForms = async () => {
+    try {
+      const data = await request('/admin/forms');
+      renderList('form-list', data.items ?? [], (item) => `
+        <strong>${item.name ?? 'Untitled form'}</strong>
+        <span>${item.slug ?? ''}</span>
+        <em>${item.status ?? 'draft'}</em>
+      `);
+    } catch (error) {
+      setStatus('form-status', 'Unable to load forms', 'error');
+    }
+  };
+
+  const init = async () => {
+    if (!apiBase) {
+      setStatus('content-status', 'Set PUBLIC_API to enable saving', 'warning');
+      setStatus('media-status', 'Set PUBLIC_API to enable uploads', 'warning');
+      setStatus('form-status', 'Set PUBLIC_API to enable saving', 'warning');
+      return;
+    }
+
+    await ensureSession();
+    await Promise.all([refreshContent(), refreshMedia(), refreshForms()]);
+  };
+
+  document.getElementById('content-form')?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = event.target;
+    const metadata = parseJson(form.metadata.value);
+    if (form.metadata.value && !metadata) {
+      setStatus('content-status', 'Metadata JSON is invalid', 'error');
+      return;
+    }
+
+    setStatus('content-status', 'Saving...', 'busy');
+    try {
+      await request('/admin/content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: form.title.value,
+          slug: form.slug.value,
+          status: form.status.value,
+          body: form.body.value,
+          metadata: metadata ?? {}
+        })
+      });
+      setStatus('content-status', 'Page saved', 'success');
+      form.reset();
+      await refreshContent();
+    } catch (error) {
+      setStatus('content-status', 'Save failed', 'error');
+    }
+  });
+
+  document.getElementById('media-form')?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+    setStatus('media-status', 'Uploading...', 'busy');
+    try {
+      await request('/admin/media', {
+        method: 'POST',
+        body: formData
+      });
+      setStatus('media-status', 'Upload complete', 'success');
+      form.reset();
+      await refreshMedia();
+    } catch (error) {
+      setStatus('media-status', 'Upload failed', 'error');
+    }
+  });
+
+  document.getElementById('form-config')?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = event.target;
+    const fields = parseJson(form.fields.value);
+    const settings = parseJson(form.settings.value);
+    if (form.fields.value && !fields) {
+      setStatus('form-status', 'Fields JSON is invalid', 'error');
+      return;
+    }
+    if (form.settings.value && !settings) {
+      setStatus('form-status', 'Settings JSON is invalid', 'error');
+      return;
+    }
+
+    setStatus('form-status', 'Saving...', 'busy');
+    try {
+      await request('/admin/forms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: form.name.value,
+          slug: form.slug.value,
+          description: form.description.value,
+          fields: fields ?? [],
+          settings: settings ?? {},
+          status: 'draft'
+        })
+      });
+      setStatus('form-status', 'Form saved', 'success');
+      form.reset();
+      await refreshForms();
+    } catch (error) {
+      setStatus('form-status', 'Save failed', 'error');
+    }
+  });
+
+  init();
+</script>
+
+<style>
+  .content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .content-header h1 {
+    margin: 0 0 0.25rem;
+  }
+
+  .content-header p {
+    margin: 0;
+    color: var(--color-text-secondary);
+  }
+
+  .api-status {
+    padding: 0.4rem 0.8rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    background: rgba(34, 211, 238, 0.12);
+    color: #67e8f9;
+  }
+
+  .panel-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .panel-title h2 {
+    margin: 0;
+    font-size: 1rem;
+  }
+
+  .pill {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--color-text-secondary);
+  }
+
+  .form-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: end;
+  }
+
+  .form-grid label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+  }
+
+  .form-grid input,
+  .form-grid select,
+  .form-grid textarea {
+    border-radius: 0.6rem;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(0,0,0,0.4);
+    color: #fff;
+    padding: 0.6rem 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  .form-grid textarea {
+    resize: vertical;
+  }
+
+  .form-grid .full {
+    grid-column: 1 / -1;
+  }
+
+  .btn-primary {
+    background: linear-gradient(120deg, #22d3ee, #818cf8);
+    border: none;
+    color: #020617;
+    padding: 0.7rem 1.4rem;
+    border-radius: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .status-text {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+  }
+
+  .status-text[data-tone='success'] {
+    color: #86efac;
+  }
+
+  .status-text[data-tone='error'] {
+    color: #fca5a5;
+  }
+
+  .status-text[data-tone='busy'] {
+    color: #fde047;
+  }
+
+  .status-text[data-tone='warning'] {
+    color: #fbbf24;
+  }
+
+  .list-section {
+    margin-top: 1.5rem;
+  }
+
+  .list-section h3 {
+    margin: 0 0 0.75rem;
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+  }
+
+  .list-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .list-card {
+    border-radius: 0.75rem;
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 0.75rem;
+    background: rgba(255,255,255,0.02);
+    display: grid;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+  }
+
+  .list-card strong {
+    color: #fff;
+    font-size: 0.85rem;
+  }
+
+  .list-card em {
+    color: #22d3ee;
+    font-style: normal;
+  }
+
+  @media (max-width: 900px) {
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .content-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+</style>

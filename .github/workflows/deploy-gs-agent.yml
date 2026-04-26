@@ -9,12 +9,21 @@ on:
       - main
     paths:
       - "apps/gs-agent/**"
-      - "infra/Cloudflare/gs-agent.wrangler.toml"
+      - ".github/workflows/deploy-gs-agent.yml"
       - "packages/**"
       - "package.json"
       - "pnpm-lock.yaml"
 
 jobs:
+  deploy:
+    if: ${{ false }} # Phase 0: keep gs-agent production deploy disabled
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
   deploy-agent:
     runs-on: ubuntu-latest
     name: Deploy
@@ -43,11 +52,9 @@ jobs:
       - name: Validate canonical worker names
         run: pnpm validate:names
 
-      - name: Deploy GS agent worker (production)
+      - name: Deploy agent worker (production)
         working-directory: apps/gs-agent
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN || secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: pnpm exec wrangler deploy --env production
-
-# // [AUTO-UPDATE] Updated by Jules AI on 2026-03-23 00:00
+        run: pnpm exec wrangler deploy --env prod --config wrangler.toml

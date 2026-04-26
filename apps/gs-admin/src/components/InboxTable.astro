@@ -71,7 +71,7 @@
     .then((data) => {
       const recent = data?.inbox?.recent ?? [];
       const total = data?.inbox?.count ?? 0;
-      if (count) count.textContent = `${total} logged`; 
+      if (count) count.textContent = `${total} logged`;
 
       if (!recent.length) {
         setStatusRow('No incoming messages detected.');

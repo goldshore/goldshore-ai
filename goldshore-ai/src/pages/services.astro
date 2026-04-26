@@ -1,0 +1,64 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { services, caseStudies } from '../data/site-content';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <BaseHead
+      title="Services | GoldShore.ai"
+      description="Depth-first services for operational AI systems."
+    />
+  </head>
+  <body>
+    <Header />
+    <main>
+      <h1>Services</h1>
+      <p class="small">
+        Depth, not clutter: each engagement is scoped for practical outcomes and
+        operational durability.
+      </p>
+      <section>
+        {
+          services.map((service) => (
+            <details class="card" style="margin-bottom:1rem;">
+              <summary>
+                <strong>{service.name}</strong>
+              </summary>
+              <p>{service.objective}</p>
+              <ul>
+                {service.deliverables.map((deliverable) => (
+                  <li>{deliverable}</li>
+                ))}
+              </ul>
+              <p class="small">
+                <strong>Typical timeframe:</strong> {service.timeframe}
+              </p>
+            </details>
+          ))
+        }
+      </section>
+      <section>
+        <h2>Mini case studies</h2>
+        <div class="grid">
+          {
+            caseStudies.map((caseStudy) => (
+              <article class="card">
+                <h3>{caseStudy.service}</h3>
+                <p>{caseStudy.outcome}</p>
+                <p class="metric">{caseStudy.result}</p>
+                <p class="small">
+                  <strong>System:</strong> {caseStudy.technology}
+                </p>
+              </article>
+            ))
+          }
+        </div>
+      </section>
+    </main>
+    <Footer />
+  </body>
+</html>

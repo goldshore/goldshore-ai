@@ -14,7 +14,9 @@ interface Env {
   MAIL_ALLOWED_RECIPIENTS?: string;
 }
 
-const VERSION = '2026.03.03-mail-inbox-log';
+const VERSION = '2026.03.21-mail-routing-fix';
+const MAX_INBOX_LOGS = 100;
+
 const app = new Hono<{ Bindings: Env }>();
 const isEmailLike = (value: string) => {
   const normalized = normalizeEmail(value);
@@ -123,9 +125,9 @@ export default {
 
     const parsedEntry = EmailLogSchema.safeParse({
       id: crypto.randomUUID(),
-      from: sender,
-      to: recipient,
-      subject,
+      from: message.from,
+      to: message.to,
+      subject: message.headers.get('subject') || 'No Subject',
       timestamp: new Date().toISOString(),
     });
 
@@ -149,7 +151,7 @@ export default {
           );
           console.info(`✅ Logged email: ${sender} -> ${recipient}`);
         } catch (error) {
-          console.error('❌ KV persistence error:', error);
+          console.error('KV persistence error for inbound mail.', error);
         }
       })(),
     );
