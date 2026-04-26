@@ -30,8 +30,10 @@ This document is the canonical reference for GoldShore domains, preview URLs, Cl
 
 ## Production domains
 
-- `goldshore.ai`
-- `www.goldshore.ai`
+- `goldshore.org` (canonical public web hostname)
+- `www.goldshore.org`
+- `goldshore.ai` (redirect to canonical web hostname)
+- `www.goldshore.ai` (redirect to canonical web hostname)
 - `api.goldshore.ai`
 - `gw.goldshore.ai` (canonical gateway hostname; not `gateway.goldshore.ai`)
 - `ops.goldshore.ai`
@@ -50,11 +52,22 @@ The table below is the canonical public layout for customer-facing web routes on
 
 | Host | Route | Purpose | Access |
 | --- | --- | --- | --- |
-| `goldshore.ai` | `/` | Primary marketing homepage | Public |
-| `goldshore.ai` | `/apps/risk-radar` | Risk Radar product/detail page with the reusable animated system component | Public |
-| `goldshore.ai` | `/developer`, `/developer/docs/*`, `/developer/api/*` | Developer hub, docs, and API reference | Public |
-| `www.goldshore.ai` | `/*` | Canonical web mirror for public pages | Public |
+| `goldshore.org` | `/` | Primary marketing homepage | Public |
+| `goldshore.org` | `/apps/risk-radar` | Risk Radar product/detail page with the reusable animated system component | Public |
+| `goldshore.org` | `/developer`, `/developer/docs/*`, `/developer/api/*` | Developer hub, docs, and API reference | Public |
+| `www.goldshore.org` | `/*` | Canonical web mirror for public pages | Public |
+| `goldshore.ai`, `www.goldshore.ai` | `/*` | Legacy public hostnames redirected to canonical `.org` host | Public |
 | `preview.goldshore.ai` and `*-preview.goldshore.ai` | `/*` | Preview deployments for web validation | Cloudflare Access (GoldShore-Web-Preview) |
+
+## Canonical redirect policy
+
+Cloudflare Pages custom domains should attach all four public web hostnames directly to the `gs-web` Pages project first (`goldshore.org`, `www.goldshore.org`, `goldshore.ai`, `www.goldshore.ai`). After all four are active, configure Bulk Redirects so `goldshore.org` remains canonical:
+
+- `www.goldshore.org/*` → `https://goldshore.org/$1` (301)
+- `goldshore.ai/*` → `https://goldshore.org/$1` (301)
+- `www.goldshore.ai/*` → `https://goldshore.org/$1` (301)
+
+This ordering prevents temporary inactive-domain states while SSL and DNS records converge.
 
 ## Cloudflare Access policies
 

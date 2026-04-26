@@ -4,13 +4,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev src/index.ts",
-    "deploy": "wrangler deploy --env prod",
-    "build": "wrangler deploy --env prod --dry-run --outdir=dist"
+    "dev": "wrangler dev src/index.ts --bundle",
+    "deploy": "wrangler deploy --env prod --bundle",
+    "build": "wrangler deploy --env prod --dry-run --outdir=dist --bundle"
+  },
+  "dependencies": {
+    "hono": "^4.10.2"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260329.1",
+    "@cloudflare/workers-types": "^4.20260421.1",
     "typescript": "^5.4.0",
-    "wrangler": "^4.75.0"
+    "wrangler": "^4.83.0"
   }
 }

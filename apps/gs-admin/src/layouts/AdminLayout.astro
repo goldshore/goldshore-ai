@@ -1,0 +1,179 @@
+---
+import '@goldshore/theme/styles/tokens.css';
+
+const {
+  title = 'GoldShore Admin',
+  currentPath = Astro.url.pathname,
+} = Astro.props;
+
+const nav = [
+  { href: '/admin/overview',     label: 'Overview',     icon: '◈' },
+  { href: '/admin/deployments',  label: 'Deployments',  icon: '⬡' },
+  { href: '/admin/agents',       label: 'Agents',       icon: '◎' },
+  { href: '/admin/risk',         label: 'Risk',         icon: '⬟' },
+  { href: '/admin/settings',     label: 'Settings',     icon: '⊙' },
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{title} — GoldShore Control</title>
+    <link rel="icon" href="/logo/gs-penrose.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <div class="gs-admin-shell">
+
+      <!-- Sidebar -->
+      <aside class="gs-sidebar" aria-label="Admin navigation">
+        <div class="gs-sidebar__brand">
+          <img src="/logo/gs-penrose.svg" alt="GoldShore" width="28" height="28" />
+          <span class="gs-sidebar__wordmark">GoldShore</span>
+          <span class="gs-sidebar__tag">Admin</span>
+        </div>
+
+        <nav class="gs-sidebar__nav">
+          {nav.map(link => (
+            <a
+              href={link.href}
+              class:list={['gs-sidebar__link', currentPath.startsWith(link.href) && 'is-active']}
+              aria-current={currentPath.startsWith(link.href) ? 'page' : undefined}
+            >
+              <span class="gs-sidebar__icon" aria-hidden="true">{link.icon}</span>
+              {link.label}
+            </a>
+          ))}
+        </nav>
+
+        <div class="gs-sidebar__footer">
+          <a href="https://goldshore.ai" class="gs-sidebar__link gs-sidebar__link--muted">
+            ← Public site
+          </a>
+        </div>
+      </aside>
+
+      <!-- Main -->
+      <main class="gs-admin-main" id="main-content">
+        <slot />
+      </main>
+    </div>
+
+    <style is:global>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      html, body {
+        height: 100%;
+        font-family: var(--gs-font-body, Inter, ui-sans-serif, system-ui, sans-serif);
+        font-size: 14px;
+        background: #070b14;
+        color: rgba(226,232,240,0.88);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .gs-admin-shell {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        min-height: 100vh;
+      }
+
+      /* Sidebar */
+      .gs-sidebar {
+        display: flex;
+        flex-direction: column;
+        background: rgba(11,15,24,0.95);
+        border-right: 1px solid rgba(90,162,255,0.10);
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+      }
+
+      .gs-sidebar__brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 20px 18px 16px;
+        border-bottom: 1px solid rgba(90,162,255,0.08);
+      }
+
+      .gs-sidebar__wordmark {
+        font-weight: 700;
+        font-size: 15px;
+        color: rgba(226,232,240,0.95);
+        letter-spacing: 0.02em;
+      }
+
+      .gs-sidebar__tag {
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: rgba(90,162,255,0.75);
+        background: rgba(90,162,255,0.10);
+        border: 1px solid rgba(90,162,255,0.18);
+        border-radius: 4px;
+        padding: 2px 6px;
+      }
+
+      .gs-sidebar__nav {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 12px 10px;
+        gap: 2px;
+      }
+
+      .gs-sidebar__link {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 10px;
+        border-radius: 8px;
+        color: rgba(148,163,184,0.80);
+        text-decoration: none;
+        font-size: 13.5px;
+        font-weight: 500;
+        transition: background 150ms ease, color 150ms ease;
+      }
+
+      .gs-sidebar__link:hover,
+      .gs-sidebar__link.is-active {
+        background: rgba(90,162,255,0.10);
+        color: rgba(226,232,240,0.95);
+      }
+
+      .gs-sidebar__link.is-active {
+        border-left: 2px solid rgba(90,162,255,0.70);
+        padding-left: 8px;
+      }
+
+      .gs-sidebar__link--muted {
+        font-size: 12px;
+        color: rgba(100,116,139,0.70);
+      }
+
+      .gs-sidebar__icon {
+        width: 18px;
+        text-align: center;
+        font-size: 14px;
+        color: rgba(90,162,255,0.65);
+      }
+
+      .gs-sidebar__footer {
+        padding: 12px 10px 20px;
+        border-top: 1px solid rgba(90,162,255,0.08);
+      }
+
+      /* Main content */
+      .gs-admin-main {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        background: #070b14;
+      }
+    </style>
+  </body>
+</html>

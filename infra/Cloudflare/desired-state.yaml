@@ -1,6 +1,8 @@
 cloudflare:
   account_name: goldshore-account
   zone: goldshore.ai
+  secondary_zones:
+    - goldshore.org
 
   dns:
     records:
@@ -10,6 +12,14 @@ cloudflare:
         content: "gs-web.pages.dev"
         proxied: true
       - name: "www"
+        type: CNAME
+        content: "gs-web.pages.dev"
+        proxied: true
+      - name: "goldshore.org"
+        type: CNAME
+        content: "gs-web.pages.dev"
+        proxied: true
+      - name: "www.goldshore.org"
         type: CNAME
         content: "gs-web.pages.dev"
         proxied: true
@@ -38,7 +48,17 @@ cloudflare:
         content: "gs-mail.goldshore-account.workers.dev"
         proxied: true
 
-      # F. Control Worker (Internal only - no public DNS)
+      # F. Control Worker (ops.goldshore.ai)
+      - name: "ops"
+        type: CNAME
+        content: "gs-control.goldshore-account.workers.dev"
+        proxied: true
+
+      # G. Preview deployments (claude/** branches)
+      - name: "preview"
+        type: CNAME
+        content: "preview-web.pages.dev"
+        proxied: true
 
   access:
     policies:
@@ -68,6 +88,8 @@ cloudflare:
         build_command: "pnpm --filter @goldshore/gs-web build"
         output_dir: "apps/gs-web/dist"
         custom_domains:
+          - "goldshore.org"
+          - "www.goldshore.org"
           - "goldshore.ai"
           - "www.goldshore.ai"
 
@@ -79,6 +101,24 @@ cloudflare:
         output_dir: "apps/gs-admin/dist"
         custom_domains:
           - "admin.goldshore.ai"
+        bindings:
+          kv:
+            - name: "KV"
+              namespace: "gs_admin_kv_001"
+          d1:
+            - name: "DB"
+              database_name: "goldshore"
+              database_id: "gs_db_001"
+          r2:
+            - name: "ASSETS"
+              bucket_name: "gs-assets"
+          services:
+            - binding: "API_SERVICE"
+              service: "gs-api"
+              environment: "prod"
+          secrets:
+            - CLOUDFLARE_ACCESS_AUDIENCE  # set via: wrangler pages secret put
+            - ADMIN_API_KEY               # set via: wrangler pages secret put
 
   workers:
     services:
@@ -108,7 +148,7 @@ cloudflare:
           services:
             - binding: "API"
               service: "gs-api"
-              environment: "production"
+              environment: "prod"
           kv:
             - name: "GATEWAY_KV"
               namespace: "goldshore-gw-kv"
@@ -121,7 +161,7 @@ cloudflare:
           services:
             - binding: "API"
               service: "gs-api"
-              environment: "production"
+              environment: "prod"
           env_vars:
             CONTROL_SERVICE: "true"
 
@@ -144,3 +184,16 @@ cloudflare:
           destination: "your.personal.email@goldshore.ai"
         - address: "support@goldshore.ai"
           destination: "your.personal.email@goldshore.ai"
+
+  redirects:
+    canonical_host: "goldshore.org"
+    rules:
+      - from: "www.goldshore.org/*"
+        to: "https://goldshore.org/$1"
+        status: 301
+      - from: "goldshore.ai/*"
+        to: "https://goldshore.org/$1"
+        status: 301
+      - from: "www.goldshore.ai/*"
+        to: "https://goldshore.org/$1"
+        status: 301

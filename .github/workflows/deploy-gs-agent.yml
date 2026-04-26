@@ -21,13 +21,13 @@ jobs:
     name: Deploy
 
     steps:
-      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
-      - uses: pnpm/action-setup@v5
+      - uses: pnpm/action-setup@v6.0.0
         with:
           run_install: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
@@ -44,9 +44,17 @@ jobs:
       - name: Validate canonical worker names
         run: pnpm validate:names
 
+      - name: Validate required Cloudflare deploy secrets
+        env:
+          CLOUDFLARE_BUILD_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          test -n "$CLOUDFLARE_BUILD_API_TOKEN" || (echo "Missing required secret: CLOUDFLARE_BUILD_API_TOKEN" && exit 1)
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "Missing required secret: CLOUDFLARE_ACCOUNT_ID" && exit 1)
+
       - name: Deploy GS Agent worker to Cloudflare
         working-directory: apps/gs-agent
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN || secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: pnpm exec wrangler deploy --env prod

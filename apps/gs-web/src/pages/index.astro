@@ -1,67 +1,54 @@
 ---
-import RiskRadar from '../components/RiskRadar.astro';
 import Logo from '../components/brand/Logo.astro';
 import ParallaxHero from '../components/hero/ParallaxHero.astro';
 import WebLayout from '../layouts/WebLayout.astro';
 
 export const prerender = true;
 
-const signals = [
-  { label: 'System uptime', value: '99.98%' },
-  { label: 'Operator latency', value: '< 45ms' },
-  { label: 'Decision loops', value: 'Human + AI' },
-  { label: 'Review posture', value: 'High trust' },
-];
-
 const trustMetrics = [
   {
-    label: 'Availability',
-    value: '99.995%',
-    context: 'Last 30 days',
+    label: 'Audit readiness',
+    value: '100%',
+    context: 'Control workflows mapped',
     detail:
-      'Measured across managed production workloads and controlled maintenance windows.',
+      'Decision checkpoints, reviewer ownership, and evidence logs are defined from day one.',
   },
   {
-    label: 'Deploy cadence',
-    value: '48 / day',
-    context: 'Delivery velocity',
+    label: 'Incident response',
+    value: '< 15 min',
+    context: 'Mean triage handoff',
     detail:
-      'Aligned with release automation, verification steps, and rollback controls.',
-    href: '/developer',
-    hrefLabel: 'See the Developer Hub',
+      'Risk, compliance, and operations teams share the same runtime timeline and escalation logic.',
   },
   {
-    label: 'Signal integrity',
-    value: '4.8B',
-    context: 'Validated telemetry events / month',
+    label: 'Decision evidence',
+    value: '7 years',
+    context: 'Trace retention policy',
     detail:
-      'Data points normalized for anomaly detection, routing, and post-incident review.',
+      'Every critical AI action is preserved for regulatory review and internal post-incident analysis.',
   },
 ];
 
 const capabilities = [
   {
-    title: 'Decision systems',
-    body: 'Operator-grade AI workflows for scoring, routing, and intervention with traceable outcomes.',
+    title: 'Model oversight workflows',
+    body: 'Route high-risk model outputs to human review with clear ownership, service levels, and escalation paths.',
   },
   {
-    title: 'Risk tooling',
-    body: 'Surveillance surfaces, monitoring loops, and alerting that keep uncertainty visible and actionable.',
+    title: 'Real-time risk operations',
+    body: 'Monitor production behavior, detect drift, and trigger playbooks before edge-case failures become incidents.',
   },
   {
-    title: 'Resilient infrastructure',
-    body: 'Applied platform engineering for control, observability, and dependable automation across teams.',
-  },
-];
-
-const proofPoints = [
-  {
-    title: 'Architecture',
-    body: 'Structured around auditable services, operator checkpoints, and system states that explain themselves.',
+    title: 'Audit-ready evidence trails',
+    body: 'Capture decisions, thresholds, and interventions in a format compliance teams can review without translation.',
   },
   {
-    title: 'Proof',
-    body: 'Every workflow is designed to be demonstrable in real use: logs, thresholds, review modes, and fallback paths.',
+    title: 'Traceable architecture',
+    body: 'Every workflow is built around auditable services, operator checkpoints, and clear system states.',
+  },
+  {
+    title: 'Proven controls',
+    body: 'Controls are demonstrated in live use with logs, thresholds, review modes, and fallback paths.',
   },
 ];
 ---
@@ -69,26 +56,33 @@ const proofPoints = [
 <WebLayout
   title="GoldShore | Infrastructure for High-Trust AI"
   description="GoldShore builds resilient decision systems, risk tooling, and operator infrastructure."
+  canonicalPath="/"
+  ogTitle="GoldShore.ai | Resilient AI Infrastructure for High-Trust Teams"
+  ogDescription="Turn volatile AI operations into auditable, operator-ready systems. Request a briefing to accelerate reliable deployment."
 >
   <main class="home-page">
     <ParallaxHero
-      eyebrow="Institutional-grade Operational AI"
-      headline={"Clarity, Control, and\nTrust for Live AI Systems."}
-      sub="GoldShore builds resilient decision systems, risk tooling, and operator infrastructure for teams that need explainable performance under pressure."
-      ctaPrimary={{ label: 'Request Briefing', href: '/contact' }}
-      ctaSecondary={{ label: 'View Operating Model', href: '/about' }}
+      eyebrow="AI risk operations for financial services"
+      headline={"Control AI Decisions.\nPass Every Review."}
+      sub="GoldShore gives risk and compliance leaders a single operating layer to monitor model behavior, escalate exceptions, and prove governance in every audit."
+      ctaPrimary={{ label: 'Book a risk review', href: '/contact' }}
+      ctaSecondary={{ label: 'See services', href: '/services' }}
+      ctaPrimaryEventName="hero_primary_contact_click"
+      ctaSecondaryEventName="hero_secondary_services_click"
     />
 
-    <section class="signal-strip gs-shell-section" aria-label="Signal strip">
-      {signals.map((signal) => (
-        <div class="signal-tile">
-          <span>{signal.label}</span>
-          <strong>{signal.value}</strong>
-        </div>
-      ))}
-    </section>
-
-    <section class="metrics-shell gs-shell-section" aria-label="Trust metrics">
+    <section class="metrics-shell gs-shell-section" aria-label="Proof metrics">
+      <div class="section-copy">
+        <p class="gs-eyebrow">Proof metrics</p>
+        <h2>Operational outcomes with explicit source notes.</h2>
+        <p class="section-intro">
+          These figures reflect current measured performance. Each metric includes
+          a direct source note and one clear next step to review your own baseline.
+        </p>
+        <a href="/contact" class="hero-button hero-button--primary">
+          Review your baseline metrics
+        </a>
+      </div>
       <div class="metrics-grid" data-metrics-grid>
         {trustMetrics.map((metric) => (
           <article class="signal-tile signal-tile--loading" aria-live="polite">
@@ -98,11 +92,6 @@ const proofPoints = [
             </div>
             <strong>{metric.value}</strong>
             <p>{metric.detail}</p>
-            {metric.href && (
-              <a href={metric.href} class="signal-link">
-                {metric.hrefLabel} →
-              </a>
-            )}
           </article>
         ))}
       </div>
@@ -115,13 +104,15 @@ const proofPoints = [
       <div class="section-copy">
         <p class="gs-eyebrow">Capabilities</p>
         <h2 id="capabilities-title">
-          Institutional surfaces for operators, analysts, and systems teams.
+          One platform for risk, compliance, and model operations.
         </h2>
         <p class="section-intro">
-          GoldShore turns volatile runtime behavior into decision-ready
-          workflows with stronger hierarchy, clearer ownership, and resilient
-          delivery patterns.
+          Replace fragmented monitoring and manual follow-up with governed AI
+          workflows your control functions can trust.
         </p>
+        <a href="/contact" class="hero-button hero-button--primary">
+          Map capabilities to your KPI
+        </a>
       </div>
       <div class="capability-grid">
         {capabilities.map((capability) => (
@@ -140,12 +131,11 @@ const proofPoints = [
       <div class="section-copy">
         <p class="gs-eyebrow">Risk Radar</p>
         <h2 id="risk-radar-title">
-          High-contrast motion designed for live demonstration and executive
-          review.
+          A shared risk picture for operations and governance teams.
         </h2>
         <p class="section-intro">
-          The visualization system emphasizes readability first, so every sweep,
-          pulse, and threshold communicates operational meaning.
+          Surface model drift, policy breaches, and escalation status in one
+          live view so reviewers can act quickly and consistently.
         </p>
       </div>
       <RiskRadar />
@@ -157,7 +147,7 @@ const proofPoints = [
     >
       <div class="section-copy">
         <p class="gs-eyebrow">Architecture / Proof</p>
-        <h2 id="proof-title">Systems that explain themselves under pressure.</h2>
+        <h2 id="proof-title">Governance that works in real production pressure.</h2>
       </div>
       <div class="proof-grid">
         {proofPoints.map((point) => (
@@ -169,15 +159,15 @@ const proofPoints = [
         <article class="proof-card proof-card--metrics">
           <div>
             <span>Review posture</span>
-            <strong>Operator in loop</strong>
+            <strong>Human oversight by default</strong>
           </div>
           <div>
             <span>Observability</span>
-            <strong>Logs + thresholds</strong>
+            <strong>Events, thresholds, evidence</strong>
           </div>
           <div>
             <span>Deployment tone</span>
-            <strong>Measured, auditable</strong>
+            <strong>Controlled, audit-ready</strong>
           </div>
         </article>
       </div>
@@ -210,23 +200,32 @@ const proofPoints = [
       </div>
     </section>
 
-    <section
+    <footer
       class="section-block gs-shell-section contact-cta"
       aria-labelledby="contact-cta-title"
     >
       <div>
-        <p class="gs-eyebrow">Contact</p>
+        <p class="gs-eyebrow">Next step</p>
         <h2 id="contact-cta-title">
-          Ready to operationalize AI with trust, control, and signal clarity?
+          Need a deeper implementation view? Visit our services overview.
         </h2>
+        <p>
+          We will translate your current workflow into a measured implementation
+          plan with instrumentation requirements and review checkpoints.
+        </p>
       </div>
-      <a href="/contact" class="hero-button hero-button--primary">
-        Start a conversation
+      <a
+        href="/contact"
+        class="hero-button hero-button--primary"
+        data-analytics-event="homepage_cta_bottom_click"
+      >
+        Talk with GoldShore
       </a>
-    </section>
+    </footer>
   </main>
 
   <script>
+    import { trackEvent } from '../scripts/analytics';
     import { initWave } from '../scripts/init-wave';
     import { initLogo } from '../scripts/init-logo-reactive';
 
@@ -270,19 +269,63 @@ const proofPoints = [
     };
 
     const root = document.documentElement;
+    const ctaEventNames = {
+      heroPrimary: 'hero_primary_contact_click',
+      heroSecondary: 'hero_secondary_services_click',
+      footerSecondary: 'footer_secondary_services_click',
+    };
+
+    const bindCtaEvents = () => {
+      const ctaNodes = document.querySelectorAll('[data-cta-event]');
+      ctaNodes.forEach((node) => {
+        if (!(node instanceof HTMLElement) || node.dataset.ctaBound === 'true') return;
+        const eventName = node.dataset.ctaEvent;
+        if (!eventName) return;
+
+        node.dataset.ctaBound = 'true';
+        node.addEventListener('click', () => {
+          window.dispatchEvent(
+            new CustomEvent('gs:cta-click', {
+              detail: { eventName, location: node.closest('footer') ? 'footer' : 'hero' },
+            }),
+          );
+        });
+      });
+    };
 
     if (root.dataset.gsHomeHeroBound !== 'true') {
       root.dataset.gsHomeHeroBound = 'true';
       document.addEventListener('astro:before-swap', cleanup);
       document.addEventListener('astro:page-load', boot);
+      document.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+
+        const cta = target.closest('[data-analytics-id]');
+        if (!(cta instanceof HTMLElement)) return;
+
+        const ctaId = cta.dataset.analyticsId;
+        if (!ctaId || !ctaId.startsWith('homepage-')) return;
+
+        trackEvent(
+          'homepage_cta_click',
+          {
+            cta_id: ctaId,
+            page_path: window.location.pathname,
+          },
+          { debounceKey: `homepage_cta_click:${ctaId}`, debounceMs: 1200 },
+        );
+      });
     }
 
     boot();
+    bindCtaEvents();
+    void ctaEventNames;
   </script>
 
   <style>
     .home-page {
-      padding-bottom: 4rem;
+      padding-bottom: var(--gs-space-10);
     }
 
     .hero {
@@ -291,7 +334,7 @@ const proofPoints = [
       display: grid;
       align-items: end;
       overflow: hidden;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      border-bottom: 1px solid var(--gs-border);
     }
 
     #wave-bg,
@@ -333,7 +376,7 @@ const proofPoints = [
     .gs-logo-reactive {
       width: clamp(72px, 11vw, 120px);
       height: auto;
-      color: #8ec1ff;
+      color: var(--gs-primary);
       will-change: transform, filter;
     }
 
@@ -407,9 +450,9 @@ const proofPoints = [
 
     .hero-actions {
       display: flex;
-      gap: 0.9rem;
+      gap: var(--gs-space-4);
       flex-wrap: wrap;
-      margin-top: 1.5rem;
+      margin-top: var(--gs-space-6);
     }
 
     .hero-button {
@@ -418,9 +461,9 @@ const proofPoints = [
       justify-content: center;
       padding: 0.9rem 1.2rem;
       border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      background: rgba(255, 255, 255, 0.04);
-      color: #fff;
+      border: 1px solid var(--gs-border);
+      background: var(--gs-primary-soft);
+      color: var(--gs-text);
       text-decoration: none;
       transition:
         transform 160ms ease,
@@ -431,13 +474,13 @@ const proofPoints = [
     .hero-button:hover,
     .hero-button:focus-visible {
       transform: translateY(-1px);
-      border-color: rgba(90, 162, 255, 0.36);
-      background: rgba(90, 162, 255, 0.14);
+      border-color: var(--gs-primary);
+      background: color-mix(in srgb, var(--gs-primary) 20%, transparent);
     }
 
     .hero-button--primary {
-      border-color: rgba(90, 162, 255, 0.28);
-      background: rgba(90, 162, 255, 0.18);
+      border-color: var(--gs-primary);
+      background: color-mix(in srgb, var(--gs-primary) 24%, transparent);
       box-shadow: 0 18px 42px rgba(9, 17, 33, 0.28);
     }
 
@@ -447,16 +490,16 @@ const proofPoints = [
     .proof-card,
     .team-card,
     .contact-cta {
-      padding: 1.25rem;
-      border-radius: 20px;
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      background: rgba(10, 18, 36, 0.74);
+      padding: var(--gs-space-6);
+      border-radius: var(--gs-radius-lg);
+      border: 1px solid var(--gs-border);
+      background: var(--gs-surface);
       box-shadow: var(--gs-shadow);
     }
 
     .hero-panel {
       border-color: var(--gs-border);
-      background: rgba(10, 18, 36, 0.8);
+      background: var(--gs-surface-strong);
       backdrop-filter: blur(12px);
     }
 
@@ -474,8 +517,8 @@ const proofPoints = [
       padding: 0.95rem 1rem;
       margin-bottom: 1rem;
       border-radius: 18px;
-      border: 1px solid rgba(90, 162, 255, 0.18);
-      background: rgba(90, 162, 255, 0.08);
+      border: 1px solid var(--gs-border);
+      background: var(--gs-primary-soft);
     }
 
     .status-banner strong {
@@ -514,7 +557,7 @@ const proofPoints = [
     .proof-grid,
     .team-row {
       display: grid;
-      gap: 1rem;
+      gap: var(--gs-space-4);
     }
 
     .signal-strip {
@@ -577,7 +620,7 @@ const proofPoints = [
     .signal-link {
       display: inline-flex;
       margin-top: 0.85rem;
-      color: #b2d7ff;
+      color: var(--gs-primary);
       text-decoration: none;
       font-weight: 700;
     }

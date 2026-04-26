@@ -1,6 +1,10 @@
 ---
+import '@goldshore/theme/styles/tokens.css';
+import '@goldshore/theme/styles/base.css';
+import '@goldshore/theme/styles/components.css';
+import '@goldshore/theme/styles/layout.css';
 import Logo from '../components/brand/Logo.astro';
-import '../styles/global.css';
+import { HTML_CSP_META_FALLBACK } from '../security/policy';
 import { WEB_META_CSP } from '../utils/csp';
 
 const navLinks = [
@@ -12,25 +16,25 @@ const navLinks = [
   { href: '/apps/risk-radar', label: 'Risk Radar' },
   { href: '/developer', label: 'Developer Hub' },
 ];
-
 const footerLinks = [
-  { href: '/about', label: 'About' },
-  { href: '/team', label: 'Team' },
-  { href: '/contact', label: 'Contact' },
-  { href: '/apps/risk-radar', label: 'Risk Radar' },
-  { href: '/developer', label: 'Developer Hub' },
+  { href: '/legal/privacy', label: 'Privacy' },
+  { href: '/legal/terms', label: 'Terms' },
 ];
+const mobileNavId = 'mobile-navigation';
+
+const CANONICAL_ORIGIN = 'https://goldshore.org';
 
 const {
   title = 'GoldShore',
   description = 'GoldShore AI',
   currentPath = Astro.url.pathname,
+  canonicalPath = Astro.url.pathname,
+  ogTitle = title,
+  ogDescription = description,
 } = Astro.props;
 
-const logoAssetPath = '/logo.svg';
-const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url);
-const socialImage = new URL(logoAssetPath, Astro.site ?? Astro.url);
-const mobileNavId = 'mobile-navigation';
+const canonicalUrl = new URL(canonicalPath, CANONICAL_ORIGIN).toString();
+const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
 ---
 
 <html lang="en">
@@ -40,25 +44,27 @@ const mobileNavId = 'mobile-navigation';
     <meta http-equiv="Content-Security-Policy" content={WEB_META_CSP} />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#0b0f18" />
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content={title} />
-    <meta property="og:description" content={description} />
-    <meta property="og:url" content={canonicalUrl} />
-    <meta property="og:image" content={socialImage} />
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:title" content={title} />
-    <meta property="twitter:description" content={description} />
-    <meta property="twitter:image" content={socialImage} />
     <link rel="canonical" href={canonicalUrl} />
-    <link rel="icon" href="/favicon.svg" sizes="any" type="image/svg+xml" />
-    <link rel="shortcut icon" href="/favicon.svg" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:title" content={ogTitle} />
+    <meta property="og:description" content={ogDescription} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content={canonicalUrl} />
+    <meta name="twitter:title" content={ogTitle} />
+    <meta name="twitter:description" content={ogDescription} />
+    <!-- Response headers from middleware/platform config are authoritative. Keep this meta CSP only as a fallback when headers are unavailable. -->
+    {shouldRenderCspMeta && <meta http-equiv="Content-Security-Policy" content={HTML_CSP_META_FALLBACK} />}
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.png" type="image/png" sizes="32x32" />
+    <!-- Bolt: Preconnect to external origins to speed up resource loading -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
+    <link rel="manifest" href="/site.webmanifest"/>
   </head>
   <body>
     <a href="#content" class="skip-link">Skip to content</a>
