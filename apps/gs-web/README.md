@@ -130,6 +130,8 @@ Set these environment variables in the `gs-web` Pages project as needed:
 
 Keep the existing `KV` and `DB` bindings so submissions still persist if mail delivery is degraded.
 
+`gs-web` does not currently read `GS_CONFIG` directly. Do not add a `GS_CONFIG` binding to the web Pages project unless a concrete `apps/gs-web` runtime consumer needs live request-time reads.
+
 ## Source of truth
 
 For API behavior exposed through the public docs, treat the OpenAPI description and the actual route files as canonical. Update this README when app routes, workspace commands, or deployment workflows change.
