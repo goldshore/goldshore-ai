@@ -1,8 +1,5 @@
 name: Deploy — GoldShore Platform
 
-permissions:
-  contents: read
-
 # Triggered on push to main OR manually from GitHub Actions tab
 on:
   push:
@@ -13,9 +10,6 @@ on:
         description: 'Skip deleting stub workers (goldshore-ai, gs-dynamic-worker)'
         required: false
         default: 'false'
-
-permissions:
-  contents: read
 
 jobs:
   # ─────────────────────────────────────────────
