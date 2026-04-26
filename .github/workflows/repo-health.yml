@@ -21,8 +21,6 @@ jobs:
           fetch-depth: 0
 
       - uses: pnpm/action-setup@08c4be7e2e672a47d11bd04269e27e5f3e8529cb
-        with:
-          version: 9
 
       - uses: actions/setup-node@v4
         with:
@@ -40,7 +38,7 @@ jobs:
 
       - name: Logo duplication check
         run: |
-          if [ "$(rg --files -g '*logo*.svg' apps packages public | wc -l)" -gt 25 ]; then
+          if [ "$(grep -r "logo" apps packages public | grep "\.svg" | wc -l)" -gt 25 ]; then
             echo "Too many logo assets found"
             exit 1
           fi
