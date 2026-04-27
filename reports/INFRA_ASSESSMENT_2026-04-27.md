@@ -1,8 +1,4 @@
-# GoldShore Infrastructure Assessment (Ad Hoc Assessment)
-
-> **Status:** Non-canonical assessment artifact.
-> This document is a point-in-time infrastructure comparison and is **not** part of the canonical/versioned `reports` output contract.
-> `reports/branch-audit.md` remains the canonical report artifact; this assessment should be treated as supporting analysis pending relocation to a more appropriate docs location or an explicit policy update in `reports/README.md`.
+# GoldShore Infrastructure Assessment
 **Date:** 2026-04-27  
 **Scope:** `marzton/goldshore-ai` vs `marzton/goldshore-web` vs `marzton/goldshore-gateway`  
 **Criteria:** Build/deploy setup · Project structure · Dependency hygiene · Configuration clarity · Maintenance readiness
