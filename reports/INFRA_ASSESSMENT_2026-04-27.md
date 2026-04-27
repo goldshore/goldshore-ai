@@ -48,7 +48,7 @@ It is the only repository with a coherent, production-ready monorepo foundation.
 - D1 migrations defined but not applied against live databases.
 - JWT auth middleware fails open — a security issue documented in `AUDIT_EXECUTIVE_SUMMARY.md`.
 - Worker naming mismatch: live CF has `gs-platform` where repo says `gs-gateway`.
-- `actions/checkout@v6.0.2` is pinned in `ci.yml` and `lockfile-guard.yml`; that tag is non-standard (latest is v4) and may fail on new runners.
+- `actions/checkout@v6.0.2` is pinned in `ci.yml` and `lockfile-guard.yml`; verify upstream that this tag exists and is intended, as it is an unusual pin for `actions/checkout` and may fail on new runners.
 
 These are known and tracked — importantly, they are operational gaps, not structural ones.
 
