@@ -31,11 +31,8 @@ type DnsSyncRun = {
 
 const parseDnsSyncRun = (value: unknown): DnsSyncRun | null => {
   if (!value || typeof value !== 'object') return null;
-
   const run = value as DnsSyncRun;
-
   if (!run.runId || !Array.isArray(run.results)) return null;
-
   return run;
 };
 
@@ -77,12 +74,8 @@ internal.get('/dns-sync-status', requirePermission('system:read'), async (c) => 
   ]);
 
   const statusResult = ServiceStatusSchema.safeParse(serviceStatusRaw);
-  const runKeys = Array.isArray(runIndexRaw)
-    ? runIndexRaw.filter((key): key is string => typeof key === 'string')
-    : [];
-  const runsRaw = await Promise.all(
-    runKeys.slice(0, 20).map((key) => controlLogs.get(key, 'json')),
-  );
+  const runKeys = Array.isArray(runIndexRaw) ? runIndexRaw.filter((key): key is string => typeof key === 'string') : [];
+  const runsRaw = await Promise.all(runKeys.slice(0, 20).map((key) => controlLogs.get(key, 'json')));
   const runs = runsRaw
     .map(parseDnsSyncRun)
     .filter((run): run is DnsSyncRun => Boolean(run))
