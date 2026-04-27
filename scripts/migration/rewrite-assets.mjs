@@ -27,7 +27,7 @@ function walk(d){
 }
 assetDirs.forEach(walk);
 
-const textFiles=execSync("rg --files apps packages src",{encoding:'utf8'}).split('\n').filter(Boolean).filter(f=>/\.(astro|tsx?|jsx?|css|md|json)$/i.test(f));
+const textFiles=execSync("grep --files apps packages src",{encoding:'utf8'}).split('\n').filter(Boolean).filter(f=>/\.(astro|tsx?|jsx?|css|md|json)$/i.test(f));
 for(const f of textFiles){
   let c=fs.readFileSync(f,'utf8');
   let o=c;

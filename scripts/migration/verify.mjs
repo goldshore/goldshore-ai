@@ -5,8 +5,8 @@ const logs=[];
 function run(cmd){
   try{const o=execSync(cmd,{encoding:'utf8'});logs.push(`$ ${cmd}\n${o}`);}catch(e){logs.push(`$ ${cmd}\n${e.stdout||''}${e.stderr||''}`);}
 }
-run("rg -n 'astro-goldshore/' -g '!archive/**' .");
-run("rg -n '/assets/' apps packages src");
-run("rg -n 'tokens\\.css' .");
+run("grep -n 'astro-goldshore/' -g '!archive/**' .");
+run("grep -n '/assets/' apps packages src");
+run("grep -n 'tokens\\.css' .");
 fs.writeFileSync('reports/migration/verification.log',logs.join('\n---\n'));
 console.log('verification log written');
