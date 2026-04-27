@@ -35,7 +35,6 @@ interface D1Database {
 interface Env {
   KV: KVNamespace;
   DB: D1Database;
-  HERO_CONFIG_KV?: KVNamespace;
   CONTACT_TTL_SECONDS?: string;
   CONTACT_NOTIFICATION_EMAILS?: string;
   MAILCHANNELS_SENDER_EMAIL?: string;

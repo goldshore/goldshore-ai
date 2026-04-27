@@ -47,6 +47,25 @@ scripts/merge-audit.sh --target origin/main --include-merged
 scripts/merge-audit.sh --target origin/main --no-fetch
 ```
 
+## Ahead-of-main audit
+
+Use the dedicated alignment script when you need to know whether any open PR branches still contain commits not present in `main`. It works both in a normal clone with `origin` configured and in detached/local-only clones by falling back to the GitHub REST API.
+
+```bash
+scripts/check-main-alignment.sh main origin
+```
+
+Optional explicit repo slug override:
+
+```bash
+scripts/check-main-alignment.sh main origin goldshore/goldshore-ai
+```
+
+Exit codes:
+
+- `0` → no open PR branches are ahead of `main`
+- `2` → one or more open PR branches are ahead of `main`
+
 ## Additional branch drift checks
 
 List branches not merged into `origin/main`:

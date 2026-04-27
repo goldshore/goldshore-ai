@@ -1,37 +1,68 @@
 ---
-import HeroLogo from './HeroLogo.astro';
+const { title = "Shaping Waves with Applied Intelligence" } = Astro.props;
+import logo from "../../assets/logo.svg";
+const logoSrc = logo.src;
 ---
 
-<section
-  class="hero gs-cinematic-hero"
-  data-hero-root
-  aria-label="Gold Shore hero"
->
-  <div class="hero-bg" aria-hidden="true">
-    <canvas class="hero-canvas gs-parallax" data-stars data-parallax="0.03"></canvas>
-    <canvas class="hero-canvas gs-parallax" data-shooting data-parallax="0.05"></canvas>
-    <div class="hero-vignette"></div>
+<section class="gs-hero" aria-label="Hero">
+  <div class="gs-hero-bg" aria-hidden="true">
+    <canvas class="gs-stars" data-stars></canvas>
+    <canvas class="gs-shooting" data-shooting></canvas>
+    <div class="gs-grid"></div>
+    <div class="gs-vignette"></div>
   </div>
 
-  <div class="hero-content">
-    <div class="hero-mark">
-      <HeroLogo />
+  <div class="gs-hero-inner">
+    <div class="gs-hero-left">
+      <div class="gs-pill"><span class="dot"></span> SYSTEM OPERATIONAL</div>
+      <div class="hero-logo-wrapper" style="margin-bottom: 1rem;">
+         <img src={logoSrc} alt="" width="60" height="60" style="opacity: 0.9;" />
+      </div>
+      <h1>{title}</h1>
+      <p class="sub">
+        GoldShore isn’t just code. It’s a provable experience. We build resilient, cinematic systems where automation meets art.
+      </p>
+
+      <div class="actions">
+        <a class="btn primary" href="/intake">Start the Experience</a>
+        <a class="btn ghost" href="/contact">Contact Sales</a>
+      </div>
     </div>
 
-    <h1 class="hero-title">Gold Shore</h1>
-    <p class="hero-subtitle">
-      Designed not to manage capital, but to steer it.
-    </p>
-
-    <div class="hero-actions">
-      <a class="btn primary" href="/intake">Start</a>
-      <a class="btn ghost" href="/developer-hub">Developer</a>
+    <div class="gs-hero-right">
+      <div class="panel">
+        <div class="panel-top">
+          <div class="lights"><span></span><span></span><span></span></div>
+          <div class="panel-title">GoldShore Agent</div>
+        </div>
+        <div class="panel-body">
+          <div class="kv">
+            <div><span>STATUS</span><b class="ok">ACTIVE</b></div>
+            <div><span>MODE</span><b class="mode">VIBE_CODING</b></div>
+          </div>
+          <div class="bars" aria-hidden="true">
+            <i></i><i></i><i></i><i></i><i></i>
+          </div>
+          <div class="terminal" aria-hidden="true">
+            <div>&gt; Initializing cinematic protocols…</div>
+            <div>&gt; Optimizing user experience…</div>
+            <div>&gt; Done.</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
+
+  <script>
+    import { mountStarfield } from "./StarfieldCanvas";
+    import { mountShootingStars } from "./ShootingStarsCanvas";
+
+    const heroes = document.querySelectorAll(".gs-hero");
+    heroes.forEach((root) => {
+      const stars = root.querySelector("[data-stars]");
+      const shooting = root.querySelector("[data-shooting]");
+      if (stars instanceof HTMLCanvasElement) mountStarfield(stars);
+      if (shooting instanceof HTMLCanvasElement) mountShootingStars(shooting);
+    });
+  </script>
 </section>
-
-<script>
-  import { mountHero } from './mountHero';
-
-  mountHero();
-</script>

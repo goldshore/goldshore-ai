@@ -1,22 +1,387 @@
 import type { APIRoute } from 'astro';
 import { buildLeadAutoResponder } from '../../emails/leadAutoResponder';
 import { isValidEmail } from '../../utils/security';
-import type { Submission } from '../../services/contact/types';
-import {
-  extractString,
-  isSpamSubmission,
-  validateRequiredFields,
-  safeRedirect,
-} from '../../services/contact/validation';
-import {
-  normalizeFormConfig,
-  fetchFormConfig,
-  logSubmissionStatus,
-  storeInKv,
-  storeInD1,
-} from '../../services/contact/storage';
 
+// Default to 90 days if not set in environment
 const DEFAULT_CONTACT_TTL_SECONDS = 60 * 60 * 24 * 90;
+const DEFAULT_MAILCHANNELS_API_URL = 'https://api.mailchannels.net/tx/v1/send';
+const CONTACT_TTL_SECONDS = 60 * 60 * 24 * 90;
+
+type Submission = {
+  id: string;
+  formType: string;
+  status: 'new' | 'read' | 'archived';
+  name: string;
+  email: string;
+  company: string;
+  role: string;
+  website: string;
+  teamSize: string;
+  industry: string;
+  timeline: string;
+  budget: string;
+  goals: string;
+  message: string;
+  receivedAt: string;
+  ipAddress?: string;
+  userAgent?: string;
+};
+
+type FormField = {
+  name: string;
+  label?: string;
+  type?: string;
+  required?: boolean;
+};
+
+type FormRecipient = {
+  email: string;
+  name?: string;
+  channel?: string;
+};
+
+type FormIntegration = {
+  type: string;
+  enabled?: boolean;
+  settings?: Record<string, unknown>;
+};
+
+type FormConfig = {
+  id: string;
+  slug: string;
+  name: string;
+  status: 'active' | 'disabled' | 'archived';
+  fields: FormField[];
+  recipients: FormRecipient[];
+  integrations: FormIntegration[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+const storeInKv = async (
+  kv: KVNamespace,
+  submission: Submission,
+  autoResponder: ReturnType<typeof buildLeadAutoResponder>,
+  ttl: number,
+) => {
+  await kv.put(`contact:${submission.id}`, JSON.stringify({ submission, autoResponder }), {
+    expirationTtl: ttl,
+    metadata: {
+      formType: submission.formType,
+      status: submission.status,
+    },
+  });
+};
+
+const storeInD1 = async (
+  db: D1Database,
+  submission: Submission,
+  autoResponder: ReturnType<typeof buildLeadAutoResponder>,
+) => {
+  await db
+    .prepare(
+      `INSERT INTO lead_submissions (
+        id,
+        form_type,
+        name,
+        email,
+        company,
+        role,
+        website,
+        team_size,
+        industry,
+        timeline,
+        budget,
+        goals,
+        message,
+        status,
+        received_at,
+        ip_address,
+        user_agent,
+        auto_responder_subject,
+        auto_responder_text,
+        auto_responder_html
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .bind(
+      submission.id,
+      submission.formType,
+      submission.name || null,
+      submission.email || null,
+      submission.company || null,
+      submission.role || null,
+      submission.website || null,
+      submission.teamSize || null,
+      submission.industry || null,
+      submission.timeline || null,
+      submission.budget || null,
+      submission.goals || null,
+      submission.message || null,
+      submission.status,
+      submission.receivedAt,
+      submission.ipAddress || null,
+      submission.userAgent || null,
+      autoResponder.subject,
+      autoResponder.text,
+      autoResponder.html,
+    )
+    .run();
+};
+
+const extractString = (value: FormDataEntryValue | null) =>
+  typeof value === 'string' ? value.trim() : '';
+
+const isSpamSubmission = (formData: FormData) => {
+  const honeypot = extractString(formData.get('companyWebsite'));
+  if (honeypot) return true;
+
+  const formStartedAt = extractString(formData.get('formStartedAt'));
+  if (!formStartedAt) return false;
+
+  const startedAtMs = Number(formStartedAt);
+  if (!Number.isFinite(startedAtMs)) return true;
+
+  const elapsedMs = Date.now() - startedAtMs;
+  return elapsedMs < 2500;
+};
+
+const parseJson = <T>(value: string | null, fallback: T): T => {
+  if (!value) return fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
+};
+
+const normalizeFormConfig = (row: Record<string, string> | null, slug: string): FormConfig => {
+  const now = new Date().toISOString();
+  if (!row) {
+    return {
+      id: `fallback:${slug}`,
+      slug,
+      name: `Form: ${slug}`,
+      status: 'active',
+      fields: [],
+      recipients: [],
+      integrations: [],
+      createdAt: now,
+      updatedAt: now
+    };
+  }
+
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    status: (row.status as FormConfig['status']) ?? 'active',
+    fields: parseJson<FormField[]>(row.fields ?? null, []),
+    recipients: parseJson<FormRecipient[]>(row.recipients ?? null, []),
+    integrations: parseJson<FormIntegration[]>(row.integrations ?? null, []),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+};
+
+const fetchFormConfig = async (db: D1Database, slug: string): Promise<FormConfig> => {
+  const result = await db
+    .prepare(
+      `SELECT id, slug, name, status, fields, recipients, integrations, created_at, updated_at
+       FROM form_configs
+       WHERE slug = ?
+       LIMIT 1`
+    )
+    .bind(slug)
+    .all();
+
+  const row = result?.results?.[0] as Record<string, string> | undefined;
+  return normalizeFormConfig(row ?? null, slug);
+};
+
+const logSubmissionStatus = async (
+  db: D1Database,
+  submissionId: string,
+  formSlug: string,
+  status: string,
+  message?: string,
+  details?: Record<string, unknown>
+) => {
+  await db
+    .prepare(
+      `INSERT INTO form_submission_logs (
+        id,
+        submission_id,
+        form_slug,
+        status,
+        message,
+        details,
+        created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)`
+    )
+    .bind(
+      crypto.randomUUID(),
+      submissionId,
+      formSlug,
+      status,
+      message ?? null,
+      details ? JSON.stringify(details) : null,
+      new Date().toISOString()
+    )
+    .run();
+};
+
+const validateRequiredFields = (submission: Submission, fields: FormField[]) => {
+  const requiredFields = fields.filter((field) => field.required && field.name);
+  const missing = requiredFields.filter((field) => {
+    const value = (submission as Record<string, string | undefined>)[field.name];
+    return !value;
+  });
+
+  return missing;
+};
+
+const safeRedirect = (redirectTo: string | null, origin: string) => {
+  if (!redirectTo) return new URL('/thank-you', origin);
+  const trimmed = redirectTo.trim();
+  if (!trimmed.startsWith('/')) return new URL('/thank-you', origin);
+  return new URL(trimmed, origin);
+};
+
+const dedupeRecipients = (recipients: MailRecipient[]) => {
+  const unique = new Map<string, MailRecipient>();
+  recipients.forEach((recipient) => {
+    const email = recipient.email.trim().toLowerCase();
+    if (!email) return;
+    if (!isValidEmail(email)) return;
+    if (!unique.has(email)) {
+      unique.set(email, {
+        email,
+        name: recipient.name?.trim() || undefined,
+      });
+    }
+  });
+  return [...unique.values()];
+};
+
+const recipientsFromEnv = (
+  rawRecipients: string | undefined,
+): MailRecipient[] => {
+  if (!rawRecipients) return [];
+
+  return rawRecipients
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((email) => ({ email }));
+};
+
+const resolveNotificationRecipients = (
+  formConfig: FormConfig,
+  env: Env,
+): MailRecipient[] => {
+  const fromConfig = formConfig.recipients
+    .map((recipient) => ({
+      email: recipient.email,
+      name: recipient.name,
+    }))
+    .filter((recipient) => recipient.email);
+
+  const fallback = recipientsFromEnv(env.CONTACT_NOTIFICATION_EMAILS);
+  return dedupeRecipients([...fromConfig, ...fallback]);
+};
+
+const buildSubmissionDigest = (submission: Submission) => {
+  const pairs: Array<[string, string]> = [
+    ['Submission ID', submission.id],
+    ['Form type', submission.formType],
+    ['Received', submission.receivedAt],
+    ['Name', submission.name],
+    ['Email', submission.email],
+    ['Company', submission.company],
+    ['Role', submission.role],
+    ['Website', submission.website],
+    ['Team size', submission.teamSize],
+    ['Industry', submission.industry],
+    ['Timeline', submission.timeline],
+    ['Budget', submission.budget],
+    ['Goals', submission.goals],
+    ['Message', submission.message],
+    ['IP', submission.ipAddress ?? ''],
+    ['User agent', submission.userAgent ?? ''],
+  ];
+
+  const filtered = pairs.filter(([, value]) => value);
+
+  const text = filtered
+    .map(([label, value]) => `${label}: ${value}`)
+    .join('\n');
+  const html = filtered
+    .map(
+      ([label, value]) =>
+        `<p><strong>${label}:</strong> ${value.replace(/</g, '&lt;')}</p>`,
+    )
+    .join('');
+
+  return { text, html };
+};
+
+const sendMail = async (
+  env: Env,
+  to: MailRecipient[],
+  subject: string,
+  text: string,
+  html: string,
+  replyTo?: MailRecipient,
+) => {
+  const fromEmail = env.MAILCHANNELS_SENDER_EMAIL?.trim();
+  const fromName = env.MAILCHANNELS_SENDER_NAME?.trim() || 'GoldShore';
+  if (!fromEmail || !isValidEmail(fromEmail) || to.length === 0) {
+    return {
+      attempted: false,
+      reason: 'missing_mail_configuration',
+    };
+  }
+
+  const payload = {
+    personalizations: [
+      {
+        to,
+      },
+    ],
+    from: {
+      email: fromEmail,
+      name: fromName,
+    },
+    ...(replyTo ? { reply_to: replyTo } : {}),
+    subject,
+    content: [
+      {
+        type: 'text/plain',
+        value: text,
+      },
+      {
+        type: 'text/html',
+        value: html,
+      },
+    ],
+  };
+
+  const endpoint = env.MAILCHANNELS_API_URL || DEFAULT_MAILCHANNELS_API_URL;
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return {
+    attempted: true,
+    ok: response.ok,
+    status: response.status,
+    body: await response.text(),
+  };
+};
 
 export const POST: APIRoute = async ({ request, locals }) => {
   if (!request.headers.get('content-type')?.includes('form')) {

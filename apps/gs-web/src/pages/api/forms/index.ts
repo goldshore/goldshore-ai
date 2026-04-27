@@ -1,5 +1,13 @@
 import type { APIRoute } from 'astro';
-import { parseJson } from '@goldshore/utils';
+
+const parseJson = <T>(value: string | null, fallback: T): T => {
+  if (!value) return fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
+};
 
 const normalizeRow = (row: Record<string, string>) => ({
   id: row.id,

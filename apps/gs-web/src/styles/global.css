@@ -1,191 +1,23 @@
+:root {
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
+    "Apple Color Emoji", "Segoe UI Emoji";
+}
+
 html,
 body {
-html, body {
+  font-family: var(--font-sans);
   margin: 0;
   padding: 0;
-  background: #000;
+  background-color: #050505;
   color: #e5e7eb;
-  font-family: Inter, system-ui, sans-serif;
 }
 
-* {
-  box-sizing: border-box;
-}
-
-.gs-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 72px;
-/* -----------------------------
-   Base Reset
------------------------------- */
-
-:root {
-  --gs-bg-primary: #05060a;
-  --gs-bg-secondary: #0c1220;
-  --gs-accent-blue: #3b82f6;
-  --gs-accent-gold: #eab308;
-  --gs-text-primary: #f1f5f9;
-  --gs-text-muted: #94a3b8;
-  --gs-border-subtle: rgba(255,255,255,0.08);
-
-  --gs-section-spacing: 6rem;
-  --gs-content-width: 1100px;
-  --gs-radius-lg: 20px;
-  --gs-radius-md: 12px;
-}
-
-html, body {
-  margin: 0;
-  padding: 0;
-  background: var(--gs-bg-primary);
-  color: var(--gs-text-primary);
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+body {
+  text-rendering: geometricPrecision;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* -----------------------------
-   Layout
------------------------------- */
-
-main {
-  padding-top: 80px;
-}
-
-.gs-container {
-  max-width: var(--gs-content-width);
-  margin: 0 auto;
-  padding: 0 2rem;
-}
-
-/* -----------------------------
-   Header
------------------------------- */
-
-.gs-header {
-  position: fixed;
-  top: 0;
-  width: 100%;
-  height: 72px;
-  height: 80px;
-  background: rgba(5,6,10,0.9);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--gs-border-subtle);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 2rem;
-  background: rgba(0, 0, 0, 0.85);
-  background: rgba(0,0,0,0.85);
-  backdrop-filter: blur(8px);
-  z-index: 1000;
-}
-
-.gs-logo img {
-  height: 32px;
-  width: auto;
-}
-
-.gs-nav {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.gs-nav a {
-  margin-left: 1.5rem;
-  color: #9ca3af;
-  text-decoration: none;
-}
-
-.gs-nav a:hover {
-  color: #fff;
-  color: white;
-}
-
-main {
-  padding-top: 72px;
-}
-
-.gs-section {
-  padding: 6rem 2rem;
-  max-width: 1100px;
-  margin: 0 auto;
-  margin-left: 2rem;
-  text-decoration: none;
-  color: var(--gs-text-muted);
-  font-weight: 500;
-  transition: color 0.2s ease;
-}
-
-.gs-nav a:hover {
-  color: var(--gs-text-primary);
-}
-
-/* -----------------------------
-   Sections
------------------------------- */
-
-.gs-section {
-  padding: var(--gs-section-spacing) 0;
-  position: relative;
-}
-
-.gs-section + .gs-section {
-  border-top: 1px solid var(--gs-border-subtle);
-}
-
-/* -----------------------------
-   Cards
------------------------------- */
-
-.gs-card {
-  background: var(--gs-bg-secondary);
-  border-radius: var(--gs-radius-lg);
-  padding: 2rem;
-  border: 1px solid var(--gs-border-subtle);
-  box-shadow: 0 10px 40px rgba(0,0,0,0.4);
-}
-
-/* -----------------------------
-   Buttons
------------------------------- */
-
-.gs-button {
-  padding: 0.75rem 1.5rem;
-  border-radius: var(--gs-radius-md);
-  text-decoration: none;
-  font-weight: 600;
-  display: inline-block;
-  transition: all 0.2s ease;
-}
-
-.gs-button--primary {
-  background: linear-gradient(
-    135deg,
-    var(--gs-accent-blue),
-    var(--gs-accent-gold)
-  );
-  color: #000;
-}
-
-.gs-button--primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(59,130,246,0.4);
-}
-
-.gs-footer {
-  padding: 4rem 2rem;
-  text-align: center;
-  background: #050507;
-}
-
-input,
-textarea,
-button {
-  font: inherit;
-  border-top: 1px solid var(--gs-border-subtle);
-  color: var(--gs-text-muted);
-}
+@import "@goldshore/theme/styles/components.css";
+@import "@goldshore/theme/styles/layout.css";
+@import "./gs-effects.css";

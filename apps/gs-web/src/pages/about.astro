@@ -1,35 +1,69 @@
 ---
-import WebLayout from '../layouts/WebLayout.astro';
+import { GSButton } from '@goldshore/ui';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import FlowSection from '../components/FlowSection.astro';
 
 export const prerender = true;
 ---
-
-<WebLayout title="About | Gold Shore" description="Gold Shore builds operator-grade infrastructure for resilient operations.">
-  <section class="gs-section">
-    <div class="gs-container">
-      <h1>Our Approach</h1>
-      <p>
-        We do not chase buzzwords or fashionable patterns. We solve real operational problems with thoughtful
-        engineering, disciplined design, and predictable execution.
-      </p>
-
-      <ul>
-        <li><strong>Measured:</strong> performance and reliability you can verify.</li>
-        <li><strong>Predictable:</strong> designed for known outcomes instead of unknown side effects.</li>
-        <li><strong>Auditable:</strong> traceable deployments, observability, and status reporting.</li>
-        <li><strong>Responsible:</strong> security, compliance, and controlled access top-to-bottom.</li>
-      </ul>
+<BaseLayout title="About | GoldShore" description="Background on GoldShore AI">
+  <FlowSection variant="hero">
+    <div>
+      <h1>About GoldShore</h1>
+      <p class="gs-text-lg">GoldShore Labs is a design-first engineering studio founded by <strong>@marzton</strong>. We build AI-powered operations for teams that demand clarity, resiliency, and speed.</p>
     </div>
-  </section>
-
-  <section class="gs-section">
-    <div class="gs-container">
-      <h2>Built for Operators &amp; Decision Makers</h2>
-      <p>
-        Whether you are an engineering organization scaling globally, a platform team seeking deterministic delivery,
-        or an operations leader demanding uptime under pressure, Gold Shore infrastructure delivers clarity where
-        others deliver complexity.
-      </p>
+    <div class="gs-card">
+      <h3 class="section-title"><span>↺</span>Our Mission</h3>
+      <p>Bridging the gap between military-grade precision and modern tech agility. We create systems that feel like a quiet operations room: powerful, predictable, and devoid of visual noise.</p>
     </div>
-  </section>
-</WebLayout>
+  </FlowSection>
+
+  <FlowSection>
+    <div class="gs-grid columns-2">
+      <article class="gs-card">
+        <h3>Leadership</h3>
+        <p>Led by <strong>Marzton</strong>, GoldShore Labs focuses on solving complex infrastructure and automation challenges with a "security-first" mindset.</p>
+      </article>
+      <article class="gs-card">
+        <h3>Design Philosophy</h3>
+        <p>Our aesthetic is grounded in "Military x Tech" — utilizing a palette of Matte Grey, Silver, and Utility Orange to convey purpose. We believe tools should be sharp, fast, and reliable.</p>
+      </article>
+    </div>
+  </FlowSection>
+
+  <FlowSection>
+    <div class="gs-grid columns-2">
+      <div>
+        <h2>Snapshot</h2>
+        <p class="gs-text-lg">Confident execution for teams that want calm, high-trust delivery.</p>
+        <GSButton href="/contact" variant="secondary">Start a scoped conversation</GSButton>
+      </div>
+      <div class="gs-card">
+        <h3 class="section-title"><span>◆</span>Snapshot</h3>
+        <ul>
+          <li><strong>Current Focus:</strong> Operational AI systems, resilient pipelines, and decision-ready dashboards.</li>
+          <li><strong>What I build:</strong> Observability foundations, automation workflows, and security-first platforms.</li>
+          <li><strong>How I work:</strong> Clear discovery, tight iterations, and measurable outcomes with your team.</li>
+          <li><strong>Availability:</strong> Full-time or contract engagements.</li>
+        </ul>
+        <p class="gs-text-sm">Ready to align on scope? Share your goals and I’ll map the next steps.</p>
+      </div>
+    </div>
+  </FlowSection>
+
+  <FlowSection>
+    <div class="gs-grid columns-2">
+      <article class="gs-card">
+        <h3>Core Values</h3>
+        <ul>
+          <li><strong>Dependability:</strong> Predictable operations even in volatile environments.</li>
+          <li><strong>Transparency:</strong> Clear dashboards, simple controls, auditable decisions.</li>
+          <li><strong>Access:</strong> Inclusive experiences that are keyboard-friendly and accessible.</li>
+        </ul>
+      </article>
+      <article class="gs-card">
+        <h3>Capabilities</h3>
+        <p>From infrastructure-as-code to model evaluation, we build stack pieces that fit together seamlessly. We ship interfaces for analysts, operators, and developers alike.</p>
+      </article>
+    </div>
+  </FlowSection>
+</BaseLayout>

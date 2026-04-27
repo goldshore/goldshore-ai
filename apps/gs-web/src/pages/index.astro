@@ -1,577 +1,204 @@
 ---
+import '@goldshore/theme/styles/tokens.css';
+import { GSButton } from '@goldshore/ui';
 import WebLayout from '../layouts/WebLayout.astro';
-import HeroBase from '../components/hero/HeroBase.astro';
-import {
-  DEFAULT_HERO_VARIANT,
-  normalizeHeroVariant,
-} from '../components/hero/hero.config';
-
-const env = Astro.locals.runtime?.env as
-  | { HERO_CONFIG_KV?: { get(key: string): Promise<string | null> } }
-  | undefined;
-const heroVariant = normalizeHeroVariant(
-  await env?.HERO_CONFIG_KV?.get('hero_variant'),
-);
+import ParallaxHero from "../components/hero/ParallaxHero.astro";
+import '../styles/home.css';
 
 export const prerender = true;
+
+const features = [
+  {
+    title: 'Vibe Coding',
+    body: 'Aesthetic-driven development where code flows like fluid dynamics. Provable experience.',
+    icon: 'palette'
+  },
+  {
+    title: 'Cinematic Ops',
+    body: 'Infrastructure monitoring that feels like a sci-fi HUD. Real-time, responsive, and beautiful.',
+    icon: 'monitor_heart'
+  },
+  {
+    title: 'Applied Intelligence',
+    body: 'AI agents that don\'t just work—they perform. Seamless integration into your workflow.',
+    icon: 'psychology'
+  },
+];
+
+const highlights = [
+  { label: 'Global Latency', value: '< 30ms', tone: 'success' },
+  { label: 'System Status', value: 'Normal', tone: 'success' },
+  { label: 'Active Nodes', value: '24/24', tone: 'info' },
+  { label: 'Threat Level', value: 'None', tone: '' },
+];
 ---
 
-<WebLayout
-  title="Gold Shore — Institutional Infrastructure & Operational Systems"
-  description="Gold Shore builds resilient infrastructure, automation, and operational platforms designed for real-time systems, reliability, and controlled performance."
->
-  <HeroBase variant={heroVariant ?? DEFAULT_HERO_VARIANT} />
+<WebLayout title="GoldShore | Shaping Waves" description="Unified AI infrastructure for trading and intelligent operations.">
+  <main class="home">
+    <ParallaxHero title="Shaping Waves with Applied Intelligence" />
 
-  <section class="gs-section dark-narrative" id="philosophy">
-    <div class="gs-container">
-      <div class="narrative-grid">
-        <div class="narrative-content">
-          <h2 class="serif-display">Built for Resiliency</h2>
-          <p class="cinematic-lead">
-            Shaping waves with composable systems and disciplined guardrails.
-          </p>
-          <div class="narrative-body">
+    <div class="cinematic-wrapper">
+    <!-- Performance Section (Secondary Hero) -->
+    <section class="gs-hero home-hero parallax-section" style="padding-top: 0;">
+        <div class="parallax-layer gs-parallax layer-grid" data-parallax="0.08" aria-hidden="true"></div>
+        <div class="parallax-layer gs-parallax layer-glow" data-parallax="0.14" aria-hidden="true"></div>
+        <div class="parallax-layer gs-parallax layer-orbit" data-parallax="0.2" aria-hidden="true"></div>
+
+        <div class="hero-content reveal">
+            <p class="gs-badge" style="margin-bottom: var(--gs-space-3);">Modern ops for fluid markets</p>
+            <h2>Built for Resiliency</h2>
             <p>
-              In a world of increasing complexity, clarity is the ultimate
-              competitive advantage. Gold Shore combines high-fidelity telemetry,
-              operator workflows, and institutional governance to preserve clarity
-              under pressure.
+                GoldShore builds resilient, automation-first systems for trading, control, and applied intelligence. Each surface ships with observability, safety, and responsive design baked in.
             </p>
-          </div>
         </div>
-        <div class="narrative-visual">
-          <div class="visual-panel">
-            <div class="visual-grid"></div>
-            <div class="visual-orb"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
 
-  <section class="gs-section" id="offerings">
-    <div class="gs-container">
-      <div class="gs-label" style="margin-bottom: 0.75rem;">
-        Core Offerings
-      </div>
-      <div class="gs-grid-3">
-        <article
-          class="gs-panel gs-hoverlift gs-edge-light gs-edge-scan gs-scroll-reveal gs-vt-reveal"
-          data-gs-reveal
-          data-gs-tilt
-        >
-          <div class="gs-label">Vibe Coding</div>
-          <div class="gs-stat">Agile</div>
-          <div class="gs-meta">Rapid experimentation paths that still pass institutional control checks.</div>
-        </article>
-        <article
-          class="gs-panel gs-hoverlift gs-edge-light gs-edge-scan gs-scroll-reveal gs-vt-reveal"
-          data-gs-reveal
-          data-gs-tilt
-        >
-          <div class="gs-label">Cinematic Ops</div>
-          <div class="gs-stat">Context</div>
-          <div class="gs-meta">Operator interfaces with clear escalation context and human override points.</div>
-        </article>
-        <article
-          class="gs-panel gs-hoverlift gs-edge-light gs-edge-scan gs-scroll-reveal gs-vt-reveal"
-          data-gs-reveal
-          data-gs-tilt
-        >
-          <div class="gs-label">Applied Intelligence</div>
-          <div class="gs-stat">Signal</div>
-          <div class="gs-meta">Signal fusion that turns data density into execution-ready recommendations.</div>
-        </article>
-      </div>
-    </div>
-  </section>
-
-
-  <section class="gs-section bordered-top">
-    <div class="content-row">
-      <div class="content-text">
-        <span class="section-tag">Deployment Intelligence</span>
-        <h2>Orchestrate with absolute precision.</h2>
-        <p>
-          Gold Shore's deployment engine provides granular control over global
-          infrastructure. Manage multi-region rollouts, automated rollbacks, and
-          real-time health monitoring from a single, unified interface.
-        </p>
-        <ul class="feature-list">
-          <li>Immutable infrastructure as code</li>
-          <li>Canary and Blue/Green strategies</li>
-          <li>Automated vulnerability scanning</li>
-        </ul>
-      </div>
-      <div class="content-preview">
-        <div class="glass-panel">
-          <div class="panel-header">
-            <span class="panel-dot"></span>
-            <span class="panel-title">GS_OPS_SURFACE</span>
-          </div>
-          <div class="panel-content">
-            <div class="pulse-line"></div>
-            <div class="pulse-line delay-1"></div>
-            <div class="pulse-line delay-2"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="gs-section">
-    <div class="gs-container">
-      <div class="content-row reverse">
-        <div class="content-text">
-          <span class="section-tag">Risk Radar</span>
-          <h2>Identify threats before they emerge.</h2>
-          <p>
-            Our Risk Radar leverages applied intelligence to scan billions of
-            signals across your network, identifying anomalies and potential
-            security breaches in milliseconds.
-          </p>
-          <div class="radar-stats">
-            <div class="radar-stat">
-              <strong>12ms</strong>
-              <span>Mean Response Time</span>
+        <div class="gs-card gs-pulse-frame hero-card reveal">
+            <h3 class="section-title"><span>⇄</span>Performance at a glance</h3>
+            <div class="gs-grid columns-2">
+                {highlights.map((item) => (
+                <div class="gs-kpi">
+                    <span>{item.label}</span>
+                    <strong>{item.value}</strong>
+                    <div class={`gs-badge ${item.tone ?? ''}`}>Live</div>
+                </div>
+                ))}
             </div>
-            <div class="radar-stat">
-              <strong>100%</strong>
-              <span>Threat Coverage</span>
+            <div class="gs-helper" style="margin-top: var(--gs-space-4);">Backed by global routing, automated rollbacks, and human-in-the-loop controls.</div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section blueprint-section parallax-section">
+        <div class="parallax-layer gs-parallax layer-blueprint" data-parallax="0.04" aria-hidden="true"></div>
+        <div class="parallax-layer gs-parallax layer-glow" data-parallax="0.1" aria-hidden="true"></div>
+        <div class="parallax-layer gs-parallax layer-sheen" data-parallax="0.16" aria-hidden="true"></div>
+        <div class="features-grid">
+            {features.map((feature, i) => (
+            <div class="feature-card glass-panel reveal lux-card" style={`transition-delay: ${0.1 + (i * 0.1)}s;`}>
+                <div class="icon-box">
+                <span class="material-symbols-rounded">{feature.icon}</span>
+                </div>
+                <h3>{feature.title}</h3>
+                <p>{feature.body}</p>
             </div>
-          </div>
+            ))}
         </div>
-        <div class="content-preview">
-          <div class="grid-field small-grid"></div>
-        </div>
-      </div>
+    </section>
     </div>
-  </section>
-
-  <section class="gs-section metrics-surface" id="performance">
-    <div class="gs-container">
-      <div class="section-header">
-        <span class="eyebrow">Operational Metrics</span>
-        <h2 class="serif-display">Performance at a glance</h2>
-      </div>
-
-      <div class="gs-grid-3">
-        <article class="metric-card is-loading" data-metric-card>
-          <div class="metric-label">System Availability</div>
-          <div class="metric-value">99.995%</div>
-          <div class="metric-trend">Institutional Standard · Last 30 days</div>
-        </article>
-
-        <article class="metric-card is-loading" data-metric-card>
-          <div class="metric-label">Deployment Frequency</div>
-          <div class="metric-value">48/day</div>
-          <div class="metric-trend">
-            <a href="/developer-hub">
-              Continuous Integration · verified in Developer Hub
-            </a>
-          </div>
-        </article>
-
-        <article class="metric-card is-loading" data-metric-card>
-          <div class="metric-label">Signal Throughput</div>
-          <div class="metric-value">4.8B</div>
-          <div class="metric-trend">Signals processed / day</div>
-        </article>
-      </div>
-    </div>
-  </section>
-
-  <section class="gs-section footer-cta" id="contact">
-    <div class="gs-container">
-      <div class="cta-panel">
-        <h2 class="serif-display">Advance your operational baseline.</h2>
-        <div class="cta-actions">
-          <a href="/experience" class="btn primary btn-large"
-            >Request Briefing</a
-          >
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <script>
-    const revealMetrics = () => {
-      window.setTimeout(() => {
-        document.querySelectorAll('[data-metric-card]').forEach((card) => {
-          card.classList.remove('is-loading');
-        });
-      }, 550);
-    };
-
-    document.addEventListener('astro:page-load', revealMetrics);
-  </script>
+  </main>
+</WebLayout>
 
 <style>
-  .gs-section {
-    padding: 8rem 0;
+  /* Cinematic Wrapper */
+  .cinematic-wrapper {
     position: relative;
-    background: #020408;
+    /* Removed min-height: 100vh to let it flow naturally */
+    overflow: hidden;
   }
 
-  .gs-container {
-    max-width: 1200px;
+  /* Hero Section */
+  .gs-hero {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--gs-space-8);
+    align-items: center;
+    padding: var(--gs-space-12) var(--gs-space-6);
+    max-width: 1280px;
     margin: 0 auto;
-    padding: 0 2rem;
   }
 
-  .serif-display {
-    font-family: 'Ibarra Real Nova', serif;
-    font-size: clamp(2rem, 5vw, 3.5rem);
-    font-weight: 400;
-    margin-bottom: 1.5rem;
-    color: #f1f5f9;
+  @media (max-width: 900px) {
+    .gs-hero { grid-template-columns: 1fr; text-align: center; }
   }
 
-  .high-contrast-heading {
-    color: #ffffff;
-    font-weight: 600;
-  }
-
-  .cinematic-lead {
-    font-size: 1.5rem;
-    color: rgba(255, 255, 255, 0.8);
-    line-height: 1.4;
-    margin-bottom: 2rem;
-  }
-
-  .narrative-body {
-    color: rgba(255, 255, 255, 0.5);
-    line-height: 1.6;
-    max-width: 50ch;
-  }
-
-  .narrative-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4rem;
-    align-items: center;
-  }
-
-  .visual-panel {
-    aspect-ratio: 1;
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 24px;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .visual-grid {
-    position: absolute;
-    inset: 0;
-    background-image: radial-gradient(
-      circle at 1px 1px,
-      rgba(255, 255, 255, 0.05) 1px,
-      transparent 0
-    );
-    background-size: 20px 20px;
-  }
-
-  .visual-orb {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 60%;
-    height: 60%;
-    background: radial-gradient(
-      circle at center,
-      rgba(59, 130, 246, 0.1),
-      transparent 70%
-    );
-    filter: blur(40px);
-  }
-
-  .bordered-top {
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    padding-top: 6rem;
-  }
-
-  .content-row {
-    display: grid;
-    grid-template-columns: 1.2fr 1fr;
-    gap: 4rem;
-    align-items: center;
-    margin-bottom: 6rem;
-  }
-
-  .content-row.reverse {
-    grid-template-columns: 1fr 1.2fr;
-  }
-
-  .content-row.reverse .content-text {
-    order: 2;
-  }
-
-  .section-tag {
-    color: var(--gs-accent, #3b82f6);
-    font-size: 0.85rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    display: block;
-    margin-bottom: 1rem;
-  }
-
-  .content-text h2 {
-    font-size: 2.8rem;
-    margin-bottom: 1.5rem;
+  h2 {
+    font-size: 3rem;
     line-height: 1.1;
-    font-family: 'Ibarra Real Nova', serif;
+    margin-bottom: var(--gs-space-4);
+    background: linear-gradient(to right, #fff, #94a3b8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
 
-  .feature-list {
-    list-style: none;
-    padding: 0;
-    margin-top: 2rem;
+  /* KPI & Performance Cards */
+  .gs-kpi {
+    background: var(--gs-color-bg-surface);
+    padding: var(--gs-space-3);
+    border-radius: var(--gs-radius-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .gs-kpi span { font-size: 0.75rem; text-transform: uppercase; color: var(--gs-color-subtle); letter-spacing: 0.05em; }
+  .gs-kpi strong { font-size: 1.5rem; color: var(--gs-color-text); }
+  .section-title {
+    margin-top: 0;
+    margin-bottom: var(--gs-space-4);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--gs-color-subtle);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 
-  .feature-list li {
-    padding-left: 1.5rem;
+  /* Features */
+  .features-section {
     position: relative;
-    margin-bottom: 0.75rem;
-    color: rgba(255, 255, 255, 0.6);
-    overflow: hidden;
+    padding: 4rem 2rem;
+    max-width: 1280px;
+    margin: 0 auto;
   }
 
-  .feature-list li::before {
-    content: '→';
-    position: absolute;
-    left: 0;
-    color: var(--gs-accent, #3b82f6);
-  }
-
-  .radar-stats {
+  .features-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 2rem;
-    margin-top: 2.5rem;
-  }
-
-  .radar-stat strong {
-    display: block;
-    font-size: 1.5rem;
-    color: #f1f5f9;
-  }
-
-  .radar-stat span {
-    font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.4);
   }
 
   .glass-panel {
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-    overflow: hidden;
-    height: 300px;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .panel-header {
-    background: rgba(255, 255, 255, 0.03);
-    padding: 0.75rem 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  }
-
-  .panel-dot {
-    width: 8px;
-    height: 8px;
-    background: #444;
-    border-radius: 50%;
-  }
-
-  .panel-title {
-    font-size: 0.7rem;
-    font-family: monospace;
-    color: rgba(255, 255, 255, 0.4);
-  }
-
-  .panel-content {
-    flex: 1;
-    position: relative;
     padding: 2rem;
-  }
-
-  .pulse-line {
-    height: 2px;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      var(--gs-accent, #3b82f6),
-      transparent
-    );
-    margin-bottom: 2rem;
-    opacity: 0.3;
-    animation: slide 3s infinite linear;
-  }
-
-  @keyframes metric-loading {
-    from {
-      transform: translateX(-100%);
-    }
-    to {
-      transform: translateX(100%);
-    }
-  }
-
-  @keyframes slide {
-    from {
-      transform: translateX(-100%);
-    }
-    to {
-      transform: translateX(100%);
-    }
-  }
-
-  .delay-1 {
-    animation-delay: 1s;
-  }
-  .delay-2 {
-    animation-delay: 2s;
-  }
-
-  @media (max-width: 900px) {
-    .content-row,
-    .content-row.reverse {
-      grid-template-columns: 1fr;
-      gap: 2rem;
-    }
-    .content-row.reverse .content-text {
-      order: 0;
-    }
-  }
-
-  .section-header {
-    margin-bottom: 4rem;
-  }
-
-  .eyebrow {
-    display: block;
-    text-transform: uppercase;
-    font-family: ui-monospace, monospace;
-    font-size: 0.75rem;
-    letter-spacing: 0.15em;
-    color: #3b82f6;
-    margin-bottom: 1rem;
-  }
-
-  .gs-grid-3 {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2rem;
-  }
-
-  .metric-card {
-    padding: 3rem 2rem;
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 16px;
+    border-radius: 1rem;
     transition: all 0.3s;
-    position: relative;
-    overflow: hidden;
   }
 
-  .metric-card.is-loading::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(255, 255, 255, 0.08),
-      transparent
-    );
-    animation: metric-loading 1.2s linear infinite;
-  }
-
-  .metric-trend a {
-    color: rgba(255, 255, 255, 0.8);
-    text-decoration-color: rgba(255, 255, 255, 0.35);
-  }
-
-  .metric-card:hover {
-    background: rgba(255, 255, 255, 0.04);
-    border-color: rgba(255, 255, 255, 0.1);
+  .glass-panel:hover {
+    background: rgba(255, 255, 255, 0.05);
     transform: translateY(-5px);
+    border-color: rgba(34, 211, 238, 0.3);
   }
 
-  .metric-label {
-    font-family: ui-monospace, monospace;
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.4);
-    margin-bottom: 1rem;
-  }
-
-  .metric-value {
-    font-size: 3rem;
-    font-weight: 500;
-    color: #f1f5f9;
-    margin-bottom: 0.5rem;
-  }
-
-  .metric-trend {
-    font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.3);
-  }
-
-  .cta-panel {
-    text-align: center;
-    padding: 6rem 2rem;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 32px;
-  }
-
-  .cta-actions {
-    margin-top: 3rem;
-  }
-
-  .btn {
-    display: inline-flex;
+  .icon-box {
+    width: 48px;
+    height: 48px;
+    background: rgba(34, 211, 238, 0.1);
+    border-radius: 12px;
+    display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    font-weight: 500;
-    transition: all 0.2s;
-    text-decoration: none;
-    font-size: 0.95rem;
+    color: #22d3ee;
+    margin-bottom: 1.5rem;
   }
 
-  .btn-large {
-    padding: 1rem 2rem;
-    font-size: 1rem;
+  .glass-panel h3 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: #fff;
   }
 
-  .btn.primary {
-    background: #f1f5f9;
-    color: #020408;
-  }
-
-  .btn.primary:hover {
-    background: #ffffff;
-    transform: translateY(-1px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-  }
-
-  @media (max-width: 768px) {
-    .narrative-grid {
-      grid-template-columns: 1fr;
-    }
-    .gs-grid-3 {
-      grid-template-columns: 1fr;
-    }
+  .glass-panel p {
+    color: #94a3b8;
+    line-height: 1.6;
   }
 </style>
-</WebLayout>
+
+<script>
+  // Ensure parallax init works if it exists
+  // Assuming it's available in the module scope or global
+  // If the previous index.astro had it, we keep it logic-wise if needed.
+  // The ParallaxHero has its own script for canvas.
+</script>

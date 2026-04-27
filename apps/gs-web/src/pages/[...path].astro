@@ -20,13 +20,12 @@ if (slug) {
     const response = await fetch(`${API_BASE}/pages/slug/${encodeURIComponent(slug)}`, {
       headers: { Accept: 'application/json' }
     });
-
     if (response.ok) {
       page = await response.json();
     } else {
       Astro.response.status = 404;
     }
-  } catch {
+  } catch (error) {
     Astro.response.status = 404;
   }
 } else {
@@ -59,3 +58,9 @@ if (slug) {
 ) : (
   <DefaultPageTemplate />
 )}
+import DefaultPageTemplate from '../components/DefaultPageTemplate.astro';
+
+export const prerender = false;
+---
+
+<DefaultPageTemplate />

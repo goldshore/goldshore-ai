@@ -3,55 +3,6 @@ const { code, lang = 'bash' } = Astro.props;
 ---
 
 <div class="code-block">
-  <button class="copy" type="button" aria-label="Copy code to clipboard">Copy</button>
+  <button class="copy" onclick="navigator.clipboard.writeText(this.nextElementSibling.innerText)">Copy</button>
   <pre><code class={"language-" + lang}>{code}</code></pre>
 </div>
-
-<script>
-  document.addEventListener('click', async (e) => {
-    const target = (e.target as HTMLElement).closest('.code-block .copy') as HTMLButtonElement | null;
-    if (!target) return;
-
-    const codeBlock = target.closest('.code-block');
-    if (!codeBlock) return;
-
-    const pre = codeBlock.querySelector('pre');
-    if (!pre) return;
-
-    const code = pre.innerText;
-
-    try {
-      await navigator.clipboard.writeText(code);
-
-      const originalText = target.dataset.originalText || target.textContent || 'Copy';
-      if (!target.dataset.originalText) {
-        target.dataset.originalText = originalText;
-      }
-
-      target.textContent = 'Copied!';
-      target.setAttribute('aria-label', 'Copied to clipboard');
-      target.classList.add('copied');
-
-      if (target.dataset.timeoutId) {
-        clearTimeout(parseInt(target.dataset.timeoutId, 10));
-      }
-
-      const timeoutId = setTimeout(() => {
-        target.textContent = originalText;
-        target.setAttribute('aria-label', 'Copy code to clipboard');
-        target.classList.remove('copied');
-        delete target.dataset.timeoutId;
-      }, 2000);
-
-      target.dataset.timeoutId = timeoutId.toString();
-    } catch (err) {
-      console.warn('Failed to copy code to clipboard:', err);
-    }
-  });
-</script>
-
-<style>
-  .copy.copied {
-    color: #4ade80;
-  }
-</style>

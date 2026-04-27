@@ -8,20 +8,21 @@ on:
     branches:
       - main
     paths:
-      - 'apps/gs-web/**'
-      - 'packages/**'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
+      - "apps/gs-web/**"
+      - "packages/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
 
 jobs:
   deploy-web:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/checkout@3df4d485d8ce6d2b61b8d12e8f44cdfffbea301e
 
-      - name: Install pnpm
-        run: npm install -g pnpm@9
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: false
 
       - uses: actions/setup-node@v6
         with:
@@ -59,7 +60,7 @@ jobs:
           grep -q '/_astro/' dist/index.html
 
       - name: Deploy to Cloudflare Pages (production)
-        uses: cloudflare/pages-action@f0a1cd58cd66095dee69bfa18fa5efd1dde93bca
+        uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

@@ -27,7 +27,7 @@ export const initParallax = (options: ParallaxOptions = {}) => {
     isVisible: false
   }));
 
-  if (layers.length === 0) {
+  if (elements.length === 0) {
     return () => undefined;
   }
 

@@ -1,140 +1,293 @@
 ---
-import '@goldshore/theme';
-import '../styles/brand.css';
-import '../styles/home.css';
-import SiteNav from '../components/SiteNav.astro';
-import GlobalModal from '../components/GlobalModal.astro';
-import themeRuntimeUrl from '../scripts/theme-runtime.ts?url';
+import '@goldshore/theme/styles/tokens.css';
+import '@goldshore/theme/styles/base.css';
+import '@goldshore/theme/styles/components.css';
+import '@goldshore/theme/styles/layout.css';
+import { GSButton } from '@goldshore/ui';
 
-interface Props {
-  title?: string;
-  description?: string;
-  structuredData?: Record<string, unknown> | Array<Record<string, unknown>>;
-}
+const navLinks = [
+  { href: '/', label: 'Home' },
+  { href: '/about', label: 'About' },
+  { href: '/services', label: 'Services' },
+  { href: '/team', label: 'Team' },
+  { href: '/contact', label: 'Contact' },
+  { href: '/apps/risk-radar', label: 'Risk Radar' }
+];
 
-const {
-  title = 'Gold Shore',
-  description = 'Institutional-grade automation and intelligence.',
-  structuredData,
-} = Astro.props;
+const { title = 'GoldShore', description = 'GoldShore AI', currentPath = Astro.url.pathname } = Astro.props;
+import logo from "../assets/logo.svg";
+import '../styles/global.css';
 
-const siteUrl = 'https://goldshore.ai';
-const organizationId = `${siteUrl}#organization`;
-const sameAs: string[] = [];
-
-const organizationSchema: Record<string, unknown> = {
-  '@context': 'https://schema.org',
-  '@type': 'Organization',
-  '@id': organizationId,
-  name: 'Gold Shore',
-  url: siteUrl,
-  logo: `${siteUrl}/logo/gs-penrose.svg`,
-  ...(sameAs.length > 0 ? { sameAs } : {}),
-};
-
-const pageSchemas = Array.isArray(structuredData)
-  ? structuredData
-  : structuredData
-    ? [structuredData]
-    : [];
+const logoSrc = logo.src;
 ---
-
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content={description} />
     <title>{title}</title>
-    <link rel="icon" href="/logo/gs-penrose.svg" type="image/svg+xml" />
-    <link rel="icon" href="/logo/gs-penrose.png" type="image/png" />
-    <script type="application/ld+json" set:html={JSON.stringify(organizationSchema)}></script>
-    {pageSchemas.map((schema) => (
-      <script type="application/ld+json" set:html={JSON.stringify(schema)}></script>
-    ))}
-    <slot name="head" />
-    <script type="application/ld+json" set:html={JSON.stringify({
-      '@context': 'https://schema.org',
-      '@type': 'Organization',
-      name: 'Gold Shore',
-      url: 'https://goldshore.ai',
-      logo: 'https://goldshore.ai/logo/gs-penrose.svg',
-      description: 'Institutional-grade automation and intelligence systems.',
-      potentialAction: {
-        '@type': 'SearchAction',
-        target: 'https://goldshore.ai/developer/docs/search?q={search_term_string}',
-        'query-input': 'required name=search_term_string'
-      }
-    })} />
+    <meta name="description" content={description} />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self';" />
+    <link rel="icon" href="/favicon.png" type="image/png" />
+    <!-- Bolt: Preconnect to external origins to speed up resource loading -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://unpkg.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0,0" />
+    <link rel="stylesheet" href="https://unpkg.com/aria-icons@1.0.0/aria-icons.css" />
   </head>
-  <body class="gs-theme-root">
-    <SiteNav />
+  <body>
+    <a href="#content" class="skip-link">Skip to content</a>
+    <div class="gs-page-shell">
+      <header class="gs-header" data-menu-open="false">
+        <a class="gs-logo" href="/" aria-label="GoldShore home">
+          <img src={logoSrc} alt="GoldShore logo" width="27" height="36" fetchpriority="high" />
+        </a>
+        <button class="gs-nav-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation">
+          <span class="material-symbols-rounded" aria-hidden="true">menu</span>
+          <span class="sr-only">Toggle menu</span>
+        </button>
+        <nav class="gs-nav" id="primary-navigation" aria-label="Primary">
+          {navLinks.map((link) => (
+            <a
+              href={link.href}
+              aria-current={currentPath === link.href ? 'page' : undefined}
+              data-astro-prefetch
+            >
+              {link.label}
+            </a>
+          ))}
+          <GSButton href="/developer" variant="secondary" class="gs-button--small gs-button--with-icon">
+            <span class="material-symbols-rounded" aria-hidden="true">terminal</span>
+            Developer
+          </GSButton>
+        </nav>
+      </header>
 
-    <slot name="hero" />
+      <main id="content" class="gs-page-content">
+        <slot />
+      </main>
 
-    <main id="main-content">
-      <slot />
-    </main>
+      <footer class="gs-footer">
+        <div class="gs-section gs-section--padded">
+          <div class="gs-grid columns-2">
+            <div>
+              <div class="gs-logo" style="gap: var(--gs-space-2);">
+                <img src={logoSrc} alt="GoldShore logo" width="24" height="32" loading="lazy" decoding="async" />
+              </div>
+              <p>Applied intelligence, resilient infrastructure, and responsive operations.</p>
+            </div>
+            <div class="gs-grid columns-2" style="gap: var(--gs-space-2);">
+              <div class="gs-nav gs-nav--vertical">
+                <strong><span class="aria-icon aria-icon-orbit" aria-hidden="true"></span>Company</strong>
+                <a href="/about" aria-current={currentPath === '/about' ? 'page' : undefined}>About</a>
+                <a href="/team" aria-current={currentPath === '/team' ? 'page' : undefined}>Team</a>
+                <a href="/services" aria-current={currentPath === '/services' ? 'page' : undefined}>Services</a>
+              </div>
+              <div class="gs-nav gs-nav--vertical-support">
+                <strong><span class="aria-icon aria-icon-signal" aria-hidden="true"></span>Support</strong>
+                <a href="/contact" aria-current={currentPath === '/contact' ? 'page' : undefined}>Contact</a>
+                <a href="/legal/privacy" aria-current={currentPath === '/legal/privacy' ? 'page' : undefined}>Privacy</a>
+                <a href="/legal/terms" aria-current={currentPath === '/legal/terms' ? 'page' : undefined}>Terms</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+    <script is:inline>
+      const header = document.querySelector('.gs-header');
+      const toggle = document.querySelector('.gs-nav-toggle');
 
-    <footer class="gs-footer">
-      <div class="gs-container">
-        <img src="/logo/gs-penrose.svg" class="footer-logo" alt="GoldShore logo" />
-        <p>Gold Shore — Designed not to manage capital, but to steer it.</p>
-        <p>
-          <a href="/status">System Status</a> |
-          <a href="/legal/compliance">Legal &amp; Compliance</a> |
-          <a href="/legal/privacy">Privacy Policy</a> |
-          <a href="/legal/terms">Terms of Service</a>
-        </p>
-        <p class="gs-footer-utility">
-          <a href="https://admin.goldshore.ai" rel="nofollow">Admin Login</a>
-        </p>
-      </div>
-    </footer>
+      // Scroll handling with requestAnimationFrame
+      let ticking = false;
+      let wasScrolled = false;
 
-    <GlobalModal />
-
-    <script>
-      import { initGoldShoreUI } from '@goldshore/theme/runtime';
-      import { initParallax } from '../components/parallax';
-
-      initGoldShoreUI();
-      initParallax();
-
-      // Mobile nav toggle logic
-      document.addEventListener('astro:page-load', () => {
-        const toggle = document.querySelector('[data-gs-nav-toggle]');
-        const close = document.querySelector('[data-gs-nav-close]');
-        const panel = document.querySelector('[data-gs-mobile-panel]');
-
-        if (toggle && panel) {
-          toggle.addEventListener('click', () => {
-            document.body.classList.add('nav-open');
-            panel.setAttribute('aria-hidden', 'false');
-            toggle.setAttribute('aria-expanded', 'true');
-          });
+      const updateHeader = () => {
+        if (!header) {
+          ticking = false;
+          return;
         }
 
-        if (close && panel) {
-          close.addEventListener('click', () => {
-            document.body.classList.remove('nav-open');
-            panel.setAttribute('aria-hidden', 'true');
-            if (toggle) toggle.setAttribute('aria-expanded', 'false');
-          });
+        const isScrolled = window.scrollY > 10;
+        if (isScrolled !== wasScrolled) {
+          header.classList.toggle('is-scrolled', isScrolled);
+          wasScrolled = isScrolled;
+        }
+        ticking = false;
+      };
+
+      window.addEventListener('scroll', () => {
+        if (!ticking) {
+          window.requestAnimationFrame(updateHeader);
+          ticking = true;
+        }
+      }, { passive: true });
+
+      // Initial check
+      updateHeader();
+
+      // Mobile Menu Handling
+      const closeMenu = () => {
+        if (header && toggle) {
+          header.setAttribute('data-menu-open', 'false');
+          toggle.setAttribute('aria-expanded', 'false');
+        }
+      };
+
+      toggle?.addEventListener('click', (e) => {
+        if (!header) return;
+        e.stopPropagation();
+        const isOpen = header.getAttribute('data-menu-open') === 'true';
+        if (isOpen) {
+          closeMenu();
+        } else {
+          header.setAttribute('data-menu-open', 'true');
+          toggle.setAttribute('aria-expanded', 'true');
+        }
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && header?.getAttribute('data-menu-open') === 'true') {
+          closeMenu();
+          toggle?.focus();
+        }
+      });
+
+      document.addEventListener('click', (e) => {
+        if (header?.getAttribute('data-menu-open') === 'true' && !header.contains(e.target)) {
+          closeMenu();
         }
       });
     </script>
-    <script type="module">
-      import { initStarField, initTilt, cleanupUI } from '/src/scripts/init-ui.ts';
-
-      function init() {
-        cleanupUI();
-        initStarField('hero-stars');
-        initTilt('[data-gs-tilt]');
+    <style is:global>
+      :root {
+        --gs-header-height: 100px;
+      }
+      .gs-page-content {
+        padding-top: calc(var(--gs-header-height) + 2rem);
+        min-height: 100vh;
+        --gs-header-height: 72px;
+      }
+      /* Cinematic Header Overrides */
+      .gs-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        height: var(--gs-header-height);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 2rem;
+        background: rgba(3, 3, 5, 0.7); /* Deep dark tint */
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
       }
 
-      document.addEventListener('astro:page-load', init);
-      document.addEventListener('astro:before-swap', cleanupUI);
-    </script>
-    <script type="module" src={themeRuntimeUrl}></script>
+      .gs-header.is-scrolled {
+        background: rgba(0, 0, 0, 0.95);
+        border-bottom-color: rgba(34, 211, 238, 0.15); /* Cyan hint */
+        box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.8);
+      }
+
+      @keyframes glow-pulse {
+        0%, 100% {
+          filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.3)) brightness(1.2);
+          transform: scale(1);
+        }
+        50% {
+          filter: drop-shadow(0 0 15px rgba(34, 211, 238, 0.6)) brightness(1.4);
+          transform: scale(1.05);
+        }
+      }
+
+      .gs-logo {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        text-decoration: none;
+        color: #fff;
+        font-weight: 600;
+        font-size: 1.1rem;
+        letter-spacing: -0.01em;
+        padding: 0.5rem;
+        margin-right: 1.5rem;
+      }
+
+      .gs-logo img {
+        height: 90px; /* 2.5x larger than base ~36px */
+        width: auto;
+        mix-blend-mode: normal;
+        animation: glow-pulse 3s infinite ease-in-out;
+      }
+
+      .gs-logo img {
+        height: 40px;
+        width: auto;
+        /* Ensure logo blends if it has a dark bg */
+        mix-blend-mode: normal;
+      }
+
+      .gs-nav {
+        display: flex;
+        gap: 2rem;
+        align-items: center;
+      }
+
+      .gs-nav a {
+        color: rgba(255, 255, 255, 0.7);
+        text-decoration: none;
+        font-size: 0.95rem;
+        transition: color 0.2s ease;
+        position: relative;
+      }
+
+      .gs-nav a:hover,
+      .gs-nav a[aria-current="page"] {
+        color: #fff;
+      }
+
+      .gs-nav a[aria-current="page"]::after {
+        content: '';
+        position: absolute;
+        bottom: -4px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: #22d3ee; /* Cyan accent */
+        box-shadow: 0 0 8px #22d3ee;
+      }
+
+      /* Mobile toggle */
+      .gs-nav-toggle {
+        display: none; /* Hidden by default on desktop */
+        background: none;
+        border: none;
+        color: #fff;
+        cursor: pointer;
+      }
+
+      @media (max-width: 768px) {
+        .gs-header { padding: 0 1rem; }
+        .gs-nav { display: none; } /* Simplified mobile handling for now */
+        .gs-nav-toggle { display: block; }
+
+        .gs-header[data-menu-open="true"] .gs-nav {
+          display: flex;
+          flex-direction: column;
+          position: absolute;
+          top: 100%;
+          left: 0;
+          right: 0;
+          background: #000;
+          padding: 2rem;
+          border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+      }
+    </style>
   </body>
 </html>

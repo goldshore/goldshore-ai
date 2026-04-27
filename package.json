@@ -30,6 +30,7 @@
     "repo:install": "pnpm install --frozen-lockfile",
     "repo:health": "node scripts/repo-health.mjs",
     "audit": "pnpm run repo:health",
+    "audit:main-alignment": "bash scripts/check-main-alignment.sh main origin",
     "build:api": "turbo run build --filter=@goldshore/api",
     "build:control": "turbo run build --filter=@goldshore/control"
   },

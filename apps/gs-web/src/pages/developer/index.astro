@@ -1,21 +1,16 @@
 ---
-// Legacy developer landing route retained as an alias.
-const target = '/developer-hub';
+import MarketingLayout from '../../layouts/MarketingLayout.astro';
 ---
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta http-equiv="refresh" content={`0;url=${target}`} />
-    <link rel="canonical" href={target} />
-    <title>Redirecting to Developer Hub…</title>
-    <script is:inline define:vars={{ target }}>
-      window.location.replace(target);
-    </script>
-  </head>
-  <body class="bg-gray-50 flex items-center justify-center min-h-screen font-sans">
-    <div class="text-center">
-      <p class="text-gray-500 mb-2">The Developer page has moved to a canonical route.</p>
-      <p>Redirecting to <a href={target} class="text-blue-600 font-bold underline">{target}</a>...</p>
-    </div>
-  </body>
-</html>
+
+<MarketingLayout title="Developers – GoldShore">
+  <section style="padding:2rem;">
+    <h1>Developer Hub</h1>
+    <p>APIs, gateway routing, workers, and documentation.</p>
+
+    <ul>
+      <li><a href="/developer/docs">Documentation</a></li>
+      <li><a href="https://admin.goldshore.ai">Admin Dashboard</a></li>
+      <li><a href="/status">System Status</a></li>
+    </ul>
+  </section>
+</MarketingLayout>

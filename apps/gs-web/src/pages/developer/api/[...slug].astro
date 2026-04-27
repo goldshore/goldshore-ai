@@ -4,83 +4,41 @@ import ApiSidebar from '../../../components/ApiSidebar.astro';
 import ApiEndpoint from '../../../components/ApiEndpoint.astro';
 import openapi from '../../../data/v1.json';
 
-// Bolt Optimization: SSG for high-performance docs.
+// Bolt Optimization: Enable Static Site Generation (SSG) for API docs.
 export const prerender = true;
 
 export async function getStaticPaths() {
-  // Generate canonical slugs for all paths in the spec
-  return Object.keys(openapi.paths).map(path => {
-    const slug = path === '/' ? undefined : path.replace(/^\//, '');
-    return {
-      params: { slug },
-      props: { rawPath: path }
-    };
+  // Generate paths for all endpoints defined in openapi spec.
+  const paths = Object.keys(openapi.paths).map(path => {
+    // Remove leading slash and curly braces for slug
+    const slug = path.replace(/^\//, '').replace(/{/g, '').replace(/}/g, '');
+    return { params: { slug } };
   });
+
+  // Add index path
+  paths.push({ params: { slug: undefined } });
+
+  return paths;
 }
 
 const { slug } = Astro.params;
-const { rawPath } = Astro.props;
-const pagePath = slug ? `/developer/api/${slug}` : '/developer/api';
-const canonicalUrl = `https://goldshore.ai${pagePath}`;
-const endpointLabel = rawPath || '/';
-const title = slug
-  ? `API Reference: ${endpointLabel} | GoldShore`
-  : 'API Reference | GoldShore';
-const description = slug
-  ? `GoldShore API endpoint reference for ${endpointLabel}.`
-  : 'Browse the GoldShore OpenAPI reference and authentication model.';
-const apiSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'TechArticle',
-  '@id': `${canonicalUrl}#tech-article`,
-  headline: slug ? `API Reference: ${endpointLabel}` : 'GoldShore API Reference',
-  description,
-  url: canonicalUrl,
-  mainEntityOfPage: canonicalUrl,
-  author: {
-    '@id': 'https://goldshore.ai#organization',
-  },
-  publisher: {
-    '@id': 'https://goldshore.ai#organization',
-  },
-};
+const endpoint = slug || '';
 ---
 
-<Layout title={title} description={description} structuredData={apiSchema}>
+<Layout title="API Reference">
   <div class="api-container">
-    <aside class="api-sidebar-wrapper">
-      <ApiSidebar openapi={openapi} currentSlug={slug} />
-    </aside>
-
+    <ApiSidebar openapi={openapi} />
     <main class="api-content">
-      <h1 class="sr-only">{slug ? `API endpoint ${endpointLabel}` : 'API Reference'}</h1>
-      {slug ? (
-        <ApiEndpoint openapi={openapi} endpoint={rawPath} />
+      {endpoint ? (
+        <ApiEndpoint openapi={openapi} endpoint={endpoint} />
       ) : (
-        <div class="api-intro prose prose-slate max-w-none">
-           <h2 class="text-4xl font-bold gs-heading">{openapi.info.title}</h2>
-           <p class="text-xl text-[var(--gs-text-secondary)]">{openapi.info.description}</p>
-
-           <div class="flex gap-4 my-6">
-             <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-mono">v{openapi.info.version}</span>
-             <span class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm">OAS 3.0.0 compliant</span>
-           </div>
-
-
-
-           <hr class="border-[var(--gs-border-primary)]" />
-
-           <section class="mt-8">
-             <h2 class="text-2xl font-semibold">Authentication</h2>
-             <p>All requests to the GoldShore API must be signed using a Bearer token generated via the <code>gs-auth</code> service.</p>
-             <pre class="bg-[var(--gs-bg-secondary)] p-4 rounded-lg border border-[var(--gs-border-primary)]"><code>Authorization: Bearer {'<YOUR_TOKEN>'}</code></pre>
-           </section>
-
-           <div class="mt-12 p-6 bg-amber-50 rounded-xl border border-amber-200">
-             <p class="text-sm text-amber-800">
-               <strong>Note:</strong> Endpoint availability is governed by the <code>route-collision-check.yml</code> workflow. If an endpoint is missing, check the CI logs for shadowing errors.
-             </p>
-           </div>
+        <div class="api-intro">
+           <h1>{openapi.info.title}</h1>
+           <p>{openapi.info.description}</p>
+           <p>Version: {openapi.info.version}</p>
+           <hr />
+           <h2>Getting Started</h2>
+           <p>Select an endpoint from the sidebar to view details.</p>
         </div>
       )}
     </main>
@@ -88,38 +46,6 @@ const apiSchema = {
 </Layout>
 
 <style>
-  .api-container {
-    display: grid;
-    grid-template-columns: 300px 1fr;
-    gap: 3rem;
-    max-width: 1600px;
-    margin: 0 auto;
-    padding: 3rem 2rem;
-  }
-  .api-sidebar-wrapper {
-    position: sticky;
-    top: 2rem;
-    height: calc(100vh - 4rem);
-    overflow-y: auto;
-  }
+  .api-container { display: grid; grid-template-columns: 280px 1fr; gap: 2rem; max-width: 1400px; margin: 0 auto; padding: 2rem; }
   .api-content { min-width: 0; }
-
-  /* GoldShore Design Tokens */
-  :root {
-    --gs-text-secondary: #64748b;
-    --gs-border-primary: #e2e8f0;
-    --gs-bg-secondary: #f8fafc;
-  }
-
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-  }
 </style>

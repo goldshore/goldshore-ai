@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import StatusDiagnostics from '../components/StatusDiagnostics.astro';
-const logo = '/logo/gs-penrose.svg';
+import logo from '../assets/logo.svg';
 
 const buildTimestamp =
   import.meta.env.PUBLIC_BUILD_TIMESTAMP ||
@@ -22,7 +22,7 @@ const shortCommitHash = commitHash === 'unknown' ? commitHash : commitHash.slice
     </div>
   </section>
 
-  <section class="gs-section gs-blueprint-bg">
+  <section class="gs-section">
     <div class="gs-card">
       <ul style="list-style: none; padding: 0; display: grid; gap: 1rem;">
         <li style="display: flex; justify-content: space-between; align-items: center;">
@@ -51,14 +51,14 @@ const shortCommitHash = commitHash === 'unknown' ? commitHash : commitHash.slice
   </section>
 
   <StatusDiagnostics />
-  <section class="gs-section gs-blueprint-bg">
+  <section class="gs-section">
     <div class="gs-card">
       <h2>Frontend Deployment Diagnostics</h2>
       <p>Use this section to verify that the deployed HTML has linked CSS/JS bundles and the logo asset resolves.</p>
       <ul style="list-style: none; padding: 0; margin: 1rem 0 0; display: grid; gap: 0.75rem;">
         <li><strong>Build timestamp:</strong> <code>{buildTimestamp}</code></li>
         <li><strong>Commit hash:</strong> <code>{shortCommitHash}</code></li>
-        <li><strong>Logo path:</strong> <code>{logo}</code></li>
+        <li><strong>Logo path:</strong> <code>{logo.src}</code></li>
         <li><strong>Stylesheet link count:</strong> <span id="status-css-count">…</span></li>
         <li><strong>Script tag count:</strong> <span id="status-js-count">…</span></li>
       </ul>

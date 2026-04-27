@@ -15,30 +15,8 @@ export async function getStaticPaths() {
 
 const { page } = Astro.props;
 const { Content } = await page.render();
-const canonicalUrl = `https://goldshore.ai/developer/docs/${page.slug}`;
-const description = page.data.description ?? `Developer documentation for ${page.data.title}.`;
-const docsSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'TechArticle',
-  '@id': `${canonicalUrl}#tech-article`,
-  headline: page.data.title,
-  description,
-  url: canonicalUrl,
-  mainEntityOfPage: canonicalUrl,
-  author: {
-    '@id': 'https://goldshore.ai#organization',
-  },
-  publisher: {
-    '@id': 'https://goldshore.ai#organization',
-  },
-};
 ---
 
-<DocsLayout
-  title={`${page.data.title} – GoldShore Docs`}
-  description={description}
-  structuredData={docsSchema}
-  page={page}
->
+<DocsLayout title={`${page.data.title} – GoldShore Docs`} page={page}>
   <Content components={{ pre: MDXCodeBlock }} />
 </DocsLayout>

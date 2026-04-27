@@ -1,62 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 200">
-
-<defs>
-  <linearGradient id="metal" x1="0%" y1="0%" x2="100%" y2="100%">
-    <stop offset="0%" stop-color="#e6f3ff"/>
-    <stop offset="50%" stop-color="#4da3ff"/>
-    <stop offset="100%" stop-color="#0a4c8a"/>
-  </linearGradient>
-
-  <linearGradient id="shine" x1="0%" y1="0%" x2="100%" y2="0%">
-    <stop offset="0%" stop-color="transparent"/>
-    <stop offset="50%" stop-color="#ffffff" stop-opacity="0.8"/>
-    <stop offset="100%" stop-color="transparent"/>
-    <animateTransform attributeName="gradientTransform"
-      type="translate"
-      from="-200 0" to="200 0"
-      dur="3.5s"
-      repeatCount="indefinite"/>
-  </linearGradient>
-
-  <filter id="softGlow">
-    <feGaussianBlur stdDeviation="1.8"/>
-  </filter>
-</defs>
-
-<rect width="160" height="200" fill="black"/>
-
-<g transform="translate(20,10) scale(1.2)">
-
-  <!-- Left Beam -->
-  <path d="M50 20 L20 120 L45 120 L70 50 Z"
-        fill="url(#metal)"
-        stroke="#052f54"
-        stroke-width="1"
-        filter="url(#softGlow)"/>
-
-  <!-- Right Beam -->
-  <path d="M50 20 L100 20 L120 120 L95 120 Z"
-        fill="url(#metal)"
-        stroke="#052f54"
-        stroke-width="1"
-        filter="url(#softGlow)"/>
-
-  <!-- Bottom Beam -->
-  <path d="M20 120 L120 120 L95 100 L45 100 Z"
-        fill="url(#metal)"
-        stroke="#052f54"
-        stroke-width="1"
-        filter="url(#softGlow)"/>
-
-  <!-- Inner Triangle (cut illusion edge) -->
-  <path d="M70 50 L45 100 L95 100 Z"
-        fill="black"/>
-
-  <!-- Twinkle Overlay -->
-  <path d="M50 20 L100 20 L120 120 L20 120 Z"
-        fill="url(#shine)"
-        opacity="0.3"/>
-
-</g>
-
+<svg viewBox="0 0 160 132" role="img" aria-label="Gold Shore" class="gs-logo-mark" xmlns="http://www.w3.org/2000/svg">
+  <g fill="currentColor" stroke="currentColor" stroke-width="7" stroke-linejoin="round">
+    <path d="M80 10 42 76h30l18-32-18-34Z" />
+    <path d="m82 90 38-66-14-3-19 33 8 36Z" />
+    <path d="M58 82h58l-8-13H70L58 82Z" />
+  </g>
 </svg>

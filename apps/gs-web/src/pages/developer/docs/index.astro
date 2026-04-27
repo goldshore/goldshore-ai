@@ -1,31 +1,9 @@
 ---
 import DocsLayout from '../../../layouts/DocsLayout.astro';
 import MDXCodeBlock from '../../../components/MDXCodeBlock.astro';
-
-const description = 'Overview and quickstart for GoldShore developer documentation.';
-const docsSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'TechArticle',
-  '@id': 'https://goldshore.ai/developer/docs#tech-article',
-  headline: 'GoldShore Documentation Overview',
-  description,
-  url: 'https://goldshore.ai/developer/docs',
-  mainEntityOfPage: 'https://goldshore.ai/developer/docs',
-  author: {
-    '@id': 'https://goldshore.ai#organization',
-  },
-  publisher: {
-    '@id': 'https://goldshore.ai#organization',
-  },
-};
 ---
 
-<DocsLayout
-  title="GoldShore Documentation"
-  description={description}
-  structuredData={docsSchema}
-  page={{ slug: 'index' }}
->
+<DocsLayout title="GoldShore Documentation" page={{ slug: 'index' }}>
   <h1>Overview</h1>
   <p>Everything begins with the API.</p>
 

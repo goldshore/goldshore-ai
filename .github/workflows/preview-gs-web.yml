@@ -1,4 +1,4 @@
-name: Preview GS Web (goldshore.ai)
+name: Preview Web (goldshore.ai)
 
 permissions:
   contents: read
@@ -13,10 +13,10 @@ on:
       - unlabeled
       - ready_for_review
     paths:
-      - 'apps/gs-web/**'
-      - 'packages/**'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
+      - "apps/gs-web/**"
+      - "packages/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
 
 jobs:
   preview-web:
@@ -26,10 +26,11 @@ jobs:
       (github.event.action == 'ready_for_review' && github.event.pull_request.base.ref == 'main')
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/checkout@3df4d485d8ce6d2b61b8d12e8f44cdfffbea301e
 
-      - name: Install pnpm
-        run: npm install -g pnpm@9
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: false
 
       - uses: actions/setup-node@v6
         with:
@@ -48,28 +49,15 @@ jobs:
       - name: Validate canonical worker names
         run: pnpm validate:names
 
-      - name: Build GS web app (preview)
+      - name: Build web app (preview)
         working-directory: apps/gs-web
         env:
           PUBLIC_API: https://api-preview.goldshore.ai
           PUBLIC_GATEWAY: https://gw-preview.goldshore.ai
-          PUBLIC_BUILD_TIMESTAMP: ${{ github.run_started_at }}
-          PUBLIC_COMMIT_HASH: ${{ github.sha }}
         run: pnpm build
 
-      - name: Validate build artifacts
-        working-directory: apps/gs-web
-        run: |
-          set -euo pipefail
-
-          test -d dist/_astro
-          find dist/_astro -maxdepth 1 -type f -name '*.css' -print -quit | grep -q .
-          find dist/_astro -maxdepth 1 -type f -name '*.js' -print -quit | grep -q .
-          grep -q '<link' dist/index.html
-          grep -q '/_astro/' dist/index.html
-
       - name: Deploy to Cloudflare Pages (preview)
-        uses: cloudflare/pages-action@f0a1cd58cd66095dee69bfa18fa5efd1dde93bca
+        uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

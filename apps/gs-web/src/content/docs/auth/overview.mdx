@@ -1,29 +1,16 @@
 ---
 title: "Authentication"
-description: "Authenticating requests within the goldshore.ai ecosystem."
+description: "Authentication guide"
 order: 50
 ---
 
 # Authentication
 
-The **GoldShore** API uses Bearer Tokens to authorize requests. These tokens ensure that every interaction—whether from the `gs-web` frontend or external services—is mapped to a specific security policy.
+GoldShore uses API keys to allow access to the API. You can register a new GoldShore API key at our [developer portal](https://dashboard.goldshore.dev).
 
-
-
-## Obtaining Credentials
-
-Administrative and service-level keys are managed via the [GoldShore Admin Portal](https://admin.goldshore.ai). 
-
-* **Development Keys**: Use these for local testing on `localhost` or your iPad development branch.
-* **Production Keys**: These are restricted to the `goldshore.ai` production environment and require multi-factor authorization for rotation.
-
-## The Authorization Header
-
-All requests to `api.goldshore.ai` must include the `Authorization` header. Failure to provide a valid token will trigger a `401 Unauthorized` response from the `gs-gateway`.
+Authentication to the API is performed via HTTP Basic Auth. Provide your API key as the basic auth username value. You do not need to provide a password.
 
 ```bash
-# Example Analysis Request
-curl -X POST [https://api.goldshore.ai/v1/analysis](https://api.goldshore.ai/v1/analysis) \
-  -H "Authorization: Bearer gs_sk_live_..." \
-  -H "Content-Type: application/json" \
-  -d '{ "model": "gpt-4o", "input": "System health check." }'
+curl https://api.goldshore.dev/v1/charges \
+  -u sk_test_...:
+```
