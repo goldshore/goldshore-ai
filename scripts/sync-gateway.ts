@@ -20,9 +20,10 @@ const MASTER_CONFIG: MasterConfig = {
     active_services: ['gateway', 'api', 'agent', 'admin'],
   },
   AI_ORCHESTRATION: {
-    preferred_model: 'gpt-4-turbo',
+    preferred_model: 'gpt-5-mini',
     agent_modules: ['operator-assist', 'market-intel'],
     queue_concurrency: 10,
+    retry_attempts: 2,
   },
 };
 
@@ -64,7 +65,7 @@ async function runFinalVerification(): Promise<void> {
   console.log('\n📬 Checking /internal/inbox-status...');
   try {
     const finalVerify = await fetch('https://api.goldshore.ai/internal/inbox-status');
-    const data = await finalVerify.json() as { success?: boolean; inbox?: { count?: number } };
+    const data = (await finalVerify.json()) as { success?: boolean; inbox?: { count?: number } };
 
     if (data.success) {
       console.log(`🎉 SYSTEM ONLINE: ${data.inbox?.count ?? 0} emails logged in KV.`);

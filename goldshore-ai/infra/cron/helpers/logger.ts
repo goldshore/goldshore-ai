@@ -26,26 +26,29 @@ function sanitizeArgs(args: any[]): any[] {
     { re: /\bBearer\s+[A-Za-z0-9_\-\.+=\/]{8,}\b/gi, replacement: "Bearer [REDACTED]" },
   ];
 
+  const redactText = (text: string): string => {
+    let out = text;
+    for (const { re, replacement } of redactionPatterns) {
+      out = out.replace(re, replacement);
+    }
+    return out;
+  };
+
   return args.map((arg) => {
     const sanitized = sanitizeValue(arg);
+
     if (typeof sanitized === "string") {
-      let out = sanitized;
-      for (const { re, replacement } of redactionPatterns) {
-        out = out.replace(re, replacement);
-      }
-      return out;
+      return redactText(sanitized);
     }
+
     if (sanitized && typeof sanitized === "object") {
       try {
-        let json = JSON.stringify(sanitized);
-        for (const { re, replacement } of redactionPatterns) {
-          json = json.replace(re, replacement);
-        }
-        return json;
+        return redactText(JSON.stringify(sanitized));
       } catch {
         return "[Unserializable object]";
       }
     }
+
     return sanitized;
   });
 }
