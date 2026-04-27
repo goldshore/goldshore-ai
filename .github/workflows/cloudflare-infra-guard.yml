@@ -11,6 +11,7 @@ permissions:
 jobs:
   validate-cloudflare-secrets:
     runs-on: ubuntu-latest
+    if: github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'workflow_dispatch'
     steps:
       - name: Verify required Cloudflare account and build token secrets
         env:
@@ -24,6 +25,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+
       - name: Enforce canonical build token usage in worker deploy workflows
         run: |
           worker_deploy_workflows=(
@@ -42,8 +47,13 @@ jobs:
       - validate-cloudflare-secrets
       - validate-worker-token-policy
     runs-on: ubuntu-latest
+    if: github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+
       - run: test -f ops/cloudflare-required.json
       - name: Verify Cloudflare deploy token is present
         env:

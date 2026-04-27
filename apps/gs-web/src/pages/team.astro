@@ -14,6 +14,10 @@ export const prerender = true;
       <div class="card founder">
         <h3>Robert M.</h3>
         <p>Leads product direction, systems strategy, and applied intelligence.</p>
+        <div class="social-links">
+          <a href="#" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+          <a href="#" target="_blank" rel="noopener noreferrer">GitHub</a>
+        </div>
       </div>
 
       <div class="card">
@@ -77,6 +81,24 @@ export const prerender = true;
       margin: 0;
       color: var(--gs-text-dim);
       line-height: 1.7;
+    }
+
+    .social-links {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .social-links a {
+      color: var(--gs-primary);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 150ms ease;
+    }
+
+    .social-links a:hover {
+      color: #fff;
     }
 
     @media (max-width: 900px) {
