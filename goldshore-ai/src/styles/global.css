@@ -1,0 +1,217 @@
+:root {
+  --accent: 16, 145, 152;
+  --accent-strong: 11, 102, 108;
+  --black: 15, 18, 25;
+  --gray: 77, 89, 117;
+  --gray-light: 229, 233, 240;
+  --gray-dark: 34, 41, 57;
+  --surface: 252, 254, 255;
+  --border: 206, 219, 234;
+  --cta-radius: 10px;
+  --cta-padding-y: 0.6rem;
+  --cta-padding-x: 1rem;
+
+  --container-max: 1080px;
+  --space-page-inline: clamp(0.9rem, 2.4vw, 2rem);
+  --space-page-block: clamp(1.25rem, 3.2vw, 3rem);
+  --space-section: clamp(1.4rem, 3.5vw, 2.8rem);
+  --space-card: clamp(0.85rem, 2vw, 1.35rem);
+}
+
+@font-face {
+  font-family: 'Atkinson';
+  src: url('/fonts/atkinson-regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Atkinson';
+  src: url('/fonts/atkinson-bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Atkinson', sans-serif;
+  margin: 0;
+  background: #f2f7fb;
+  color: rgb(var(--gray-dark));
+  font-size: clamp(1rem, 0.95rem + 0.25vw, 1.2rem);
+  line-height: 1.65;
+}
+
+main {
+  width: min(var(--container-max), 100% - (var(--space-page-inline) * 2));
+  margin: 0 auto;
+  padding: var(--space-page-block) 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0 0 0.55rem 0;
+  color: rgb(var(--black));
+  line-height: 1.2;
+}
+h1 {
+  font-size: clamp(1.95rem, 1.55rem + 1.45vw, 2.9rem);
+}
+h2 {
+  font-size: clamp(1.45rem, 1.15rem + 0.9vw, 2.1rem);
+}
+h3 {
+  font-size: clamp(1.1rem, 1rem + 0.4vw, 1.35rem);
+}
+a {
+  color: rgb(var(--accent-strong));
+}
+a:hover {
+  color: rgb(var(--accent));
+}
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgb(var(--accent-strong));
+  outline-offset: 2px;
+}
+section {
+  margin: var(--space-section) 0;
+}
+.grid {
+  display: grid;
+  gap: clamp(0.75rem, 1.5vw, 1.25rem);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+}
+.card {
+  border: 1px solid rgb(var(--border));
+  border-radius: 12px;
+  padding: var(--space-card);
+  background: rgb(var(--surface));
+}
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--cta-radius);
+  padding: var(--cta-padding-y) var(--cta-padding-x);
+  font-weight: 700;
+  text-decoration: none;
+  border: 1px solid transparent;
+}
+.button-primary {
+  background: rgb(var(--accent-strong));
+  color: white;
+}
+.button-primary:hover {
+  background: rgb(var(--accent));
+  color: white;
+}
+.button-secondary {
+  background: white;
+  border-color: rgb(var(--accent-strong));
+  color: rgb(var(--accent-strong));
+}
+.button-tertiary {
+  background: transparent;
+  border-color: rgb(var(--border));
+  color: rgb(var(--gray-dark));
+}
+.metric {
+  margin-top: 0.4rem;
+  color: rgb(var(--accent-strong));
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.small {
+  font-size: 0.95rem;
+  color: rgb(var(--gray));
+}
+
+.card summary {
+  cursor: pointer;
+}
+
+.card summary:focus-visible {
+  outline: 3px solid rgb(var(--accent-strong));
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  border: 1px solid rgb(var(--border));
+  border-radius: 8px;
+  padding: 0.62rem 0.7rem;
+  font: inherit;
+  color: inherit;
+  background: rgb(var(--surface));
+}
+
+@media (max-width: 1024px) {
+  main {
+    width: min(100% - (var(--space-page-inline) * 2), 920px);
+  }
+
+  .card {
+    border-radius: 10px;
+  }
+}
+
+@media (max-width: 720px) {
+  .button {
+    width: 100%;
+    text-align: center;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  section {
+    margin: clamp(1rem, 4vw, 1.45rem) 0;
+  }
+}
+
+.card summary {
+  cursor: pointer;
+}
+
+.card summary:focus-visible {
+  outline: 3px solid rgb(var(--accent-strong));
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid rgb(var(--border));
+  border-radius: 8px;
+  padding: 0.55rem 0.65rem;
+  font: inherit;
+  color: inherit;
+  background: rgb(var(--surface));
+}
+
+@media (max-width: 720px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

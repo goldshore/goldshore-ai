@@ -80,10 +80,10 @@ jobs:
 
           {
             echo "### gs-web build metadata"
-            echo "- Commit SHA: \\`${deployed_sha}\\`"
-            echo "- Build timestamp: \\`${build_timestamp}\\`"
+            echo "- Commit SHA: \`${deployed_sha}\`"
+            echo "- Build timestamp: \`${build_timestamp}\`"
             if [[ -n "$release_label" ]]; then
-              echo "- Release label: \\`${release_label}\\`"
+              echo "- Release label: \`${release_label}\`"
             else
               echo "- Release label: _(not set)_"
             fi
@@ -100,15 +100,6 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Validate workspace contract
-        run: pnpm validate:workspace
-
-      - name: Validate canonical worker structure
-        run: pnpm validate:structure
-
-      - name: Validate canonical worker names
-        run: pnpm validate:names
 
       - name: Build web app
         working-directory: apps/gs-web

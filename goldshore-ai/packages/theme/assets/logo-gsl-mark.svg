@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="#D1D5DB" stroke-width="2">
+  <path d="M50 10 L90 30 L90 70 L50 90 L10 70 L10 30 Z" fill="rgba(0,0,0,0.5)" />
+  <path d="M50 10 L50 50 L90 70" />
+  <path d="M50 50 L10 70" />
+  <text x="50" y="98" font-size="8" text-anchor="middle" fill="#FF4500" font-family="monospace">GOLD SHORE</text>
+</svg>
