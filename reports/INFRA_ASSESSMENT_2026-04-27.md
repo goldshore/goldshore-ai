@@ -37,7 +37,7 @@ It is the only repository with a coherent, production-ready monorepo foundation.
 ## goldshore-ai — Detail
 
 ### What it gets right
-- **Coherent monorepo:** All seven platform services (`gs-web`, `gs-api`, `gs-admin`, `gs-control`, `gs-gateway`, `gs-agent`, `gs-mail`) plus eleven shared packages co-exist under one TurboRepo workspace. Changes cascade correctly through the dependency graph.
+- **Coherent monorepo:** All seven platform services (`gs-web`, `gs-api`, `gs-admin`, `gs-control`, `gs-gateway`, `gs-agent`, `gs-mail`) plus eleven shared packages coexist under one TurboRepo workspace. Changes cascade correctly through the dependency graph.
 - **CI discipline:** Separate deploy workflows per service with pinned action versions/refs on production-critical steps. Lockfile changes are blocked in PRs, preventing accidental dependency drift.
 - **Infra-as-code:** Every Cloudflare Worker and Pages deployment has a corresponding `wrangler.toml` in `infra/Cloudflare/`, with `desired-state.yaml` for drift comparison. A machine-readable canonical state JSON (`infra/AGENT_CANONICAL_STATE.json`) and automated audit scripts round out the picture.
 - **Developer tooling:** `pnpm validate` enforces workspace protocol, canonical structure, and worker naming before any merge. `pnpm repo:health` gives a quick at-a-glance state check.
