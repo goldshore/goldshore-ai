@@ -1,0 +1,8 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "//": "Repository-level defaults for Cloudflare worker services",
+  "vars": {
+    "ACCOUNT_ID": "REPLACE_WITH_CLOUDFLARE_ACCOUNT_ID",
+    "BUILD_TOKEN_SERVICE": "gs-control"
+  }
+}
