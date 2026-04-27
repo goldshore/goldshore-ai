@@ -1,0 +1,108 @@
+---
+import TryItConsole from './TryItConsole.astro';
+
+const { openapi, endpoint } = Astro.props;
+
+// Normalize endpoint to look up in paths
+// endpoint from props might be "system/status"
+// path keys in openapi are usually "/system/status"
+const pathKey = endpoint.startsWith('/') ? endpoint : '/' + endpoint;
+
+// Find the path item in the openapi spec
+const pathItem = openapi?.paths?.[pathKey];
+const methods = ['get', 'post', 'put', 'delete', 'patch'];
+---
+
+{pathItem ? (
+<section class="api-endpoint">
+  <h2>{pathKey}</h2>
+  <div class="methods">
+    {methods.map((method) => {
+      const op = pathItem[method];
+      if (!op) return null;
+      return (
+        <article class="method-block">
+          <header>
+            <span class={`method-badge ${method}`}>{method.toUpperCase()}</span>
+            <h3>{op.summary || op.operationId || 'Operation'}</h3>
+          </header>
+          {op.description && <p class="description">{op.description}</p>}
+
+          <div class="op-details">
+             {/* Parameters Display */}
+             {op.parameters && op.parameters.length > 0 && (
+                 <div class="parameters">
+                     <h4>Parameters</h4>
+                     <ul>
+                     {op.parameters.map((param: { name: string; in: string; required?: boolean; description?: string }) => (
+                         <li>
+                             <code>{param.name}</code> ({param.in}) - {param.required ? 'Required' : 'Optional'}
+                             {param.description && <span>: {param.description}</span>}
+                         </li>
+                     ))}
+                     </ul>
+                 </div>
+             )}
+
+             {/* Try It Console Integration */}
+             <TryItConsole method={method} path={pathKey} />
+          </div>
+
+        </article>
+      );
+    })}
+  </div>
+</section>
+) : (
+<div class="endpoint-error">
+  <h2>{pathKey}</h2>
+  <p>Endpoint definition not found in OpenAPI spec.</p>
+</div>
+)}
+
+<style>
+  .api-endpoint {
+    margin-bottom: var(--gs-space-6);
+  }
+  .method-block {
+    margin-bottom: var(--gs-space-4);
+    padding: var(--gs-space-4);
+    background: var(--gs-color-bg-surface);
+    border: 1px solid var(--gs-color-border);
+    border-radius: var(--gs-radius-md);
+  }
+  .method-block header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  .method-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: #fff;
+  }
+  .method-badge.get { background: #3b82f6; }
+  .method-badge.post { background: #22c55e; }
+  .method-badge.put { background: #f59e0b; }
+  .method-badge.delete { background: #ef4444; }
+  .method-badge.patch { background: #8b5cf6; }
+
+  h3 { margin: 0; font-size: 1.1rem; }
+  .description { color: var(--gs-color-subtle); font-size: 0.9rem; margin-bottom: 1rem; }
+
+  .parameters {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: var(--gs-color-bg-subtle);
+      border-radius: 4px;
+  }
+  .parameters h4 { margin-top: 0; font-size: 0.9rem; }
+  .parameters ul { padding-left: 1.2rem; margin-bottom: 0; }
+  .parameters li { font-size: 0.85rem; }
+  .endpoint-error { padding: 2rem; color: #ef4444; border: 1px dashed #ef4444; border-radius: 8px; }
+</style>

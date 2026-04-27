@@ -1,0 +1,40 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Status | GoldShore" description="System status">
+  <section class="gs-hero">
+    <div>
+      <h1>System Status</h1>
+      <p>All systems are currently operational.</p>
+    </div>
+  </section>
+
+  <section class="gs-section">
+    <div class="gs-card">
+      <ul style="list-style: none; padding: 0; display: grid; gap: 1rem;">
+        <li style="display: flex; justify-content: space-between; align-items: center;">
+          <span>API Gateway</span>
+          <span style="color: #4ade80; display: flex; align-items: center; gap: 0.5rem;">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: currentColor;"></span>
+            Operational
+          </span>
+        </li>
+        <li style="display: flex; justify-content: space-between; align-items: center;">
+          <span>Web Application</span>
+          <span style="color: #4ade80; display: flex; align-items: center; gap: 0.5rem;">
+             <span style="width: 8px; height: 8px; border-radius: 50%; background: currentColor;"></span>
+             Operational
+          </span>
+        </li>
+        <li style="display: flex; justify-content: space-between; align-items: center;">
+          <span>Background Workers</span>
+          <span style="color: #4ade80; display: flex; align-items: center; gap: 0.5rem;">
+             <span style="width: 8px; height: 8px; border-radius: 50%; background: currentColor;"></span>
+             Operational
+          </span>
+        </li>
+      </ul>
+    </div>
+  </section>
+</BaseLayout>

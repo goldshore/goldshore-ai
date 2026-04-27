@@ -1,0 +1,23 @@
+---
+const { color = 'cyan' } = Astro.props;
+---
+
+<span class={`gs-badge ${color}`}>
+  <slot />
+</span>
+
+<style>
+  .gs-badge {
+    padding: 0.15rem 0.45rem;
+    border-radius: var(--gs-radius-sm);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    border: 1px solid var(--gs-border);
+  }
+  .cyan { border-color: var(--gs-cyan); color: var(--gs-cyan); }
+  .gold { border-color: var(--gs-gold); color: var(--gs-gold); }
+  .purple { border-color: var(--gs-purple); color: var(--gs-purple); }
+  .green { border-color: var(--gs-lime); color: var(--gs-lime); }
+  .red { border-color: #ef4444; color: #ef4444; }
+</style>
