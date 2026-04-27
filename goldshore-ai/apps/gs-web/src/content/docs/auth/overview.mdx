@@ -1,0 +1,16 @@
+---
+title: "Authentication"
+description: "Authentication guide"
+order: 50
+---
+
+# Authentication
+
+GoldShore uses API keys to allow access to the API. You can register a new GoldShore API key at our [developer portal](https://dashboard.goldshore.dev).
+
+Authentication to the API is performed via HTTP Basic Auth. Provide your API key as the basic auth username value. You do not need to provide a password.
+
+```bash
+curl https://api.goldshore.dev/v1/charges \
+  -u sk_test_...:
+```

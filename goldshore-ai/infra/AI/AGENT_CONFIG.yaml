@@ -1,0 +1,30 @@
+agent:
+  id: goldshore-infra-agent
+  name: GoldShore Infra Orchestrator
+  version: 1.0.0
+  description: >
+    Manages Cloudflare applications, DNS, email routing, and bindings for
+    goldshore.ai based on desired-state definitions in the infra directory.
+
+  bootstrap:
+    - read: ../cloudflare/desired-state.yaml
+    - read: ../cloudflare/runbooks/CLOUDFLARE_APPS.md
+    - read: ../cloudflare/runbooks/DNS_AND_EMAIL.md
+    - read: ../../AGENT_GLOBAL_RULES.md
+
+  requirements:
+    enforce_desired_state: true
+    require_confirmation_for_destructive: true
+    never_expose_secrets: true
+
+  cloudflare:
+    use_api: true
+    account_from_env: true
+    # The host system / runtime must provide:
+    #   CLOUDFLARE_API_TOKEN
+    #   CLOUDFLARE_ACCOUNT_ID
+
+  behavior:
+    show_plan_before_apply: true
+    group_changes_by_resource_type: true
+    treat_dns_misconfig_as_critical: true

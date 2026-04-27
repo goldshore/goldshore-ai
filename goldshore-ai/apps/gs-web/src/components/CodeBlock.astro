@@ -1,0 +1,8 @@
+---
+const { code, lang = 'bash' } = Astro.props;
+---
+
+<div class="code-block">
+  <button class="copy" onclick="navigator.clipboard.writeText(this.nextElementSibling.innerText)">Copy</button>
+  <pre><code class={"language-" + lang}>{code}</code></pre>
+</div>

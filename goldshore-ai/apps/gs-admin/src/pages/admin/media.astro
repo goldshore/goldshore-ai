@@ -1,0 +1,258 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { Card, Table } from '@goldshore/ui';
+
+const mediaAssets = [
+  { id: 'asset-410', name: 'Brand hero video', type: 'video/mp4', status: 'approved' },
+  { id: 'asset-411', name: 'Partner logo pack', type: 'image/svg+xml', status: 'review' },
+  { id: 'asset-412', name: 'Platform screenshots', type: 'image/png', status: 'approved' }
+];
+---
+<AdminLayout title="Media | GoldShore Admin" requiredPermission="media:read">
+  <section class="max-w-6xl mx-auto py-16 px-6">
+    <h1 class="text-3xl gs-heading mb-4">Media</h1>
+    <p class="text-[var(--gs-text-secondary)] mb-8">
+      Curate approved media assets with structured access controls for editors and viewers.
+    </p>
+
+    <Card class="gs-table-card">
+      <Table>
+        <thead>
+          <tr>
+            <th>Asset ID</th>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {mediaAssets.map((asset) => (
+            <tr>
+              <td>{asset.id}</td>
+              <td>{asset.name}</td>
+              <td>{asset.type}</td>
+              <td class="capitalize">{asset.status}</td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+    </Card>
+  </section>
+import { GSButton } from '@goldshore/ui';
+
+const API_BASE = import.meta.env.PUBLIC_API;
+---
+<AdminLayout title="Media Library | GoldShore Admin">
+  <section class="max-w-6xl mx-auto py-16 px-6 space-y-10">
+    <header class="space-y-3">
+      <h1 class="text-3xl gs-heading">Media Library</h1>
+      <p class="text-[var(--gs-text-secondary)]">
+        Upload brand assets and reuse approved imagery across page content.
+      </p>
+    </header>
+
+    <div class="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+      <div class="gs-card space-y-4">
+        <div>
+          <h2 class="text-xl font-semibold">Upload new media</h2>
+          <p class="text-sm gs-text-subtle">Supports SVG, PNG, and JPG assets.</p>
+        </div>
+        <form id="media-upload-form" class="grid gap-4">
+          <input id="media-file" class="gs-input" type="file" accept=".svg,.png,.jpg,.jpeg" />
+          <GSButton type="submit" variant="primary">Upload asset</GSButton>
+        </form>
+        <p id="media-upload-status" class="text-sm text-[var(--gs-text-secondary)]"></p>
+      </div>
+
+      <div class="gs-card space-y-4">
+        <div>
+          <h2 class="text-xl font-semibold">Quick actions</h2>
+          <p class="text-sm gs-text-subtle">Copy URLs or preview assets before insertion.</p>
+        </div>
+        <div class="grid gap-3">
+          <GSButton id="media-refresh" variant="secondary">Refresh library</GSButton>
+          <div class="gs-helper">Tip: Select an image to copy its URL into the clipboard.</div>
+        </div>
+      </div>
+    </div>
+
+    <section class="space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-semibold">Library</h2>
+        <span id="media-count" class="text-sm text-[var(--gs-text-secondary)]">0 assets</span>
+      </div>
+      <div id="media-grid" class="media-grid"></div>
+    </section>
+  </section>
+
+  <style>
+    .media-grid {
+      display: grid;
+      gap: 1.5rem;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    }
+
+    .media-card {
+      border: 1px solid var(--gs-border-subtle, #233041);
+      background: rgba(12, 18, 31, 0.7);
+      border-radius: 12px;
+      padding: 0.75rem;
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .media-preview {
+      height: 140px;
+      border-radius: 10px;
+      background: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .media-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .media-meta {
+      display: grid;
+      gap: 0.25rem;
+      font-size: 0.85rem;
+      color: var(--gs-text-secondary);
+      word-break: break-word;
+    }
+
+    .media-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .media-actions button {
+      border-radius: 999px;
+      font-size: 0.75rem;
+      padding: 0.35rem 0.75rem;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      color: #e2e8f0;
+    }
+  </style>
+
+  <script>
+    const apiBase = `${API_BASE}`.replace(/\/$/, '');
+    const mediaGrid = document.getElementById('media-grid');
+    const mediaCount = document.getElementById('media-count');
+    const mediaStatus = document.getElementById('media-upload-status');
+
+    const formatSize = (bytes) => {
+      if (!bytes && bytes !== 0) return 'Unknown size';
+      if (bytes < 1024) return `${bytes} B`;
+      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    };
+
+    const createCard = (item) => {
+      const card = document.createElement('div');
+      card.className = 'media-card';
+
+      const preview = document.createElement('div');
+      preview.className = 'media-preview';
+      const img = document.createElement('img');
+      img.src = item.url;
+      img.alt = item.filename;
+      preview.appendChild(img);
+
+      const meta = document.createElement('div');
+      meta.className = 'media-meta';
+      meta.innerHTML = `
+        <strong>${item.filename}</strong>
+        <span>${item.type}</span>
+        <span>${formatSize(item.size)}</span>
+      `;
+
+      const actions = document.createElement('div');
+      actions.className = 'media-actions';
+      const copyButton = document.createElement('button');
+      copyButton.type = 'button';
+      copyButton.textContent = 'Copy URL';
+      copyButton.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(item.url);
+          copyButton.textContent = 'Copied';
+          setTimeout(() => {
+            copyButton.textContent = 'Copy URL';
+          }, 1500);
+        } catch (error) {
+          console.error('Clipboard error', error);
+        }
+      });
+      actions.appendChild(copyButton);
+
+      card.appendChild(preview);
+      card.appendChild(meta);
+      card.appendChild(actions);
+      return card;
+    };
+
+    const renderMedia = (items) => {
+      if (!mediaGrid || !mediaCount) return;
+      mediaGrid.innerHTML = '';
+      if (!items.length) {
+        mediaGrid.innerHTML = '<div class="gs-helper">No media assets found yet.</div>';
+        mediaCount.textContent = '0 assets';
+        return;
+      }
+      items.forEach((item) => mediaGrid.appendChild(createCard(item)));
+      mediaCount.textContent = `${items.length} asset${items.length === 1 ? '' : 's'}`;
+    };
+
+    const loadMedia = async () => {
+      try {
+        const response = await fetch(`${apiBase}/media`);
+        const data = await response.json();
+        renderMedia(data.items ?? []);
+      } catch (error) {
+        console.error('Failed to load media', error);
+      }
+    };
+
+    document.getElementById('media-refresh')?.addEventListener('click', () => {
+      loadMedia();
+    });
+
+    document.getElementById('media-upload-form')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const input = document.getElementById('media-file');
+      const file = input?.files?.[0];
+      if (!file) {
+        if (mediaStatus) mediaStatus.textContent = 'Select a file to upload.';
+        return;
+      }
+      const formData = new FormData();
+      formData.append('file', file);
+      if (mediaStatus) mediaStatus.textContent = 'Uploading...';
+      try {
+        const response = await fetch(`${apiBase}/media/upload`, {
+          method: 'POST',
+          body: formData
+        });
+        if (!response.ok) {
+          const error = await response.json();
+          if (mediaStatus) mediaStatus.textContent = error.error || 'Upload failed.';
+          return;
+        }
+        const result = await response.json();
+        if (mediaStatus) mediaStatus.textContent = `Uploaded ${result.filename}.`;
+        if (input) input.value = '';
+        await loadMedia();
+      } catch (error) {
+        console.error('Upload failed', error);
+        if (mediaStatus) mediaStatus.textContent = 'Upload failed. Please try again.';
+      }
+    });
+
+    loadMedia();
+  </script>
+</AdminLayout>
