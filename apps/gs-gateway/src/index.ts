@@ -56,11 +56,12 @@ app.all("*", async (c) => {
   const subdomain = host.split('.')[0];
 
   // Advanced dynamic routing: match subdomain to service binding
-  // e.g., agent.goldshore.ai -> env.AGENT or env.GS_AGENT
+  // Normalize preview subdomains: e.g., 'api-preview' -> 'api'
+  const baseSubdomain = subdomain.split('-')[0];
   const serviceKeys = [
-    subdomain.toUpperCase(),
-    `GS_${subdomain.toUpperCase()}`,
-    `${subdomain.toUpperCase()}_SERVICE`
+    baseSubdomain.toUpperCase(),
+    `GS_${baseSubdomain.toUpperCase()}`,
+    `${baseSubdomain.toUpperCase()}_SERVICE`
   ];
 
   for (const key of serviceKeys) {
@@ -71,10 +72,10 @@ app.all("*", async (c) => {
   }
 
   // Fallback map
-  if (subdomain === "api" && c.env.API_SERVICE) return c.env.API_SERVICE.fetch(c.req.raw);
+  if (baseSubdomain === "api" && c.env.API_SERVICE) return c.env.API_SERVICE.fetch(c.req.raw);
 
   // Default catch-all to API_SERVICE if not on main domain
-  if (subdomain !== "goldshore" && subdomain !== "www" && c.env.API_SERVICE) {
+  if (baseSubdomain !== "goldshore" && baseSubdomain !== "www" && c.env.API_SERVICE) {
     return c.env.API_SERVICE.fetch(c.req.raw);
   }
 

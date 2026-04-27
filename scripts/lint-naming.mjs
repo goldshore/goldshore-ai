@@ -19,7 +19,7 @@ function run(command) {
 }
 
 function lintPackages() {
-  const packageFiles = run("grep --files apps packages infra -g 'package.json' -g '!**/node_modules/**'");
+  const packageFiles = run("find apps packages infra -type f -name 'package.json' -not -path '*/node_modules/*'");
 
   for (const packageFile of packageFiles) {
     const packageJson = JSON.parse(readFileSync(resolve(repoRoot, packageFile), 'utf8'));
@@ -43,7 +43,7 @@ function lintPackages() {
 }
 
 function lintWorkflows() {
-  const workflowFiles = run("grep --files .github/workflows -g '*.yml'");
+  const workflowFiles = run("find .github/workflows -type f -name '*.yml'");
 
   for (const workflowFile of workflowFiles) {
     const workflowBasename = workflowFile.split('/').pop().replace(/\.yml$/, '');
