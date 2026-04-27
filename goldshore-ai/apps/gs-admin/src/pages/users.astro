@@ -1,0 +1,51 @@
+---
+import AdminLayout from '../layouts/AdminLayout.astro';
+import { Card, Table, GSButton } from '@goldshore/ui';
+
+const users = [
+  { name: 'Marin Reyes', role: 'Owner', status: 'Active' },
+  { name: 'Alex Kim', role: 'Engineer', status: 'Active' },
+  { name: 'Priya Nair', role: 'Analyst', status: 'Invited' },
+];
+---
+<AdminLayout title="Users">
+  <section class="gs-grid columns-2">
+    <Card>
+      <div class="section-title"><span>➕</span><h3>Invite</h3></div>
+      <p class="gs-helper">Send a secure invite link with scoped permissions.</p>
+      <form class="gs-form-row">
+        <div class="gs-input-group">
+          <label for="user-email">Work email</label>
+          <input id="user-email" type="email" required />
+        </div>
+        <div class="gs-input-group">
+          <label for="user-role">Role</label>
+          <select id="user-role">
+            <option>Owner</option>
+            <option>Engineer</option>
+            <option>Analyst</option>
+          </select>
+        </div>
+        <div class="gs-form-actions">
+          <GSButton class="gs-button--small">Send invite</GSButton>
+        </div>
+      </form>
+    </Card>
+
+    <Card class="gs-table-card">
+      <div class="section-title"><span>◎</span><h3>Directory</h3></div>
+      <Table ariaLabel="User directory">
+        <thead><tr><th scope="col">Name</th><th scope="col">Role</th><th scope="col">Status</th></tr></thead>
+        <tbody>
+          {users.map((user) => (
+            <tr>
+              <td>{user.name}</td>
+              <td>{user.role}</td>
+              <td><span class={`gs-badge ${user.status === 'Active' ? 'success' : 'warning'}`}>{user.status}</span></td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+    </Card>
+  </section>
+</AdminLayout>

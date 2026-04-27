@@ -1,0 +1,32 @@
+# .github/workflows/palette-manual.yml
+name: Palette Manual Run
+
+on:
+  repository_dispatch:
+    types: [PALETTE_RUN]
+
+jobs:
+  palette-manual:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@3df4d485d8ce6d2b61b8d12e8f44cdfffbea301e
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run Palette Agent
+        run: node .Jules/run-palette.js

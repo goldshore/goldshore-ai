@@ -1,0 +1,51 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { team, credibility } from '../data/site-content';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <BaseHead
+      title="About | GoldShore.ai"
+      description="Team and delivery posture."
+    />
+  </head>
+  <body>
+    <Header />
+    <main>
+      <h1>About</h1>
+      <p>
+        GoldShore.ai is a specialist team focused on operational AI systems that
+        must remain stable under pressure.
+      </p>
+      <section>
+        <h2>Team</h2>
+        <div class="grid">
+          {
+            team.map((member) => (
+              <article class="card">
+                <h3>{member.name}</h3>
+                <p class="small">{member.role}</p>
+                <p>{member.bio}</p>
+              </article>
+            ))
+          }
+        </div>
+      </section>
+      <section class="card">
+        <h2>Credibility strip</h2>
+        <p>
+          <strong>Industry domains:</strong>
+          {credibility.domains.join(' • ')}
+        </p>
+        <ul>
+          {credibility.signals.map((signal) => <li>{signal}</li>)}
+        </ul>
+      </section>
+    </main>
+    <Footer />
+  </body>
+</html>

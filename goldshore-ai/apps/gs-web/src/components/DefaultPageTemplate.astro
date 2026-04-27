@@ -1,0 +1,17 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const { path = Astro.url.pathname } = Astro.props;
+---
+
+<BaseLayout title="Page Not Found | GoldShore">
+  <section class="max-w-4xl mx-auto py-24 px-6 text-center">
+    <h1 class="text-4xl gs-heading mb-6" style="color: var(--gs-brand-gold);">Page Not Found</h1>
+    <p class="text-lg text-[var(--gs-text-secondary)] mb-8">
+      We can't find the page you're looking for at: <code class="bg-[var(--gs-surface)] px-2 py-1 rounded text-[var(--gs-text-primary)]">{path}</code>
+    </p>
+    <p class="text-[var(--gs-text-secondary)]">
+      Please check the URL or navigate back to the <a href="/" class="text-[var(--gs-brand-gold)] hover:underline">GoldShore Home Page</a>.
+    </p>
+  </section>
+</BaseLayout>
