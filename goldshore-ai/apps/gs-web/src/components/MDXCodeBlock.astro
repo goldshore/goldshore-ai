@@ -1,0 +1,113 @@
+---
+const props = Astro.props;
+---
+
+<div class="code-block">
+  <button class="copy" aria-label="Copy code">
+    <span class="material-symbols-rounded">content_copy</span>
+  </button>
+  <pre {...props}><slot /></pre>
+</div>
+
+<script>
+  // Use event delegation for better performance and to handle dynamically added blocks if any
+  document.addEventListener('click', async (e) => {
+    const target = (e.target as HTMLElement).closest('.copy') as HTMLElement | null;
+    if (!target) return;
+
+    const codeBlock = target.closest('.code-block');
+    if (!codeBlock) return;
+
+    const pre = codeBlock.querySelector('pre') as HTMLElement | null;
+    if (!pre) return;
+
+    const icon = target.querySelector('.material-symbols-rounded');
+    if (!icon) return;
+
+    const code = pre.innerText;
+
+    try {
+      await navigator.clipboard.writeText(code);
+
+      icon.textContent = 'check';
+      target.setAttribute('aria-label', 'Copied to clipboard');
+      target.classList.add('copied');
+
+      setTimeout(() => {
+        icon.textContent = 'content_copy';
+        target.setAttribute('aria-label', 'Copy code');
+        target.classList.remove('copied');
+      }, 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      // Optional: show error state if needed, but usually silent failure or console log is okay for copy
+    }
+  });
+</script>
+
+<style>
+  .code-block {
+    position: relative;
+    background: #1e1e1e;
+    border-radius: 4px;
+    margin: 1rem 0;
+    overflow: hidden;
+  }
+
+  .code-block pre {
+    margin: 0;
+    padding: 1rem;
+    overflow-x: auto;
+    color: #e4e4e7;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+
+  .copy {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.2s ease;
+    padding: 0;
+  }
+
+  /* Icon sizing */
+  .copy .material-symbols-rounded {
+    font-size: 1.25rem;
+  }
+
+  /* Success state color */
+  .copy.copied {
+    color: #4ade80; /* Green-400 */
+    border-color: rgba(74, 222, 128, 0.3);
+    background: rgba(74, 222, 128, 0.1);
+    opacity: 1 !important; /* Keep visible while showing success */
+  }
+
+  /* Show on hover or focus */
+  .code-block:hover .copy,
+  .code-block:focus-within .copy,
+  .copy:focus-visible {
+    opacity: 1;
+  }
+
+  .copy:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+  }
+
+  .copy:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+</style>

@@ -1,0 +1,16 @@
+{
+  "name": "@goldshore/ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "index.ts",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "peerDependencies": {
+    "astro": "^5.15.9"
+  },
+  "devDependencies": {
+    "astro": "^5.15.9"
+  }
+}

@@ -1,0 +1,9 @@
+repos:
+  - repo: local
+    hooks:
+      - id: pii-scan
+        name: PII scan (staged)
+        entry: node scripts/pii-scan.mjs --mode pre-commit --staged --output apps/gs-admin/src/data/pii-scan-results.json
+        language: system
+        pass_filenames: false
+        stages: [commit]
