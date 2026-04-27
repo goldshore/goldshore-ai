@@ -1,6 +1,6 @@
-repository: astro-gs-web
+repository: goldshore-ai
 domain: https://goldshore.ai
-cloudflare_project: astro-gs-web
+cloudflare_project: gs-web
 scope: web_frontend
 
 cloudflare_permissions:

@@ -39,8 +39,8 @@ const props = Astro.props;
         target.classList.remove('copied');
       }, 2000);
     } catch (err) {
-      console.warn('Failed to copy code to clipboard:', err);
-      // Silent failure is acceptable for non-critical clipboard operations.
+      console.error('Failed to copy:', err);
+      // Optional: show error state if needed, but usually silent failure or console log is okay for copy
     }
   });
 </script>

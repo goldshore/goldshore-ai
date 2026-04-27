@@ -107,13 +107,62 @@ describe('verifyAccess', () => {
         assert.strictEqual(calls.arguments[2].issuer, 'https://custom.team.com');
     });
 
-    test('verifyAccess public wrapper returns boolean', async () => {
+    test('normalizes short Cloudflare Access team names to a full domain', async () => {
+        const req = new Request('http://example.com', {
+            headers: { 'CF-Access-Jwt-Assertion': 'valid-token' }
+        });
+        const env: Env = { CLOUDFLARE_TEAM_DOMAIN: 'gsl-ops' };
+
+        await testVerify(req, env);
+
+        const calls = createRemoteJWKSetMock.mock.calls[0];
+        assert.strictEqual(calls.arguments[0].toString(), 'https://gsl-ops.cloudflareaccess.com/cdn-cgi/access/certs');
+        assert.strictEqual(jwtVerifyMock.mock.calls[0].arguments[2].issuer, 'https://gsl-ops.cloudflareaccess.com');
+    });
+
+    test('verifyAccess public wrapper returns boolean (false for no token)', async () => {
          const req = new Request('http://example.com');
          const env: Env = {};
-         // We can't mock internals for the public wrapper easily without full module mocking,
-         // but we can ensure it runs safely.
          const result = await verifyAccess(req, env);
          assert.strictEqual(result, false);
+    });
+
+    test('verifyAccess returns true for valid token', async () => {
+        const req = new Request('http://example.com', {
+            headers: { 'CF-Access-Jwt-Assertion': 'valid-token' }
+        });
+        const env: Env = {};
+
+        // Mock deps.jwtVerify directly as verifyAccess calls verifyAccessWithClaims
+        // which uses the real deps.jwtVerify
+        const jwtVerifyMockLocal = mock.method(deps, 'jwtVerify', async () => {
+            return { payload: { sub: 'user123' } };
+        });
+
+        const result = await verifyAccess(req, env);
+        assert.strictEqual(result, true);
+
+        jwtVerifyMockLocal.mock.restore();
+    });
+
+    test('verifyAccess returns false for invalid token', async () => {
+        const req = new Request('http://example.com', {
+            headers: { 'CF-Access-Jwt-Assertion': 'invalid-token' }
+        });
+        const env: Env = {};
+
+        const jwtVerifyMockLocal = mock.method(deps, 'jwtVerify', async () => {
+            throw new Error('Invalid token');
+        });
+
+        // Suppress console.error for this test
+        const consoleErrorMock = mock.method(console, 'error', () => {});
+
+        const result = await verifyAccess(req, env);
+        assert.strictEqual(result, false);
+
+        jwtVerifyMockLocal.mock.restore();
+        consoleErrorMock.mock.restore();
     });
 });
 

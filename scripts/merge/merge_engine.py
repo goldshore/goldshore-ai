@@ -3,7 +3,6 @@ from pathlib import Path
 from datetime import datetime
 from json_merge import deep_merge_json
 from workflow_dedupe import merge_workflows
-from asset_fingerprint import fingerprint_asset
 
 SKIP_LEGACY_DIRS = {
     ".git",

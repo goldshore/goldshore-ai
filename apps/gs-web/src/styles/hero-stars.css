@@ -1,0 +1,240 @@
+:root {
+  --gs-hero-star-core: var(--gs-effect-star-core);
+  --gs-hero-star-glow: var(--gs-effect-star-glow);
+  --gs-hero-star-grid-primary: var(--gs-effect-signal-blue-24);
+  --gs-hero-star-grid-secondary: var(--gs-effect-signal-blue-18);
+  --gs-hero-sweep-core: var(--gs-effect-sweep-core);
+  --gs-hero-sweep-edge: var(--gs-effect-sweep-edge);
+}
+
+.home-hero::after,
+.home-features::after,
+.blueprint-section::after {
+  background-image: linear-gradient(var(--gs-hero-star-grid-primary) 1px, transparent 1px),
+    linear-gradient(90deg, var(--gs-hero-star-grid-secondary) 1px, transparent 1px);
+}
+
+.blueprint-section::after {
+  background-image: linear-gradient(var(--gs-hero-sweep-core) 1px, transparent 1px),
+    linear-gradient(90deg, var(--gs-hero-star-grid-primary) 1px, transparent 1px),
+    linear-gradient(135deg, var(--gs-hero-sweep-edge) 0%, transparent 55%);
+}
+
+.layer-grid {
+  background-image: linear-gradient(var(--gs-hero-star-grid-primary) 1px, transparent 1px),
+    linear-gradient(90deg, var(--gs-hero-star-grid-secondary) 1px, transparent 1px);
+  filter: drop-shadow(0 0 24px var(--gs-hero-star-glow));
+}
+
+.layer-blueprint {
+  background-image: linear-gradient(var(--gs-effect-signal-blue-32) 1px, transparent 1px),
+    linear-gradient(90deg, var(--gs-effect-signal-blue-24) 1px, transparent 1px);
+  filter: drop-shadow(0 0 18px var(--gs-effect-signal-blue-45));
+}
+
+.layer-glow {
+  background: radial-gradient(circle at 40% 30%, var(--gs-hero-star-core), transparent 45%),
+    radial-gradient(circle at 65% 70%, var(--gs-hero-sweep-core), transparent 45%);
+}
+
+.layer-orbit {
+  background: conic-gradient(from 140deg, var(--gs-hero-sweep-edge), transparent 60%, var(--gs-hero-sweep-edge));
+}
+
+.hero-stars__field {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+.hero-stars__layer {
+  position: absolute;
+  inset: -50% 0 0;
+  background-repeat: repeat;
+  background-size: 280px 280px;
+  animation: hero-stars-drift linear infinite;
+}
+
+.hero-stars__layer--near {
+  background-image:
+    radial-gradient(2px 2px at 24px 32px, rgba(248, 250, 252, 0.95), transparent 60%),
+    radial-gradient(1.5px 1.5px at 180px 120px, rgba(196, 231, 255, 0.8), transparent 65%),
+    radial-gradient(1.8px 1.8px at 80px 210px, rgba(167, 243, 208, 0.85), transparent 65%);
+  animation-duration: 54s;
+}
+
+.hero-stars__layer--mid {
+  background-image:
+    radial-gradient(1.4px 1.4px at 140px 44px, rgba(186, 230, 253, 0.8), transparent 65%),
+    radial-gradient(1px 1px at 60px 188px, rgba(224, 231, 255, 0.75), transparent 68%),
+    radial-gradient(1.2px 1.2px at 220px 250px, rgba(254, 240, 138, 0.75), transparent 65%);
+  animation-duration: 78s;
+  opacity: 0.7;
+}
+
+.hero-stars__layer--far {
+  background-image:
+    radial-gradient(0.8px 0.8px at 40px 70px, rgba(186, 230, 253, 0.7), transparent 70%),
+    radial-gradient(0.9px 0.9px at 250px 160px, rgba(196, 181, 253, 0.6), transparent 70%),
+    radial-gradient(0.7px 0.7px at 100px 250px, rgba(253, 224, 71, 0.55), transparent 72%);
+  animation-duration: 112s;
+  opacity: 0.5;
+}
+
+@keyframes hero-stars-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 40%, 0);
+  }
+}
+
+.hero {
+  position: relative;
+  isolation: isolate;
+  z-index: 0;
+  min-height: 72vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--gs-space-8) var(--gs-space-4);
+  background:
+    radial-gradient(circle at 50% 120%, color-mix(in srgb, var(--gs-accent-blue) 24%, transparent), transparent 70%),
+    var(--gs-color-bg);
+}
+
+.hero .shooting-stars {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: linear-gradient(
+    120deg,
+    transparent 40%,
+    color-mix(in srgb, var(--gs-accent-blue) 10%, transparent),
+    transparent 60%
+  );
+  pointer-events: none;
+  animation: hero-sweep 12s linear infinite;
+}
+
+.shooting-stars {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.star {
+  position: absolute;
+  top: -20%;
+  left: var(--star-left, 50%);
+  width: 2px;
+  height: 80px;
+  opacity: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    color-mix(in srgb, var(--gs-accent-blue) 92%, var(--gs-text-primary) 8%)
+  );
+  transform: translate3d(0, -200px, 0) rotate(45deg);
+  will-change: transform, opacity;
+  animation: star-fall var(--star-duration, 6s) linear var(--star-delay, 0s) infinite;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 3;
+  max-width: 52rem;
+  text-align: center;
+}
+
+.hero-title {
+  color: var(--gs-text-primary);
+  font-family: var(--gs-font-display);
+  letter-spacing: -0.02em;
+  margin: 0 0 var(--gs-space-4);
+}
+
+.hero-sub {
+  color: var(--gs-text-secondary);
+  max-width: 44rem;
+  margin: 0 auto var(--gs-space-5);
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gs-space-3);
+  flex-wrap: wrap;
+}
+
+.btn-primary,
+.btn-secondary {
+  text-decoration: none;
+  padding: 0.7rem 1.2rem;
+  border-radius: var(--gs-radius-sm);
+  border: 1px solid var(--gs-color-border);
+}
+
+.btn-primary {
+  background: var(--gs-accent-blue);
+  color: var(--gs-color-bg);
+}
+
+.btn-secondary {
+  color: var(--gs-text-primary);
+  background: color-mix(in srgb, var(--gs-color-surface) 75%, transparent);
+}
+
+@keyframes star-fall {
+  0% {
+    transform: translate3d(0, -200px, 0) rotate(45deg);
+    opacity: 0;
+  }
+
+  20% {
+    opacity: 0.75;
+  }
+
+  100% {
+    transform: translate3d(600px, 800px, 0) rotate(45deg);
+    opacity: 0;
+  }
+}
+
+@keyframes hero-sweep {
+  0% {
+    transform: translateX(-40%);
+  }
+
+  100% {
+    transform: translateX(40%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-stars__layer {
+    animation: none;
+  }
+  .star,
+  .hero::after {
+    animation: none;
+  }
+
+  .star {
+    display: none;
+  }
+}

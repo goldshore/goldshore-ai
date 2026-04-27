@@ -7,7 +7,6 @@ const WRANGLER_NAME_PATTERN = /^\s*name\s*=\s*["']([^"']+)["']/m;
 const ROUTE_PATTERN = /pattern\s*=\s*["']([^"']+)["']/g;
 const SINGLE_ROUTE_PATTERN = /^\s*route\s*=\s*["']([^"']+)["']/gm;
 const EXPECTED_HOST_OWNERS: Record<string, string> = {
-  "gateway.goldshore.ai": "gs-gateway",
   "gw.goldshore.ai": "gs-gateway",
   "agent.goldshore.ai": "gs-gateway",
 };

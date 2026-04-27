@@ -8,13 +8,13 @@ describe('Health API', () => {
     const app = new Hono();
     app.route('/', health);
 
-    const res = await app.request('/', {}, { API_VERSION: 'v1' });
+    const res = await app.request('/');
     assert.strictEqual(res.status, 200);
-    const data = await res.json() as { status: string; service: string; schemaVersion: string; apiVersion: string };
+    const data = await res.json() as { status: string; service: string; timestamp: string; version: string };
     assert.strictEqual(data.status, "ok");
     assert.strictEqual(data.service, "gs-api");
-    assert.strictEqual(typeof data.schemaVersion, "string");
-    assert.strictEqual(data.apiVersion, "v1");
+    assert.strictEqual(typeof data.timestamp, "string");
+    assert.strictEqual(typeof data.version, "string");
   });
 
   it('GET /unknown returns 404 Not Found', async () => {

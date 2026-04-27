@@ -1,73 +1,11 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-
-const sections = [
-  { id: 'general', title: 'General', icon: '⚙️' },
-  { id: 'notifications', title: 'Notifications', icon: '🔔' },
-  { id: 'security', title: 'Security & Keys', icon: '🔑' },
-  { id: 'api', title: 'API Access', icon: '🌐' },
-];
 ---
-
 <BaseLayout title="Settings | GoldShore">
-  <main class="max-w-5xl mx-auto py-16 px-6">
-    <header class="mb-10">
-      <h1 class="text-4xl font-bold gs-heading mb-2">System Settings</h1>
-      <p class="text-[var(--gs-text-secondary)]">
-        Configure your workspace preferences and environment synchronization.
-      </p>
-    </header>
-
-    <div class="flex flex-col md:flex-row gap-12">
-      <aside class="w-full md:w-64 space-y-1">
-        {sections.map((section) => (
-          <button 
-            class="w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors hover:bg-[var(--gs-bg-secondary)] focus:outline-none focus:ring-2 focus:ring-blue-500"
-            data-section={section.id}
-          >
-            <span class="mr-3">{section.icon}</span>
-            {section.title}
-          </button>
-        ))}
-      </aside>
-
-      <section class="flex-1 space-y-8">
-        <div id="settings-view" class="p-8 rounded-2xl border border-[var(--gs-border-primary)] bg-white shadow-sm">
-          <h2 class="text-2xl font-semibold mb-6">Preferences Baseline</h2>
-          
-          <div class="space-y-6">
-            <div class="flex items-center justify-between p-4 bg-[var(--gs-bg-tertiary)] rounded-xl">
-              <div>
-                <p class="font-medium">Dark Mode</p>
-                <p class="text-xs text-[var(--gs-text-secondary)]">Follow system appearance by default.</p>
-              </div>
-              <div class="h-6 w-11 bg-gray-200 rounded-full"></div> </div>
-
-            <div class="flex items-center justify-between p-4 bg-[var(--gs-bg-tertiary)] rounded-xl">
-              <div>
-                <p class="font-medium">Automatic Backups</p>
-                <p class="text-xs text-[var(--gs-text-secondary)]">Sync local state to <code>gs-gateway</code> every 6h.</p>
-              </div>
-              <div class="h-6 w-11 bg-emerald-500 rounded-full"></div> </div>
-          </div>
-        </div>
-
-        <div class="p-4 rounded-lg bg-blue-50 border border-blue-100 flex gap-4 items-start">
-          <div class="text-blue-500 mt-1">ℹ️</div>
-          <p class="text-sm text-blue-700 leading-relaxed">
-            Note: Global infrastructure settings (e.g., Worker routes, KV namespaces) must be managed through the <code>infra/</code> directory and validated via <code>sync:infra</code>.
-          </p>
-        </div>
-      </section>
-    </div>
-  </main>
+    <section class="max-w-4xl mx-auto py-24 px-6">
+        <h1 class="text-4xl gs-heading mb-4">Settings</h1>
+        <p class="text-[var(--gs-text-secondary)]">
+            User settings and preferences will be available soon.
+        </p>
+    </section>
 </BaseLayout>
-
-<style>
-  :root {
-    --gs-bg-secondary: #f3f4f6;
-    --gs-bg-tertiary: #f9fafb;
-    --gs-border-primary: #e5e7eb;
-    --gs-text-secondary: #6b7280;
-  }
-</style>

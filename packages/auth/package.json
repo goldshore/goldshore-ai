@@ -2,11 +2,19 @@
   "name": "@goldshore/auth",
   "version": "0.0.1",
   "main": "index.ts",
+  "types": "index.ts",
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./index.ts",
+      "import": "./index.ts",
+      "default": "./index.ts"
+    }
+  },
   "dependencies": {
     "jose": "^6.1.3"
   },
   "scripts": {
-    "test": "tsx --test **/*.test.ts"
+    "test": "tsx --test verify.test.ts rbac.test.ts"
   }
 }

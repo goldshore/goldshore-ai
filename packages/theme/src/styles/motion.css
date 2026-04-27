@@ -1,0 +1,95 @@
+:root {
+  --gs-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --gs-ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --gs-duration-fast: 120ms;
+  --gs-duration-normal: 220ms;
+  --gs-duration-slow: 400ms;
+
+  --gs-lift-distance: -4px;
+}
+
+.gs-transition {
+  transition:
+    transform var(--gs-duration-normal) var(--gs-ease-standard),
+    opacity var(--gs-duration-normal) var(--gs-ease-standard),
+    background var(--gs-duration-normal) var(--gs-ease-standard),
+    box-shadow var(--gs-duration-normal) var(--gs-ease-standard);
+}
+
+.gs-lift {
+  transition:
+    transform var(--gs-duration-normal) var(--gs-ease-standard),
+    box-shadow var(--gs-duration-normal) var(--gs-ease-standard);
+}
+
+.gs-lift:hover {
+  transform: translateY(var(--gs-lift-distance));
+}
+
+.gs-reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition:
+    opacity var(--gs-duration-slow) var(--gs-ease-emphasized),
+    transform var(--gs-duration-slow) var(--gs-ease-emphasized);
+}
+
+.gs-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.gs-parallax {
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .gs-reveal {
+    opacity: 1;
+    transform: none;
+  }
+
+  .gs-lift:hover {
+    transform: none;
+  }
+
+  .gs-parallax {
+    transform: none !important;
+  }
+}
+
+@supports (animation-timeline: view()) {
+  .gs-view-timeline {
+    animation-timeline: view();
+    animation-name: gs-fade-in;
+    animation-fill-mode: both;
+    animation-timing-function: linear;
+  }
+
+  @keyframes gs-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+@media (pointer: fine) and (hover: hover) {
+  .gs-3d-tilt {
+    transition: transform 0.1s ease-out;
+    transform-style: preserve-3d;
+  }
+}

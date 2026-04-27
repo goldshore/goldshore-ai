@@ -6,8 +6,6 @@
 ## Goal
 Ensure `goldshore.ai` and `www.goldshore.ai` are publicly accessible without aggressive WAF challenges blocking legitimate users.
 
-Hostname reference: `docs/infra/HOSTNAME_REFERENCE.md` defines canonical preview/production hostnames to avoid routing drift.
-
 ## Domain Policies
 
 ### Public (No WAF Challenge)

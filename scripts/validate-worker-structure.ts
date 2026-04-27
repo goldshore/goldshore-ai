@@ -1,9 +1,20 @@
-import { existsSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { join } from "node:path";
 
 const APPS_DIR = path.resolve(process.cwd(), "apps");
 const REQUIRED_FILES = ["wrangler.toml", "package.json", "tsconfig.json", "src/index.ts"];
+const LEGACY_API_WORKER_PATH = "apps/api-worker";
+const GS_API_PATH = "apps/gs-api";
+const DEPLOYMENT_CONFIG_FILES = [
+  ".github/workflows/deploy-gs-api.yml",
+  ".github/workflows/preview-gs-api.yml",
+  ".github/workflows-disabled/deploy-api-worker.yml",
+  "infra/Cloudflare/config.yaml",
+  "infra/Cloudflare/desired-state.yaml",
+  "infra/Cloudflare/gs-api.wrangler.toml",
+  "infra/Cloudflare/legacy/goldshore-api.wrangler.toml",
+] as const;
 
 function findWorkerDirectories(): string[] {
   return readdirSync(APPS_DIR)
@@ -11,6 +22,29 @@ function findWorkerDirectories(): string[] {
     .filter((fullPath) => statSync(fullPath).isDirectory())
     .filter((fullPath) => existsSync(path.join(fullPath, "wrangler.toml")))
     .filter((fullPath) => !fullPath.includes(`${path.sep}legacy${path.sep}`));
+}
+
+function validateCanonicalApiWorkerPaths(): string[] {
+  const failures: string[] = [];
+
+  for (const filePath of DEPLOYMENT_CONFIG_FILES) {
+    if (!existsSync(filePath)) {
+      failures.push(`missing deployment config file: ${filePath}`);
+      continue;
+    }
+
+    const content = readFileSync(filePath, "utf8");
+
+    if (content.includes(LEGACY_API_WORKER_PATH)) {
+      failures.push(`${filePath}: contains legacy API worker path \"${LEGACY_API_WORKER_PATH}\"`);
+    }
+
+    if (!content.includes(GS_API_PATH)) {
+      failures.push(`${filePath}: missing canonical API worker path \"${GS_API_PATH}\"`);
+    }
+  }
+
+  return failures;
 }
 
 export function validateWorkerStructure(): string[] {
@@ -27,6 +61,8 @@ export function validateWorkerStructure(): string[] {
       failures.push(`${folderName}: missing required file(s): ${missingFiles.join(", ")}`);
     }
   }
+
+  failures.push(...validateCanonicalApiWorkerPaths());
 
   return failures;
 }

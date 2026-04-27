@@ -3,16 +3,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 export const prerender = true;
 ---
 <BaseLayout title="Legal | GoldShore" description="Legal documents and policies">
-  <section class="gs-section gs-blueprint-bg gs-section--padded">
+  <section class="gs-section gs-section--padded">
     <div class="max-w-3xl mx-auto">
       <h1 class="gs-heading text-4xl mb-8">Legal</h1>
 
       <div class="grid gap-6">
-        <a href="/legal/compliance" class="block p-6 border border-[var(--gs-border-color)] rounded-lg hover:border-[var(--gs-color-primary)] transition-colors">
-          <h2 class="text-xl font-semibold mb-2">Legal &amp; Compliance</h2>
-          <p class="text-[var(--gs-text-secondary)]">Entity metadata, disclosures, and trust controls.</p>
-        </a>
-
         <a href="/legal/privacy" class="block p-6 border border-[var(--gs-border-color)] rounded-lg hover:border-[var(--gs-color-primary)] transition-colors">
           <h2 class="text-xl font-semibold mb-2">Privacy Policy</h2>
           <p class="text-[var(--gs-text-secondary)]">How we handle and protect your data.</p>
@@ -21,16 +16,6 @@ export const prerender = true;
         <a href="/legal/terms" class="block p-6 border border-[var(--gs-border-color)] rounded-lg hover:border-[var(--gs-color-primary)] transition-colors">
           <h2 class="text-xl font-semibold mb-2">Terms of Service</h2>
           <p class="text-[var(--gs-text-secondary)]">Service agreements and usage guidelines.</p>
-        </a>
-
-        <a href="/security-policy" class="block p-6 border border-[var(--gs-border-color)] rounded-lg hover:border-[var(--gs-color-primary)] transition-colors">
-          <h2 class="text-xl font-semibold mb-2">Security Policy</h2>
-          <p class="text-[var(--gs-text-secondary)]">Guidelines for responsible disclosure and safe harbor.</p>
-        </a>
-
-        <a href="/disclosure-policy" class="block p-6 border border-[var(--gs-border-color)] rounded-lg hover:border-[var(--gs-color-primary)] transition-colors">
-          <h2 class="text-xl font-semibold mb-2">Disclosure Policy</h2>
-          <p class="text-[var(--gs-text-secondary)]">Coordinated disclosure expectations and process.</p>
         </a>
       </div>
     </div>

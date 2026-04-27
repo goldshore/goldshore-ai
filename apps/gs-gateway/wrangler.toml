@@ -1,65 +1,39 @@
 name = "gs-gateway"
 main = "src/index.ts"
-compatibility_date = "2025-01-10"
+compatibility_date = "2026-04-18"
 compatibility_flags = ["nodejs_compat"]
 
 workers_dev = false
 
-[env.preview]
-routes = [
-  { pattern = "gw-preview.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "gateway-preview.goldshore.ai/*", zone_name = "goldshore.ai" }
-]
-
-[env.preview.vars]
-ENV = "preview"
-API_ORIGIN = "https://api-preview.goldshore.ai"
-CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
-CLOUDFLARE_TEAM_DOMAIN = "gsl-ops"
-
-[[env.preview.kv_namespaces]]
-binding = "GATEWAY_KV"
-id = "9cc2209906a94851b704be57543987a9"
-
-[[env.preview.queues.producers]]
-binding = "JOB_QUEUE"
-queue = "goldshore-jobs"
-
-[[env.preview.services]]
-binding = "API"
-service = "gs-api"
-environment = "preview"
-
-[env.preview.ai]
-binding = "AI"
-
 [env.prod]
 routes = [
   { pattern = "gw.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "gateway.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" }
 ]
 
 [env.prod.vars]
 ENV = "production"
-NODE_ENV = "production"
-OTEL_SERVICE_NAME = "goldshore-core-prod"
-API_ORIGIN = "https://api.goldshore.ai"
-CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
-CLOUDFLARE_TEAM_DOMAIN = "gsl-ops"
+CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
+TUNNEL = "goldshore-prod-tunnel-id"
 
 [[env.prod.kv_namespaces]]
-binding = "GATEWAY_KV"
-id = "9cc2209906a94851b704be57543987a9"
-
-[[env.prod.queues.producers]]
-binding = "JOB_QUEUE"
-queue = "goldshore-jobs"
+binding = "AI_CACHE"
+id = "gs-ai-cache"
 
 [[env.prod.services]]
-binding = "API"
+binding = "API_SERVICE"
 service = "gs-api"
 environment = "prod"
 
-[env.prod.ai]
-binding = "AI"
+[[env.prod.services]]
+binding = "AGENT"
+service = "gs-agent"
+environment = "prod"
+
+[env.preview]
+routes = [
+  { pattern = "gw-preview.goldshore.ai/*", zone_name = "goldshore.ai" }
+]
+
+[env.preview.vars]
+ENV = "preview"

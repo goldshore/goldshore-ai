@@ -1,129 +1,93 @@
-import { Hono } from 'hono';
-import { secureHeaders } from 'hono/secure-headers';
-import { cors } from 'hono/cors';
-import { verifyAccess } from '@goldshore/auth';
-import { STATUS_PAGE_HTML } from './templates/status';
-import { type Env } from './types';
-import { integrationControls } from './middleware/integration';
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { secureHeaders } from "hono/secure-headers";
+import { authMiddleware } from "./middleware/auth";
 
-const app = new Hono<{ Bindings: Env }>();
+// GatewayEnv must include the auth fields from @goldshore/auth's Env interface
+interface GatewayEnv {
+  // Auth (required by @goldshore/auth verify.ts)
+  CLOUDFLARE_ACCESS_AUDIENCE?: string;
+  CLOUDFLARE_TEAM_DOMAIN?: string;
+  // Service bindings
+  API_SERVICE?: Fetcher;
+  AGENT?: Fetcher;
+  // KV
+  AI_CACHE?: KVNamespace;
+  GATEWAY_KV?: KVNamespace;
+  // Config
+  API_ORIGIN?: string;
+  ACCESS_CLIENT_SECRET?: string;
+  ENV?: string;
+}
 
-const ALLOWED_ORIGINS = [
-  'https://goldshore.ai',
-  'https://www.goldshore.ai',
-  'https://admin.goldshore.ai',
-  'https://gw.goldshore.ai',
-  'https://api.goldshore.ai'
-];
+const app = new Hono<{ Bindings: GatewayEnv }>();
 
-// Sentinel: Add security headers to all responses (X-Frame-Options, X-XSS-Protection, etc.)
-app.use('*', secureHeaders());
+const requiredBindings = ["API_SERVICE", "AI_CACHE"] as const;
+const requiredSecrets  = ["ACCESS_CLIENT_SECRET"] as const;
 
-// Sentinel: Add CORS protection
-app.use('*', cors({
-  origin: (origin, c) => {
-    // Development overrides
-    if (c.env.ENV !== 'production') {
-      if (origin && (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1'))) {
-        return origin;
+// ── Security headers ───────────────────────────────────────
+app.use("*", secureHeaders());
+
+// ── Startup binding guard (production only) ────────────────
+app.use("*", async (c, next) => {
+  if (c.env.ENV === "production") {
+    for (const key of [...requiredBindings, ...requiredSecrets]) {
+      if (!c.env[key]) {
+        throw new Error(`CRITICAL_MISSING: ${key}. Terminating.`);
       }
     }
-
-    // Strict origin check for production (and dev non-localhost)
-    if (ALLOWED_ORIGINS.includes(origin)) {
-      return origin;
-    }
-
-    return null; // Block unknown origins
-  },
-  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowHeaders: [
-    'Content-Type',
-    'Authorization',
-    'CF-Access-Jwt-Assertion',
-    'X-Data-Classification',
-    'X-Secrets-Access-Policy',
-    'X-Audit-Trace-Id'
-  ],
-  exposeHeaders: ['Content-Length'],
-  maxAge: 600,
-  credentials: true
-}));
-
-// Authentication Middleware
-app.use('*', async (c, next) => {
-    // Skip auth for health check, root, and OPTIONS requests
-    if (c.req.path === '/health' || c.req.path === '/' || c.req.method === 'OPTIONS') {
-        await next();
-        return;
-    }
-
-    if (!c.env.CLOUDFLARE_ACCESS_AUDIENCE) {
-        console.warn('SECURITY WARNING: CLOUDFLARE_ACCESS_AUDIENCE is not set. Audience verification is disabled.');
-    }
-
-    const authorized = await verifyAccess(c.req.raw, c.env);
-    if (!authorized) {
-        return c.json({ error: 'Unauthorized' }, 401);
-    }
-    await next();
+  }
+  await next();
 });
 
-// Integration controls: data classification, secrets access, and audit trail enforcement
-app.use('*', integrationControls);
-
-app.get('/health', (c) => c.json({ status: 'ok', service: 'gs-gateway' }));
-app.get('/templates', (c) =>
-  c.json({
-    service: 'gs-gateway',
-    description: 'Gateway template routes for routing, auth, and AI dispatch.',
-    modules: [
-      {
-        name: 'routing',
-        purpose: 'Proxy requests to gs-api or partner services with consistent observability.'
-      },
-      {
-        name: 'ai-dispatch',
-        purpose: 'Send AI requests to Gemini, ChatGPT, Jules, or Cloudflare AI Gateway.'
-      },
-      {
-        name: 'market-streams',
-        purpose: 'Broker market data connections for Alpaca, Thinkorswim, and other feeds.'
-      }
+// ── CORS ───────────────────────────────────────────────────
+app.use(
+  "*",
+  cors({
+    origin: [
+      "https://goldshore.ai",
+      "https://www.goldshore.ai",
+      "https://admin.goldshore.ai",
     ],
-    nextSteps: [
-      'Add per-route rate limits and request shaping.',
-      'Define queue-backed workflows for bursty workloads.',
-      'Publish route maps to admin dashboards.'
-    ]
-  })
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization", "CF-Access-Jwt-Assertion"],
+    credentials: true,
+  }),
 );
 
-// Root Status Page
-app.get('/', (c) => {
-  return c.html(STATUS_PAGE_HTML);
-});
+// ── Auth (uses existing @goldshore/auth verify.ts) ─────────
+// authMiddleware skips /health, /, OPTIONS automatically.
+// Fails closed if CLOUDFLARE_ACCESS_AUDIENCE is not set.
+app.use("*", authMiddleware);
 
-// Example specific routes
-app.get('/user/login', (c) => c.json({ message: 'Gateway Login Placeholder' }));
-app.post('/v1/chat', (c) => c.json({ message: 'Gateway Chat Placeholder' }));
+// ── Public routes ──────────────────────────────────────────
+app.get("/",      (c) => c.json({ service: "gs-gateway", ok: true }));
+app.get("/health",(c) => c.json({ status: "ok", service: "gs-gateway" }));
 
-// Forwarding fallback
-app.all('*', async (c) => {
-    // If we have an API binding, use it (recommended for Service Bindings)
-    if (c.env.API) {
-        return c.env.API.fetch(c.req.raw);
+// ── Routing ────────────────────────────────────────────────
+app.all("*", async (c) => {
+  const host = new URL(c.req.url).hostname.toLowerCase();
+
+  // agent.goldshore.ai → gs-agent service binding
+  if (host.startsWith("agent.")) {
+    if (!c.env.AGENT) {
+      return c.json({ error: "AGENT service binding not configured" }, 500);
     }
+    return c.env.AGENT.fetch(c.req.raw);
+  }
 
-    // Fallback logic for environments without Service Bindings
-    if (c.env.API_ORIGIN) {
-        const url = new URL(c.req.url);
-        const targetUrl = new URL(url.pathname + url.search, c.env.API_ORIGIN);
-        return fetch(targetUrl.toString(), c.req.raw);
-    }
+  // Everything else → gs-api
+  if (c.env.API_SERVICE) {
+    return c.env.API_SERVICE.fetch(c.req.raw);
+  }
 
-    // Fallback to fetch if no binding (e.g. local dev without binding simulation)
-    return c.text('Upstream API not configured', 500);
+  if (c.env.API_ORIGIN) {
+    const url = new URL(c.req.url);
+    const target = new URL(url.pathname + url.search, c.env.API_ORIGIN);
+    return fetch(target.toString(), c.req.raw);
+  }
+
+  return c.json({ error: "No upstream configured" }, 500);
 });
 
 export default app;

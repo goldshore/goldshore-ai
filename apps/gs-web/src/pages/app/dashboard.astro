@@ -1,48 +1,11 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-
-// Placeholder for future data fetching
-const user = { name: "Operator" }; 
 ---
-
 <BaseLayout title="Dashboard | GoldShore">
-  <main class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-    <header class="mb-12 border-b border-[var(--gs-border-primary)] pb-8">
-      <h1 class="text-4xl font-bold gs-heading tracking-tight mb-2">
-        Welcome back, {user.name}
-      </h1>
-      <p class="text-lg text-[var(--gs-text-secondary)]">
-        System Status: <span class="text-emerald-500 font-medium">Stable</span>
-      </p>
-    </header>
-
-    <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div class="p-6 rounded-xl border border-[var(--gs-border-primary)] bg-[var(--gs-bg-secondary)] shadow-sm">
-        <h3 class="text-xl font-semibold mb-2">Analytics</h3>
-        <p class="text-[var(--gs-text-secondary)]">Metric visualization is being initialized.</p>
-        <div class="mt-4 h-2 w-full bg-[var(--gs-bg-tertiary)] rounded-full overflow-hidden">
-          <div class="h-full bg-blue-500 animate-pulse" style="width: 45%"></div>
-        </div>
-      </div>
-
-      <div class="p-6 rounded-xl border border-[var(--gs-border-primary)] bg-[var(--gs-bg-secondary)] shadow-sm opacity-60">
-        <h3 class="text-xl font-semibold mb-2">Security Scans</h3>
-        <p class="text-[var(--gs-text-secondary)]">Awaiting baseline synchronization.</p>
-      </div>
-
-      <div class="p-6 rounded-xl border border-dashed border-[var(--gs-border-primary)] flex items-center justify-center">
-        <span class="text-[var(--gs-text-secondary)] italic">+ Add Widget</span>
-      </div>
+    <section class="max-w-4xl mx-auto py-24 px-6">
+        <h1 class="text-4xl gs-heading mb-4">User Dashboard</h1>
+        <p class="text-lg text-[var(--gs-text-secondary)]">
+            Dashboard features will be added here soon.
+        </p>
     </section>
-  </main>
 </BaseLayout>
-
-<style>
-  /* Local overrides if standard CSS variables aren't injected yet */
-  :root {
-    --gs-text-secondary: #6b7280;
-    --gs-border-primary: #e5e7eb;
-    --gs-bg-secondary: #ffffff;
-    --gs-bg-tertiary: #f3f4f6;
-  }
-</style>

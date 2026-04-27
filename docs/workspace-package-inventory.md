@@ -64,4 +64,3 @@ This inventory is sourced from:
   - `packages/schema` (`@astro-gs/schema`) had no live references in `apps/*` or `packages/*` runtime code.
 - Migration impact:
   - No import rewrites required in active apps; references only existed in legacy snapshots/logs.
-

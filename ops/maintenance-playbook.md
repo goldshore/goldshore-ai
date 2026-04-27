@@ -181,6 +181,8 @@ Output:
 - PR comment or issue summary
 - suggested merge order
 
+Branch-management automation for the maintenance workflow should stay **inspection-only** unless a separate PR-targeted workflow is explicitly approved. The reporting workflow may fetch and inspect refs, but it should not run branch-wide `git checkout`, `git pull`, rebase, merge, or force-push steps from CI. Prefer report output such as `git branch -r`, `gh pr list`, and `git log` for daily maintenance visibility. If branch mutation is ever required, scope it to a single PR and use logic equivalent to `ops/jules/clean-one-pr.sh` rather than sweeping across every branch. Protected branches such as `main` must never be rewritten directly from CI.
+
 ### 5.2 Daily: Palette “Micro UX”
 
 Palette runs daily and:

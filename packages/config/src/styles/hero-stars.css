@@ -1,0 +1,93 @@
+.hero-stage {
+  position: relative;
+  isolation: isolate;
+  border-radius: 1rem;
+  padding: 3rem 1.5rem;
+  overflow: hidden;
+}
+
+.hero-stage > :not(.hero-stars) {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-stars {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(138, 180, 255, 0.22), transparent 45%),
+    radial-gradient(circle at 85% 15%, rgba(255, 214, 143, 0.14), transparent 42%),
+    linear-gradient(160deg, rgba(4, 10, 26, 0.92), rgba(8, 14, 31, 0.94));
+}
+
+.hero-stars__cluster,
+.hero-stars__sweep {
+  position: absolute;
+  inset: 0;
+}
+
+.hero-stars__cluster {
+  background-image:
+    radial-gradient(circle at 10% 30%, rgba(255, 255, 255, 0.45) 0 1px, transparent 2px),
+    radial-gradient(circle at 22% 76%, rgba(255, 255, 255, 0.5) 0 1px, transparent 2px),
+    radial-gradient(circle at 63% 20%, rgba(255, 255, 255, 0.45) 0 1px, transparent 2px),
+    radial-gradient(circle at 79% 62%, rgba(255, 255, 255, 0.5) 0 1px, transparent 2px),
+    radial-gradient(circle at 95% 36%, rgba(255, 255, 255, 0.45) 0 1px, transparent 2px);
+  filter: drop-shadow(0 0 8px rgba(178, 205, 255, 0.35));
+  opacity: 0.65;
+  animation: hero-stars-shimmer 10s ease-in-out infinite;
+}
+
+.hero-stars__sweep {
+  background: linear-gradient(130deg, transparent 0 42%, rgba(128, 178, 255, 0.22) 50%, transparent 58%);
+  mix-blend-mode: screen;
+  opacity: 0.5;
+  animation: hero-stars-sweep 14s linear infinite;
+}
+
+.hero-stars__item {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 0 10px rgba(164, 202, 255, 0.7);
+  opacity: 0;
+  animation: hero-stars-twinkle 2.6s ease-out forwards;
+}
+
+@keyframes hero-stars-shimmer {
+  0%,
+  100% { opacity: 0.5; }
+  50% { opacity: 0.72; }
+}
+
+@keyframes hero-stars-sweep {
+  0% { transform: translateX(-20%); }
+  100% { transform: translateX(20%); }
+}
+
+@keyframes hero-stars-twinkle {
+  0% { opacity: 0; transform: scale(0.6); }
+  25% { opacity: 0.95; }
+  100% { opacity: 0; transform: scale(1.25); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-stars__cluster,
+  .hero-stars__sweep,
+  .hero-stars__item {
+    animation: none;
+  }
+
+  .hero-stars__sweep {
+    opacity: 0.15;
+    background: linear-gradient(130deg, transparent 0 46%, rgba(128, 178, 255, 0.12) 50%, transparent 54%);
+  }
+
+  .hero-stars__cluster {
+    opacity: 0.5;
+  }
+}
