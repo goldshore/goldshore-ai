@@ -68,21 +68,34 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
         run: |
           python - <<'PY'
-          import json, os, urllib.parse, urllib.request
-          def cf_get(url):
-              req = urllib.request.Request(url, headers={'Authorization': f"Bearer {os.environ['CLOUDFLARE_API_TOKEN']}", 'Content-Type': 'application/json'})
-              with urllib.request.urlopen(req) as resp:
-                  data = json.loads(resp.read().decode())
+          import json, os, urllib.error, urllib.parse, urllib.request
+          def cf_get(url, context):
+              req = urllib.request.Request(url, method='GET', headers={'Authorization': f"Bearer {os.environ['CLOUDFLARE_API_TOKEN']}", 'Content-Type': 'application/json'})
+              try:
+                  with urllib.request.urlopen(req) as resp:
+                      data = json.loads(resp.read().decode())
+              except urllib.error.HTTPError as err:
+                  body = ''
+                  if err.fp is not None:
+                      body = err.read().decode('utf-8', errors='replace')
+                  print(f"[Cloudflare API HTTPError] context: {context}")
+                  print(f"[Cloudflare API HTTPError] request: {req.get_method()} {req.full_url}")
+                  print(f"[Cloudflare API HTTPError] status: {err.code} {err.reason}")
+                  if body:
+                      print(f"[Cloudflare API HTTPError] response body: {body}")
+                  raise
               if not data.get('success'):
-                  raise SystemExit(f"Cloudflare API error for {url}: {data}")
+                  raise SystemExit(f"Cloudflare API error for {context} ({url}): {data}")
               return data['result']
           cfg = json.load(open('ops/cloudflare-required.json', 'r', encoding='utf-8'))
           zone_name = urllib.parse.quote(cfg['zone_name'])
-          zones = cf_get(f"https://api.cloudflare.com/client/v4/zones?name={zone_name}")
+          zones_lookup_url = f"https://api.cloudflare.com/client/v4/zones?name={zone_name}"
+          zones = cf_get(zones_lookup_url, f"zones lookup (zone_name={cfg['zone_name']})")
           if not zones:
               raise SystemExit(f"Zone not found: {cfg['zone_name']}")
           zone_id = zones[0]['id']
-          route_patterns = [r.get('pattern') for r in cf_get(f"https://api.cloudflare.com/client/v4/zones/{zone_id}/workers/routes")]
+          workers_routes_url = f"https://api.cloudflare.com/client/v4/zones/{zone_id}/workers/routes"
+          route_patterns = [r.get('pattern') for r in cf_get(workers_routes_url, f"workers routes lookup (zone_id={zone_id})")]
           for pattern in cfg.get('required_routes', []):
               if pattern not in route_patterns:
                   raise SystemExit(f"Missing required worker route: {pattern}")
@@ -91,7 +104,9 @@ jobs:
                   raise SystemExit(f"Forbidden worker route still present: {pattern}")
           for hostname in cfg.get('required_dns', []):
               encoded = urllib.parse.quote(hostname)
-              if not cf_get(f"https://api.cloudflare.com/client/v4/zones/{zone_id}/dns_records?name={encoded}"):
+              dns_lookup_url = f"https://api.cloudflare.com/client/v4/zones/{zone_id}/dns_records?name={encoded}"
+              dns_context = f"dns lookup (zone_id={zone_id}, hostname={hostname})"
+              if not cf_get(dns_lookup_url, dns_context):
                   raise SystemExit(f"Missing required DNS record: {hostname}")
           print('Cloudflare infra guard passed.')
           PY
