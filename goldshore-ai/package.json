@@ -1,0 +1,54 @@
+{
+  "name": "goldshore-ai",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build:openapi": "node scripts/build-openapi.mjs",
+    "build": "pnpm build:openapi && turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "check:pages": "tsx scripts/check-pages-200.ts",
+    "scan:pii": "node scripts/pii-scan.mjs --mode local --output apps/gs-admin/src/data/pii-scan-results.json --summary reports/pii-scan-summary.md",
+    "check:docs-consistency": "node scripts/check-doc-consistency.mjs",
+    "check:naming": "node scripts/lint-naming.mjs",
+    "validate:structure": "tsx scripts/validate-worker-structure.ts",
+    "validate:names": "tsx scripts/validate-worker-names.ts",
+    "validate:workspace": "tsx scripts/validate-workspace-contract.ts",
+    "validate": "pnpm check:naming && pnpm validate:workspace && pnpm validate:structure && pnpm validate:names",
+    "branch:bootstrap": "bash scripts/branch-bootstrap.sh",
+    "scaffold:worker": "node scripts/scaffold-worker.mjs"
+  },
+  "devDependencies": {
+    "@astrojs/mdx": "^4.0.8",
+    "@astrojs/sitemap": "^3.6.0",
+    "@astrojs/tailwind": "^6.0.2",
+    "@types/node": "^25.0.1",
+    "@typescript-eslint/eslint-plugin": "^8.54.0",
+    "@typescript-eslint/parser": "^8.54.0",
+    "astro": "^5.15.9",
+    "eslint": "^8.57.0",
+    "eslint-plugin-astro": "^1.5.0",
+    "form-data": "^4.0.5",
+    "octokit": "^5.0.5",
+    "prettier": "^3.2.5",
+    "prettier-plugin-astro": "^0.13.0",
+    "tailwindcss": "^3",
+    "tsx": "^4.21.0",
+    "typescript": "^5.4.2",
+    "wrangler": "^4.63.0",
+    "yaml": "^2.8.2"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^12.6.12",
+    "turbo": "^2.7.5"
+  },
+  "pnpm": {
+    "overrides": {
+      "@astrojs/cloudflare": "latest",
+      "@astrojs/adapter-cloudflare": "latest",
+      "postal-mime": "2.7.3",
+      "wrangler": "^4.63.0"
+    }
+  }
+}

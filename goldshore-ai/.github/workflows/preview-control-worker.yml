@@ -1,0 +1,57 @@
+name: Preview Control Worker (ops-preview.goldshore.ai)
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - labeled
+      - unlabeled
+      - ready_for_review
+    paths:
+      - "apps/gs-control/**"
+      - "packages/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+
+jobs:
+  deploy-preview-control:
+    runs-on: ubuntu-latest
+    if: |
+      contains(github.event.pull_request.labels.*.name, 'preview') ||
+      (github.event.action == 'ready_for_review' && github.event.pull_request.base.ref == 'main')
+
+    steps:
+      - uses: actions/checkout@3df4d485d8ce6d2b61b8d12e8f44cdfffbea301e
+
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate workspace contract
+        run: pnpm validate:workspace
+
+      - name: Validate canonical worker structure
+        run: pnpm validate:structure
+
+      - name: Validate canonical worker names
+        run: pnpm validate:names
+
+      - name: Deploy Control worker (preview)
+        working-directory: apps/gs-control
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: pnpm exec wrangler deploy --env preview --config wrangler.toml
