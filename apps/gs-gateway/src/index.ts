@@ -72,7 +72,6 @@ app.all("*", async (c) => {
 
   // Fallback map
   if (subdomain === "api" && c.env.API_SERVICE) return c.env.API_SERVICE.fetch(c.req.raw);
-  if (subdomain === "ops" && c.env.CONTROL) return c.env.CONTROL.fetch(c.req.raw);
 
   // Default catch-all to API_SERVICE if not on main domain
   if (subdomain !== "goldshore" && subdomain !== "www" && c.env.API_SERVICE) {
