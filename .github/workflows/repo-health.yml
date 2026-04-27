@@ -36,7 +36,7 @@ jobs:
 
       - name: Logo duplication check
         run: |
-          if [ "$(rg --files -g '*logo*.svg' apps packages public | wc -l)" -gt 25 ]; then
+          if [ "$(find apps packages public -type f -name "*logo*.svg" | wc -l)" -gt 25 ]; then
             echo "Too many logo assets found"
             exit 1
           fi
