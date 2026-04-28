@@ -76,7 +76,7 @@ async function cf(path, init = {}) {
   });
   const json = await res.json();
   if (!json.success) {
-    throw new Error(`CF ${path} failed: ${JSON.stringify(json.errors)}`);
+    throw new Error("Cloudflare API request failed");
   }
   return json.result;
 }
@@ -138,8 +138,7 @@ async function main() {
     } else {
       if (process.env.DEBUG === "1") {
         console.warn(
-          "   ⚠ Could not add custom domain (project may not exist yet). Debug details:",
-          sanitizeErrorForLog(err)
+          "   ⚠ Could not add custom domain (project may not exist yet). Debug details redacted."
         );
       } else {
         console.warn("   ⚠ Could not add custom domain (project may not exist yet). Enable DEBUG=1 for more details.");
