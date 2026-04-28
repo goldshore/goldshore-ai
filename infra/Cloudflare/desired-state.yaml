@@ -61,7 +61,7 @@ cloudflare:
         proxied: true
 
       # H. SendGrid domain authentication + DMARC
-      - name: "em5094.goldshore.ai"
+      - name: "em5094"
         type: CNAME
         content: "u106406774.wl025.sendgrid.net"
         proxied: false
