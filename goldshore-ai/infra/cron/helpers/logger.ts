@@ -64,9 +64,8 @@ export function createLogger(context: string) {
   return {
     info: (...args: any[]) => console.log(...format("INFO", ...args)),
     warn: (...args: any[]) => console.warn(...format("WARN", ...args)),
-    error: (...args: any[]) => {
-      const safeArgs = sanitizeArgs(args);
-      console.error(...format("ERROR", ...safeArgs));
+    error: (..._args: any[]) => {
+      console.error(...format("ERROR", "An internal error occurred"));
     },
   };
 }
