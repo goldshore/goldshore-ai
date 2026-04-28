@@ -65,11 +65,11 @@ cloudflare:
         type: CNAME
         content: "u106406774.wl025.sendgrid.net"
         proxied: false
-      - name: "s1._domainkey.goldshore.ai"
+      - name: "s1._domainkey"
         type: CNAME
         content: "s1.domainkey.u106406774.wl025.sendgrid.net"
         proxied: false
-      - name: "s2._domainkey.goldshore.ai"
+      - name: "s2._domainkey"
         type: CNAME
         content: "s2.domainkey.u106406774.wl025.sendgrid.net"
         proxied: false
