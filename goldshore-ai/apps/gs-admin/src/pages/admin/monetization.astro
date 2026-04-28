@@ -1,0 +1,253 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { Card, GSButton } from '@goldshore/ui';
+import {
+  adPlacements,
+  affiliateLinks,
+  analyticsProviders,
+  pageMonetizationConfigs,
+} from '../../lib/monetization';
+
+const analyticsPlacementOptions = ['Global head', 'Page head', 'Body end', 'On-demand'];
+const adPlacementOptions = ['Hero Banner', 'Inline Article', 'Footer Banner', 'None'];
+const affiliateSlotOptions = ['Primary CTA card', 'CTA footer', 'Sidebar resources', 'FAQ panel', 'None'];
+---
+<AdminLayout title="Monetization & Analytics | GoldShore Admin">
+  <section class="max-w-6xl mx-auto px-6 py-10 space-y-10">
+    <header class="space-y-3">
+      <p class="text-sm uppercase tracking-[0.3em] gs-text-subtle">Revenue Ops</p>
+      <h1 class="text-3xl gs-heading">Monetization & Analytics Controls</h1>
+      <p class="text-lg gs-text-subtle">
+        Configure analytics providers, ad placements, and affiliate link programs. Apply per-page
+        toggles and placement controls for snippets deployed across the web experience.
+      </p>
+    </header>
+
+    <section class="grid gap-6 lg:grid-cols-2">
+      <Card>
+        <div class="section-title"><span>📈</span><h3>Analytics Providers</h3></div>
+        <p class="gs-helper">Manage GA4, Plausible, and other telemetry providers.</p>
+        <table class="gs-table gs-mt-4">
+          <thead>
+            <tr>
+              <th>Provider</th>
+              <th>Status</th>
+              <th>Measurement ID</th>
+              <th>Placement</th>
+            </tr>
+          </thead>
+          <tbody>
+            {analyticsProviders.map((provider) => (
+              <tr>
+                <td>
+                  <div class="font-semibold">{provider.name}</div>
+                  <div class="text-xs gs-text-subtle">{provider.host}</div>
+                </td>
+                <td>
+                  <span class={`status-pill status-pill--${provider.status}`}>
+                    {provider.status}
+                  </span>
+                </td>
+                <td>{provider.measurementId}</td>
+                <td>
+                  <div>{provider.scriptPlacement}</div>
+                  <div class="text-xs gs-text-subtle">{provider.notes}</div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
+
+      <Card>
+        <div class="section-title"><span>🧲</span><h3>Ad Placements</h3></div>
+        <p class="gs-helper">Control inventory, sizes, and refresh rules for ads.</p>
+        <table class="gs-table gs-mt-4">
+          <thead>
+            <tr>
+              <th>Placement</th>
+              <th>Status</th>
+              <th>Inventory</th>
+              <th>Sizes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {adPlacements.map((placement) => (
+              <tr>
+                <td>
+                  <div class="font-semibold">{placement.name}</div>
+                  <div class="text-xs gs-text-subtle">{placement.notes}</div>
+                </td>
+                <td>
+                  <span class={`status-pill status-pill--${placement.status}`}>
+                    {placement.status}
+                  </span>
+                </td>
+                <td>
+                  <div>{placement.inventory}</div>
+                  <div class="text-xs gs-text-subtle">{placement.refresh}</div>
+                </td>
+                <td>{placement.sizes}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
+    </section>
+
+    <Card>
+      <div class="section-title"><span>🤝</span><h3>Affiliate Programs</h3></div>
+      <p class="gs-helper">Manage tracking tags, payout details, and default deep links.</p>
+      <table class="gs-table gs-mt-4">
+        <thead>
+          <tr>
+            <th>Partner</th>
+            <th>Status</th>
+            <th>Program</th>
+            <th>Tracking Tag</th>
+            <th>Default Link</th>
+            <th>Payout</th>
+          </tr>
+        </thead>
+        <tbody>
+          {affiliateLinks.map((partner) => (
+            <tr>
+              <td class="font-semibold">{partner.partner}</td>
+              <td>
+                <span class={`status-pill status-pill--${partner.status}`}>
+                  {partner.status}
+                </span>
+              </td>
+              <td>{partner.program}</td>
+              <td>{partner.trackingTag}</td>
+              <td class="truncate">{partner.defaultUrl}</td>
+              <td>{partner.payout}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </Card>
+
+    <Card>
+      <div class="section-title"><span>🧩</span><h3>Per-Page Snippet Controls</h3></div>
+      <p class="gs-helper">
+        Toggle analytics and monetization snippets per page, and select placement targets.
+      </p>
+      <form class="gs-form-row gs-mt-4">
+        <table class="gs-table">
+          <thead>
+            <tr>
+              <th>Page</th>
+              <th>Analytics</th>
+              <th>Analytics Placement</th>
+              <th>Ads</th>
+              <th>Ad Placement</th>
+              <th>Affiliate Slot</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pageMonetizationConfigs.map((config, index) => (
+              <tr>
+                <td class="font-semibold">{config.page}</td>
+                <td>
+                  <label class="toggle">
+                    <input
+                      type="checkbox"
+                      name={`analytics-enabled-${index}`}
+                      checked={config.analyticsEnabled}
+                    />
+                    <span>Enabled</span>
+                  </label>
+                </td>
+                <td>
+                  <select name={`analytics-placement-${index}`} class="gs-input">
+                    {analyticsPlacementOptions.map((option) => (
+                      <option value={option} selected={option === config.analyticsPlacement}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+                <td>
+                  <label class="toggle">
+                    <input
+                      type="checkbox"
+                      name={`ads-enabled-${index}`}
+                      checked={config.adsEnabled}
+                    />
+                    <span>Enabled</span>
+                  </label>
+                </td>
+                <td>
+                  <select name={`ad-placement-${index}`} class="gs-input">
+                    {adPlacementOptions.map((option) => (
+                      <option value={option} selected={option === config.adPlacement}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+                <td>
+                  <select name={`affiliate-slot-${index}`} class="gs-input">
+                    {affiliateSlotOptions.map((option) => (
+                      <option value={option} selected={option === config.affiliateSlot}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+                <td class="text-xs gs-text-subtle">{config.notes}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div class="gs-form-actions">
+          <GSButton type="button" variant="secondary">Preview changes</GSButton>
+          <GSButton type="submit" variant="primary">Save configuration</GSButton>
+        </div>
+      </form>
+    </Card>
+  </section>
+
+  <style>
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      border: 1px solid transparent;
+    }
+
+    .status-pill--enabled,
+    .status-pill--active {
+      color: var(--gs-success);
+      border-color: rgba(34, 197, 94, 0.35);
+      background: rgba(34, 197, 94, 0.12);
+    }
+
+    .status-pill--disabled,
+    .status-pill--paused {
+      color: var(--gs-text-secondary);
+      border-color: rgba(148, 163, 184, 0.35);
+      background: rgba(148, 163, 184, 0.12);
+    }
+
+    .toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.85rem;
+    }
+
+    .truncate {
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  </style>
+</AdminLayout>

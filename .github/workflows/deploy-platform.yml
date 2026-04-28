@@ -11,6 +11,9 @@ on:
         required: false
         default: 'false'
 
+permissions:
+  contents: read
+
 jobs:
   # ─────────────────────────────────────────────
   # Job 1: Deploy gs-platform (gateway) with fixed auth

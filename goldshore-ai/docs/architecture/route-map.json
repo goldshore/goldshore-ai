@@ -1,0 +1,1157 @@
+{
+  "generatedAt": "2026-02-11T15:29:12.085Z",
+  "routes": [
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/",
+      "source": "apps/gs-admin/src/pages/index.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/admin/analytics",
+      "source": "apps/gs-admin/src/pages/admin/analytics.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/admin/api-logs",
+      "source": "apps/gs-admin/src/pages/admin/api-logs.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/admin/content",
+      "source": "apps/gs-admin/src/pages/admin/content.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/admin/forms",
+      "source": "apps/gs-admin/src/pages/admin/forms/index.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/admin/forms",
+      "source": "apps/gs-admin/src/pages/admin/forms.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/admin/forms/:slug",
+      "source": "apps/gs-admin/src/pages/admin/forms/[slug].astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/admin/logs",
+      "source": "apps/gs-admin/src/pages/admin/logs.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/admin/media",
+      "source": "apps/gs-admin/src/pages/admin/media.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/admin/monetization",
+      "source": "apps/gs-admin/src/pages/admin/monetization.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/admin/overview",
+      "source": "apps/gs-admin/src/pages/admin/overview.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/admin/page-editor",
+      "source": "apps/gs-admin/src/pages/admin/page-editor.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/admin/pages",
+      "source": "apps/gs-admin/src/pages/admin/pages/index.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/admin/pages/:id",
+      "source": "apps/gs-admin/src/pages/admin/pages/[id].astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/admin/pages/editor",
+      "source": "apps/gs-admin/src/pages/admin/pages/editor.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/admin/pages/new",
+      "source": "apps/gs-admin/src/pages/admin/pages/new.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/admin/pii-scans",
+      "source": "apps/gs-admin/src/pages/admin/pii-scans.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/admin/settings",
+      "source": "apps/gs-admin/src/pages/admin/settings/index.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/admin/system",
+      "source": "apps/gs-admin/src/pages/admin/system.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/admin/system/dns",
+      "source": "apps/gs-admin/src/pages/admin/system/dns.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/admin/system/pages",
+      "source": "apps/gs-admin/src/pages/admin/system/pages.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/admin/system/secrets",
+      "source": "apps/gs-admin/src/pages/admin/system/secrets.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/admin/system/storage",
+      "source": "apps/gs-admin/src/pages/admin/system/storage.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/admin/systems",
+      "source": "apps/gs-admin/src/pages/admin/systems.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/admin/users",
+      "source": "apps/gs-admin/src/pages/admin/users.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/admin/users/list",
+      "source": "apps/gs-admin/src/pages/admin/users/list.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/admin/users/permissions",
+      "source": "apps/gs-admin/src/pages/admin/users/permissions.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/admin/users/sessions",
+      "source": "apps/gs-admin/src/pages/admin/users/sessions.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/admin/workers",
+      "source": "apps/gs-admin/src/pages/admin/workers.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/admin/workers/bindings",
+      "source": "apps/gs-admin/src/pages/admin/workers/bindings.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/admin/workers/routes",
+      "source": "apps/gs-admin/src/pages/admin/workers/routes.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/admin/workers/status",
+      "source": "apps/gs-admin/src/pages/admin/workers/status.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/ai",
+      "source": "apps/gs-admin/src/pages/ai.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/api-logs",
+      "source": "apps/gs-admin/src/pages/api-logs.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/dashboard",
+      "source": "apps/gs-admin/src/pages/dashboard.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/deployments",
+      "source": "apps/gs-admin/src/pages/deployments.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/domain",
+      "source": "apps/gs-admin/src/pages/domain.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/index.legacy-20251128",
+      "source": "apps/gs-admin/src/pages/index.legacy-20251128.astro",
+      "status": "deprecated"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/settings",
+      "source": "apps/gs-admin/src/pages/settings.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/systems",
+      "source": "apps/gs-admin/src/pages/systems/index.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/systems",
+      "source": "apps/gs-admin/src/pages/systems.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/templates",
+      "source": "apps/gs-admin/src/pages/templates/index.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/trading",
+      "source": "apps/gs-admin/src/pages/trading/index.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-admin",
+      "method": "GET",
+      "path": "/users",
+      "source": "apps/gs-admin/src/pages/users.astro",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-agent",
+      "method": "GET",
+      "path": "/",
+      "source": "apps/gs-agent/src/index.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-agent",
+      "method": "GET",
+      "path": "/health",
+      "source": "apps/gs-agent/src/index.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "GET",
+      "path": "/",
+      "source": "apps/gs-api/src/index.legacy-20251128.ts",
+      "status": "deprecated"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "GET",
+      "path": "/",
+      "source": "apps/gs-api/src/index.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "GET",
+      "path": "/admin/audit",
+      "source": "apps/gs-api/src/routes/admin.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "GET",
+      "path": "/admin/users",
+      "source": "apps/gs-api/src/routes/admin.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "POST",
+      "path": "/admin/users",
+      "source": "apps/gs-api/src/routes/admin.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "PATCH",
+      "path": "/admin/users/:id",
+      "source": "apps/gs-api/src/routes/admin.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "GET",
+      "path": "/ai/",
+      "source": "apps/gs-api/src/routes/ai.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "POST",
+      "path": "/ai/analysis",
+      "source": "apps/gs-api/src/routes/ai.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "GET",
+      "path": "/health",
+      "source": "apps/gs-api/src/index.legacy-20251128.ts",
+      "status": "deprecated"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "GET",
+      "path": "/health/",
+      "source": "apps/gs-api/src/routes/health.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "GET",
+      "path": "/media/",
+      "source": "apps/gs-api/src/routes/media.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "GET",
+      "path": "/media/:id",
+      "source": "apps/gs-api/src/routes/media.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "POST",
+      "path": "/media/upload",
+      "source": "apps/gs-api/src/routes/media.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "GET",
+      "path": "/pages/",
+      "source": "apps/gs-api/src/routes/pages.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "POST",
+      "path": "/pages/",
+      "source": "apps/gs-api/src/routes/pages.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "DELETE",
+      "path": "/pages/:id",
+      "source": "apps/gs-api/src/routes/pages.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "GET",
+      "path": "/pages/:id",
+      "source": "apps/gs-api/src/routes/pages.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "PUT",
+      "path": "/pages/:id",
+      "source": "apps/gs-api/src/routes/pages.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "PATCH",
+      "path": "/pages/:id/status",
+      "source": "apps/gs-api/src/routes/pages.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "GET",
+      "path": "/pages/slug/:slug",
+      "source": "apps/gs-api/src/routes/pages.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "GET",
+      "path": "/system/config",
+      "source": "apps/gs-api/src/routes/system.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "PUT",
+      "path": "/system/config",
+      "source": "apps/gs-api/src/routes/system.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "GET",
+      "path": "/system/info",
+      "source": "apps/gs-api/src/routes/system.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "GET",
+      "path": "/system/status",
+      "source": "apps/gs-api/src/routes/system.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "GET",
+      "path": "/system/version",
+      "source": "apps/gs-api/src/routes/system.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "GET",
+      "path": "/templates/",
+      "source": "apps/gs-api/src/routes/templates.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "GET",
+      "path": "/user/:id",
+      "source": "apps/gs-api/src/routes/user.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "GET",
+      "path": "/users/",
+      "source": "apps/gs-api/src/routes/users.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "GET",
+      "path": "/users/:id",
+      "source": "apps/gs-api/src/routes/users.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "GET",
+      "path": "/v1/agents",
+      "source": "apps/gs-api/src/index.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "GET",
+      "path": "/v1/logs",
+      "source": "apps/gs-api/src/index.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "GET",
+      "path": "/v1/models",
+      "source": "apps/gs-api/src/index.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "GET",
+      "path": "/v1/users/",
+      "source": "apps/gs-api/src/routes/users.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-api",
+      "method": "GET",
+      "path": "/v1/users/:id",
+      "source": "apps/gs-api/src/routes/users.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-control",
+      "method": "GET",
+      "path": "/",
+      "source": "apps/gs-control/src/index.js",
+      "status": "deprecated"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-control",
+      "method": "GET",
+      "path": "/",
+      "source": "apps/gs-control/src/index.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-control",
+      "method": "POST",
+      "path": "/access/audit",
+      "source": "apps/gs-control/src/index.js",
+      "status": "deprecated"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-control",
+      "method": "POST",
+      "path": "/access/audit",
+      "source": "apps/gs-control/src/index.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-control",
+      "method": "GET",
+      "path": "/cloudflare/access/policies",
+      "source": "apps/gs-control/src/routes/cloudflare.js",
+      "status": "deprecated"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-control",
+      "method": "GET",
+      "path": "/cloudflare/access/policies",
+      "source": "apps/gs-control/src/routes/cloudflare.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-control",
+      "method": "GET",
+      "path": "/cloudflare/d1/databases",
+      "source": "apps/gs-control/src/routes/cloudflare.js",
+      "status": "deprecated"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-control",
+      "method": "GET",
+      "path": "/cloudflare/d1/databases",
+      "source": "apps/gs-control/src/routes/cloudflare.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-control",
+      "method": "GET",
+      "path": "/cloudflare/dns/records",
+      "source": "apps/gs-control/src/routes/cloudflare.js",
+      "status": "deprecated"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-control",
+      "method": "GET",
+      "path": "/cloudflare/dns/records",
+      "source": "apps/gs-control/src/routes/cloudflare.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-control",
+      "method": "PUT",
+      "path": "/cloudflare/dns/records/:recordId",
+      "source": "apps/gs-control/src/routes/cloudflare.js",
+      "status": "deprecated"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-control",
+      "method": "PUT",
+      "path": "/cloudflare/dns/records/:recordId",
+      "source": "apps/gs-control/src/routes/cloudflare.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-control",
+      "method": "GET",
+      "path": "/cloudflare/kv/namespaces",
+      "source": "apps/gs-control/src/routes/cloudflare.js",
+      "status": "deprecated"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-control",
+      "method": "GET",
+      "path": "/cloudflare/kv/namespaces",
+      "source": "apps/gs-control/src/routes/cloudflare.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-control",
+      "method": "GET",
+      "path": "/cloudflare/pages/projects",
+      "source": "apps/gs-control/src/routes/cloudflare.js",
+      "status": "deprecated"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-control",
+      "method": "GET",
+      "path": "/cloudflare/pages/projects",
+      "source": "apps/gs-control/src/routes/cloudflare.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-control",
+      "method": "GET",
+      "path": "/cloudflare/r2/buckets",
+      "source": "apps/gs-control/src/routes/cloudflare.js",
+      "status": "deprecated"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-control",
+      "method": "GET",
+      "path": "/cloudflare/r2/buckets",
+      "source": "apps/gs-control/src/routes/cloudflare.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-control",
+      "method": "GET",
+      "path": "/cloudflare/workers/status",
+      "source": "apps/gs-control/src/routes/cloudflare.js",
+      "status": "deprecated"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-control",
+      "method": "GET",
+      "path": "/cloudflare/workers/status",
+      "source": "apps/gs-control/src/routes/cloudflare.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-control",
+      "method": "POST",
+      "path": "/dns/apply",
+      "source": "apps/gs-control/src/index.js",
+      "status": "deprecated"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-control",
+      "method": "POST",
+      "path": "/dns/apply",
+      "source": "apps/gs-control/src/index.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-control",
+      "method": "POST",
+      "path": "/pages/deploy",
+      "source": "apps/gs-control/src/index.js",
+      "status": "deprecated"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-control",
+      "method": "POST",
+      "path": "/pages/deploy",
+      "source": "apps/gs-control/src/index.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-control",
+      "method": "POST",
+      "path": "/workers/reconcile",
+      "source": "apps/gs-control/src/index.js",
+      "status": "deprecated"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-control",
+      "method": "POST",
+      "path": "/workers/reconcile",
+      "source": "apps/gs-control/src/index.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-gateway",
+      "method": "ALL",
+      "path": "*",
+      "source": "apps/gs-gateway/src/index.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-gateway",
+      "method": "GET",
+      "path": "/",
+      "source": "apps/gs-gateway/src/index.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-gateway",
+      "method": "GET",
+      "path": "/health",
+      "source": "apps/gs-gateway/src/index.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-gateway",
+      "method": "GET",
+      "path": "/templates",
+      "source": "apps/gs-gateway/src/index.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-gateway",
+      "method": "GET",
+      "path": "/user/login",
+      "source": "apps/gs-gateway/src/index.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "gs-gateway",
+      "method": "POST",
+      "path": "/v1/chat",
+      "source": "apps/gs-gateway/src/index.ts",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-web",
+      "method": "GET",
+      "path": "/",
+      "source": "apps/gs-web/src/pages/index.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-web",
+      "method": "GET",
+      "path": "/:...path",
+      "source": "apps/gs-web/src/pages/[...path].astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-web",
+      "method": "GET",
+      "path": "/about",
+      "source": "apps/gs-web/src/pages/about.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-web",
+      "method": "GET",
+      "path": "/admin/lead-submissions",
+      "source": "apps/gs-web/src/pages/admin/lead-submissions.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-web",
+      "method": "GET",
+      "path": "/app/dashboard",
+      "source": "apps/gs-web/src/pages/app/dashboard.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-web",
+      "method": "GET",
+      "path": "/app/logs",
+      "source": "apps/gs-web/src/pages/app/logs.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-web",
+      "method": "GET",
+      "path": "/app/profile",
+      "source": "apps/gs-web/src/pages/app/profile.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-web",
+      "method": "GET",
+      "path": "/app/settings",
+      "source": "apps/gs-web/src/pages/app/settings.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-web",
+      "method": "GET",
+      "path": "/apps/risk-radar",
+      "source": "apps/gs-web/src/pages/apps/risk-radar.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-web",
+      "method": "GET",
+      "path": "/contact",
+      "source": "apps/gs-web/src/pages/contact.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-web",
+      "method": "GET",
+      "path": "/developer",
+      "source": "apps/gs-web/src/pages/developer/index.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-web",
+      "method": "GET",
+      "path": "/developer/api/:...slug",
+      "source": "apps/gs-web/src/pages/developer/api/[...slug].astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-web",
+      "method": "GET",
+      "path": "/developer/docs",
+      "source": "apps/gs-web/src/pages/developer/docs/index.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-web",
+      "method": "GET",
+      "path": "/developer/docs/:...slug",
+      "source": "apps/gs-web/src/pages/developer/docs/[...slug].astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-web",
+      "method": "GET",
+      "path": "/developer/sdk",
+      "source": "apps/gs-web/src/pages/developer/sdk.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-web",
+      "method": "GET",
+      "path": "/index.legacy-20251128",
+      "source": "apps/gs-web/src/pages/index.legacy-20251128.astro",
+      "status": "deprecated"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-web",
+      "method": "GET",
+      "path": "/intake",
+      "source": "apps/gs-web/src/pages/intake.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-web",
+      "method": "GET",
+      "path": "/legal",
+      "source": "apps/gs-web/src/pages/legal.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-web",
+      "method": "GET",
+      "path": "/legal/privacy",
+      "source": "apps/gs-web/src/pages/legal/privacy.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-web",
+      "method": "GET",
+      "path": "/legal/terms",
+      "source": "apps/gs-web/src/pages/legal/terms.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-web",
+      "method": "GET",
+      "path": "/page-builder-preview",
+      "source": "apps/gs-web/src/pages/page-builder-preview.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-web",
+      "method": "GET",
+      "path": "/pricing",
+      "source": "apps/gs-web/src/pages/pricing.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-web",
+      "method": "GET",
+      "path": "/services",
+      "source": "apps/gs-web/src/pages/services.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-web",
+      "method": "GET",
+      "path": "/status",
+      "source": "apps/gs-web/src/pages/status.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-web",
+      "method": "GET",
+      "path": "/team",
+      "source": "apps/gs-web/src/pages/team.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-web",
+      "method": "GET",
+      "path": "/templates",
+      "source": "apps/gs-web/src/pages/templates/index.astro",
+      "status": "active"
+    },
+    {
+      "kind": "frontend-page",
+      "owner": "gs-web",
+      "method": "GET",
+      "path": "/thank-you",
+      "source": "apps/gs-web/src/pages/thank-you.astro",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "mail-worker",
+      "method": "GET",
+      "path": "/",
+      "source": "apps/mail-worker/src/index.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "mail-worker",
+      "method": "GET",
+      "path": "/health",
+      "source": "apps/mail-worker/src/index.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "mail-worker",
+      "method": "GET",
+      "path": "/system/info",
+      "source": "apps/mail-worker/src/index.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "mail-worker",
+      "method": "GET",
+      "path": "/version",
+      "source": "apps/mail-worker/src/index.ts",
+      "status": "active"
+    },
+    {
+      "kind": "worker-handler",
+      "owner": "mail-worker",
+      "method": "POST",
+      "path": "/webhook",
+      "source": "apps/mail-worker/src/index.ts",
+      "status": "active"
+    }
+  ]
+}

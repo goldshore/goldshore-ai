@@ -18,7 +18,8 @@ on:
 jobs:
   deploy-control:
     runs-on: ubuntu-latest
-    name: Deploy
+    name: Deploy Control Worker
+    if: false # Explicitly disable job
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd

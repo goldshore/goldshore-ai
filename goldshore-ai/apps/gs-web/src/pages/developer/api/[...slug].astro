@@ -1,0 +1,51 @@
+---
+import Layout from '../../../layouts/BaseLayout.astro';
+import ApiSidebar from '../../../components/ApiSidebar.astro';
+import ApiEndpoint from '../../../components/ApiEndpoint.astro';
+import openapi from '../../../data/v1.json';
+
+// Bolt Optimization: Enable Static Site Generation (SSG) for API docs.
+export const prerender = true;
+
+export async function getStaticPaths() {
+  // Generate paths for all endpoints defined in openapi spec.
+  const paths = Object.keys(openapi.paths).map(path => {
+    // Remove leading slash and curly braces for slug
+    const slug = path.replace(/^\//, '').replace(/{/g, '').replace(/}/g, '');
+    return { params: { slug } };
+  });
+
+  // Add index path
+  paths.push({ params: { slug: undefined } });
+
+  return paths;
+}
+
+const { slug } = Astro.params;
+const endpoint = slug || '';
+---
+
+<Layout title="API Reference">
+  <div class="api-container">
+    <ApiSidebar openapi={openapi} />
+    <main class="api-content">
+      {endpoint ? (
+        <ApiEndpoint openapi={openapi} endpoint={endpoint} />
+      ) : (
+        <div class="api-intro">
+           <h1>{openapi.info.title}</h1>
+           <p>{openapi.info.description}</p>
+           <p>Version: {openapi.info.version}</p>
+           <hr />
+           <h2>Getting Started</h2>
+           <p>Select an endpoint from the sidebar to view details.</p>
+        </div>
+      )}
+    </main>
+  </div>
+</Layout>
+
+<style>
+  .api-container { display: grid; grid-template-columns: 280px 1fr; gap: 2rem; max-width: 1400px; margin: 0 auto; padding: 2rem; }
+  .api-content { min-width: 0; }
+</style>
