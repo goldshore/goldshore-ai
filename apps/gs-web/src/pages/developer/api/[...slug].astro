@@ -10,19 +10,22 @@ export const prerender = true;
 export async function getStaticPaths() {
   // Generate paths for all endpoints defined in openapi spec.
   const paths = Object.keys(openapi.paths).map(path => {
-    // Remove leading slash and curly braces for slug
+    // Remove leading slash and curly braces for slug (URL routing only)
     const slug = path.replace(/^\//, '').replace(/{/g, '').replace(/}/g, '');
-    return { params: { slug } };
+    // Pass the original openapi path key as a prop so the page can look it up exactly
+    return { params: { slug }, props: { openApiPath: path } };
   });
 
   // Add index path
-  paths.push({ params: { slug: undefined } });
+  paths.push({ params: { slug: undefined }, props: { openApiPath: undefined } });
 
   return paths;
 }
 
 const { slug } = Astro.params;
-const endpoint = slug || '';
+const { openApiPath } = Astro.props;
+// Use the raw openapi path (with {params}) for lookup; fall back to slug for index
+const endpoint = openApiPath || slug || '';
 ---
 
 <Layout title="API Reference">

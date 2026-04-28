@@ -247,6 +247,11 @@ const safeRedirect = (redirectTo: string | null, origin: string) => {
   return new URL(trimmed, origin);
 };
 
+type MailRecipient = {
+  email: string;
+  name?: string;
+};
+
 const dedupeRecipients = (recipients: MailRecipient[]) => {
   const unique = new Map<string, MailRecipient>();
   recipients.forEach((recipient) => {
@@ -479,6 +484,32 @@ export const POST: APIRoute = async ({ request, locals }) => {
       recipients: formConfig.recipients,
       integrations: formConfig.integrations
     });
+  }
+
+  const notificationRecipients = resolveNotificationRecipients(formConfig, env as Env);
+  if (notificationRecipients.length > 0) {
+    const digest = buildSubmissionDigest(submission);
+    const replyTo = submission.email && isValidEmail(submission.email)
+      ? { email: submission.email, name: submission.name || undefined }
+      : undefined;
+    const mailResult = await sendMail(
+      env as Env,
+      notificationRecipients,
+      `New ${submission.formType} submission from ${submission.name || submission.email || 'anonymous'}`,
+      digest.text,
+      digest.html,
+      replyTo,
+    );
+    if (env?.DB) {
+      await logSubmissionStatus(
+        env.DB,
+        submission.id,
+        formType,
+        mailResult.attempted ? (mailResult.ok ? 'notified' : 'notify_failed') : 'notify_skipped',
+        mailResult.attempted ? undefined : mailResult.reason,
+        mailResult.attempted ? { status: mailResult.status } : undefined,
+      );
+    }
   }
 
   const redirectUrl = safeRedirect(redirectTo, new URL(request.url).origin);

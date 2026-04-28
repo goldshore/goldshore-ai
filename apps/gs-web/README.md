@@ -52,7 +52,7 @@ The public GoldShore website and user portal built with Astro and shared theme/U
 Cloudflare metadata:
 
 - Pages project name: `gs-web` (production), `preview-web` (preview)
-- Pages bindings config: `infra/cloudflare/goldshore-web.wrangler.toml`
+- Pages bindings config: `infra/Cloudflare/gs-web.wrangler.toml`
 - Connected services for preview builds: `PUBLIC_API=https://api-preview.goldshore.ai`, `PUBLIC_GATEWAY=https://gw-preview.goldshore.ai`
 - Public diagnostics metadata injected during GitHub Actions builds:
   - `PUBLIC_BUILD_TIMESTAMP` = `${{ github.run_started_at }}` (ISO timestamp for the workflow run)

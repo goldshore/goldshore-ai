@@ -3,6 +3,36 @@ const { code, lang = 'bash' } = Astro.props;
 ---
 
 <div class="code-block">
-  <button class="copy" onclick="navigator.clipboard.writeText(this.nextElementSibling.innerText)">Copy</button>
-  <pre><code class={"language-" + lang}>{code}</code></pre>
+  <button type="button" class="copy" data-copy-button>Copy</button>
+  <pre><code class={"language-" + lang} data-copy-source>{code}</code></pre>
 </div>
+
+<script>
+  const resetButtonLabel = (button: HTMLButtonElement, label: string) => {
+    window.setTimeout(() => {
+      button.textContent = label;
+    }, 2000);
+  };
+
+  document.querySelectorAll('.code-block').forEach((block) => {
+    const button = block.querySelector('[data-copy-button]');
+    const codeElement = block.querySelector('[data-copy-source]');
+
+    if (!(button instanceof HTMLButtonElement) || !(codeElement instanceof HTMLElement)) {
+      return;
+    }
+
+    button.addEventListener('click', async () => {
+      const originalLabel = button.textContent ?? 'Copy';
+
+      try {
+        await navigator.clipboard.writeText(codeElement.innerText);
+        button.textContent = 'Copied!';
+      } catch {
+        button.textContent = 'Copy failed';
+      }
+
+      resetButtonLabel(button, originalLabel);
+    });
+  });
+</script>
