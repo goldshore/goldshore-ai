@@ -8,9 +8,9 @@
     ".": "./index.ts"
   },
   "peerDependencies": {
-    "astro": "^5.15.9"
+    "astro": "^6.1.6"
   },
   "devDependencies": {
-    "astro": "^5.15.9"
+    "astro": "^6.1.6"
   }
 }

@@ -16,10 +16,10 @@
     "@goldshore/integrations": "workspace:*",
     "@goldshore/theme": "workspace:*",
     "@goldshore/ui": "workspace:*",
-    "astro": "^5.15.9"
+    "astro": "^6.1.6"
   },
   "devDependencies": {
-    "@astrojs/cloudflare": "^12.6.12",
+    "@astrojs/cloudflare": "^13.1.10",
     "@types/node": "^25.0.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
