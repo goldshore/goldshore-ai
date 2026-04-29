@@ -1,0 +1,60 @@
+# Worker Builds token for this service must be the gs-control build token.
+# Canonical wrangler manifest for gs-platform (infra-level reference).
+# The deployable config lives at apps/gs-platform/wrangler.toml.
+#
+# This file is checked by CI (infrastructure-guard) to ensure the app-level
+# config stays in sync with the infrastructure source of truth.
+
+name = "gs-platform"
+main = "../../apps/gs-platform/src/index.ts"
+compatibility_date = "2026-04-18"
+compatibility_flags = ["nodejs_compat"]
+
+[env.dev]
+name = "gs-platform-dev"
+
+[env.preview]
+name = "gs-platform-preview"
+
+[env.prod]
+name = "gs-platform"
+routes = [
+  { pattern = "goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "www.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "admin.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "armsway.com/*", zone_name = "armsway.com" },
+  { pattern = "www.armsway.com/*", zone_name = "armsway.com" },
+]
+
+[[env.prod.d1_databases]]
+binding = "DB"
+database_name = "gs_platform_db"
+database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
+
+[[env.prod.kv_namespaces]]
+binding = "GATEWAY_KV"
+id = "17840f9b6ac64cb1a51aeff085efe24c"
+
+[[env.prod.kv_namespaces]]
+binding = "GOLDSHORE_KV"
+id = "5f13370575784c9dacff522121104cb3"
+
+[[env.prod.r2_buckets]]
+binding = "ASSETS"
+bucket_name = "gs-assets"
+
+[[env.prod.services]]
+binding = "SECURITY"
+service = "banproof-me"
+
+[[env.prod.services]]
+binding = "SIGNALS"
+service = "gs-signals-prod"
+
+[[env.prod.services]]
+binding = "MAIL"
+service = "gs-mail"
+
+[[env.prod.services]]
+binding = "CORE"
+service = "gs-core-worker"

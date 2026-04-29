@@ -31,12 +31,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build gs-gateway
-        run: pnpm --filter @goldshore/gs-gateway build
-        # Adjust filter if package name differs: check apps/gs-gateway/package.json "name" field
+      - name: Build gs-platform
+        run: pnpm --filter @goldshore/gs-platform build
 
-      - name: Deploy to Cloudflare (as gs-platform)
-        run: wrangler deploy --config apps/gs-gateway/wrangler.toml
+      - name: Deploy to Cloudflare
+        run: wrangler deploy --config apps/gs-platform/wrangler.toml --env prod
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
