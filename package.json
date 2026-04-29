@@ -17,6 +17,7 @@
     "validate:structure": "tsx scripts/validate-worker-structure.ts",
     "validate:names": "tsx scripts/validate-worker-names.ts",
     "validate:workers": "tsx scripts/validate-worker-names.ts",
+    "validate:queues": "node scripts/validate-queue-contracts.mjs",
     "validate:workspace": "tsx scripts/validate-workspace-contract.ts",
     "validate": "pnpm check:naming && pnpm check:workspace-protocol && pnpm validate:workspace && pnpm validate:structure && pnpm validate:names",
     "branch:bootstrap": "bash scripts/branch-bootstrap.sh",
