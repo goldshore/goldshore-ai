@@ -1,0 +1,21 @@
+# wrangler.toml for the background Agent Worker
+
+name = "gs-agent" # Base name, will be suffixed per environment
+compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
+# Using CLI to pass tsconfig to avoid relative path confusion with external config
+
+[env.dev]
+name = "gs-agent-dev"
+[[env.dev.queues.consumers]]
+queue = "gs-jobs"
+
+[env.preview]
+name = "gs-agent-preview"
+[[env.preview.queues.consumers]]
+queue = "gs-jobs"
+
+[env.prod]
+name = "gs-agent-prod"
+[[env.prod.queues.consumers]]
+queue = "gs-jobs"
