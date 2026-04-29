@@ -82,7 +82,7 @@ app.use(
 
 // ── Auth (uses existing @goldshore/auth verify.ts) ─────────
 // authMiddleware skips /health, /, OPTIONS automatically.
-// Fails closed if CLOUDFLARE_ACCESS_AUDIENCE is not set.
+// Audience validation is enforced only when CLOUDFLARE_ACCESS_AUDIENCE is set.
 app.use("*", (c, next) => authMiddleware(c.req.raw, c.env, next));
 
 app.use("*", async (c, next) => {
