@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
 import { authMiddleware } from "./middleware/auth";
+import { assertSecuritySecrets } from "./securitySecrets";
 
 // GatewayEnv must include the auth fields from @goldshore/auth's Env interface
 interface GatewayEnv {
@@ -31,6 +32,7 @@ app.use("*", secureHeaders());
 // ── Startup binding guard (production only) ────────────────
 app.use("*", async (c, next) => {
   if (c.env.ENV === "production") {
+    assertSecuritySecrets(c.env as Record<string, unknown>, c.env.ENV);
     for (const key of [...requiredBindings, ...requiredSecrets]) {
       if (!c.env[key]) {
         throw new Error(`CRITICAL_MISSING: ${key}. Terminating.`);
