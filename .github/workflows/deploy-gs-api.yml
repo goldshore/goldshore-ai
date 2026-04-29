@@ -49,6 +49,10 @@ jobs:
           test -n "$CLOUDFLARE_BUILD_API_TOKEN" || (echo "Missing required secret: CLOUDFLARE_BUILD_API_TOKEN" && exit 1)
           test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "Missing required secret: CLOUDFLARE_ACCOUNT_ID" && exit 1)
 
+
+      - name: Validate gs-api infra bindings config
+        run: pnpm check:gs-api-infra-bindings
+
       - name: Deploy GS API worker to Cloudflare
         working-directory: apps/gs-api
         env:
