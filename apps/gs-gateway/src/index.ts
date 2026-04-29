@@ -8,12 +8,24 @@ interface GatewayEnv {
   // Auth (required by @goldshore/auth verify.ts)
   CLOUDFLARE_ACCESS_AUDIENCE?: string;
   CLOUDFLARE_TEAM_DOMAIN?: string;
-  // Service bindings
+  // Core service bindings
   API_SERVICE?: Fetcher;
   AGENT?: Fetcher;
+  // Phase 2 service bindings (joinery)
+  SECURITY?: Fetcher;   // banproof-me security layer
+  SIGNALS?: Fetcher;    // gs-signals-prod trading signals worker
   // KV
   AI_CACHE?: KVNamespace;
+  GS_CONFIG?: KVNamespace;
   GATEWAY_KV?: KVNamespace;
+  // D1
+  DB?: D1Database;
+  // R2
+  ASSETS?: R2Bucket;
+  // Queue producers
+  MAIL_QUEUE?: Queue;   // gs-mail-jobs queue
+  // Stripe (secret — never logged, never returned in responses)
+  STRIPE_SECRET_KEY?: string;
   // Config
   API_ORIGIN?: string;
   ACCESS_CLIENT_SECRET?: string;
@@ -22,19 +34,29 @@ interface GatewayEnv {
 
 const app = new Hono<{ Bindings: GatewayEnv }>();
 
-const requiredBindings = ["API_SERVICE", "AI_CACHE"] as const;
-const requiredSecrets  = ["ACCESS_CLIENT_SECRET"] as const;
-
 // ── Security headers ───────────────────────────────────────
 app.use("*", secureHeaders());
 
 // ── Startup binding guard (production only) ────────────────
+// Fail CLOSED: hard-stop (503) when critical bindings/secrets are absent.
+// STRIPE_SECRET_KEY absence is enforced per-request in authMiddleware (fail closed).
 app.use("*", async (c, next) => {
   if (c.env.ENV === "production") {
-    for (const key of [...requiredBindings, ...requiredSecrets]) {
-      if (!c.env[key]) {
-        throw new Error(`CRITICAL_MISSING: ${key}. Terminating.`);
-      }
+    // CRITICAL: CLOUDFLARE_ACCESS_AUDIENCE must be set in production.
+    // Without it, JWT audience verification is skipped — tokens from other
+    // CF Access applications would be accepted (auth bypass).
+    if (!c.env.CLOUDFLARE_ACCESS_AUDIENCE) {
+      console.error(
+        "CRITICAL: CLOUDFLARE_ACCESS_AUDIENCE is not set. Refusing to serve requests.",
+      );
+      return c.json(
+        {
+          error: "Service Unavailable",
+          message: "Auth configuration incomplete",
+          code: "AUDIENCE_MISSING",
+        },
+        503,
+      );
     }
   }
   await next();
