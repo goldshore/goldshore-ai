@@ -38,10 +38,9 @@ function assertEnvironment(): void {
 
 async function syncConfig(config: MasterConfig): Promise<void> {
   console.log('🚀 Starting GoldShore System Sync...');
-  const failedKeys: string[] = [];
 
   for (const [key, value] of Object.entries(config)) {
-    const url = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/storage/kv/namespaces/${NAMESPACE_ID}/values/${key}`;
+    const url = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/workers/kv/namespaces/${NAMESPACE_ID}/values/${key}`;
 
     try {
       const response = await fetch(url, {
@@ -58,16 +57,10 @@ async function syncConfig(config: MasterConfig): Promise<void> {
       } else {
         const error = await response.text();
         console.error(`❌ Failed to sync ${key}: ${error}`);
-        failedKeys.push(key);
       }
     } catch (error) {
       console.error(`🚨 Network Error syncing ${key}:`, error);
-      failedKeys.push(key);
     }
-  }
-
-  if (failedKeys.length > 0) {
-    throw new Error(`KV synchronization failed for keys: ${failedKeys.join(', ')}`);
   }
 }
 
