@@ -1,0 +1,91 @@
+---
+const {
+  currentPath = Astro.url.pathname,
+  navLinks = [
+    { href: '/', label: 'Home' },
+    { href: '/about', label: 'About' },
+    { href: '/services', label: 'Services' },
+    { href: '/team', label: 'Team' },
+    { href: '/contact', label: 'Contact' }
+  ]
+} = Astro.props;
+---
+
+<header class="gs-header" data-menu-open="false">
+  <button
+    id="menu-toggle"
+    class="gs-nav-toggle"
+    type="button"
+    aria-expanded="false"
+    aria-controls="primary-navigation"
+  >
+    <span class="sr-only">Toggle menu</span>
+  </button>
+
+  <nav class="gs-nav" id="primary-navigation" aria-label="Primary">
+    {
+      navLinks.map((link) => (
+        <a href={link.href} aria-current={currentPath === link.href ? 'page' : undefined}>
+          {link.label}
+        </a>
+      ))
+    }
+  </nav>
+</header>
+
+<script is:inline>
+  const header = document.querySelector('.gs-header');
+  const toggle = document.querySelector('#menu-toggle');
+  const menu = document.querySelector('#primary-navigation');
+
+  const firstMobileLink = () => menu?.querySelector('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])');
+
+  const setMenuState = (isOpen, options = { restoreFocus: false }) => {
+    if (!header || !toggle || !menu) {
+      return;
+    }
+
+    const value = isOpen ? 'true' : 'false';
+    header.setAttribute('data-menu-open', value);
+    toggle.setAttribute('aria-expanded', value);
+    menu.toggleAttribute('hidden', !isOpen);
+
+    if (isOpen) {
+      firstMobileLink()?.focus();
+    } else if (options.restoreFocus) {
+      toggle.focus();
+    }
+  };
+
+  const closeMenu = (options) => setMenuState(false, { restoreFocus: true, ...options });
+
+  toggle?.addEventListener('click', (event) => {
+    event.stopPropagation();
+
+    const isOpen = toggle.getAttribute('aria-expanded') === 'true';
+    if (isOpen) {
+      closeMenu({ restoreFocus: true });
+    } else {
+      setMenuState(true);
+    }
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && toggle?.getAttribute('aria-expanded') === 'true') {
+      closeMenu({ restoreFocus: true });
+    }
+  });
+
+  document.addEventListener('click', (event) => {
+    if (
+      toggle?.getAttribute('aria-expanded') === 'true' &&
+      header &&
+      event.target instanceof Node &&
+      !header.contains(event.target)
+    ) {
+      closeMenu({ restoreFocus: true });
+    }
+  });
+
+  setMenuState(false);
+</script>

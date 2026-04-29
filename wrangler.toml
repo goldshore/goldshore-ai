@@ -1,66 +1,20 @@
-name = "gs-gateway"
-main = "apps/gs-gateway/src/index.ts"
-compatibility_date = "2025-01-10"
+name = "goldshore-ai"
+main = "src/index.ts"
+compatibility_date = "2025-03-07"
 compatibility_flags = ["nodejs_compat"]
 
-workers_dev = false
-
-# Primary Route Alignment
-routes = [
-  { pattern = "gw.goldshore.ai/*", zone_id = "d86cd71f0d1c8b8e08928a32e0c95ae3" }
-]
+[observability]
+enabled = true
+head_sampling_rate = 1
 
 [vars]
 ENV = "production"
-NODE_ENV = "production"
-OTEL_SERVICE_NAME = "goldshore-gateway-prod"
-API_ORIGIN = "https://api.goldshore.ai"
-# From Unified Bundle
-CLOUDFLARE_ACCESS_AUDIENCE = "3ae67260bc738a42d4eeaf1525fd4941bf220375e5325c2cb76dbe653a2f8c25"
-CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 
-[[kv_namespaces]]
-binding = "GATEWAY_KV"
-id = "goldshore-gw-kv"
+# This Worker is a redirect/alias layer for goldshore.ai
+# The Astro site (gs-web) is served via Pages at goldshore.ai
+# This worker handles the .ai custom domain if not using Pages
+# For now: redirect goldshore.ai/* to goldshore.org (Pages handles .ai directly)
 
-[[queues.producers]]
-binding = "JOB_QUEUE"
-queue = "goldshore-jobs"
-
-[[services]]
-binding = "API"
-service = "gs-api"
-environment = "prod"
-
-[ai]
-binding = "AI"
-
-# --- Preview Environment Alignment ---
-[env.preview]
-name = "gs-gateway-preview"
-workers_dev = false # Set to false to use your custom preview domain
-
-routes = [
-  { pattern = "gateway-preview.goldshore.ai/*", zone_id = "d86cd71f0d1c8b8e08928a32e0c95ae3" }
-]
-
-[env.preview.vars]
-ENV = "preview"
-NODE_ENV = "development"
-OTEL_SERVICE_NAME = "goldshore-gateway-preview"
-API_ORIGIN = "https://api-preview.goldshore.ai"
-CLOUDFLARE_ACCESS_AUDIENCE = "3ae67260bc738a42d4eeaf1525fd4941bf220375e5325c2cb76dbe653a2f8c25"
-CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-
-[[env.preview.kv_namespaces]]
-binding = "GATEWAY_KV"
-id = "goldshore-gw-kv"
-
-[[env.preview.queues.producers]]
-binding = "JOB_QUEUE"
-queue = "goldshore-jobs"
-
-[[env.preview.services]]
-binding = "API"
-service = "gs-api"
-environment = "preview"
+[[routes]]
+pattern = "goldshore.ai/*"
+zone_name = "goldshore.ai"

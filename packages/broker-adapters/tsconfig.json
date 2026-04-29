@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "target": "ESNext",
+    "strict": true,
+    "skipLibCheck": true,
+    "paths": {
+      "@goldshore/integrations/*": [
+        "../integrations/*"
+      ],
+      "@goldshore/core-schema": [
+        "../core-schema/src/index.ts"
+      ]
+    }
+  },
+  "include": [
+    "src"
+  ]
+}

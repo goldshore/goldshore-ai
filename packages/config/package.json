@@ -6,10 +6,11 @@
     "./astro": "./src/astro/base.mjs",
     "./middleware": "./src/middleware/base.ts",
     "./env": "./src/env/base.d.ts",
-    "./scaffold": "./src/scaffold/index.astro"
+    "./scaffold": "./src/scaffold/index.astro",
+    "./parallax": "./src/components/parallax.ts"
   },
   "dependencies": {
-    "@goldshore/theme": "workspace:*",
-    "@goldshore/ui": "workspace:*"
+    "@goldshore/theme": "workspace:^",
+    "@goldshore/ui": "workspace:^"
   }
 }

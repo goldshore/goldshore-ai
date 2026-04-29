@@ -1,21 +1,203 @@
 ---
-// This is a pure redirect file to handle legacy paths.
-const target = '/risk-radar';
+import MarketingLayout from '../../layouts/MarketingLayout.astro';
+import RiskRadarVisual from '../../components/RiskRadar.astro';
+
+export const prerender = true;
+
+const operationalMetrics = [
+  { label: 'Signal latency', value: '< 28ms' },
+  { label: 'Volatility sweep', value: '96 bands' },
+  { label: 'Directional bias', value: 'Adaptive' },
+];
+
+const designPrinciples = [
+  {
+    title: 'Continuous sweep',
+    body: 'Rotating motion stays loopable and instrument-like so the component holds up in live systems and recorded clips.',
+  },
+  {
+    title: 'Signal discipline',
+    body: 'Pulsing rings and drifting blips stay restrained, legible, and operational rather than decorative.',
+  },
+  {
+    title: 'Reusable surface',
+    body: 'The module is designed to drop into homepage sections, dedicated radar views, and operator-facing presentations.',
+  },
+];
+
+const deploymentContexts = [
+  'Homepage Risk Radar section for platform positioning',
+  'Dedicated Radar page for launch posts, reels, and recorded walkthroughs',
+  'Investor and operator visuals that need a high-trust systems tone',
+];
 ---
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta http-equiv="refresh" content={`0;url=${target}`} />
-    <link rel="canonical" href={target} />
-    <title>Redirecting to Risk Radar…</title>
-    <script is:inline define:vars={{ target }}>
-      window.location.replace(target);
-    </script>
-  </head>
-  <body class="bg-gray-50 flex items-center justify-center min-h-screen font-sans">
-    <div class="text-center">
-      <p class="text-gray-500 mb-2">The Risk Radar has been promoted to a canonical route.</p>
-      <p>Redirecting to <a href={target} class="text-blue-600 font-bold underline">{target}</a>...</p>
+
+<MarketingLayout title="Risk Radar | GoldShore" description="Operational risk visualization system from GoldShore.">
+  <section class="risk-page gs-shell-section">
+    <header class="risk-page__intro">
+      <p class="gs-eyebrow">Risk Radar</p>
+      <h1>Operational risk visualization for high-trust systems.</h1>
+      <p>
+        GoldShore treats Risk Radar as a reusable instrument surface: continuous sweep, disciplined motion, and a presentation layer built for teams that need precision under pressure.
+      </p>
+    </header>
+
+    <div class="risk-page__stats" aria-label="Risk Radar operational stats">
+      {operationalMetrics.map((metric) => (
+        <article>
+          <span>{metric.label}</span>
+          <strong>{metric.value}</strong>
+        </article>
+      ))}
     </div>
-  </body>
-</html>
+
+    <RiskRadarVisual
+      title="GoldShore Risk Radar"
+      subtitle="A loopable system component for homepage deployment, launch media, and operator interfaces—designed to feel precise, restrained, and infrastructure-grade."
+    />
+
+    <section class="risk-page__section" aria-labelledby="risk-radar-principles">
+      <div class="risk-page__section-copy">
+        <p class="gs-eyebrow">Component contract</p>
+        <h2 id="risk-radar-principles">A real animated system, not a decorative mock.</h2>
+        <p>
+          The component follows the site motion rules: subtle sweep rotation, asynchronous pulse behavior, minimal drift, and no noisy color cycling. It should read like a control-room instrument rather than a startup demo.
+        </p>
+      </div>
+
+      <div class="risk-page__cards">
+        {designPrinciples.map((principle) => (
+          <article>
+            <h3>{principle.title}</h3>
+            <p>{principle.body}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="risk-page__section" aria-labelledby="risk-radar-contexts">
+      <div class="risk-page__section-copy">
+        <p class="gs-eyebrow">Deployment contexts</p>
+        <h2 id="risk-radar-contexts">Built to travel across the site and external media.</h2>
+        <p>
+          Risk Radar is intended to be the most shareable system on the site while preserving GoldShore's institutional tone. The implementation remains reusable so pages can assemble the component without redefining its visual rules.
+        </p>
+      </div>
+
+      <div class="risk-page__contexts">
+        {deploymentContexts.map((context) => (
+          <article>
+            <span>Use case</span>
+            <p>{context}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  </section>
+
+  <style>
+    .risk-page {
+      display: grid;
+      gap: 2rem;
+      padding: 4.5rem 0 5rem;
+    }
+
+    .risk-page__intro,
+    .risk-page__section-copy {
+      display: grid;
+      gap: 0.9rem;
+    }
+
+    .risk-page__intro h1 {
+      max-width: 11ch;
+      margin: 0;
+      font-size: clamp(2.5rem, 6vw, 4.6rem);
+      line-height: 0.98;
+      letter-spacing: -0.04em;
+    }
+
+    .risk-page__intro p:last-child,
+    .risk-page__section-copy p:last-child {
+      max-width: 64ch;
+      color: var(--gs-text-dim);
+      line-height: 1.75;
+    }
+
+    .risk-page__stats,
+    .risk-page__cards,
+    .risk-page__contexts {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    .risk-page__stats article,
+    .risk-page__cards article,
+    .risk-page__contexts article {
+      border-radius: 20px;
+      border: 1px solid var(--gs-border);
+      background: rgba(10, 18, 36, 0.78);
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.18);
+      backdrop-filter: blur(12px);
+    }
+
+    .risk-page__stats article {
+      display: grid;
+      gap: 0.35rem;
+      padding: 1rem 1.1rem;
+    }
+
+    .risk-page__stats span,
+    .risk-page__contexts span {
+      color: var(--gs-text-dim);
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .risk-page__stats strong {
+      font-size: 1rem;
+      letter-spacing: 0.01em;
+    }
+
+    .risk-page__section {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .risk-page__section h2 {
+      margin: 0;
+      max-width: 18ch;
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+      line-height: 1.05;
+    }
+
+    .risk-page__cards article,
+    .risk-page__contexts article {
+      display: grid;
+      gap: 0.75rem;
+      padding: 1.25rem;
+    }
+
+    .risk-page__cards h3 {
+      margin: 0;
+      font-size: 1.05rem;
+      line-height: 1.4;
+    }
+
+    .risk-page__cards p,
+    .risk-page__contexts p {
+      margin: 0;
+      color: var(--gs-text-dim);
+      line-height: 1.7;
+    }
+
+    @media (max-width: 900px) {
+      .risk-page__stats,
+      .risk-page__cards,
+      .risk-page__contexts {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</MarketingLayout>

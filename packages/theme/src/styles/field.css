@@ -1,0 +1,47 @@
+/* CSS-only GPU particle illusion (no JS)
+   Use as a background layer inside hero or any section:
+   <div class="gs-css-field" aria-hidden="true"></div>
+*/
+
+.gs-css-field{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  z-index:0;
+  opacity:.78;
+
+  /* "pulsars through a telescope" — sparse, large-ish glows + tiny cores */
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(90,140,255,.22) 0 2px, transparent 3px),
+    radial-gradient(circle at 55% 28%, rgba(90,140,255,.16) 0 3px, transparent 5px),
+    radial-gradient(circle at 78% 62%, rgba(90,140,255,.14) 0 2px, transparent 4px),
+    radial-gradient(circle at 30% 75%, rgba(90,140,255,.10) 0 4px, transparent 7px),
+    radial-gradient(circle at 88% 12%, rgba(255,107,0,.10) 0 2px, transparent 4px),
+
+    /* micro speckle pass (very faint) */
+    radial-gradient(circle at 22% 36%, rgba(241,245,249,.08) 0 1px, transparent 2px),
+    radial-gradient(circle at 64% 44%, rgba(241,245,249,.06) 0 1px, transparent 2px),
+    radial-gradient(circle at 82% 78%, rgba(241,245,249,.05) 0 1px, transparent 2px);
+
+  background-size:
+    520px 520px,
+    760px 760px,
+    680px 680px,
+    980px 980px,
+    900px 900px,
+    620px 620px,
+    840px 840px,
+    980px 980px;
+
+  animation: gs-css-drift 160s linear infinite;
+  filter: saturate(1.05);
+}
+
+@keyframes gs-css-drift{
+  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+  to   { background-position: 0 -320px, 0 -220px, 0 -260px, 0 -180px, 0 -240px, 0 -210px, 0 -160px, 0 -140px; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .gs-css-field{ animation:none; }
+}

@@ -1,0 +1,203 @@
+<div class="signal-field" aria-hidden="true">
+  <div class="signal-field__grid"></div>
+  <div class="signal-field__particles" data-signal-field></div>
+  <svg class="signal-field__wave signal-field__wave--primary" viewBox="0 0 800 200" preserveAspectRatio="none">
+    <path d="M0 100 Q 100 40 200 100 T 400 100 T 600 100 T 800 100" />
+  </svg>
+  <svg class="signal-field__wave signal-field__wave--secondary" viewBox="0 0 800 200" preserveAspectRatio="none">
+    <path d="M0 120 Q 100 70 200 120 T 400 120 T 600 120 T 800 120" />
+  </svg>
+</div>
+
+<script>
+  // @ts-nocheck
+  import * as THREE from 'three';
+
+  const instances = new WeakMap();
+  const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function initSignalField(root) {
+    if (instances.has(root)) return;
+
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    renderer.setClearColor(0x000000, 0);
+    root.replaceChildren(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 100);
+    camera.position.z = 8;
+
+    const particleCount = 1200;
+    const positions = new Float32Array(particleCount * 3);
+    for (let i = 0; i < particleCount; i += 1) {
+      const stride = i * 3;
+      positions[stride] = (Math.random() - 0.5) * 14;
+      positions[stride + 1] = (Math.random() - 0.5) * 8;
+      positions[stride + 2] = (Math.random() - 0.5) * 6;
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+    const material = new THREE.PointsMaterial({
+      color: '#5FA8FF',
+      size: 0.045,
+      transparent: true,
+      opacity: 0.72,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      sizeAttenuation: true
+    });
+
+    const points = new THREE.Points(geometry, material);
+    points.rotation.x = 0.28;
+    scene.add(points);
+
+    const halo = new THREE.Mesh(
+      new THREE.PlaneGeometry(18, 9),
+      new THREE.MeshBasicMaterial({ color: '#1E3A8A', transparent: true, opacity: 0.08 })
+    );
+    halo.position.z = -2.4;
+    scene.add(halo);
+
+    const resize = () => {
+      const { clientWidth, clientHeight } = root;
+      if (!clientWidth || !clientHeight) return;
+      renderer.setSize(clientWidth, clientHeight, false);
+      camera.aspect = clientWidth / clientHeight;
+      camera.updateProjectionMatrix();
+    };
+
+    let frame = 0;
+    const clock = new THREE.Clock();
+
+    const renderFrame = () => {
+      const elapsed = clock.getElapsedTime();
+      points.rotation.y = elapsed * 0.04;
+      points.rotation.z = Math.sin(elapsed * 0.18) * 0.08;
+      points.position.y = Math.sin(elapsed * 0.42) * 0.08;
+      halo.material.opacity = 0.06 + (Math.sin(elapsed * 0.65) + 1) * 0.025;
+      renderer.render(scene, camera);
+      if (!prefersReducedMotion()) {
+        frame = window.requestAnimationFrame(renderFrame);
+      }
+    };
+
+    const observer = new ResizeObserver(resize);
+    observer.observe(root);
+    resize();
+    renderFrame();
+
+    const cleanup = () => {
+      window.cancelAnimationFrame(frame);
+      observer.disconnect();
+      geometry.dispose();
+      material.dispose();
+      halo.geometry.dispose();
+      halo.material.dispose();
+      renderer.dispose();
+      if (renderer.domElement.parentNode === root) {
+        root.removeChild(renderer.domElement);
+      }
+      instances.delete(root);
+    };
+
+    instances.set(root, cleanup);
+  }
+
+  function initSignalFields() {
+    document.querySelectorAll('[data-signal-field]').forEach((root) => initSignalField(root));
+  }
+
+  function cleanupSignalFields() {
+    document.querySelectorAll('[data-signal-field]').forEach((root) => {
+      const cleanup = instances.get(root);
+      cleanup?.();
+    });
+  }
+
+  document.addEventListener('astro:page-load', initSignalFields);
+  document.addEventListener('astro:before-swap', cleanupSignalFields);
+
+  if (document.readyState !== 'loading') {
+    initSignalFields();
+  } else {
+    document.addEventListener('DOMContentLoaded', initSignalFields, { once: true });
+  }
+</script>
+
+<style>
+  .signal-field {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    isolation: isolate;
+  }
+
+  .signal-field__grid,
+  .signal-field__particles,
+  .signal-field__wave {
+    position: absolute;
+    inset: 0;
+  }
+
+  .signal-field__grid {
+    background:
+      linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.45;
+    mask-image: radial-gradient(circle at 55% 40%, black 30%, transparent 80%);
+    -webkit-mask-image: radial-gradient(circle at 55% 40%, black 30%, transparent 80%);
+  }
+
+  .signal-field__particles :global(canvas) {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .signal-field__wave {
+    width: 140%;
+    height: 46%;
+    left: -20%;
+    top: 36%;
+    overflow: visible;
+    animation: waveMove 6s linear infinite;
+  }
+
+  .signal-field__wave path {
+    fill: none;
+    stroke: rgba(95, 168, 255, 0.38);
+    stroke-width: 2;
+    filter: drop-shadow(0 0 16px rgba(95, 168, 255, 0.22));
+  }
+
+  .signal-field__wave--secondary {
+    top: 48%;
+    animation-duration: 8s;
+    opacity: 0.55;
+  }
+
+  .signal-field__wave--secondary path {
+    stroke: rgba(30, 58, 138, 0.45);
+    stroke-width: 1.35;
+  }
+
+  @keyframes waveMove {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-200px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .signal-field__wave {
+      animation: none;
+    }
+  }
+</style>

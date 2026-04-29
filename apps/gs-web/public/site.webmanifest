@@ -1,0 +1,13 @@
+{
+  "name": "Gold Shore Labs",
+  "short_name": "GoldShore",
+  "description": "AI infrastructure for high-trust operations.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#060810",
+  "theme_color": "#1a3a7a",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "/assets/gsl-logo.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

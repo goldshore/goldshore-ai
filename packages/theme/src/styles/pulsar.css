@@ -1,0 +1,30 @@
+/* =========================================
+   Pulsar Field Background
+========================================= */
+
+.gs-pulsar-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("/assets/pulsar-field.svg");
+  background-size: cover;
+  background-position: center;
+  opacity: 0.18;
+  animation: gs-pulsar-drift 200s linear infinite;
+}
+
+.gs-pulsar-layer.deep {
+  opacity: 0.08;
+  filter: blur(0.3px);
+  animation: gs-pulsar-drift-slow 320s linear infinite;
+}
+
+@keyframes gs-pulsar-drift {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-180px); }
+}
+
+@keyframes gs-pulsar-drift-slow {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-120px); }
+}

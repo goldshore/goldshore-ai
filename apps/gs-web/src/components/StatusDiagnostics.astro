@@ -7,14 +7,14 @@ const commitHash = import.meta.env.PUBLIC_COMMIT_HASH || 'unknown';
   <div class="gs-card">
     <h2 id="build-diagnostics-heading">Build Diagnostics</h2>
     <p style="margin-top: 0.5rem; color: var(--gs-text-muted);">
-      Public build metadata for quick verification.
+      Public build metadata and layout asset diagnostics for quick verification.
     </p>
     <ul style="list-style: none; padding: 0; margin-top: 1rem; display: grid; gap: 0.75rem;">
       <li><strong>Build timestamp:</strong> <code>{buildTimestamp}</code></li>
       <li><strong>Commit hash:</strong> <code>{commitHash}</code></li>
       <li><strong>Stylesheet link count:</strong> <code data-diagnostic="css-link-count">loading…</code></li>
       <li><strong>Script tag count:</strong> <code data-diagnostic="script-count">loading…</code></li>
-      <li><strong>Resolved logo asset path:</strong> <code data-diagnostic="logo-src">loading…</code></li>
+      <li><strong>Layout logo asset path:</strong> <code data-diagnostic="logo-src">loading…</code></li>
     </ul>
   </div>
 </section>

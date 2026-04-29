@@ -4,50 +4,85 @@ zone_id_env: CF_ZONE_ID
 projects:
   pages:
     - name: gs-web
+      public_url: https://goldshore.org/
       output_dir: apps/gs-web/dist
       max_daily_deploys: 6
-      require_checks: ["smoke", "lighthouse"]
+      require_checks: ['smoke', 'lighthouse']
       skip_if_paths_only:
-        - "^docs/.*"
-        - "^scripts/.*"
-        - "^README.md$"
+        - '^docs/.*'
+        - '^scripts/.*'
+        - '^README.md$'
     - name: gs-admin
+      public_url: https://admin.goldshore.ai/
       output_dir: apps/gs-admin/dist
       max_daily_deploys: 6
-      require_checks: ["smoke", "lighthouse"]
+      require_checks: ['smoke', 'lighthouse']
       skip_if_paths_only:
-        - "^docs/.*"
-        - "^scripts/.*"
-        - "^README.md$"
+        - '^docs/.*'
+        - '^scripts/.*'
+        - '^README.md$'
 
   workers:
     - script: gs-api
       entry: apps/gs-api/dist/index.js
       routes:
-        - pattern: "api.goldshore.ai/*"
+        - pattern: 'api.goldshore.ai/*'
           zone: goldshore.ai
       max_daily_deploys: 10
-      require_checks: ["smoke"]
+      require_checks: ['smoke']
       skip_if_paths_only:
-        - "^docs/.*"
-        - "^README.md$"
+        - '^docs/.*'
+        - '^README.md$'
+    - script: gs-gateway
+      entry: apps/gs-gateway/dist/index.js
+      routes:
+        - pattern: 'gw.goldshore.ai/*'
+          zone: goldshore.ai
+      max_daily_deploys: 10
+      require_checks: ['smoke']
+      skip_if_paths_only:
+        - '^docs/.*'
+        - '^README.md$'
+    - script: gs-control
+      entry: apps/gs-control/dist/index.js
+      routes:
+        - pattern: 'ops.goldshore.ai/*'
+          zone: goldshore.ai
+      max_daily_deploys: 10
+      require_checks: ['smoke']
+      skip_if_paths_only:
+        - '^docs/.*'
+        - '^README.md$'
+    - script: gs-mail
+      entry: apps/gs-mail/dist/index.js
+      routes:
+        - pattern: 'mail.goldshore.ai/*'
+          zone: goldshore.ai
+      max_daily_deploys: 10
+      require_checks: ['smoke']
+      skip_if_paths_only:
+        - '^docs/.*'
+        - '^README.md$'
 
 guards:
-  dedupe_concurrency_key: "cf-deploy"
+  dedupe_concurrency_key: 'cf-deploy'
   cool_down_minutes: 15
   backoff_ms: 250
   backoff_factor: 2
 
 tests:
   smoke:
-    - url: "https://goldshore.ai/"
+    - url: 'https://goldshore.org/'
       expect_status: 200
       timeout_ms: 5000
-    - url: "https://api.goldshore.ai/health"
+    - url: 'https://goldshore.ai/'
+      expect_status: 301
+      timeout_ms: 5000
+    - url: 'https://api.goldshore.ai/health'
       expect_status: 200
       timeout_ms: 4000
   lighthouse:
-    url: "https://goldshore.ai/"
+    url: 'https://goldshore.org/'
     budget:
       performance: 0.85
       tti_ms: 4000

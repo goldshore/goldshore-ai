@@ -17,7 +17,9 @@ const posts = (await getCollection('blog')).sort(
 		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
 		<style>
 			main {
-				width: 960px;
+				width: 100%;
+				max-width: 960px;
+				margin: 0 auto;
 			}
 			ul {
 				display: flex;
@@ -66,7 +68,7 @@ const posts = (await getCollection('blog')).sort(
 				color: rgb(var(--accent));
 			}
 			ul a:hover img {
-				box-shadow: var(--box-shadow);
+				box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.25);
 			}
 			@media (max-width: 720px) {
 				ul {

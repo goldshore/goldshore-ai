@@ -13,6 +13,6 @@
     }
   },
   "scripts": {
-    "test": "tsx --test **/*.test.ts"
+    "test": "tsx --test index.test.ts audit.test.ts"
   }
 }

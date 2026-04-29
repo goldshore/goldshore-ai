@@ -1,45 +1,33 @@
 # wrangler.toml for the background Agent Worker
 
-name = "gs-agent" # Base name, will be suffixed per environment
+name = "gs-agent"
 compatibility_date = "2024-11-01"
 compatibility_flags = ["nodejs_compat"]
-# Using CLI to pass tsconfig to avoid relative path confusion with external config
 
-[env.dev]
-name = "gs-agent-dev"
-[[env.dev.queues.consumers]]
-queue = "gs-jobs"
-
-[env.preview]
-name = "gs-agent-preview"
-[[env.preview.queues.consumers]]
-queue = "gs-jobs"
-
-[env.prod]
-name = "gs-agent-prod"
-[[env.prod.queues.consumers]]
-queue = "gs-jobs"
-main = "../../apps/gs-agent/src/index.ts"
-compatibility_date = "2024-03-20"
-tsconfig = "../../apps/gs-agent/tsconfig.json"
-
-# This worker is queue-driven, so we define the consumer here.
+# This worker is queue-driven, so we define the consumer here at top level.
 [[queues.consumers]]
-  # The queue binding name should match what's in the environment bindings.
-  # Example: QUEUES_JOBS
-  queue = "goldshore-jobs"
+queue = "goldshore-jobs"
+max_batch_size = 10
+max_batch_timeout = 5
 
 [env.dev]
 name = "gs-agent-dev"
-# Dev bindings for the agent
-# [[queues.producers]]
-# binding = "QUEUES_JOBS"
-# queue = "goldshore-jobs-dev"
 
 [env.preview]
 name = "gs-agent-preview"
-# Preview bindings for the agent
 
 [env.prod]
-name = "gs-agent-prod"
-# Production bindings for the agent
+main = "../../apps/gs-agent/src/index.ts"
+tsconfig = "../../apps/gs-agent/tsconfig.json"
+[[env.prod.queues.consumers]]
+queue = "goldshore-jobs"
+max_batch_size = 10
+max_batch_timeout = 5
+
+[env.production]
+main = "../../apps/gs-agent/src/index.ts"
+tsconfig = "../../apps/gs-agent/tsconfig.json"
+[[env.production.queues.consumers]]
+queue = "goldshore-jobs"
+max_batch_size = 10
+max_batch_timeout = 5

@@ -1,6 +1,8 @@
-# wrangler.toml for the goldshore-admin Astro Pages app (for Pages Functions)
+# Worker Builds token for this service must be the gs-control build token.
+# wrangler.toml for the gs-admin Astro Pages app (for Pages Functions; formerly goldshore-admin)
 
 name = "gs-admin" # Base name for Pages project
+compatibility_date = "2026-04-18"
 
 # This file is primarily for configuring bindings for Cloudflare Pages Functions.
 # The actual deployment will be handled by the GitHub Action connecting to the Pages project.
@@ -29,3 +31,9 @@ name = "gs-admin" # Base name for Pages project
 
 [env.prod]
 # Production bindings for Pages Functions
+
+
+# Route boundary: admin worker must own only admin hostnames
+routes = [
+  { pattern = "admin.goldshore.ai/*", zone_name = "goldshore.ai" }
+]

@@ -25,5 +25,6 @@ Private routes must enforce access at the edge or application layer:
 
 - **Cloudflare Access config**: Configure Access policies to require identity verification for private route paths and preview environments.
 - **Application middleware**: Ensure SSR middleware or edge handlers validate sessions before serving private content.
+- **Service-token automation**: For synthetic checks and maintenance jobs that must reach Access-protected hosts, use Cloudflare Access service-token headers (`CF_ACCESS_CLIENT_ID` / `CF_ACCESS_CLIENT_SECRET`) rather than weakening the Access policy.
 
 When introducing new routes, update this policy and ensure enforcement is in place before deployment.
