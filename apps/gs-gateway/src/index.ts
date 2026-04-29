@@ -87,7 +87,12 @@ app.use("*", (c, next) => authMiddleware(c.req.raw, c.env, next));
 
 app.use("*", async (c, next) => {
   const pathname = new URL(c.req.url).pathname;
+  const isHealthPath = pathname === "/health";
   const isSignalsPath = isNonCriticalSignalsPath(pathname);
+
+  if (isHealthPath) {
+    return next();
+  }
 
   if (!c.env.SECURITY_CHECK) {
     if (isSignalsPath) {
