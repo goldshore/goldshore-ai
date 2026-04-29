@@ -20,7 +20,7 @@ export interface AuthMiddlewareEnv extends Env {
   CLOUDFLARE_TEAM_DOMAIN?: string;
 }
 
-const PUBLIC_PATHS = ["/", "/health", "/status", "/signals"];
+const PUBLIC_PATHS = ["/", "/health", "/status"];
 
 /**
  * Check if a path is public (does not require authentication)
