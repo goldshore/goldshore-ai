@@ -1,0 +1,128 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+
+const API_BASE = import.meta.env.PUBLIC_API || 'https://api.goldshore.dev';
+---
+<AdminLayout title="Pages | GoldShore Admin">
+  <section class="max-w-6xl mx-auto py-12 px-6 space-y-6">
+    <header class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div>
+        <h1 class="text-3xl gs-heading">Pages</h1>
+        <p class="text-[var(--gs-text-secondary)]">Manage dynamic content pages and publishing status.</p>
+      </div>
+      <a class="gs-btn-primary" href="/admin/pages/new">Create New Page</a>
+    </header>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">📄</span>
+        <h2>All Pages</h2>
+      </div>
+      <div id="pages-table" class="overflow-x-auto text-sm text-[var(--gs-text-secondary)]">
+        Loading pages...
+      </div>
+    </div>
+  </section>
+  <script define:vars={{ API_BASE }}>
+    const container = document.getElementById('pages-table');
+
+    const statusBadge = (status) => {
+      const color =
+        status === 'published'
+          ? 'text-green-300 bg-green-900/40 border-green-500/40'
+          : status === 'disabled'
+          ? 'text-red-300 bg-red-900/40 border-red-500/40'
+          : 'text-yellow-300 bg-yellow-900/40 border-yellow-500/40';
+      return `<span class="inline-flex items-center px-2 py-1 rounded border ${color}">${status}</span>`;
+    };
+
+    const renderTable = (pages) => {
+      if (!pages.length) {
+        container.innerHTML = '<p class="p-4">No pages yet. Create your first page.</p>';
+        return;
+      }
+
+      container.innerHTML = `
+        <table class="min-w-full text-left">
+          <thead>
+            <tr class="text-xs uppercase tracking-wide text-[var(--gs-text-tertiary)]">
+              <th class="p-3">Slug</th>
+              <th class="p-3">Title</th>
+              <th class="p-3">Status</th>
+              <th class="p-3">Updated</th>
+              <th class="p-3">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${pages
+              .map(
+                (page) => `
+                  <tr class="border-t border-white/5">
+                    <td class="p-3 font-mono text-[var(--gs-text-primary)]">/${page.slug}</td>
+                    <td class="p-3 text-[var(--gs-text-primary)]">${page.title}</td>
+                    <td class="p-3">${statusBadge(page.status)}</td>
+                    <td class="p-3">${new Date(page.updatedAt).toLocaleString()}</td>
+                    <td class="p-3 flex flex-wrap gap-2">
+                      <a class="gs-btn-xs" href="/admin/pages/${page.id}">Edit</a>
+                      <button class="gs-btn-xs gs-btn-secondary" data-toggle-id="${page.id}" data-status="${
+                        page.status === 'published' ? 'disabled' : 'published'
+                      }">
+                        ${page.status === 'published' ? 'Disable' : 'Publish'}
+                      </button>
+                      <button class="gs-btn-xs gs-btn-danger" data-delete-id="${page.id}">Delete</button>
+                    </td>
+                  </tr>
+                `
+              )
+              .join('')}
+          </tbody>
+        </table>
+      `;
+    };
+
+    const loadPages = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/pages`, { credentials: 'include' });
+        const data = await response.json();
+        renderTable(data.pages || []);
+      } catch (error) {
+        container.innerHTML = '<p class="p-4 text-red-300">Failed to load pages.</p>';
+      }
+    };
+
+    const updateStatus = async (id, status) => {
+      await fetch(`${API_BASE}/pages/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ status })
+      });
+      await loadPages();
+    };
+
+    const deletePage = async (id) => {
+      if (!confirm('Delete this page? This cannot be undone.')) return;
+      await fetch(`${API_BASE}/pages/${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      await loadPages();
+    };
+
+    container.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      const toggleId = target.dataset.toggleId;
+      const status = target.dataset.status;
+      if (toggleId && status) {
+        updateStatus(toggleId, status);
+      }
+      const deleteId = target.dataset.deleteId;
+      if (deleteId) {
+        deletePage(deleteId);
+      }
+    });
+
+    loadPages();
+  </script>
+</AdminLayout>

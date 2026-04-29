@@ -1,0 +1,22 @@
+---
+import { GSButton } from '@goldshore/ui';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+export const prerender = true;
+---
+
+<BaseLayout
+  title="Thank You | GoldShore"
+  description="Your details are on the way to the GoldShore team."
+>
+  <section class="gs-hero">
+    <div>
+      <h1>Thank you</h1>
+      <p>
+        We have received your submission and will respond within one business
+        day. You can also email us directly at hello@goldshore.ai.
+      </p>
+      <GSButton href="/">Back to home</GSButton>
+    </div>
+  </section>
+</BaseLayout>

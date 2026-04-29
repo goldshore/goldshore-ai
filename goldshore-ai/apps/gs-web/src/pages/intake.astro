@@ -1,0 +1,143 @@
+---
+import { GSButton } from '@goldshore/ui';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import FlowSection from '../components/FlowSection.astro';
+
+export const prerender = true;
+---
+
+<BaseLayout
+  title="Project Intake | GoldShore"
+  description="Share your goals and requirements so we can qualify your lead and respond quickly."
+>
+  <FlowSection variant="hero">
+    <div>
+      <h1>Project intake</h1>
+      <p>
+        Help us understand your organization, timelines, and priorities. We will
+        follow up with a tailored plan and next steps.
+      </p>
+    </div>
+    <form class="gs-card" action="/api/contact" method="post">
+      <input type="hidden" name="formType" value="lead-qualification" />
+      <input type="hidden" name="redirectTo" value="/thank-you" />
+      <input type="hidden" name="formStartedAt" value="" />
+      <div class="gs-honeypot" aria-hidden="true">
+        <label for="companyWebsite">Company website</label>
+        <input id="companyWebsite" name="companyWebsite" type="text" autocomplete="off" tabindex="-1" />
+      </div>
+      <div class="gs-input-group">
+        <label for="name">Name</label>
+        <input id="name" name="name" type="text" autocomplete="name" required />
+      </div>
+      <div class="gs-input-group">
+        <label for="email">Work email</label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          autocomplete="email"
+          spellcheck="false"
+          required
+        />
+      </div>
+      <div class="gs-input-group">
+        <label for="company">Company</label>
+        <input
+          id="company"
+          name="company"
+          type="text"
+          autocomplete="organization"
+          required
+        />
+      </div>
+      <div class="gs-input-group">
+        <label for="role">Role / team</label>
+        <input id="role" name="role" type="text" autocomplete="organization-title" />
+      </div>
+      <div class="gs-input-group">
+        <label for="website">Company website</label>
+        <input
+          id="website"
+          name="website"
+          type="url"
+          placeholder="https://"
+          autocomplete="url"
+        />
+      </div>
+      <div class="gs-input-group">
+        <label for="teamSize">Team size</label>
+        <select id="teamSize" name="teamSize" required>
+          <option value="">Select a range</option>
+          <option value="1-10">1-10</option>
+          <option value="11-50">11-50</option>
+          <option value="51-200">51-200</option>
+          <option value="201-1000">201-1000</option>
+          <option value="1000+">1000+</option>
+        </select>
+      </div>
+      <div class="gs-input-group">
+        <label for="industry">Industry</label>
+        <input id="industry" name="industry" type="text" />
+      </div>
+      <div class="gs-input-group">
+        <label for="timeline">Ideal timeline</label>
+        <select id="timeline" name="timeline" required>
+          <option value="">Select a timeline</option>
+          <option value="immediate">Immediate (0-30 days)</option>
+          <option value="quarter">This quarter (1-3 months)</option>
+          <option value="half-year">3-6 months</option>
+          <option value="future">6+ months</option>
+        </select>
+      </div>
+      <div class="gs-input-group">
+        <label for="budget">Budget range</label>
+        <select id="budget" name="budget" required>
+          <option value="">Select a range</option>
+          <option value="under-50k">Under $50k</option>
+          <option value="50k-150k">$50k-$150k</option>
+          <option value="150k-500k">$150k-$500k</option>
+          <option value="500k+">$500k+</option>
+        </select>
+      </div>
+      <div class="gs-input-group">
+        <label for="goals">Primary goals</label>
+        <textarea
+          id="goals"
+          name="goals"
+          rows="4"
+          aria-describedby="goals-helper"
+          required></textarea>
+        <p id="goals-helper" class="gs-helper">
+          Include KPIs, compliance needs, or systems you need to integrate.
+        </p>
+      </div>
+      <div class="gs-input-group">
+        <label for="message">Anything else we should know?</label>
+        <textarea id="message" name="message" rows="3"></textarea>
+      </div>
+      <GSButton type="submit">Submit intake</GSButton>
+    </form>
+  </FlowSection>
+
+  <script>
+    const form = document.querySelector('form[action="/api/contact"]');
+    if (form instanceof HTMLFormElement) {
+      const startedAtField = form.querySelector('[name="formStartedAt"]');
+      if (startedAtField instanceof HTMLInputElement) {
+        startedAtField.value = String(Date.now());
+      }
+    }
+  </script>
+
+  <style is:global>
+    .gs-honeypot {
+      position: absolute;
+      left: -10000px;
+      top: auto;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
+  </style>
+</BaseLayout>
