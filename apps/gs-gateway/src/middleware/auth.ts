@@ -29,7 +29,7 @@ const PUBLIC_PATHS = ["/", "/health", "/status"];
 
 /** Paths that are public and bypass JWT auth (fail open). */
 function isPublicPath(pathname: string): boolean {
-  return PUBLIC_PATHS.includes(pathname) || !!pathname.match(/^\/health\//);
+  return PUBLIC_PATHS.includes(pathname) || pathname.startsWith("/health/");
 }
 
 /** Paths that handle Stripe operations and require STRIPE_SECRET_KEY (fail closed). */
