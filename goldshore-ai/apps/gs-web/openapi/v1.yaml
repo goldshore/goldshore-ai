@@ -1,0 +1,35 @@
+openapi: 3.0.0
+info:
+  title: GoldShore API
+  version: 1.0.0
+paths:
+  /status:
+    get:
+      summary: Get system status
+      responses:
+        '200':
+          description: System is operational
+  /users:
+    get:
+      summary: List users
+      description: Returns a list of users.
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+          description: Max records to return
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string

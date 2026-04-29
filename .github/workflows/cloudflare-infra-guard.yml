@@ -61,11 +61,13 @@ jobs:
       - name: Verify Cloudflare deploy token is present
         env:
           CLOUDFLARE_BUILD_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           test -n "$CLOUDFLARE_BUILD_API_TOKEN" || (echo "Missing required secret: CLOUDFLARE_BUILD_API_TOKEN" && exit 1)
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "Missing required secret: CLOUDFLARE_ACCOUNT_ID" && exit 1)
       - name: Validate routes and DNS
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+          CLOUDFLARE_BUILD_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
         run: |
           python - <<'PY'
           import json, os, urllib.error, urllib.parse, urllib.request
@@ -87,6 +89,8 @@ jobs:
               if not data.get('success'):
                   raise SystemExit(f"Cloudflare API error for {context} ({url}): {data}")
               return data['result']
+          if not os.environ.get('CLOUDFLARE_BUILD_API_TOKEN'):
+              raise SystemExit('Missing required env var: CLOUDFLARE_BUILD_API_TOKEN')
           cfg = json.load(open('ops/cloudflare-required.json', 'r', encoding='utf-8'))
           zone_name = urllib.parse.quote(cfg['zone_name'])
           zones_lookup_url = f"https://api.cloudflare.com/client/v4/zones?name={zone_name}"

@@ -1,0 +1,32 @@
+agent_name: goldshore-infra-agent
+repository: astro-goldshore
+scope: cloudflare_infrastructure
+
+allowed_domains:
+  - goldshore.ai
+
+cloudflare_permissions:
+  can_manage_dns: true
+  can_manage_workers: true
+  can_manage_pages: true
+  can_manage_email_routing: true
+  can_manage_bindings: true
+
+dangerous_operations_require_confirmation:
+  - delete_dns_record
+  - delete_worker
+  - delete_pages_project
+  - rotate_api_tokens
+  - drop_d1_database
+  - delete_r2_bucket
+
+repo_lock:
+  root_only: true
+  allowed_paths:
+    - infra/**
+  forbidden_paths:
+    - apps/gs-web/**
+    - apps/gs-admin/**
+    - apps/gs-api/**
+    - apps/gs-gateway/**
+    - packages/**

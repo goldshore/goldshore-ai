@@ -1,0 +1,19 @@
+---
+const { schema } = Astro.props;
+---
+
+{ !schema ? <p>No schema.</p> :
+  <div class="api-schema">
+    <pre>{JSON.stringify(schema, null, 2)}</pre>
+  </div>
+}
+
+<style>
+  .api-schema {
+    background: #0b1220;
+    padding: 1rem;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(148,163,184,0.3);
+    overflow-x: auto;
+  }
+</style>
