@@ -15,6 +15,7 @@ import admin from './routes/admin';
 import media from './routes/media';
 import pages from './routes/pages';
 import internal from './routes/internal';
+import { assertSecuritySecrets } from './securitySecrets';
 
 type Env = {
   KV: KVNamespace;
@@ -93,6 +94,9 @@ app.use('*', secureHeaders());
 
 // Runtime safety guard (fail-fast for misconfigured production runtime).
 app.use('*', async (c, next) => {
+  if (c.env.ENV === 'production') {
+    assertSecuritySecrets(c.env as Record<string, unknown>, c.env.ENV);
+  }
   for (const key of [...requiredBindings, ...requiredSecrets]) {
     if (!c.env[key]) {
       throw new Error(`CRITICAL_MISSING: ${key}. Terminating.`);
