@@ -20,6 +20,7 @@ TUNNEL = "goldshore-prod-tunnel-id"
 binding = "AI_CACHE"
 id = "gs-ai-cache"
 
+# ── Core service bindings ──────────────────────────────────
 [[env.prod.services]]
 binding = "API_SERVICE"
 service = "gs-api"
@@ -29,6 +30,20 @@ environment = "prod"
 binding = "AGENT"
 service = "gs-agent"
 environment = "prod"
+
+# ── Phase 2: Joinery — security + signals spokes ──────────
+[[env.prod.services]]
+binding = "SECURITY"
+service = "banproof-me"
+
+[[env.prod.services]]
+binding = "SIGNALS"
+service = "gs-signals-prod"
+
+# ── Phase 2: Queue producer for mail jobs ─────────────────
+[[env.prod.queues.producers]]
+binding = "MAIL_QUEUE"
+queue = "gs-mail-jobs"
 
 [env.preview]
 routes = [

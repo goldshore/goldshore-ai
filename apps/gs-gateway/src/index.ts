@@ -8,12 +8,19 @@ interface GatewayEnv {
   // Auth (required by @goldshore/auth verify.ts)
   CLOUDFLARE_ACCESS_AUDIENCE?: string;
   CLOUDFLARE_TEAM_DOMAIN?: string;
-  // Service bindings
+  // Core service bindings
   API_SERVICE?: Fetcher;
   AGENT?: Fetcher;
+  // Phase 2 service bindings (joinery)
+  SECURITY?: Fetcher;   // banproof-me security layer
+  SIGNALS?: Fetcher;    // gs-signals-prod trading signals worker
   // KV
   AI_CACHE?: KVNamespace;
   GATEWAY_KV?: KVNamespace;
+  // Queue producers
+  MAIL_QUEUE?: Queue;   // gs-mail-jobs queue
+  // Stripe (secret — never logged, never returned in responses)
+  STRIPE_SECRET_KEY?: string;
   // Config
   API_ORIGIN?: string;
   ACCESS_CLIENT_SECRET?: string;
@@ -29,6 +36,8 @@ const requiredSecrets  = ["ACCESS_CLIENT_SECRET"] as const;
 app.use("*", secureHeaders());
 
 // ── Startup binding guard (production only) ────────────────
+// Fail CLOSED: hard-stop when critical bindings are absent.
+// STRIPE_SECRET_KEY absence is enforced per-request in authMiddleware (fail closed).
 app.use("*", async (c, next) => {
   if (c.env.ENV === "production") {
     for (const key of [...requiredBindings, ...requiredSecrets]) {
