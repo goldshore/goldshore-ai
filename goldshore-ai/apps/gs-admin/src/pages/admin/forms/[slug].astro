@@ -1,0 +1,120 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { formConfigs, getFormConfig } from '../../../data/forms';
+
+const { slug } = Astro.params;
+const config = slug ? getFormConfig(slug) : undefined;
+const fallback = formConfigs[0];
+const activeConfig = config ?? fallback;
+---
+<AdminLayout title={`Form Details | ${activeConfig.name} | GoldShore Admin`}>
+  <section class="max-w-6xl mx-auto py-16 px-6 space-y-8">
+    <header class="space-y-3">
+      <p class="text-sm gs-text-subtle">
+        <a href="/admin/forms" class="hover:underline">← Back to forms</a>
+      </p>
+      <h1 class="text-3xl gs-heading">{activeConfig.name}</h1>
+      <p class="text-[var(--gs-text-secondary)]">/{activeConfig.slug} · {activeConfig.description}</p>
+    </header>
+
+    <div class="grid gap-6 lg:grid-cols-3">
+      <div class="gs-card space-y-4 lg:col-span-2">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-semibold">Form Configuration</h2>
+          <span class={`rounded-full px-3 py-1 text-xs font-semibold ${
+            activeConfig.status === 'active'
+              ? 'bg-emerald-500/20 text-emerald-200'
+              : activeConfig.status === 'paused'
+              ? 'bg-amber-500/20 text-amber-200'
+              : 'bg-slate-500/20 text-slate-200'
+          }`}>
+            {activeConfig.status}
+          </span>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <p class="text-xs uppercase tracking-wide gs-text-subtle">Fields</p>
+            <ul class="mt-2 space-y-2">
+              {activeConfig.fields.map((field) => (
+                <li class="flex items-center justify-between rounded-xl border border-white/10 px-3 py-2 text-sm">
+                  <span>{field.label}</span>
+                  <span class="text-xs gs-text-subtle">
+                    {field.type}{field.required ? ' · required' : ''}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <p class="text-xs uppercase tracking-wide gs-text-subtle">Recipients</p>
+            <ul class="mt-2 space-y-2">
+              {activeConfig.recipients.map((recipient) => (
+                <li class="flex items-center justify-between rounded-xl border border-white/10 px-3 py-2 text-sm">
+                  <span>{recipient.name}</span>
+                  <span class="text-xs gs-text-subtle">{recipient.channel}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        <div>
+          <p class="text-xs uppercase tracking-wide gs-text-subtle">Integrations</p>
+          <div class="mt-2 grid gap-3 md:grid-cols-2">
+            {activeConfig.integrations.map((integration) => (
+              <div class="rounded-xl border border-white/10 px-3 py-3 text-sm">
+                <div class="flex items-center justify-between">
+                  <span>{integration.name}</span>
+                  <span class={`text-xs font-semibold ${integration.status === 'enabled' ? 'text-emerald-200' : 'text-slate-300'}`}>
+                    {integration.status}
+                  </span>
+                </div>
+                <p class="text-xs gs-text-subtle">{integration.type}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div class="gs-card space-y-5">
+        <div>
+          <p class="text-xs uppercase tracking-wide gs-text-subtle">Submission status</p>
+          <div class="mt-3 space-y-2 text-sm">
+            <div class="flex items-center justify-between">
+              <span class="gs-text-subtle">Received</span>
+              <span class="font-semibold">{activeConfig.submissionStatus.received}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="gs-text-subtle">Stored</span>
+              <span class="font-semibold">{activeConfig.submissionStatus.stored}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="gs-text-subtle">Routed</span>
+              <span class="font-semibold">{activeConfig.submissionStatus.routed}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="gs-text-subtle">Failed</span>
+              <span class="font-semibold">{activeConfig.submissionStatus.failed}</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <p class="text-xs uppercase tracking-wide gs-text-subtle">Audit trail</p>
+          <ul class="mt-3 space-y-2 text-sm">
+            <li class="rounded-xl border border-white/10 px-3 py-2">
+              Status refreshed · {activeConfig.lastUpdated}
+            </li>
+            <li class="rounded-xl border border-white/10 px-3 py-2">
+              Routing applied to {activeConfig.recipients.length} targets
+            </li>
+            <li class="rounded-xl border border-white/10 px-3 py-2">
+              Integrations checked · {activeConfig.integrations.length} configured
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+</AdminLayout>

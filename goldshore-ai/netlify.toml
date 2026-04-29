@@ -1,0 +1,6 @@
+[build]
+  command = "pnpm install --frozen-lockfile && pnpm build"
+
+[build.environment]
+  NETLIFY_USE_PNPM = "true"
+  PNPM_FLAGS = "--frozen-lockfile"

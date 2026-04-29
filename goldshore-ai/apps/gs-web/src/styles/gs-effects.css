@@ -1,0 +1,44 @@
+:root {
+  --gs-parallax-offset: 0px;
+  --gs-shadow-layered-soft: 0 12px 24px -16px rgba(14, 20, 30, 0.22),
+    0 24px 48px -32px rgba(14, 20, 30, 0.3);
+  --gs-shadow-layered-medium: 0 16px 32px -18px rgba(14, 20, 30, 0.26),
+    0 32px 64px -28px rgba(14, 20, 30, 0.36);
+  --gs-shadow-layered-strong: 0 18px 36px -18px rgba(14, 20, 30, 0.32),
+    0 40px 80px -28px rgba(14, 20, 30, 0.42);
+  --gs-section-lift-distance: -12px;
+  --gs-section-lift-shadow: var(--gs-shadow-layered-soft);
+}
+
+.gs-parallax {
+  transform: translate3d(0, var(--gs-parallax-offset), 0);
+  will-change: transform;
+}
+
+.gs-parallax--xs { --gs-parallax-offset: -8px; }
+.gs-parallax--sm { --gs-parallax-offset: -16px; }
+.gs-parallax--md { --gs-parallax-offset: -28px; }
+.gs-parallax--lg { --gs-parallax-offset: -44px; }
+
+.gs-shadow-layered { box-shadow: var(--gs-shadow-layered-soft); }
+.gs-shadow-layered--soft { box-shadow: var(--gs-shadow-layered-soft); }
+.gs-shadow-layered--medium { box-shadow: var(--gs-shadow-layered-medium); }
+.gs-shadow-layered--strong { box-shadow: var(--gs-shadow-layered-strong); }
+
+.gs-section-lift {
+  transform: translateY(0px);
+  transition: transform 500ms ease, box-shadow 500ms ease;
+}
+
+.gs-section-lift.is-lifted {
+  transform: translateY(var(--gs-section-lift-distance));
+  box-shadow: var(--gs-section-lift-shadow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gs-parallax,
+  .gs-section-lift {
+    transition: none;
+    transform: none;
+  }
+}
