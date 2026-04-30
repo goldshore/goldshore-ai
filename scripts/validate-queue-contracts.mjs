@@ -10,11 +10,10 @@ const manifests = [
 const environments = ['dev', 'preview', 'prod'];
 
 function parseEnvQueues(content, env, kind) {
-  const block = new RegExp(`\\[env\\.${env}\\][\\s\\S]*?(?=\\n\\[env\\.|$)`, 'm').exec(content)?.[0] ?? '';
   const re = new RegExp(`\\[\\[env\\.${env}\\.queues\\.${kind}\\]\\][\\s\\S]*?queue\\s*=\\s*"([^"]+)"`, 'g');
   const out = [];
   let m;
-  while ((m = re.exec(block)) !== null) out.push(m[1]);
+  while ((m = re.exec(content)) !== null) out.push(m[1]);
   return out;
 }
 
