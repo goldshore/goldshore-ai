@@ -12,7 +12,7 @@
     "@goldshore/auth": "workspace:*",
     "@goldshore/utils": "workspace:*",
     "@hono/zod-validator": "^0.7.6",
-    "hono": "^4.0.0",
+    "hono": "^4.12.14",
     "zod": "^3.23.8"
   },
   "devDependencies": {
