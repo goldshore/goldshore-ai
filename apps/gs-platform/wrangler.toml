@@ -47,18 +47,22 @@ bucket_name = "gs-assets"
 [[env.prod.services]]
 binding = "SECURITY"
 service = "banproof-me"
+environment = "prod"
 
 [[env.prod.services]]
 binding = "SIGNALS"
 service = "gs-signals-prod"
+environment = "prod"
 
 [[env.prod.services]]
 binding = "MAIL"
 service = "gs-mail"
+environment = "prod"
 
 [[env.prod.services]]
 binding = "CORE"
 service = "gs-core-worker"
+environment = "prod"
 
 # ─── Preview ─────────────────────────────────────────────────────────────────
 
