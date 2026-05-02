@@ -1,0 +1,48 @@
+name = "banproof-me"
+main = "src/index.ts"
+compatibility_date = "2026-04-18"
+compatibility_flags = ["nodejs_compat"]
+
+workers_dev = false
+
+[env.prod]
+routes = [
+  { pattern = "banproof.me/*", zone_name = "banproof.me" },
+  { pattern = "www.banproof.me/*", zone_name = "banproof.me" }
+]
+
+[[env.prod.d1_databases]]
+binding = "PLATFORM_DB"
+database_name = "banproof_platform"
+database_id = "<existing_id>"
+
+[[env.prod.r2_buckets]]
+binding = "ASSETS"
+bucket_name = "gs-assets"
+
+[[env.prod.kv_namespaces]]
+binding = "BANPROOF_KV"
+id = "<existing_banproof_kv_id>"
+
+[[env.prod.kv_namespaces]]
+binding = "GOLDSHORE_KV"
+id = "<existing_goldshore_kv_id>"
+
+[[env.prod.r2_buckets]]
+binding = "TELEMETRY_STORAGE"
+bucket_name = "gs-telemetry-storage"
+
+[[env.prod.d1_databases]]
+binding = "GS_PLATFORM_DB"
+database_name = "gs_platform_db"
+database_id = "<existing_platform_db_id>"
+
+[[env.prod.d1_databases]]
+binding = "GS_AUDIT_DB"
+database_name = "gs_audit_db"
+database_id = "<existing_audit_db_id>"
+
+[[env.prod.d1_databases]]
+binding = "GS_SIGNALS_DB"
+database_name = "gs_signals_db"
+database_id = "<existing_signals_db_id>"
