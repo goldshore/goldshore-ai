@@ -7,7 +7,7 @@
     "dev": "wrangler dev src/index.ts",
     "deploy": "wrangler deploy --env prod",
     "build": "wrangler deploy --env prod --dry-run --outdir=dist",
-    "test": "tsx src/repro_cors.test.ts"
+    "test": "tsx --test src/*.test.ts"
   },
   "dependencies": {
     "@goldshore/auth": "workspace:*",
