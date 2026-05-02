@@ -48,15 +48,23 @@ jobs:
       - name: Verify D1 database IDs are consistent
         run: |
           # Check that wrangler.toml D1 IDs match INFRASTRUCTURE.md
+          mismatch_found=0
+
           for toml in apps/*/wrangler.toml infra/Cloudflare/*.wrangler.toml; do
             [ -f "$toml" ] || continue
             DB_IDS=$(grep 'database_id' "$toml" | grep -oP '"[a-f0-9-]+"' | tr -d '"' || true)
             for db_id in $DB_IDS; do
               if ! grep -q "$db_id" infra/INFRASTRUCTURE.md; then
-                echo "WARNING: $toml references D1 ID '$db_id' not found in INFRASTRUCTURE.md"
+                echo "FAIL: $toml references D1 ID '$db_id' not found in INFRASTRUCTURE.md"
+                mismatch_found=1
               fi
             done
           done
+
+          if [ "$mismatch_found" -ne 0 ]; then
+            echo "D1 ID consistency check failed."
+            exit 1
+          fi
 
           echo "D1 ID consistency check complete."
 
