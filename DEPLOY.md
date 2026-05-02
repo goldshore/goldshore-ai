@@ -4,8 +4,8 @@
 
 ### 1. packages/auth/verify.ts — CRITICAL FIX
 - Was: fetching JWKS cert but never validating — returned `true` for any token
-- Now: full `jose`-based JWT verification with issuer + audience checks
-- Fails closed if `CLOUDFLARE_ACCESS_AUDIENCE` is not set
+- Now: full `jose`-based JWT verification with issuer checks and audience verification when `CLOUDFLARE_ACCESS_AUDIENCE` is set
+- Missing `CLOUDFLARE_ACCESS_AUDIENCE` is not fail-closed here; that enforcement happens in the gs-platform middleware below
 
 ### 2. apps/gs-platform/src/index.ts
 - Auth middleware now hard-fails (503) when audience env var is missing
