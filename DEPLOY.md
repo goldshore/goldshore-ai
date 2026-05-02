@@ -31,7 +31,7 @@ pnpm install
 wrangler secret put CLOUDFLARE_ACCESS_AUDIENCE --name gs-platform
 # Enter: your CF Access audience tag (find in CF Zero Trust → Applications)
 
-wrangler secret put CLOUDFLARE_ACCESS_TEAM_DOMAIN --name gs-platform
+wrangler secret put CLOUDFLARE_TEAM_DOMAIN --name gs-platform
 # Enter: goldshore.cloudflareaccess.com
 ```
 
