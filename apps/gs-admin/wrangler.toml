@@ -1,75 +1,22 @@
-# gs-admin — Cloudflare Pages Functions wrangler config
-#
-# This file declares bindings for the Pages Functions runtime.
-# Secrets (API tokens, sync tokens) are managed via:
-#   wrangler pages secret put <KEY> --project-name gs-admin
-# or the Cloudflare dashboard → gs-admin → Settings → Environment variables.
-
 name = "gs-admin"
 compatibility_date = "2026-04-18"
-compatibility_flags = ["nodejs_compat"]
-
-pages_build_output_dir = "dist"
-
-# ── Production bindings ────────────────────────────────────────────────────────
+pages_build_output_dir = "dist/client"
 
 [[kv_namespaces]]
 binding = "KV"
 id = "gs_admin_kv_001"
-# Provision: wrangler kv namespace create gs_admin_kv_001
 
 [[d1_databases]]
 binding = "DB"
 database_name = "goldshore"
 database_id = "gs_db_001"
-# Same D1 as gs-api (read-only dashboard queries)
-
-[[r2_buckets]]
-binding = "ASSETS"
-bucket_name = "gs-assets"
-# Same R2 as gs-api (brand assets, logos)
 
 [[services]]
 binding = "API_SERVICE"
 service = "gs-api"
 environment = "prod"
-# Zero-hop service binding to gs-api worker — no public network request
 
 [vars]
 ENV = "production"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-# AUD tag for the GoldShore-Admin-ZT Access application.
-# Public identifier used to verify Cloudflare Access JWTs — not a secret.
-# Rotate via: Cloudflare Access → gs-admin application → Revoke Token.
 CLOUDFLARE_ACCESS_AUDIENCE = "8b6e1890f664c52ad265a240948a1f3315a757e19b4a0fa180ffe952b81a0daf"
-
-# ── Preview bindings ───────────────────────────────────────────────────────────
-
-[env.preview]
-pages_build_output_dir = "dist"
-
-[[env.preview.kv_namespaces]]
-binding = "KV"
-id = "gs_admin_kv_preview"
-# Provision: wrangler kv namespace create gs_admin_kv_preview
-
-[[env.preview.d1_databases]]
-binding = "DB"
-database_name = "goldshore_preview"
-database_id = "gs_db_preview"
-
-[[env.preview.r2_buckets]]
-binding = "ASSETS"
-bucket_name = "gs-assets-preview"
-
-[[env.preview.services]]
-binding = "API_SERVICE"
-service = "gs-api"
-environment = "preview"
-
-[env.preview.vars]
-ENV = "preview"
-CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-
-# ── Secret bindings (set via CLI or dashboard, never committed) ────────────────
-# wrangler pages secret put ADMIN_API_KEY --project-name gs-admin

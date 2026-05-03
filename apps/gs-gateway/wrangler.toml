@@ -3,22 +3,10 @@ main = "src/index.ts"
 compatibility_date = "2026-04-18"
 compatibility_flags = ["nodejs_compat"]
 
-workers_dev = false
-
 [env.prod]
 routes = [
-  { pattern = "gw.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" }
+  { pattern = "gw.goldshore.ai/*", zone_name = "goldshore.ai" }
 ]
-
-[env.prod.vars]
-ENV = "production"
-CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-TUNNEL = "goldshore-prod-tunnel-id"
-
-[[env.prod.kv_namespaces]]
-binding = "AI_CACHE"
-id = "gs-ai-cache"
 
 [[env.prod.services]]
 binding = "API_SERVICE"
@@ -26,14 +14,8 @@ service = "gs-api"
 environment = "prod"
 
 [[env.prod.services]]
-binding = "AGENT"
-service = "gs-agent"
-environment = "prod"
+binding = "ADMIN_SERVICE"
+service = "gs-admin"
 
-[env.preview]
-routes = [
-  { pattern = "gw-preview.goldshore.ai/*", zone_name = "goldshore.ai" }
-]
-
-[env.preview.vars]
-ENV = "preview"
+[env.prod.vars]
+ENV = "production"

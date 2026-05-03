@@ -1,15 +1,12 @@
-import { Hono } from "hono";
-import { requirePermission } from "../auth";
-import { Env, Variables } from "../types";
+import { Hono } from 'hono';
 
-const user = new Hono<{ Bindings: Env; Variables: Variables }>();
+export const user = new Hono();
 
-user.get("/:id", requirePermission("users:read"), async (c) => {
-  const id = c.req.param("id");
-  c.header("Deprecation", "true");
-  c.header("Sunset", "Wed, 01 Jul 2026 00:00:00 GMT");
-  c.header("Link", `</users/${id}>; rel=\"successor-version\"`);
-  return c.redirect(`/users/${id}`, 308);
+user.get('/me', (c) => {
+  // In production, this would use Cloudflare Access headers via @goldshore/auth
+  return c.json({
+    id: 'user_123',
+    email: 'admin@goldshore.ai',
+    role: 'admin'
+  });
 });
-
-export default user;

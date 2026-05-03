@@ -36,7 +36,7 @@ let recentDeploys: Array<{ label: string; time: string; env: string; ok: boolean
 
 if (runtime?.env?.API_SERVICE) {
   try {
-    const res = await runtime.env.API_SERVICE.fetch('https://internal/health');
+    const res = await runtime.env.API_SERVICE.fetch('https://api.goldshore.ai/health');
     if (res.ok) {
       const json = await res.json() as typeof systemStatus;
       systemStatus = json;

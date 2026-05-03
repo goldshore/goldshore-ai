@@ -1,3 +1,16 @@
 name = "gs-web"
 compatibility_date = "2026-04-18"
-pages_build_output_dir = "./dist"
+pages_build_output_dir = "dist/client"
+
+[[kv_namespaces]]
+binding = "SESSION"
+id = "gs_web_session_kv"
+
+[[r2_buckets]]
+binding = "GS_APP_ASSETS"
+bucket_name = "gs-assets"
+
+[vars]
+ENV = "production"
+PUBLIC_API = "https://api.goldshore.ai"
+PUBLIC_GATEWAY = "https://gw.goldshore.ai"

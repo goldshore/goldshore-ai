@@ -73,13 +73,6 @@ type ApiResponseBody = {
   redirectTo?: string;
 };
 
-const jsonResponse = (status: number, body: ApiResponseBody) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      'content-type': 'application/json; charset=utf-8',
-    },
-  });
 
 const requestExpectsJson = (request: Request) => {
   const accept = request.headers.get('accept') ?? '';
@@ -482,7 +475,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
     dedupeKey: extractString(formData.get('dedupeKey')),
   };
 
-  const env = locals.runtime?.env as Env | undefined;
 
   if (isSpam) {
     console.info('contact_submission_spam_blocked', {
