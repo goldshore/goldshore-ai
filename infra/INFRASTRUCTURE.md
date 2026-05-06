@@ -17,11 +17,17 @@
 
 ---
 
-## Workers (canonical set — 11 active)
+## Workers (canonical set — 17 active)
 
 | Worker name | Purpose | Domains served | Fail policy |
 |---|---|---|---|
 | `gs-platform` | Main gateway — auth, CORS, routing hub | goldshore.ai, goldshore.org, armsway.com | Fail closed on auth routes |
+| `gs-api` | API layer | api.goldshore.ai | Fail closed |
+| `gs-admin` | Admin dashboard worker | admin.goldshore.ai | Fail closed |
+| `gs-gateway` | Legacy gateway (to be superseded by gs-platform) | — | Fail closed |
+| `gs-agent` | AI agent worker | — | Fail closed |
+| `gs-control` | Build control service | — | Fail closed |
+| `goldshore-org` | goldshore.org site | goldshore.org | Fail open (public) |
 | `banproof-me` | Proof-of-Agency security layer, contact forms, PoA workflow | banproof.me | Fail closed |
 | `banproof-email-router` | Email routing for banproof | — | Fail closed |
 | `gs-core-worker` | Gearswipe/StellarAIO ATC trigger, signals consumer | — | Fail closed |

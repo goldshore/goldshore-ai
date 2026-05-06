@@ -62,13 +62,38 @@ const ALLOWED_ORIGINS = [
 app.use("*", secureHeaders());
 
 // ---------------------------------------------------------------------------
+// CORS — applied early so error responses always include CORS headers
+// ---------------------------------------------------------------------------
+app.use(
+  "*",
+  cors({
+    origin: (origin) => {
+      if (!origin) return null;
+      return ALLOWED_ORIGINS.includes(origin) ? origin : null;
+    },
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization", "CF-Access-Jwt-Assertion"],
+    credentials: true,
+    maxAge: 600,
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// Helper: returns true for hosts that require authentication
+// ---------------------------------------------------------------------------
+function isProtectedHost(hostname: string): boolean {
+  return hostname === "admin.goldshore.ai";
+}
+
+// ---------------------------------------------------------------------------
 // CRITICAL: Fail closed when CLOUDFLARE_ACCESS_AUDIENCE is not set.
-// Without audience validation, any CF Access token from any app in the
-// account could be used to access protected routes — an auth bypass.
+// Only enforced on protected (admin) hosts — public domains are fail-open.
 // ---------------------------------------------------------------------------
 app.use("*", async (c, next) => {
-  // Allow health / root to pass even without audience config
-  if (c.req.path === "/" || c.req.path === "/health") {
+  const host = new URL(c.req.url).hostname.toLowerCase();
+
+  // Public hosts and common health routes skip the audience guard
+  if (!isProtectedHost(host) || c.req.path === "/" || c.req.path === "/health") {
     return next();
   }
 
@@ -91,28 +116,14 @@ app.use("*", async (c, next) => {
 });
 
 // ---------------------------------------------------------------------------
-// CORS
-// ---------------------------------------------------------------------------
-app.use(
-  "*",
-  cors({
-    origin: (origin) => {
-      if (!origin) return null;
-      return ALLOWED_ORIGINS.includes(origin) ? origin : null;
-    },
-    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization", "CF-Access-Jwt-Assertion"],
-    credentials: true,
-    maxAge: 600,
-  }),
-);
-
-// ---------------------------------------------------------------------------
-// Auth middleware — enforces JWT verification, fails closed
+// Auth middleware — enforces JWT verification on protected hosts only
 // ---------------------------------------------------------------------------
 app.use("*", async (c, next) => {
-  // Public routes bypass auth
+  const host = new URL(c.req.url).hostname.toLowerCase();
+
+  // Public hosts and public routes bypass auth entirely
   if (
+    !isProtectedHost(host) ||
     c.req.path === "/" ||
     c.req.path === "/health" ||
     c.req.method === "OPTIONS"

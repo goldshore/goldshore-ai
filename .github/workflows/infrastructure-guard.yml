@@ -28,8 +28,8 @@ jobs:
 
       - name: Verify all wrangler configs reference canonical worker names
         run: |
-          # Extract canonical worker names from INFRASTRUCTURE.md
-          CANONICAL_WORKERS=$(grep -oP '`gs-platform`|`banproof-me`|`banproof-email-router`|`gs-core-worker`|`gs-signals-prod`|`gs-mail`|`gs-web`|`gs-web-staging`|`rmarston-com`|`goldshore-ai`|`gs-todo`' infra/INFRASTRUCTURE.md | sort -u | tr -d '`')
+          # Dynamically extract canonical worker names from the Workers table in INFRASTRUCTURE.md
+          CANONICAL_WORKERS=$(sed -n '/^## Workers/,/^---$/p' infra/INFRASTRUCTURE.md | grep -oP '^\| `\K[a-z0-9_-]+(?=` \|)' | sort -u)
 
           echo "Canonical workers:"
           echo "$CANONICAL_WORKERS"
