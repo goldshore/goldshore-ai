@@ -14,17 +14,21 @@ export const DEPRECATED_SECURITY_SECRET_ALIASES: Record<string, readonly string[
 
 type EnvLike = Record<string, unknown>;
 
+function isMissingSecuritySecretValue(value: unknown) {
+  return value === undefined || value === null || value === '';
+}
+
 export function getSecuritySecretReport(env: EnvLike) {
   const missing = CANONICAL_SECURITY_SECRETS.filter((key) => {
     const value = env[key];
-    return value === undefined || value === null || value === '';
+    return isMissingSecuritySecretValue(value);
   });
 
   const aliasConflicts: Array<{ canonical: string; alias: string }> = [];
   for (const [canonical, aliases] of Object.entries(DEPRECATED_SECURITY_SECRET_ALIASES)) {
-    if (env[canonical]) continue;
+    if (!isMissingSecuritySecretValue(env[canonical])) continue;
     for (const alias of aliases) {
-      if (env[alias]) {
+      if (!isMissingSecuritySecretValue(env[alias])) {
         aliasConflicts.push({ canonical, alias });
       }
     }
