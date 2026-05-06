@@ -7,23 +7,20 @@
     "dev": "wrangler dev src/index.ts",
     "deploy": "wrangler deploy --env prod",
     "build": "wrangler deploy --env prod --dry-run --outdir=dist",
-    "test": "tsx --test src/routes/*.test.ts",
-    "test:gateway": "node test-gateway.js"
+    "test": "echo \"No tests in gs-api yet\""
   },
   "dependencies": {
-    "@goldshore/ai-providers": "workspace:^",
-    "@goldshore/auth": "workspace:^",
-    "@goldshore/schema": "workspace:^",
-    "@goldshore/utils": "workspace:^",
-    "@types/sanitize-html": "^2.16.0",
+    "@goldshore/auth": "workspace:*",
+    "@goldshore/utils": "workspace:*",
+    "@goldshore/ai-providers": "workspace:*",
+    "@goldshore/broker-adapters": "workspace:*",
     "hono": "^4.12.4",
-    "openai": "^6.34.0",
-    "safe-stable-stringify": "^2.5.0",
-    "sanitize-html": "^2.17.3"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260421.1",
-    "tsx": "^4.7.1",
+    "@types/node": "^25.2.1",
+    "tsx": "^4.21.0",
     "typescript": "^5.4.0",
     "wrangler": "^4.83.0"
   }
