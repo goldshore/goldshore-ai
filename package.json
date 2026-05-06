@@ -34,6 +34,7 @@
     "build:api": "turbo run build --filter=@goldshore/gs-api",
     "build:control": "turbo run build --filter=@goldshore/gs-control",
     "preflight:security-secrets": "node scripts/preflight-security-secrets.mjs"
+    "check:banproof-bindings": "node scripts/check-banproof-bindings.mjs"
   },
   "devDependencies": {
     "@astrojs/mdx": "^4.0.8",

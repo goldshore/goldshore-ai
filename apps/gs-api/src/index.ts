@@ -46,6 +46,7 @@ const app = new Hono<{
 }>();
 
 const requiredBindings = ['DB', 'ASSETS', 'AI'] as const;
+const expectedD1Binding = 'DB' as const;
 const requiredSecrets = [
   'JWT_SECRET',
   'STRIPE_API_KEY',
@@ -97,6 +98,12 @@ app.use('*', async (c, next) => {
   if (c.env.ENV === 'production') {
     assertSecuritySecrets(c.env as Record<string, unknown>, c.env.ENV);
   }
+  if (!c.env[expectedD1Binding]) {
+    throw new Error(
+      `CRITICAL_MISSING_D1_BINDING: Expected D1 binding "${expectedD1Binding}" is undefined. Verify [[d1_databases]] binding in wrangler.toml.`,
+    );
+  }
+
   for (const key of [...requiredBindings, ...requiredSecrets]) {
     if (!c.env[key]) {
       throw new Error(`CRITICAL_MISSING: ${key}. Terminating.`);
