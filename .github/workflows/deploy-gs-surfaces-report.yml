@@ -1,0 +1,71 @@
+name: Deploy GS Surfaces Report
+# This workflow keeps gs-web and gs-admin independently deployed while generating
+# one release-parity report for operators.
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_ref:
+        description: Git ref to build and deploy for both surfaces.
+        required: false
+        type: string
+      release_label:
+        description: Optional shared release label for parity tracking.
+        required: false
+        type: string
+
+jobs:
+  deploy-web:
+    name: Deploy gs-web
+    uses: ./.github/workflows/deploy-gs-web.yml
+    with:
+      deploy_ref: ${{ inputs.deploy_ref }}
+      release_label: ${{ inputs.release_label }}
+    secrets: inherit
+
+  deploy-admin:
+    name: Deploy gs-admin
+    uses: ./.github/workflows/deploy-gs-admin.yml
+    with:
+      deploy_ref: ${{ inputs.deploy_ref }}
+      release_label: ${{ inputs.release_label }}
+    secrets: inherit
+
+  release-parity-report:
+    name: Publish release parity report
+    runs-on: ubuntu-latest
+    needs:
+      - deploy-web
+      - deploy-admin
+    steps:
+      - name: Summarize deployment parity
+        run: |
+          set -euo pipefail
+
+          web_sha='${{ needs.deploy-web.outputs.deployed_sha }}'
+          admin_sha='${{ needs.deploy-admin.outputs.deployed_sha }}'
+          web_ts='${{ needs.deploy-web.outputs.build_timestamp }}'
+          admin_ts='${{ needs.deploy-admin.outputs.build_timestamp }}'
+          web_label='${{ needs.deploy-web.outputs.release_label }}'
+          admin_label='${{ needs.deploy-admin.outputs.release_label }}'
+
+          parity_status='Aligned'
+          if [[ "$web_sha" != "$admin_sha" ]]; then
+            parity_status='Diverged'
+          fi
+
+          {
+            echo "### GS surface release parity"
+            echo "- Status: **${parity_status}**"
+            echo "- gs-web commit: \`${web_sha}\`"
+            echo "- gs-admin commit: \`${admin_sha}\`"
+            echo "- gs-web build timestamp: \`${web_ts}\`"
+            echo "- gs-admin build timestamp: \`${admin_ts}\`"
+            echo "- gs-web release label: \`${web_label:-not set}\`"
+            echo "- gs-admin release label: \`${admin_label:-not set}\`"
+            echo ""
+            echo "Both deploys remain independent Cloudflare Pages releases."
+          } >> "$GITHUB_STEP_SUMMARY"
