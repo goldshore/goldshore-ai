@@ -1,103 +1,106 @@
+import type { Context, Next } from "hono";
 import { verifyAccessWithClaims, type Env } from "@goldshore/auth";
 
 /**
  * Auth Middleware for gs-gateway
  * Purpose: Enforce JWT token validation and fail CLOSED on auth failure
- * 
+ *
  * SECURITY: This middleware MUST check the return value from verifyAccessWithClaims
  * and BLOCK requests that fail authentication.
- * 
+ *
  * Public routes (health, /):
- *   - These routes BYPASS auth (as intended)
+ *   - These routes BYPASS auth (fail open by design — no sensitive data)
  * Protected routes (everything else):
  *   - Token MUST be present and valid
  *   - Invalid tokens → 401 Unauthorized (fail closed)
  *   - Token without audience claim → 401 if CLOUDFLARE_ACCESS_AUDIENCE is set
+ * Stripe routes (/stripe/*):
+ *   - STRIPE_SECRET_KEY must be set; requests are rejected (503) if missing (fail closed)
  */
 
 export interface AuthMiddlewareEnv extends Env {
   CLOUDFLARE_ACCESS_AUDIENCE?: string;
   CLOUDFLARE_TEAM_DOMAIN?: string;
+  STRIPE_SECRET_KEY?: string;
+  ENV?: string;
 }
 
 const PUBLIC_PATHS = ["/", "/health", "/status"];
 
-/**
- * Check if a path is public (does not require authentication)
- */
+/** Paths that are public and bypass JWT auth (fail open). */
 function isPublicPath(pathname: string): boolean {
-  return PUBLIC_PATHS.includes(pathname) || pathname.match(/^\/health\//);
+  return PUBLIC_PATHS.includes(pathname) || pathname.startsWith("/health/");
+}
+
+/** Paths that handle Stripe operations and require STRIPE_SECRET_KEY (fail closed). */
+function isStripePath(pathname: string): boolean {
+  return pathname.startsWith("/stripe/") || pathname.startsWith("/webhooks/stripe");
 }
 
 /**
- * Auth middleware — enforces JWT verification and fails closed
- * 
- * @param req Request from client
- * @param env Cloudflare environment bindings
- * @param next Next handler in chain
- * @returns Response (401 if auth fails, otherwise proceeds to next handler)
+ * Auth middleware — Hono-style (c, next).
+ *
+ * - Public paths: proceed without auth (fail open).
+ * - Stripe paths: reject with 503 when STRIPE_SECRET_KEY is absent (fail closed).
+ * - All other paths: require a valid CF-Access JWT (fail closed on missing/invalid token).
  */
 export async function authMiddleware(
-  req: Request,
-  env: AuthMiddlewareEnv,
-  next: () => Promise<Response>,
-): Promise<Response> {
-  const url = new URL(req.url);
-  const pathname = url.pathname;
+  c: Context<{ Bindings: AuthMiddlewareEnv }>,
+  next: Next,
+): Promise<Response | void> {
+  const pathname = new URL(c.req.url).pathname;
 
-  // Allow public paths without authentication
+  // Public routes bypass authentication (fail open).
   if (isPublicPath(pathname)) {
     return next();
   }
 
-  // For protected routes: Verify JWT token
-  const claims = await verifyAccessWithClaims(req, env);
+  // Stripe routes require the secret to be present (fail closed).
+  if (isStripePath(pathname)) {
+    if (!c.env.STRIPE_SECRET_KEY) {
+      return c.json(
+        {
+          error: "Service Unavailable",
+          message: "Payment processing is not configured",
+          code: "STRIPE_UNAVAILABLE",
+        },
+        503,
+      );
+    }
+  }
 
-  // SECURITY: If auth fails, return 401 Unauthorized
+  // All other protected routes: verify CF-Access JWT (fail closed).
+  const claims = await verifyAccessWithClaims(c.req.raw, c.env);
+
   if (!claims) {
-    return new Response(
-      JSON.stringify({
+    return c.json(
+      {
         error: "Unauthorized",
         message: "Valid CF-Access-Jwt-Assertion header required",
         code: "AUTH_FAILED",
-      }),
-      {
-        status: 401,
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-        },
       },
+      401,
     );
   }
 
-  // Auth passed — continue to next handler
   return next();
 }
 
 /**
- * Fail-closed guard: Ensures CLOUDFLARE_ACCESS_AUDIENCE is set in production
- * 
- * In production, audience validation is REQUIRED to prevent token reuse.
- * If this environment variable is missing, the worker should not accept requests.
+ * Fail-closed guard: Ensures CLOUDFLARE_ACCESS_AUDIENCE is set in production.
+ *
+ * In production, audience validation is REQUIRED to prevent token reuse across apps.
  */
-export async function validateAudienceSecretExists(
-  env: AuthMiddlewareEnv,
-): Promise<boolean> {
+export function validateAudienceSecretExists(env: AuthMiddlewareEnv): boolean {
   if (env.ENV !== "production") {
-    return true; // Dev/preview can skip this check
+    return true;
   }
 
-  // In production, CLOUDFLARE_ACCESS_AUDIENCE MUST be set
-  const hasAudience = env.CLOUDFLARE_ACCESS_AUDIENCE !== undefined;
-
-  if (!hasAudience) {
+  if (!env.CLOUDFLARE_ACCESS_AUDIENCE) {
     console.error(
-      "CRITICAL: CLOUDFLARE_ACCESS_AUDIENCE not set in production. Audience validation is disabled.",
+      "CRITICAL: CLOUDFLARE_ACCESS_AUDIENCE not set in production. Refusing to start.",
     );
-    // In a real scenario, you might return false to block requests
-    // For now, we log the warning but allow the request to proceed
-    // (assuming the secret is set but not visible in this context)
+    return false;
   }
 
   return true;
