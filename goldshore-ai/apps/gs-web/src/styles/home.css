@@ -1,0 +1,215 @@
+@import './gs-effects.css';
+
+.home-hero,
+.home-features,
+.blueprint-section {
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(circle at top left, rgba(88, 130, 255, 0.18), transparent 55%),
+    radial-gradient(circle at 90% 10%, rgba(212, 179, 93, 0.16), transparent 45%),
+    linear-gradient(130deg, rgba(3, 8, 22, 0.95), rgba(8, 13, 28, 0.9) 45%, rgba(4, 6, 16, 0.96));
+  box-shadow: inset 0 0 140px rgba(0, 0, 0, 0.65);
+}
+
+.home-hero::after,
+.home-features::after,
+.blueprint-section::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(100, 130, 200, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(100, 130, 200, 0.1) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mix-blend-mode: screen;
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.home-hero::before,
+.home-features::before,
+.blueprint-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 20%, rgba(255, 255, 255, 0.12), transparent 60%);
+  opacity: 0.6;
+  animation: gradient-drift 18s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.blueprint-section {
+  background: radial-gradient(circle at 15% 20%, rgba(88, 130, 255, 0.22), transparent 55%),
+    radial-gradient(circle at 80% 10%, rgba(212, 179, 93, 0.25), transparent 50%),
+    linear-gradient(140deg, rgba(4, 8, 20, 0.98), rgba(10, 16, 30, 0.94) 50%, rgba(5, 7, 18, 0.98));
+  box-shadow: inset 0 0 160px rgba(0, 0, 0, 0.72), inset 0 0 60px rgba(26, 39, 74, 0.6);
+}
+
+.blueprint-section::after {
+  background-image: linear-gradient(rgba(110, 160, 240, 0.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(110, 160, 240, 0.12) 1px, transparent 1px),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 55%);
+  background-size: 48px 48px, 48px 48px, 100% 100%;
+  opacity: 0.55;
+}
+
+.parallax-layer {
+  position: absolute;
+  inset: -20% -10%;
+  pointer-events: none;
+  opacity: 0.55;
+}
+
+.layer-grid {
+  background-image: linear-gradient(rgba(120, 180, 255, 0.22) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(120, 180, 255, 0.18) 1px, transparent 1px);
+  background-size: 120px 120px;
+  filter: drop-shadow(0 0 24px rgba(88, 130, 255, 0.4));
+}
+
+.layer-blueprint {
+  background-image: linear-gradient(rgba(136, 196, 255, 0.3) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(136, 196, 255, 0.2) 1px, transparent 1px);
+  background-size: 140px 140px;
+  opacity: 0.5;
+  filter: drop-shadow(0 0 18px rgba(100, 160, 255, 0.45));
+}
+
+.layer-glow {
+  background: radial-gradient(circle at 40% 30%, rgba(190, 224, 255, 0.36), transparent 45%),
+    radial-gradient(circle at 65% 70%, rgba(212, 179, 93, 0.3), transparent 45%);
+  filter: blur(2px);
+}
+
+.layer-sheen {
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0) 45%),
+    linear-gradient(300deg, rgba(186, 150, 78, 0.22) 0%, transparent 55%);
+  mix-blend-mode: screen;
+  opacity: 0.65;
+}
+
+.layer-shadow {
+  background: radial-gradient(circle at 50% 60%, rgba(0, 0, 0, 0.6), transparent 65%);
+  opacity: 0.6;
+}
+
+.layer-orbit {
+  background: conic-gradient(from 140deg, rgba(255, 255, 255, 0.12), transparent 60%, rgba(255, 255, 255, 0.12));
+  mask-image: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.9), transparent 70%);
+  opacity: 0.5;
+}
+
+.home-hero .hero-content,
+.home-hero .hero-card,
+.blueprint-section .hero-content,
+.blueprint-section .hero-card,
+.blueprint-section .features-grid {
+  position: relative;
+  z-index: 2;
+}
+
+.home-hero h1,
+.blueprint-section h1,
+.blueprint-section h2 {
+  text-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+.home-hero .gs-card,
+.home-features .feature-card,
+.blueprint-section .glass-panel,
+.blueprint-section .gs-card {
+  background: linear-gradient(135deg, rgba(17, 24, 39, 0.92), rgba(10, 18, 30, 0.88));
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  box-shadow: 0 24px 60px rgba(2, 8, 23, 0.55), inset 0 0 30px rgba(120, 170, 255, 0.08);
+}
+
+.home-features {
+  padding: var(--gs-space-8) 0;
+}
+
+.home-features .feature-card {
+  padding: var(--gs-space-5);
+  border-radius: var(--gs-radius-md);
+  position: relative;
+  z-index: 1;
+}
+
+.lux-card {
+  position: relative;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(180, 200, 255, 0.22);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.65), inset 0 0 30px rgba(128, 178, 255, 0.12);
+  overflow: hidden;
+}
+
+.lux-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0.08) 0%, transparent 45%);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.lux-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(214, 190, 120, 0.35);
+  border-radius: inherit;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.home-features .feature-card h3 {
+  background: linear-gradient(90deg, #f8fafc, #cbd5f5);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@keyframes gradient-drift {
+  0% {
+    transform: translate3d(-2%, -1%, 0);
+  }
+  50% {
+    transform: translate3d(2%, 1%, 0);
+  }
+  100% {
+    transform: translate3d(-2%, -1%, 0);
+  }
+}
+
+@media (max-width: 900px) {
+  .home-hero,
+  .home-features,
+  .blueprint-section {
+    box-shadow: inset 0 0 90px rgba(0, 0, 0, 0.6);
+  }
+
+  .parallax-layer {
+    inset: -10% -5%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-hero::before,
+  .home-features::before,
+  .blueprint-section::before {
+    animation: none;
+  }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}

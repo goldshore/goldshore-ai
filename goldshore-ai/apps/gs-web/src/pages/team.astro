@@ -1,0 +1,36 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+export const prerender = true;
+
+const team = [
+  { name: 'Robert Marston', title: 'Director of Engineering', focus: 'High-scale infrastructure and developer experience.' },
+  { name: 'Marin Reyes', title: 'Founder & Systems Lead', focus: 'Automation-first architectures.' },
+  { name: 'Alex Kim', title: 'Security & Reliability', focus: 'Zero-trust enforcement and SLOs.' },
+  { name: 'Priya Nair', title: 'AI Engineering', focus: 'Model evaluation and deployment safety.' },
+];
+---
+<BaseLayout title="Team | GoldShore" description="Meet the people building GoldShore.">
+  <section class="gs-hero">
+    <div>
+      <h1>The team behind the controls</h1>
+      <p>Engineers, operators, and designers who care deeply about trustworthy automation and resilient experiences.</p>
+    </div>
+    <div class="gs-card">
+      <h3 class="section-title"><span>◎</span>How we work</h3>
+      <p>We pair rapid iteration with strong guardrails, validating every release against service levels and usability checks.</p>
+    </div>
+  </section>
+
+  <section class="gs-section">
+    <div class="gs-grid columns-3">
+      {team.map((member) => (
+        <article class="gs-card">
+          <h3>{member.name}</h3>
+          <p class="gs-helper">{member.title}</p>
+          <p>{member.focus}</p>
+        </article>
+      ))}
+    </div>
+  </section>
+</BaseLayout>

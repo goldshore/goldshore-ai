@@ -1,0 +1,13 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--gs-font-body, system-ui, sans-serif);
+  background: var(--gs-color-bg, #050914);
+  color: var(--gs-color-text, #e4ecfa);
+}
+
+a { color: inherit; text-decoration: none; }
+button, input, select, textarea { font-family: inherit; }
