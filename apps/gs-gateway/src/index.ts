@@ -11,9 +11,7 @@ interface GatewayEnv {
   // Core service bindings
   API_SERVICE?: Fetcher;
   AGENT?: Fetcher;
-  // Phase 2 service bindings (joinery)
-  SECURITY?: Fetcher;   // banproof-me security layer
-  SIGNALS?: Fetcher;    // gs-signals-prod trading signals worker
+  SECURITY_CHECK?: Fetcher;
   // KV
   AI_CACHE?: KVNamespace;
   GS_CONFIG?: KVNamespace;
@@ -30,6 +28,30 @@ interface GatewayEnv {
   API_ORIGIN?: string;
   ACCESS_CLIENT_SECRET?: string;
   ENV?: string;
+}
+
+const SECURITY_TIMEOUT_MS = 250;
+const SIGNALS_TIMEOUT_MS = 1200;
+const NON_CRITICAL_SIGNAL_PATHS = ["/signals", "/telemetry", "/events"] as const;
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${label}_TIMEOUT`)), timeoutMs);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
+function isNonCriticalSignalsPath(pathname: string): boolean {
+  return NON_CRITICAL_SIGNAL_PATHS.some((base) => pathname === base || pathname.startsWith(`${base}/`));
 }
 
 const app = new Hono<{ Bindings: GatewayEnv }>();
@@ -79,8 +101,81 @@ app.use(
 
 // ── Auth (uses existing @goldshore/auth verify.ts) ─────────
 // authMiddleware skips /health, /, OPTIONS automatically.
-// Fails closed if CLOUDFLARE_ACCESS_AUDIENCE is not set.
-app.use("*", authMiddleware);
+// Audience validation is enforced only when CLOUDFLARE_ACCESS_AUDIENCE is set.
+app.use("*", (c, next) => authMiddleware(c.req.raw, c.env, next));
+
+app.use("*", async (c, next) => {
+  const pathname = new URL(c.req.url).pathname;
+  const isHealthPath = pathname === "/health";
+  const isSignalsPath = isNonCriticalSignalsPath(pathname);
+
+  if (isHealthPath) {
+    return next();
+  }
+
+  if (!c.env.SECURITY_CHECK) {
+    if (isSignalsPath) {
+      console.warn(JSON.stringify({
+        event: "security_check_skipped",
+        policy: "fail-open",
+        reason: "missing_binding",
+        path: pathname,
+      }));
+      return next();
+    }
+
+    return c.json({
+      error: "SECURITY_CHECK_UNAVAILABLE",
+      message: "security check service binding missing",
+      policy: "fail-closed",
+    }, 503);
+  }
+
+  try {
+    const timeoutMs = isSignalsPath ? SIGNALS_TIMEOUT_MS : SECURITY_TIMEOUT_MS;
+    const checkResponse = await withTimeout(
+      c.env.SECURITY_CHECK.fetch(c.req.raw.clone()),
+      timeoutMs,
+      "SECURITY_CHECK",
+    );
+
+    if (!checkResponse.ok) {
+      if (isSignalsPath) {
+        console.warn(JSON.stringify({
+          event: "security_check_non_ok",
+          policy: "fail-open",
+          status: checkResponse.status,
+          path: pathname,
+        }));
+        return next();
+      }
+
+      return c.json({
+        error: "SECURITY_CHECK_FAILED",
+        message: "security policy rejected request",
+        policy: "fail-closed",
+      }, 403);
+    }
+  } catch (error) {
+    if (isSignalsPath) {
+      console.warn(JSON.stringify({
+        event: "security_check_error",
+        policy: "fail-open",
+        path: pathname,
+        error: error instanceof Error ? error.message : String(error),
+      }));
+      return next();
+    }
+
+    return c.json({
+      error: "SECURITY_CHECK_ERROR",
+      message: "security check service unavailable",
+      policy: "fail-closed",
+    }, 503);
+  }
+
+  return next();
+});
 
 // ── Public routes ──────────────────────────────────────────
 app.get("/",      (c) => c.json({ service: "gs-gateway", ok: true }));
