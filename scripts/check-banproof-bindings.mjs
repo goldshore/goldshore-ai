@@ -10,25 +10,85 @@ const required = {
   secrets: ['OPENAI_API_KEY', 'POA_TOKEN', 'AUDIT_TOKEN'],
 };
 
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function getProdSection(toml) {
+  const prodHeader = /^\[env\.prod\]\s*$/m;
+  const headerMatch = prodHeader.exec(toml);
+  if (!headerMatch) {
+    return null;
+  }
+
+  const start = headerMatch.index + headerMatch[0].length;
+  const rest = toml.slice(start);
+  const nextSectionMatch = /^\[(?!env\.prod\])[\w.-]+\](?:\s*$)|^\[\[.*\]\]\s*$/m.exec(rest);
+  const end = nextSectionMatch ? start + nextSectionMatch.index : toml.length;
+  return toml.slice(start, end);
+}
+
+function hasKeyValue(section, key, value) {
+  const pattern = new RegExp(
+    String.raw`(^|\n)\s*${escapeRegExp(key)}\s*=\s*(['"])${escapeRegExp(value)}\2(?=\s*(#.*)?(?:\n|$))`,
+    'm',
+  );
+  return pattern.test(section);
+}
+
+function hasSecretName(section, secretName) {
+  const pattern = new RegExp(
+    String.raw`(^|\n)\s*(?:secret|name|binding)\s*=\s*(['"])${escapeRegExp(secretName)}\1(?=\s*(#.*)?(?:\n|$))`,
+    'm',
+  );
+  return pattern.test(section) || section.includes(secretName);
+}
+
 const errors = [];
 if (!fs.existsSync(wranglerPath)) {
   errors.push(`Missing required Wrangler file: ${wranglerPath}`);
 } else {
   const wrangler = fs.readFileSync(wranglerPath, 'utf8');
+  const prodSection = getProdSection(wrangler);
 
-  const mustContain = [
-    `binding = "${required.d1.binding}"`,
-    `database_name = "${required.d1.database_name}"`,
-    ...required.kv_namespaces.map((key) => `binding = "${key}"`),
-    ...required.queues.map((key) => `binding = "${key}"`),
-    ...required.services.map((svc) => `binding = "${svc.binding}"`),
-    ...required.services.map((svc) => `service = "${svc.service}"`),
-    ...required.secrets.map((key) => key),
-  ];
+  if (!prodSection) {
+    errors.push('Missing required [env.prod] section in Wrangler file.');
+  } else {
+    if (!hasKeyValue(prodSection, 'binding', required.d1.binding)) {
+      errors.push(`Missing or renamed required production D1 binding: ${required.d1.binding}`);
+    }
+    if (!hasKeyValue(prodSection, 'database_name', required.d1.database_name)) {
+      errors.push(`Missing or renamed required production D1 database_name: ${required.d1.database_name}`);
+    }
 
-  for (const token of mustContain) {
-    if (!wrangler.includes(token)) {
-      errors.push(`Missing or renamed required production binding token: ${token}`);
+    for (const key of required.kv_namespaces) {
+      if (!hasKeyValue(prodSection, 'binding', key)) {
+        errors.push(`Missing or renamed required production KV binding: ${key}`);
+      }
+    }
+
+    for (const key of required.queues) {
+      if (!hasKeyValue(prodSection, 'binding', key)) {
+        errors.push(`Missing or renamed required production queue binding: ${key}`);
+      }
+    }
+
+    for (const svc of required.services) {
+      const servicePattern = new RegExp(
+        String.raw`\[\[\s*env\.prod\.services\s*\]\][\s\S]*?^\s*binding\s*=\s*(['"])${escapeRegExp(svc.binding)}\1[\s\S]*?^\s*service\s*=\s*(['"])${escapeRegExp(svc.service)}\2`,
+        'm',
+      );
+      if (!servicePattern.test(prodSection)) {
+        errors.push(
+          `Missing or renamed required production service binding: ${svc.binding} -> ${svc.service}`,
+        );
+      }
+    }
+
+    for (const key of required.secrets) {
+      if (!hasSecretName(prodSection, key)) {
+        errors.push(`Missing or renamed required production secret: ${key}`);
+      }
     }
   }
 }
