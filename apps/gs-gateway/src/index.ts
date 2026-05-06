@@ -8,13 +8,22 @@ interface GatewayEnv {
   // Auth (required by @goldshore/auth verify.ts)
   CLOUDFLARE_ACCESS_AUDIENCE?: string;
   CLOUDFLARE_TEAM_DOMAIN?: string;
-  // Service bindings
+  // Core service bindings
   API_SERVICE?: Fetcher;
   AGENT?: Fetcher;
   SECURITY_CHECK?: Fetcher;
   // KV
   AI_CACHE?: KVNamespace;
+  GS_CONFIG?: KVNamespace;
   GATEWAY_KV?: KVNamespace;
+  // D1
+  DB?: D1Database;
+  // R2
+  ASSETS?: R2Bucket;
+  // Queue producers
+  MAIL_QUEUE?: Queue;   // gs-mail-jobs queue
+  // Stripe (secret — never logged, never returned in responses)
+  STRIPE_SECRET_KEY?: string;
   // Config
   API_ORIGIN?: string;
   ACCESS_CLIENT_SECRET?: string;
@@ -25,18 +34,19 @@ const SECURITY_TIMEOUT_MS = 250;
 const SIGNALS_TIMEOUT_MS = 1200;
 const NON_CRITICAL_SIGNAL_PATHS = ["/signals", "/telemetry", "/events"] as const;
 
-function withTimeout<T>(
-  operation: (signal: AbortSignal) => Promise<T>,
-  timeoutMs: number,
-  label: string,
-): Promise<T> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => {
-    controller.abort(new DOMException(`${label}_TIMEOUT`, "AbortError"));
-  }, timeoutMs);
-
-  return operation(controller.signal).finally(() => {
-    clearTimeout(timer);
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${label}_TIMEOUT`)), timeoutMs);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
   });
 }
 
@@ -46,19 +56,29 @@ function isNonCriticalSignalsPath(pathname: string): boolean {
 
 const app = new Hono<{ Bindings: GatewayEnv }>();
 
-const requiredBindings = ["API_SERVICE", "AI_CACHE"] as const;
-const requiredSecrets  = ["ACCESS_CLIENT_SECRET"] as const;
-
 // ── Security headers ───────────────────────────────────────
 app.use("*", secureHeaders());
 
 // ── Startup binding guard (production only) ────────────────
+// Fail CLOSED: hard-stop (503) when critical bindings/secrets are absent.
+// STRIPE_SECRET_KEY absence is enforced per-request in authMiddleware (fail closed).
 app.use("*", async (c, next) => {
   if (c.env.ENV === "production") {
-    for (const key of [...requiredBindings, ...requiredSecrets]) {
-      if (!c.env[key]) {
-        throw new Error(`CRITICAL_MISSING: ${key}. Terminating.`);
-      }
+    // CRITICAL: CLOUDFLARE_ACCESS_AUDIENCE must be set in production.
+    // Without it, JWT audience verification is skipped — tokens from other
+    // CF Access applications would be accepted (auth bypass).
+    if (!c.env.CLOUDFLARE_ACCESS_AUDIENCE) {
+      console.error(
+        "CRITICAL: CLOUDFLARE_ACCESS_AUDIENCE is not set. Refusing to serve requests.",
+      );
+      return c.json(
+        {
+          error: "Service Unavailable",
+          message: "Auth configuration incomplete",
+          code: "AUDIENCE_MISSING",
+        },
+        503,
+      );
     }
   }
   await next();
@@ -81,12 +101,17 @@ app.use(
 
 // ── Auth (uses existing @goldshore/auth verify.ts) ─────────
 // authMiddleware skips /health, /, OPTIONS automatically.
-// Fails closed if CLOUDFLARE_ACCESS_AUDIENCE is not set.
+// Audience validation is enforced only when CLOUDFLARE_ACCESS_AUDIENCE is set.
 app.use("*", (c, next) => authMiddleware(c.req.raw, c.env, next));
 
 app.use("*", async (c, next) => {
   const pathname = new URL(c.req.url).pathname;
+  const isHealthPath = pathname === "/health";
   const isSignalsPath = isNonCriticalSignalsPath(pathname);
+
+  if (isHealthPath) {
+    return next();
+  }
 
   if (!c.env.SECURITY_CHECK) {
     if (isSignalsPath) {
