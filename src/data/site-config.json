@@ -1,0 +1,16 @@
+{
+  "cta": {
+    "primary": "Start the Engagement",
+    "secondary": "Contact the Team",
+    "tertiary": "Open Developer Hub"
+  },
+  "featureFlags": {
+    "homepageMicroMetrics": true,
+    "servicePanels": true,
+    "serviceCaseStudies": true,
+    "aboutCredibilityStrip": true,
+    "contactGuidedFields": true,
+    "riskRadarExplainer": true,
+    "developerApiOverview": true
+  }
+}

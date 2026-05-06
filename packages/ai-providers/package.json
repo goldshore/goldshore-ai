@@ -1,0 +1,9 @@
+{
+  "name": "@goldshore/ai-providers",
+  "version": "0.0.1",
+  "main": "index.ts",
+  "type": "module",
+  "scripts": {
+    "test": "npx tsx --test **/*.test.ts"
+  }
+}

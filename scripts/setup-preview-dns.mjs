@@ -2,20 +2,19 @@
 /**
  * One-shot script: configure preview.goldshore.ai DNS + Cloudflare Pages custom domain.
  *
- * Required env vars:
- *   CLOUDFLARE_BUILD_API_TOKEN
- *   CLOUDFLARE_ACCOUNT_ID
- * Optional env vars:
- *   CLOUDFLARE_ZONE_ID (auto-resolved from zone name if omitted)
+ * Accepts either naming convention for env vars:
+ *   CLOUDFLARE_API_TOKEN  or  CF_API_TOKEN
+ *   CLOUDFLARE_ACCOUNT_ID or  CF_ACCOUNT_ID
+ *   CLOUDFLARE_ZONE_ID    or  CF_ZONE_ID  (optional — auto-resolved from domain if omitted)
  */
 
 const API = "https://api.cloudflare.com/client/v4";
-const TOKEN = process.env.CLOUDFLARE_BUILD_API_TOKEN;
-const ACCOUNT = process.env.CLOUDFLARE_ACCOUNT_ID;
-let ZONE = process.env.CLOUDFLARE_ZONE_ID;
+const TOKEN = process.env.CLOUDFLARE_API_TOKEN || process.env.CF_API_TOKEN;
+const ACCOUNT = process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_ID;
+let ZONE = process.env.CLOUDFLARE_ZONE_ID || process.env.CF_ZONE_ID;
 
 if (!TOKEN || !ACCOUNT) {
-  console.error("Missing required env vars: CLOUDFLARE_BUILD_API_TOKEN and CLOUDFLARE_ACCOUNT_ID. (CLOUDFLARE_ZONE_ID is optional; it will be auto-resolved if omitted.)");
+  console.error("Missing required env vars: set either CLOUDFLARE_API_TOKEN/CLOUDFLARE_ACCOUNT_ID or CF_API_TOKEN/CF_ACCOUNT_ID. (CLOUDFLARE_ZONE_ID/CF_ZONE_ID is optional; it will be auto-resolved if omitted.)");
   process.exit(1);
 }
 
@@ -67,8 +66,7 @@ function sanitizeErrorForLog(err) {
 }
 
 async function cf(path, init = {}) {
-  const url = `${API}${path}`;
-  const res = await fetch(url, {
+  const res = await fetch(`${API}${path}`, {
     ...init,
     headers: {
       "Authorization": `Bearer ${TOKEN}`,
@@ -76,20 +74,9 @@ async function cf(path, init = {}) {
       ...(init.headers || {}),
     },
   });
-  const bodyText = await res.text();
-  let json;
-  try {
-    json = JSON.parse(bodyText);
-  } catch {
-    json = null;
-  }
-
-  if (!res.ok) {
-    throw new Error(`Cloudflare API request failed: url=${url} status=${res.status} body=${bodyText}`);
-  }
-
-  if (!json || !json.success) {
-    throw new Error(`Cloudflare API logical failure: url=${url} status=${res.status} body=${bodyText}`);
+  const json = await res.json();
+  if (!json.success) {
+    throw new Error(`CF ${path} failed: ${JSON.stringify(json.errors)}`);
   }
   return json.result;
 }
@@ -104,7 +91,7 @@ async function resolveZoneId(domain) {
   if (zones.length > 1) {
     throw new Error(
       `Multiple Cloudflare zones found for ${domain} under account ${ACCOUNT}. ` +
-      "Refusing to choose arbitrarily. Please set CLOUDFLARE_ZONE_ID explicitly."
+      `Refusing to choose arbitrarily. Please set CLOUDFLARE_ZONE_ID or CF_ZONE_ID explicitly.`
     );
   }
   console.log(`  ✓ Zone ID: ${zones[0].id}`);

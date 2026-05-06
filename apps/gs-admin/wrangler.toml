@@ -1,15 +1,11 @@
 name = "gs-admin"
 compatibility_date = "2026-04-18"
-pages_build_output_dir = "dist/client"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "dist"
 
 [[kv_namespaces]]
 binding = "KV"
 id = "gs_admin_kv_001"
-
-[[d1_databases]]
-binding = "DB"
-database_name = "goldshore"
-database_id = "gs_db_001"
 
 [[services]]
 binding = "API_SERVICE"

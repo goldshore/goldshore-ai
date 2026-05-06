@@ -1,0 +1,32 @@
+	"name": "Gold Shore Sentinel Node.js",
+	"image": "mcr.microsoft.com/devcontainers/typescript-node:1-24-bookworm",
+	"features": {
+		"ghcr.io/devcontainers/features/git-lfs:1": {},
+		"ghcr.io/devcontainers/features/github-cli:1": {},
+		"ghcr.io/devcontainers/features/python:1": {},
+		"ghcr.io/stu-bell/devcontainer-features/gemini-cli:0": {},
+		"ghcr.io/devcontainers-extra/features/supabase-cli:1": {},
+		"ghcr.io/devcontainers-extra/features/vercel-cli:1": {},
+		"ghcr.io/kvokka/features/aicommit2:1": {},
+		"ghcr.io/devcontainer-config/features/dot-config:3": {}
+	},
+	"customizations": {
+		"vscode": {
+			"settings": {
+				"editor.formatOnSave": true,
+				"typescript.tsdk": "node_modules/typescript/lib"
+			},
+			"extensions": [
+				"google.gemini-vscode",
+				"GitHub.copilot",
+				"GitHub.copilot-chat",
+				"esbenp.prettier-vscode",
+				"bradlc.vscode-tailwindcss",
+				"supabase.supabase-sql"
+			]
+		}
+	},
+	"forwardPorts": [3000, 54321],
+	"postCreateCommand": "npm install && supabase --version",
+	"remoteUser": "node"
+}

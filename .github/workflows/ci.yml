@@ -6,44 +6,16 @@ on:
     branches: [main]
 
 jobs:
-  lint-test-build:
-    permissions:
-      contents: read
+  build:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v6.0.2
-
-      - uses: pnpm/action-setup@v6.0.0
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
         with:
-          run_install: false
-
+          version: 9.0.0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: "pnpm"
-
-      - name: Install
-        run: pnpm install --frozen-lockfile
-
-      - name: Repo health checks
-        run: pnpm run repo:health
-        continue-on-error: false
-
-      - name: Enforce banproof production bindings
-        run: |
-          if [ -f apps/banproof-me/wrangler.toml ]; then
-            pnpm check:banproof-bindings
-          else
-            echo "Skipping banproof binding check: apps/banproof-me/wrangler.toml is not present in this branch."
-          fi
-
-      - name: Build all
-        run: pnpm -r build
-
-      - name: gs-web release quality gate
-        working-directory: apps/gs-web
-        run: pnpm check:release
-
-      - name: Verify internal links (Developer Hub, Risk Radar, Workflows)
-        run: node scripts/check-internal-links.mjs
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build

@@ -1,0 +1,14 @@
+{
+  "name": "@goldshore/integrations",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "./index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./http.js": "./http.ts",
+    "./index.js": "./index.ts"
+  },
+  "scripts": {
+    "test": "tsx --test admin.test.ts"
+  }
+}

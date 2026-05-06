@@ -1,0 +1,74 @@
+---
+const today = new Date();
+import siteConfig from '../data/site-config.json';
+---
+
+<footer>
+  <div class="footer-cta-row">
+    <a class="button button-primary" href="/contact">{siteConfig.cta.primary}</a
+    >
+    <a class="button button-secondary" href="/contact"
+      >{siteConfig.cta.secondary}</a
+    >
+    <a class="button button-tertiary" href="/developer-hub#api-overview"
+      >{siteConfig.cta.tertiary}</a
+    >
+  </div>
+  <div class="footer-brand">
+    <img
+      src="/logo/gs-penrose.svg"
+      alt="GoldShore.ai Penrose triangle logo"
+      width="160"
+      height="160"
+    />
+    <p>&copy; {today.getFullYear()} GoldShore.ai. All rights reserved.</p>
+  </div>
+</footer>
+<style>
+  footer {
+    padding: 2em 1em 3em;
+    border-top: 1px solid rgba(123, 158, 204, 0.16);
+    color: rgba(212, 224, 241, 0.8);
+    text-align: center;
+    background:
+      linear-gradient(180deg, rgba(7, 16, 30, 0.94), rgba(5, 9, 18, 0.98)),
+      #050912;
+  }
+  .footer-cta-row {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+  .footer-brand {
+    display: grid;
+    justify-items: center;
+    gap: 0.9rem;
+  }
+  .footer-brand img {
+    width: 52px;
+    height: 52px;
+    color: #7eb8ff;
+
+  @media (max-width: 560px) {
+    .footer-cta-col {
+      flex-direction: column;
+    }
+
+    .footer-cta-col .button {
+      width: 100%;
+    }
+
+    .footer-brand {
+      display: grid;
+      justify-items: center;
+      gap: 0.9rem;
+    }
+
+    .footer-brand img {
+      width: 52px;
+      height: 52px;
+    }
+  }
+</style>
