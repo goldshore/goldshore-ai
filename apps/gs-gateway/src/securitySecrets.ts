@@ -10,13 +10,17 @@ const DEPRECATED_ALIASES: Record<string, readonly string[]> = {
 
 type EnvLike = Record<string, unknown>;
 
+function isMissingSecuritySecret(value: unknown): boolean {
+  return value === undefined || value === null || value === '';
+}
+
 export function assertSecuritySecrets(env: EnvLike, envName?: string) {
-  const missing = CANONICAL_SECURITY_SECRETS.filter((key) => !env[key]);
+  const missing = CANONICAL_SECURITY_SECRETS.filter((key) => isMissingSecuritySecret(env[key]));
   const aliasOnly: string[] = [];
 
   for (const key of missing) {
     for (const alias of DEPRECATED_ALIASES[key] ?? []) {
-      if (env[alias]) {
+      if (!isMissingSecuritySecret(env[alias])) {
         aliasOnly.push(`${alias} -> use ${key}`);
       }
     }
