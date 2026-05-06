@@ -1,0 +1,23 @@
+---
+title: "Gateway Routing"
+description: "How gateway routing works"
+order: 60
+---
+
+# Gateway Routing
+
+The GoldShore Gateway handles routing for all incoming requests.
+
+## Routing Rules
+
+Routes are defined in the configuration and matched against the incoming request path.
+
+| Path | Service |
+|------|---------|
+| /api | API Service |
+| /auth | Auth Service |
+| /docs | Documentation |
+
+## Load Balancing
+
+The gateway automatically load balances requests across available instances.

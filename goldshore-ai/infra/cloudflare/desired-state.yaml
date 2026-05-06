@@ -1,0 +1,130 @@
+cloudflare:
+  account_name: goldshore-account
+  zone: goldshore.ai
+
+  dns:
+    records:
+      # A. Web App (gs-web)
+      - name: "goldshore.ai"
+        type: CNAME
+        content: "gs-web.pages.dev"
+        proxied: true
+      - name: "www"
+        type: CNAME
+        content: "gs-web.pages.dev"
+        proxied: true
+
+      # B. Admin App (gs-admin)
+      - name: "admin"
+        type: CNAME
+        content: "gs-admin.pages.dev"
+        proxied: true
+
+      # C. API Gateway Worker
+      - name: "gw"
+        type: CNAME
+        content: "gs-gateway.goldshore-account.workers.dev"
+        proxied: true
+
+      # D. API Worker
+      - name: "api"
+        type: CNAME
+        content: "gs-api.goldshore-account.workers.dev"
+        proxied: true
+
+      # E. Control Worker (Internal only - no public DNS)
+
+  access:
+    policies:
+      - name: "GoldShore-Admin-ZT"
+        domain: "admin.goldshore.ai"
+        action: "allow"
+        rules:
+          include:
+            - email_domain: "goldshore.ai"
+            - email: "your.personal@email.com" # Placeholder
+          require:
+            - identity_provider: "github"
+
+      - name: "GoldShore-API-Bypass"
+        domain: "api.goldshore.ai"
+        action: "bypass"
+        rules:
+          include:
+            - everyone: true
+
+  pages:
+    projects:
+      - name: "gs-web"
+        repo: "astro-goldshore"
+        root_dir: "/" # Run from repo root for monorepo support
+        production_branch: "main"
+        build_command: "pnpm --filter @goldshore/web build"
+        output_dir: "apps/gs-web/dist"
+        custom_domains:
+          - "goldshore.ai"
+          - "www.goldshore.ai"
+
+      - name: "gs-admin"
+        repo: "astro-goldshore"
+        root_dir: "/" # Run from repo root for monorepo support
+        production_branch: "main"
+        build_command: "pnpm --filter @goldshore/admin build"
+        output_dir: "apps/gs-admin/dist"
+        custom_domains:
+          - "admin.goldshore.ai"
+
+  workers:
+    services:
+      - name: "gs-api"
+        script_path: "apps/gs-api/dist/index.js"
+        routes:
+          - pattern: "api.goldshore.ai/*"
+        bindings:
+          kv:
+            - name: "KV"
+              namespace: "goldshore-api-kv"
+          d1:
+            - name: "DB"
+              database_name: "goldshore-api-db"
+          r2:
+            - name: "ASSETS"
+              bucket_name: "goldshore-api-assets"
+          ai:
+            - name: "AI"
+              gateway: "goldshore-ai-gateway"
+
+      - name: "gs-gateway"
+        script_path: "apps/gs-gateway/dist/index.js"
+        routes:
+          - pattern: "gw.goldshore.ai/*"
+        bindings:
+          services:
+            - binding: "API"
+              service: "gs-api"
+              environment: "production"
+          kv:
+            - name: "GATEWAY_KV"
+              namespace: "goldshore-gw-kv"
+
+      - name: "gs-control"
+        script_path: "apps/gs-control/dist/index.js"
+        # No public routes
+        bindings:
+          services:
+            - binding: "API"
+              service: "gs-api"
+              environment: "production"
+          env_vars:
+            CONTROL_SERVICE: "true"
+
+  email:
+    routing:
+      catch_all:
+        enabled: true
+        destination: "inbox@goldshore.ai"
+      addresses:
+        - address: "ops@goldshore.ai"
+          destination: "your.personal.email@goldshore.ai"
+        - address: "support@goldshore.ai"
+          destination: "your.personal.email@goldshore.ai"

@@ -1,0 +1,46 @@
+name: Jules Nightly
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  jules-daily-guardian:
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    uses: ./.github/workflows/jules-daily.yml
+
+  jules-nightly-clean:
+    permissions:
+      contents: read
+      actions: write
+    uses: ./.github/workflows/jules-nightly-clean.yml
+
+  palette-daily:
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/palette-daily.yml
+
+  sentinel-nightly:
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    uses: ./.github/workflows/sentinel-nightly.yml
+
+  conflict-sweeper-nightly:
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/conflict-sweeper-nightly.yml
+  noop:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Sweepers removed
+        run: echo "No sweeper jobs are configured in this workflow."
