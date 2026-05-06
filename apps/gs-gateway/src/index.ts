@@ -25,19 +25,18 @@ const SECURITY_TIMEOUT_MS = 250;
 const SIGNALS_TIMEOUT_MS = 1200;
 const NON_CRITICAL_SIGNAL_PATHS = ["/signals", "/telemetry", "/events"] as const;
 
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error(`${label}_TIMEOUT`)), timeoutMs);
-    promise.then(
-      (value) => {
-        clearTimeout(timer);
-        resolve(value);
-      },
-      (error) => {
-        clearTimeout(timer);
-        reject(error);
-      },
-    );
+function withTimeout<T>(
+  operation: (signal: AbortSignal) => Promise<T>,
+  timeoutMs: number,
+  label: string,
+): Promise<T> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => {
+    controller.abort(new DOMException(`${label}_TIMEOUT`, "AbortError"));
+  }, timeoutMs);
+
+  return operation(controller.signal).finally(() => {
+    clearTimeout(timer);
   });
 }
 
