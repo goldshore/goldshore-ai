@@ -1,6 +1,6 @@
 # Worker Builds token for this service must be the gs-control build token.
 # wrangler.toml for the gs-gateway worker (deployed as gs-platform on CF)
-name = "gs-platform-legacy"
+name = "gs-gateway"
 main = "src/index.ts"
 compatibility_date = "2026-04-18"
 compatibility_flags = ["nodejs_compat"]
