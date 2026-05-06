@@ -1,6 +1,7 @@
 name = "gs-core-worker"
 main = "src/index.ts"
 compatibility_date = "2026-04-18"
+workers_dev = false
 
 [env.prod]
 [[env.prod.d1_databases]]
