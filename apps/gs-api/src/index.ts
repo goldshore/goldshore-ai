@@ -45,7 +45,7 @@ const app = new Hono<{
 }>();
 
 const requiredBindings = ['DB', 'ASSETS', 'AI'] as const;
-const expectedD1Binding = 'DB' as const;
+const [expectedD1Binding] = requiredBindings;
 const requiredSecrets = [
   'JWT_SECRET',
   'STRIPE_API_KEY',
