@@ -96,7 +96,7 @@ app.use('*', secureHeaders());
 app.use('*', async (c, next) => {
   if (!c.env[expectedD1Binding]) {
     throw new Error(
-      `CRITICAL_MISSING_D1_BINDING: Expected D1 binding "${expectedD1Binding}" is undefined. Verify [[d1_databases]] binding in wrangler.toml.`,
+      `CRITICAL_MISSING_D1_BINDING: Expected D1 binding "${expectedD1Binding}" is undefined. Verify the env-specific D1 binding in wrangler.toml (for example [[env.prod.d1_databases]] or [[env.preview.d1_databases]]).`,
     );
   }
 
