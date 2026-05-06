@@ -41,10 +41,12 @@ ENV = "preview"
 [[env.prod.services]]
 binding = "SECURITY"
 service = "banproof-me"
+environment = "prod"
 
 [[env.prod.services]]
 binding = "SIGNALS"
 service = "gs-signals-prod"
+environment = "prod"
 
 [[env.prod.queues.producers]]
 binding = "MAIL_QUEUE"
