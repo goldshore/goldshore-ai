@@ -7,4 +7,4 @@ workers_dev = false
 [[env.prod.d1_databases]]
 binding = "GS_SIGNALS_DB"
 database_name = "gs_signals_db"
-database_id = "<existing_signals_db_id>"
+database_id = "gs_signals_db"
