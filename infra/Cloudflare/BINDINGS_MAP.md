@@ -113,3 +113,41 @@
   - `CLOUDFLARE_API_TOKEN` (secret)
   - `CLOUDFLARE_ACCOUNT_ID` (secret)
   - `CONTROL_SERVICE=true`
+
+---
+
+### 6. Banproof-Me Security Worker
+
+- Service Name: `banproof-me`
+- Config: `apps/banproof-me/wrangler.toml`
+- External domain: `banproof.me`
+- Bound as `SECURITY` in `gs-gateway`
+
+**Bindings (9 platform bindings):**
+
+- KV:
+  - Binding: `BANPROOF_KV` — real-time ban cache
+  - Binding: `GOLDSHORE_KV` — shared platform config / feature flags
+- D1:
+  - Binding: `BAN_DB` — `gs_platform_db` (ban records, user reputation)
+  - Binding: `AUDIT_DB` — `gs_audit_db` (compliance audit log)
+  - Binding: `SIGNALS_DB` — `gs_signals_db` (trading signal association)
+- R2:
+  - Binding: `ASSETS` — `gs-assets` (shared media/assets)
+  - Binding: `TELEMETRY` — `gs-telemetry-storage` (compliance telemetry)
+- Service:
+  - Binding: `API_SERVICE` — `gs-api` / `prod` (reputation lookups)
+- Queue (producer):
+  - Binding: `BAN_EVENTS` — `ban-events` queue
+
+---
+
+### 7. Gateway Worker — Phase 2 Joinery Bindings
+
+Additional bindings added to `gs-gateway` (`apps/gs-gateway/wrangler.toml`) for Phase 2:
+
+- Service:
+  - Binding: `SECURITY` — `banproof-me` (ban / security checks)
+  - Binding: `SIGNALS` — `gs-signals-prod` (trading signals worker)
+- Queue (producer):
+  - Binding: `MAIL_QUEUE` — `gs-mail-jobs` queue

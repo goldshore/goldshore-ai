@@ -4,7 +4,7 @@
   "packageManager": "pnpm@9.0.0",
   "scripts": {
     "dev": "turbo run dev --parallel",
-    "build": "pnpm build:openapi && turbo run build --filter=@goldshore/gs-web --filter=@goldshore/gs-admin --filter=@goldshore/gs-api",
+    "build": "pnpm build:openapi && turbo run build",
     "build:openapi": "node scripts/build-openapi.mjs",
     "lint": "turbo run lint",
     "test": "turbo run test",
@@ -32,7 +32,8 @@
     "repo:health": "node scripts/repo-health.mjs",
     "audit": "pnpm run repo:health",
     "build:api": "turbo run build --filter=@goldshore/gs-api",
-    "build:control": "turbo run build --filter=@goldshore/gs-control"
+    "build:control": "turbo run build --filter=@goldshore/gs-control",
+    "check:banproof-bindings": "node scripts/check-banproof-bindings.mjs"
   },
   "devDependencies": {
     "@astrojs/mdx": "^4.0.8",
