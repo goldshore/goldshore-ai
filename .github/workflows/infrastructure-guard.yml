@@ -192,9 +192,12 @@ jobs:
           with open("infra/INFRASTRUCTURE.md") as f:
               manifest = f.read()
 
-          # Extract worker names from the manifest table
+          # Extract worker names only from the Workers section
           import re
-          canonical = sorted(set(re.findall(r"\| `([a-z0-9_-]+)` \|", manifest)))
+          workers_section = re.search(r"(?ms)^## Workers\s*$\n(.*?)(?=^## |\Z)", manifest)
+          if not workers_section:
+              raise SystemExit("Could not find '## Workers' section in infra/INFRASTRUCTURE.md")
+          canonical = sorted(set(re.findall(r"\| `([a-z0-9_-]+)` \|", workers_section.group(1))))
 
           print(f"Live workers:     {live_names}")
           print(f"Canonical workers: {canonical}")
