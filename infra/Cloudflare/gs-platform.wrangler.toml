@@ -2,8 +2,8 @@
 # Canonical wrangler manifest for gs-platform (infra-level reference).
 # The deployable config lives at apps/gs-platform/wrangler.toml.
 #
-# This file is checked by CI (infrastructure-guard) to ensure the app-level
-# config stays in sync with the infrastructure source of truth.
+# Infrastructure Guard validates related infrastructure metadata in CI, but
+# does not currently enforce full sync with the app-level Wrangler config.
 
 name = "gs-platform"
 main = "../../apps/gs-platform/src/index.ts"
