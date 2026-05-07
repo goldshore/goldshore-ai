@@ -203,6 +203,7 @@ jobs:
           if unknown:
               print(f"WARNING: Unrecognized workers in account: {unknown}")
               print("These workers are NOT in infra/INFRASTRUCTURE.md — audit required.")
+              raise SystemExit("Failing audit: unrecognized workers must not exist in the account.")
 
           print("Cloudflare live state audit complete.")
           PY
