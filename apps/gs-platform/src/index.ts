@@ -52,6 +52,7 @@ const ALLOWED_ORIGINS = [
   "https://goldshore.ai",
   "https://www.goldshore.ai",
   "https://admin.goldshore.ai",
+  "https://preview.goldshore.ai",
   "https://armsway.com",
   "https://www.armsway.com",
 ];
