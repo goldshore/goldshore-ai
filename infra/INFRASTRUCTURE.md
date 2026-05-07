@@ -21,7 +21,7 @@
 
 | Worker name | Purpose | Domains served | Fail policy |
 |---|---|---|---|
-| `gs-platform` | Main gateway — auth, CORS, routing hub | goldshore.ai, goldshore.org, armsway.com | Fail closed on auth routes |
+| `gs-platform` | Main gateway — auth, CORS, routing hub | goldshore.ai, armsway.com | Fail closed on auth routes |
 | `gs-api` | API layer | api.goldshore.ai | Fail closed |
 | `gs-admin` | Admin dashboard worker | admin.goldshore.ai | Fail closed |
 | `gs-gateway` | Legacy gateway (to be superseded by gs-platform) | — | Fail closed |
