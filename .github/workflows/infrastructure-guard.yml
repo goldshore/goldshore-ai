@@ -47,15 +47,88 @@ jobs:
 
       - name: Verify D1 database IDs are consistent
         run: |
-          # Check that wrangler.toml D1 IDs match INFRASTRUCTURE.md
+          # Build a canonical database_name -> database_id map from the D1 Databases
+          # table in INFRASTRUCTURE.md, then verify each wrangler.toml binding matches
+          # the exact documented pair.
           mismatch_found=0
+
+          CANONICAL_D1_MAP=$(
+            awk '
+              /^## D1 Databases/ { in_section=1; next }
+              in_section && /^## / { exit }
+              in_section && /^\|/ {
+                n=split($0, parts, "|")
+                name=""
+                id=""
+                for (i = 1; i <= n; i++) {
+                  if (parts[i] ~ /`[a-zA-Z0-9_-]+`/) {
+                    value = parts[i]
+                    gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+                    gsub(/`/, "", value)
+                    if (name == "") {
+                      name = value
+                    } else if (id == "" && value ~ /^[a-f0-9-]+$/) {
+                      id = value
+                    }
+                  }
+                }
+                if (name != "" && id != "") {
+                  print name "|" id
+                }
+              }
+            ' infra/INFRASTRUCTURE.md | sort -u
+          )
+
+          if [ -z "$CANONICAL_D1_MAP" ]; then
+            echo "FAIL: Could not extract any canonical D1 database mappings from infra/INFRASTRUCTURE.md"
+            exit 1
+          fi
+
+          echo "Canonical D1 databases:"
+          echo "$CANONICAL_D1_MAP"
 
           for toml in apps/*/wrangler.toml infra/Cloudflare/*.wrangler.toml; do
             [ -f "$toml" ] || continue
-            DB_IDS=$(grep 'database_id' "$toml" | grep -oP '"[a-f0-9-]+"' | tr -d '"' || true)
-            for db_id in $DB_IDS; do
-              if ! grep -q "$db_id" infra/INFRASTRUCTURE.md; then
-                echo "FAIL: $toml references D1 ID '$db_id' not found in INFRASTRUCTURE.md"
+
+            awk '
+              BEGIN { in_block=0; db_name=""; db_id="" }
+              /^\[\[d1_databases\]\]/ {
+                if (in_block && db_name != "" && db_id != "") {
+                  print db_name "|" db_id
+                }
+                in_block=1
+                db_name=""
+                db_id=""
+                next
+              }
+              in_block && /^[[:space:]]*database_name[[:space:]]*=/ {
+                match($0, /"[^"]+"/)
+                if (RSTART > 0) {
+                  db_name = substr($0, RSTART + 1, RLENGTH - 2)
+                }
+              }
+              in_block && /^[[:space:]]*database_id[[:space:]]*=/ {
+                match($0, /"[^"]+"/)
+                if (RSTART > 0) {
+                  db_id = substr($0, RSTART + 1, RLENGTH - 2)
+                }
+              }
+              END {
+                if (in_block && db_name != "" && db_id != "") {
+                  print db_name "|" db_id
+                }
+              }
+            ' "$toml" | while IFS='|' read -r db_name db_id; do
+              [ -n "$db_name" ] || continue
+              [ -n "$db_id" ] || continue
+
+              expected_id=$(printf '%s\n' "$CANONICAL_D1_MAP" | awk -F'|' -v name="$db_name" '$1 == name { print $2; exit }')
+
+              if [ -z "$expected_id" ]; then
+                echo "FAIL: $toml references D1 database '$db_name' that is not documented in infra/INFRASTRUCTURE.md"
+                mismatch_found=1
+              elif [ "$db_id" != "$expected_id" ]; then
+                echo "FAIL: $toml references D1 database '$db_name' with ID '$db_id' but INFRASTRUCTURE.md specifies '$expected_id'"
                 mismatch_found=1
               fi
             done
