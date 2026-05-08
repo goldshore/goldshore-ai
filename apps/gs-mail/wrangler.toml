@@ -7,10 +7,6 @@ routes = [
   { pattern = "mail.goldshore.ai/*", zone_name = "goldshore.ai" }
 ]
 
-[[email]]
-bindings = [
-  { name = "MAIL", type = "inbound" }
-]
 
 [env.dev]
 name = "gs-mail-dev"
