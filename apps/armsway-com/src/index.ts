@@ -39,8 +39,10 @@ export default {
         return json({ error: 'Invalid JSON in request body' }, 400);
       }
 
-      if (typeof payload.productId !== 'string' || typeof payload.quantity !== 'number' || typeof payload.orderId !== 'string') {
-        return json({ error: 'Missing or invalid required fields: productId, quantity, orderId' }, 400);
+      if (typeof payload.productId !== 'string' || !payload.productId ||
+          typeof payload.orderId !== 'string' || !payload.orderId ||
+          typeof payload.quantity !== 'number' || !Number.isInteger(payload.quantity) || payload.quantity <= 0) {
+        return json({ error: 'Missing or invalid required fields: productId, orderId (non-empty strings) and quantity (positive integer)' }, 400);
       }
 
       try {

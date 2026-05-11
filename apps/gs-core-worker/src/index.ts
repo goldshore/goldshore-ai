@@ -39,8 +39,10 @@ export default {
         return json({ error: 'Invalid JSON in request body' }, 400);
       }
 
-      if (typeof payload.signalType !== 'string' || typeof payload.symbol !== 'string' || typeof payload.price !== 'number') {
-        return json({ error: 'Missing or invalid required fields: signalType, symbol, price' }, 400);
+      if (typeof payload.signalType !== 'string' || !payload.signalType ||
+          typeof payload.symbol !== 'string' || !payload.symbol ||
+          typeof payload.price !== 'number' || !Number.isFinite(payload.price) || payload.price <= 0) {
+        return json({ error: 'Missing or invalid required fields: signalType, symbol, price (must be a positive number)' }, 400);
       }
 
       if (payload.signalType !== 'BUY') {
@@ -73,7 +75,7 @@ export default {
               body: JSON.stringify({ action: 'ATC', product: payload.symbol })
             });
           } catch (e) {
-            console.error('Failed to trigger StellarAIO', e);
+            console.error('Failed to trigger StellarAIO webhook for ATC action', e);
           }
         }
 
