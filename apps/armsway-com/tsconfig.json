@@ -1,14 +1,12 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "target": "es2021",
-    "lib": ["es2021"],
-    "module": "es2022",
-    "moduleResolution": "node",
-    "types": ["@cloudflare/workers-types"],
-    "strict": true,
-    "esModuleInterop": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "lib": ["ES2022"],
+    "types": ["@cloudflare/workers-types"]
   },
-  "include": ["src"]
+  "include": ["src/**/*"]
 }
