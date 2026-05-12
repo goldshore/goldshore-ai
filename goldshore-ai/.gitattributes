@@ -1,4 +1,0 @@
-# High-churn files auto-resolve to the branch version (`merge=ours`) to keep rebases deterministic.
-pnpm-lock.yaml merge=ours
-README.md merge=ours
-CURRENT_MONOREPO_STATE.md merge=ours

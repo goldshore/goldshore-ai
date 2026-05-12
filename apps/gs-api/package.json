@@ -16,7 +16,7 @@
     "@goldshore/schema": "workspace:^",
     "@goldshore/utils": "workspace:^",
     "@types/sanitize-html": "^2.16.0",
-    "hono": "^4.12.4",
+    "hono": "^4.12.16",
     "openai": "^6.34.0",
     "safe-stable-stringify": "^2.5.0",
     "sanitize-html": "^2.17.3"
