@@ -54,13 +54,13 @@
     "tsx": "^4.21.0",
     "typescript": "^5.4.2",
     "wrangler": "^4.83.0",
-    "yaml": "^2.8.3",
+    "yaml": "^2.8.4",
     "zod": "^4.3.6"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^13.1.10",
     "p-limit": "^7.3.0",
-    "turbo": "^2.8.21"
+    "turbo": "^2.9.12"
   },
   "pnpm": {
     "overrides": {
