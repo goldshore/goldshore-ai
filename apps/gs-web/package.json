@@ -33,7 +33,7 @@
     "framer-motion": "^12.38.0",
     "fuse.js": "^7.1.0",
     "react": "^19.2.4",
-    "react-dom": "^19.2.5",
+    "react-dom": "^19.2.6",
     "three": "^0.183.2",
     "vanilla-tilt": "^1.8.1"
   },
