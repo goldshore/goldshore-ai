@@ -13,7 +13,7 @@
     "@goldshore/config": "workspace:*",
     "@goldshore/theme": "workspace:*",
     "@goldshore/auth": "workspace:*",
-    "astro": "^6.1.7"
+    "astro": "^6.3.1"
   },
   "devDependencies": {
     "@astrojs/cloudflare": "^13.1.10",
