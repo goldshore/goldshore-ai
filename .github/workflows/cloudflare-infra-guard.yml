@@ -36,9 +36,9 @@ jobs:
           )
 
           for workflow in "${worker_deploy_workflows[@]}"; do
-            grep -qE "CLOUDFLARE_API_TOKEN:[[:space:]]+\$\{\{[[:space:]]*secrets\.CLOUDFLARE_BUILD_API_TOKEN[[:space:]]*\}\}" "$workflow" \
+            grep -qE 'CLOUDFLARE_API_TOKEN:[[:space:]]+\$\{\{[[:space:]]*secrets\.CLOUDFLARE_BUILD_API_TOKEN[[:space:]]*\}\}' "$workflow" \
               || (echo "Workflow must set CLOUDFLARE_API_TOKEN from secrets.CLOUDFLARE_BUILD_API_TOKEN: $workflow" && exit 1)
-            ! grep -qE "secrets\.CLOUDFLARE_BUILD_API_TOKEN\s*\|\|" "$workflow" \
+            ! grep -qE 'secrets\.CLOUDFLARE_BUILD_API_TOKEN\s*\|\|' "$workflow" \
               || (echo "Fallback token source is not allowed: $workflow" && exit 1)
           done
 
