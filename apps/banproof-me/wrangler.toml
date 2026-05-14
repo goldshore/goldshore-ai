@@ -36,12 +36,12 @@ queue = "banproof-events-dev"
 [[env.dev.services]]
 binding = "GS_API"
 service = "gs-api"
-environment = "dev"
+environment = "preview"
 
 [[env.dev.services]]
 binding = "GS_CONTROL"
 service = "gs-control"
-environment = "dev"
+environment = "preview"
 
 [env.preview]
 name = "banproof-me-preview"
