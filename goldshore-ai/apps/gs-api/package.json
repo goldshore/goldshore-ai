@@ -11,7 +11,7 @@
   "dependencies": {
     "@goldshore/ai-providers": "workspace:^",
     "@goldshore/auth": "workspace:^",
-    "hono": "^4.12.16",
+    "hono": "^4.12.18",
     "safe-stable-stringify": "^2.5.0",
     "@goldshore/utils": "workspace:^",
     "dompurify": "^3.3.1",
