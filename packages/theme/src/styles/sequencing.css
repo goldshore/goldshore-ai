@@ -1,0 +1,23 @@
+/* Micro-interaction sequencing primitives
+   Usage:
+     <div class="gs-seq gs-vt">
+       <div class="gs-i-0">...</div>
+       <div class="gs-i-1">...</div>
+       ...
+     </div>
+*/
+
+.gs-seq{
+  --gs-stagger: 90ms;
+  --gs-delay: 0ms;
+}
+
+.gs-seq > *{
+  transition-delay: calc(var(--gs-delay) + (var(--i, 0) * var(--gs-stagger)));
+  animation-delay: calc(var(--gs-delay) + (var(--i, 0) * var(--gs-stagger)));
+}
+
+/* Index utilities */
+.gs-i-0{ --i:0 } .gs-i-1{ --i:1 } .gs-i-2{ --i:2 } .gs-i-3{ --i:3 }
+.gs-i-4{ --i:4 } .gs-i-5{ --i:5 } .gs-i-6{ --i:6 } .gs-i-7{ --i:7 }
+.gs-i-8{ --i:8 } .gs-i-9{ --i:9 } .gs-i-10{ --i:10 } .gs-i-11{ --i:11 }

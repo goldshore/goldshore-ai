@@ -80,18 +80,6 @@ export const prerender = true;
         <label for="industry">Industry</label>
         <input id="industry" name="industry" type="text" />
       </div>
-
-      <div class="gs-input-group">
-        <label for="visitorType">I am a...</label>
-        <select id="visitorType" name="visitorType" required>
-          <option value="">Select your role</option>
-          <option value="founder-cto">Founder / CTO</option>
-          <option value="ops">Operations lead</option>
-          <option value="security">Security lead</option>
-          <option value="developer">Developer / platform engineer</option>
-          <option value="investor">Investor / advisor</option>
-        </select>
-      </div>
       <div class="gs-input-group">
         <label for="timeline">Ideal timeline</label>
         <select id="timeline" name="timeline" required>
@@ -112,18 +100,6 @@ export const prerender = true;
           <option value="500k+">$500k+</option>
         </select>
       </div>
-
-      <div class="gs-input-group">
-        <label for="painPoint">Primary pain point</label>
-        <select id="painPoint" name="painPoint" required>
-          <option value="">Select one</option>
-          <option value="release-risk">Release instability and change failure</option>
-          <option value="security-gaps">Security hardening and compliance pressure</option>
-          <option value="visibility">Limited observability and incident visibility</option>
-          <option value="scaling">Scaling architecture and platform reliability</option>
-        </select>
-      </div>
-
       <div class="gs-input-group">
         <label for="goals">Primary goals</label>
         <textarea
@@ -141,11 +117,6 @@ export const prerender = true;
         <textarea id="message" name="message" rows="3"></textarea>
       </div>
       <GSButton type="submit">Submit intake</GSButton>
-      <div class="gs-card" id="intake-summary" aria-live="polite">
-        <h3>Recommended service bundle</h3>
-        <p id="bundle-name">Complete the role and pain-point fields to preview your recommended starting package.</p>
-      </div>
-
     </form>
   </FlowSection>
 
@@ -153,35 +124,9 @@ export const prerender = true;
     const form = document.querySelector('form[action="/api/contact"]');
     if (form instanceof HTMLFormElement) {
       const startedAtField = form.querySelector('[name="formStartedAt"]');
-      const visitorTypeField = form.querySelector('#visitorType');
-      const painPointField = form.querySelector('#painPoint');
-      const bundleName = form.querySelector('#bundle-name');
-
       if (startedAtField instanceof HTMLInputElement) {
         startedAtField.value = String(Date.now());
       }
-
-      const bundleMap = {
-        'founder-cto:release-risk': 'Platform Reliability Sprint + Deployment Controls',
-        'ops:visibility': 'Operational Dashboards + Incident Response Readiness',
-        'security:security-gaps': 'Cloud Security Engineering + Access Hardening',
-        'developer:scaling': 'AI System Architecture + Infrastructure Automation',
-        'investor:release-risk': 'Technical Risk Radar + Governance Reporting'
-      };
-
-      const updateBundle = () => {
-        if (!(visitorTypeField instanceof HTMLSelectElement) || !(painPointField instanceof HTMLSelectElement) || !(bundleName instanceof HTMLElement)) return;
-        const key = `${visitorTypeField.value}:${painPointField.value}`;
-        const recommendation = bundleMap[key] ?? 'Discovery workshop + architecture intake checklist';
-        if (!visitorTypeField.value || !painPointField.value) {
-          bundleName.textContent = 'Complete the role and pain-point fields to preview your recommended starting package.';
-          return;
-        }
-        bundleName.textContent = `${recommendation}. Week 1 output: engagement brief, dependency map, and 30/60/90 plan.`;
-      };
-
-      visitorTypeField?.addEventListener('change', updateBundle);
-      painPointField?.addEventListener('change', updateBundle);
     }
   </script>
 

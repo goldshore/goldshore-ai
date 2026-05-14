@@ -26,5 +26,5 @@
    - Cross-directory edits require explicit user instruction and MUST be logged.
 
 6. Idempotency:
-   - All infra changes must be expressed in `infra/Cloudflare/desired-state.yaml`.
+   - All infra changes must be expressed in `infra/cloudflare/desired-state.yaml`.
    - The Infra Agent applies desired-state → actual-state, instead of ad-hoc mutations.

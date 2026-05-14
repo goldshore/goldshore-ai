@@ -85,12 +85,13 @@ describe('RBAC Helpers', () => {
 
     test('unions permissions for multiple roles without duplicates', () => {
       const result = getAdminPermissions(['editor', 'viewer']);
-      // editor has content:read/write, media:read/write, forms:read/write
+      // editor has content:read/write, media:read/write, forms:read/write, ai:analyze
       // viewer has content:read, media:read, forms:read
       // union should be same as editor
       assert.ok(result.includes('content:write'));
       assert.ok(result.includes('content:read'));
-      assert.strictEqual(result.length, 6);
+      assert.ok(result.includes('ai:analyze'));
+      assert.strictEqual(result.length, 8);
     });
 
     test('admin role has all permissions', () => {

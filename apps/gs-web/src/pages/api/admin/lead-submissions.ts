@@ -1,4 +1,9 @@
 import type { APIRoute } from 'astro';
+import {
+  buildAdminSession,
+  verifyAccessWithClaims,
+  type Env as AccessEnv,
+} from '@goldshore/auth';
 
 const allowedStatuses = new Set(['new', 'read', 'archived']);
 
@@ -33,10 +38,53 @@ const buildCsv = (rows: Record<string, unknown>[]) => {
   return [header, ...body].join('\n');
 };
 
+const hasPermission = async (
+  request: Request,
+  env: AccessEnv & Env,
+  permission: 'forms:read' | 'forms:write',
+) => {
+  const claims = await verifyAccessWithClaims(request, env);
+  if (!claims) {
+    return false;
+  }
+
+  const session = buildAdminSession(claims);
+  return session.permissions.includes(permission);
+};
+
+const isSameOriginRequest = (request: Request) => {
+  const expectedOrigin = new URL(request.url).origin;
+  const originHeader = request.headers.get('origin');
+  if (originHeader) {
+    return originHeader === expectedOrigin;
+  }
+
+  const refererHeader = request.headers.get('referer');
+  if (refererHeader) {
+    try {
+      return new URL(refererHeader).origin === expectedOrigin;
+    } catch {
+      return false;
+    }
+  }
+
+  const fetchSite = request.headers.get('sec-fetch-site');
+  if (fetchSite) {
+    return fetchSite === 'same-origin' || fetchSite === 'none';
+  }
+
+  return false;
+};
+
 export const GET: APIRoute = async ({ request, locals }) => {
   const env = locals.runtime?.env as Env | undefined;
   if (!env?.DB) {
     return new Response('Storage unavailable.', { status: 503 });
+  }
+
+  const canReadForms = await hasPermission(request, env, 'forms:read');
+  if (!canReadForms) {
+    return new Response('Unauthorized', { status: 401 });
   }
 
   const url = new URL(request.url);
@@ -93,6 +141,15 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return new Response('Storage unavailable.', { status: 503 });
   }
 
+  if (!isSameOriginRequest(request)) {
+    return new Response('Forbidden: CSRF check failed', { status: 403 });
+  }
+
+  const canWriteForms = await hasPermission(request, env, 'forms:write');
+  if (!canWriteForms) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
   const contentType = request.headers.get('content-type') || '';
   let id = '';
   let status = '';
@@ -125,4 +182,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
       'content-type': 'application/json; charset=utf-8',
     },
   });
+};
+
+export const __testing = {
+  buildCsv,
+  isSameOriginRequest,
 };

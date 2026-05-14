@@ -9,7 +9,7 @@ on:
       - main
     paths:
       - "apps/gs-agent/**"
-      - "infra/cloudflare/gs-agent.wrangler.toml"
+      - "infra/Cloudflare/gs-agent.wrangler.toml"
       - "packages/**"
       - "package.json"
       - "pnpm-lock.yaml"
@@ -38,6 +38,6 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: pnpm exec wrangler deploy --env prod --config ../../infra/cloudflare/gs-agent.wrangler.toml
+        run: pnpm exec wrangler deploy --env prod --config ../../infra/Cloudflare/gs-agent.wrangler.toml
 
 # // [AUTO-UPDATE] Updated by Jules AI on 2026-01-23 01:43

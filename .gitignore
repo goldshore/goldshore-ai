@@ -69,6 +69,8 @@ Thumbs.db
 
 # Verification
 *.png
+!public/favicon.png
+!public/apple-touch-icon.png
 *.diff
 
 # Repo hygiene: generated logs, caches, and snapshots
@@ -87,3 +89,6 @@ tmp/
 **/*.legacy-*.toml
 **/*.legacy-*.ts
 reports/*.txt
+
+# Claude local settings (contains secrets)
+.claude/settings.local.json

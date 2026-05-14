@@ -1,0 +1,26 @@
+name: PR Hygiene
+
+on:
+  schedule:
+    - cron: '13 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  close-stale-problem-prs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3df4d485d8ce6d2b61b8d12e8f44cdfffbea301e
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Close stale PRs with conflicts/red CI
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          STALE_DAYS: '3'
+        run: node scripts/pr-hygiene.mjs

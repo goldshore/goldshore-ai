@@ -10,11 +10,12 @@
 
 ### 1. Web (Public)
 
-- Project: `astro-gs-web`
-- Repo: `astro-goldshore`
+- Project: `gs-web`
+- Repo: `goldshore-ai`
 - Root: `apps/gs-web`
 - Custom Domains:
   - `goldshore.ai`
+  - `www.goldshore.ai`
   - `preview.goldshore.ai`
 
 **Environment Variables:**
@@ -26,8 +27,8 @@
 
 ### 2. Admin (Cockpit)
 
-- Project: `astro-gs-admin`
-- Repo: `astro-goldshore`
+- Project: `gs-admin`
+- Repo: `goldshore-ai`
 - Root: `apps/gs-admin`
 - Custom Domains:
   - `admin.goldshore.ai`
@@ -46,8 +47,6 @@
 
 ## Workers
 
-> **Source of truth:** Worker service names in this document must mirror the app-local `wrangler.toml` names.
-
 ### 3. API Worker
 
 - Service Name: `gs-api`
@@ -59,14 +58,14 @@
 **Bindings:**
 
 - KV:
-  - Binding: `API_KV`
-  - Namespace: `goldshore-api-kv`
+  - Binding: `KV`
+  - Namespace: `gs_api_kv_001` _(canonical; historical alias: `goldshore-api-kv`)_
 - D1:
   - Binding: `DB`
-  - Database: `goldshore-api-db`
+  - Database: `goldshore` / `gs_db_001` _(historical alias: `goldshore-api-db`)_
 - R2:
   - Binding: `ASSETS`
-  - Bucket: `goldshore-api-assets`
+  - Bucket: `gs-assets` _(historical alias: `goldshore-api-assets`)_
 - AI:
   - Binding: `AI`
   - Gateway: `goldshore-ai-gateway`
@@ -79,6 +78,7 @@
 - Code: `apps/gs-gateway`
 - Routes:
   - `gw.goldshore.ai/*`
+  - `agent.goldshore.ai/*`
   - `gw-preview.goldshore.ai/*`
 
 **Bindings:**
@@ -87,6 +87,10 @@
   - Binding: `API`
   - Service: `gs-api`
   - Environment: `production`
+- Service:
+  - Binding: `AGENT`
+  - Service: `gs-agent`
+  - Environment: `prod`
 - KV:
   - Binding: `GATEWAY_KV`
   - Namespace: `goldshore-gw-kv`
@@ -98,14 +102,14 @@
 
 ### 5. Control Worker
 
-- Service Name: `goldshore-control-worker`
+- Service Name: `gs-control`
 - Code: `apps/gs-control`
 - Routes:
-  - `ops.goldshore.ai/*` (optional, or workers.dev only)
+  - `ops.goldshore.ai/*`
 
 **Bindings:**
 
 - Env Vars:
   - `CLOUDFLARE_API_TOKEN` (secret)
   - `CLOUDFLARE_ACCOUNT_ID` (secret)
-  - `ENVIRONMENT=production`
+  - `CONTROL_SERVICE=true`

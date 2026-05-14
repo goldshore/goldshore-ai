@@ -1,0 +1,21 @@
+/* Defense-lab black/orange variant (token swap; no rewrite)
+   Enable by setting: <html data-gs-skin="defense">
+*/
+
+:root[data-gs-skin="defense"]{
+  --gs-bg-0:#030406;
+  --gs-bg-1:#05070d;
+  --gs-bg-2:#070b14;
+  --gs-bg-3:#091023;
+
+  /* Blue remains system highlight */
+  --gs-accent:#4b83ff;
+  --gs-accent-soft:rgba(75,131,255,.18);
+
+  /* Silicon orange for signal/status */
+  --gs-signal:#ff6b00;
+  --gs-signal-soft:rgba(255,107,0,.20);
+
+  --gs-border:rgba(255,255,255,.055);
+  --gs-border-strong:rgba(255,255,255,.095);
+}

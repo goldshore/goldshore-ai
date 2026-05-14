@@ -1,4 +1,4 @@
-name: Deploy GS Mail Worker (gs-mail)
+name: Deploy GS Mail Worker (mail.goldshore.ai)
 
 permissions:
   contents: read
@@ -9,28 +9,31 @@ on:
       - main
     paths:
       - "apps/gs-mail/**"
-      - ".github/workflows/deploy-gs-mail.yml"
       - "packages/**"
       - "package.json"
       - "pnpm-lock.yaml"
+      - ".github/workflows/deploy-gs-mail.yml"
+  workflow_dispatch:
 
 jobs:
   deploy-mail:
     runs-on: ubuntu-latest
+    name: Deploy
+
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6.0.0
         with:
-          version: 9
+          run_install: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Validate workspace contract
         run: pnpm validate:workspace
@@ -41,9 +44,9 @@ jobs:
       - name: Validate canonical worker names
         run: pnpm validate:names
 
-      - name: Deploy
+      - name: Deploy GS Mail worker to Cloudflare
         working-directory: apps/gs-mail
-        run: pnpm deploy --env prod
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN || secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: pnpm exec wrangler deploy --env prod

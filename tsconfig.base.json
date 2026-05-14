@@ -40,6 +40,12 @@
       ],
       "@goldshore/schema/*": [
         "packages/schema/src/*"
+      ],
+      "@goldshore/integrations": [
+        "packages/integrations/index.ts"
+      ],
+      "@goldshore/integrations/*": [
+        "packages/integrations/*"
       ]
     }
   }
