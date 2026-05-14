@@ -2,26 +2,8 @@ name = "gs-mail"
 main = "src/index.ts"
 compatibility_date = "2026-04-18"
 compatibility_flags = ["nodejs_compat"]
+
 workers_dev = false
-routes = [
-  { pattern = "mail.goldshore.ai/*", zone_name = "goldshore.ai" }
-]
-
-[[email]]
-bindings = [
-  { name = "MAIL", type = "inbound" }
-]
-
-[env.dev]
-name = "gs-mail-dev"
-
-[[env.dev.kv_namespaces]]
-binding = "GS_CONFIG"
-id = "9cc2209906a94851b704be57543987a9"
-
-[env.dev.vars]
-ENV = "dev"
-MAIL_FORWARD_TO = "ops+dev@goldshore.ai"
 
 [[env.dev.queues.consumers]]
 queue = "gs-platform-checkout-events-dev"
