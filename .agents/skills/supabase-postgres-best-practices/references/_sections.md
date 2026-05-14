@@ -2,7 +2,7 @@
 
 This file defines the rule categories for Postgres best practices. Rules are automatically assigned to sections based on their filename prefix.
 
-Take the examples below as pure demonstrative. Replace each section with the actual rule categories for Postgres best practices.
+The sections below are the authoritative rule categories for Postgres best practices used by this skill.
 
 ---
 
