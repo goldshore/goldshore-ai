@@ -95,21 +95,13 @@ app.use("*", async (c, next) => {
   }
 
   if (!c.env.SECURITY_CHECK) {
-    if (isSignalsPath) {
-      console.warn(JSON.stringify({
-        event: "security_check_skipped",
-        policy: "fail-open",
-        reason: "missing_binding",
-        path: pathname,
-      }));
-      return next();
-    }
-
-    return c.json({
-      error: "SECURITY_CHECK_UNAVAILABLE",
-      message: "security check service binding missing",
-      policy: "fail-closed",
-    }, 503);
+    console.warn(JSON.stringify({
+      event: "security_check_skipped",
+      policy: "fail-open",
+      reason: "missing_binding",
+      path: pathname,
+    }));
+    return next();
   }
 
   try {
