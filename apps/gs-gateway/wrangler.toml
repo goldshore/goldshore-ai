@@ -80,3 +80,15 @@ routes = [
 
 [env.preview.vars]
 ENV = "preview"
+
+[[env.prod.services]]
+binding = "SECURITY"
+service = "banproof-me"
+
+[[env.prod.services]]
+binding = "SIGNALS"
+service = "gs-signals-prod"
+
+[[env.prod.queues.producers]]
+binding = "MAIL_QUEUE"
+queue = "gs-mail-jobs"
