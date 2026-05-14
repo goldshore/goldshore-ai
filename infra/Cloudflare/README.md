@@ -22,6 +22,7 @@ Use exactly one canonical path per live service:
 | `gs-gateway` | `apps/gs-gateway/wrangler.toml` |
 | `gs-control` | `apps/gs-control/wrangler.toml` |
 | `gs-mail` | `apps/gs-mail/wrangler.toml` |
+| `banproof-me` | `apps/banproof-me/wrangler.toml` |
 
 The legacy `infra/Cloudflare/legacy/goldshore-api.wrangler.toml` file remains for reference only; production tooling should target the canonical `gs-api` manifest and `apps/gs-api` worker sources.
 
@@ -43,7 +44,7 @@ Cloudflare worker deploy workflows and infra guard checks use the following cano
 | Secret name | Required for | Ownership |
 |---|---|---|
 | `CLOUDFLARE_ACCOUNT_ID` | All worker deploy jobs and Cloudflare infra guard checks | Cloudflare account owner / platform ops |
-| `CLOUDFLARE_BUILD_API_TOKEN` | All worker deploy jobs (`gs-api`, `gs-agent`, `gs-gateway`, `gs-control`) and Cloudflare infra guard API calls | `gs-control` service token owner (platform ops) |
+| `CLOUDFLARE_BUILD_API_TOKEN` | All worker deploy jobs (`gs-api`, `gs-agent`, `gs-gateway`, `gs-control`, `gs-mail`, `banproof-me`) and Cloudflare infra guard API calls | `gs-control` service token owner (platform ops) |
 
 Policy:
 
