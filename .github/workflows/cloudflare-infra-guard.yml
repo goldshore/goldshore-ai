@@ -32,16 +32,13 @@ jobs:
       - name: Enforce canonical build token usage in worker deploy workflows
         run: |
           worker_deploy_workflows=(
-            ".github/workflows/deploy-gs-api.yml"
-            ".github/workflows/deploy-gs-agent.yml"
-            ".github/workflows/deploy-gs-gateway.yml"
-            ".github/workflows/deploy-gs-control.yml"
+            ".github/workflows/deploy-platform.yml"
           )
 
           for workflow in "${worker_deploy_workflows[@]}"; do
-            grep -q "CLOUDFLARE_API_TOKEN: \${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}" "$workflow" \
+            grep -qE 'CLOUDFLARE_API_TOKEN:[[:space:]]+\$\{\{[[:space:]]*secrets\.CLOUDFLARE_BUILD_API_TOKEN[[:space:]]*\}\}' "$workflow" \
               || (echo "Workflow must set CLOUDFLARE_API_TOKEN from secrets.CLOUDFLARE_BUILD_API_TOKEN: $workflow" && exit 1)
-            ! grep -q "secrets.CLOUDFLARE_BUILD_API_TOKEN ||" "$workflow" \
+            ! grep -qE 'secrets\.CLOUDFLARE_BUILD_API_TOKEN\s*\|\|' "$workflow" \
               || (echo "Fallback token source is not allowed: $workflow" && exit 1)
           done
 
