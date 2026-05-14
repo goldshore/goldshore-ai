@@ -25,6 +25,13 @@ Use exactly one canonical path per live service:
 
 The legacy `infra/Cloudflare/legacy/goldshore-api.wrangler.toml` file remains for reference only; production tooling should target the canonical `gs-api` manifest and `apps/gs-api` worker sources.
 
+
+## Routing source of truth
+
+For all Pages-vs-Workers route ownership and change workflow rules, use:
+
+- `infra/Cloudflare/runbooks/ROUTING_SOURCE_OF_TRUTH.md`
+
 ## Selection policy
 
 Do **not** glob `infra/Cloudflare/*.wrangler.toml` in scripts/docs. Use the explicit canonical paths above.
