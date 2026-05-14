@@ -37,7 +37,7 @@
     "tsx": "^4.21.0",
     "typescript": "^5.4.2",
     "wrangler": "^4.63.0",
-    "yaml": "^2.8.3"
+    "yaml": "^2.8.4"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^13.1.10",
