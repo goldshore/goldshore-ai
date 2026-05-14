@@ -17,4 +17,7 @@ app.get("/", (c) => c.json({ service: "banproof-me", ok: true }));
 
 export default {
   fetch: app.fetch,
+  async queue(batch) {
+    console.log(`Received queue batch with ${batch.messages.length} message(s)`);
+  },
 };
