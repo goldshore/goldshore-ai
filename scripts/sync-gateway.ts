@@ -46,7 +46,7 @@ const MASTER_CONFIG: MasterConfig = {
     last_sync: new Date().toISOString(),
   },
   AI_ORCHESTRATION: {
-    preferred_model: 'gpt-5-mini',
+    preferred_model: 'gpt-4-turbo',
     agent_modules: ['operator-assist', 'market-intel'],
     queue_concurrency: 10,
     retry_attempts: 2,
@@ -63,8 +63,6 @@ async function putKvValue(key: string, value: unknown): Promise<{ key: string; o
   const url = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/workers/kv/namespaces/${NAMESPACE_ID}/values/${encodeURIComponent(key)}`;
 
   try {
-    const finalVerify = await fetch('https://api.goldshore.ai/internal/inbox-status');
-    const data = (await finalVerify.json()) as { success?: boolean; inbox?: { count?: number } };
     const response = await fetch(url, {
       method: 'PUT',
       headers: {
@@ -77,30 +75,6 @@ async function putKvValue(key: string, value: unknown): Promise<{ key: string; o
     if (response.ok) {
       return { key, ok: true, status: response.status };
     }
-  } catch (error) {
-    console.error('⚠️ Final verification failed due to network/auth issue:', error);
-  }
-}
-
-async function main(): Promise<void> {
-  assertEnvironment();
-  const parseResult = MasterConfigSchema.safeParse(MASTER_CONFIG);
-
-  if (!parseResult.success) {
-    console.error('❌ Invalid MASTER_CONFIG.');
-    console.error(parseResult.error.format());
-    process.exitCode = 1;
-    return;
-  }
-
-  await syncConfig(parseResult.data);
-  await runFinalVerification();
-}
-
-main().catch((error) => {
-  console.error('❌ System sync failed:', error);
-  process.exitCode = 1;
-});
 
     const error = await response.text();
     return { key, ok: false, status: response.status, detail: error.slice(0, 500) };

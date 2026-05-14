@@ -11,7 +11,7 @@ const VERSION = '2026.02.10-mail-worker-fix';
 
 const app = new Hono<{ Bindings: Env }>();
 
-const isEmailLike = (value: string) => /^[^\s@]{1,64}@(?:[^\s@.]{1,63}\.)+[^\s@.]{2,}$/.test(value);
+const isEmailLike = (value: string) => /.+@.+\..+/.test(value);
 
 app.get('/', (c) => c.text('GoldShore Mail Worker'));
 
