@@ -36,7 +36,7 @@
     "check:banproof-bindings": "node scripts/check-banproof-bindings.mjs"
   },
   "devDependencies": {
-    "@astrojs/mdx": "^4.0.8",
+    "@astrojs/mdx": "^5.0.4",
     "@astrojs/sitemap": "^3.7.2",
     "@astrojs/tailwind": "^6.0.2",
     "@types/node": "^25.7.0",
