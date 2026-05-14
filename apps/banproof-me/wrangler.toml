@@ -60,6 +60,107 @@ id = "banproof_config_preview"
 binding = "BANPROOF_DB"
 database_name = "banproof_platform"
 database_id = "banproof_platform_preview"
+# Worker Builds token for this service must be the gs-control build token.
+# wrangler.toml for the banproof-me security worker
+#
+# banproof-me is the GoldShore security / ban-checking layer.
+# It is bound as SECURITY in gs-gateway and protects all inbound requests.
+#
+# The 9 bindings below are required for full platform integration (Phase 2 audit):
+#   1. BANPROOF_KV   — real-time ban cache (fast lookups)
+#   2. GOLDSHORE_KV  — shared platform KV (feature flags, config)
+#   3. BAN_DB        — gs_platform_db  (ban records, user reputation)
+#   4. AUDIT_DB      — gs_audit_db     (compliance / audit log)
+#   5. SIGNALS_DB    — gs_signals_db   (trading signal association)
+#   6. ASSETS        — gs-assets R2 bucket (shared media/assets)
+#   7. TELEMETRY     — gs-telemetry-storage R2 (compliance telemetry)
+#   8. API_SERVICE   — gs-api service binding (for reputation lookups)
+#   9. BAN_EVENTS    — ban-events queue producer (async ban processing)
+
+name = "banproof-me"
+main = "src/index.ts"
+compatibility_date = "2026-04-18"
+compatibility_flags = ["nodejs_compat"]
+
+workers_dev = false
+
+[env.prod]
+vars = { ENV = "production" }
+
+# 1. BANPROOF_KV — ban cache (fast IP / user lookups)
+[[env.prod.kv_namespaces]]
+binding = "BANPROOF_KV"
+id = "banproof_kv_001"
+
+# 2. GOLDSHORE_KV — shared platform config / feature flags
+[[env.prod.kv_namespaces]]
+binding = "GOLDSHORE_KV"
+id = "goldshore_kv_001"
+
+# 3. BAN_DB — gs_platform_db D1 (ban records, user reputation)
+[[env.prod.d1_databases]]
+binding = "BAN_DB"
+database_name = "gs_platform_db"
+database_id = "gs_platform_db"
+
+# 4. AUDIT_DB — gs_audit_db D1 (compliance audit log)
+[[env.prod.d1_databases]]
+binding = "AUDIT_DB"
+database_name = "gs_audit_db"
+database_id = "gs_audit_db"
+
+# 5. SIGNALS_DB — gs_signals_db D1 (trading signal association for ban context)
+[[env.prod.d1_databases]]
+binding = "SIGNALS_DB"
+database_name = "gs_signals_db"
+database_id = "gs_signals_db"
+
+# 6. ASSETS — shared R2 bucket (media / static assets)
+[[env.prod.r2_buckets]]
+binding = "ASSETS"
+bucket_name = "gs-assets"
+
+# 7. TELEMETRY — R2 bucket for compliance telemetry / transaction logs
+[[env.prod.r2_buckets]]
+binding = "TELEMETRY"
+bucket_name = "gs-telemetry-storage"
+
+# 8. API_SERVICE — gs-api service binding (reputation lookups, user data)
+[[env.prod.services]]
+binding = "API_SERVICE"
+service = "gs-api"
+environment = "prod"
+
+# 9. BAN_EVENTS — queue producer for async ban event processing
+[[env.prod.queues.producers]]
+binding = "BAN_EVENTS"
+queue = "ban-events"
+
+[env.preview]
+vars = { ENV = "preview" }
+
+[[env.preview.kv_namespaces]]
+binding = "BANPROOF_KV"
+id = "banproof_kv_preview"
+
+[[env.preview.kv_namespaces]]
+binding = "GOLDSHORE_KV"
+id = "goldshore_kv_preview"
+
+[[env.preview.d1_databases]]
+binding = "BAN_DB"
+database_name = "gs_platform_db"
+database_id = "gs_platform_db"
+
+[[env.preview.d1_databases]]
+binding = "AUDIT_DB"
+database_name = "gs_audit_db"
+database_id = "gs_audit_db"
+
+[[env.preview.d1_databases]]
+binding = "SIGNALS_DB"
+database_name = "gs_signals_db"
+database_id = "gs_signals_db"
 
 [[env.preview.r2_buckets]]
 binding = "ASSETS"
@@ -120,3 +221,15 @@ environment = "prod"
 binding = "GS_CONTROL"
 service = "gs-control"
 environment = "prod"
+[[env.preview.r2_buckets]]
+binding = "TELEMETRY"
+bucket_name = "gs-telemetry-storage"
+
+[[env.preview.services]]
+binding = "API_SERVICE"
+service = "gs-api"
+environment = "preview"
+
+[[env.preview.queues.producers]]
+binding = "BAN_EVENTS"
+queue = "ban-events-preview"
