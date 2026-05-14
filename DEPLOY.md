@@ -83,3 +83,6 @@ This makes CI checks **required** — no PR merges to main unless
 
 See `infra/INFRASTRUCTURE.md` for the canonical list of all Cloudflare
 resources (workers, D1, KV, R2, routes) with real IDs.
+
+
+For URL route ownership and binding procedure (Pages vs Workers), follow `infra/Cloudflare/runbooks/ROUTING_SOURCE_OF_TRUTH.md`.
