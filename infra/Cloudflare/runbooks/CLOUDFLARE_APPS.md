@@ -104,3 +104,4 @@ Required repo-managed bindings by environment (`dev`, `preview`, `prod`):
 - R2: `ASSETS` (`gs-assets`)
 - Queue: `POA_EVENTS_QUEUE` (producer + consumer)
 - Service bindings: `GS_API` (`gs-api`) and `GS_CONTROL` (`gs-control`)
+- Workflow binding: `ContentProcessingWorkflow`
