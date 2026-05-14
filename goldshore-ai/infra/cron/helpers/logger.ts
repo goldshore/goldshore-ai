@@ -1,31 +1,8 @@
 function sanitizeValue(value: any): any {
-  if (value instanceof Error) {
-    // Avoid logging full error objects which may contain sensitive data such as
-    // environment-derived URLs, tokens, or file system paths. Only expose a
-    // generic, non-sensitive representation.
-    const safe: Record<string, unknown> = {
-      name: value.name,
-      // Do not include the original error message text as it may contain
-      // secrets or environment-specific details.
-      message: "An internal error occurred",
-    };
-    // Indicate that a stack was present without logging its contents.
-    if (typeof value.stack === "string" && value.stack.length > 0) {
-      safe.hasStack = true;
-    }
-    return safe;
-  }
-  return value;
-}
-
-function sanitizeArgs(args: any[]): any[] {
   const redactionPatterns: { re: RegExp; replacement: string }[] = [
-    // Common secret-like key names
     { re: /(token|secret|password|api[_-]?key|authorization|account[_-]?id|zone[_-]?id)\s*[:=]\s*["']?([A-Za-z0-9_\-\.]{2,})["']?/gi, replacement: "$1: [REDACTED]" },
-    // Bearer tokens and long opaque values
     { re: /\bBearer\s+[A-Za-z0-9_\-\.+=\/]{8,}\b/gi, replacement: "Bearer [REDACTED]" },
   ];
-
   const sensitiveKeyRe = /(token|secret|password|api[_-]?key|authorization|account[_-]?id|zone[_-]?id|cf_.*)/i;
 
   const redactText = (text: string): string => {
@@ -54,21 +31,36 @@ function sanitizeArgs(args: any[]): any[] {
     return out;
   };
 
+  if (value instanceof Error) {
+    const safe: Record<string, unknown> = {
+      name: value.name,
+      message: "An internal error occurred",
+    };
+    if (typeof value.stack === "string" && value.stack.length > 0) {
+      safe.hasStack = true;
+    }
+    return safe;
+  }
+
+  if (typeof value === "string") return redactText(value);
+
+  if (value && typeof value === "object") {
+    return sanitizeObject(value);
+  }
+
+  return value;
+}
+
+function sanitizeArgs(args: any[]): any[] {
   return args.map((arg) => {
     const sanitized = sanitizeValue(arg);
-
-    if (typeof sanitized === "string") {
-      return redactText(sanitized);
-    }
-
     if (sanitized && typeof sanitized === "object") {
       try {
-        return redactText(JSON.stringify(sanitizeObject(sanitized)));
+        return JSON.stringify(sanitized);
       } catch {
         return "[Unserializable object]";
       }
     }
-
     return sanitized;
   });
 }
