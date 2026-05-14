@@ -1,8 +1,8 @@
 # Section Definitions
 
-This file defines the rule categories for Postgres best practices. Rules are automatically assigned to sections based on their filename prefix.
+This file defines the canonical rule categories for Postgres best practices. Rules are automatically assigned to sections based on their filename prefix.
 
-Take the examples below as pure demonstrative. Replace each section with the actual rule categories for Postgres best practices.
+The sections below are the authoritative categories for this skill and should be kept in sync with the corresponding rule files.
 
 ---
 
