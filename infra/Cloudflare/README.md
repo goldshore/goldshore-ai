@@ -37,7 +37,7 @@ Cloudflare worker deploy workflows and infra guard checks use the following cano
 | Secret name | Required for | Ownership |
 |---|---|---|
 | `CLOUDFLARE_ACCOUNT_ID` | All worker deploy jobs and Cloudflare infra guard checks | Cloudflare account owner / platform ops |
-| `CLOUDFLARE_BUILD_API_TOKEN` | All worker deploy jobs (`gs-api`, `gs-agent`, `gs-gateway`, `gs-control`, `banproof-me`) and Cloudflare infra guard API calls | `gs-control` service token owner (platform ops) |
+| `CLOUDFLARE_BUILD_API_TOKEN` | All worker deploy jobs (`gs-api`, `gs-agent`, `gs-gateway`, `gs-control`, `gs-mail`, `banproof-me`) and Cloudflare infra guard API calls | `gs-control` service token owner (platform ops) |
 
 Policy:
 
