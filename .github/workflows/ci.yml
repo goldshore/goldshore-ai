@@ -30,6 +30,14 @@ jobs:
         run: pnpm run repo:health
         continue-on-error: false
 
+      - name: Enforce banproof production bindings
+        run: |
+          if [ -f apps/banproof-me/wrangler.toml ]; then
+            pnpm check:banproof-bindings
+          else
+            echo "Skipping banproof binding check: apps/banproof-me/wrangler.toml is not present in this branch."
+          fi
+
       - name: Build all
         run: pnpm -r build
 
