@@ -1,29 +1,23 @@
-export interface Env {
-  PLATFORM_DB: D1Database;
+import { Hono } from "hono";
+
+interface BanproofEnv {
+  ENV?: string;
+  BANPROOF_CONFIG: KVNamespace;
+  BANPROOF_DB: D1Database;
   ASSETS: R2Bucket;
-  BANPROOF_KV: KVNamespace;
-  GOLDSHORE_KV: KVNamespace;
-  TELEMETRY_STORAGE: R2Bucket;
-  GS_PLATFORM_DB: D1Database;
-  GS_AUDIT_DB: D1Database;
-  GS_SIGNALS_DB: D1Database;
+  POA_EVENTS_QUEUE: Queue;
+  GS_API: Fetcher;
+  GS_CONTROL: Fetcher;
 }
 
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
+const app = new Hono<{ Bindings: BanproofEnv }>();
+
+app.get("/health", (c) => c.json({ status: "ok", service: "banproof-me", env: c.env.ENV ?? "unknown" }));
+app.get("/", (c) => c.json({ service: "banproof-me", ok: true }));
 
 export default {
-  async fetch(request: Request, _env: Env, _ctx: ExecutionContext): Promise<Response> {
-    const url = new URL(request.url);
-
-    if (request.method === 'GET' && url.pathname === '/health') {
-      return json({ status: 'ok', service: 'banproof-me' });
-    }
-
-    return json({ service: 'banproof-me', ok: true });
+  fetch: app.fetch,
+  async queue(batch) {
+    console.log(`Received queue batch with ${batch.messages.length} message(s)`);
   },
 };
