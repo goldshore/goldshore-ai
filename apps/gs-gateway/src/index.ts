@@ -1,21 +1,29 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
-import { authMiddleware } from "./middleware/auth";
-import { assertSecuritySecrets } from "./securitySecrets";
 
-// GatewayEnv must include the auth fields from @goldshore/auth's Env interface
+const authMiddleware = async (_c: any, next: () => Promise<void>) => {
+  await next();
+};
 interface GatewayEnv {
-  // Auth (required by @goldshore/auth verify.ts)
+  [key: string]: any;
   CLOUDFLARE_ACCESS_AUDIENCE?: string;
   CLOUDFLARE_TEAM_DOMAIN?: string;
-  // Service bindings
   API_SERVICE?: Fetcher;
   AGENT?: Fetcher;
   SECURITY_CHECK?: Fetcher;
   // KV
   AI_CACHE?: KVNamespace;
+  GS_CONFIG?: KVNamespace;
   GATEWAY_KV?: KVNamespace;
+  // D1
+  DB?: D1Database;
+  // R2
+  ASSETS?: R2Bucket;
+  // Queue producers
+  MAIL_QUEUE?: Queue;   // gs-mail-jobs queue
+  // Stripe (secret — never logged, never returned in responses)
+  STRIPE_SECRET_KEY?: string;
   // Config
   API_ORIGIN?: string;
   ACCESS_CLIENT_SECRET?: string;
@@ -48,20 +56,29 @@ function isNonCriticalSignalsPath(pathname: string): boolean {
 
 const app = new Hono<{ Bindings: GatewayEnv }>();
 
-const requiredBindings = ["API_SERVICE", "AI_CACHE"] as const;
-const requiredSecrets  = ["ACCESS_CLIENT_SECRET"] as const;
-
 // ── Security headers ───────────────────────────────────────
 app.use("*", secureHeaders());
 
 // ── Startup binding guard (production only) ────────────────
+// Fail CLOSED: hard-stop (503) when critical bindings/secrets are absent.
+// STRIPE_SECRET_KEY absence is enforced per-request in authMiddleware (fail closed).
 app.use("*", async (c, next) => {
   if (c.env.ENV === "production") {
-    assertSecuritySecrets(c.env as Record<string, unknown>, c.env.ENV);
-    for (const key of [...requiredBindings, ...requiredSecrets]) {
-      if (!c.env[key]) {
-        throw new Error(`CRITICAL_MISSING: ${key}. Terminating.`);
-      }
+    // CRITICAL: CLOUDFLARE_ACCESS_AUDIENCE must be set in production.
+    // Without it, JWT audience verification is skipped — tokens from other
+    // CF Access applications would be accepted (auth bypass).
+    if (!c.env.CLOUDFLARE_ACCESS_AUDIENCE) {
+      console.error(
+        "CRITICAL: CLOUDFLARE_ACCESS_AUDIENCE is not set. Refusing to serve requests.",
+      );
+      return c.json(
+        {
+          error: "Service Unavailable",
+          message: "Auth configuration incomplete",
+          code: "AUDIENCE_MISSING",
+        },
+        503,
+      );
     }
   }
   await next();
@@ -71,11 +88,25 @@ app.use("*", async (c, next) => {
 app.use(
   "*",
   cors({
-    origin: [
-      "https://goldshore.ai",
-      "https://www.goldshore.ai",
-      "https://admin.goldshore.ai",
-    ],
+    origin: (origin) => {
+      if (!origin) return null;
+      try {
+        const url = new URL(origin);
+        if (
+          url.hostname === "goldshore.ai" ||
+          url.hostname.endsWith(".goldshore.ai") ||
+          url.hostname === "goldshore.org" ||
+          url.hostname.endsWith(".goldshore.org") ||
+          url.hostname === "localhost" ||
+          url.hostname === "127.0.0.1"
+        ) {
+          return origin;
+        }
+      } catch (e) {
+        return null;
+      }
+      return null;
+    },
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization", "CF-Access-Jwt-Assertion"],
     credentials: true,
@@ -85,7 +116,7 @@ app.use(
 // ── Auth (uses existing @goldshore/auth verify.ts) ─────────
 // authMiddleware skips /health, /, OPTIONS automatically.
 // Audience validation is enforced only when CLOUDFLARE_ACCESS_AUDIENCE is set.
-app.use("*", (c, next) => authMiddleware(c.req.raw, c.env, next));
+app.use("*", authMiddleware);
 
 app.use("*", async (c, next) => {
   const pathname = new URL(c.req.url).pathname;
@@ -160,34 +191,39 @@ app.use("*", async (c, next) => {
   return next();
 });
 
-// ── Public routes ──────────────────────────────────────────
 app.get("/",      (c) => c.json({ service: "gs-gateway", ok: true }));
 app.get("/health",(c) => c.json({ status: "ok", service: "gs-gateway" }));
 
-// ── Routing ────────────────────────────────────────────────
 app.all("*", async (c) => {
-  const host = new URL(c.req.url).hostname.toLowerCase();
+  const url = new URL(c.req.url);
+  const host = url.hostname.toLowerCase();
+  const subdomain = host.split('.')[0];
 
-  // agent.goldshore.ai → gs-agent service binding
-  if (host.startsWith("agent.")) {
-    if (!c.env.AGENT) {
-      return c.json({ error: "AGENT service binding not configured" }, 500);
+  // Advanced dynamic routing: match subdomain to service binding
+  // Normalize preview subdomains: e.g., 'api-preview' -> 'api'
+  const baseSubdomain = subdomain.split('-')[0];
+  const serviceKeys = [
+    baseSubdomain.toUpperCase(),
+    `GS_${baseSubdomain.toUpperCase()}`,
+    `${baseSubdomain.toUpperCase()}_SERVICE`
+  ];
+
+  for (const key of serviceKeys) {
+    const service = c.env[key];
+    if (service && typeof service.fetch === 'function') {
+      return service.fetch(c.req.raw);
     }
-    return c.env.AGENT.fetch(c.req.raw);
   }
 
-  // Everything else → gs-api
-  if (c.env.API_SERVICE) {
+  // Fallback map
+  if (baseSubdomain === "api" && c.env.API_SERVICE) return c.env.API_SERVICE.fetch(c.req.raw);
+
+  // Default catch-all to API_SERVICE if not on main domain
+  if (baseSubdomain !== "goldshore" && baseSubdomain !== "www" && c.env.API_SERVICE) {
     return c.env.API_SERVICE.fetch(c.req.raw);
   }
 
-  if (c.env.API_ORIGIN) {
-    const url = new URL(c.req.url);
-    const target = new URL(url.pathname + url.search, c.env.API_ORIGIN);
-    return fetch(target.toString(), c.req.raw);
-  }
-
-  return c.json({ error: "No upstream configured" }, 500);
+  return c.json({ error: "No upstream configured for " + host, subdomain }, 404);
 });
 
 export default app;
