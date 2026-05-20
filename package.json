@@ -33,7 +33,7 @@
     "audit": "pnpm run repo:health",
     "build:api": "turbo run build --filter=@goldshore/gs-api",
     "build:control": "turbo run build --filter=@goldshore/gs-control",
-    "preflight:security-secrets": "node scripts/preflight-security-secrets.mjs"
+    "preflight:security-secrets": "node scripts/preflight-security-secrets.mjs",
     "check:banproof-bindings": "node scripts/check-banproof-bindings.mjs"
   },
   "devDependencies": {
