@@ -11,6 +11,9 @@ interface GatewayEnv {
   // Core service bindings
   API_SERVICE?: Fetcher;
   AGENT?: Fetcher;
+  // Phase 2 service bindings (joinery)
+  SECURITY?: Fetcher;   // banproof-me security layer
+  SIGNALS?: Fetcher;    // gs-signals-prod trading signals worker
   SECURITY_CHECK?: Fetcher;
   // KV
   AI_CACHE?: KVNamespace;
