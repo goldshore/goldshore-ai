@@ -7,5 +7,8 @@ packages:
   - 'apps/gs-platform'
   - 'apps/gs-agent'
   - 'apps/gs-mail'
+  - 'apps/gs-core-worker'
+  - 'apps/armsway-com'
+  - 'apps/banproof-me'
   - 'packages/*'
   - 'infra/*'
