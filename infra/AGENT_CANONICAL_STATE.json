@@ -5,7 +5,9 @@
     "apps/gs-admin",
     "apps/gs-api",
     "apps/gs-gateway",
-    "apps/gs-control"
+    "apps/gs-control",
+    "apps/gs-agent",
+    "apps/gs-mail"
   ],
   "legacy_paths": [
     "astro-goldshore",

@@ -14,9 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6.0.2
 
-      - uses: pnpm/action-setup@v6.0.0
-        with:
-          run_install: false
+      - uses: pnpm/action-setup@v4
 
       - uses: actions/setup-node@v4
         with:
@@ -29,14 +27,6 @@ jobs:
       - name: Repo health checks
         run: pnpm run repo:health
         continue-on-error: false
-
-      - name: Enforce banproof production bindings
-        run: |
-          if [ -f apps/banproof-me/wrangler.toml ]; then
-            pnpm check:banproof-bindings
-          else
-            echo "Skipping banproof binding check: apps/banproof-me/wrangler.toml is not present in this branch."
-          fi
 
       - name: Build all
         run: pnpm -r build

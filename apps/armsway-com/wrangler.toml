@@ -1,0 +1,19 @@
+name = "armsway-com"
+main = "src/index.ts"
+compatibility_date = "2026-04-18"
+workers_dev = false
+
+[env.prod]
+routes = [
+  { pattern = "armsway.com/*", zone_name = "armsway.com" },
+  { pattern = "www.armsway.com/*", zone_name = "armsway.com" }
+]
+
+[[env.prod.d1_databases]]
+binding = "GS_AUDIT_DB"
+database_name = "gs_audit_db"
+database_id = "TODO_REPLACE_WITH_REAL_GS_AUDIT_DB_ID"
+
+[[env.prod.r2_buckets]]
+binding = "TELEMETRY_STORAGE"
+bucket_name = "gs-telemetry-storage"

@@ -1,2 +1,2 @@
-export * from './system';
-export * from './system-sync';
+export * from './system.ts';
+export * from './system-sync.ts';
