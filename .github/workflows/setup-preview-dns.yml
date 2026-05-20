@@ -14,21 +14,19 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: 22
 
-      - name: Validate required Cloudflare token
-        env:
-          CLOUDFLARE_BUILD_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
-        run: |
-          if [ -z "$CLOUDFLARE_BUILD_API_TOKEN" ]; then
-            echo "::error::Required secret CLOUDFLARE_BUILD_API_TOKEN is not set. Configure it before running this workflow."
-            exit 1
-          fi
       - name: Run DNS setup script
         env:
-          # scripts/setup-preview-dns.mjs currently reads CLOUDFLARE_API_TOKEN;
-          # map the canonical CLOUDFLARE_BUILD_API_TOKEN secret into that env var.
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+          CLOUDFLARE_BUILD_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          test -n "$CLOUDFLARE_BUILD_API_TOKEN" || (echo "Missing required secret: CLOUDFLARE_BUILD_API_TOKEN" && exit 1)
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "Missing required secret: CLOUDFLARE_ACCOUNT_ID" && exit 1)
+
+      - name: Configure preview DNS
+        env:
+          CLOUDFLARE_BUILD_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
         run: node scripts/setup-preview-dns.mjs
