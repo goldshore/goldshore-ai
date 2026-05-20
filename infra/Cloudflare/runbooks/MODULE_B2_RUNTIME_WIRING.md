@@ -13,6 +13,7 @@ Treat the following as the expected Cloudflare inventory and URLs:
 | Gateway Worker  | Worker  | UNKNOWN  | Routing /api/*      | https://gw.goldshore.ai               |
 | Control Worker  | Worker  | UNKNOWN  | Infra automation    | https://ops.goldshore.ai              |
 | Mail Worker     | Worker  | UNKNOWN  | Email routing       | https://gs-mail.goldshore.workers.dev |
+| Banproof Worker | Worker  | UNKNOWN  | PoA gateway         | https://banproof.me                    |
 
 Always compare Cloudflare to this table and repair any divergence.
 
@@ -25,6 +26,7 @@ Always compare Cloudflare to this table and repair any divergence.
   - `gs-gateway` → `https://gw.goldshore.ai`.
   - `gs-control` → `https://ops.goldshore.ai`.
   - `gs-mail` → `https://mail.goldshore.ai` (replace workers.dev long term).
+  - `banproof-me` → `https://banproof.me`.
 - Routing
   - `/api/*` → Gateway → API.
   - `/control/*` → Control worker.
@@ -35,7 +37,7 @@ Always compare Cloudflare to this table and repair any divergence.
 Use the Cloudflare API to enumerate and verify current state.
 
 - Pages projects: `GET /client/v4/accounts/{account_id}/pages/projects` and confirm `gs-web` and `gs-admin` exist.
-- Workers: `GET /client/v4/accounts/{account_id}/workers/services` and confirm `gs-api`, `gs-gateway`, `gs-control`, `gs-mail` exist.
+- Workers: `GET /client/v4/accounts/{account_id}/workers/services` and confirm `gs-api`, `gs-gateway`, `gs-control`, `gs-mail`, `banproof-me` exist.
 - Routes: `GET /client/v4/accounts/{account_id}/workers/filters` and confirm:
   - `api.goldshore.ai/*` → `gs-api`
   - `gw.goldshore.ai/*` → `gs-gateway`

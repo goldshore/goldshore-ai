@@ -15,8 +15,6 @@ on:
       - "package.json"
       - "pnpm-lock.yaml"
       - ".github/workflows/deploy-gs-admin.yml"
-      - ".github/workflows/deploy-gs-web.yml"
-      - ".github/workflows/deploy-gs-surfaces-report.yml"
   workflow_dispatch:
     inputs:
       deploy_ref:

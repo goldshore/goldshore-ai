@@ -22,7 +22,7 @@ Last audited: 2026-03-23
 | `.github/workflows/cleanup-cache.yml` | Remove cached artifacts on demand. | `workflow_dispatch` | Non-blocking |
 | `.github/workflows/cleanup-workflow-runs.yml` | Prune old workflow runs on a schedule. | `schedule`, `workflow_dispatch` | Non-blocking |
 | `.github/workflows/close-stale-prs.yml` | Close stale pull requests automatically. | `schedule`, `workflow_dispatch` | Non-blocking |
-| `.github/workflows/cloudflare-infra-guard.yml` | Validate Cloudflare Workers/Pages infrastructure wiring and guardrails for incident triage. | `workflow_dispatch` | Non-blocking |
+| `.github/workflows/cloudflare-infra-guard.yml` | Validate Cloudflare Workers/Pages infrastructure wiring and guardrails for incident triage. | `pull_request` to `main`, `workflow_dispatch` | Non-blocking (advisory on PRs) |
 | `.github/workflows/deploy-gs-admin.yml` | Production deploy for the admin app. | `push` to `main` (path-filtered) | Non-blocking |
 | `.github/workflows/deploy-gs-agent.yml` | Production-labeled deploy workflow for the agent worker. | `pull_request` (path-filtered, label/ready-for-review gated) | Non-blocking |
 | `.github/workflows/deploy-gs-api.yml` | Production deploy for the API worker. | `push` to `main` (path-filtered) | Non-blocking |
