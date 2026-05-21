@@ -2,49 +2,73 @@
 /**
  * One-shot script: configure preview.goldshore.ai DNS + Cloudflare Pages custom domain.
  *
- * Accepts either naming convention for env vars:
- *   CLOUDFLARE_API_TOKEN  or  CF_API_TOKEN
- *   CLOUDFLARE_ACCOUNT_ID or  CF_ACCOUNT_ID
- *   CLOUDFLARE_ZONE_ID    or  CF_ZONE_ID  (optional — auto-resolved from domain if omitted)
+ * Required env vars:
+ *   CLOUDFLARE_BUILD_API_TOKEN
+ *   CLOUDFLARE_ACCOUNT_ID
+ * Optional env vars:
+ *   CLOUDFLARE_ZONE_ID (auto-resolved from zone name if omitted)
  */
 
 const API = "https://api.cloudflare.com/client/v4";
-const TOKEN = process.env.CLOUDFLARE_API_TOKEN || process.env.CF_API_TOKEN;
-const ACCOUNT = process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_ID;
-let ZONE = process.env.CLOUDFLARE_ZONE_ID || process.env.CF_ZONE_ID;
+const TOKEN = process.env.CLOUDFLARE_BUILD_API_TOKEN;
+const ACCOUNT = process.env.CLOUDFLARE_ACCOUNT_ID;
+let ZONE = process.env.CLOUDFLARE_ZONE_ID;
 
 if (!TOKEN || !ACCOUNT) {
-  console.error("Missing required env vars: set either CLOUDFLARE_API_TOKEN/CLOUDFLARE_ACCOUNT_ID or CF_API_TOKEN/CF_ACCOUNT_ID. (CLOUDFLARE_ZONE_ID/CF_ZONE_ID is optional; it will be auto-resolved if omitted.)");
+  console.error("Missing required env vars: CLOUDFLARE_BUILD_API_TOKEN and CLOUDFLARE_ACCOUNT_ID. (CLOUDFLARE_ZONE_ID is optional; it will be auto-resolved if omitted.)");
   process.exit(1);
 }
 
 function sanitizeErrorForLog(err) {
   // Avoid logging provider-supplied messages directly, as they may contain
   // sensitive data. Instead, log a constrained summary for debugging.
+  //
+  // This function must be safe even if `err` is fully tainted (e.g. derived
+  // from environment variables or remote responses). Therefore, we:
+  //   - Only log a small, whitelisted set of primitive fields.
+  //   - Reject free-form or long strings.
+  //   - Never log nested objects/arrays such as `err.errors`.
   if (!err || typeof err !== "object") {
     return "Unknown error";
   }
+
   const parts = [];
-  if (typeof err.status === "number") {
+
+  // Helper to allow only short, simple identifiers (e.g. "ENOENT", "ERR123").
+  const safeString = (value) => {
+    if (typeof value !== "string") return null;
+    // Limit length to reduce risk of leaking large payloads.
+    if (value.length === 0 || value.length > 64) return null;
+    // Allow only word chars, dash, and dot.
+    if (!/^[A-Za-z0-9_.-]+$/.test(value)) return null;
+    return value;
+  };
+
+  // HTTP status code or similar numeric status.
+  if (typeof err.status === "number" && Number.isFinite(err.status)) {
     parts.push(`status=${err.status}`);
   }
-  if (typeof err.code === "string") {
-    parts.push(`code=${err.code}`);
+
+  // Generic error code / name, but only if they are short, simple identifiers.
+  const code = safeString(err.code);
+  if (code) {
+    parts.push(`code=${code}`);
   }
-  if (typeof err.name === "string") {
-    parts.push(`name=${err.name}`);
+
+  const name = safeString(err.name);
+  if (name) {
+    parts.push(`name=${name}`);
   }
-  if (Array.isArray(err.errors) && err.errors.length > 0) {
-    const first = err.errors[0];
-    if (first && typeof first.code !== "undefined") {
-      parts.push(`cf_error_code=${first.code}`);
-    }
-  }
+
+  // Do NOT log nested structures like `err.errors` as they may contain
+  // request echoes, environment data, or other sensitive information.
+
   return parts.length > 0 ? parts.join(", ") : "Unspecified error (details redacted)";
 }
 
 async function cf(path, init = {}) {
-  const res = await fetch(`${API}${path}`, {
+  const url = `${API}${path}`;
+  const res = await fetch(url, {
     ...init,
     headers: {
       "Authorization": `Bearer ${TOKEN}`,
@@ -52,9 +76,20 @@ async function cf(path, init = {}) {
       ...(init.headers || {}),
     },
   });
-  const json = await res.json();
-  if (!json.success) {
-    throw new Error(`CF ${path} failed: ${JSON.stringify(json.errors)}`);
+  const bodyText = await res.text();
+  let json;
+  try {
+    json = JSON.parse(bodyText);
+  } catch {
+    json = null;
+  }
+
+  if (!res.ok) {
+    throw new Error(`Cloudflare API request failed: url=${url} status=${res.status} body=${bodyText}`);
+  }
+
+  if (!json || !json.success) {
+    throw new Error(`Cloudflare API logical failure: url=${url} status=${res.status} body=${bodyText}`);
   }
   return json.result;
 }
@@ -69,7 +104,7 @@ async function resolveZoneId(domain) {
   if (zones.length > 1) {
     throw new Error(
       `Multiple Cloudflare zones found for ${domain} under account ${ACCOUNT}. ` +
-      `Refusing to choose arbitrarily. Please set CLOUDFLARE_ZONE_ID or CF_ZONE_ID explicitly.`
+      "Refusing to choose arbitrarily. Please set CLOUDFLARE_ZONE_ID explicitly."
     );
   }
   console.log(`  ✓ Zone ID: ${zones[0].id}`);
@@ -116,8 +151,7 @@ async function main() {
     } else {
       if (process.env.DEBUG === "1") {
         console.warn(
-          "   ⚠ Could not add custom domain (project may not exist yet). Debug details:",
-          sanitizeErrorForLog(err)
+          "   ⚠ Could not add custom domain (project may not exist yet). Debug details redacted."
         );
       } else {
         console.warn("   ⚠ Could not add custom domain (project may not exist yet). Enable DEBUG=1 for more details.");

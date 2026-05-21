@@ -15,15 +15,22 @@ import admin from './routes/admin';
 import media from './routes/media';
 import pages from './routes/pages';
 import internal from './routes/internal';
+import { assertSecuritySecrets } from './securitySecrets';
 
 type Env = {
   KV: KVNamespace;
   CONTROL_LOGS?: KVNamespace;
   DB: D1Database;
+  TELEMETRY_DB?: D1Database;
   ASSETS: R2Bucket;
+  AUTH_SESSION?: DurableObjectNamespace;
   AI: Ai;
   OPENAI_API_KEY?: string;
   GEMINI_API_KEY?: string;
+  JWT_SECRET?: string;
+  STRIPE_API_KEY?: string;
+  SENDGRID_API_KEY?: string;
+  ACCESS_CLIENT_SECRET?: string;
   // Sentinel: Added support for Audience verification to prevent auth bypass
   CLOUDFLARE_ACCESS_AUDIENCE?: string;
   // Sentinel: Added support for dynamic team domain
@@ -37,6 +44,15 @@ const app = new Hono<{
   Bindings: Env;
   Variables: { accessClaims: AccessTokenPayload | null };
 }>();
+
+const requiredBindings = ['DB', 'ASSETS', 'AI'] as const;
+const expectedD1Binding = 'DB' as const;
+const requiredSecrets = [
+  'JWT_SECRET',
+  'STRIPE_API_KEY',
+  'SENDGRID_API_KEY',
+  'ACCESS_CLIENT_SECRET',
+] as const;
 
 const DEFAULT_ALLOWED_ORIGINS = [
   'https://goldshore.ai',
@@ -76,6 +92,25 @@ const isLocalDevelopmentOrigin = (origin: string) => {
 
 // Sentinel: Security Middleware
 app.use('*', secureHeaders());
+
+// Runtime safety guard (fail-fast for misconfigured production runtime).
+app.use('*', async (c, next) => {
+  if (c.env.ENV === 'production') {
+    assertSecuritySecrets(c.env as Record<string, unknown>, c.env.ENV);
+  }
+  if (!c.env[expectedD1Binding]) {
+    throw new Error(
+      `CRITICAL_MISSING_D1_BINDING: Expected D1 binding "${expectedD1Binding}" is undefined. Verify [[d1_databases]] binding in wrangler.toml.`,
+    );
+  }
+
+  for (const key of [...requiredBindings, ...requiredSecrets]) {
+    if (!c.env[key]) {
+      throw new Error(`CRITICAL_MISSING: ${key}. Terminating.`);
+    }
+  }
+  await next();
+});
 
 // Enforce CORS to allow legitimate browser clients
 app.use(
@@ -189,4 +224,23 @@ v1.route('/users', users);
 app.route('/v1', v1);
 
 export { isAllowedOrigin, isPreviewOrigin, parseAllowedOrigins };
+
+export class AuthSession {
+  constructor(
+    private readonly state: DurableObjectState,
+    private readonly env: Env,
+  ) {}
+
+  async fetch(): Promise<Response> {
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        id: this.state.id.toString(),
+        env: this.env.ENV ?? 'unknown',
+      }),
+      { headers: { 'content-type': 'application/json' } },
+    );
+  }
+}
+
 export default app;

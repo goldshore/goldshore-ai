@@ -55,6 +55,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Build gs-web
         run: pnpm --dir apps/gs-web build
+      - name: Run gs-web release quality gate
+        run: pnpm --dir apps/gs-web check:release
 
   gs-admin-build:
     runs-on: ubuntu-latest

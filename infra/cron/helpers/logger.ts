@@ -18,7 +18,8 @@ function sanitizeArgs(args: any[]): any[] {
     // Leave non-string primitives and objects as-is unless they contain sensitive substrings
     let text: string;
     if (arg instanceof Error) {
-      text = arg.stack || arg.message || String(arg);
+      // Avoid logging full stack traces to reduce risk of leaking sensitive data; prefer the message
+      text = arg.message || String(arg);
     } else if (typeof arg === "string") {
       text = arg;
     } else {

@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Gold Shore Labs — AI infrastructure, data intelligence, human-in-the-loop systems." />
+  <title>Gold Shore Labs</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist+Mono:wght@300;400;500&family=Geist:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ── TOKENS ── */
+    :root {
+      --gold:       #c9a84c;
+      --gold-soft:  rgba(201,168,76,0.14);
+      --gold-glow:  rgba(201,168,76,0.06);
+      --void:       #060810;
+      --surface:    #0c1120;
+      --surface2:   #111827;
+      --border:     rgba(201,168,76,0.15);
+      --border-dim: rgba(255,255,255,0.05);
+      --text:       #e8edf8;
+      --muted:      rgba(232,237,248,0.5);
+      --faint:      rgba(232,237,248,0.25);
+      --serif:      'Instrument Serif', Georgia, serif;
+      --mono:       'Geist Mono', 'Courier New', monospace;
+      --sans:       'Geist', system-ui, sans-serif;
+      --ease:       cubic-bezier(0.22,0.61,0.36,1);
+      --gw-url:     var(--GW_URL, 'https://gw.goldshore.ai');
+      --api-url:    var(--API_URL, 'https://api.goldshore.ai');
+      --admin-url:  var(--ADMIN_URL, 'https://admin.goldshore.ai');
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--sans);
+      background: var(--void);
+      color: var(--text);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* Ambient grid */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(201,168,76,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(201,168,76,0.025) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Radial vignette */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(201,168,76,0.06) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.25rem 3rem;
+      background: rgba(6,8,16,0.8);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border-dim);
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+    }
+
+    .nav-mark {
+      width: 28px; height: 28px;
+      border: 1px solid var(--gold);
+      transform: rotate(45deg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .nav-mark::after {
+      content: '';
+      width: 8px; height: 8px;
+      background: var(--gold);
+      transform: rotate(0deg);
+    }
+
+    .nav-name {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 2.5rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 220ms var(--ease);
+    }
+
+    .nav-links a:hover { color: var(--gold); }
+
+    .nav-cta {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gold) !important;
+      border: 1px solid var(--gold);
+      padding: 0.5rem 1.1rem;
+      transition: background 220ms var(--ease) !important;
+    }
+
+    .nav-cta:hover { background: var(--gold-soft) !important; }
+
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0.5rem;
+    }
+
+    .hamburger span {
+      display: block;
+      width: 22px;
+      height: 1px;
+      background: var(--gold);
+      transition: all 220ms var(--ease);
+    }
+
+    .mobile-menu {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--void);
+      z-index: 199;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2.5rem;
+    }
+
+    .mobile-menu.open { display: flex; }
+
+    .mobile-menu a {
+      font-family: var(--mono);
+      font-size: 1rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-decoration: none;
+    }
+
+    .mobile-menu a:hover { color: var(--gold); }
+
+    .mobile-close {
+      position: absolute;
+      top: 1.5rem; right: 2rem;
+      background: none; border: none;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 8rem 3rem 5rem;
+      max-width: 1300px;
+      margin: 0 auto;
+    }
+
+    .hero-inner {
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 5rem;
+      align-items: center;
+      width: 100%;
+    }
+
+    .hero-eyebrow {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gold);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+    }
+
+    .hero-eyebrow::before {
+      content: '';
+      display: block;
+      width: 32px;
+      height: 1px;
+      background: var(--gold);
+    }
+
+    .hero-title {
+      font-family: var(--serif);
+      font-size: clamp(3.2rem, 6vw, 6rem);
+      line-height: 1.0;
+      color: var(--text);
+      margin-bottom: 2rem;
+      letter-spacing: -0.02em;
+    }
+
+    .hero-title em {
+      font-style: italic;
+      color: var(--gold);
+    }
+
+    .hero-sub {
+      font-size: 1.05rem;
+      font-weight: 300;
+      color: var(--muted);
+      line-height: 1.8;
+      max-width: 44ch;
+      margin-bottom: 3rem;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--void);
+      background: var(--gold);
+      border: 1px solid var(--gold);
+      padding: 0.85rem 2rem;
+      text-decoration: none;
+      transition: all 220ms var(--ease);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary:hover { background: transparent; color: var(--gold); }
+
+    .btn-outline {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gold);
+      background: transparent;
+      border: 1px solid var(--border);
+      padding: 0.85rem 2rem;
+      text-decoration: none;
+      transition: all 220ms var(--ease);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-outline:hover { border-color: var(--gold); background: var(--gold-soft); }
+
+    /* Hero panel */
+    .hero-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 2rem;
+      position: relative;
+    }
+
+    .hero-panel::before {
+      content: '';
+      position: absolute;
+      top: -1px; left: 0;
+      width: 60%;
+      height: 2px;
+      background: linear-gradient(90deg, var(--gold), transparent);
+    }
+
+    .panel-label {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 1.5rem;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border-dim);
+    }
+
+    .status-row:last-child { border-bottom: none; }
+
+    .status-name {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+
+    .status-badge {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.6rem;
+    }
+
+    .badge-live { color: #4ade80; border: 1px solid rgba(74,222,128,0.3); }
+    .badge-active { color: var(--gold); border: 1px solid var(--border); }
+    .badge-building { color: var(--muted); border: 1px solid var(--border-dim); }
+
+    .dot-live {
+      display: inline-block;
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: #4ade80;
+      margin-right: 0.4rem;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    /* ── SECTIONS ── */
+    section {
+      position: relative;
+      z-index: 1;
+      padding: 7rem 3rem;
+      max-width: 1300px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gold);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .section-label::before {
+      content: '';
+      display: block;
+      width: 24px;
+      height: 1px;
+      background: var(--gold);
+    }
+
+    .section-title {
+      font-family: var(--serif);
+      font-size: clamp(2rem, 3.5vw, 3.2rem);
+      line-height: 1.1;
+      color: var(--text);
+      margin-bottom: 1.25rem;
+    }
+
+    .section-sub {
+      font-size: 1rem;
+      font-weight: 300;
+      color: var(--muted);
+      line-height: 1.75;
+      max-width: 52ch;
+      margin-bottom: 3.5rem;
+    }
+
+    /* ── DIVIDER ── */
+    .divider {
+      position: relative;
+      z-index: 1;
+      border: none;
+      border-top: 1px solid var(--border-dim);
+      margin: 0 3rem;
+    }
+
+    /* ── CAPABILITIES ── */
+    .cap-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2px;
+    }
+
+    .cap-card {
+      background: var(--surface);
+      border: 1px solid var(--border-dim);
+      padding: 2.5rem 2rem;
+      transition: border-color 220ms var(--ease), background 220ms var(--ease);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cap-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 0;
+      height: 2px;
+      background: var(--gold);
+      transition: width 350ms var(--ease);
+    }
+
+    .cap-card:hover { border-color: var(--border); background: var(--surface2); }
+    .cap-card:hover::before { width: 100%; }
+
+    .cap-num {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.14em;
+      color: var(--gold);
+      margin-bottom: 1.25rem;
+    }
+
+    .cap-title {
+      font-family: var(--serif);
+      font-size: 1.4rem;
+      color: var(--text);
+      margin-bottom: 0.75rem;
+      line-height: 1.2;
+    }
+
+    .cap-desc {
+      font-size: 0.88rem;
+      font-weight: 300;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    /* ── PRODUCTS ── */
+    #products { background: none; }
+
+    .product-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .product-row {
+      display: grid;
+      grid-template-columns: 280px 1fr auto;
+      align-items: center;
+      gap: 3rem;
+      padding: 2rem 2.5rem;
+      background: var(--surface);
+      border: 1px solid var(--border-dim);
+      transition: border-color 220ms var(--ease);
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .product-row:hover { border-color: var(--border); }
+
+    .product-tag {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 0.4rem;
+    }
+
+    .product-name {
+      font-family: var(--serif);
+      font-size: 1.5rem;
+      color: var(--text);
+    }
+
+    .product-desc {
+      font-size: 0.9rem;
+      font-weight: 300;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .product-arrow {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      color: var(--gold);
+      opacity: 0;
+      transition: opacity 220ms var(--ease), transform 220ms var(--ease);
+    }
+
+    .product-row:hover .product-arrow { opacity: 1; transform: translateX(4px); }
+
+    /* ── CONTACT ── */
+    #contact-section {
+      background: var(--surface);
+      border-top: 1px solid var(--border-dim);
+      border-bottom: 1px solid var(--border-dim);
+      max-width: none;
+      margin: 0;
+      padding: 7rem 3rem;
+    }
+
+    #contact-section .inner {
+      max-width: 1300px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 560px;
+      gap: 6rem;
+      align-items: start;
+    }
+
+    /* Contact form — wired to Cloudflare bindings via /api/contact */
+    .contact-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.1rem;
+    }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .field label {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--faint);
+    }
+
+    .field input,
+    .field textarea,
+    .field select {
+      background: var(--void);
+      border: 1px solid var(--border-dim);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 0.9rem;
+      padding: 0.8rem 1rem;
+      outline: none;
+      transition: border-color 220ms var(--ease);
+      border-radius: 2px;
+      -webkit-appearance: none;
+      width: 100%;
+    }
+
+    .field input:focus,
+    .field textarea:focus,
+    .field select:focus { border-color: var(--gold); }
+
+    .field textarea { min-height: 120px; resize: vertical; }
+    .field select option { background: var(--surface2); }
+
+    /* Honeypot */
+    .hp-field { display: none !important; visibility: hidden !important; }
+
+    .form-submit-row {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .btn-submit {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--void);
+      background: var(--gold);
+      border: 1px solid var(--gold);
+      padding: 0.9rem 2.5rem;
+      cursor: pointer;
+      transition: all 220ms var(--ease);
+    }
+
+    .btn-submit:hover { background: transparent; color: var(--gold); }
+    .btn-submit:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .form-notice {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.06em;
+      min-height: 1.2em;
+    }
+
+    .contact-meta {
+      padding-top: 0.5rem;
+    }
+
+    .contact-intro {
+      font-size: 1rem;
+      font-weight: 300;
+      color: var(--muted);
+      line-height: 1.8;
+      max-width: 38ch;
+      margin-bottom: 3rem;
+    }
+
+    .contact-links {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .contact-link-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--border-dim);
+    }
+
+    .contact-link-label {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--faint);
+    }
+
+    .contact-link-value {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--gold);
+      text-decoration: none;
+      transition: opacity 220ms;
+    }
+
+    .contact-link-value:hover { opacity: 0.7; }
+
+    /* ── FOOTER ── */
+    footer {
+      position: relative;
+      z-index: 1;
+      border-top: 1px solid var(--border-dim);
+      padding: 2rem 3rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .footer-copy {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--faint);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .footer-links a {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--faint);
+      text-decoration: none;
+      transition: color 220ms var(--ease);
+    }
+
+    .footer-links a:hover { color: var(--gold); }
+
+    /* ── SYSTEM STATUS BAR ── */
+    .status-bar {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      z-index: 100;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 0.6rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-family: var(--mono);
+      font-size: 0.58rem;
+      letter-spacing: 0.1em;
+      color: var(--faint);
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1024px) {
+      .hero-inner { grid-template-columns: 1fr; gap: 3rem; }
+      .hero-panel { max-width: 480px; }
+      .cap-grid { grid-template-columns: 1fr 1fr; }
+      #contact-section .inner { grid-template-columns: 1fr; gap: 3rem; }
+      #contact-section .inner > :first-child { order: 2; }
+      #contact-section .inner > :last-child { order: 1; }
+    }
+
+    @media (max-width: 768px) {
+      nav { padding: 1rem 1.5rem; }
+      .nav-links { display: none; }
+      .hamburger { display: flex; }
+      section { padding: 4rem 1.5rem; }
+      .hero { padding: 7rem 1.5rem 4rem; }
+      .cap-grid { grid-template-columns: 1fr; }
+      .product-row { grid-template-columns: 1fr; gap: 0.75rem; }
+      .product-arrow { display: none; }
+      .form-row { grid-template-columns: 1fr; }
+      footer { flex-direction: column; gap: 1.5rem; text-align: center; }
+      .divider { margin: 0 1.5rem; }
+      .status-bar { display: none; }
+      #contact-section { padding: 4rem 1.5rem; }
+    }
+
+    @media (min-width: 769px) and (max-width: 1024px) {
+      .hero { padding: 8rem 2rem 5rem; }
+      section { padding: 5rem 2rem; }
+      #contact-section { padding: 5rem 2rem; }
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- NAV -->
+<nav id="main-nav">
+  <a href="/" class="nav-logo">
+    <div class="nav-mark"></div>
+    <span class="nav-name">Gold Shore Labs</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#capabilities">Platform</a></li>
+    <li><a href="#products">Products</a></li>
+    <li><a href="#contact-section">Contact</a></li>
+    <li><a href="https://goldshore.org">Org</a></li>
+    <li><a href="https://admin.goldshore.ai" class="nav-cta" id="admin-link">Dashboard</a></li>
+  </ul>
+  <button class="hamburger" id="hamburger" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mobile-menu">
+  <button class="mobile-close" id="mobile-close">Close ✕</button>
+  <a href="#capabilities" onclick="closeMobile()">Platform</a>
+  <a href="#products" onclick="closeMobile()">Products</a>
+  <a href="#contact-section" onclick="closeMobile()">Contact</a>
+  <a href="https://goldshore.org">Org</a>
+  <a href="https://admin.goldshore.ai">Dashboard</a>
+</div>
+
+<!-- HERO -->
+<div class="hero" aria-label="Introduction">
+  <div class="hero-inner">
+    <div>
+      <p class="hero-eyebrow">AI Infrastructure · Gold Shore Labs</p>
+      <h1 class="hero-title">
+        Intelligence<br>
+        at the<br>
+        <em>edge.</em>
+      </h1>
+      <p class="hero-sub">
+        We build the infrastructure layer between raw AI capability and production systems — gateway, audit, sentiment, and human-in-the-loop tooling.
+      </p>
+      <div class="hero-actions">
+        <a href="#capabilities" class="btn-primary">Explore platform →</a>
+        <a href="#contact-section" class="btn-outline">Get in touch</a>
+      </div>
+    </div>
+
+    <div class="hero-panel">
+      <p class="panel-label">System status</p>
+      <div class="status-row">
+        <span class="status-name">goldshore-gateway</span>
+        <span class="status-badge badge-live"><span class="dot-live"></span>Live</span>
+      </div>
+      <div class="status-row">
+        <span class="status-name">api.goldshore.ai</span>
+        <span class="status-badge badge-live"><span class="dot-live"></span>Live</span>
+      </div>
+      <div class="status-row">
+        <span class="status-name">admin.goldshore.ai</span>
+        <span class="status-badge badge-active">Active</span>
+      </div>
+      <div class="status-row">
+        <span class="status-name">goldshore-agent</span>
+        <span class="status-badge badge-active">Active</span>
+      </div>
+      <div class="status-row">
+        <span class="status-name">Banproof / PoA</span>
+        <span class="status-badge badge-active">Active</span>
+      </div>
+      <div class="status-row">
+        <span class="status-name">Armsway</span>
+        <span class="status-badge badge-building">Private</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider" />
+
+<!-- CAPABILITIES -->
+<section id="capabilities">
+  <p class="section-label">Platform capabilities</p>
+  <h2 class="section-title">Built for<br>production AI.</h2>
+  <p class="section-sub">Every layer of the stack, designed to stay auditable, composable, and operator-controlled as it scales.</p>
+
+  <div class="cap-grid">
+    <div class="cap-card">
+      <p class="cap-num">01</p>
+      <h3 class="cap-title">AI Gateway &amp; Routing</h3>
+      <p class="cap-desc">Unified request routing across Gemini, GPT, and Workers AI. CORS, auth, rate limiting, and correlation IDs at the edge via Cloudflare Workers.</p>
+    </div>
+    <div class="cap-card">
+      <p class="cap-num">02</p>
+      <h3 class="cap-title">Proof of Agency</h3>
+      <p class="cap-desc">Auditable provenance for AI decisions. Every action chain recorded — who authorized it, what model ran it, what the output was. DePIN infrastructure layer.</p>
+    </div>
+    <div class="cap-card">
+      <p class="cap-num">03</p>
+      <h3 class="cap-title">Sentiment Intelligence</h3>
+      <p class="cap-desc">Multi-source signal routing across sports, government data, open-source databases, and professional networks. Structured for downstream consumption.</p>
+    </div>
+    <div class="cap-card">
+      <p class="cap-num">04</p>
+      <h3 class="cap-title">Human-in-the-Loop</h3>
+      <p class="cap-desc">Operator-assist review queues, approval gates, and escalation paths. Keeps humans in control of consequential AI decisions without adding friction to routine flows.</p>
+    </div>
+    <div class="cap-card">
+      <p class="cap-num">05</p>
+      <h3 class="cap-title">Content Processing</h3>
+      <p class="cap-desc">Durable Cloudflare Workflows for media ingestion, AI analysis, and sentiment scoring. Retryable, auditable, and connected to shared D1 and R2 storage.</p>
+    </div>
+    <div class="cap-card">
+      <p class="cap-num">06</p>
+      <h3 class="cap-title">Edge Security</h3>
+      <p class="cap-desc">Cloudflare Access JWT validation, RBAC role enforcement, secure headers, CORS controls, and audit logging — standard across all surfaces.</p>
+    </div>
+  </div>
+</section>
+
+<hr class="divider" />
+
+<!-- PRODUCTS -->
+<section id="products">
+  <p class="section-label">Products</p>
+  <h2 class="section-title">Active ventures.</h2>
+  <p class="section-sub">Each product is independently deployed and operates on shared Gold Shore Labs infrastructure.</p>
+
+  <div class="product-list">
+    <a href="https://goldshore.org" class="product-row">
+      <div>
+        <p class="product-tag">Platform · Data intelligence</p>
+        <p class="product-name">goldshore.org</p>
+      </div>
+      <p class="product-desc">Primary platform — sentiment data routing, analytics, and operator tooling. The operational center of the Gold Shore Labs ecosystem.</p>
+      <span class="product-arrow">→</span>
+    </a>
+    <a href="https://banproof.me" class="product-row">
+      <div>
+        <p class="product-tag">AI Gateway · Proof of Agency</p>
+        <p class="product-name">Banproof</p>
+      </div>
+      <p class="product-desc">AI transparency layer. Proof of Agency protocols with verifiable decision chains and DePIN audit infrastructure.</p>
+      <span class="product-arrow">→</span>
+    </a>
+    <a href="https://armsway.com" class="product-row">
+      <div>
+        <p class="product-tag">Patented product · Client</p>
+        <p class="product-name">Armsway</p>
+      </div>
+      <p class="product-desc">Selective access. Patented technology — inquire directly for details.</p>
+      <span class="product-arrow">→</span>
+    </a>
+    <a href="https://admin.goldshore.ai" class="product-row" id="admin-product-link">
+      <div>
+        <p class="product-tag">Internal · Protected</p>
+        <p class="product-name">Admin Dashboard</p>
+      </div>
+      <p class="product-desc">Operator control plane — worker status, route management, lead submissions, and system configuration. Cloudflare Access protected.</p>
+      <span class="product-arrow">→</span>
+    </a>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<div id="contact-section">
+  <div class="inner">
+    <div class="contact-meta">
+      <p class="section-label">Contact</p>
+      <h2 class="section-title">Work with<br>Gold Shore Labs.</h2>
+      <p class="contact-intro">
+        We take on a small number of engagements. If what you're building sits at the edge of AI capability and production systems, we want to hear about it.
+      </p>
+      <div class="contact-links">
+        <div class="contact-link-row">
+          <span class="contact-link-label">General</span>
+          <a href="mailto:hello@goldshore.ai" class="contact-link-value">hello@goldshore.ai</a>
+        </div>
+        <div class="contact-link-row">
+          <span class="contact-link-label">Gateway</span>
+          <a href="https://gw.goldshore.ai" class="contact-link-value" id="gw-link">gw.goldshore.ai</a>
+        </div>
+        <div class="contact-link-row">
+          <span class="contact-link-label">API</span>
+          <a href="https://api.goldshore.ai" class="contact-link-value" id="api-link">api.goldshore.ai</a>
+        </div>
+        <div class="contact-link-row">
+          <span class="contact-link-label">Admin</span>
+          <a href="https://admin.goldshore.ai" class="contact-link-value" id="admin-contact-link">admin.goldshore.ai</a>
+        </div>
+      </div>
+    </div>
+
+    <!--
+      Contact form — Cloudflare bindings:
+        POST /api/contact
+        Bindings used (set in wrangler.jsonc):
+          DB  = PLATFORM_DB (D1: 9703574e-adb7-481e-8d98-96f8ce5f8a90) — stores lead_submissions
+          KV  = GS_CONFIG (KV: 5f13370575784c9dacff522121104cb3) — stores contact TTL cache
+          MAILCHANNELS_SENDER_EMAIL (secret) — from address
+          MAILCHANNELS_API_URL (var) — https://api.mailchannels.net/tx/v1/send
+          CONTACT_NOTIFICATION_EMAILS (secret) — notification recipients
+    -->
+    <form
+      class="contact-form"
+      id="contactForm"
+      method="POST"
+      action="/api/contact"
+      novalidate
+    >
+      <!-- Honeypot — bots fill this, humans don't see it -->
+      <div class="hp-field" aria-hidden="true">
+        <input type="text" name="companyWebsite" tabindex="-1" autocomplete="off" />
+      </div>
+      <!-- Timing — submission too fast = spam -->
+      <input type="hidden" name="formStartedAt" id="formStartedAt" />
+      <input type="hidden" name="formType" value="contact" />
+      <input type="hidden" name="dedupeKey" id="dedupeKey" />
+
+      <div class="form-row">
+        <div class="field">
+          <label for="gs-name">Name *</label>
+          <input type="text" id="gs-name" name="name" required minlength="2" maxlength="120" autocomplete="name" />
+        </div>
+        <div class="field">
+          <label for="gs-email">Email *</label>
+          <input type="email" id="gs-email" name="email" required autocomplete="email" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label for="gs-company">Organization</label>
+          <input type="text" id="gs-company" name="company" autocomplete="organization" />
+        </div>
+        <div class="field">
+          <label for="gs-inquiry">Inquiry type *</label>
+          <select id="gs-inquiry" name="inquiry" required>
+            <option value="" disabled selected>Select</option>
+            <option value="strategy-call">Strategy call</option>
+            <option value="project-scope">Project scope</option>
+            <option value="general">General</option>
+            <option value="support">Support</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label for="gs-message">Message * <span style="color:var(--faint)">(20–4000 chars)</span></label>
+        <textarea id="gs-message" name="message" required minlength="20" maxlength="4000"></textarea>
+      </div>
+      <div class="form-submit-row">
+        <button type="submit" class="btn-submit" id="submitBtn">Send →</button>
+        <p class="form-notice" id="formNotice" aria-live="polite" role="status"></p>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <p class="footer-copy">&copy; 2025 Gold Shore Labs · All rights reserved</p>
+  <ul class="footer-links">
+    <li><a href="https://goldshore.org">Org</a></li>
+    <li><a href="https://banproof.me">Banproof</a></li>
+    <li><a href="https://armsway.com">Armsway</a></li>
+    <li><a href="https://rmarston.com">rmarston.com</a></li>
+    <li><a href="https://github.com/marzton">GitHub</a></li>
+  </ul>
+</footer>
+
+<!-- STATUS BAR -->
+<div class="status-bar" id="systemStatus">
+  <span class="dot-live"></span>
+  <span id="statusText">Checking systems…</span>
+</div>
+
+<script>
+  // ── Mobile menu ──
+  const hamburger = document.getElementById('hamburger');
+  const mobileMenu = document.getElementById('mobile-menu');
+  const mobileClose = document.getElementById('mobile-close');
+  hamburger.addEventListener('click', () => mobileMenu.classList.add('open'));
+  mobileClose.addEventListener('click', closeMobile);
+  function closeMobile() { mobileMenu.classList.remove('open'); }
+
+  // ── Smooth scroll nav offset ──
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      const t = document.querySelector(a.getAttribute('href'));
+      if (!t) return;
+      e.preventDefault();
+      window.scrollTo({ top: t.getBoundingClientRect().top + scrollY - 80, behavior: 'smooth' });
+      closeMobile();
+    });
+  });
+
+  // ── Contact form ──
+  const form = document.getElementById('contactForm');
+  const notice = document.getElementById('formNotice');
+  const submitBtn = document.getElementById('submitBtn');
+
+  // Set timing and dedupe fields
+  document.getElementById('formStartedAt').value = Date.now();
+  document.getElementById('dedupeKey').value = crypto.randomUUID().replace(/-/g,'') + crypto.randomUUID().replace(/-/g,'');
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending…';
+    notice.textContent = '';
+    notice.style.color = '';
+
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'x-gs-request-mode': 'spa',
+          'accept': 'application/json',
+        },
+        body: new FormData(form),
+      });
+
+      const data = await res.json();
+
+      if (data.ok) {
+        notice.textContent = 'Received. We\'ll be in touch.';
+        notice.style.color = '#4ade80';
+        form.reset();
+        document.getElementById('formStartedAt').value = Date.now();
+        document.getElementById('dedupeKey').value = crypto.randomUUID().replace(/-/g,'') + crypto.randomUUID().replace(/-/g,'');
+      } else {
+        const msg = data.error?.message || 'Something went wrong.';
+        notice.textContent = msg;
+        notice.style.color = '#f87171';
+      }
+    } catch {
+      notice.textContent = 'Network error. Try emailing hello@goldshore.ai';
+      notice.style.color = '#f87171';
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Send →';
+    }
+  });
+
+  // ── System status check via gateway health endpoint ──
+  async function checkStatus() {
+    try {
+      const res = await fetch('https://gw.goldshore.ai/health', { signal: AbortSignal.timeout(4000) });
+      const data = await res.json();
+      const el = document.getElementById('statusText');
+      if (data.status === 'ok') {
+        el.textContent = 'All systems operational';
+      } else {
+        el.textContent = 'Degraded — check status';
+      }
+    } catch {
+      document.getElementById('statusText').textContent = 'Gateway unreachable';
+    }
+  }
+  checkStatus();
+
+  // ── Admin link — update with correct admin URL from gateway ──
+  // These href values are hardcoded but can be overridden by the worker
+  // via CF-injected env vars or a /api/config endpoint
+  const ADMIN_URL = 'https://admin.goldshore.ai';
+  const GW_URL = 'https://gw.goldshore.ai';
+  const API_URL = 'https://api.goldshore.ai';
+
+  document.getElementById('admin-link').href = ADMIN_URL;
+  document.getElementById('admin-product-link').href = ADMIN_URL;
+  document.getElementById('admin-contact-link').href = ADMIN_URL;
+  document.getElementById('gw-link').href = GW_URL;
+  document.getElementById('api-link').href = API_URL;
+</script>
+
+</body>
+</html>

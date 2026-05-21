@@ -6,13 +6,19 @@
   "scripts": {
     "dev": "wrangler dev src/index.ts",
     "deploy": "wrangler deploy --env prod",
-    "build": "wrangler deploy --env prod --dry-run --outdir=dist"
+    "build": "wrangler deploy --env prod --dry-run --outdir=dist",
+    "test": "tsx src/repro_cors.test.ts"
+  },
+  "dependencies": {
+    "@goldshore/auth": "workspace:*",
+    "hono": "^4.12.16",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260329.1",
-    "@types/node": "^25.2.1",
+    "@cloudflare/workers-types": "^4.20260421.1",
+    "@types/node": "^25.7.0",
     "tsx": "^4.21.0",
     "typescript": "^5.4.0",
-    "wrangler": "^4.75.0"
+    "wrangler": "^4.83.0"
   }
 }

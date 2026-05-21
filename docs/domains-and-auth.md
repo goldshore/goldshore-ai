@@ -30,15 +30,44 @@ This document is the canonical reference for GoldShore domains, preview URLs, Cl
 
 ## Production domains
 
-- `goldshore.ai`
+- `goldshore.org` (canonical public web hostname)
+- `www.goldshore.org`
+- `goldshore.ai` (redirect to canonical web hostname)
+- `www.goldshore.ai` (redirect to canonical web hostname)
 - `api.goldshore.ai`
 - `gw.goldshore.ai` (canonical gateway hostname; not `gateway.goldshore.ai`)
 - `ops.goldshore.ai`
+- `admin.goldshore.ai`
+- `mail.goldshore.ai`
 
 ## Preview domains
 
 - `*-preview.goldshore.ai`
 - `{branch}.goldshore-pages.dev`
+
+## `goldshore.ai` domain layout
+
+The table below is the canonical public layout for customer-facing web routes on the
+`goldshore.ai` domain family.
+
+| Host | Route | Purpose | Access |
+| --- | --- | --- | --- |
+| `goldshore.org` | `/` | Primary marketing homepage | Public |
+| `goldshore.org` | `/apps/risk-radar` | Risk Radar product/detail page with the reusable animated system component | Public |
+| `goldshore.org` | `/developer`, `/developer/docs/*`, `/developer/api/*` | Developer hub, docs, and API reference | Public |
+| `www.goldshore.org` | `/*` | Canonical web mirror for public pages | Public |
+| `goldshore.ai`, `www.goldshore.ai` | `/*` | Legacy public hostnames redirected to canonical `.org` host | Public |
+| `preview.goldshore.ai` and `*-preview.goldshore.ai` | `/*` | Preview deployments for web validation | Cloudflare Access (GoldShore-Web-Preview) |
+
+## Canonical redirect policy
+
+Cloudflare Pages custom domains should attach all four public web hostnames directly to the `gs-web` Pages project first (`goldshore.org`, `www.goldshore.org`, `goldshore.ai`, `www.goldshore.ai`). After all four are active, configure Bulk Redirects so `goldshore.org` remains canonical:
+
+- `www.goldshore.org/*` → `https://goldshore.org/$1` (301)
+- `goldshore.ai/*` → `https://goldshore.org/$1` (301)
+- `www.goldshore.ai/*` → `https://goldshore.org/$1` (301)
+
+This ordering prevents temporary inactive-domain states while SSL and DNS records converge.
 
 ## Cloudflare Access policies
 
@@ -47,6 +76,7 @@ Cloudflare Access is enforced on internal tooling and protected previews. The ta
 | Access application | Policy name                                                                                                  | Domains protected           | Notes                                                                                                 |
 | ------------------ | ------------------------------------------------------------------------------------------------------------ | --------------------------- | ----------------------------------------------------------------------------------------------------- |
 | Public web         | `goldshore.ai`, `www.goldshore.ai`                                                                           | No                          | Public marketing site.                                                                                |
+| Risk Radar page    | `goldshore.ai/apps/risk-radar`, `www.goldshore.ai/apps/risk-radar`                                          | No                          | Public Risk Radar experience and demo surface on the web domain family.                              |
 | Web previews       | `preview.goldshore.ai`, `*-preview.goldshore.ai`, `{branch}.goldshore-pages.dev`                             | Yes (GoldShore-Web-Preview) | Preview builds for the marketing site should remain Access gated.                                     |
 | Admin cockpit      | `admin.goldshore.ai`, `admin-preview.goldshore.ai`, `*-preview.goldshore.ai`, `{branch}.goldshore-pages.dev` | Yes (GoldShore-Admin-ZT)    | Internal admin dashboard, email allowlist + IdP/OTP.                                                  |
 | Control worker     | `ops.goldshore.ai`                                                                                           | Yes                         | Internal ops workflows and automation.                                                                |

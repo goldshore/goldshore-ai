@@ -78,5 +78,6 @@ export async function verifyAccessWithClaims(req: Request, env: Env) {
 }
 
 export async function verifyAccess(req: Request, env: Env) {
-  return Boolean(await verifyAccessWithClaims(req, env));
+  const claims = await verifyAccessWithClaims(req, env);
+  return claims !== null;
 }

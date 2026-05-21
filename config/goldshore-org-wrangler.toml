@@ -1,0 +1,122 @@
+# goldshore-org Router Worker — Corrected Wrangler Configuration
+# Purpose: Route goldshore.org traffic to goldshore-org.pages.dev asset origin
+# Authority: marzton (infrastructure ownership)
+# Replaces: Placeholder config from Drive (had invalid account_id)
+# Deployment: In monorepo as apps/goldshore-org/wrangler.toml
+# CI/CD: Deploy via GitHub Actions using CLOUDFLARE_BUILD_API_TOKEN
+
+name = "goldshore-org"
+main = "src/router.ts"
+compatibility_date = "2024-12-18"
+compatibility_flags = ["nodejs_compat"]
+
+workers_dev = false
+
+# ──────────────────────────────────────────────────────────────────────────
+# Production Environment
+# ──────────────────────────────────────────────────────────────────────────
+# Routes ONLY for goldshore.org zone
+# NOTE: Do NOT add goldshore.ai routes here — gs-web Pages owns those domains
+# This router is for .org branding/content only
+
+[env.production]
+name = "goldshore-org"
+routes = [
+  { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "www.goldshore.org/*", zone_name = "goldshore.org" }
+]
+
+# ──────────────────────────────────────────────────────────────────────────
+# Environment Variables
+# ──────────────────────────────────────────────────────────────────────────
+
+[env.production.vars]
+ENV = "production"
+ASSETS_ORIGIN = "https://goldshore-org.pages.dev"
+
+# ──────────────────────────────────────────────────────────────────────────
+# Service Bindings
+# ──────────────────────────────────────────────────────────────────────────
+# Proxy requests to gs-api for backend operations
+# Requests to /api/* are forwarded to gs-api service binding
+
+[[env.production.services]]
+binding = "API_SERVICE"
+service = "gs-api"
+environment = "production"
+
+# ──────────────────────────────────────────────────────────────────────────
+# R2 Bucket Bindings
+# ──────────────────────────────────────────────────────────────────────────
+# Public assets shared across all GoldShore domains
+
+[[env.production.r2_buckets]]
+binding = "ASSETS"
+bucket_name = "gs-assets"
+
+# ──────────────────────────────────────────────────────────────────────────
+# Secrets
+# ──────────────────────────────────────────────────────────────────────────
+# Set via: wrangler secret put SECRET_NAME --name goldshore-org
+
+[env.production.secrets]
+# None currently required for goldshore-org router
+# If auth is needed in future: add CLOUDFLARE_ACCESS_AUDIENCE
+
+# ──────────────────────────────────────────────────────────────────────────
+# CORS & Cross-Origin Header Configuration
+# ──────────────────────────────────────────────────────────────────────────
+# The router sets CORS headers to allow requests from other GoldShore domains
+
+# GPT_ALLOWED_ORIGINS — Allow requests from other GoldShore domains
+# This is for OpenAI GPT integration (if needed) and similar
+[env.production.env]
+GPT_ALLOWED_ORIGINS = [
+  "https://goldshore.ai",
+  "https://www.goldshore.ai",
+  "https://goldshore.org",
+  "https://www.goldshore.org",
+  "https://admin.goldshore.ai",
+  "https://banproof.me"
+]
+
+# ──────────────────────────────────────────────────────────────────────────
+# Preview Environment (Optional)
+# ──────────────────────────────────────────────────────────────────────────
+
+[env.preview]
+name = "goldshore-org-preview"
+routes = [
+  { pattern = "preview.goldshore.org/*", zone_name = "goldshore.org" }
+]
+
+[env.preview.vars]
+ENV = "preview"
+ASSETS_ORIGIN = "https://goldshore-org-preview.pages.dev"
+
+# ──────────────────────────────────────────────────────────────────────────
+# IMPORTANT: Route Conflict Prevention & Architecture Decision
+# ──────────────────────────────────────────────────────────────────────────
+#
+# CORRECT SPLIT (this config implements):
+#   ✓ goldshore-org router → .org zone only
+#   ✓ gs-web Pages → .ai zone only (goldshore.ai, www.goldshore.ai)
+#   ✓ gs-admin Pages → admin.goldshore.ai only (CF Access protected)
+#   ✓ gs-api Worker → api.goldshore.ai only
+#   ✓ gs-gateway Worker → gw.goldshore.ai only
+#
+# WRONG (previous attempt — DO NOT IMPLEMENT):
+#   ✗ goldshore-org router claiming goldshore.ai/* routes
+#   ✗ This would conflict with gs-web Pages on the same domain
+#   ✗ Cloudflare routing would be ambiguous
+#
+# Why this matters:
+#   Each domain zone should have exactly ONE owner.
+#   Cloudflare Pages custom domains take precedence over Worker routes.
+#   If both claim the same route, behavior is undefined.
+#
+# For .ai cross-domain requests from .org:
+#   Use explicit subdomain routing: api.goldshore.ai, gw.goldshore.ai, etc.
+#   Or: CORS headers + cross-origin fetch from frontend
+#
+# ──────────────────────────────────────────────────────────────────────────

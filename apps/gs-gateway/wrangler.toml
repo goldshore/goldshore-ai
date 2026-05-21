@@ -1,34 +1,123 @@
+# Worker Builds token for this service must be the gs-control build token.
+# wrangler.toml for the gs-gateway worker (deployed as gs-platform on CF)
 name = "gs-gateway"
 main = "src/index.ts"
-compatibility_date = "2024-11-01"
+compatibility_date = "2026-04-18"
 compatibility_flags = ["nodejs_compat"]
 
 workers_dev = false
 
+[env.dev]
+routes = []
+
+[env.dev.vars]
+ENV = "dev"
+
+[[env.dev.queues.producers]]
+binding = "CHECKOUT_EVENTS_QUEUE"
+queue = "gs-platform-checkout-events-dev"
+
+[[env.dev.queues.producers]]
+binding = "CONTACT_EVENTS_QUEUE"
+queue = "gs-platform-contact-events-dev"
+
 [env.prod]
 routes = [
   { pattern = "gw.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" }
+  { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" }
 ]
 
 [env.prod.vars]
 ENV = "production"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 
+# ── KV Namespaces ──────────────────────────────────────────
+[[env.prod.kv_namespaces]]
+binding = "AI_CACHE"
+id = "gs-ai-cache"
+
+[[env.prod.kv_namespaces]]
+binding = "GS_CONFIG"
+id = "gs_config_001"
+
+[[env.prod.kv_namespaces]]
+binding = "GATEWAY_KV"
+# TODO: Replace with actual namespace ID from CF dashboard (Storage → KV).
+# Create if missing: wrangler kv namespace create GATEWAY_KV
+id = "REPLACE_WITH_GATEWAY_KV_NAMESPACE_ID"
+
+# ── D1 Databases ───────────────────────────────────────────
+[[env.prod.d1_databases]]
+binding = "DB"
+database_name = "gs_platform_db"
+database_id = "gs_platform_db"
+
+# ── R2 Buckets ─────────────────────────────────────────────
+[[env.prod.r2_buckets]]
+binding = "ASSETS"
+bucket_name = "gs-assets"
+
+# ── Service bindings ───────────────────────────────────────
+# Uncomment each binding once the target worker is deployed on CF.
+#
+# [[env.prod.services]]
+# binding = "API_SERVICE"
+# service = "gs-api"
+# environment = "prod"
+#
+# [[env.prod.services]]
+# binding = "AGENT"
+# service = "gs-agent"
+# environment = "prod"
+
+# ── Phase 2: Joinery — security + signals spokes ──────────
 [[env.prod.services]]
-binding = "API"
-service = "gs-api"
-environment = "production"
+binding = "SECURITY_CHECK"
+service = "banproof-me"
 
 [[env.prod.services]]
-binding = "AGENT"
-service = "gs-agent"
-environment = "prod"
+binding = "SIGNALS"
+service = "gs-signals-prod"
+
+# ── Phase 2: Queue producer for mail jobs ─────────────────
+[[env.prod.queues.producers]]
+binding = "MAIL_QUEUE"
+queue = "gs-mail-jobs"
+
+[[env.prod.queues.producers]]
+binding = "CHECKOUT_EVENTS_QUEUE"
+queue = "gs-platform-checkout-events-prod"
+
+[[env.prod.queues.producers]]
+binding = "CONTACT_EVENTS_QUEUE"
+queue = "gs-platform-contact-events-prod"
 
 [env.preview]
 routes = [
-  { pattern = "gw-preview.goldshore.ai/*", zone_name = "goldshore.ai" }
+  { pattern = "gw-preview.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "agent-preview.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "api-preview.goldshore.ai/*", zone_name = "goldshore.ai" }
 ]
 
 [env.preview.vars]
 ENV = "preview"
+
+[[env.preview.queues.producers]]
+binding = "CHECKOUT_EVENTS_QUEUE"
+queue = "gs-platform-checkout-events-preview"
+
+[[env.preview.queues.producers]]
+binding = "CONTACT_EVENTS_QUEUE"
+queue = "gs-platform-contact-events-preview"
+[[env.prod.services]]
+binding = "SECURITY"
+service = "banproof-me"
+
+[[env.prod.services]]
+binding = "SIGNALS"
+service = "gs-signals-prod"
+
+[[env.prod.queues.producers]]
+binding = "MAIL_QUEUE"
+queue = "gs-mail-jobs"

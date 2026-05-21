@@ -21,6 +21,8 @@ export const HTML_CSP_META_FALLBACK = HTML_CSP_DIRECTIVES
   .filter((directive) => !directive.startsWith('frame-ancestors'))
   .join('; ');
 
+// Mirrored manually in public/_headers because platform header config cannot import
+// this module at runtime.
 export const STATIC_RISK_RADAR_CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
   "script-src 'self'",

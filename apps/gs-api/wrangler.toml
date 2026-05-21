@@ -1,77 +1,51 @@
 name = "gs-api"
 main = "src/index.ts"
-compatibility_date = "2024-11-01"
+compatibility_date = "2026-04-18"
 compatibility_flags = ["nodejs_compat"]
 
 workers_dev = false
 
 [env.prod]
-routes = [
-  { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" }
-]
+routes = []
 
 [env.prod.vars]
 ENV = "production"
-
-# Sentinel: Audience tag for Cloudflare Access.
-# CRITICAL: This must be set to the specific Application Audience (AUD) tag
-# for the GoldShore API service to prevent token reuse from other apps.
 CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
-
-# Sentinel: Team domain for Cloudflare Access (e.g., goldshore.cloudflareaccess.com).
-# Used to fetch JWKS for token verification.
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-CONTROL_SYNC_TOKEN = "__PROD_CONTROL_SYNC_TOKEN__"
 
-# Keep the legacy KV binding name because the API routes still read c.env.KV
-# for service status, admin state, orchestration config, and health checks.
 [[env.prod.kv_namespaces]]
-# Keep the runtime binding name aligned with c.env.KV in the API handlers.
 binding = "KV"
 id = "gs_api_kv_001"
-
 
 [[env.prod.kv_namespaces]]
 binding = "CONTROL_LOGS"
 id = "gs_control_logs_001"
 
-# Production deploys also require the same D1, R2, and AI bindings used by
-# pages, media, and AI routes in addition to the env-specific KV namespaces.
 [[env.prod.r2_buckets]]
-# The deployed API also depends on ASSETS/DB/AI for media, pages, and AI routes.
 binding = "ASSETS"
-bucket_name = "gs-assets"
+bucket_name = "gs-platform-assets"
 
 [[env.prod.d1_databases]]
 binding = "DB"
 database_name = "goldshore"
-database_id = "gs_db_001"
+database_id = "f77de112-d201-4e54-a785-a4583814a6c3"
 
 [env.prod.ai]
 binding = "AI"
 
+[[env.prod.durable_objects.bindings]]
+name = "AUTH_SESSION"
+class_name = "AuthSession"
+
 [env.production]
-routes = [
-  { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" }
-]
+routes = []
 
 [env.production.vars]
 ENV = "production"
-
-# Sentinel: Audience tag for Cloudflare Access.
-# CRITICAL: This must be set to the specific Application Audience (AUD) tag
-# for the GoldShore API service to prevent token reuse from other apps.
 CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
-
-# Sentinel: Team domain for Cloudflare Access (e.g., goldshore.cloudflareaccess.com).
-# Used to fetch JWKS for token verification.
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-CONTROL_SYNC_TOKEN = "__PROD_CONTROL_SYNC_TOKEN__"
 
-# Keep the legacy KV binding name because the API routes still read c.env.KV
-# for service status, admin state, orchestration config, and health checks.
 [[env.production.kv_namespaces]]
-# Keep the runtime binding name aligned with c.env.KV in the API handlers.
 binding = "KV"
 id = "gs_api_kv_001"
 
@@ -79,48 +53,44 @@ id = "gs_api_kv_001"
 binding = "CONTROL_LOGS"
 id = "gs_control_logs_001"
 
-# Production deploys also require the same D1, R2, and AI bindings used by
-# pages, media, and AI routes in addition to the env-specific KV namespaces.
 [[env.production.r2_buckets]]
-# The deployed API also depends on ASSETS/DB/AI for media, pages, and AI routes.
 binding = "ASSETS"
-bucket_name = "gs-assets"
+bucket_name = "gs-platform-assets"
 
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "goldshore"
-database_id = "gs_db_001"
+database_id = "f77de112-d201-4e54-a785-a4583814a6c3"
 
 [env.production.ai]
 binding = "AI"
 
+[[env.production.durable_objects.bindings]]
+name = "AUTH_SESSION"
+class_name = "AuthSession"
+
 [env.preview]
-routes = [
-  { pattern = "api-preview.goldshore.ai/*", zone_name = "goldshore.ai" }
-]
+routes = []
 
 [env.preview.vars]
 ENV = "preview"
-CLOUDFLARE_ACCESS_AUDIENCE = "SECRET_MANAGED"
-CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-CONTROL_SYNC_TOKEN = "SECRET_MANAGED"
 
 [[env.preview.kv_namespaces]]
 binding = "KV"
 id = "gs_api_kv_preview"
 
-[[env.preview.kv_namespaces]]
-binding = "CONTROL_LOGS"
-id = "gs_control_logs_preview"
-
 [[env.preview.r2_buckets]]
 binding = "ASSETS"
-bucket_name = "gs-assets-preview"
+bucket_name = "gs-platform-assets"
 
 [[env.preview.d1_databases]]
 binding = "DB"
-database_name = "goldshore_preview"
-database_id = "gs_db_preview"
+database_name = "goldshore"
+database_id = "f77de112-d201-4e54-a785-a4583814a6c3"
 
 [env.preview.ai]
 binding = "AI"
+
+[[migrations]]
+tag = "v1-auth-session"
+new_sqlite_classes = ["AuthSession"]
