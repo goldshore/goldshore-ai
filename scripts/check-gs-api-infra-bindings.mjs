@@ -3,18 +3,36 @@ import { readFile } from 'node:fs/promises';
 const FILE = 'infra/Cloudflare/gs-api.wrangler.toml';
 const raw = await readFile(FILE, 'utf8');
 
-function escapeRegex(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
 function getTomlBlocks(source, header) {
-  const escapedHeader = escapeRegex(header);
-  const blockPattern = new RegExp(
-    `^\\s*${escapedHeader}\\s*$[\\s\\S]*?(?=^\\s*\\[[^\\]]|^\\s*\\[\\[[^\\]]|\\s*$)`,
-    'gm',
-  );
+  const lines = source.split(/\r?\n/);
+  const headerPattern = /^\s*(?:\[\[[^\]]+\]\]|\[[^\]]+\])\s*$/;
+  const blocks = [];
+  let currentBlock = null;
 
-  return Array.from(source.matchAll(blockPattern), (match) => match[0]);
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+    const isHeaderLine = headerPattern.test(line);
+
+    if (currentBlock && isHeaderLine) {
+      blocks.push(currentBlock.join('\n'));
+      currentBlock = null;
+    }
+
+    if (trimmedLine === header) {
+      currentBlock = [line];
+      continue;
+    }
+
+    if (currentBlock) {
+      currentBlock.push(line);
+    }
+  }
+
+  if (currentBlock) {
+    blocks.push(currentBlock.join('\n'));
+  }
+
+  return blocks;
 }
 
 function hasRequiredLineInBlock(source, header, linePattern) {
