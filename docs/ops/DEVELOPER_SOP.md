@@ -15,7 +15,7 @@ If a Pull Request (PR) shows merge conflicts, the Agent MUST execute a **Forcefu
 
 ## 2. Deployment Failure Troubleshooting (SOP-002)
 
-Before debugging deploy-specific errors, check `.github/workflows/cloudflare-infra-guard.yml` in GitHub Actions to confirm Cloudflare infrastructure guard checks are green and use it as the canonical Cloudflare guard workflow during incident response.
+Before debugging deploy-specific errors, check `.github/workflows/cloudflare-infra-guard.yml` in GitHub Actions as the canonical Cloudflare guard workflow. It normally runs on PRs to `main`; if there is not a recent successful run, manually dispatch it to validate the current Cloudflare infrastructure state during incident response.
 
 | Error Code | Likely Cause | Fix Action |
 | :--- | :--- | :--- |

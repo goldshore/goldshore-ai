@@ -7,6 +7,20 @@ compatibility_flags = ["nodejs_compat"]
 
 workers_dev = false
 
+[env.dev]
+routes = []
+
+[env.dev.vars]
+ENV = "dev"
+
+[[env.dev.queues.producers]]
+binding = "CHECKOUT_EVENTS_QUEUE"
+queue = "gs-platform-checkout-events-dev"
+
+[[env.dev.queues.producers]]
+binding = "CONTACT_EVENTS_QUEUE"
+queue = "gs-platform-contact-events-dev"
+
 [env.prod]
 routes = [
   { pattern = "gw.goldshore.ai/*", zone_name = "goldshore.ai" },
@@ -69,6 +83,14 @@ service = "gs-signals-prod"
 binding = "MAIL_QUEUE"
 queue = "gs-mail-jobs"
 
+[[env.prod.queues.producers]]
+binding = "CHECKOUT_EVENTS_QUEUE"
+queue = "gs-platform-checkout-events-prod"
+
+[[env.prod.queues.producers]]
+binding = "CONTACT_EVENTS_QUEUE"
+queue = "gs-platform-contact-events-prod"
+
 [env.preview]
 routes = [
   { pattern = "gw-preview.goldshore.ai/*", zone_name = "goldshore.ai" },
@@ -78,3 +100,22 @@ routes = [
 
 [env.preview.vars]
 ENV = "preview"
+
+[[env.preview.queues.producers]]
+binding = "CHECKOUT_EVENTS_QUEUE"
+queue = "gs-platform-checkout-events-preview"
+
+[[env.preview.queues.producers]]
+binding = "CONTACT_EVENTS_QUEUE"
+queue = "gs-platform-contact-events-preview"
+[[env.prod.services]]
+binding = "SECURITY"
+service = "banproof-me"
+
+[[env.prod.services]]
+binding = "SIGNALS"
+service = "gs-signals-prod"
+
+[[env.prod.queues.producers]]
+binding = "MAIL_QUEUE"
+queue = "gs-mail-jobs"

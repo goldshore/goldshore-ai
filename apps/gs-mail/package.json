@@ -9,10 +9,10 @@
     "build": "wrangler deploy --env prod --dry-run --outdir=dist --bundle"
   },
   "dependencies": {
-    "hono": "^4.10.2"
+    "hono": "^4.12.16"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260421.1",
+    "@cloudflare/workers-types": "^4.20260511.1",
     "typescript": "^5.4.0",
     "wrangler": "^4.83.0"
   }

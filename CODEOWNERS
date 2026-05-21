@@ -1,1 +1,6 @@
 * @marzton
+
+# Infrastructure files — require owner review, no agent bypass
+infra/ @marzton
+.github/workflows/infrastructure-guard.yml @marzton
+DEPLOY.md @marzton
