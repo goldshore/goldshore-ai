@@ -1,0 +1,212 @@
+name: Infrastructure Guard
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'infra/**'
+      - 'apps/*/wrangler.toml'
+      - '.github/workflows/infrastructure-guard.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # ─── Job 1: Manifest integrity check ─────────────────────────────────────
+  manifest-integrity:
+    name: Manifest integrity check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify INFRASTRUCTURE.md exists
+        run: test -f infra/INFRASTRUCTURE.md || (echo "FAIL: infra/INFRASTRUCTURE.md is missing" && exit 1)
+
+      - name: Verify branch-protection.json exists
+        run: test -f infra/branch-protection.json || (echo "FAIL: infra/branch-protection.json is missing" && exit 1)
+
+      - name: Verify all wrangler configs reference canonical worker names
+        run: |
+          # Dynamically extract canonical worker names from the Workers table in INFRASTRUCTURE.md
+          CANONICAL_WORKERS=$(sed -n '/^## Workers/,/^---$/p' infra/INFRASTRUCTURE.md | grep -oP '^\| `\K[a-z0-9_-]+(?=` \|)' | sort -u)
+
+          echo "Canonical workers:"
+          echo "$CANONICAL_WORKERS"
+
+          # Check each app-level wrangler.toml references a known worker name
+          for toml in apps/*/wrangler.toml; do
+            WORKER_NAME=$(grep '^name = ' "$toml" | head -1 | sed 's/name = "\(.*\)"/\1/')
+            if [ -n "$WORKER_NAME" ] && ! echo "$CANONICAL_WORKERS" | grep -qx "$WORKER_NAME"; then
+              echo "FAIL: $toml references unrecognized worker '$WORKER_NAME'"
+              exit 1
+            fi
+          done
+
+          echo "All wrangler configs reference canonical workers."
+
+      - name: Verify D1 database IDs are consistent
+        run: |
+          # Build a canonical database_name -> database_id map from the D1 Databases
+          # table in INFRASTRUCTURE.md, then verify each wrangler.toml binding matches
+          # the exact documented pair.
+          mismatch_found=0
+
+          CANONICAL_D1_MAP=$(
+            awk '
+              /^## D1 Databases/ { in_section=1; next }
+              in_section && /^## / { exit }
+              in_section && /^\|/ {
+                n=split($0, parts, "|")
+                name=""
+                id=""
+                for (i = 1; i <= n; i++) {
+                  if (parts[i] ~ /`[a-zA-Z0-9_-]+`/) {
+                    value = parts[i]
+                    gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+                    gsub(/`/, "", value)
+                    if (name == "") {
+                      name = value
+                    } else if (id == "" && value ~ /^[a-f0-9-]+$/) {
+                      id = value
+                    }
+                  }
+                }
+                if (name != "" && id != "") {
+                  print name "|" id
+                }
+              }
+            ' infra/INFRASTRUCTURE.md | sort -u
+          )
+
+          if [ -z "$CANONICAL_D1_MAP" ]; then
+            echo "FAIL: Could not extract any canonical D1 database mappings from infra/INFRASTRUCTURE.md"
+            exit 1
+          fi
+
+          echo "Canonical D1 databases:"
+          echo "$CANONICAL_D1_MAP"
+
+          for toml in apps/*/wrangler.toml infra/Cloudflare/*.wrangler.toml; do
+            [ -f "$toml" ] || continue
+
+            awk '
+              BEGIN { in_block=0; db_name=""; db_id="" }
+              /^\[\[d1_databases\]\]/ {
+                if (in_block && db_name != "" && db_id != "") {
+                  print db_name "|" db_id
+                }
+                in_block=1
+                db_name=""
+                db_id=""
+                next
+              }
+              in_block && /^[[:space:]]*database_name[[:space:]]*=/ {
+                match($0, /"[^"]+"/)
+                if (RSTART > 0) {
+                  db_name = substr($0, RSTART + 1, RLENGTH - 2)
+                }
+              }
+              in_block && /^[[:space:]]*database_id[[:space:]]*=/ {
+                match($0, /"[^"]+"/)
+                if (RSTART > 0) {
+                  db_id = substr($0, RSTART + 1, RLENGTH - 2)
+                }
+              }
+              END {
+                if (in_block && db_name != "" && db_id != "") {
+                  print db_name "|" db_id
+                }
+              }
+            ' "$toml" | while IFS='|' read -r db_name db_id; do
+              [ -n "$db_name" ] || continue
+              [ -n "$db_id" ] || continue
+
+              expected_id=$(printf '%s\n' "$CANONICAL_D1_MAP" | awk -F'|' -v name="$db_name" '$1 == name { print $2; exit }')
+
+              if [ -z "$expected_id" ]; then
+                echo "FAIL: $toml references D1 database '$db_name' that is not documented in infra/INFRASTRUCTURE.md"
+                mismatch_found=1
+              elif [ "$db_id" != "$expected_id" ]; then
+                echo "FAIL: $toml references D1 database '$db_name' with ID '$db_id' but INFRASTRUCTURE.md specifies '$expected_id'"
+                mismatch_found=1
+              fi
+            done
+          done
+
+          if [ "$mismatch_found" -ne 0 ]; then
+            echo "D1 ID consistency check failed."
+            exit 1
+          fi
+
+          echo "D1 ID consistency check complete."
+
+  # ─── Job 2: Cloudflare live state audit ──────────────────────────────────
+  live-state-audit:
+    name: Cloudflare live state audit
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify Cloudflare credentials
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_BUILD_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+        run: |
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "Missing: CLOUDFLARE_ACCOUNT_ID" && exit 1)
+          test -n "$CLOUDFLARE_BUILD_API_TOKEN" || (echo "Missing: CLOUDFLARE_BUILD_API_TOKEN" && exit 1)
+
+      - name: Audit live Cloudflare state against manifest
+        env:
+          CLOUDFLARE_BUILD_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.request, urllib.error
+
+          TOKEN = os.environ["CLOUDFLARE_BUILD_API_TOKEN"]
+          ACCOUNT = os.environ["CLOUDFLARE_ACCOUNT_ID"]
+
+          def cf_get(path):
+              url = f"https://api.cloudflare.com/client/v4/accounts/{ACCOUNT}/{path}"
+              req = urllib.request.Request(url, headers={
+                  "Authorization": f"Bearer {TOKEN}",
+                  "Content-Type": "application/json",
+              })
+              try:
+                  with urllib.request.urlopen(req) as resp:
+                      data = json.loads(resp.read().decode())
+                      if not data.get("success"):
+                          raise SystemExit(f"CF API error: {url} → {data}")
+                      return data["result"]
+              except urllib.error.HTTPError as e:
+                  body = e.read().decode()
+                  raise SystemExit(f"CF API HTTP error: {url} → {e.code} {body}")
+
+          # List workers from the account
+          workers = cf_get("workers/scripts")
+          live_names = sorted(w["id"] for w in workers)
+
+          # Read canonical list from INFRASTRUCTURE.md
+          with open("infra/INFRASTRUCTURE.md") as f:
+              manifest = f.read()
+
+          # Extract worker names only from the Workers section
+          import re
+          workers_section = re.search(r"(?ms)^## Workers\s*$\n(.*?)(?=^## |\Z)", manifest)
+          if not workers_section:
+              raise SystemExit("Could not find '## Workers' section in infra/INFRASTRUCTURE.md")
+          canonical = sorted(set(re.findall(r"\| `([a-z0-9_-]+)` \|", workers_section.group(1))))
+
+          print(f"Live workers:     {live_names}")
+          print(f"Canonical workers: {canonical}")
+
+          unknown = set(live_names) - set(canonical)
+          if unknown:
+              print(f"WARNING: Unrecognized workers in account: {unknown}")
+              print("These workers are NOT in infra/INFRASTRUCTURE.md — audit required.")
+              raise SystemExit("Failing audit: unrecognized workers must not exist in the account.")
+
+          print("Cloudflare live state audit complete.")
+          PY
