@@ -31,9 +31,25 @@ const createTextPlaceholder = (file) => {
 };
 
 for (const file of required) {
-  if (!fs.existsSync(file)) {
-    fs.mkdirSync(path.dirname(file), { recursive: true });
-    fs.writeFileSync(file, createTextPlaceholder(file));
-    console.log('Created missing:', file);
+  const dir = path.dirname(file);
+  
+  // Ensure the target directory exists
+  fs.mkdirSync(dir, { recursive: true });
+
+  try {
+    /**
+     * Using 'wx' flag ensures the file is created ONLY if it doesn't exist.
+     * This is the atomic way to handle this and avoids TOCTOU (Time-of-check to time-of-use) vulnerabilities.
+     */
+    fs.writeFileSync(file, createTextPlaceholder(file), { flag: 'wx' });
+    console.log('Created missing asset:', file);
+  } catch (error) {
+    // If the file already exists, we do nothing (this is the expected path)
+    if (error.code !== 'EEXIST') {
+      console.error(`Error processing ${file}:`, error);
+      process.exit(1);
+    }
   }
 }
+
+console.log('Integrity check complete.');

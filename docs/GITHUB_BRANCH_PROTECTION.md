@@ -123,3 +123,15 @@ Apply this checklist to all default branches and any release branches designated
 - Weekly automated drift scan for protected branches.
 - Monthly owner attestation for Tier-1 repositories.
 - Quarterly governance review of exceptions and policy changes.
+
+
+## 10. Goldshore `main` branch implementation
+
+- Enforced via `.github/workflows/enforce-branch-protection.yml` + `scripts/configure-branch-protection.mjs`.
+- Required status checks:
+  - `Required Merge Checks / workspace-install`
+  - `Required Merge Checks / gs-api-build-test`
+  - `Required Merge Checks / gs-web-build`
+  - `Required Merge Checks / gs-admin-build`
+  - `Required Merge Checks / deployment-dry-run`
+- `strict: true` is enabled so the PR branch must be up to date with the base branch before merge.

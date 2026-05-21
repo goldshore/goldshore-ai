@@ -1,53 +1,139 @@
 ---
 import WebLayout from '../layouts/WebLayout.astro';
-import HeroBase from '../components/hero/HeroBase.astro';
-import {
-  DEFAULT_HERO_VARIANT,
-  normalizeHeroVariant,
-} from '../components/hero/hero.config';
 
-const env = Astro.locals.runtime?.env as
-  | { HERO_CONFIG_KV?: { get(key: string): Promise<string | null> } }
-  | undefined;
-const heroVariant = normalizeHeroVariant(
-  await env?.HERO_CONFIG_KV?.get('hero_variant'),
-);
+export const prerender = true;
+
+const platformCards = [
+  {
+    title: 'Risk Radar',
+    body: 'Real-time risk awareness, signal monitoring, sector mapping, and decision-support tooling for fast-moving environments.',
+  },
+  {
+    title: 'Sentinel',
+    body: 'Persistent monitoring infrastructure for alerts, anomalies, system health, access events, and operational continuity.',
+  },
+  {
+    title: 'AI Oracle',
+    body: 'A structured intelligence interface for querying systems, documents, markets, workflows, and decision histories.',
+  },
+  {
+    title: 'Workflow Engine',
+    body: 'Automation pipelines for intake, routing, review, escalation, fulfillment, and reporting.',
+  },
+  {
+    title: 'Operator Infrastructure',
+    body: 'Resilient digital systems for founders, analysts, administrators, and teams operating across fragmented tools.',
+  },
+];
+
+const serviceCards = [
+  { title: 'Digital Strategy', body: 'Roadmaps, system audits, product positioning, automation planning, and operational architecture.' },
+  { title: 'AI Implementation', body: 'Practical AI integration for internal tools, document workflows, customer operations, research, and reporting.' },
+  { title: 'Systems Integration', body: 'Connecting websites, databases, APIs, CRMs, analytics, cloud services, and internal dashboards.' },
+  { title: 'Design & Development', body: 'Web platforms, landing pages, dashboards, internal portals, prototypes, and product interfaces.' },
+  { title: 'Consulting', body: 'Strategic advisory for founders, operators, analysts, and teams navigating digital complexity.' },
+];
+
+const ventureCards = [
+  { title: 'BanProof', body: 'Consumer protection, dispute recovery, account resilience, and escalation tooling for users navigating platform failure.' },
+  { title: 'GearSwipe', body: 'Commerce intelligence, resale workflows, affiliate infrastructure, product discovery, and market-routing automation.' },
+  { title: 'Risk Radar', body: 'Financial and operational signal tooling for markets, sectors, volatility, and asymmetric decision environments.' },
+  { title: 'Future Schemas', body: 'A research layer for emerging product categories, novel data structures, automation models, and operator-first intelligence systems.' },
+];
+
+const intelligenceCards = [
+  { title: 'Financial Signals', body: 'Market movement, sector risk, ticker monitoring, macro events, and volatility-aware signal interpretation.' },
+  { title: 'Risk Tooling', body: 'Systems for identifying exposure, operational fragility, platform dependency, and decision bottlenecks.' },
+  { title: 'Reports', body: 'Briefings, audits, research notes, product maps, technical documentation, and strategic summaries.' },
+  { title: 'Market Systems', body: 'Tools and frameworks for understanding how capital, attention, infrastructure, and behavior move together.' },
+];
 ---
 
 <WebLayout
-  title="Gold Shore — Institutional Infrastructure & Operational Systems"
-  description="Gold Shore builds resilient infrastructure, automation, and operational platforms designed for real-time systems, reliability, and controlled performance."
+  title="GoldShore | Applied Intelligence Systems"
+  description="Institutional AI systems, risk tooling, and resilient operator infrastructure."
+  canonicalPath="/"
 >
-  <HeroBase variant={heroVariant ?? DEFAULT_HERO_VARIANT} />
+  <main class="home">
+    <section class="hero" id="top">
+      <p class="kicker">Applied Intelligence · Digital Systems · Consulting</p>
+      <h1>Applied intelligence systems for operators, institutions, and resilient digital infrastructure.</h1>
+      <p class="lead">GoldShore builds AI-enabled platforms, risk tooling, workflow systems, and digital strategy infrastructure for teams that need clarity, control, and durable execution.</p>
+      <p class="trust">Cross-sector. Full-stack. Built to last.</p>
+      <div class="actions">
+        <a href="#platform" class="btn btn-primary">Explore Platform</a>
+        <a href="#contact" class="btn">Start a Consultation</a>
+      </div>
+    </section>
 
-  <div class="gs-divider" aria-hidden="true"></div>
+    <section id="platform" class="section">
+      <h2>Platform</h2>
+      <p class="intro">A modular intelligence layer for risk sensing, workflow automation, signal interpretation, and operator support.</p>
+      <div class="grid">{platformCards.map((card) => <article class="card"><h3>{card.title}</h3><p>{card.body}</p></article>)}</div>
+    </section>
 
-  <section class="gs-section" id="offerings">
-    <div class="gs-container gs-grid-3">
-      <article
-        class="gs-panel gs-hoverlift gs-edge-light gs-edge-scan gs-scroll-reveal gs-vt-reveal"
-        data-gs-reveal
-        data-gs-tilt
-      >
-        <div class="gs-label">Availability</div>
-        <div class="gs-stat">99.995%</div>
-      </article>
-      <article
-        class="gs-panel gs-hoverlift gs-edge-light gs-edge-scan gs-scroll-reveal gs-vt-reveal"
-        data-gs-reveal
-        data-gs-tilt
-      >
-        <div class="gs-label">Deploy Cadence</div>
-        <div class="gs-stat">48/day</div>
-      </article>
-      <article
-        class="gs-panel gs-hoverlift gs-edge-light gs-edge-scan gs-scroll-reveal gs-vt-reveal"
-        data-gs-reveal
-        data-gs-tilt
-      >
-        <div class="gs-label">Signal Integrity</div>
-        <div class="gs-stat">4.8B</div>
-      </article>
-    </div>
-  </section>
+    <section id="services" class="section">
+      <h2>Services</h2>
+      <p class="intro">GoldShore helps organizations design, implement, and stabilize intelligent systems across strategy, automation, infrastructure, and interface design.</p>
+      <div class="grid">{serviceCards.map((card) => <article class="card"><h3>{card.title}</h3><p>{card.body}</p></article>)}</div>
+    </section>
+
+    <section id="ventures" class="section">
+      <h2>Ventures</h2>
+      <p class="intro">GoldShore develops product concepts and independent systems around defensible workflows, market inefficiencies, and high-friction digital problems.</p>
+      <div class="grid">{ventureCards.map((card) => <article class="card"><h3>{card.title}</h3><p>{card.body}</p></article>)}</div>
+    </section>
+
+    <section id="intelligence" class="section">
+      <h2>Intelligence</h2>
+      <p class="intro">GoldShore treats information as infrastructure: something to be structured, monitored, interpreted, and deployed.</p>
+      <div class="grid">{intelligenceCards.map((card) => <article class="card"><h3>{card.title}</h3><p>{card.body}</p></article>)}</div>
+    </section>
+
+    <section id="why" class="section">
+      <h2>Built for operators who need systems that hold.</h2>
+      <p class="intro">Most digital systems are fragmented, reactive, and dependent on scattered tools. GoldShore designs intelligence infrastructure that helps teams see what matters, automate what repeats, and preserve control when complexity increases.</p>
+      <div class="three-col">
+        <article class="card"><h3>Clarity</h3><p>Turn scattered inputs into structured signals, dashboards, workflows, and decisions.</p></article>
+        <article class="card"><h3>Control</h3><p>Design systems that reduce dependency, preserve auditability, and support operational continuity.</p></article>
+        <article class="card"><h3>Durability</h3><p>Build platforms and processes that can evolve across markets, tools, teams, and technology cycles.</p></article>
+      </div>
+    </section>
+
+    <section id="company" class="section">
+      <h2>Company</h2>
+      <p class="intro">GoldShore is an applied intelligence and digital systems company focused on AI implementation, risk tooling, workflow infrastructure, and strategic consulting.</p>
+      <div class="grid simple-links">
+        <a href="/about" class="card"><h3>About</h3></a>
+        <a href="/team" class="card"><h3>Team</h3></a>
+        <a href="/developer" class="card"><h3>Developer Hub</h3></a>
+        <a href="/status" class="card"><h3>Status</h3></a>
+      </div>
+    </section>
+
+    <section id="contact" class="section contact">
+      <h2>Start with the system.</h2>
+      <p class="intro">Whether you need a platform audit, AI workflow, risk tool, website, dashboard, or product strategy map, GoldShore can help structure the next layer.</p>
+      <a class="btn btn-primary" href="/contact">Request Consultation</a>
+    </section>
+  </main>
+
+  <style>
+    .home { width: min(1100px, 92vw); margin: 0 auto; padding: 5rem 0 6rem; color: #f5f7fb; }
+    .hero { padding: 4rem 0 3rem; border-bottom: 1px solid rgba(255,255,255,.12); }
+    .kicker { color: #d8b56b; text-transform: uppercase; letter-spacing: .12em; font-size: .8rem; }
+    h1 { font-size: clamp(2rem, 5vw, 3.8rem); line-height: 1.05; max-width: 15ch; }
+    .lead,.intro { color: rgba(232,236,247,.82); max-width: 72ch; line-height: 1.7; }
+    .trust { color: #b8c5dd; font-weight: 600; }
+    .actions { display: flex; gap: .75rem; flex-wrap: wrap; margin-top: 1.25rem; }
+    .btn { border: 1px solid rgba(216,181,107,.45); color: #edf2ff; border-radius: 999px; padding: .7rem 1.05rem; text-decoration: none; }
+    .btn-primary { background: rgba(216,181,107,.15); border-color: #d8b56b; }
+    .section { padding: 3.5rem 0 1rem; }
+    h2 { font-size: clamp(1.7rem, 3vw, 2.5rem); margin-bottom: .65rem; }
+    .grid, .three-col { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); margin-top: 1.1rem; }
+    .card { background: rgba(16,20,30,.78); border: 1px solid rgba(154,171,201,.22); border-radius: 14px; padding: 1rem; text-decoration: none; color: inherit; }
+    .card h3 { margin: 0 0 .5rem; font-size: 1.05rem; }
+    .card p { margin: 0; color: rgba(226,233,247,.8); line-height: 1.6; }
+    .contact { padding-bottom: 4rem; }
+  </style>
 </WebLayout>

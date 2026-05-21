@@ -14,22 +14,34 @@
     "test": "playwright test",
     "test:unit": "node --experimental-strip-types --test tests/unit/**/*.test.ts",
     "test:e2e": "playwright test",
-    "verify:dist": "node ../../scripts/verify-web-dist.mjs"
+    "verify:dist": "node ../../scripts/verify-web-dist.mjs",
+    "check:release": "node scripts/release-quality-gate.mjs"
   },
   "dependencies": {
+    "@astrojs/react": "^5.0.3",
+    "@astrojs/tailwind": "^6.0.2",
+    "@goldshore/auth": "workspace:^",
+    "@goldshore/brand": "workspace:^",
     "@goldshore/config": "workspace:^",
-    "@goldshore/theme": "workspace:*",
-    "@goldshore/ui": "workspace:*",
-    "@goldshore/utils": "workspace:*",
-    "astro": "^5.18.0",
+    "@goldshore/theme": "workspace:^",
+    "@goldshore/ui": "workspace:^",
+    "@goldshore/utils": "workspace:^",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.5.0",
+    "@supabase/supabase-js": "^2.104.0",
+    "astro": "^6.3.1",
+    "framer-motion": "^12.38.0",
     "fuse.js": "^7.1.0",
-    "@goldshore/brand": "workspace:*"
+    "react": "^19.2.4",
+    "react-dom": "^19.2.6",
+    "three": "^0.183.2",
+    "vanilla-tilt": "^1.8.1"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.6",
-    "@astrojs/cloudflare": "^12.6.12",
-    "@astrojs/tailwind": "^6.0.2",
-    "@playwright/test": "^1.55.0",
+    "@astrojs/check": "^0.9.8",
+    "@astrojs/cloudflare": "^13.1.10",
+    "@playwright/test": "^1.59.1",
+    "tailwindcss": "^4.3.0",
     "typescript": "^5.4.2"
   }
 }

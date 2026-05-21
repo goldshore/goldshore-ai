@@ -11,9 +11,10 @@ git fetch --all --prune
 # Create/reset staging branch
 git checkout -B "$STAGING" "$BASE"
 
-# List remote branches (exclude main + HEAD)
+# List remote branches (exclude main + HEAD and the remote root ref)
 mapfile -t BRANCHES < <(
   git for-each-ref --format='%(refname:short)' refs/remotes/origin \
+  | grep '^origin/' \
   | grep -vE '^origin/(main|HEAD)$'
 )
 
@@ -40,9 +41,11 @@ for rb in "${BRANCHES[@]}"; do
       git diff --unified=0 --diff-filter=U || true
     } >> "$REPORT_DIR/conflicts.txt"
     git merge --abort
-  else
+  elif git rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1; then
     git commit -m "Merge $rb (policy-resolved conflicts)"
     echo "RESOLVED by policy: $rb" | tee -a "$REPORT_DIR/summary.txt"
+  else
+    echo "SKIPPED: $rb (merge could not start cleanly)" | tee -a "$REPORT_DIR/summary.txt"
   fi
 done
 

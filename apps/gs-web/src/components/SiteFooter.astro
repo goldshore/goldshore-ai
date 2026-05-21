@@ -1,0 +1,39 @@
+---
+const {
+  currentPath = '',
+  logoSrc = '/logo.svg'
+} = Astro.props;
+
+const legalLinks = [
+  { href: '/legal/privacy', label: 'Privacy' },
+  { href: '/legal/terms', label: 'Terms' }
+];
+---
+
+<footer class="gs-footer">
+  <div class="gs-section gs-section--padded">
+    <div class="gs-grid columns-2">
+      <div>
+        <div class="gs-logo" style="gap: var(--gs-space-2);">
+          <img src={logoSrc} alt="GoldShore logo" width="24" height="32" loading="lazy" decoding="async" />
+        </div>
+        <p>Applied intelligence, resilient infrastructure, and responsive operations.</p>
+      </div>
+      <div class="gs-grid columns-2" style="gap: var(--gs-space-2);">
+        <div class="gs-nav gs-nav--vertical">
+          <strong><span class="aria-icon aria-icon-orbit" aria-hidden="true"></span>Company</strong>
+          <a href="/about" aria-current={currentPath === '/about' ? 'page' : undefined}>About</a>
+          <a href="/team" aria-current={currentPath === '/team' ? 'page' : undefined}>Team</a>
+          <a href="/services" aria-current={currentPath === '/services' ? 'page' : undefined}>Services</a>
+        </div>
+        <div class="gs-nav gs-nav--vertical-support">
+          <strong><span class="aria-icon aria-icon-signal" aria-hidden="true"></span>Support</strong>
+          <a href="/contact" aria-current={currentPath === '/contact' ? 'page' : undefined}>Contact</a>
+          {legalLinks.map((link) => (
+            <a href={link.href} aria-current={currentPath === link.href ? 'page' : undefined}>{link.label}</a>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>

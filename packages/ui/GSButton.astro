@@ -40,10 +40,16 @@ const variantClass = {
     border-radius: 999px;
     border: 2px solid rgba(255,255,255,0.4);
     border-top-color: rgba(255,255,255,0.9);
-    animation: spin 0.8s linear infinite;
+    animation: spin 0.8s linear infinite, loader-pulse 2.2s ease-in-out infinite;
+    box-shadow: 0 0 0 rgba(95, 168, 255, 0);
   }
 
   @keyframes spin {
     to { transform: rotate(360deg); }
+  }
+
+  @keyframes loader-pulse {
+    0%, 100% { box-shadow: 0 0 0 rgba(95, 168, 255, 0); }
+    50% { box-shadow: 0 0 14px rgba(95, 168, 255, 0.45); }
   }
 </style>

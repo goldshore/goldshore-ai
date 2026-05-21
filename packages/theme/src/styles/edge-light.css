@@ -1,0 +1,59 @@
+/* =========================================
+   Edge Lighting + Shimmer Scan
+========================================= */
+
+.gs-edge-light {
+  position: relative;
+  overflow: hidden;
+}
+
+.gs-edge-light::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 1px;
+  background:
+    linear-gradient(
+      120deg,
+      transparent,
+      rgba(90,140,255,0.4),
+      transparent
+    );
+  opacity: 0;
+  transition: opacity 300ms cubic-bezier(0.2,0.8,0.2,1);
+  pointer-events: none;
+}
+
+.gs-edge-light:hover::before {
+  opacity: 1;
+}
+
+/* Shimmer Scan */
+
+.gs-scan {
+  position: relative;
+  overflow: hidden;
+}
+
+.gs-scan::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      120deg,
+      transparent 0%,
+      rgba(255,255,255,0.06) 40%,
+      transparent 60%
+    );
+  transform: translateX(-120%);
+  animation: gs-scan 6s cubic-bezier(0.4,0,0.2,1) infinite;
+  pointer-events: none;
+}
+
+@keyframes gs-scan {
+  0% { transform: translateX(-120%); }
+  50% { transform: translateX(120%); }
+  100% { transform: translateX(120%); }
+}

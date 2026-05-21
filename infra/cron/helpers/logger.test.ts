@@ -1,6 +1,6 @@
 import { test, describe, afterEach, beforeEach } from 'node:test';
 import assert from 'node:assert';
-import { createLogger } from './logger';
+import { createLogger } from './logger.ts';
 
 describe('createLogger', () => {
   let logs: string[] = [];

@@ -1,0 +1,111 @@
+Merging into integration/conflict-resolution/20260320T084444Z from origin/main
+
+==> Merge origin/codex/add-merge-or-squash-info-to-commit-descriptions-2026-03-14
+CONFLICT: origin/codex/add-merge-or-squash-info-to-commit-descriptions-2026-03-14
+SKIPPED: origin/codex/add-merge-or-squash-info-to-commit-descriptions-2026-03-14 (merge could not start cleanly)
+==> Merge origin/codex/add-parallax-hero-and-reusable-modal-2026-03-05
+CONFLICT: origin/codex/add-parallax-hero-and-reusable-modal-2026-03-05
+SKIPPED: origin/codex/add-parallax-hero-and-reusable-modal-2026-03-05 (merge could not start cleanly)
+==> Merge origin/codex/add-parallax-hero-and-reusable-modal-2026-03-19
+CONFLICT: origin/codex/add-parallax-hero-and-reusable-modal-2026-03-19
+SKIPPED: origin/codex/add-parallax-hero-and-reusable-modal-2026-03-19 (merge could not start cleanly)
+==> Merge origin/codex/add-parallax-hero-and-reusable-modal-2026-03-19-yx6l2h
+CONFLICT: origin/codex/add-parallax-hero-and-reusable-modal-2026-03-19-yx6l2h
+SKIPPED: origin/codex/add-parallax-hero-and-reusable-modal-2026-03-19-yx6l2h (merge could not start cleanly)
+==> Merge origin/codex/configure-upstream-remote-and-refresh-refs-2026-03-12
+CONFLICT: origin/codex/configure-upstream-remote-and-refresh-refs-2026-03-12
+SKIPPED: origin/codex/configure-upstream-remote-and-refresh-refs-2026-03-12 (merge could not start cleanly)
+==> Merge origin/codex/fix-high-priority-bugs-from-codex-review-2026-03-01-enshox
+CONFLICT: origin/codex/fix-high-priority-bugs-from-codex-review-2026-03-01-enshox
+SKIPPED: origin/codex/fix-high-priority-bugs-from-codex-review-2026-03-01-enshox (merge could not start cleanly)
+==> Merge origin/codex/fix-infra-deployment-for-renamed-gs-api-directory-2026-03-12
+CONFLICT: origin/codex/fix-infra-deployment-for-renamed-gs-api-directory-2026-03-12
+SKIPPED: origin/codex/fix-infra-deployment-for-renamed-gs-api-directory-2026-03-12 (merge could not start cleanly)
+==> Merge origin/codex/github-mention-chore/working-copy-2026-03-18
+CONFLICT: origin/codex/github-mention-chore/working-copy-2026-03-18
+SKIPPED: origin/codex/github-mention-chore/working-copy-2026-03-18 (merge could not start cleanly)
+==> Merge origin/codex/github-mention-chore/working-copy-2026-03-19
+CONFLICT: origin/codex/github-mention-chore/working-copy-2026-03-19
+SKIPPED: origin/codex/github-mention-chore/working-copy-2026-03-19 (merge could not start cleanly)
+==> Merge origin/codex/github-mention-chore/working-copy-2026-03-19-4fdatf
+CONFLICT: origin/codex/github-mention-chore/working-copy-2026-03-19-4fdatf
+SKIPPED: origin/codex/github-mention-chore/working-copy-2026-03-19-4fdatf (merge could not start cleanly)
+==> Merge origin/codex/github-mention-chore/working-copy-2026-03-19-mh995h
+CONFLICT: origin/codex/github-mention-chore/working-copy-2026-03-19-mh995h
+SKIPPED: origin/codex/github-mention-chore/working-copy-2026-03-19-mh995h (merge could not start cleanly)
+==> Merge origin/codex/github-mention-cloudflare-infra-add-public_url,-cf-access-2026-03-19
+CONFLICT: origin/codex/github-mention-cloudflare-infra-add-public_url,-cf-access-2026-03-19
+SKIPPED: origin/codex/github-mention-cloudflare-infra-add-public_url,-cf-access-2026-03-19 (merge could not start cleanly)
+==> Merge origin/codex/locate-and-update-legacy-tokens-in-infra-2026-03-14
+CONFLICT: origin/codex/locate-and-update-legacy-tokens-in-infra-2026-03-14
+SKIPPED: origin/codex/locate-and-update-legacy-tokens-in-infra-2026-03-14 (merge could not start cleanly)
+==> Merge origin/codex/locate-and-update-legacy-tokens-in-infra-2026-03-14-g63dip
+CONFLICT: origin/codex/locate-and-update-legacy-tokens-in-infra-2026-03-14-g63dip
+SKIPPED: origin/codex/locate-and-update-legacy-tokens-in-infra-2026-03-14-g63dip (merge could not start cleanly)
+==> Merge origin/codex/locate-and-update-legacy-tokens-in-infra-2026-03-15
+CONFLICT: origin/codex/locate-and-update-legacy-tokens-in-infra-2026-03-15
+SKIPPED: origin/codex/locate-and-update-legacy-tokens-in-infra-2026-03-15 (merge could not start cleanly)
+==> Merge origin/codex/locate-and-update-legacy-tokens-in-infra-2026-03-17
+CONFLICT: origin/codex/locate-and-update-legacy-tokens-in-infra-2026-03-17
+SKIPPED: origin/codex/locate-and-update-legacy-tokens-in-infra-2026-03-17 (merge could not start cleanly)
+==> Merge origin/codex/locate-and-update-legacy-tokens-in-infra-2026-03-17-sde09k
+CONFLICT: origin/codex/locate-and-update-legacy-tokens-in-infra-2026-03-17-sde09k
+SKIPPED: origin/codex/locate-and-update-legacy-tokens-in-infra-2026-03-17-sde09k (merge could not start cleanly)
+==> Merge origin/codex/replace-and-update-favicons-and-assets-2026-03-12
+CONFLICT: origin/codex/replace-and-update-favicons-and-assets-2026-03-12
+SKIPPED: origin/codex/replace-and-update-favicons-and-assets-2026-03-12 (merge could not start cleanly)
+==> Merge origin/codex/replace-and-update-favicons-and-assets-2026-03-12-v88k1q
+CONFLICT: origin/codex/replace-and-update-favicons-and-assets-2026-03-12-v88k1q
+SKIPPED: origin/codex/replace-and-update-favicons-and-assets-2026-03-12-v88k1q (merge could not start cleanly)
+==> Merge origin/codex/replace-and-update-favicons-and-assets-2026-03-15
+CONFLICT: origin/codex/replace-and-update-favicons-and-assets-2026-03-15
+SKIPPED: origin/codex/replace-and-update-favicons-and-assets-2026-03-15 (merge could not start cleanly)
+==> Merge origin/codex/replace-and-update-favicons-and-assets-2026-03-15-hverby
+CONFLICT: origin/codex/replace-and-update-favicons-and-assets-2026-03-15-hverby
+SKIPPED: origin/codex/replace-and-update-favicons-and-assets-2026-03-15-hverby (merge could not start cleanly)
+==> Merge origin/codex/replace-and-update-favicons-and-assets-2026-03-17
+CONFLICT: origin/codex/replace-and-update-favicons-and-assets-2026-03-17
+SKIPPED: origin/codex/replace-and-update-favicons-and-assets-2026-03-17 (merge could not start cleanly)
+==> Merge origin/codex/replace-and-update-favicons-and-assets-2026-03-17-fyov0f
+CONFLICT: origin/codex/replace-and-update-favicons-and-assets-2026-03-17-fyov0f
+SKIPPED: origin/codex/replace-and-update-favicons-and-assets-2026-03-17-fyov0f (merge could not start cleanly)
+==> Merge origin/codex/replace-and-update-favicons-and-assets-2026-03-17-ie6a2x
+CONFLICT: origin/codex/replace-and-update-favicons-and-assets-2026-03-17-ie6a2x
+SKIPPED: origin/codex/replace-and-update-favicons-and-assets-2026-03-17-ie6a2x (merge could not start cleanly)
+==> Merge origin/codex/replace-and-update-favicons-and-assets-2026-03-18
+CONFLICT: origin/codex/replace-and-update-favicons-and-assets-2026-03-18
+SKIPPED: origin/codex/replace-and-update-favicons-and-assets-2026-03-18 (merge could not start cleanly)
+==> Merge origin/codex/replace-hardcoded-colors-with-theme-variables-2026-03-13
+CONFLICT: origin/codex/replace-hardcoded-colors-with-theme-variables-2026-03-13
+SKIPPED: origin/codex/replace-hardcoded-colors-with-theme-variables-2026-03-13 (merge could not start cleanly)
+==> Merge origin/codex/replace-logo-asset-with-gs-penrose.svg-2026-03-12
+CONFLICT: origin/codex/replace-logo-asset-with-gs-penrose.svg-2026-03-12
+SKIPPED: origin/codex/replace-logo-asset-with-gs-penrose.svg-2026-03-12 (merge could not start cleanly)
+==> Merge origin/codex/resolve-conflicts-with-main-branch-2026-03-12
+CONFLICT: origin/codex/resolve-conflicts-with-main-branch-2026-03-12
+SKIPPED: origin/codex/resolve-conflicts-with-main-branch-2026-03-12 (merge could not start cleanly)
+==> Merge origin/codex/review-main-repo-for-errors-2026-03-12
+CONFLICT: origin/codex/review-main-repo-for-errors-2026-03-12
+SKIPPED: origin/codex/review-main-repo-for-errors-2026-03-12 (merge could not start cleanly)
+==> Merge origin/codex/review-prs-for-required-actions-2026-03-18
+CONFLICT: origin/codex/review-prs-for-required-actions-2026-03-18
+UNRESOLVED after policy: origin/codex/review-prs-for-required-actions-2026-03-18
+==> Merge origin/codex/standardize-cloudflare-worker-configuration-2026-03-18
+CONFLICT: origin/codex/standardize-cloudflare-worker-configuration-2026-03-18
+SKIPPED: origin/codex/standardize-cloudflare-worker-configuration-2026-03-18 (merge could not start cleanly)
+==> Merge origin/codex/update-book-strategy-call-target-2026-03-13
+CONFLICT: origin/codex/update-book-strategy-call-target-2026-03-13
+SKIPPED: origin/codex/update-book-strategy-call-target-2026-03-13 (merge could not start cleanly)
+==> Merge origin/codex/update-package.json-name-and-audit-labels-2026-02-15
+CONFLICT: origin/codex/update-package.json-name-and-audit-labels-2026-02-15
+SKIPPED: origin/codex/update-package.json-name-and-audit-labels-2026-02-15 (merge could not start cleanly)
+==> Merge origin/codex/update-phase-5-in-validate-rebuild.sh-2026-03-13
+CONFLICT: origin/codex/update-phase-5-in-validate-rebuild.sh-2026-03-13
+SKIPPED: origin/codex/update-phase-5-in-validate-rebuild.sh-2026-03-13 (merge could not start cleanly)
+==> Merge origin/fix/control-worker-dns-validation-7280295458721055887
+CONFLICT: origin/fix/control-worker-dns-validation-7280295458721055887
+SKIPPED: origin/fix/control-worker-dns-validation-7280295458721055887 (merge could not start cleanly)
+==> Merge origin/integral-junglefowl
+CONFLICT: origin/integral-junglefowl
+SKIPPED: origin/integral-junglefowl (merge could not start cleanly)
+Done. See reports/branch-merge

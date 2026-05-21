@@ -35,6 +35,16 @@ describe('json utility', () => {
     const body = await response.json();
     assert.strictEqual(body, null);
   });
+
+  test('throws for circular references', () => {
+    const circular: any = {};
+    circular.self = circular;
+    assert.throws(() => json(circular));
+  });
+
+  test('throws for BigInt', () => {
+    assert.throws(() => json(BigInt(1)));
+  });
 });
 
 describe('parseJson utility', () => {
@@ -69,5 +79,12 @@ describe('parseJson utility', () => {
     const jsonStr = '123';
     const result = parseJson(jsonStr, 0);
     assert.strictEqual(result, 123);
+  });
+
+  test('returns fallback when JSON.parse returns null', () => {
+    const jsonStr = 'null';
+    const fallback = { foo: 'fallback' };
+    const result = parseJson(jsonStr, fallback);
+    assert.deepStrictEqual(result, fallback);
   });
 });

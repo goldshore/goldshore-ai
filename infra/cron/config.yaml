@@ -37,7 +37,7 @@ cloudflare:
           type: "CNAME"
         - name: "_dmarc.goldshore.ai"
           type: "TXT"
-          contains: "v=DMARC1; p=reject; rua=mailto:security@goldshore.ai"
+          contains: "v=DMARC1; p=reject"
         - name: "goldshore.ai"
           type: "TXT"
           contains: "v=spf1"

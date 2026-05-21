@@ -137,28 +137,32 @@ const uniqueId = Math.random().toString(36).slice(2, 11);
   }
 </style>
 
-<script lang="ts">
-  function initDocsSearch(wrapper: HTMLElement) {
-    const input = wrapper.querySelector('input[type="search"]') as HTMLInputElement | null;
-    const list = wrapper.querySelector('.docs-search-results') as HTMLUListElement | null;
+<script>
+  function initDocsSearch(wrapper) {
+    const input = wrapper.querySelector('input[type="search"]');
+    const list = wrapper.querySelector('.docs-search-results');
 
-    if (!input || !list) return;
+    if (!(input instanceof HTMLInputElement) || !(list instanceof HTMLUListElement)) {
+      return;
+    }
 
-    let timer: ReturnType<typeof setTimeout>;
-    let controller: AbortController | null = null;
+    let timer = 0;
+    let controller = null;
 
-    input.addEventListener('input', (e) => {
+    input.addEventListener('input', (event) => {
       clearTimeout(timer);
       controller?.abort();
 
-      const q = (e.target as HTMLInputElement).value.trim();
-      if (!q) {
+      const target = event.target;
+      const query = target instanceof HTMLInputElement ? target.value.trim() : '';
+
+      if (!query) {
         list.innerHTML = '';
         input.setAttribute('aria-expanded', 'false');
         return;
       }
 
-      timer = setTimeout(async () => {
+      timer = window.setTimeout(async () => {
         list.textContent = '';
         const loading = document.createElement('li');
         loading.className = 'message';
@@ -167,49 +171,66 @@ const uniqueId = Math.random().toString(36).slice(2, 11);
         input.setAttribute('aria-expanded', 'true');
 
         controller = new AbortController();
+
         try {
-          const res = await fetch(`/api/docs-search?q=${encodeURIComponent(q)}`, {
-            signal: controller.signal,
-          });
-          const data = await res.json();
+          const response = await fetch(
+            `/api/docs-search?q=${encodeURIComponent(query)}`,
+            {
+              signal: controller.signal,
+            },
+          );
+          const results = await response.json();
           list.textContent = '';
 
-          if (data.length === 0) {
-            const li = document.createElement('li');
-            li.className = 'message';
-            li.textContent = 'No results found';
-            list.appendChild(li);
+          if (!Array.isArray(results) || results.length === 0) {
+            const emptyState = document.createElement('li');
+            emptyState.className = 'message';
+            emptyState.textContent = 'No results found';
+            list.appendChild(emptyState);
             return;
           }
 
-          data.forEach((r: { url?: string; title: string }) => {
+          results.forEach((result) => {
             const li = document.createElement('li');
-            const a = document.createElement('a');
-            a.href = r.url && !r.url.trim().toLowerCase().startsWith('javascript:') ? r.url : '#';
-            a.textContent = r.title;
-            li.appendChild(a);
+            const link = document.createElement('a');
+            const safeUrl =
+              typeof result?.url === 'string' &&
+              result.url.trim() &&
+              !result.url.trim().toLowerCase().startsWith('javascript:')
+                ? result.url
+                : '#';
+
+            link.href = safeUrl;
+            link.textContent =
+              typeof result?.title === 'string' ? result.title : 'Untitled result';
+            li.appendChild(link);
             list.appendChild(li);
           });
-        } catch (err: unknown) {
-          if (err instanceof DOMException && err.name === 'AbortError') return;
+        } catch (error) {
+          if (error instanceof DOMException && error.name === 'AbortError') {
+            return;
+          }
+
           list.textContent = '';
-          const li = document.createElement('li');
-          li.className = 'message error';
-          li.textContent = 'Error searching';
-          list.appendChild(li);
+          const errorMessage = document.createElement('li');
+          errorMessage.className = 'message error';
+          errorMessage.textContent = 'Error searching';
+          list.appendChild(errorMessage);
         }
       }, 300);
     });
 
-    document.addEventListener('click', (e) => {
-      if (!wrapper.contains(e.target as Node)) {
+    document.addEventListener('click', (event) => {
+      if (event.target instanceof Node && !wrapper.contains(event.target)) {
         list.innerHTML = '';
         input.setAttribute('aria-expanded', 'false');
       }
     });
   }
 
-  document.querySelectorAll('.search-wrapper').forEach((el) => {
-    initDocsSearch(el as HTMLElement);
+  document.querySelectorAll('.search-wrapper').forEach((element) => {
+    if (element instanceof HTMLElement) {
+      initDocsSearch(element);
+    }
   });
 </script>
