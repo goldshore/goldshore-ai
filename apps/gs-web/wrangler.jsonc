@@ -1,6 +1,6 @@
 {
   "$schema": "../../node_modules/wrangler/config-schema.json",
-  "name": "gs-web",
+  "name": "gs-web-staging",
   "compatibility_date": "2026-03-13",
   "compatibility_flags": ["nodejs_compat"],
   "pages_build_output_dir": "./dist",
