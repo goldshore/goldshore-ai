@@ -45,17 +45,15 @@ binding = "ASSETS"
 bucket_name = "gs-assets"
 
 # ── Service bindings ───────────────────────────────────────
-# Uncomment each binding once the target worker is deployed on CF.
-#
-# [[env.prod.services]]
-# binding = "API_SERVICE"
-# service = "gs-api"
-# environment = "prod"
-#
-# [[env.prod.services]]
-# binding = "AGENT"
-# service = "gs-agent"
-# environment = "prod"
+[[env.prod.services]]
+binding = "API_SERVICE"
+service = "gs-api"
+environment = "prod"
+
+[[env.prod.services]]
+binding = "AGENT"
+service = "gs-agent"
+environment = "prod"
 
 # ── Phase 2: Joinery — security + signals spokes ──────────
 [[env.prod.services]]

@@ -4,7 +4,7 @@ zone_id_env: CF_ZONE_ID
 projects:
   pages:
     - name: gs-web
-      public_url: https://goldshore.ai/
+      public_url: https://www.goldshore.ai/
       output_dir: apps/gs-web/dist
       max_daily_deploys: 6
       require_checks: ['smoke', 'lighthouse']
