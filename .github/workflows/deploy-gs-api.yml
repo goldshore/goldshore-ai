@@ -53,6 +53,14 @@ jobs:
       - name: Validate gs-api infra bindings config
         run: pnpm check:gs-api-infra-bindings
 
+      - name: Verify deployed gs-api manifest matches validated infra manifest
+        run: |
+          cmp -s infra/Cloudflare/gs-api.wrangler.toml apps/gs-api/wrangler.toml || (
+            echo "apps/gs-api/wrangler.toml does not match infra/Cloudflare/gs-api.wrangler.toml" &&
+            echo "The deploy step uses apps/gs-api/wrangler.toml, so it must stay in sync with the validated infra manifest." &&
+            exit 1
+          )
+
       - name: Deploy GS API worker to Cloudflare
         working-directory: apps/gs-api
         env:
