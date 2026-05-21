@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import sanitizeHtml from 'sanitize-html';
 import { requirePermission } from '../auth';
 import { Env, Variables } from '../types';
 
@@ -32,27 +33,92 @@ const SVG_DANGEROUS_TAGS_REGEX =
 const SVG_DANGEROUS_SELF_CLOSING_TAGS_REGEX =
   /<(script|iframe|object|embed|link|meta|style|foreignObject|animate|set|discard)\b[^>]*\/?>/gi;
 const SVG_EVENT_HANDLER_ATTR_REGEX =
-  /\s+on[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi;
+  /(?:^|[\s"'<])on[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi;
 const SVG_SCRIPTABLE_URL_ATTR_QUOTED_REGEX =
   /\s+(?:href|xlink:href|src)\s*=\s*("|')\s*(?:javascript:|data:text\/html)[\s\S]*?\1/gi;
 const SVG_SCRIPTABLE_URL_ATTR_UNQUOTED_REGEX =
   /\s+(?:href|xlink:href|src)\s*=\s*(?:javascript:|data:text\/html)[^\s>]*/gi;
 
 const sanitizeSvg = (input: string): string => {
-  let current = input;
-  let previous: string;
-
-  do {
-    previous = current;
-    current = current
-      .replace(SVG_DANGEROUS_TAGS_REGEX, '')
-      .replace(SVG_DANGEROUS_SELF_CLOSING_TAGS_REGEX, '')
-      .replace(SVG_EVENT_HANDLER_ATTR_REGEX, '')
-      .replace(SVG_SCRIPTABLE_URL_ATTR_QUOTED_REGEX, '')
-      .replace(SVG_SCRIPTABLE_URL_ATTR_UNQUOTED_REGEX, '');
-  } while (current !== previous);
-
-  return current;
+  return sanitizeHtml(input, {
+    allowedTags: [
+      'svg',
+      'g',
+      'path',
+      'circle',
+      'ellipse',
+      'line',
+      'polyline',
+      'polygon',
+      'rect',
+      'defs',
+      'linearGradient',
+      'radialGradient',
+      'stop',
+      'clipPath',
+      'mask',
+      'pattern',
+      'symbol',
+      'use',
+      'text',
+      'tspan',
+      'image',
+      'title',
+      'desc',
+    ],
+    allowedAttributes: {
+      '*': [
+        'id',
+        'class',
+        'x',
+        'y',
+        'cx',
+        'cy',
+        'r',
+        'rx',
+        'ry',
+        'x1',
+        'y1',
+        'x2',
+        'y2',
+        'd',
+        'points',
+        'viewBox',
+        'width',
+        'height',
+        'fill',
+        'stroke',
+        'stroke-width',
+        'stroke-linecap',
+        'stroke-linejoin',
+        'stroke-dasharray',
+        'stroke-dashoffset',
+        'opacity',
+        'fill-opacity',
+        'stroke-opacity',
+        'transform',
+        'gradientUnits',
+        'gradientTransform',
+        'offset',
+        'stop-color',
+        'stop-opacity',
+        'clip-path',
+        'mask',
+        'patternUnits',
+        'patternTransform',
+        'preserveAspectRatio',
+        'xmlns',
+        'xmlns:xlink',
+        'role',
+        'aria-label',
+        'aria-hidden',
+      ],
+      use: ['href', 'xlink:href'],
+      image: ['href', 'xlink:href'],
+    },
+    allowedSchemes: ['http', 'https', 'data'],
+    allowProtocolRelative: false,
+  });
 };
 
 const isUploadFileLike = (value: unknown): value is UploadFileLike => {
