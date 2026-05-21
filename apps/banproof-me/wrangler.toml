@@ -1,3 +1,65 @@
+name = "banproof-me"
+main = "src/index.ts"
+compatibility_date = "2026-04-29"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = false
+
+[env.dev]
+name = "banproof-me-dev"
+routes = [
+  { pattern = "dev.banproof.me/*", zone_name = "banproof.me" }
+]
+
+[env.dev.vars]
+ENV = "dev"
+
+[[env.dev.kv_namespaces]]
+binding = "BANPROOF_CONFIG"
+id = "banproof_config_dev"
+
+[[env.dev.d1_databases]]
+binding = "BANPROOF_DB"
+database_name = "banproof_platform"
+database_id = "banproof_platform_dev"
+
+[[env.dev.r2_buckets]]
+binding = "ASSETS"
+bucket_name = "gs-assets"
+
+[[env.dev.queues.producers]]
+binding = "POA_EVENTS_QUEUE"
+queue = "banproof-events-dev"
+
+[[env.dev.queues.consumers]]
+queue = "banproof-events-dev"
+
+[[env.dev.services]]
+binding = "GS_API"
+service = "gs-api"
+environment = "preview"
+
+[[env.dev.services]]
+binding = "GS_CONTROL"
+service = "gs-control"
+environment = "preview"
+
+[env.preview]
+name = "banproof-me-preview"
+routes = [
+  { pattern = "preview.banproof.me/*", zone_name = "banproof.me" }
+]
+
+[env.preview.vars]
+ENV = "preview"
+
+[[env.preview.kv_namespaces]]
+binding = "BANPROOF_CONFIG"
+id = "banproof_config_preview"
+
+[[env.preview.d1_databases]]
+binding = "BANPROOF_DB"
+database_name = "banproof_platform"
+database_id = "banproof_platform_preview"
 # Worker Builds token for this service must be the gs-control build token.
 # wrangler.toml for the banproof-me security worker
 #
@@ -104,6 +166,61 @@ database_id = "gs_signals_db"
 binding = "ASSETS"
 bucket_name = "gs-assets"
 
+[[env.preview.queues.producers]]
+binding = "POA_EVENTS_QUEUE"
+queue = "banproof-events-preview"
+
+[[env.preview.queues.consumers]]
+queue = "banproof-events-preview"
+
+[[env.preview.services]]
+binding = "GS_API"
+service = "gs-api"
+environment = "preview"
+
+[[env.preview.services]]
+binding = "GS_CONTROL"
+service = "gs-control"
+environment = "preview"
+
+[env.prod]
+routes = [
+  { pattern = "banproof.me/*", zone_name = "banproof.me" },
+  { pattern = "www.banproof.me/*", zone_name = "banproof.me" }
+]
+
+[env.prod.vars]
+ENV = "production"
+
+[[env.prod.kv_namespaces]]
+binding = "BANPROOF_CONFIG"
+id = "banproof_config_prod"
+
+[[env.prod.d1_databases]]
+binding = "BANPROOF_DB"
+database_name = "banproof_platform"
+database_id = "banproof_platform_prod"
+
+[[env.prod.r2_buckets]]
+binding = "ASSETS"
+bucket_name = "gs-assets"
+
+[[env.prod.queues.producers]]
+binding = "POA_EVENTS_QUEUE"
+queue = "banproof-events-prod"
+
+[[env.prod.queues.consumers]]
+queue = "banproof-events-prod"
+
+[[env.prod.services]]
+binding = "GS_API"
+service = "gs-api"
+environment = "prod"
+
+[[env.prod.services]]
+binding = "GS_CONTROL"
+service = "gs-control"
+environment = "prod"
 [[env.preview.r2_buckets]]
 binding = "TELEMETRY"
 bucket_name = "gs-telemetry-storage"

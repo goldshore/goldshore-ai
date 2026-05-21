@@ -17,6 +17,7 @@
     "validate:structure": "tsx scripts/validate-worker-structure.ts",
     "validate:names": "tsx scripts/validate-worker-names.ts",
     "validate:workers": "tsx scripts/validate-worker-names.ts",
+    "validate:queues": "node scripts/validate-queue-contracts.mjs",
     "validate:workspace": "tsx scripts/validate-workspace-contract.ts",
     "validate": "pnpm check:naming && pnpm check:workspace-protocol && pnpm validate:workspace && pnpm validate:structure && pnpm validate:names",
     "branch:bootstrap": "bash scripts/branch-bootstrap.sh",
@@ -32,14 +33,13 @@
     "repo:health": "node scripts/repo-health.mjs",
     "audit": "pnpm run repo:health",
     "build:api": "turbo run build --filter=@goldshore/gs-api",
-    "build:control": "turbo run build --filter=@goldshore/gs-control",
-    "check:banproof-bindings": "node scripts/check-banproof-bindings.mjs"
+    "build:control": "turbo run build --filter=@goldshore/gs-control"
   },
   "devDependencies": {
-    "@astrojs/mdx": "^4.0.8",
+    "@astrojs/mdx": "^5.0.4",
     "@astrojs/sitemap": "^3.7.2",
     "@astrojs/tailwind": "^6.0.2",
-    "@types/node": "^25.3.3",
+    "@types/node": "^25.7.0",
     "@typescript-eslint/eslint-plugin": "^8.57.2",
     "@typescript-eslint/parser": "^8.57.2",
     "astro": "^6.3.1",
