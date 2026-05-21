@@ -40,8 +40,11 @@
     if (count) count.textContent = 'Unavailable';
   };
 
-  fetch('https://api.goldshore.ai/internal/inbox-status')
-    .then((res) => res.json())
+  fetch('/api/gs-api/inbox-status')
+    .then((res) => {
+      if (!res.ok) throw new Error(`Failed to load inbox status: ${res.status}`);
+      return res.json();
+    })
     .then((data) => {
       const recent = data?.inbox?.recent ?? [];
       const total = data?.inbox?.count ?? 0;
