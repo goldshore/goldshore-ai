@@ -33,7 +33,7 @@
     "audit": "pnpm run repo:health",
     "build:api": "turbo run build --filter=@goldshore/gs-api",
     "build:control": "turbo run build --filter=@goldshore/gs-control",
-    "check:gs-api-infra-bindings": "node scripts/check-gs-api-infra-bindings.mjs"
+    "check:gs-api-infra-bindings": "node scripts/check-gs-api-infra-bindings.mjs",
     "check:banproof-bindings": "node scripts/check-banproof-bindings.mjs"
   },
   "devDependencies": {
