@@ -25,7 +25,7 @@ export interface AuthMiddlewareEnv extends Env {
   ENV?: string;
 }
 
-const PUBLIC_PATHS = ["/", "/health", "/status"];
+const PUBLIC_PATHS = ["/", "/health", "/status", "/signals"];
 
 /** Paths that are public and bypass JWT auth (fail open). */
 function isPublicPath(pathname: string): boolean {
