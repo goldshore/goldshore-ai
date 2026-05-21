@@ -14,7 +14,6 @@ routes = [
 ENV = "production"
 CONTROL_SERVICE = "true"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 
 [env.preview]
 routes = [

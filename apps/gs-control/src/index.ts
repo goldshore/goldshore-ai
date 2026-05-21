@@ -63,7 +63,12 @@ export const createApp = (verifyAccess: VerifyAccessWithClaims = verifyAccessWit
       return c.json({ error: "Missing GS_CONFIG binding." }, 500);
     }
 
-    const body = await c.req.json();
+    let body: unknown;
+    try {
+      body = await c.req.json();
+    } catch {
+      return c.json({ error: "Invalid JSON body" }, 400);
+    }
 
     // 1. Schema Validation
     const parsedPayload = parseSystemSyncWritePayload(body);

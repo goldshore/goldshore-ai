@@ -15,7 +15,6 @@ ENV = "production"
 MAIL_SERVICE = "true"
 MAIL_ALLOWED_RECIPIENTS = "ops@goldshore.ai,inbox@goldshore.ai"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 
 [env.preview]
 routes = [

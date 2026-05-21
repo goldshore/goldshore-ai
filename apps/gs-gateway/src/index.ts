@@ -1,9 +1,9 @@
 import { Hono } from 'hono';
 import { secureHeaders } from 'hono/secure-headers';
 import { cors } from 'hono/cors';
-import { verifyAccess } from '@goldshore/auth';
 import { STATUS_PAGE_HTML } from './templates/status';
 import { type Env } from './types';
+import { checkAuth } from './auth';
 import { integrationControls } from './middleware/integration';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -80,11 +80,12 @@ app.use('*', async (c, next) => {
         return;
     }
 
-    if (!c.env.CLOUDFLARE_ACCESS_AUDIENCE) {
-        console.warn('SECURITY WARNING: CLOUDFLARE_ACCESS_AUDIENCE is not set. Audience verification is disabled.');
+    if (c.env.ENV === 'production' && !c.env.CLOUDFLARE_ACCESS_AUDIENCE) {
+        console.error('SECURITY ERROR: CLOUDFLARE_ACCESS_AUDIENCE must be configured for protected gs-gateway routes in production.');
+        return c.json({ error: 'Service auth misconfigured' }, 500);
     }
 
-    const authorized = await verifyAccess(c.req.raw, c.env);
+    const authorized = await checkAuth(c.req.raw, c.env);
     if (!authorized) {
         return c.json({ error: 'Unauthorized' }, 401);
     }
@@ -169,7 +170,9 @@ app.all('/api/*', async (c) => {
         if (c.env.API_ORIGIN) {
             const url = new URL(c.req.url);
             const targetUrl = new URL(url.pathname + url.search, c.env.API_ORIGIN);
-            const response = await fetch(targetUrl.toString(), c.req.raw);
+            const upstreamRequest = new Request(targetUrl, c.req.raw);
+            upstreamRequest.headers.set(TRACE_HEADER, correlationId);
+            const response = await fetch(upstreamRequest);
             return withCorrelationId(response, correlationId);
         }
 

@@ -128,6 +128,21 @@ describe('verifyAccess', () => {
          const result = await verifyAccess(req, env);
          assert.strictEqual(result, false);
     });
+
+    test('verifyAccess public wrapper returns true when verification succeeds', async () => {
+        const req = new Request('http://example.com', {
+            headers: { 'CF-Access-Jwt-Assertion': 'valid-token' }
+        });
+        const env: Env = {};
+        const verifyMock = mock.method(deps, 'jwtVerify', async () => {
+            return { payload: { sub: 'user123' } };
+        });
+
+        const result = await verifyAccess(req, env);
+
+        assert.strictEqual(result, true);
+        verifyMock.mock.restore();
+    });
 });
 
 describe('verifyAccessWithClaims (public)', () => {

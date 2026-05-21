@@ -16,7 +16,6 @@ routes = []
 [env.prod.vars]
 ENV = "production"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 
 [[env.prod.queues.consumers]]
 queue = "goldshore-jobs"

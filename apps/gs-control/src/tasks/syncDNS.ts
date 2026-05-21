@@ -44,7 +44,14 @@ function resolveTargets(env: ControlEnv): DnsSyncTarget[] {
     return DEFAULT_TARGETS;
   }
 
-  const parsed = JSON.parse(configured) as unknown;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(configured) as unknown;
+  } catch (error) {
+    console.warn("Invalid DNS_SYNC_TARGETS value, falling back to defaults.", error);
+    return DEFAULT_TARGETS;
+  }
+
   if (!Array.isArray(parsed)) {
     return DEFAULT_TARGETS;
   }

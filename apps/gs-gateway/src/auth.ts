@@ -1,4 +1,4 @@
-import { verifyAccess, type Env as AuthEnv } from '@goldshore/auth';
+import { verifyAccessWithClaims, type Env as AuthEnv } from '@goldshore/auth';
 
 /**
  * Verifies that the request is authenticated via Cloudflare Access.
@@ -9,5 +9,5 @@ import { verifyAccess, type Env as AuthEnv } from '@goldshore/auth';
  * @returns boolean indicating if the request is authenticated
  */
 export async function checkAuth(req: Request, env: AuthEnv) {
-  return verifyAccess(req, env);
+  return Boolean(await verifyAccessWithClaims(req, env));
 }

@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { secureHeaders } from 'hono/secure-headers';
-import { verifyAccess } from '@goldshore/auth';
+import { verifyAccessWithClaims } from '@goldshore/auth';
 
 interface Env {
 	AI: any;
@@ -35,8 +35,8 @@ app.use('*', async (c, next) => {
 		return c.json({ error: 'Service auth misconfigured' }, 500);
 	}
 
-	const authorized = await verifyAccess(c.req.raw, c.env);
-	if (!authorized) return c.json({ error: 'Unauthorized' }, 401);
+	const claims = await verifyAccessWithClaims(c.req.raw, c.env);
+	if (!claims) return c.json({ error: 'Unauthorized' }, 401);
 	await next();
 });
 

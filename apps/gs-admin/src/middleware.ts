@@ -6,6 +6,7 @@ import {
   getAdminPermissions,
   verifyAccessWithClaims
 } from "@goldshore/auth";
+import { enforcePreviewAuth } from "./middleware/preview-protect";
 
 type AdminEnv = {
   CLOUDFLARE_ACCESS_AUDIENCE?: string;
@@ -24,6 +25,11 @@ const authMiddleware = defineMiddleware(async (context, next) => {
     pathname.startsWith('/fonts');
 
   if (!isAssetRoute) {
+    const previewResponse = enforcePreviewAuth(context.request);
+    if (previewResponse) {
+      return previewResponse;
+    }
+
     const sessionCookie = context.cookies.get('gs_admin_session');
     const accessHeader = context.request.headers.get('CF-Access-Jwt-Assertion');
 
