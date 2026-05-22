@@ -1,28 +1,96 @@
 name = "gs-api"
 main = "src/index.ts"
-compatibility_date = "2024-11-01"
+compatibility_date = "2026-04-18"
 compatibility_flags = ["nodejs_compat"]
 
 workers_dev = false
-routes = [
-  { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" }
-]
 
-[vars]
+[env.prod]
+routes = []
+
+[env.prod.vars]
 ENV = "production"
+CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
+CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 
-[[kv_namespaces]]
+[[env.prod.kv_namespaces]]
 binding = "KV"
 id = "gs_api_kv_001"
 
-[[r2_buckets]]
-binding = "ASSETS"
-bucket_name = "gs-assets"
+[[env.prod.kv_namespaces]]
+binding = "CONTROL_LOGS"
+id = "gs_control_logs_001"
 
-[[d1_databases]]
+[[env.prod.r2_buckets]]
+binding = "ASSETS"
+bucket_name = "gs-platform-assets"
+
+[[env.prod.d1_databases]]
 binding = "DB"
 database_name = "goldshore"
-database_id = "gs_db_001"
+database_id = "f77de112-d201-4e54-a785-a4583814a6c3"
 
-[ai]
+[env.prod.ai]
 binding = "AI"
+
+[[env.prod.durable_objects.bindings]]
+name = "AUTH_SESSION"
+class_name = "AuthSession"
+
+[env.production]
+routes = []
+
+[env.production.vars]
+ENV = "production"
+CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
+CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
+
+[[env.production.kv_namespaces]]
+binding = "KV"
+id = "gs_api_kv_001"
+
+[[env.production.kv_namespaces]]
+binding = "CONTROL_LOGS"
+id = "gs_control_logs_001"
+
+[[env.production.r2_buckets]]
+binding = "ASSETS"
+bucket_name = "gs-platform-assets"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "goldshore"
+database_id = "f77de112-d201-4e54-a785-a4583814a6c3"
+
+[env.production.ai]
+binding = "AI"
+
+[[env.production.durable_objects.bindings]]
+name = "AUTH_SESSION"
+class_name = "AuthSession"
+
+[env.preview]
+routes = []
+
+[env.preview.vars]
+ENV = "preview"
+
+[[env.preview.kv_namespaces]]
+binding = "KV"
+id = "gs_api_kv_preview"
+
+[[env.preview.r2_buckets]]
+binding = "ASSETS"
+bucket_name = "gs-platform-assets"
+
+[[env.preview.d1_databases]]
+binding = "DB"
+database_name = "goldshore"
+database_id = "f77de112-d201-4e54-a785-a4583814a6c3"
+
+[env.preview.ai]
+binding = "AI"
+
+[[migrations]]
+tag = "v1-auth-session"
+new_sqlite_classes = ["AuthSession"]

@@ -1,51 +1,39 @@
+/*
+  The CSS in this style tag is based off of Bear Blog's default CSS.
+  https://github.com/HermanMartinus/bearblog/blob/297026a877bc2ab2b3bdfbd6b9f7961c350917dd/templates/styles/blog/default.css
+  License MIT: https://github.com/HermanMartinus/bearblog/blob/master/LICENSE.md
+*/
+
 :root {
-  --accent: 16, 145, 152;
-  --accent-strong: 11, 102, 108;
-  --black: 15, 18, 25;
-  --gray: 77, 89, 117;
-  --gray-light: 229, 233, 240;
-  --gray-dark: 34, 41, 57;
-  --surface: 252, 254, 255;
-  --border: 206, 219, 234;
+  --accent: 90, 162, 255;
+  --accent-strong: 26, 105, 194;
+  --black: 226, 232, 240;
+  --gray: 148, 163, 184;
+  --gray-light: 200, 213, 230;
+  --gray-dark: 226, 232, 240;
+  --surface: 10, 18, 34;
+  --surface-soft: 14, 24, 43;
+  --surface-alt: 7, 12, 24;
+  --border: 71, 102, 145;
   --cta-radius: 10px;
   --cta-padding-y: 0.6rem;
   --cta-padding-x: 1rem;
-
   --container-max: 1080px;
   --space-page-inline: clamp(0.9rem, 2.4vw, 2rem);
   --space-page-block: clamp(1.25rem, 3.2vw, 3rem);
   --space-section: clamp(1.4rem, 3.5vw, 2.8rem);
   --space-card: clamp(0.85rem, 2vw, 1.35rem);
+  --box-shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
 }
 
 @font-face {
   font-family: 'Atkinson';
   src: url('/fonts/atkinson-regular.woff') format('woff');
-/*
-  The CSS in this style tag is based off of Bear Blog's default CSS.
-  https://github.com/HermanMartinus/bearblog/blob/297026a877bc2ab2b3bdfbd6b9f7961c350917dd/templates/styles/blog/default.css
-  License MIT: https://github.com/HermanMartinus/bearblog/blob/master/LICENSE.md
- */
-
-:root {
-  --accent: #2337ff;
-  --accent-dark: #000d8a;
-  --black: 15, 18, 25;
-  --gray: 96, 115, 159;
-  --gray-light: 229, 233, 240;
-  --gray-dark: 34, 41, 57;
-  --gray-gradient: rgba(var(--gray-light), 50%), #fff;
-  --box-shadow:
-    0 2px 6px rgba(var(--gray), 25%), 0 8px 24px rgba(var(--gray), 33%),
-    0 16px 32px rgba(var(--gray), 33%);
-}
-@font-face {
-  font-family: "Atkinson";
-  src: url("/fonts/atkinson-regular.woff") format("woff");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
+
 @font-face {
   font-family: 'Atkinson';
   src: url('/fonts/atkinson-bold.woff') format('woff');
@@ -63,10 +51,13 @@
 body {
   font-family: 'Atkinson', sans-serif;
   margin: 0;
-  background: #f2f7fb;
+  background:
+    radial-gradient(circle at top, rgba(38, 95, 160, 0.2), transparent 38%),
+    linear-gradient(180deg, #09111f 0%, #060b15 42%, #04070f 100%);
   color: rgb(var(--gray-dark));
   font-size: clamp(1rem, 0.95rem + 0.25vw, 1.2rem);
   line-height: 1.65;
+  min-height: 100vh;
 }
 
 main {
@@ -75,25 +66,6 @@ main {
   padding: var(--space-page-block) 0;
 }
 
-body {
-  font-family: "Atkinson", sans-serif;
-  margin: 0;
-  padding: 0;
-  text-align: left;
-  background: linear-gradient(var(--gray-gradient)) no-repeat;
-  background-size: 100% 600px;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  color: rgb(var(--gray-dark));
-  font-size: 20px;
-  line-height: 1.7;
-}
-main {
-  width: 720px;
-  max-width: calc(100% - 2em);
-  margin: auto;
-  padding: 3em 1em;
-}
 h1,
 h2,
 h3,
@@ -104,21 +76,27 @@ h6 {
   color: rgb(var(--black));
   line-height: 1.2;
 }
+
 h1 {
   font-size: clamp(1.95rem, 1.55rem + 1.45vw, 2.9rem);
 }
+
 h2 {
   font-size: clamp(1.45rem, 1.15rem + 0.9vw, 2.1rem);
 }
+
 h3 {
   font-size: clamp(1.1rem, 1rem + 0.4vw, 1.35rem);
 }
+
 a {
-  color: rgb(var(--accent-strong));
+  color: rgb(var(--black));
 }
+
 a:hover {
   color: rgb(var(--accent));
 }
+
 a:focus-visible,
 button:focus-visible,
 input:focus-visible,
@@ -127,20 +105,29 @@ textarea:focus-visible {
   outline: 3px solid rgb(var(--accent-strong));
   outline-offset: 2px;
 }
+
 section {
   margin: var(--space-section) 0;
 }
+
 .grid {
   display: grid;
   gap: clamp(0.75rem, 1.5vw, 1.25rem);
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
 }
+
 .card {
-  border: 1px solid rgb(var(--border));
-  border-radius: 12px;
+  border: 1px solid rgba(var(--border), 0.4);
+  border-radius: 18px;
   padding: var(--space-card);
-  background: rgb(var(--surface));
+  background: linear-gradient(
+    180deg,
+    rgba(var(--surface), 0.86),
+    rgba(var(--surface-soft), 0.94)
+  );
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.22);
 }
+
 .button {
   display: inline-flex;
   align-items: center;
@@ -151,55 +138,64 @@ section {
   text-decoration: none;
   border: 1px solid transparent;
 }
+
 .button-primary {
-  background: rgb(var(--accent-strong));
+  background: linear-gradient(
+    135deg,
+    rgba(var(--accent), 0.32),
+    rgba(var(--accent-strong), 0.26)
+  );
   color: white;
+  border-color: rgba(var(--accent), 0.42);
+  box-shadow:
+    0 10px 28px rgba(26, 105, 194, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.09);
 }
+
 .button-primary:hover {
-  background: rgb(var(--accent));
+  background: linear-gradient(
+    135deg,
+    rgba(var(--accent), 0.42),
+    rgba(var(--accent-strong), 0.34)
+  );
   color: white;
 }
+
 .button-secondary {
-  background: white;
-  border-color: rgb(var(--accent-strong));
-  color: rgb(var(--accent-strong));
+  background: rgba(var(--surface), 0.72);
+  border-color: rgba(var(--accent), 0.44);
+  color: rgb(var(--black));
+  backdrop-filter: blur(10px);
 }
+
 .button-tertiary {
   background: transparent;
-  border-color: rgb(var(--border));
+  border-color: rgba(var(--border), 0.46);
   color: rgb(var(--gray-dark));
 }
+
 .metric {
   margin-top: 0.4rem;
   color: rgb(var(--accent-strong));
   font-size: 0.9rem;
   font-weight: 700;
 }
+
 .small {
   font-size: 0.95rem;
-  color: rgb(var(--gray));
-}
-
-.card summary {
-  cursor: pointer;
-}
-
-.card summary:focus-visible {
-  outline: 3px solid rgb(var(--accent-strong));
-  outline-offset: 4px;
-  border-radius: 6px;
+  color: rgba(var(--gray), 0.96);
 }
 
 input,
 select,
 textarea {
   width: 100%;
-  border: 1px solid rgb(var(--border));
+  border: 1px solid rgba(var(--border), 0.48);
   border-radius: 8px;
   padding: 0.62rem 0.7rem;
   font: inherit;
   color: inherit;
-  background: rgb(var(--surface));
+  background: rgba(var(--surface), 0.82);
 }
 
 @media (max-width: 1024px) {
@@ -224,34 +220,5 @@ textarea {
 
   section {
     margin: clamp(1rem, 4vw, 1.45rem) 0;
-  }
-}
-
-.card summary {
-  cursor: pointer;
-}
-
-.card summary:focus-visible {
-  outline: 3px solid rgb(var(--accent-strong));
-  outline-offset: 4px;
-  border-radius: 6px;
-}
-
-input,
-select,
-textarea {
-  width: 100%;
-  box-sizing: border-box;
-  border: 1px solid rgb(var(--border));
-  border-radius: 8px;
-  padding: 0.55rem 0.65rem;
-  font: inherit;
-  color: inherit;
-  background: rgb(var(--surface));
-}
-
-@media (max-width: 720px) {
-  .grid {
-    grid-template-columns: 1fr;
   }
 }

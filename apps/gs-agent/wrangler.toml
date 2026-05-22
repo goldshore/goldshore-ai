@@ -1,18 +1,28 @@
-# wrangler.toml for the background Agent Worker
-
-name = "gs-agent" # Base name, will be suffixed per environment
-main = "src/index.ts"
-compatibility_date = "2024-03-20"
-tsconfig = "tsconfig.json"
-
-[env.dev]
-name = "gs-agent-dev"
-
-[env.preview]
-name = "gs-agent-preview"
-
-[env.prod]
 name = "gs-agent"
+main = "src/index.ts"
+compatibility_date = "2026-04-18"
+compatibility_flags = ["nodejs_compat"]
+
+workers_dev = false
 
 [[queues.consumers]]
-  queue = "goldshore-jobs"
+queue = "goldshore-jobs"
+max_batch_size = 10
+max_batch_timeout = 5
+
+[env.prod]
+routes = []
+
+[env.prod.vars]
+ENV = "production"
+
+[[env.prod.queues.consumers]]
+queue = "goldshore-jobs"
+max_batch_size = 10
+max_batch_timeout = 5
+
+[env.preview]
+routes = []
+
+[env.preview.vars]
+ENV = "preview"

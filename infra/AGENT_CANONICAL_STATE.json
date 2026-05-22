@@ -1,0 +1,30 @@
+{
+  "canonical_structure": "Option-A-gs",
+  "production_apps": [
+    "apps/gs-web",
+    "apps/gs-admin",
+    "apps/gs-api",
+    "apps/gs-gateway",
+    "apps/gs-control",
+    "apps/gs-agent",
+    "apps/gs-mail"
+  ],
+  "legacy_paths": [
+    "astro-goldshore",
+    "apps/web",
+    "apps/admin",
+    "public",
+    "src"
+  ],
+  "build_root": "apps/gs-web",
+  "asset_policy": {
+    "public_dir": "apps/gs-web/public",
+    "src_assets": "apps/gs-web/src/assets",
+    "disallowed": [
+      "astro-goldshore",
+      "root/public",
+      "root/src"
+    ]
+  },
+  "memory_lock_version": "1.0"
+}

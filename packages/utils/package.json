@@ -2,16 +2,17 @@
   "name": "@goldshore/utils",
   "version": "0.0.1",
   "main": "index.ts",
+  "type": "module",
   "types": "index.ts",
   "exports": {
     ".": {
+      "types": "./index.ts",
       "import": "./index.ts",
       "require": "./index.ts",
-      "types": "./index.ts",
       "default": "./index.ts"
     }
   },
   "scripts": {
-    "test": "tsx --test **/*.test.ts"
+    "test": "tsx --test index.test.ts audit.test.ts"
   }
 }

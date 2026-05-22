@@ -10,10 +10,12 @@ const mockQuery = {
   run: mock.fn(async () => ({ meta: { last_row_id: 1, changes: 1 } })),
 };
 
+const mockBind = mock.fn(() => mockQuery);
+
 // Mock DB
 const mockDB = {
   prepare: mock.fn(() => ({
-    bind: mock.fn(() => mockQuery),
+    bind: mockBind,
     ...mockQuery
   })),
 };
@@ -97,5 +99,25 @@ describe('Pages API Security', () => {
       headers: { 'Content-Type': 'application/json' }
     });
     assert.notStrictEqual(adminRes.status, 403);
+  });
+
+  it('POST /pages should sanitize body content', async () => {
+    const app = createTestApp({ roles: ['admin'] });
+    const maliciousBody = '<script>alert("XSS")</script><p>Safe content</p><img src="x" alt="test" onerror="alert(1)" />';
+    const expectedBody = '<p>Safe content</p><img src="x" alt="test" />';
+
+    await app.request('/pages', {
+      method: 'POST',
+      body: JSON.stringify({ slug: 'xss-test', title: 'XSS Test', body: maliciousBody, status: 'draft' }),
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    // We need to find the call to bind that corresponds to the INSERT
+    const calls = mockBind.mock.calls;
+    // The last call should be the one
+    const lastCallArgs = calls[calls.length - 1].arguments;
+    // The bind arguments for INSERT are: [slug, title, body, status]
+    // Check if the body argument (index 2) matches expectedBody
+    assert.strictEqual(lastCallArgs[2], expectedBody);
   });
 });

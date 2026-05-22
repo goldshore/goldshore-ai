@@ -1,0 +1,38 @@
+{
+  "A": [
+    "apps/admin/astro.config.mjs",
+    "apps/admin/package.json",
+    "apps/admin/src/env.d.ts",
+    "apps/admin/src/pages/index.astro",
+    "apps/api-worker/package.json",
+    "apps/api-worker/src/index.ts",
+    "apps/api-worker/wrangler.toml",
+    "apps/gateway/package.json",
+    "apps/gateway/src/index.ts",
+    "apps/gateway/wrangler.toml",
+    "apps/web/astro.config.mjs",
+    "apps/web/package.json",
+    "apps/web/src/env.d.ts",
+    "apps/web/src/pages/contact.astro",
+    "apps/web/src/pages/index.astro",
+    "apps/web/src/styles/global.css",
+    "packages/schema/package.json",
+    "packages/theme/tokens.css",
+    "packages/ui/package.json"
+  ],
+  "B": [],
+  "C": [
+    "package.json",
+    "pnpm-lock.yaml",
+    "pnpm-workspace.yaml",
+    "tsconfig.json",
+    "turbo.json"
+  ],
+  "D": [],
+  "E": [
+    ".github/workflows/deploy-admin.yml",
+    ".github/workflows/deploy-api-worker.yml",
+    ".github/workflows/deploy-gateway.yml",
+    ".github/workflows/deploy-web.yml"
+  ]
+}

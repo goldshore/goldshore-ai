@@ -1,224 +1,414 @@
-@import './gs-effects.css';
-@import './hero-stars.css';
+.gs-hero{
+  position:relative;
+  min-height: calc(100vh - 88px);
+  overflow:hidden;
+  border-top: 1px solid rgba(226,232,240,.08);
+  border-bottom: 1px solid rgba(226,232,240,.08);
+}
 
-.home-hero,
-.home-features,
-.blueprint-section {
+.gs-hero-bg{ position:absolute; inset:0; }
+.gs-wave-field{
+  position:absolute; inset:0;
+  width:100%; height:100%;
+  z-index:0;
+}
+
+.hero-logo-wrapper{
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 0 1rem;
+}
+
+.gs-logo-reactive{
+  width: clamp(72px, 10vw, 132px);
+  height: auto;
+  color: rgba(90,162,255,.95);
+  transform-origin: 50% 50%;
+  will-change: transform, filter, opacity;
+  transition:
+    transform 120ms linear,
+    filter 160ms linear,
+    opacity 160ms linear;
+  opacity: .86;
+}
+
+.gs-logo-path,
+.gs-logo-seam{
+  vector-effect: non-scaling-stroke;
+}
+
+.gs-logo-seam{
+  opacity: .28;
+  transition: opacity 160ms linear, stroke-width 160ms linear;
+}
+.gs-grid{
+  position:absolute; inset:0;
+  background:
+    linear-gradient(rgba(148,163,184,.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148,163,184,.12) 1px, transparent 1px);
+  background-size: 72px 72px;
+  opacity:.22;
+  mask-image: radial-gradient(circle at 30% 35%, black 35%, transparent 70%);
+}
+.gs-vignette{
+  position:absolute; inset:-40px;
+  background: radial-gradient(circle at 25% 30%, rgba(56,189,248,.18), transparent 55%),
+              radial-gradient(circle at 70% 40%, rgba(59,130,246,.10), transparent 60%),
+              linear-gradient(120deg, rgba(2,6,23,.92), rgba(2,6,23,.70));
+  filter: saturate(1.05);
+}
+
+.hero-mark-wrap{
+  position:absolute;
+  left: 8%;
+  top: 18%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.gs-logo-reactive{
+  width: clamp(72px, 10vw, 132px);
+  height: auto;
+  color: #5aa2ff;
+  transform-origin: 50% 50%;
+  will-change: transform, filter, opacity;
+  transition:
+    transform 120ms linear,
+    filter 160ms linear,
+    opacity 160ms linear;
+  opacity: 0.84;
+}
+
+.gs-logo-path{
+  vector-effect: non-scaling-stroke;
+}
+
+.gs-logo-seam{
+  opacity: var(--gs-logo-seam-opacity, 0.42);
+  transition: opacity 160ms linear;
+}
+
+.gs-hero-inner{
+  position:relative;
+  z-index:2;
+  width:min(1200px, calc(100% - 48px));
+  margin:0 auto;
+  padding: 84px 0 72px;
+  display:grid;
+  grid-template-columns: 1.15fr .85fr;
+  gap: 48px;
+  align-items:center;
+}
+
+.gs-pill{
+  display:inline-flex; align-items:center; gap:10px;
+  font-size:12px; letter-spacing:.12em;
+  color: rgba(56,189,248,.95);
+  border:1px solid rgba(56,189,248,.25);
+  background: rgba(2,6,23,.35);
+  padding:10px 14px;
+  border-radius:999px;
+  text-transform:uppercase;
+}
+.gs-pill .dot{ width:8px; height:8px; border-radius:50%;
+  background: rgba(56,189,248,1);
+  box-shadow: 0 0 18px rgba(56,189,248,.55);
+}
+
+.gs-hero h1{
+  margin: 18px 0 10px;
+  font-family: var(--gs-font-display, ui-sans-serif, system-ui, sans-serif);
+  font-size: clamp(44px, 5vw, 74px);
+  line-height: 1.02;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: #f8fafc;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+}
+.gs-hero .sub{
+  max-width: 52ch;
+  color: rgba(226,232,240,.72);
+  font-size: 15.5px;
+  line-height: 1.55;
+}
+
+.actions{ margin-top: 22px; display:flex; gap: 12px; flex-wrap:wrap; }
+.btn{
+  display:inline-flex; align-items:center; justify-content:center;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font-weight: 650;
+  font-size: 13px;
+  border: 1px solid rgba(226,232,240,.14);
+  background: rgba(2,6,23,.35);
+  color: rgba(226,232,240,.92);
+  backdrop-filter: blur(10px);
+}
+.btn.primary{
+  border-color: rgba(56,189,248,.35);
+  background: linear-gradient(90deg, rgba(56,189,248,.22), rgba(59,130,246,.12));
+  box-shadow: 0 10px 30px rgba(56,189,248,.14);
+}
+.btn.ghost:hover, .btn.primary:hover{ transform: translateY(-1px); }
+
+.panel{
+  border-radius: 18px;
+  border: 1px solid rgba(226,232,240,.12);
+  background: rgba(2,6,23,.35);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 30px 80px rgba(0,0,0,.45);
+  overflow:hidden;
+  transform: translateZ(0);
+  animation: floaty 6s ease-in-out infinite;
+}
+@keyframes floaty{
+  0%,100%{ transform: translateY(0); }
+  50%{ transform: translateY(-10px); }
+}
+.panel-top{
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(226,232,240,.10);
+}
+.lights{ display:flex; gap:8px; }
+.lights span{ width:10px; height:10px; border-radius:50%; background: rgba(226,232,240,.18); }
+.lights span:nth-child(1){ background: rgba(239,68,68,.55); }
+.lights span:nth-child(2){ background: rgba(245,158,11,.55); }
+.lights span:nth-child(3){ background: rgba(34,197,94,.55); }
+
+.panel-title{ font-size: 12px; color: rgba(226,232,240,.55); letter-spacing:.08em; }
+.panel-body{ padding: 16px; }
+.kv{ display:grid; gap:10px; }
+.kv div{ display:flex; justify-content:space-between; }
+.kv span{ font-size: 12px; color: rgba(226,232,240,.45); }
+.kv b{ font-size: 12px; letter-spacing:.12em; }
+.kv .ok{ color: rgba(34,197,94,.9); }
+.kv .mode{ color: rgba(56,189,248,.9); }
+
+.bars{ margin: 14px 0 10px; display:flex; gap:10px; align-items:flex-end; height: 60px; }
+.bars i{
+  display:block; width: 18%;
+  background: linear-gradient(180deg, rgba(56,189,248,.75), rgba(59,130,246,.25));
+  border-radius: 8px;
+  animation: bar 1.6s ease-in-out infinite;
+}
+.bars i:nth-child(1){ height: 32%; }
+.bars i:nth-child(2){ height: 54%; animation-delay: .1s; }
+.bars i:nth-child(3){ height: 38%; animation-delay: .2s; }
+.bars i:nth-child(4){ height: 68%; animation-delay: .3s; }
+.bars i:nth-child(5){ height: 44%; animation-delay: .4s; }
+@keyframes bar{
+  0%,100%{ filter: brightness(1); transform: translateY(0); }
+  50%{ filter: brightness(1.25); transform: translateY(-6px); }
+}
+
+.terminal{
+  margin-top: 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono";
+  font-size: 12px;
+  line-height: 1.6;
+  color: rgba(226,232,240,.55);
+}
+
+@media (max-width: 980px){
+  .gs-hero-inner{ grid-template-columns: 1fr; padding-top: 64px; }
+  .gs-grid{ background-size: 64px 64px; }
+  .hero-mark-wrap{ left: 6%; top: 14%; }
+}
+
+/* --- Cinematic Hero Integration --- */
+
+.stars {
+  z-index: 0;
+  background-image:
+    radial-gradient(1px 1px at 20px 30px, rgba(255, 255, 255, 0.28), transparent),
+    radial-gradient(1px 1px at 130px 80px, rgba(255, 255, 255, 0.22), transparent),
+    radial-gradient(1px 1px at 260px 150px, rgba(255, 255, 255, 0.24), transparent),
+    radial-gradient(1px 1px at 320px 40px, rgba(255, 255, 255, 0.19), transparent);
+  background-repeat: repeat;
+  background-size: 360px 220px;
+}
+
+.gs-cinematic-hero {
+  position: relative;
+  min-height: 100vh;
   overflow: hidden;
-  background: radial-gradient(circle at top left, rgba(88, 130, 255, 0.18), transparent 55%),
-    radial-gradient(circle at 90% 10%, rgba(212, 179, 93, 0.16), transparent 45%),
-    linear-gradient(130deg, rgba(3, 8, 22, 0.95), rgba(8, 13, 28, 0.9) 45%, rgba(4, 6, 16, 0.96));
-  box-shadow: inset 0 0 140px rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  isolation: isolate;
+  text-align: center;
+  color: var(--gs-hero-text-primary);
 }
 
-
-.home-hero::before,
-.home-features::before,
-.blueprint-section::before {
-  content: '';
+.hero-bg {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% 20%, rgba(255, 255, 255, 0.12), transparent 60%);
-  opacity: 0.6;
-  animation: gradient-drift 18s ease-in-out infinite;
-  pointer-events: none;
+  z-index: 0;
 }
 
-.blueprint-section {
-  background: radial-gradient(circle at 15% 20%, rgba(88, 130, 255, 0.22), transparent 55%),
-    radial-gradient(circle at 80% 10%, rgba(212, 179, 93, 0.25), transparent 50%),
-    linear-gradient(140deg, rgba(4, 8, 20, 0.98), rgba(10, 16, 30, 0.94) 50%, rgba(5, 7, 18, 0.98));
-  box-shadow: inset 0 0 160px rgba(0, 0, 0, 0.72), inset 0 0 60px rgba(26, 39, 74, 0.6);
-}
-
-
-.parallax-layer {
-  position: absolute;
-  inset: -20% -10%;
-  pointer-events: none;
-  opacity: 0.55;
-}
-
-
-.home-hero::after,
-.home-features::after,
-.blueprint-section::after {
-  content: '';
+.hero-canvas {
   position: absolute;
   inset: 0;
-  background-size: 42px 42px;
-  mix-blend-mode: screen;
-  opacity: 0.4;
-  pointer-events: none;
+  width: 100%;
+  height: 100%;
 }
 
-.blueprint-section::after {
-  background-size: 48px 48px, 48px 48px, 100% 100%;
-  opacity: 0.55;
+.hero-vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 35%, var(--gs-hero-vignette-core), transparent 46%),
+    linear-gradient(180deg, var(--gs-hero-vignette-fade-start) 0%, var(--gs-hero-vignette-fade-end) 100%);
 }
 
-.layer-grid {
-  background-size: 120px 120px;
-}
-
-.layer-blueprint {
-  background-size: 140px 140px;
-  opacity: 0.5;
-}
-
-.layer-glow {
-  filter: blur(2px);
-}
-
-.layer-orbit {
-  mask-image: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.9), transparent 70%);
-  opacity: 0.5;
-}
-
-
-
-
-.layer-sheen {
-  background: linear-gradient(120deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0) 45%),
-    linear-gradient(300deg, rgba(186, 150, 78, 0.22) 0%, transparent 55%);
-  mix-blend-mode: screen;
-  opacity: 0.65;
-}
-
-.layer-shadow {
-  background: radial-gradient(circle at 50% 60%, rgba(0, 0, 0, 0.6), transparent 65%);
-  opacity: 0.6;
-}
-
-
-.home-hero .hero-content,
-.home-hero .hero-card,
-.blueprint-section .hero-content,
-.blueprint-section .hero-card,
-.blueprint-section .features-grid {
+.hero-content {
   position: relative;
   z-index: 2;
+  max-width: 52rem;
+  padding: 0 1.5rem;
 }
 
-.home-hero h1,
-.blueprint-section h1,
-.blueprint-section h2 {
-  text-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+.hero-mark {
+  width: 92px;
+  margin: 0 auto 1.25rem;
+  color: var(--gs-hero-mark);
 }
 
-.home-hero .gs-card,
-.home-features .feature-card,
-.blueprint-section .glass-panel,
-.blueprint-section .gs-card {
-  background: linear-gradient(135deg, rgba(17, 24, 39, 0.92), rgba(10, 18, 30, 0.88));
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  box-shadow: 0 24px 60px rgba(2, 8, 23, 0.55), inset 0 0 30px rgba(120, 170, 255, 0.08);
+.gs-logo-mark {
+  width: 100%;
 }
 
-.home-features {
-  padding: var(--gs-space-8) 0;
+.hero-subtitle {
+  margin: 0 0 1.5rem;
+  color: var(--gs-hero-text-secondary);
 }
 
-.home-features .feature-card {
-  padding: var(--gs-space-5);
-  border-radius: var(--gs-radius-md);
+.hero-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.gs-depth-bg {
   position: relative;
-  z-index: 1;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 0%, var(--gs-hero-depth-glow), transparent 60%),
+    linear-gradient(180deg, #05070d 0%, #060a14 100%);
 }
 
-.lux-card {
+#pulsar-field {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.gs-hero-mark {
+  width: clamp(68px, 10vw, 96px);
+  margin-bottom: 1rem;
+}
+
+.gs-hero-logo {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Hardened Logo (Glare & Pulses Disabled) */
+.gs-logo-stroke {
+  stroke-dasharray: none;
+  stroke-dashoffset: 0;
+  animation: none;
+  filter: none;
+}
+
+.gs-logo-glow {
+  display: none;
+  animation: none;
+}
+
+.gs-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gs-divider-signal), transparent);
   position: relative;
-  border-radius: 1.25rem;
-  border: 1px solid rgba(180, 200, 255, 0.22);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.65), inset 0 0 30px rgba(128, 178, 255, 0.12);
   overflow: hidden;
 }
 
-.lux-card::before {
+.gs-divider::after {
   content: '';
   position: absolute;
-  inset: 0;
-  background: linear-gradient(120deg, rgba(255, 255, 255, 0.08) 0%, transparent 45%);
-  opacity: 0.7;
-  pointer-events: none;
+  inset: -20px 0;
+  background: linear-gradient(120deg, transparent, var(--gs-divider-sweep), transparent);
+  animation: signalSweep 6s ease-in-out infinite;
 }
 
-.lux-card::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border: 1px solid rgba(214, 190, 120, 0.35);
-  border-radius: inherit;
-  opacity: 0.45;
-  pointer-events: none;
+.gs-panel {
+  background: linear-gradient(180deg, #0b1220, #0a101c);
+  border: 1px solid var(--gs-panel-border-subtle);
+  border-radius: 20px;
+  padding: 2.5rem;
 }
 
-.home-features .feature-card h3 {
-  background: linear-gradient(90deg, #f8fafc, #cbd5f5);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+.gs-label {
+  opacity: 0.8;
 }
 
-.reveal {
-  opacity: 0;
-  transform: translateY(24px);
-  transition: opacity 0.8s ease, transform 0.8s ease;
+.gs-stat {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-top: 0.5rem;
 }
 
-.reveal.is-visible {
-  opacity: 1;
-  transform: translateY(0);
+.gs-signal-btn {
+  border-color: var(--gs-signal-soft);
 }
 
-@keyframes gradient-drift {
-  0% {
-    transform: translate3d(-2%, -1%, 0);
-  }
-  50% {
-    transform: translate3d(2%, 1%, 0);
-  }
-  100% {
-    transform: translate3d(-2%, -1%, 0);
-  }
+.gs-signal-btn:hover {
+  box-shadow: 0 0 24px var(--gs-signal-soft);
 }
 
-@media (max-width: 900px) {
-  .home-hero,
-  .home-features,
-  .blueprint-section {
-    box-shadow: inset 0 0 90px rgba(0, 0, 0, 0.6);
-  }
+.gs-signal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
 
-  .parallax-layer {
-    inset: -10% -5%;
-  }
+.gs-status-indicator {
+  inline-size: 0.6rem;
+  block-size: 0.6rem;
+  border-radius: 999px;
+  background: #94a3b8;
+  box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.42);
+  flex-shrink: 0;
+}
+
+.gs-status-indicator.is-operational {
+  background: #34d399;
+  box-shadow: 0 0 0 1px rgba(110, 231, 183, 0.5);
+  animation: gs-status-pulse 2.8s ease-in-out infinite;
+}
+
+@keyframes gs-status-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.12); opacity: 1; }
+}
+
+@keyframes signalSweep {
+  0% { transform: translateX(-100%); }
+  50%, 100% { transform: translateX(100%); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .home-hero::before,
-  .home-features::before,
-  .blueprint-section::before {
-    animation: none;
-  }
-
-  .reveal {
+  .gs-divider::after,
+  .gs-status-indicator.is-operational {
+    animation: none !important;
     opacity: 1;
-    transform: none;
-  }
-}
-
-
-@media (max-width: 768px) {
-  .home-features {
-    padding: var(--gs-space-6) 0;
-  }
-
-  .home-features .feature-card {
-    padding: var(--gs-space-4);
-  }
-
-  .lux-card {
-    border-radius: 1rem;
   }
 }

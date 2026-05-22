@@ -1,0 +1,175 @@
+/* ---------------------------------------------
+   Motion++ (Progressive Enhancement)
+   - view-timeline / scroll-driven animation (where supported)
+   - true 3D tilt (pointer-fine gated; JS sets CSS vars)
+   - edge scan + shimmer sequencing hooks
+   --------------------------------------------- */
+
+/* Progressive enhancement guard: only apply view-timeline if supported */
+@supports (animation-timeline: view()) {
+
+  /* Generic scroll reveal using view timeline
+     Usage: add class .gs-vt-reveal to an element */
+  .gs-vt-reveal {
+    opacity: 0;
+    transform: translateY(18px);
+    will-change: transform, opacity;
+    animation-name: gs-vt-in;
+    animation-duration: 1s;
+    animation-timing-function: var(--gs-ease);
+    animation-fill-mode: both;
+    animation-timeline: view();
+    animation-range: entry 5% cover 25%;
+  }
+
+  @keyframes gs-vt-in {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Parallax title drift on scroll (subtle)
+     Usage: .gs-vt-title on H1/H2 inside hero/page header */
+  .gs-vt-title {
+    will-change: transform;
+    animation-name: gs-vt-title;
+    animation-duration: 1s;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: view();
+    animation-range: entry 0% exit 60%;
+  }
+
+  @keyframes gs-vt-title {
+    from { transform: translateY(0px); }
+    to   { transform: translateY(-14px); }
+  }
+
+  /* Background drift layer (scroll-driven) – optional
+     Usage: apply to an absolutely positioned overlay */
+  .gs-vt-bg-drift {
+    will-change: transform;
+    animation-name: gs-vt-bg-drift;
+    animation-duration: 1s;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: view();
+    animation-range: entry 0% exit 80%;
+  }
+
+  @keyframes gs-vt-bg-drift {
+    from { transform: translate3d(0, 0, 0); }
+    to   { transform: translate3d(0, -26px, 0); }
+  }
+}
+
+/* ---------------------------------------------
+   True 3D Tilt (CSS side)
+   JS sets:
+     --gs-tilt-x, --gs-tilt-y, --gs-tilt-glare-x, --gs-tilt-glare-y
+   Gate by:
+     .gs-tilt (on panel)
+   --------------------------------------------- */
+
+.gs-tilt {
+  transform-style: preserve-3d;
+  perspective: 900px;
+  will-change: transform;
+}
+
+/* When JS is active, it adds .gs-tilt-on to <html> */
+html.gs-tilt-on .gs-tilt {
+  transform:
+    perspective(900px)
+    rotateX(var(--gs-tilt-x, 0deg))
+    rotateY(var(--gs-tilt-y, 0deg))
+    translateZ(0);
+  transition: transform var(--gs-fast) var(--gs-ease);
+}
+
+html.gs-tilt-on .gs-tilt::after {
+  /* glare layer */
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      circle at var(--gs-tilt-glare-x, 50%) var(--gs-tilt-glare-y, 35%),
+      rgba(255,255,255,0.08),
+      transparent 55%
+    );
+  mix-blend-mode: screen;
+  opacity: 0.85;
+}
+
+/* ---------------------------------------------
+   Edge scan + shimmer hooks
+   - Apply .gs-edge-scan to panels/buttons/logo wrappers
+   --------------------------------------------- */
+
+.gs-edge-scan {
+  position: relative;
+  overflow: hidden;
+}
+
+.gs-edge-scan::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  pointer-events: none;
+
+  /* subtle luminous border */
+  background:
+    linear-gradient(135deg,
+      rgba(90,140,255,0.14),
+      transparent 35%,
+      rgba(255,107,0,0.08) 70%,
+      transparent
+    );
+  opacity: 0.55;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  padding: 1px;
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+.gs-edge-scan::after {
+  content: "";
+  position: absolute;
+  top: -30%;
+  left: -60%;
+  width: 55%;
+  height: 160%;
+  pointer-events: none;
+
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255,255,255,0.08),
+    rgba(90,140,255,0.10),
+    transparent
+  );
+
+  transform: rotate(12deg);
+  opacity: 0.35;
+  animation: gs-edge-sweep 6.5s var(--gs-ease) infinite;
+}
+
+@keyframes gs-edge-sweep {
+  0%   { transform: translateX(-20%) rotate(12deg); opacity: 0; }
+  8%   { opacity: 0.35; }
+  45%  { transform: translateX(240%) rotate(12deg); opacity: 0.22; }
+  100% { transform: translateX(240%) rotate(12deg); opacity: 0; }
+}
+
+/* Reduced motion: disable edge sweep + view-timeline motions */
+@media (prefers-reduced-motion: reduce) {
+  .gs-edge-scan::after { animation: none !important; }
+  .gs-tilt { transform: none !important; }
+}

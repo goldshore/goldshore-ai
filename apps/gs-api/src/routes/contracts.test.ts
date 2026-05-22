@@ -7,41 +7,43 @@ import user from './user.ts';
 import users from './users.ts';
 
 describe('API contract/versioning', () => {
-  it('health includes schemaVersion and apiVersion', async () => {
+  it('health returns standard structure', async () => {
     const app = new Hono();
     app.route('/health', health);
 
-    const res = await app.request('/health', {}, { API_VERSION: 'v1.2.3' } as any);
+    const res = await app.request('/health');
     assert.strictEqual(res.status, 200);
     const data = await res.json() as Record<string, unknown>;
 
     assert.strictEqual(data.status, 'ok');
     assert.strictEqual(data.service, 'gs-api');
-    assert.strictEqual(typeof data.schemaVersion, 'string');
-    assert.strictEqual(data.apiVersion, 'v1.2.3');
+    assert.strictEqual(typeof data.timestamp, 'string');
+    assert.strictEqual(typeof data.version, 'string');
   });
 
   it('system/version returns contract metadata', async () => {
-    const app = new Hono();
+    const app = new Hono<{ Variables: { accessClaims: any } }>();
+    app.use('*', async (c, next) => {
+      c.set('accessClaims', { roles: ['admin'], email: 'admin@example.com' });
+      await next();
+    });
     app.route('/system', system);
 
-    const kv = {
-      get: async () => null,
-      put: async () => undefined,
-    };
-
-    const res = await app.request('/system/version', {}, { KV: kv, API_VERSION: 'v9', DEPLOY_SHA: 'abc123' } as any);
+    const res = await app.request('/system/version', {}, { GIT_SHA: 'abc123' } as any);
     assert.strictEqual(res.status, 200);
     const data = await res.json() as Record<string, unknown>;
 
-    assert.strictEqual(data.version, 'v9');
+    assert.strictEqual(data.version, 'abc123');
     assert.strictEqual(data.deploySha, 'abc123');
-    assert.strictEqual(data.apiVersion, 'v9');
-    assert.strictEqual(typeof data.schemaVersion, 'string');
+    assert.strictEqual(data.service, 'gs-api');
   });
 
   it('legacy /user/:id endpoint redirects to /users/:id', async () => {
-    const app = new Hono();
+    const app = new Hono<{ Variables: { accessClaims: any } }>();
+    app.use('*', async (c, next) => {
+      c.set('accessClaims', { roles: ['admin'], email: 'admin@example.com' });
+      await next();
+    });
     app.route('/user', user);
 
     const res = await app.request('/user/42', { redirect: 'manual' });

@@ -1,27 +1,24 @@
 {
   "name": "@goldshore/theme",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
-  "main": "./index.css",
-  "style": "./index.css",
-  "files": [
-    "*.css",
-    "src/styles/*.css",
-    "src/*.ts",
-    "assets/*"
-  ],
   "exports": {
     ".": "./index.css",
     "./index.css": "./index.css",
-    "./reset.css": "./reset.css",
-    "./tokens.css": "./tokens.css",
-    "./tokens": "./src/styles/tokens.css",
-    "./styles/tokens": "./src/styles/tokens.css",
-    "./styles/base": "./src/styles/base.css",
-    "./styles/components": "./src/styles/components.css",
-    "./styles/layout": "./src/styles/layout.css",
-    "./manager": "./src/theme-manager.ts",
+    "./styles/global.css": "./src/styles/global.css",
+    "./styles/tokens.css": "./src/styles/tokens.css",
+    "./styles/base.css": "./src/styles/base.css",
+    "./styles/layout.css": "./src/styles/layout.css",
+    "./styles/components.css": "./src/styles/components.css",
+    "./styles/motion.css": "./src/styles/motion.css",
+    "./styles/scroll.css": "./src/styles/scroll.css",
+    "./styles/edge-light.css": "./src/styles/edge-light.css",
+    "./styles/pulsar.css": "./src/styles/pulsar.css",
+    "./styles/*": "./src/styles/*",
+    "./runtime": "./index.ts",
+    "./manager": "./src/manager.ts",
+    "./components/Logo.astro": "./src/components/Logo.astro",
     "./assets/logo.svg": "./assets/logo.svg"
   }
 }

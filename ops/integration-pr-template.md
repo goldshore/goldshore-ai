@@ -13,6 +13,10 @@
 ## Conflict resolutions
 - `<file>`: `<decision and rationale>`
 
+## Canonicalization policy
+- Follow `docs/migration/canonicalization-policy.md` for deterministic file handling and conflict decisions.
+- Document any policy exception in **Conflict resolutions** with rationale.
+
 ## Regenerated artifacts
 - `pnpm-lock.yaml`: regenerated after merging `<branch list>`
 

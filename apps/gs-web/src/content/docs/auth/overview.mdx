@@ -6,11 +6,27 @@ order: 50
 
 # Authentication
 
-GoldShore uses API keys to allow access to the API. You can register a new GoldShore API key at our [developer portal](https://dashboard.goldshore.dev).
+GoldShore currently uses two distinct authentication layers depending on what you are accessing.
 
-Authentication to the API is performed via HTTP Basic Auth. Provide your API key as the basic auth username value. You do not need to provide a password.
+## API authentication
+
+Direct requests to `gs-api` should use an API key in the `Authorization` header.
 
 ```bash
-curl https://api.goldshore.dev/v1/charges \
-  -u sk_test_...:
+curl "$PUBLIC_API/system/info" \
+  -H "Authorization: Bearer YOUR_API_KEY"
 ```
+
+This is the canonical pattern for API requests. Basic Auth is not the expected authentication flow for the current platform.
+
+## Cloudflare Access for protected hosts
+
+Some GoldShore surfaces are protected by Cloudflare Access instead of being anonymously reachable.
+
+- Preview deployments of `gs-web`
+- Internal/admin tooling
+- Other Access-gated hosts documented in `docs/domains-and-auth.md`
+
+Those surfaces expect a Cloudflare Access-backed session or token. The developer docs landing page reflects the current internal expectation: Cloudflare Access JWT with audience `goldshore-admin` for protected documentation and tooling flows.
+
+For automation against an Access-protected host, use Cloudflare Access service-token headers rather than downgrading the host to Basic Auth.

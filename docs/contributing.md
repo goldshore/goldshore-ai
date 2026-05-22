@@ -9,8 +9,8 @@ For full standards see `docs/conventions/naming.md`.
 - Branch: `feat/add-worker-health-endpoint`
 - Package: `@goldshore/control-worker`
 - Worker service (wrangler): `gs-control`
-- Workflow file: `.github/workflows/deploy-control-worker.yml`
-- Workflow job key: `deploy`
+- Workflow file: `.github/workflows/deploy-gs-control.yml`
+- Workflow job key: `deploy-control`
 
 ### Anti-patterns
 

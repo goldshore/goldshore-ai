@@ -14,14 +14,14 @@ async function getDocs() {
   async function scan(dir) {
     try {
       const entries = await readdir(dir, { withFileTypes: true });
-      for (const entry of entries) {
+      await Promise.all(entries.map(async (entry) => {
         const fullPath = join(dir, entry.name);
         if (entry.isDirectory()) {
           await scan(fullPath);
         } else if (entry.isFile() && /\.(md|mdx)$/.test(entry.name)) {
           files.push(fullPath);
         }
-      }
+      }));
     } catch (err) {
       if (err.code === 'ENOENT') {
         console.warn(`Directory not found: ${dir}`);
@@ -33,7 +33,8 @@ async function getDocs() {
 
   await scan(DOCS_DIR);
 
-  const docs = await Promise.all(files.map(async (file) => {
+  const docs = [];
+  for (const file of files) {
     const content = await readFile(file, 'utf-8');
 
     // Extract frontmatter block (first block between ---)
@@ -45,38 +46,38 @@ async function getDocs() {
     let title = titleMatch ? (titleMatch[1] ?? titleMatch[2] ?? titleMatch[3] ?? '') : '';
     title = title.trim();
     if (!title) {
-        title = basename(file, extname(file));
+      title = basename(file, extname(file));
     }
 
     // Check for explicit slug in frontmatter
     const slugMatch = frontmatter.match(/^slug:\s*(?:"([^"]*)"|'([^']*)'|([^\n]*))/m);
     let slug = null;
     if (slugMatch) {
-       slug = slugMatch[1] ?? slugMatch[2] ?? slugMatch[3] ?? '';
-       slug = slug.trim();
-       // Normalize leading/trailing slashes
-       if (slug.startsWith('/')) slug = slug.slice(1);
-       if (slug.endsWith('/')) slug = slug.slice(0, -1);
+      slug = slugMatch[1] ?? slugMatch[2] ?? slugMatch[3] ?? '';
+      slug = slug.trim();
+      // Normalize leading/trailing slashes
+      if (slug.startsWith('/')) slug = slug.slice(1);
+      if (slug.endsWith('/')) slug = slug.slice(0, -1);
     } else {
-        // Generate slug from filepath
-        let relPath = relative(DOCS_DIR, file);
+      // Generate slug from filepath
+      let relPath = relative(DOCS_DIR, file);
 
-        // Normalize Windows paths to forward slashes
-        if (sep === '\\') {
-          relPath = relPath.split(sep).join('/');
-        }
+      // Normalize Windows paths to forward slashes
+      if (sep === '\\') {
+        relPath = relPath.split(sep).join('/');
+      }
 
-        slug = relPath.replace(/\.(md|mdx)$/, '');
+      slug = relPath.replace(/\.(md|mdx)$/, '');
 
-        if (slug === 'index') {
-          slug = '';
-        } else if (slug.endsWith('/index')) {
-          slug = slug.slice(0, -6);
-        }
+      if (slug === 'index') {
+        slug = '';
+      } else if (slug.endsWith('/index')) {
+        slug = slug.slice(0, -6);
+      }
     }
 
-    return { title, slug };
-  }));
+    docs.push({ title, slug });
+  }
 
   // Sort for deterministic output
   docs.sort((a, b) => a.slug.localeCompare(b.slug));

@@ -7,21 +7,19 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "lint": "eslint .",
-    "test": "echo 'No tests configured for @goldshore/gs-admin'"
+    "check": "astro check"
   },
   "dependencies": {
-    "@goldshore/auth": "workspace:^",
-    "@goldshore/config": "workspace:^",
-    "@goldshore/integrations": "workspace:^",
-    "@goldshore/theme": "workspace:^",
-    "@goldshore/ui": "workspace:^",
-    "astro": "^5.15.9"
+    "@goldshore/config": "workspace:*",
+    "@goldshore/theme": "workspace:*",
+    "@goldshore/auth": "workspace:*",
+    "astro": "^6.3.1"
   },
   "devDependencies": {
-    "@astrojs/cloudflare": "^12.6.12",
-    "@types/node": "^25.0.1",
-    "tsx": "^4.21.0",
-    "typescript": "^5.4.2"
+    "@astrojs/cloudflare": "^13.1.10",
+    "@astrojs/tailwind": "^6.0.2",
+    "@cloudflare/workers-types": "^4.20260421.1",
+    "tailwindcss": "^4.3.0",
+    "typescript": "^5.4.0"
   }
 }

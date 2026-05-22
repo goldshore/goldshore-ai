@@ -5,7 +5,7 @@ import DefaultPageTemplate from '../components/DefaultPageTemplate.astro';
 export const prerender = false;
 
 const slug = Astro.params.path ?? '';
-const API_BASE = import.meta.env.PUBLIC_API || 'https://api.goldshore.dev';
+const API_BASE = import.meta.env.PUBLIC_API || 'https://api.goldshore.ai';
 
 let page: {
   id: number;
@@ -25,7 +25,7 @@ if (slug) {
     } else {
       Astro.response.status = 404;
     }
-  } catch (error) {
+  } catch {
     Astro.response.status = 404;
   }
 } else {
@@ -58,9 +58,3 @@ if (slug) {
 ) : (
   <DefaultPageTemplate />
 )}
-import DefaultPageTemplate from '../components/DefaultPageTemplate.astro';
-
-export const prerender = false;
----
-
-<DefaultPageTemplate />

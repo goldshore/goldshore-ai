@@ -1,51 +1,108 @@
-# apps/gs-api
+# GoldShore API (`apps/gs-api`)
+
+Primary Hono-based API worker for GoldShore.
 
 ## Overview
-The `gs-api` worker is the primary Hono-based API layer for GoldShore, served from `https://api.goldshore.ai/*` on Cloudflare Workers.
 
-Cloudflare metadata (from `wrangler.toml`):
-- Worker name: `gs-api`
-- Route: `api.goldshore.ai/*`
-- Compatibility date: `2025-01-10`
-- Bindings: `API_KV` (KV), `ASSETS` (R2), `DB` (D1), `AI` (AI Gateway)
-- Environment variable: `ENV=production`
-The `gs-api` worker is the primary Hono-based API layer for GoldShore, served from `https://api.goldshore.ai/*` on Cloudflare Workers. It uses KV, R2, D1, and the AI Gateway bindings configured in `wrangler.toml`.
+`gs-api` serves the core API surface behind `api.goldshore.ai`, including health checks, AI analysis, user/admin endpoints, content management, media delivery, templates, and internal system telemetry.
 
-Configuration highlights (from `wrangler.toml`):
-- `ENV=production`
-- KV binding: `API_KV`
-- R2 binding: `ASSETS`
-- D1 binding: `DB`
-- AI binding: `AI`
+## Cloudflare configuration
 
-## Routes/Endpoints
-These are API endpoints handled by the worker in `src/index.ts` and the route files in `src/routes` (not HTML pages). The router files are the source of truth.
-- `GET /` (status page)
-- `GET /health`
+- App-local Wrangler config: `apps/gs-api/wrangler.toml`
+- Canonical Cloudflare manifest: `infra/Cloudflare/gs-api.wrangler.toml`
+- Live deploy workflows: `.github/workflows/deploy-gs-api.yml` and `.github/workflows/preview-gs-api.yml`
+- Worker Builds for this service must use the `gs-control` build token.
+
+App-local `wrangler.toml` currently defines the production and preview routes:
+
+- `api.goldshore.ai/*`
+- `api-preview.goldshore.ai/*`
+
+## Routes and endpoints
+
+The router in `src/index.ts` and the route files in `src/routes/` are the source of truth.
+
+### Public routes
+
+- `GET /` — HTML service status page
+- `GET /health` — shallow or deep health probe via `?type=deep`
+
+### Authenticated API modules
+
 - `GET /ai`
 - `POST /ai/analysis`
 - `GET /users`
-- `GET /user/:id`
-- `GET /system/info`
+- `GET /users/:id`
+- `GET /user/:id` — legacy redirect to `/users/:id`
+- `GET /system/status`
+- `GET /system/routing`
+- `GET /system/config`
+- `PUT /system/config`
+- `GET /system/version`
 - `GET /templates`
+- `GET /admin/users`
+- `POST /admin/users`
+- `PATCH /admin/users/:id`
+- `GET /admin/audit`
+- `GET /media`
+- `GET /media/:id`
+- `POST /media/upload`
+- `GET /pages`
+- `GET /pages/slug/:slug`
+- `GET /pages/:id`
+- `POST /pages`
+- `PUT /pages/:id`
+- `PATCH /pages/:id/status`
+- `DELETE /pages/:id`
+- `GET /internal/inbox-status`
+- `GET /internal/dns-sync-status`
+
+### Versioned compatibility routes
+
 - `GET /v1/users`
+- `GET /v1/users/:id`
 - `GET /v1/agents`
 - `GET /v1/models`
 - `GET /v1/logs`
 
-## Local Dev
+## Development
+
 ```bash
 pnpm install
-pnpm --filter ./apps/gs-api dev
-pnpm --filter ./apps/gs-api build
+pnpm --filter @goldshore/gs-api dev
+pnpm --filter @goldshore/gs-api build
+pnpm --filter @goldshore/gs-api test
 ```
 
-## Deploy
-- Production deploy: `.github/workflows/deploy-api-worker.yml`
-- Preview deploy: `.github/workflows/preview-api-worker.yml`
-- Uses `wrangler deploy` with `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` secrets
+Deployment-oriented scripts exposed by the package:
 
-<!-- // [AUTO-UPDATE] Updated by Jules AI on 2026-01-23 01:43 -->
 ```bash
-pnpm --filter ./apps/gs-api deploy
+pnpm --filter @goldshore/gs-api deploy
+pnpm --filter @goldshore/gs-api test:gateway
 ```
+
+## Deployment
+
+- Production workflow: `.github/workflows/deploy-gs-api.yml`
+- Preview workflow: `.github/workflows/preview-gs-api.yml`
+- Secrets used by GitHub Actions and Wrangler deployments include `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
+
+### Worker Builds troubleshooting
+
+If Cloudflare Worker Builds fails before dependency installation with a deleted or rolled build token error, fix the Worker Builds token in Cloudflare Dashboard for `gs-api`. Use an active build token associated with the `gs-control` service.
+
+## AI Gateway local setup
+
+Install dependencies and populate local secrets before running gateway validation.
+
+```bash
+cp apps/gs-api/.env.example apps/gs-api/.env
+pnpm -C apps/gs-api wrangler secret put CF_AIG_TOKEN
+pnpm -C apps/gs-api wrangler secret put CF_GATEWAY_URL
+pnpm --filter @goldshore/gs-api test:gateway
+```
+
+Relevant environment variables:
+
+- `CF_AIG_TOKEN`
+- `CF_GATEWAY_URL`

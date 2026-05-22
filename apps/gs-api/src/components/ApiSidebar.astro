@@ -1,0 +1,90 @@
+---
+interface Props {
+  openapi: any;
+  currentSlug?: string;
+}
+
+const { openapi, currentSlug } = Astro.props;
+
+// Group paths by tags defined in the OpenAPI spec
+const groupedPaths: Record<string, any[]> = {};
+
+Object.entries(openapi.paths).forEach(([path, methods]: [string, any]) => {
+  const methodKeys = Object.keys(methods);
+  const primaryMethod = methods[methodKeys[0]];
+  const tag = primaryMethod.tags?.[0] || 'General';
+
+  if (!groupedPaths[tag]) groupedPaths[tag] = [];
+  
+  groupedPaths[tag].push({
+    path,
+    slug: path.replace(/^\//, ''),
+    summary: primaryMethod.summary,
+    methods: methodKeys.filter(m => ['get', 'post', 'put', 'delete', 'patch'].includes(m))
+  });
+});
+---
+
+<nav class="api-sidebar space-y-8">
+  <div class="relative mb-6">
+    <input 
+      type="text" 
+      placeholder="Search endpoints..." 
+      class="w-full px-4 py-2 text-sm bg-[var(--gs-bg-secondary)] border border-[var(--gs-border-primary)] rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+    />
+  </div>
+
+  
+
+  <div class="space-y-6">
+    {Object.entries(groupedPaths).map(([tag, endpoints]) => (
+      <div class="tag-group">
+        <h3 class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3 px-2">
+          {tag}
+        </h3>
+        <ul class="space-y-1">
+          {endpoints.map((ep) => (
+            <li>
+              <a 
+                href={`/docs/${ep.slug}`}
+                class={`flex items-center justify-between px-3 py-2 rounded-md text-sm transition-colors ${
+                  currentSlug === ep.slug 
+                  ? 'bg-blue-50 text-blue-700 font-semibold border border-blue-100' 
+                  : 'text-[var(--gs-text-secondary)] hover:bg-gray-100'
+                }`}
+              >
+                <span class="truncate mr-2">{ep.summary || ep.path}</span>
+                <div class="flex gap-1">
+                  {ep.methods.map((m: string) => (
+                    <span class={`method-dot ${m}`}></span>
+                  ))}
+                </div>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </div>
+</nav>
+
+<style>
+  .api-sidebar {
+    border-right: 1px solid var(--gs-border-primary);
+    padding-right: 1.5rem;
+  }
+
+  .method-dot {
+    @apply h-1.5 w-1.5 rounded-full;
+  }
+  .method-dot.get { @apply bg-blue-500; }
+  .method-dot.post { @apply bg-emerald-500; }
+  .method-dot.put { @apply bg-amber-500; }
+  .method-dot.delete { @apply bg-red-500; }
+
+  :root {
+    --gs-bg-secondary: #f8fafc;
+    --gs-border-primary: #e2e8f0;
+    --gs-text-secondary: #475569;
+  }
+</style>

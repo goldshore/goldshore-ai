@@ -1,0 +1,4 @@
+from	to	mode	note
+packages/schema/package.json	packages/schema/package.json	skip_identical	identical content
+packages/theme/tokens.css	packages/theme/tokens.css	skip_identical	identical content
+packages/ui/package.json	packages/ui/package.json	skip_identical	identical content

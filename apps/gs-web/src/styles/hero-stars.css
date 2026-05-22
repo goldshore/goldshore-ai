@@ -96,9 +96,15 @@
   position: relative;
   isolation: isolate;
   z-index: 0;
+  min-height: 72vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--gs-space-8) var(--gs-space-4);
+  background:
+    radial-gradient(circle at 50% 120%, color-mix(in srgb, var(--gs-accent-blue) 24%, transparent), transparent 70%),
+    var(--gs-color-bg);
 }
-
-/* Base gradient/background lives on .hero at z-index: 0 */
 
 .hero .shooting-stars {
   position: absolute;
@@ -112,34 +118,6 @@
   position: absolute;
   inset: 0;
   z-index: 2;
-  pointer-events: none;
-}
-
-.hero-content {
-  position: relative;
-  z-index: 3;
-}
-
-.hero::before,
-.hero .shooting-stars,
-.hero::after {
-  pointer-events: none;
-  overflow: hidden;
-  min-height: 72vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--gs-space-8) var(--gs-space-4);
-  background:
-    radial-gradient(circle at 50% 120%, color-mix(in srgb, var(--gs-accent-blue) 24%, transparent), transparent 70%),
-    var(--gs-bg-primary);
-}
-
-.hero::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 1;
   background: linear-gradient(
     120deg,
     transparent 40%,
@@ -177,14 +155,14 @@
 
 .hero-content {
   position: relative;
-  z-index: 2;
+  z-index: 3;
   max-width: 52rem;
   text-align: center;
 }
 
 .hero-title {
   color: var(--gs-text-primary);
-  font-family: var(--gs-font-heading);
+  font-family: var(--gs-font-display);
   letter-spacing: -0.02em;
   margin: 0 0 var(--gs-space-4);
 }
@@ -208,17 +186,17 @@
   text-decoration: none;
   padding: 0.7rem 1.2rem;
   border-radius: var(--gs-radius-sm);
-  border: 1px solid var(--gs-border);
+  border: 1px solid var(--gs-color-border);
 }
 
 .btn-primary {
   background: var(--gs-accent-blue);
-  color: var(--gs-bg-primary);
+  color: var(--gs-color-bg);
 }
 
 .btn-secondary {
   color: var(--gs-text-primary);
-  background: color-mix(in srgb, var(--gs-surface) 75%, transparent);
+  background: color-mix(in srgb, var(--gs-color-surface) 75%, transparent);
 }
 
 @keyframes star-fall {

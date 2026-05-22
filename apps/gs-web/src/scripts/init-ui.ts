@@ -2,6 +2,7 @@ import VanillaTilt from 'vanilla-tilt';
 
 let tiltInstances: Array<{ destroy: () => void }> = [];
 let cleanupStarField: (() => void) | null = null;
+let cleanupBriefingModal: (() => void) | null = null;
 
 const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -125,6 +126,9 @@ export function cleanupUI() {
 
   cleanupStarField?.();
   cleanupStarField = null;
+
+  cleanupBriefingModal?.();
+  cleanupBriefingModal = null;
 }
 
 export function initBriefingModal() {
@@ -148,4 +152,9 @@ export function initBriefingModal() {
 
   openButton.addEventListener('click', openModal);
   closeButtons.forEach((button) => button.addEventListener('click', closeModal));
+
+  cleanupBriefingModal = () => {
+    openButton.removeEventListener('click', openModal);
+    closeButtons.forEach((button) => button.removeEventListener('click', closeModal));
+  };
 }

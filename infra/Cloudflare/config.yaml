@@ -1,0 +1,72 @@
+account_id_env: CF_ACCOUNT_ID
+zone_id_env: CF_ZONE_ID
+
+projects:
+  pages:
+    - name: gs-web
+      public_url: https://goldshore.ai/
+      output_dir: apps/gs-web/dist
+      max_daily_deploys: 6
+      require_checks: ['smoke', 'lighthouse']
+      skip_if_paths_only:
+        - '^docs/.*'
+        - '^scripts/.*'
+        - '^README.md$'
+    - name: gs-admin
+      public_url: https://admin.goldshore.ai/
+      output_dir: apps/gs-admin/dist
+      max_daily_deploys: 6
+      require_checks: ['smoke', 'lighthouse']
+      skip_if_paths_only:
+        - '^docs/.*'
+        - '^scripts/.*'
+        - '^README.md$'
+
+  workers:
+    - script: gs-gateway
+      entry: apps/gs-gateway/dist/index.js
+      routes:
+        - pattern: 'gw.goldshore.ai/*'
+          zone: goldshore.ai
+        - pattern: 'agent.goldshore.ai/*'
+          zone: goldshore.ai
+        - pattern: 'api.goldshore.ai/*'
+          zone: goldshore.ai
+      max_daily_deploys: 10
+      require_checks: ['smoke']
+    - script: gs-api
+      entry: apps/gs-api/dist/index.js
+      routes: [] # Accessed via gateway service binding
+      max_daily_deploys: 10
+      require_checks: ['smoke']
+    - script: gs-control
+      entry: apps/gs-control/dist/index.js
+      routes:
+        - pattern: 'ops.goldshore.ai/*'
+          zone: goldshore.ai
+      max_daily_deploys: 10
+    - script: gs-agent
+      entry: apps/gs-agent/dist/index.js
+      routes: [] # Queue-based or internal
+      max_daily_deploys: 10
+    - script: gs-mail
+      entry: apps/gs-mail/dist/index.js
+      routes:
+        - pattern: 'mail.goldshore.ai/*'
+          zone: goldshore.ai
+      max_daily_deploys: 10
+
+guards:
+  dedupe_concurrency_key: 'cf-deploy'
+  cool_down_minutes: 15
+  backoff_ms: 250
+  backoff_factor: 2
+
+tests:
+  smoke:
+    - url: 'https://goldshore.ai/'
+      expect_status: 301
+      timeout_ms: 5000
+    - url: 'https://gw.goldshore.ai/health'
+      expect_status: 200
+      timeout_ms: 4000

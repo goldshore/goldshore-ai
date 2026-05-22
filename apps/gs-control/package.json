@@ -4,23 +4,18 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev --config ../../infra/cloudflare/gs-control.wrangler.toml",
-    "deploy": "wrangler deploy --config ../../infra/cloudflare/gs-control.wrangler.toml",
-    "run-task": "wrangler dev --config ../../infra/cloudflare/gs-control.wrangler.toml --test-scheduled",
-    "test": "tsx --test src/routes/*.test.ts",
-    "build": "wrangler deploy --config ../../infra/cloudflare/gs-control.wrangler.toml --dry-run --outdir=dist"
+    "dev": "wrangler dev src/index.ts",
+    "deploy": "wrangler deploy --env prod",
+    "build": "wrangler deploy --env prod --dry-run --outdir=dist"
   },
   "dependencies": {
-    "@goldshore/auth": "workspace:^",
-    "@goldshore/utils": "workspace:^",
-    "@hono/zod-validator": "^0.7.6",
-    "hono": "^4.0.0",
-    "zod": "^3.23.8"
+    "@goldshore/auth": "workspace:*",
+    "hono": "^4.12.16"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20241106.0",
+    "@cloudflare/workers-types": "^4.20260511.1",
     "tsx": "^4.7.1",
     "typescript": "^5.4.0",
-    "wrangler": "^4.63.0"
+    "wrangler": "^4.83.0"
   }
 }

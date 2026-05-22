@@ -1,0 +1,103 @@
+---
+interface Props {
+  openapi: any;
+  path: string;
+}
+
+const { openapi, path } = Astro.params;
+const methods = openapi.paths[path];
+const methodNames = Object.keys(methods).filter(m => ['get', 'post', 'put', 'delete', 'patch'].includes(m));
+
+// Helper to resolve $ref pointers in schemas
+const resolveRef = (ref: string) => {
+  const parts = ref.replace('#/', '').split('/');
+  return parts.reduce((acc, part) => acc[part], openapi);
+};
+---
+
+<div class="space-y-16">
+  {methodNames.map((method) => {
+    const data = methods[method];
+    return (
+      <article class="endpoint-block border-b border-[var(--gs-border-primary)] pb-16">
+        <header class="flex items-center gap-4 mb-6">
+          <span class={`method-badge ${method}`}>{method.toUpperCase()}</span>
+          <code class="text-xl font-mono font-bold">{path}</code>
+        </header>
+
+        <h3 class="text-2xl font-bold mb-2">{data.summary}</h3>
+        <p class="text-[var(--gs-text-secondary)] mb-8">{data.description}</p>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          <section class="space-y-6">
+            {data.parameters && (
+              <div>
+                <h4 class="text-sm font-bold uppercase tracking-widest text-gray-400 mb-4">Parameters</h4>
+                <div class="space-y-3">
+                  {data.parameters.map((p: any) => (
+                    <div class="flex justify-between p-3 bg-[var(--gs-bg-secondary)] rounded-lg border border-[var(--gs-border-primary)]">
+                      <div>
+                        <span class="font-mono text-sm font-bold">{p.name}</span>
+                        <span class="text-xs text-gray-400 ml-2">({p.in})</span>
+                      </div>
+                      <span class="text-xs font-mono text-blue-600">{p.schema?.type}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {data.requestBody && (
+              <div>
+                <h4 class="text-sm font-bold uppercase tracking-widest text-gray-400 mb-4">Request Body</h4>
+                <pre class="p-4 bg-gray-900 text-blue-300 rounded-xl text-xs overflow-x-auto">
+                  <code>{JSON.stringify(data.requestBody.content['application/json'].schema, null, 2)}</code>
+                </pre>
+              </div>
+            )}
+          </section>
+
+          <section class="space-y-6">
+            <h4 class="text-sm font-bold uppercase tracking-widest text-gray-400 mb-4">Responses</h4>
+            
+            <div class="space-y-3">
+              {Object.entries(data.responses).map(([code, res]: [string, any]) => (
+                <details class="group border border-[var(--gs-border-primary)] rounded-xl overflow-hidden">
+                  <summary class="flex justify-between items-center p-4 cursor-pointer bg-white hover:bg-gray-50">
+                    <div class="flex items-center gap-3">
+                      <span class={`status-dot ${code.startsWith('2') ? 'success' : 'error'}`}></span>
+                      <span class="font-bold">{code}</span>
+                    </div>
+                    <span class="text-sm text-[var(--gs-text-secondary)]">{res.description}</span>
+                  </summary>
+                  <div class="p-4 bg-[var(--gs-bg-tertiary)] border-t border-[var(--gs-border-primary)]">
+                    <p class="text-xs font-mono">Content-Type: application/json</p>
+                  </div>
+                </details>
+              ))}
+            </div>
+          </section>
+        </div>
+      </article>
+    );
+  })}
+</div>
+
+<style>
+  .method-badge { @apply px-3 py-1 rounded text-xs font-black text-white; }
+  .method-badge.get { @apply bg-blue-600; }
+  .method-badge.post { @apply bg-emerald-600; }
+  .method-badge.put { @apply bg-amber-600; }
+  .method-badge.delete { @apply bg-red-600; }
+
+  .status-dot { @apply h-2 w-2 rounded-full; }
+  .status-dot.success { @apply bg-emerald-500; }
+  .status-dot.error { @apply bg-red-500; }
+
+  :root {
+    --gs-border-primary: #e2e8f0;
+    --gs-bg-secondary: #f8fafc;
+    --gs-bg-tertiary: #f1f5f9;
+    --gs-text-secondary: #64748b;
+  }
+</style>

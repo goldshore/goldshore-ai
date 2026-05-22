@@ -1,0 +1,111 @@
+.gs-blueprint-bg {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(90,140,255,0.14), transparent 60%),
+    linear-gradient(180deg, var(--gs-bg-0) 0%, var(--gs-bg-1) 100%);
+}
+
+.gs-grid-overlay {
+  position: absolute;
+  inset: 0;
+  background-image: url("/assets/blueprint-grid.svg");
+  opacity: 0.12;
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .gs-grid-overlay { opacity: 0.08; }
+}
+
+/* HERO */
+.gs-hero {
+  position: relative;
+  overflow: hidden;
+  min-height: clamp(560px, 78vh, 820px);
+  display: grid;
+  align-items: center;
+}
+
+.gs-hero-content {
+  position: relative;
+  z-index: 3;
+  padding: 6.5rem 0 5.5rem 0;
+}
+
+.gs-hero-title { max-width: 18ch; }
+
+.gs-hero-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+}
+
+/* layered starfield – subtle drift */
+.gs-stars,
+.gs-stars-deep {
+  position: absolute;
+  inset: 0;
+  background-image: url("/assets/starfield.svg");
+  background-size: cover;
+  background-position: center;
+  pointer-events: none;
+}
+
+.gs-stars {
+  opacity: 0.22;
+  animation: gs-drift 140s linear infinite;
+  z-index: 1;
+}
+
+.gs-stars-deep {
+  opacity: 0.10;
+  animation: gs-drift-slow 260s linear infinite;
+  z-index: 0;
+  filter: blur(0.2px);
+}
+
+@keyframes gs-drift {
+  from { transform: translate3d(0, 0, 0) scale(1.05); }
+  to   { transform: translate3d(0, -220px, 0) scale(1.05); }
+}
+
+@keyframes gs-drift-slow {
+  from { transform: translate3d(0, 0, 0) scale(1.12); }
+  to   { transform: translate3d(0, -160px, 0) scale(1.12); }
+}
+
+/* controlled atmospheric vignettes */
+.gs-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background:
+    radial-gradient(circle at 70% 30%, rgba(90,140,255,0.08), transparent 55%),
+    radial-gradient(circle at 20% 85%, rgba(0,0,0,0.75), transparent 55%),
+    radial-gradient(circle at 50% 50%, transparent, rgba(0,0,0,0.65));
+}
+
+/* signal separator line with angle */
+.gs-signal-divider {
+  height: 1px;
+  margin-top: 3rem;
+  background: linear-gradient(90deg, transparent, rgba(90,140,255,0.28), transparent);
+  position: relative;
+}
+
+.gs-signal-divider::after {
+  content: "";
+  position: absolute;
+  inset: -18px 0 auto 0;
+  height: 36px;
+  background: linear-gradient(120deg, transparent, rgba(255,107,0,0.14), transparent);
+  opacity: 0.55;
+  animation: gs-signal 6.2s var(--gs-ease) infinite;
+}
+
+@keyframes gs-signal {
+  0% { transform: translateX(-55%); }
+  45% { transform: translateX(55%); }
+  100% { transform: translateX(55%); }
+}

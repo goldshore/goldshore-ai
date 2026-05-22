@@ -1,0 +1,16 @@
+{
+  "name": "@goldshore/brand",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./brand.json": "./brand.json",
+    "./logo-penrose.svg": "./logo-penrose.svg",
+    "./logo-horizontal.svg": "./logo-horizontal.svg",
+    "./favicon.svg": "./favicon.svg",
+    "./Logo.astro": "./Logo.astro"
+  },
+  "peerDependencies": {
+    "astro": "^5.18.0"
+  }
+}

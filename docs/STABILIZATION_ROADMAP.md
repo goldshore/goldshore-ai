@@ -110,6 +110,26 @@ Main branch must require:
 	•	Lint
 	•	Test
 
+
+### 3.5 Naming Gate Clarification
+
+- Active file in this repository: `.github/workflows/naming-lint.yml`.
+- Planned file name `naming-guard.yml` is **not** present in this repo.
+- During stabilization, treat `naming-lint` as the canonical naming gate for branch protection and CI policy.
+
+Temporary disable/archive procedure (only for incident mitigation):
+
+```bash
+mkdir -p .github/workflows-backup
+mv .github/workflows/naming-lint.yml .github/workflows-backup/
+```
+
+Restore with:
+
+```bash
+mv .github/workflows-backup/naming-lint.yml .github/workflows/
+```
+
 Exit Criteria
 	•	5 consecutive merges without conflict
 	•	No CI race-condition failures
@@ -163,7 +183,7 @@ Objective
 Remove shared deployment mutation.
 
 Actions
-	•	Remove infra/cloudflare/*
+	•	Remove infra/Cloudflare/*
 	•	Each worker owns:
 	•	Its own wrangler.toml
 	•	Its own deploy script

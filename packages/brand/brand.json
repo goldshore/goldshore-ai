@@ -1,0 +1,10 @@
+{
+  "name": "Gold Shore Labs",
+  "primary_logo": "logo-horizontal.svg",
+  "icon_logo": "logo-penrose.svg",
+  "colors": {
+    "primary": "#4da3ff",
+    "dark": "#0a4c8a",
+    "stroke": "#052f54"
+  }
+}

@@ -5,21 +5,26 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev src/index.ts",
-    "deploy": "wrangler deploy",
-    "build": "wrangler deploy --dry-run --outdir=dist",
-    "test": "tsx --test src/routes/*.test.ts"
+    "deploy": "wrangler deploy --env prod",
+    "build": "wrangler deploy --env prod --dry-run --outdir=dist",
+    "test": "tsx --test src/routes/*.test.ts",
+    "test:gateway": "node test-gateway.js"
   },
   "dependencies": {
-    "@goldshore/ai-providers": "workspace:*",
-    "@goldshore/auth": "workspace:*",
-    "hono": "^4.0.0",
+    "@goldshore/ai-providers": "workspace:^",
+    "@goldshore/auth": "workspace:^",
+    "@goldshore/schema": "workspace:^",
+    "@goldshore/utils": "workspace:^",
+    "@types/sanitize-html": "^2.16.0",
+    "hono": "^4.12.16",
+    "openai": "^6.34.0",
     "safe-stable-stringify": "^2.5.0",
-    "@goldshore/utils": "workspace:*"
+    "sanitize-html": "^2.17.3"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20241106.0",
+    "@cloudflare/workers-types": "^4.20260511.1",
     "tsx": "^4.7.1",
     "typescript": "^5.4.0",
-    "wrangler": "^4.63.0"
+    "wrangler": "^4.83.0"
   }
 }

@@ -1,15 +1,18 @@
 import type { APIRoute } from 'astro';
+import {
+  buildAdminSession,
+  verifyAccessWithClaims,
+  type AdminPermission,
+  type Env as AccessEnv,
+} from '@goldshore/auth';
+import { parseJson } from '@goldshore/utils';
+
+/**
+ * Admin UI form configuration item endpoint.
+ * Requires `forms:read` for GET and `forms:write` for PUT/PATCH.
+ */
 
 export const prerender = false;
-
-const parseJson = <T>(value: string | null, fallback: T): T => {
-  if (!value) return fallback;
-  try {
-    return JSON.parse(value) as T;
-  } catch {
-    return fallback;
-  }
-};
 
 const normalizeRow = (row: Record<string, string>) => ({
   id: row.id,
@@ -20,15 +23,68 @@ const normalizeRow = (row: Record<string, string>) => ({
   recipients: parseJson(row.recipients ?? null, [] as Record<string, unknown>[]),
   integrations: parseJson(row.integrations ?? null, [] as Record<string, unknown>[]),
   createdAt: row.created_at,
-  updatedAt: row.updated_at
+  updatedAt: row.updated_at,
 });
 
-export const GET: APIRoute = async ({ locals, params }) => {
+const isSameOriginRequest = (request: Request) => {
+  const expectedOrigin = new URL(request.url).origin;
+  const originHeader = request.headers.get('origin');
+  if (originHeader) {
+    return originHeader === expectedOrigin;
+  }
+
+  const refererHeader = request.headers.get('referer');
+  if (refererHeader) {
+    try {
+      return new URL(refererHeader).origin === expectedOrigin;
+    } catch {
+      return false;
+    }
+  }
+
+  const fetchSite = request.headers.get('sec-fetch-site');
+  if (fetchSite) {
+    return fetchSite === 'same-origin' || fetchSite === 'none';
+  }
+
+  return false;
+};
+
+const unauthorizedResponse = () =>
+  Response.json({ error: 'Authentication required.' }, { status: 401 });
+
+const forbiddenResponse = (message = 'Insufficient permissions.') =>
+  Response.json({ error: message }, { status: 403 });
+
+const requirePermission = async (
+  request: Request,
+  env: AccessEnv,
+  permission: AdminPermission,
+) => {
+  const claims = await verifyAccessWithClaims(request, env);
+  if (!claims) {
+    return { response: unauthorizedResponse() };
+  }
+
+  const session = buildAdminSession(claims);
+  if (!session.permissions.includes(permission)) {
+    return { response: forbiddenResponse() };
+  }
+
+  return { response: null };
+};
+
+export const GET: APIRoute = async ({ request, locals, params }) => {
   const env = locals.runtime?.env as Env | undefined;
   const slug = params.slug;
 
   if (!env?.DB) {
     return new Response('Storage unavailable.', { status: 503 });
+  }
+
+  const auth = await requirePermission(request, env as AccessEnv, 'forms:read');
+  if (auth.response) {
+    return auth.response;
   }
 
   if (!slug) {
@@ -58,6 +114,15 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
 
   if (!env?.DB) {
     return new Response('Storage unavailable.', { status: 503 });
+  }
+
+  if (!isSameOriginRequest(request)) {
+    return forbiddenResponse('Forbidden: CSRF check failed.');
+  }
+
+  const auth = await requirePermission(request, env as AccessEnv, 'forms:write');
+  if (auth.response) {
+    return auth.response;
   }
 
   if (!slug) {
@@ -91,7 +156,7 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     status: payload.status ?? row.status,
     fields: payload.fields ?? parseJson(row.fields ?? null, [] as Record<string, unknown>[]),
     recipients: payload.recipients ?? parseJson(row.recipients ?? null, [] as Record<string, unknown>[]),
-    integrations: payload.integrations ?? parseJson(row.integrations ?? null, [] as Record<string, unknown>[])
+    integrations: payload.integrations ?? parseJson(row.integrations ?? null, [] as Record<string, unknown>[]),
   };
 
   const now = new Date().toISOString();
@@ -122,11 +187,14 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
       recipients: updated.recipients,
       integrations: updated.integrations,
       createdAt: row.created_at,
-      updatedAt: now
-    }
+      updatedAt: now,
+    },
   });
 };
 
 export const PATCH = PUT;
 
-export const getStaticPaths = async () => [];
+export const __testing = {
+  isSameOriginRequest,
+  requirePermission,
+};

@@ -1,26 +1,13 @@
 ---
-import '@goldshore/theme/styles/tokens';
+import '@goldshore/theme';
 import { GSButton } from '@goldshore/ui';
 import MarketingLayout from '../layouts/MarketingLayout.astro';
 import '../styles/home.css';
-import '../styles/hero-stars.css';
 
 export const prerender = true;
 ---
 
-<main class="hero-shell">
-  <section class="hero-stage">
-    <div class="hero-stars" data-hero-stars>
-      <span class="hero-stars__cluster" aria-hidden="true"></span>
-      <span class="hero-stars__sweep" aria-hidden="true"></span>
-    </div>
-    <h1>Goldshore</h1>
-    <p>Scaffold page is active.</p>
-  </section>
+<main>
+  <h1>Goldshore</h1>
+  <p>Scaffold page is active.</p>
 </main>
-
-<script>
-  import { initHeroStars } from '../components/hero-stars';
-
-  initHeroStars();
-</script>

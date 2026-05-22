@@ -23,8 +23,17 @@ type LeadSubmission = {
   user_agent: string | null;
 };
 
-const env = Astro.locals.runtime?.env as Env | undefined;
-const db = env?.DB;
+const runtime = Astro.locals.runtime as {
+  env?: {
+    DB?: {
+      prepare(query: string): {
+        bind(...values: string[]): { all(): Promise<{ results?: LeadSubmission[] }> };
+        all(): Promise<{ results?: LeadSubmission[] }>;
+      };
+    };
+  };
+} | undefined;
+const db = runtime?.env?.DB;
 const url = new URL(Astro.request.url);
 const statusFilter = url.searchParams.get('status');
 const allowedStatuses = ['new', 'read', 'archived'] as const;

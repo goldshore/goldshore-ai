@@ -1,0 +1,119 @@
+---
+interface Props {
+  serviceUrl: string;
+}
+
+const { serviceUrl } = Astro.props;
+---
+
+<div class="service-status-card p-6 rounded-2xl border border-[var(--gs-border-primary)] bg-white shadow-sm">
+  <div class="mb-6 flex items-center justify-between">
+    <h3 class="gs-heading text-lg font-bold">System Vitality</h3>
+    <div id="status-indicator" class="flex items-center gap-2" aria-live="polite">
+      <span class="status-dot h-3 w-3 animate-pulse rounded-full bg-gray-300"></span>
+      <span class="status-text text-sm font-medium text-gray-500">Initializing...</span>
+    </div>
+  </div>
+
+  <div class="space-y-4">
+    <div class="flex items-center justify-between border-b border-[var(--gs-border-primary)] py-2">
+      <span class="text-sm text-[var(--gs-text-secondary)]">API Gateway</span>
+      <span id="api-val" class="text-sm font-mono text-gray-400">--</span>
+    </div>
+    <div class="flex items-center justify-between border-b border-[var(--gs-border-primary)] py-2">
+      <span class="text-sm text-[var(--gs-text-secondary)]">KV Store (Edge)</span>
+      <span id="kv-val" class="text-sm font-mono text-gray-400">--</span>
+    </div>
+    <div class="flex items-center justify-between py-2">
+      <span class="text-sm text-[var(--gs-text-secondary)]">D1 Database</span>
+      <span id="db-val" class="text-sm font-mono text-gray-400">--</span>
+    </div>
+  </div>
+
+  <button
+    id="trigger-deep-check"
+    class="mt-6 flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--gs-border-primary)] bg-[var(--gs-bg-secondary)] py-2 text-xs font-bold uppercase tracking-widest transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-70"
+  >
+    <span class="btn-text">Perform Deep Validation</span>
+    <svg class="spinner hidden h-4 w-4 animate-spin" viewBox="0 0 24 24" aria-hidden="true">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+  </button>
+</div>
+
+<script is:inline define:vars={{ serviceUrl }}>
+  const btn = document.getElementById('trigger-deep-check');
+  const btnText = btn?.querySelector('.btn-text');
+  const spinner = btn?.querySelector('.spinner');
+  const indicator = document.getElementById('status-indicator');
+  const dot = indicator?.querySelector('.status-dot');
+  const text = indicator?.querySelector('.status-text');
+  const apiVal = document.getElementById('api-val');
+  const kvVal = document.getElementById('kv-val');
+  const dbVal = document.getElementById('db-val');
+
+  let isChecking = false;
+  let queuedCheckType = null;
+
+  const updateStatus = (status) => {
+    if (!dot || !text) return;
+
+    const normalizedStatus = String(status).toUpperCase();
+    const color = normalizedStatus === 'OK' ? 'bg-emerald-500' : 'bg-red-500';
+    dot.className = `status-dot h-3 w-3 rounded-full ${color}`;
+    text.className = 'status-text text-sm font-bold uppercase';
+    text.textContent = normalizedStatus;
+  };
+
+  const setCheckingState = (checking, type = 'shallow') => {
+    if (!btn || !btnText || !spinner) return;
+
+    btn.disabled = checking;
+    btn.setAttribute('aria-busy', String(checking));
+    btnText.textContent = checking
+      ? type === 'deep'
+        ? 'Validating...'
+        : 'Checking status...'
+      : 'Perform Deep Validation';
+    spinner.classList.toggle('hidden', !checking);
+  };
+
+  async function checkHealth(type = 'shallow') {
+    if (isChecking) {
+      queuedCheckType = type === 'deep' ? 'deep' : (queuedCheckType ?? 'shallow');
+      return;
+    }
+
+    isChecking = true;
+    setCheckingState(true, type);
+
+    try {
+      const res = await fetch(`${serviceUrl}?type=${type}`);
+      const data = await res.json();
+
+      updateStatus(data.status);
+
+      if (apiVal) apiVal.innerText = 'CONNECTED';
+      if (data.kv && kvVal) kvVal.innerText = String(data.kv).toUpperCase();
+      if (data.db && dbVal) dbVal.innerText = String(data.db).toUpperCase();
+    } catch (_error) {
+      updateStatus('OFFLINE');
+    } finally {
+      isChecking = false;
+      setCheckingState(false);
+
+      const nextCheckType = queuedCheckType;
+      queuedCheckType = null;
+
+      if (nextCheckType) {
+        void checkHealth(nextCheckType);
+      }
+    }
+  }
+
+  btn?.addEventListener('click', () => {
+    void checkHealth('deep');
+  });
+  void checkHealth();
+</script>

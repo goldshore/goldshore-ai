@@ -9,12 +9,12 @@ import MDXCodeBlock from '../../../components/MDXCodeBlock.astro';
 
   <h2 id="api">API Base</h2>
   <MDXCodeBlock>
-    GET {String(import.meta.env.PUBLIC_API || 'https://api.goldshore.dev')}/system/info
+    GET {String(import.meta.env.PUBLIC_API || 'https://api.goldshore.ai')}/system/info
   </MDXCodeBlock>
 
   <h2 id="gateway">Gateway</h2>
   <MDXCodeBlock>
-    {import.meta.env.PUBLIC_GATEWAY || 'https://gateway.goldshore.dev'}/api/* → gs-api
+    {import.meta.env.PUBLIC_GATEWAY || 'https://gw.goldshore.ai'}/api/* → gs-api
   </MDXCodeBlock>
 
   <h2 id="auth">Auth</h2>

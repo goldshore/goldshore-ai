@@ -6,7 +6,14 @@ import siteConfig from '../data/site-config.json';
 
 <header>
   <nav>
-    <h2><a href="/">{SITE_TITLE}</a></h2>
+    <a class="brand-lockup" href="/" aria-label={SITE_TITLE}>
+      <img
+        src="/assets/brand/logo-horizontal.svg"
+        alt="GoldShore.ai"
+        width="540"
+        height="160"
+      />
+    </a>
     <div class="internal-links">
       <HeaderLink href="/">Home</HeaderLink>
       <HeaderLink href="/services">Services</HeaderLink>
@@ -25,36 +32,41 @@ import siteConfig from '../data/site-config.json';
   header {
     margin: 0;
     padding: 0 1em;
-    background: rgb(var(--surface));
-    border-bottom: 1px solid rgb(var(--border));
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(7, 16, 30, 0.88);
+    border-bottom: 1px solid rgba(123, 158, 204, 0.18);
+    backdrop-filter: blur(18px);
   }
-  h2 {
-    margin: 0;
-    font-size: 1.1rem;
-  }
-
-  h2 a,
-  h2 a.active {
+  .brand-lockup {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
     text-decoration: none;
-    color: rgb(var(--black));
+  }
+  .brand-lockup img {
+    width: clamp(180px, 20vw, 260px);
+    height: auto;
+    display: block;
   }
   nav {
     display: flex;
     gap: 1rem;
     align-items: center;
     justify-content: space-between;
-    padding: 0.4rem 0;
+    padding: 0.8rem 0;
   }
   .internal-links {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 0.2rem;
+    gap: 0.35rem;
   }
   @media (max-width: 980px) {
     nav {
       flex-direction: column;
-      align-items: flex-start;
+      align-items: stretch;
     }
     .internal-links {
       justify-content: flex-start;

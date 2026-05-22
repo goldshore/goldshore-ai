@@ -1,27 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 220" role="img" aria-labelledby="title desc">
-  <title id="title">Penrose Triangle Logo</title>
-  <desc id="desc">Interlocking triangular mark used for the GoldShore identity.</desc>
-  <defs>
-    <linearGradient id="penroseFill" x1="18" y1="18" x2="142" y2="142" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#fef3c7" />
-      <stop offset="45%" stop-color="#fbbf24" />
-      <stop offset="100%" stop-color="#d97706" />
-    </linearGradient>
-    <linearGradient id="penroseStroke" x1="18" y1="18" x2="142" y2="142" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#fde68a" />
-      <stop offset="55%" stop-color="#f59e0b" />
-      <stop offset="100%" stop-color="#b45309" />
-    </linearGradient>
-  </defs>
-  <g fill="url(#penroseFill)" stroke="url(#penroseStroke)" stroke-width="12" stroke-linejoin="round">
-    <path d="M130 14 68 122h48l31-54-29-54Z" />
-    <path d="m133 146 62-108-23-4-31 54 12 58Z" />
-    <path d="M96 131h94l-12-21H115l-19 21Z" />
-  </g>
-  <text x="130" y="190" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="20" letter-spacing="6" fill="url(#penroseFill)" stroke="none" style="text-transform: uppercase;">GOLD SHORE</text>
-</svg>
-    <path d="M80 14 18 122h48l31-54-29-54Z" />
-    <path d="m83 146 62-108-23-4-31 54 12 58Z" />
-    <path d="M46 131h94l-12-21H65l-19 21Z" />
-  </g>
+<!-- CANONICAL_BRAND_ASSET: packages/brand/logo-penrose.svg -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 200">
+  <title>Gold Shore Labs</title>
+  <path d="m111.87 92.505-41-72A1 1 0 0 0 70 20H57a1 1 0 0 0-.87.505l-41 72a1 1 0 0 0 0 .99l6.5 11.414a1 1 0 0 0 .87.506h82a1 1 0 0 0 .87-.506l6.5-11.414a1 1 0 0 0 0-.99M109.28 92H43.72l5.361-9.415H91.5a1 1 0 0 0 .87-1.494L58.72 22h10.698ZM63.5 57.265l13.28 23.32H50.22ZM17.15 93 57 23.021l32.78 57.564h-10.7l-21.21-37.25a1.04 1.04 0 0 0-1.738 0L22.5 102.392Zm86.768 10.415H24.22L57 45.85l5.35 9.394-21.22 37.261A1 1 0 0 0 42 94h67.28Z" fill="none" stroke="#0b3a5f" stroke-linejoin="round"/>
 </svg>

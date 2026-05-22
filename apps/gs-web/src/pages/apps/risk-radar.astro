@@ -1,459 +1,203 @@
 ---
-import '@goldshore/theme/styles/tokens';
 import MarketingLayout from '../../layouts/MarketingLayout.astro';
-import { GSButton } from '@goldshore/ui';
+import RiskRadarVisual from '../../components/RiskRadar.astro';
 
 export const prerender = true;
 
-const samples = [
+const operationalMetrics = [
+  { label: 'Signal latency', value: '< 28ms' },
+  { label: 'Volatility sweep', value: '96 bands' },
+  { label: 'Directional bias', value: 'Adaptive' },
+];
+
+const designPrinciples = [
   {
-    label: 'Aurora Sigma',
-    ticker: 'AXP',
-    iv: '38.6%',
-    openVol: '1.42M',
-    openPositions: '8,240',
-    gForce: 'NW 18.2',
-    drift: '145°',
-    pressure: '+0.86',
-    momentum: 'Up-slope',
-    riskScore: 72
+    title: 'Continuous sweep',
+    body: 'Rotating motion stays loopable and instrument-like so the component holds up in live systems and recorded clips.',
   },
   {
-    label: 'Titan Harbor',
-    ticker: 'NVDA',
-    iv: '52.1%',
-    openVol: '2.08M',
-    openPositions: '11,904',
-    gForce: 'E 22.7',
-    drift: '80°',
-    pressure: '+1.34',
-    momentum: 'Accel',
-    riskScore: 88
+    title: 'Signal discipline',
+    body: 'Pulsing rings and drifting blips stay restrained, legible, and operational rather than decorative.',
   },
   {
-    label: 'Mariner Ghost',
-    ticker: 'TSLA',
-    iv: '64.9%',
-    openVol: '1.77M',
-    openPositions: '9,332',
-    gForce: 'SE 12.3',
-    drift: '205°',
-    pressure: '-0.62',
-    momentum: 'Slip',
-    riskScore: 65
-  }
+    title: 'Reusable surface',
+    body: 'The module is designed to drop into homepage sections, dedicated radar views, and operator-facing presentations.',
+  },
+];
+
+const deploymentContexts = [
+  'Homepage Risk Radar section for platform positioning',
+  'Dedicated Radar page for launch posts, reels, and recorded walkthroughs',
+  'Investor and operator visuals that need a high-trust systems tone',
 ];
 ---
 
-<MarketingLayout title="Risk Radar | GoldShore" description="Blueprint-grade risk radar visual with live sample metrics.">
-  <div class="blueprint-grid"></div>
-
-  <section class="risk-hero">
-    <div class="risk-hero__content">
-      <div class="gs-badge-group">
-        <span class="gs-badge gs-badge--gold">GoldShore Intelligence</span>
-        <span class="gs-badge gs-badge--cyan">System Active</span>
-      </div>
-      <h1 class="glitch-text" data-text="Risk Radar">Risk Radar</h1>
-      <p class="risk-subtitle">
-        High-precision volatility surveillance.
-        <span class="highlight">Luxury-grade telemetry</span> for the modern strategist.
+<MarketingLayout title="Risk Radar | GoldShore" description="Operational risk visualization system from GoldShore.">
+  <section class="risk-page gs-shell-section">
+    <header class="risk-page__intro">
+      <p class="gs-eyebrow">Risk Radar</p>
+      <h1>Operational risk visualization for high-trust systems.</h1>
+      <p>
+        GoldShore treats Risk Radar as a reusable instrument surface: continuous sweep, disciplined motion, and a presentation layer built for teams that need precision under pressure.
       </p>
-
-      <div class="hud-stats">
-        <div class="hud-stat">
-          <span class="label">Latency</span>
-          <span class="value text-cyan">28ms</span>
-        </div>
-        <div class="hud-stat">
-          <span class="label">Resolution</span>
-          <span class="value text-gold">96-Band</span>
-        </div>
-        <div class="hud-stat">
-          <span class="label">Status</span>
-          <span class="value text-green">Online</span>
-        </div>
-      </div>
-
-      <div class="cta-group">
-        <GSButton href="/contact" variant="primary" class="glow-button">Request Access</GSButton>
-        <GSButton href="#demo" variant="secondary">View Demo</GSButton>
-      </div>
-    </div>
-
-    <div class="risk-hero__visual">
-      <div class="radar-container">
-        <div class="radar-scan"></div>
-        <div class="radar-grid"></div>
-        <div class="radar-rings">
-          <div class="ring ring-1"></div>
-          <div class="ring ring-2"></div>
-          <div class="ring ring-3"></div>
-        </div>
-        <div class="radar-blips">
-          <div class="blip blip-1"></div>
-          <div class="blip blip-2"></div>
-          <div class="blip blip-3"></div>
-        </div>
-        <div class="radar-overlay">
-          <span class="bearing b-n">N</span>
-          <span class="bearing b-e">E</span>
-          <span class="bearing b-s">S</span>
-          <span class="bearing b-w">W</span>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section id="demo" class="risk-interface">
-    <div class="interface-header">
-      <div class="header-title">
-        <span class="icon">◈</span>
-        <h2>Command Interface</h2>
-      </div>
-      <div class="header-controls">
-         <div class="control-group">
-            <label for="risk-sample-select">Target System</label>
-            <div class="select-wrapper">
-              <select id="risk-sample-select">
-                {samples.map((sample, index) => (
-                  <option value={index}>{sample.label} [{sample.ticker}]</option>
-                ))}
-              </select>
-            </div>
-         </div>
-      </div>
-    </div>
-
-    <div class="interface-grid">
-      <!-- Main Display -->
-      <div class="panel main-display">
-        <div class="panel-header">
-          <span>Signal Analysis</span>
-          <span class="status-dot"></span>
-        </div>
-        <div class="vector-display">
-          <div class="compass-ring"></div>
-          <div class="vector-arrow" id="vector-arrow"></div>
-          <div class="data-overlay">
-             <div class="data-point">
-               <span class="label">Drift</span>
-               <span class="value" data-field="drift">145°</span>
-             </div>
-             <div class="data-point">
-               <span class="label">G-Force</span>
-               <span class="value text-cyan" data-field="gForce">NW 18.2</span>
-             </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Metrics Array -->
-      <div class="panel metrics-array">
-        <div class="panel-header">
-          <span>Telemetry</span>
-          <span class="code">SEC-01</span>
-        </div>
-        <div class="metrics-grid">
-          <div class="metric-card">
-            <span class="label">Implied Vol</span>
-            <span class="value text-gold" data-field="iv">38.6%</span>
-            <div class="bar-chart">
-               <div class="bar" style="width: 60%"></div>
-            </div>
-          </div>
-          <div class="metric-card">
-            <span class="label">Open Vol</span>
-            <span class="value" data-field="openVol">1.42M</span>
-            <div class="bar-chart">
-               <div class="bar" style="width: 45%"></div>
-            </div>
-          </div>
-          <div class="metric-card">
-            <span class="label">Pressure</span>
-            <span class="value text-cyan" data-field="pressure">+0.86</span>
-             <div class="bar-chart">
-               <div class="bar" style="width: 75%"></div>
-            </div>
-          </div>
-          <div class="metric-card">
-            <span class="label">Momentum</span>
-            <span class="value" data-field="momentum">Up-slope</span>
-             <div class="bar-chart">
-               <div class="bar" style="width: 80%"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Risk Score -->
-      <div class="panel score-panel">
-        <div class="panel-header">
-          <span>Risk Index</span>
-        </div>
-        <div class="score-display">
-           <svg viewBox="0 0 100 100" class="score-chart">
-             <circle cx="50" cy="50" r="45" class="score-bg" />
-             <circle cx="50" cy="50" r="45" class="score-val" id="score-ring" stroke-dasharray="283" stroke-dashoffset="70" />
-           </svg>
-           <div class="score-number">
-             <span class="value" data-field="riskScore">72</span>
-             <span class="label">/100</span>
-           </div>
-        </div>
-  <section class="risk-hero">
-    <div class="risk-hero__content">
-      <p class="risk-badge">Risk Radar Suite</p>
-      <h1>Luxury-grade surveillance for volatility pressure</h1>
-      <p class="risk-subtitle">
-        A blueprint-inspired command surface that blends market telemetry, exposure drift, and watchmaking precision.
-        Designed for desks that live on the edge of momentum.
-      </p>
-      <div class="risk-hero__stats">
-        <div>
-          <span>Signal latency</span>
-          <strong>&lt; 28ms</strong>
-        </div>
-        <div>
-          <span>Volatility sweep</span>
-          <strong>96 bands</strong>
-        </div>
-        <div>
-          <span>Directional bias</span>
-          <strong>Adaptive</strong>
-        </div>
-      </div>
-    </div>
-    <div class="risk-hero__visual">
-      <svg class="risk-sketch" viewBox="0 0 520 360" role="img" aria-label="3D sketch of the risk radar device">
-        <defs>
-          <linearGradient id="metal" x1="0" x2="1">
-            <stop offset="0%" stop-color="#d8d4c3" stop-opacity="0.85" />
-            <stop offset="100%" stop-color="#6f6a59" stop-opacity="0.9" />
-          </linearGradient>
-          <linearGradient id="glass" x1="0" x2="1" y1="0" y2="1">
-            <stop offset="0%" stop-color="#0b1d2b" stop-opacity="0.15" />
-            <stop offset="100%" stop-color="#6ea4c5" stop-opacity="0.35" />
-          </linearGradient>
-        </defs>
-        <rect x="38" y="70" width="300" height="200" rx="32" fill="url(#metal)" stroke="#a9a48f" stroke-width="2" />
-        <rect x="58" y="94" width="260" height="152" rx="20" fill="url(#glass)" stroke="#6788a1" stroke-width="1.4" />
-        <ellipse cx="360" cy="190" rx="120" ry="80" fill="none" stroke="#b4b09a" stroke-width="2" />
-        <ellipse cx="360" cy="190" rx="80" ry="55" fill="none" stroke="#556b7a" stroke-dasharray="6 10" stroke-width="1.5" />
-        <path d="M360 110 L360 270" stroke="#7f8890" stroke-width="1.5" />
-        <path d="M300 190 L420 190" stroke="#7f8890" stroke-width="1.5" />
-        <path d="M360 190 L420 150" stroke="#96b0c4" stroke-width="2" />
-        <path d="M86 238 L152 278" stroke="#aeb3b0" stroke-width="2" />
-        <path d="M112 84 L206 48" stroke="#aeb3b0" stroke-width="1.5" />
-        <circle cx="270" cy="170" r="22" fill="none" stroke="#c7c2ad" stroke-width="2" />
-        <circle cx="270" cy="170" r="6" fill="#c7c2ad" />
-        <path d="M402 78 L456 32" stroke="#8c8a78" stroke-width="1.5" />
-        <path d="M408 76 L468 90" stroke="#8c8a78" stroke-width="1.5" />
-      </svg>
-      <div class="risk-hero__caption">3D sketch motif · layered sapphire glass · brushed titanium case</div>
-    </div>
-  </section>
-
-  <section class="risk-demo" aria-label="Interactive radar demo">
-    <header class="risk-demo__header">
-      <div>
-        <p class="risk-badge">Radar demo</p>
-        <h2>Interactive threat &amp; opportunity sweep</h2>
-        <p class="risk-subtitle">Select a working sample to preview how the radar translates flow into directional G-force.</p>
-      </div>
-      <div class="risk-demo__controls">
-        <label class="risk-select">
-          <span>Sample set</span>
-          <select name="sample" id="risk-sample-select">
-            {samples.map((sample, index) => (
-              <option value={index}>{sample.label}</option>
-            ))}
-          </select>
-        </label>
-        <label class="risk-range">
-          <span>Direction drift</span>
-          <input type="range" id="risk-direction-range" min="0" max="360" value="145" />
-        </label>
-      </div>
     </header>
 
-    <div class="risk-demo__grid">
-      <div class="risk-panel">
-        <div class="risk-panel__head">
-          <h3>Working sample</h3>
-          <span class="risk-chip" data-field="ticker">AXP</span>
-        </div>
-        <div class="risk-panel__body">
-          <div class="risk-indicator" data-direction="145">
-            <div class="risk-indicator__arrow"></div>
-            <div class="risk-indicator__rings"></div>
-            <div class="risk-indicator__label" data-field="gForce">NW 18.2</div>
-            <div class="risk-indicator__hint">G-force vector</div>
-            <div class="risk-indicator__drift" data-field="drift">145°</div>
-          </div>
-          <dl class="risk-metrics">
-            <div>
-              <dt>Implied vol</dt>
-              <dd data-field="iv">38.6%</dd>
-            </div>
-            <div>
-              <dt>Open vol</dt>
-              <dd data-field="openVol">1.42M</dd>
-            </div>
-            <div>
-              <dt>Open positions</dt>
-              <dd data-field="openPositions">8,240</dd>
-            </div>
-            <div>
-              <dt>Pressure</dt>
-              <dd data-field="pressure">+0.86</dd>
-            </div>
-            <div>
-              <dt>Momentum</dt>
-              <dd data-field="momentum">Up-slope</dd>
-            </div>
-          </dl>
-        </div>
-      </div>
-
-      <div class="risk-panel risk-panel--radar">
-        <div class="risk-panel__head">
-          <h3>Radar sweep</h3>
-          <span class="risk-chip">Live simulation</span>
-        </div>
-        <div class="risk-radar">
-          <div class="risk-radar__grid"></div>
-          <div class="risk-radar__pulse"></div>
-          <div class="risk-radar__blip"></div>
-          <div class="risk-radar__legend">
-            <div>
-              <strong data-field="ticker">AXP</strong>
-              <span>Tracker lock</span>
-            </div>
-            <div>
-              <strong data-field="momentum">Up-slope</strong>
-              <span>Directional bias</span>
-            </div>
-          </div>
-        </div>
-        <p class="risk-helper">Rotating sweep translated into directional G-force bias for position mapping.</p>
-      </div>
+    <div class="risk-page__stats" aria-label="Risk Radar operational stats">
+      {operationalMetrics.map((metric) => (
+        <article>
+          <span>{metric.label}</span>
+          <strong>{metric.value}</strong>
+        </article>
+      ))}
     </div>
+
+    <RiskRadarVisual
+      title="GoldShore Risk Radar"
+      subtitle="A loopable system component for homepage deployment, launch media, and operator interfaces—designed to feel precise, restrained, and infrastructure-grade."
+    />
+
+    <section class="risk-page__section" aria-labelledby="risk-radar-principles">
+      <div class="risk-page__section-copy">
+        <p class="gs-eyebrow">Component contract</p>
+        <h2 id="risk-radar-principles">A real animated system, not a decorative mock.</h2>
+        <p>
+          The component follows the site motion rules: subtle sweep rotation, asynchronous pulse behavior, minimal drift, and no noisy color cycling. It should read like a control-room instrument rather than a startup demo.
+        </p>
+      </div>
+
+      <div class="risk-page__cards">
+        {designPrinciples.map((principle) => (
+          <article>
+            <h3>{principle.title}</h3>
+            <p>{principle.body}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="risk-page__section" aria-labelledby="risk-radar-contexts">
+      <div class="risk-page__section-copy">
+        <p class="gs-eyebrow">Deployment contexts</p>
+        <h2 id="risk-radar-contexts">Built to travel across the site and external media.</h2>
+        <p>
+          Risk Radar is intended to be the most shareable system on the site while preserving GoldShore's institutional tone. The implementation remains reusable so pages can assemble the component without redefining its visual rules.
+        </p>
+      </div>
+
+      <div class="risk-page__contexts">
+        {deploymentContexts.map((context) => (
+          <article>
+            <span>Use case</span>
+            <p>{context}</p>
+          </article>
+        ))}
+      </div>
+    </section>
   </section>
+
+  <style>
+    .risk-page {
+      display: grid;
+      gap: 2rem;
+      padding: 4.5rem 0 5rem;
+    }
+
+    .risk-page__intro,
+    .risk-page__section-copy {
+      display: grid;
+      gap: 0.9rem;
+    }
+
+    .risk-page__intro h1 {
+      max-width: 11ch;
+      margin: 0;
+      font-size: clamp(2.5rem, 6vw, 4.6rem);
+      line-height: 0.98;
+      letter-spacing: -0.04em;
+    }
+
+    .risk-page__intro p:last-child,
+    .risk-page__section-copy p:last-child {
+      max-width: 64ch;
+      color: var(--gs-text-dim);
+      line-height: 1.75;
+    }
+
+    .risk-page__stats,
+    .risk-page__cards,
+    .risk-page__contexts {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    .risk-page__stats article,
+    .risk-page__cards article,
+    .risk-page__contexts article {
+      border-radius: 20px;
+      border: 1px solid var(--gs-border);
+      background: rgba(10, 18, 36, 0.78);
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.18);
+      backdrop-filter: blur(12px);
+    }
+
+    .risk-page__stats article {
+      display: grid;
+      gap: 0.35rem;
+      padding: 1rem 1.1rem;
+    }
+
+    .risk-page__stats span,
+    .risk-page__contexts span {
+      color: var(--gs-text-dim);
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .risk-page__stats strong {
+      font-size: 1rem;
+      letter-spacing: 0.01em;
+    }
+
+    .risk-page__section {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .risk-page__section h2 {
+      margin: 0;
+      max-width: 18ch;
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+      line-height: 1.05;
+    }
+
+    .risk-page__cards article,
+    .risk-page__contexts article {
+      display: grid;
+      gap: 0.75rem;
+      padding: 1.25rem;
+    }
+
+    .risk-page__cards h3 {
+      margin: 0;
+      font-size: 1.05rem;
+      line-height: 1.4;
+    }
+
+    .risk-page__cards p,
+    .risk-page__contexts p {
+      margin: 0;
+      color: var(--gs-text-dim);
+      line-height: 1.7;
+    }
+
+    @media (max-width: 900px) {
+      .risk-page__stats,
+      .risk-page__cards,
+      .risk-page__contexts {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </MarketingLayout>
-
-
-<script>
-  const sampleData = [
-    {
-      label: 'Aurora Sigma',
-      ticker: 'AXP',
-      iv: '38.6%',
-      openVol: '1.42M',
-      openPositions: '8,240',
-      gForce: 'NW 18.2',
-      drift: '145°',
-      pressure: '+0.86',
-      momentum: 'Up-slope',
-      riskScore: 72
-    },
-    {
-      label: 'Titan Harbor',
-      ticker: 'NVDA',
-      iv: '52.1%',
-      openVol: '2.08M',
-      openPositions: '11,904',
-      gForce: 'E 22.7',
-      drift: '80°',
-      pressure: '+1.34',
-      momentum: 'Accel',
-      riskScore: 88
-    },
-    {
-      label: 'Mariner Ghost',
-      ticker: 'TSLA',
-      iv: '64.9%',
-      openVol: '1.77M',
-      openPositions: '9,332',
-      gForce: 'SE 12.3',
-      drift: '205°',
-      pressure: '-0.62',
-      momentum: 'Slip',
-      riskScore: 65
-    }
-  ];
-
-  // DOM Elements
-  const select = document.getElementById('risk-sample-select');
-  const fieldTargets = document.querySelectorAll('[data-field]');
-  const vectorArrow = document.getElementById('vector-arrow');
-  const scoreRing = document.getElementById('score-ring');
-  const range = document.getElementById('risk-direction-range');
-  const indicator = document.querySelector('.risk-indicator');
-
-  const updateDashboard = (index) => {
-    const data = sampleData[index];
-    if (!data) return;
-
-    // Update Text Fields
-    fieldTargets.forEach(el => {
-      const field = el.dataset.field;
-      if (data[field]) el.textContent = data[field];
-    });
-
-    const degrees = parseInt(data.drift.replace('°', ''));
-
-    // Update Vector Arrow
-    if (vectorArrow) {
-       vectorArrow.style.transform = `rotate(${degrees}deg)`;
-    }
-
-    // Update Score Ring
-    if (scoreRing) {
-      const circumference = 2 * Math.PI * 45; // r=45
-      const offset = circumference - (data.riskScore / 100) * circumference;
-      scoreRing.style.strokeDashoffset = offset;
-
-      // Color change based on risk
-      if (data.riskScore > 80) scoreRing.style.stroke = '#ef4444'; // Red
-      else if (data.riskScore > 60) scoreRing.style.stroke = '#fbbf24'; // Yellow
-      else scoreRing.style.stroke = '#10b981'; // Green
-    }
-
-    // Update Range and Indicator
-    if (range) {
-      range.value = degrees;
-    }
-    if (indicator) {
-        indicator.style.setProperty('--direction', degrees + 'deg');
-        indicator.setAttribute('data-direction', degrees);
-    }
-  };
-
-  const updateDirection = (value) => {
-    const numeric = `${value}`.padStart(3, '0');
-    const drift = `${numeric}°`;
-    if (indicator) {
-        indicator.style.setProperty('--direction', `${value}deg`);
-    }
-    const driftField = document.querySelector('[data-field="drift"]');
-    if (driftField) {
-      driftField.textContent = drift;
-    }
-  };
-
-  if (select) {
-    select.addEventListener('change', (e) => {
-      updateDashboard(e.target.value);
-    });
-  }
-
-  if (range) {
-    range.addEventListener('input', (event) => {
-      updateDirection(event.target.value);
-    });
-  }
-
-  // Init
-  updateDashboard(0);
-</script>

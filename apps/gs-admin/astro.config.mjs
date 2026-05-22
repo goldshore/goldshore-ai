@@ -1,8 +1,5 @@
-import baseConfig from "@goldshore/config/astro";
-import { defineConfig } from "astro/config";
+import { createAstroConfig } from '@goldshore/config/astro';
 
-export default defineConfig({
-  ...baseConfig,
-  srcDir: "./src",
-  output: "server"
+export default createAstroConfig({
+  site: 'https://admin.goldshore.ai',
 });

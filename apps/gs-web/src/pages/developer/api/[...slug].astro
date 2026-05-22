@@ -2,12 +2,15 @@
 import Layout from '../../../layouts/BaseLayout.astro';
 import ApiSidebar from '../../../components/ApiSidebar.astro';
 import ApiEndpoint from '../../../components/ApiEndpoint.astro';
-import openapi from '../../../data/v1.json';
+
+const openapi = await import('../../../data/v1.json');
 
 // Bolt Optimization: Enable Static Site Generation (SSG) for API docs.
 export const prerender = true;
 
 export async function getStaticPaths() {
+  const openapi = await import('../../../data/v1.json');
+
   // Generate paths for all endpoints defined in openapi spec.
   const paths = Object.keys(openapi.paths).map(path => {
     // Remove leading slash and curly braces for slug
@@ -34,7 +37,7 @@ const endpoint = slug || '';
       ) : (
         <div class="api-intro">
            <h1>{openapi.info.title}</h1>
-           <p>{openapi.info.description}</p>
+           {openapi.info.description && <p>{openapi.info.description}</p>}
            <p>Version: {openapi.info.version}</p>
            <hr />
            <h2>Getting Started</h2>

@@ -2,35 +2,109 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 
 export const prerender = true;
-
-const team = [
-  { name: 'Robert Marston', title: 'Director of Engineering', focus: 'High-scale infrastructure and developer experience.' },
-  { name: 'Marin Reyes', title: 'Founder & Systems Lead', focus: 'Automation-first architectures.' },
-  { name: 'Alex Kim', title: 'Security & Reliability', focus: 'Zero-trust enforcement and SLOs.' },
-  { name: 'Priya Nair', title: 'AI Engineering', focus: 'Model evaluation and deployment safety.' },
-];
 ---
-<BaseLayout title="Team | GoldShore" description="Meet the people building GoldShore.">
-  <section class="gs-hero">
-    <div>
-      <h1>The team behind the controls</h1>
-      <p>Engineers, operators, and designers who care deeply about trustworthy automation and resilient experiences.</p>
-    </div>
-    <div class="gs-card">
-      <h3 class="section-title"><span>◎</span>How we work</h3>
-      <p>We pair rapid iteration with strong guardrails, validating every release against service levels and usability checks.</p>
-    </div>
+
+<BaseLayout title="Team | GoldShore" description="Meet the GoldShore team.">
+  <section class="page-shell gs-shell-section team-page">
+    <p class="gs-eyebrow">Team</p>
+    <h1>Resilient systems, applied intelligence, and high-trust execution.</h1>
+    <p class="page-intro">GoldShore is built by operators focused on resilient systems, applied intelligence, and high-trust execution.</p>
+
+    <section class="team-grid">
+      <div class="card founder">
+        <h3>Robert M.</h3>
+        <p>Leads product direction, systems strategy, and applied intelligence.</p>
+        <div class="social-links">
+          <a href="#" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+          <a href="#" target="_blank" rel="noopener noreferrer">GitHub</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Systems</h3>
+        <p>Infrastructure, execution, observability.</p>
+      </div>
+
+      <div class="card">
+        <h3>Risk</h3>
+        <p>Monitoring, analytics, decision systems.</p>
+      </div>
+    </section>
   </section>
 
-  <section class="gs-section">
-    <div class="gs-grid columns-3">
-      {team.map((member) => (
-        <article class="gs-card">
-          <h3>{member.name}</h3>
-          <p class="gs-helper">{member.title}</p>
-          <p>{member.focus}</p>
-        </article>
-      ))}
-    </div>
-  </section>
+  <style>
+    .team-page {
+      padding: 4.5rem 0 5rem;
+    }
+
+    .team-page h1 {
+      max-width: 12ch;
+      margin: 0.75rem 0 1rem;
+      font-size: clamp(2.5rem, 6vw, 4.6rem);
+      line-height: 0.98;
+      letter-spacing: -0.04em;
+    }
+
+    .page-intro {
+      max-width: 60ch;
+      color: var(--gs-text-dim);
+      line-height: 1.75;
+    }
+
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .card {
+      padding: 1.4rem;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(10, 18, 36, 0.72);
+      box-shadow: var(--gs-shadow);
+    }
+
+    .founder {
+      border-color: rgba(90, 162, 255, 0.24);
+      background: rgba(90, 162, 255, 0.08);
+    }
+
+    .card h3 {
+      margin-top: 0;
+      margin-bottom: 0.75rem;
+      font-size: 1.3rem;
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--gs-text-dim);
+      line-height: 1.7;
+    }
+
+    .social-links {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .social-links a {
+      color: var(--gs-primary);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 150ms ease;
+    }
+
+    .social-links a:hover {
+      color: #fff;
+    }
+
+    @media (max-width: 900px) {
+      .team-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </BaseLayout>

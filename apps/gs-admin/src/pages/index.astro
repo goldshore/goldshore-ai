@@ -1,6 +1,5 @@
 ---
-import Scaffold from '@goldshore/config/scaffold';
-export const prerender = true;
----
+export const prerender = false;
 
-<Scaffold />
+return Astro.redirect('/admin/overview', 302);
+---

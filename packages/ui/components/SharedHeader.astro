@@ -1,0 +1,38 @@
+---
+interface Props {
+  class?: string;
+  linkClass?: string;
+  href?: string;
+  logoSrc?: string;
+  logoAlt?: string;
+  target?: '_blank' | '_self' | '_parent' | '_top';
+  rel?: string;
+  systemStatus?: string;
+  showSystemStatus?: boolean;
+}
+
+const {
+  class: className = '',
+  linkClass = 'gs-logo',
+  href = '/',
+  logoSrc = '/logo/gs-penrose.svg',
+  logoAlt = 'Gold Shore',
+  target,
+  rel,
+  systemStatus,
+  showSystemStatus = true
+} = Astro.props as Props;
+
+const runtimeEnv = Astro.locals.runtime?.env as { GS_SYSTEM_STATUS?: string } | undefined;
+const resolvedSystemStatus = systemStatus ?? runtimeEnv?.GS_SYSTEM_STATUS ?? 'Operational';
+---
+<header class={className}>
+  <a class={linkClass} href={href} target={target} rel={rel}>
+    <img src={logoSrc} alt={logoAlt} width="23" height="32" fetchpriority="high" loading="eager" />
+    <slot name="brand-text" />
+  </a>
+  {showSystemStatus && (
+    <div class="gs-system-status" aria-live="polite">System Status: {resolvedSystemStatus}</div>
+  )}
+  <slot />
+</header>

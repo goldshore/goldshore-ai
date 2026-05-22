@@ -1,0 +1,20 @@
+name = "goldshore-ai"
+main = "src/index.ts"
+compatibility_date = "2026-04-18"
+compatibility_flags = ["nodejs_compat"]
+
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[vars]
+ENV = "production"
+
+# This Worker is a redirect/alias layer for goldshore.ai
+# The Astro site (gs-web) is served via Pages at goldshore.ai
+# This worker handles the .ai custom domain if not using Pages
+# For now: redirect goldshore.ai/* to goldshore.org (Pages handles .ai directly)
+
+[[routes]]
+pattern = "goldshore.ai/*"
+zone_name = "goldshore.ai"

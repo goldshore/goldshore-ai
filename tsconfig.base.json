@@ -23,9 +23,6 @@
       "@goldshore/theme/*": [
         "packages/theme/*"
       ],
-      "@goldshore/ai-providers": [
-        "packages/ai-providers/index.ts"
-      ],
       "@goldshore/ai-providers/*": [
         "packages/ai-providers/*"
       ],
@@ -34,6 +31,21 @@
       ],
       "@apps/*": [
         "apps/*"
+      ],
+      "@goldshore/ai-providers": [
+        "packages/ai-providers/index.ts"
+      ],
+      "@goldshore/schema": [
+        "packages/schema/src/index.ts"
+      ],
+      "@goldshore/schema/*": [
+        "packages/schema/src/*"
+      ],
+      "@goldshore/integrations": [
+        "packages/integrations/index.ts"
+      ],
+      "@goldshore/integrations/*": [
+        "packages/integrations/*"
       ]
     }
   }

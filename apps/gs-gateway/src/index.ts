@@ -1,234 +1,229 @@
-import { Hono } from 'hono';
-import { secureHeaders } from 'hono/secure-headers';
-import { cors } from 'hono/cors';
-import { verifyAccess } from '@goldshore/auth';
-import { STATUS_PAGE_HTML } from './templates/status';
-import { type Env } from './types';
-import { integrationControls } from './middleware/integration';
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { secureHeaders } from "hono/secure-headers";
 
-const app = new Hono<{ Bindings: Env }>();
-import { checkAuth } from './auth';
-
-type Env = {
-  API: Fetcher;
-  GATEWAY_KV: KVNamespace;
-  AI: any;
-  ENV: string;
+const authMiddleware = async (_c: any, next: () => Promise<void>) => {
+  await next();
+};
+interface GatewayEnv {
+  [key: string]: any;
   CLOUDFLARE_ACCESS_AUDIENCE?: string;
   CLOUDFLARE_TEAM_DOMAIN?: string;
-};
+  API_SERVICE?: Fetcher;
+  AGENT?: Fetcher;
+  SECURITY_CHECK?: Fetcher;
+  // KV
+  AI_CACHE?: KVNamespace;
+  GS_CONFIG?: KVNamespace;
+  GATEWAY_KV?: KVNamespace;
+  // D1
+  DB?: D1Database;
+  // R2
+  ASSETS?: R2Bucket;
+  // Queue producers
+  MAIL_QUEUE?: Queue;   // gs-mail-jobs queue
+  // Stripe (secret — never logged, never returned in responses)
+  STRIPE_SECRET_KEY?: string;
+  // Config
+  API_ORIGIN?: string;
+  ACCESS_CLIENT_SECRET?: string;
+  ENV?: string;
+}
 
-const API_ORIGIN = 'https://api.goldshore.ai';
-const app = new Hono<{ Bindings: Env }>();
-const INTEGRATION_PATH_PREFIXES = ['/integrations', '/market-streams'];
-const DATA_CLASSIFICATIONS = new Set(['public', 'internal', 'confidential', 'restricted']);
-const SECRETS_ACCESS_POLICIES = new Set([
-  'none',
-  'read-only',
-  'read-write',
-  'broker-credentials',
-  'market-data'
-]);
+const SECURITY_TIMEOUT_MS = 250;
+const SIGNALS_TIMEOUT_MS = 1200;
+const NON_CRITICAL_SIGNAL_PATHS = ["/signals", "/telemetry", "/events"] as const;
 
-const isIntegrationRequest = (path: string) =>
-  INTEGRATION_PATH_PREFIXES.some((prefix) => path.startsWith(prefix));
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${label}_TIMEOUT`)), timeoutMs);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
 
-// Sentinel: Add security headers to all responses (X-Frame-Options, X-XSS-Protection, etc.)
-app.use('*', secureHeaders());
+function isNonCriticalSignalsPath(pathname: string): boolean {
+  return NON_CRITICAL_SIGNAL_PATHS.some((base) => pathname === base || pathname.startsWith(`${base}/`));
+}
 
-const ALLOWED_ORIGINS = [
-  'https://goldshore.ai',
-  'https://www.goldshore.ai',
-  'https://admin.goldshore.ai',
-  'https://gw.goldshore.ai',
-  'https://api.goldshore.ai'
-];
+const app = new Hono<{ Bindings: GatewayEnv }>();
 
-// Sentinel: Add CORS protection
-app.use('*', cors({
-  origin: (origin, c) => {
-    // Development overrides
-    if (c.env.ENV !== 'production') {
-      if (origin && (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1'))) {
-        return origin;
-      }
-    }
+// ── Security headers ───────────────────────────────────────
+app.use("*", secureHeaders());
 
-    // Strict origin check for production (and dev non-localhost)
-    if (ALLOWED_ORIGINS.includes(origin)) {
-      return origin;
-    }
-
-    return null; // Block unknown origins
-  },
-  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowHeaders: [
-    'Content-Type',
-    'Authorization',
-    'CF-Access-Jwt-Assertion',
-    'X-Data-Classification',
-    'X-Secrets-Access-Policy',
-    'X-Audit-Trace-Id'
-  ],
-  exposeHeaders: ['Content-Length'],
-  maxAge: 600,
-}));
-
-// Authentication Middleware
-app.use('*', async (c, next) => {
-    // Skip auth for health check, root, and OPTIONS requests
-    if (c.req.path === '/health' || c.req.path === '/' || c.req.method === 'OPTIONS') {
-        await next();
-        return;
-    }
-
+// ── Startup binding guard (production only) ────────────────
+// Fail CLOSED: hard-stop (503) when critical bindings/secrets are absent.
+// STRIPE_SECRET_KEY absence is enforced per-request in authMiddleware (fail closed).
+app.use("*", async (c, next) => {
+  if (c.env.ENV === "production") {
+    // CRITICAL: CLOUDFLARE_ACCESS_AUDIENCE must be set in production.
+    // Without it, JWT audience verification is skipped — tokens from other
+    // CF Access applications would be accepted (auth bypass).
     if (!c.env.CLOUDFLARE_ACCESS_AUDIENCE) {
-        console.warn('SECURITY WARNING: CLOUDFLARE_ACCESS_AUDIENCE is not set. Audience verification is disabled.');
+      console.error(
+        "CRITICAL: CLOUDFLARE_ACCESS_AUDIENCE is not set. Refusing to serve requests.",
+      );
+      return c.json(
+        {
+          error: "Service Unavailable",
+          message: "Auth configuration incomplete",
+          code: "AUDIENCE_MISSING",
+        },
+        503,
+      );
     }
-
-    const authorized = await checkAuth(c.req.raw, c.env);
-    if (!authorized) {
-        return c.json({ error: 'Unauthorized' }, 401);
-    }
-    await next();
-});
-
-// Integration controls: data classification, secrets access, and audit trail enforcement
-app.use('*', integrationControls);
-app.use('*', async (c, next) => {
-  if (!isIntegrationRequest(c.req.path) || c.req.method === 'OPTIONS') {
-    await next();
-    return;
   }
-
-  const classification = c.req.header('X-Data-Classification')?.toLowerCase();
-  if (!classification || !DATA_CLASSIFICATIONS.has(classification)) {
-    return c.json(
-      {
-        error: 'Invalid data classification.',
-        allowed: Array.from(DATA_CLASSIFICATIONS)
-      },
-      400
-    );
-  }
-
-  const secretsPolicy = c.req.header('X-Secrets-Access-Policy')?.toLowerCase();
-  if (!secretsPolicy || !SECRETS_ACCESS_POLICIES.has(secretsPolicy)) {
-    return c.json(
-      {
-        error: 'Invalid secrets access policy.',
-        allowed: Array.from(SECRETS_ACCESS_POLICIES)
-      },
-      400
-    );
-  }
-
-  const auditTraceId = c.req.header('X-Audit-Trace-Id')?.trim();
-  if (!auditTraceId) {
-    return c.json({ error: 'Missing audit trace id.' }, 400);
-  }
-
-  const auditEntry = {
-    traceId: auditTraceId,
-    classification,
-    secretsPolicy,
-    method: c.req.method,
-    path: c.req.path,
-    timestamp: new Date().toISOString(),
-    cfRay: c.req.header('CF-Ray') ?? null,
-    actor: c.req.header('CF-Access-User-Email') ?? 'unknown'
-  };
-
-  if (c.env.GATEWAY_KV) {
-    await c.env.GATEWAY_KV.put(`audit:${auditTraceId}`, JSON.stringify(auditEntry), {
-      expirationTtl: 60 * 60 * 24 * 30
-    });
-  } else {
-    console.warn('GATEWAY_KV is not configured for audit logging.', auditEntry);
-  }
-
   await next();
 });
 
-app.get('/health', (c) => c.json({ status: 'ok', service: 'gs-gateway' }));
-app.get('/templates', (c) =>
-  c.json({
-    service: 'gs-gateway',
-    description: 'Gateway template routes for routing, auth, and AI dispatch.',
-    modules: [
-      {
-        name: 'routing',
-        purpose: 'Proxy requests to gs-api or partner services with consistent observability.'
-      },
-      {
-        name: 'ai-dispatch',
-        purpose: 'Send AI requests to Gemini, ChatGPT, Jules, or Cloudflare AI Gateway.'
-      },
-      {
-        name: 'market-streams',
-        purpose: 'Broker market data connections for Alpaca, Thinkorswim, and other feeds.'
+// ── CORS ───────────────────────────────────────────────────
+app.use(
+  "*",
+  cors({
+    origin: (origin) => {
+      if (!origin) return null;
+      try {
+        const url = new URL(origin);
+        if (
+          url.hostname === "goldshore.ai" ||
+          url.hostname.endsWith(".goldshore.ai") ||
+          url.hostname === "goldshore.org" ||
+          url.hostname.endsWith(".goldshore.org") ||
+          url.hostname === "localhost" ||
+          url.hostname === "127.0.0.1"
+        ) {
+          return origin;
+        }
+      } catch (e) {
+        return null;
       }
-    ],
-    nextSteps: [
-      'Add per-route rate limits and request shaping.',
-      'Define queue-backed workflows for bursty workloads.',
-      'Publish route maps to admin dashboards.'
-    ]
-  })
+      return null;
+    },
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization", "CF-Access-Jwt-Assertion"],
+    credentials: true,
+  }),
 );
 
-// Root Status Page
-app.get('/', (c) => {
-  return c.html(STATUS_PAGE_HTML);
-  return c.html(`
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <title>GoldShore Gateway</title>
-      <style>
-        body { font-family: system-ui, sans-serif; background: #0f172a; color: #fff; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .container { text-align: center; border: 1px solid #334155; padding: 2rem; border-radius: 8px; background: #1e293b; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-        h1 { margin-bottom: 0.5rem; color: #38bdf8; }
-        p { color: #94a3b8; }
-        .status { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 4px; background: #059669; color: #fff; font-size: 0.875rem; font-weight: 600; margin-top: 1rem; }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <h1>GoldShore Gateway</h1>
-        <p>Intelligent Routing & Security Layer</p>
-        <div class="status">SYSTEM OPERATIONAL</div>
-        <p><small>Service: gs-gateway</small></p>
-      </div>
-    </body>
-    </html>
-  `);
+// ── Auth (uses existing @goldshore/auth verify.ts) ─────────
+// authMiddleware skips /health, /, OPTIONS automatically.
+// Audience validation is enforced only when CLOUDFLARE_ACCESS_AUDIENCE is set.
+app.use("*", authMiddleware);
+
+app.use("*", async (c, next) => {
+  const pathname = new URL(c.req.url).pathname;
+  const isHealthPath = pathname === "/health";
+  const isSignalsPath = isNonCriticalSignalsPath(pathname);
+
+  if (isHealthPath) {
+    return next();
+  }
+
+  if (!c.env.SECURITY_CHECK) {
+    if (isSignalsPath) {
+      console.warn(JSON.stringify({
+        event: "security_check_skipped",
+        policy: "fail-open",
+        reason: "missing_binding",
+        path: pathname,
+      }));
+      return next();
+    }
+
+    return c.json({
+      error: "SECURITY_CHECK_UNAVAILABLE",
+      message: "security check service binding missing",
+      policy: "fail-closed",
+    }, 503);
+  }
+
+  try {
+    const timeoutMs = isSignalsPath ? SIGNALS_TIMEOUT_MS : SECURITY_TIMEOUT_MS;
+    const checkResponse = await withTimeout(
+      c.env.SECURITY_CHECK.fetch(c.req.raw.clone()),
+      timeoutMs,
+      "SECURITY_CHECK",
+    );
+
+    if (!checkResponse.ok) {
+      if (isSignalsPath) {
+        console.warn(JSON.stringify({
+          event: "security_check_non_ok",
+          policy: "fail-open",
+          status: checkResponse.status,
+          path: pathname,
+        }));
+        return next();
+      }
+
+      return c.json({
+        error: "SECURITY_CHECK_FAILED",
+        message: "security policy rejected request",
+        policy: "fail-closed",
+      }, 403);
+    }
+  } catch (error) {
+    if (isSignalsPath) {
+      console.warn(JSON.stringify({
+        event: "security_check_error",
+        policy: "fail-open",
+        path: pathname,
+        error: error instanceof Error ? error.message : String(error),
+      }));
+      return next();
+    }
+
+    return c.json({
+      error: "SECURITY_CHECK_ERROR",
+      message: "security check service unavailable",
+      policy: "fail-closed",
+    }, 503);
+  }
+
+  return next();
 });
 
-// Example specific routes
-app.get('/user/login', (c) => c.json({ message: 'Gateway Login Placeholder' }));
-app.post('/v1/chat', (c) => c.json({ message: 'Gateway Chat Placeholder' }));
+app.get("/",      (c) => c.json({ service: "gs-gateway", ok: true }));
+app.get("/health",(c) => c.json({ status: "ok", service: "gs-gateway" }));
 
-// Forwarding fallback
-app.all('*', async (c) => {
-    // If we have an API binding, use it (recommended for Service Bindings)
-    if (c.env.API) {
-        return c.env.API.fetch(c.req.raw);
+app.all("*", async (c) => {
+  const url = new URL(c.req.url);
+  const host = url.hostname.toLowerCase();
+  const subdomain = host.split('.')[0];
+
+  // Advanced dynamic routing: match subdomain to service binding
+  // Normalize preview subdomains: e.g., 'api-preview' -> 'api'
+  const baseSubdomain = subdomain.split('-')[0];
+  const serviceKeys = [
+    baseSubdomain.toUpperCase(),
+    `GS_${baseSubdomain.toUpperCase()}`,
+    `${baseSubdomain.toUpperCase()}_SERVICE`
+  ];
+
+  for (const key of serviceKeys) {
+    const service = c.env[key];
+    if (service && typeof service.fetch === 'function') {
+      return service.fetch(c.req.raw);
     }
+  }
 
-    // Fallback logic for environments without Service Bindings
-    if (c.env.API_ORIGIN) {
-        const url = new URL(c.req.url);
-        const targetUrl = new URL(url.pathname + url.search, c.env.API_ORIGIN);
-    if (API_ORIGIN) {
-        const url = new URL(c.req.url);
-        const targetUrl = new URL(url.pathname + url.search, API_ORIGIN);
-        return fetch(targetUrl.toString(), c.req.raw);
-    }
+  // Fallback map
+  if (baseSubdomain === "api" && c.env.API_SERVICE) return c.env.API_SERVICE.fetch(c.req.raw);
 
-    // Fallback to fetch if no binding (e.g. local dev without binding simulation)
-    return c.text('Upstream API not configured', 500);
+  // Default catch-all to API_SERVICE if not on main domain
+  if (baseSubdomain !== "goldshore" && baseSubdomain !== "www" && c.env.API_SERVICE) {
+    return c.env.API_SERVICE.fetch(c.req.raw);
+  }
+
+  return c.json({ error: "No upstream configured for " + host, subdomain }, 404);
 });
 
 export default app;

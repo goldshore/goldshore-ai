@@ -1,13 +1,12 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "lib": ["es2020"],
-    "types": ["@cloudflare/workers-types"],
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
     "target": "ES2022",
-    "strict": true,
-    "skipLibCheck": true
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "skipLibCheck": true,
+    "lib": ["ES2022"],
+    "types": ["@cloudflare/workers-types"]
   },
-  "include": ["src"]
+  "include": ["src/**/*"]
 }

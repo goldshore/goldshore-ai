@@ -1,55 +1,47 @@
-import { Hono } from 'hono';
+import { Hono } from "hono";
 
-interface Env {
+interface MailEnv {
   ENV?: string;
   MAIL_FORWARD_TO?: string;
   MAIL_ALLOWED_RECIPIENTS?: string;
   MAIL_BLOCKED_SENDERS?: string;
 }
 
-const VERSION = '2026.02.10-mail-worker-fix';
+const app = new Hono<{ Bindings: MailEnv }>();
 
-const app = new Hono<{ Bindings: Env }>();
+const normalizeList = (rawValue: string | undefined): string[] =>
+  (rawValue ?? "")
+    .split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter((value) => value.length > 0);
 
-const isEmailLike = (value: string) => /.+@.+\..+/.test(value);
-
-app.get('/', (c) => c.text('GoldShore Mail Worker'));
-
-app.get('/health', (c) =>
-  c.json({ status: 'ok', service: 'gs-mail', env: c.env.ENV ?? 'unknown' }),
-);
-
-app.get('/system/info', (c) =>
-  c.json({
-    service: 'gs-mail',
-    runtime: 'cloudflare-worker',
-    env: c.env.ENV ?? 'unknown',
-  }),
-);
-
-app.get('/version', (c) => c.json({ version: VERSION }));
-
-app.post('/webhook', async (c) => {
-  // Reserved for future provider hooks.
-  return c.json({ received: true });
-});
+app.get("/", (c) => c.text("GoldShore Mail Worker"));
+app.get("/health", (c) => c.json({ status: "ok", service: "gs-mail", env: c.env.ENV ?? "unknown" }));
 
 export default {
   fetch: app.fetch,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async email(message: EmailMessage, _env: Env, _ctx: ExecutionContext): Promise<void> {
-    // Basic email handler scaffolding
-    console.log(`Received email from ${message.from} to ${message.to}`);
+  async email(message: ForwardableEmailMessage, env: MailEnv, _ctx: ExecutionContext): Promise<void> {
+    const sender = message.from.toLowerCase();
+    const recipient = message.to.toLowerCase();
 
-    const forwardTo = _env.MAIL_FORWARD_TO?.trim();
-    if (!forwardTo || !isEmailLike(forwardTo)) {
-      message.setReject('Mail forwarding is not configured.');
+    const blockedSenders = normalizeList(env.MAIL_BLOCKED_SENDERS);
+    if (blockedSenders.includes(sender)) {
+      message.setReject(`Sender ${sender} is blocked.`);
+      return;
+    }
+
+    const allowedRecipients = normalizeList(env.MAIL_ALLOWED_RECIPIENTS);
+    if (allowedRecipients.length > 0 && !allowedRecipients.includes(recipient)) {
+      message.setReject(`Recipient ${recipient} is not allowed.`);
+      return;
+    }
+
+    const forwardTo = env.MAIL_FORWARD_TO?.trim();
+    if (!forwardTo) {
+      message.setReject("Mail forwarding is not configured.");
       return;
     }
 
     await message.forward(forwardTo);
-export default {
-  async fetch(request: Request) {
-    return new Response("Hello from gs-mail");
   },
 };

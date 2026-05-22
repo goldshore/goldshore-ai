@@ -47,6 +47,10 @@ function hasRedChecks(checkRuns = []) {
 
   for (const pr of openPRs) {
     if (!olderThanDays(pr.created_at, staleDays)) continue;
+    if (pr.draft) continue;
+
+    const labels = (pr.labels || []).map((l) => l.name);
+    if (labels.includes('keep-open')) continue;
 
     const detail = await gh(`/repos/${owner}/${repo}/pulls/${pr.number}`);
     const checks = await gh(`/repos/${owner}/${repo}/commits/${pr.head.sha}/check-runs?per_page=100`);

@@ -1,11 +1,11 @@
 import type { APIRoute } from 'astro';
 import { buildLeadAutoResponder } from '../../emails/leadAutoResponder';
 import { isValidEmail } from '../../utils/security';
+import { parseJson } from '@goldshore/utils';
 
 // Default to 90 days if not set in environment
 const DEFAULT_CONTACT_TTL_SECONDS = 60 * 60 * 24 * 90;
 const DEFAULT_MAILCHANNELS_API_URL = 'https://api.mailchannels.net/tx/v1/send';
-const CONTACT_TTL_SECONDS = 60 * 60 * 24 * 90;
 
 type Submission = {
   id: string;
@@ -25,6 +25,8 @@ type Submission = {
   receivedAt: string;
   ipAddress?: string;
   userAgent?: string;
+  inquiry?: string;
+  dedupeKey?: string;
 };
 
 type FormField = {
@@ -38,6 +40,11 @@ type FormRecipient = {
   email: string;
   name?: string;
   channel?: string;
+};
+
+type MailRecipient = {
+  email: string;
+  name?: string;
 };
 
 type FormIntegration = {
@@ -56,6 +63,28 @@ type FormConfig = {
   integrations: FormIntegration[];
   createdAt: string;
   updatedAt: string;
+};
+
+type ApiResponseBody = {
+  success: boolean;
+  code: string;
+  message: string;
+  submissionId?: string;
+  redirectTo?: string;
+};
+
+const jsonResponse = (status: number, body: ApiResponseBody) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+    },
+  });
+
+const requestExpectsJson = (request: Request) => {
+  const accept = request.headers.get('accept') ?? '';
+  const requestedWith = request.headers.get('x-requested-with') ?? '';
+  return accept.includes('application/json') || requestedWith === 'XMLHttpRequest';
 };
 
 const storeInKv = async (
@@ -131,6 +160,55 @@ const storeInD1 = async (
 const extractString = (value: FormDataEntryValue | null) =>
   typeof value === 'string' ? value.trim() : '';
 
+const normalizeWhitespace = (value: string) => value.replace(/\s+/g, ' ').trim();
+
+const normalizeMultiline = (value: string) =>
+  value
+    .replace(/\r\n/g, '\n')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+const allowedInquiryTypes = new Set([
+  'general',
+  'strategy-call',
+  'project-scope',
+  'support',
+]);
+
+const normalizeContactSubmission = (submission: Submission) => {
+  const normalizedEmail = submission.email.trim().toLowerCase();
+  const normalizedInquiry = submission.inquiry?.trim().toLowerCase() || 'general';
+  return {
+    ...submission,
+    name: normalizeWhitespace(submission.name),
+    email: normalizedEmail,
+    inquiry: allowedInquiryTypes.has(normalizedInquiry) ? normalizedInquiry : '',
+    message: normalizeMultiline(submission.message),
+    dedupeKey: submission.dedupeKey?.trim().toLowerCase() || '',
+  };
+};
+
+const validateContactSubmission = (submission: Submission): string[] => {
+  const errors: string[] = [];
+  if (!submission.name || submission.name.length < 2 || submission.name.length > 120) {
+    errors.push('name');
+  }
+  if (!submission.email || !isValidEmail(submission.email)) {
+    errors.push('email');
+  }
+  if (!submission.inquiry || !allowedInquiryTypes.has(submission.inquiry)) {
+    errors.push('inquiry');
+  }
+  if (!submission.message || submission.message.length < 20 || submission.message.length > 4000) {
+    errors.push('message');
+  }
+  if (!submission.dedupeKey || !/^[a-f0-9]{64}$/.test(submission.dedupeKey)) {
+    errors.push('dedupeKey');
+  }
+  return errors;
+};
+
 const isSpamSubmission = (formData: FormData) => {
   const honeypot = extractString(formData.get('companyWebsite'));
   if (honeypot) return true;
@@ -143,15 +221,6 @@ const isSpamSubmission = (formData: FormData) => {
 
   const elapsedMs = Date.now() - startedAtMs;
   return elapsedMs < 2500;
-};
-
-const parseJson = <T>(value: string | null, fallback: T): T => {
-  if (!value) return fallback;
-  try {
-    return JSON.parse(value) as T;
-  } catch {
-    return fallback;
-  }
 };
 
 const normalizeFormConfig = (row: Record<string, string> | null, slug: string): FormConfig => {
@@ -240,6 +309,23 @@ const validateRequiredFields = (submission: Submission, fields: FormField[]) => 
   return missing;
 };
 
+const checkRecentDuplicate = async (db: D1Database, submission: Submission): Promise<boolean> => {
+  const duplicateResult = await db
+    .prepare(
+      `SELECT id
+       FROM lead_submissions
+       WHERE form_type = ?
+         AND email = ?
+         AND message = ?
+         AND received_at >= datetime('now', '-15 minutes')
+       LIMIT 1`
+    )
+    .bind(submission.formType, submission.email, submission.message)
+    .first<{ id: string }>();
+
+  return Boolean(duplicateResult?.id);
+};
+
 const safeRedirect = (redirectTo: string | null, origin: string) => {
   if (!redirectTo) return new URL('/thank-you', origin);
   const trimmed = redirectTo.trim();
@@ -247,85 +333,63 @@ const safeRedirect = (redirectTo: string | null, origin: string) => {
   return new URL(trimmed, origin);
 };
 
-const dedupeRecipients = (recipients: MailRecipient[]) => {
-  const unique = new Map<string, MailRecipient>();
-  recipients.forEach((recipient) => {
-    const email = recipient.email.trim().toLowerCase();
-    if (!email) return;
-    if (!isValidEmail(email)) return;
-    if (!unique.has(email)) {
-      unique.set(email, {
-        email,
-        name: recipient.name?.trim() || undefined,
-      });
-    }
-  });
-  return [...unique.values()];
+type ApiSuccessPayload = {
+  ok: true;
+  submissionId: string;
+  redirectTo: string;
+  mail: {
+    notification: 'sent' | 'failed' | 'skipped';
+    autoResponder: 'sent' | 'failed' | 'skipped';
+  };
 };
 
-const recipientsFromEnv = (
-  rawRecipients: string | undefined,
-): MailRecipient[] => {
-  if (!rawRecipients) return [];
+type ApiErrorPayload = {
+  ok: false;
+  error: {
+    code: string;
+    message: string;
+    details?: Record<string, unknown>;
+  };
+};
 
-  return rawRecipients
+const jsonResponse = (payload: ApiSuccessPayload | ApiErrorPayload, status = 200) =>
+  new Response(JSON.stringify(payload), {
+    status,
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'no-store',
+    },
+  });
+
+const buildError = (
+  status: number,
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+) => jsonResponse({ ok: false, error: { code, message, details } }, status);
+
+const shouldReturnJson = (request: Request) =>
+  request.headers.get('x-gs-request-mode') === 'spa' ||
+  request.headers.get('accept')?.includes('application/json');
+
+const parseNotificationRecipients = (
+  configRecipients: FormRecipient[],
+  fallbackRecipients: string | undefined,
+): MailRecipient[] => {
+  const fromConfig = configRecipients
+    .filter((recipient) => isValidEmail(recipient.email))
+    .map((recipient) => ({ email: recipient.email, name: recipient.name }));
+
+  if (fromConfig.length > 0) return fromConfig;
+
+  return (fallbackRecipients ?? '')
     .split(',')
-    .map((entry) => entry.trim())
-    .filter(Boolean)
+    .map((recipient) => recipient.trim())
+    .filter((email) => isValidEmail(email))
     .map((email) => ({ email }));
 };
 
-const resolveNotificationRecipients = (
-  formConfig: FormConfig,
-  env: Env,
-): MailRecipient[] => {
-  const fromConfig = formConfig.recipients
-    .map((recipient) => ({
-      email: recipient.email,
-      name: recipient.name,
-    }))
-    .filter((recipient) => recipient.email);
-
-  const fallback = recipientsFromEnv(env.CONTACT_NOTIFICATION_EMAILS);
-  return dedupeRecipients([...fromConfig, ...fallback]);
-};
-
-const buildSubmissionDigest = (submission: Submission) => {
-  const pairs: Array<[string, string]> = [
-    ['Submission ID', submission.id],
-    ['Form type', submission.formType],
-    ['Received', submission.receivedAt],
-    ['Name', submission.name],
-    ['Email', submission.email],
-    ['Company', submission.company],
-    ['Role', submission.role],
-    ['Website', submission.website],
-    ['Team size', submission.teamSize],
-    ['Industry', submission.industry],
-    ['Timeline', submission.timeline],
-    ['Budget', submission.budget],
-    ['Goals', submission.goals],
-    ['Message', submission.message],
-    ['IP', submission.ipAddress ?? ''],
-    ['User agent', submission.userAgent ?? ''],
-  ];
-
-  const filtered = pairs.filter(([, value]) => value);
-
-  const text = filtered
-    .map(([label, value]) => `${label}: ${value}`)
-    .join('\n');
-  const html = filtered
-    .map(
-      ([label, value]) =>
-        `<p><strong>${label}:</strong> ${value.replace(/</g, '&lt;')}</p>`,
-    )
-    .join('');
-
-  return { text, html };
-};
-
-const sendMail = async (
+export const sendMail = async (
   env: Env,
   to: MailRecipient[],
   subject: string,
@@ -384,14 +448,17 @@ const sendMail = async (
 };
 
 export const POST: APIRoute = async ({ request, locals }) => {
+  const respondJson = shouldReturnJson(request);
+
   if (!request.headers.get('content-type')?.includes('form')) {
-    return new Response('Unsupported payload.', { status: 415 });
+    return buildError(415, 'unsupported_payload', 'Unsupported payload.');
   }
 
   const formData = await request.formData();
   const formType = extractString(formData.get('formType')) || 'contact';
   const redirectTo = extractString(formData.get('redirectTo'));
   const isSpam = isSpamSubmission(formData);
+  const env = locals.runtime?.env as Env | undefined;
 
   const submission: Submission = {
     id: crypto.randomUUID(),
@@ -411,21 +478,50 @@ export const POST: APIRoute = async ({ request, locals }) => {
     receivedAt: new Date().toISOString(),
     ipAddress: request.headers.get('CF-Connecting-IP') ?? undefined,
     userAgent: request.headers.get('User-Agent') ?? undefined,
+    inquiry: extractString(formData.get('inquiry')),
+    dedupeKey: extractString(formData.get('dedupeKey')),
   };
 
+  const env = locals.runtime?.env as Env | undefined;
+
   if (isSpam) {
+    console.info('contact_submission_spam_blocked', {
+      submissionId: submission.id,
+      formType,
+      ipAddress: submission.ipAddress,
+    });
+    if (env?.DB) {
+      await logSubmissionStatus(env.DB, submission.id, formType, 'blocked_spam', 'Spam submission blocked.');
+    }
     const redirectUrl = safeRedirect(redirectTo, new URL(request.url).origin);
+    if (respondJson) {
+      return jsonResponse({
+        ok: true,
+        submissionId: submission.id,
+        redirectTo: redirectUrl.pathname,
+        mail: {
+          notification: 'skipped',
+          autoResponder: 'skipped',
+        },
+      });
+    }
     return Response.redirect(redirectUrl, 303);
   }
 
   if (submission.email && !isValidEmail(submission.email)) {
-    return new Response('Invalid email address.', { status: 400 });
+    console.info('contact_submission_validation_failed', {
+      submissionId: submission.id,
+      formType,
+      reason: 'invalid_email',
+    });
+    if (env?.DB) {
+      await logSubmissionStatus(env.DB, submission.id, formType, 'rejected', 'Invalid email address.');
+    }
+    return buildError(400, 'invalid_email', 'Invalid email address.');
   }
 
-  const env = locals.runtime?.env as Env | undefined;
-
   if (!env?.KV && !env?.DB) {
-    return new Response('Storage unavailable.', { status: 503 });
+    return buildError(503, 'storage_unavailable', 'Storage unavailable.');
   }
 
   const formConfig = env?.DB ? await fetchFormConfig(env.DB, formType) : normalizeFormConfig(null, formType);
@@ -436,30 +532,59 @@ export const POST: APIRoute = async ({ request, locals }) => {
         status: formConfig.status
       });
     }
-    return new Response('Form is not accepting submissions.', { status: 403 });
+    return buildError(403, 'form_inactive', 'Form is not accepting submissions.');
   }
 
-  const missingFields = validateRequiredFields(submission, formConfig.fields);
+  const missingFields = validateRequiredFields(normalizedSubmission, formConfig.fields);
   if (missingFields.length > 0) {
+    console.warn('contact_submission_validation_failed', {
+      formType,
+      submissionId: submission.id,
+      error: 'missing_required_fields',
+      fields: missingFields.map((field) => field.name),
+    });
     if (env?.DB) {
       await logSubmissionStatus(env.DB, submission.id, formType, 'rejected', 'Missing required fields.', {
         fields: missingFields.map((field) => field.name)
       });
     }
-    return new Response('Missing required fields.', { status: 400 });
+    console.info('contact_submission_validation_failed', {
+      submissionId: submission.id,
+      formType,
+      missingFields: missingFields.map((field) => field.name),
+    });
+    return buildError(400, 'missing_required_fields', 'Missing required fields.', {
+      fields: missingFields.map((field) => field.name),
+    });
   }
 
   const ttl = env?.CONTACT_TTL_SECONDS ? parseInt(env.CONTACT_TTL_SECONDS, 10) : DEFAULT_CONTACT_TTL_SECONDS;
 
   const autoResponder = buildLeadAutoResponder({
-    name: submission.name,
-    formType: submission.formType,
+    name: normalizedSubmission.name,
+    formType: normalizedSubmission.formType,
   });
+
+  if (env?.DB) {
+    const isDuplicate = await checkRecentDuplicate(env.DB, normalizedSubmission);
+    if (isDuplicate) {
+      await logSubmissionStatus(
+        env.DB,
+        normalizedSubmission.id,
+        formType,
+        'duplicate',
+        'Repeated submission detected within dedupe window.',
+        { dedupeKey: normalizedSubmission.dedupeKey }
+      );
+      const redirectUrl = safeRedirect(redirectTo, new URL(request.url).origin);
+      return Response.redirect(redirectUrl, 303);
+    }
+  }
 
   const storageTasks: Promise<unknown>[] = [];
   if (env?.KV)
-    storageTasks.push(storeInKv(env.KV, submission, autoResponder, ttl));
-  if (env?.DB) storageTasks.push(storeInD1(env.DB, submission, autoResponder));
+    storageTasks.push(storeInKv(env.KV, normalizedSubmission, autoResponder, ttl));
+  if (env?.DB) storageTasks.push(storeInD1(env.DB, normalizedSubmission, autoResponder));
 
   const storageResults = await Promise.allSettled(storageTasks);
   const storedSuccessfully = storageResults.some(
@@ -468,22 +593,109 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
   if (!storedSuccessfully) {
     console.error('Contact submission storage failed.', storageResults);
+    console.error('contact_submission_persistence_failed', {
+      submissionId: submission.id,
+      formType,
+      storageResults,
+    });
     if (env?.DB) {
       await logSubmissionStatus(env.DB, submission.id, formType, 'storage_failed', 'Storage unavailable.');
     }
-    return new Response('Storage unavailable.', { status: 503 });
+    return buildError(503, 'storage_unavailable', 'Storage unavailable.');
   }
 
   if (env?.DB) {
-    await logSubmissionStatus(env.DB, submission.id, formType, 'stored', 'Submission stored successfully.', {
+    await logSubmissionStatus(env.DB, normalizedSubmission.id, formType, 'stored', 'Submission stored successfully.', {
+      dedupeKey: normalizedSubmission.dedupeKey,
       recipients: formConfig.recipients,
       integrations: formConfig.integrations
     });
   }
 
+  const recipients = parseNotificationRecipients(
+    formConfig.recipients,
+    env.CONTACT_NOTIFICATION_EMAILS,
+  );
+  const notificationResult = recipients.length
+    ? await sendMail(
+        env,
+        recipients,
+        `[GoldShore] New ${submission.formType} submission`,
+        [
+          `Name: ${submission.name || 'N/A'}`,
+          `Email: ${submission.email || 'N/A'}`,
+          `Inquiry: ${extractString(formData.get('inquiry')) || 'general'}`,
+          '',
+          submission.message || 'No message provided.',
+        ].join('\n'),
+        `<p><strong>Name:</strong> ${submission.name || 'N/A'}</p>
+<p><strong>Email:</strong> ${submission.email || 'N/A'}</p>
+<p><strong>Inquiry:</strong> ${extractString(formData.get('inquiry')) || 'general'}</p>
+<p><strong>Message:</strong></p>
+<p>${submission.message || 'No message provided.'}</p>`,
+        submission.email ? { email: submission.email, name: submission.name || undefined } : undefined,
+      )
+    : { attempted: false, reason: 'no_recipients' };
+
+  const autoResponderResult = submission.email
+    ? await sendMail(
+        env,
+        [{ email: submission.email, name: submission.name || undefined }],
+        autoResponder.subject,
+        autoResponder.text,
+        autoResponder.html,
+      )
+    : { attempted: false, reason: 'missing_submitter_email' };
+
+  console.info('contact_submission_outbound_email_result', {
+    submissionId: submission.id,
+    formType,
+    notificationResult,
+    autoResponderResult,
+  });
+  if (env?.DB) {
+    await logSubmissionStatus(
+      env.DB,
+      submission.id,
+      formType,
+      'email_attempted',
+      'Outbound email attempts completed.',
+      {
+        notification: notificationResult,
+        autoResponder: autoResponderResult,
+      },
+    );
+  }
+
   const redirectUrl = safeRedirect(redirectTo, new URL(request.url).origin);
+  const successPayload: ApiSuccessPayload = {
+    ok: true,
+    submissionId: submission.id,
+    redirectTo: redirectUrl.pathname,
+    mail: {
+      notification: notificationResult.attempted
+        ? notificationResult.ok
+          ? 'sent'
+          : 'failed'
+        : 'skipped',
+      autoResponder: autoResponderResult.attempted
+        ? autoResponderResult.ok
+          ? 'sent'
+          : 'failed'
+        : 'skipped',
+    },
+  };
+
+  if (respondJson) {
+    return jsonResponse(successPayload);
+  }
+
   return Response.redirect(redirectUrl, 303);
 };
 
 export const GET: APIRoute = async () =>
-  new Response('Method not allowed.', { status: 405 });
+  jsonResponse(405, {
+    success: false,
+    code: 'METHOD_NOT_ALLOWED',
+    message: 'Method not allowed.',
+  });

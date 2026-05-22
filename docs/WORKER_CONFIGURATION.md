@@ -2,19 +2,24 @@
 
 This document details the configuration for all Cloudflare Workers and Pages projects in the GoldShore monorepo.
 
-## 1. gs-mail (`apps/mail-worker`)
+## Queue Source of Truth
+
+- Canonical queue matrix: `docs/ops/queue-contract-matrix.md`.
+- CI/static guard: `pnpm validate:queues` (script: `scripts/validate-queue-contracts.mjs`) fails when any env-scoped producer queue has no consumer in the same environment.
+
+## 1. gs-mail (`apps/gs-mail`)
 
 The email routing and processing worker.
 
-- **Directory:** `apps/mail-worker`
+- **Directory:** `apps/gs-mail`
 - **Package Name:** `gs-mail`
-- **Wrangler:** `wrangler.toml` (locally defined)
-- **Deployment:** Manual via Wrangler or CI.
-- **Bindings:** None currently required.
-- **Compatibility Date:** `2024-03-20`
+- **Wrangler:** `apps/gs-mail/wrangler.toml`
+- **Deployment:** CI workflow (`.github/workflows/deploy-gs-mail.yml`) on `push` to `main`.
+- **Bindings:** `GS_CONFIG` KV plus production email vars in `env.prod`.
+- **Queues:** Consumes `gs-platform-checkout-events-{dev|preview|prod}` and `gs-platform-contact-events-{dev|preview|prod}` to process gs-platform checkout/contact events.
+- **Compatibility Date:** `2024-11-01`
 - **Main Entry:** `src/index.ts`
-- **Purpose:** Handles email routing logic, possibly integrated with Cloudflare Email Routing or third-party providers (e.g., MailChannels).
-- **Status:** Repaired with inbound routing logic. Supports sender blocking, recipient allowlists, and forwarding to `MAIL_FORWARD_TO`.
+- **Purpose:** Handles email routing logic, including sender blocking, optional recipient allowlists, and fail-closed forwarding via `MAIL_FORWARD_TO`.
 
 ## 2. gs-agent (`apps/gs-agent`)
 
@@ -22,12 +27,12 @@ The AI agent service.
 
 - **Directory:** `apps/gs-agent`
 - **Package Name:** `@goldshore/agent`
-- **Wrangler:** `infra/cloudflare/gs-agent.wrangler.toml` (external config)
-- **Deployment:** CI workflow (`deploy-agent.yml`).
+- **Wrangler:** `infra/Cloudflare/gs-agent.wrangler.toml`
+- **Deployment:** Preview CI workflow (`.github/workflows/preview-gs-agent.yml`) on `pull_request`; production CI workflow (`.github/workflows/deploy-gs-agent.yml`) on `push` to `main`.
 - **Bindings:**
   - `AI`: Cloudflare Workers AI binding.
   - `Queues`: Consumes `goldshore-jobs` queue.
-- **Compatibility Date:** `2024-03-20`
+- **Compatibility Date:** `2024-11-01`
 - **Main Entry:** `src/index.ts`
 - **Purpose:** Handles AI inference tasks, job processing from queues, and agent interactions.
 
@@ -37,17 +42,19 @@ The API gateway and router.
 
 - **Directory:** `apps/gs-gateway`
 - **Package Name:** `@goldshore/gateway`
-- **Wrangler:** `wrangler.toml` (locally defined)
-- **Deployment:** CI workflow (`deploy-gateway.yml`).
+- **Wrangler:** `apps/gs-gateway/wrangler.toml`
+- **Deployment:** Preview CI workflow (`.github/workflows/preview-gs-gateway.yml`) on `pull_request`; production CI workflow (`.github/workflows/deploy-gs-gateway.yml`) on `push` to `main`.
 - **Bindings:**
-  - `KV Namespaces`: `gs-kv` (production), `GATEWAY_KV` (local/dev).
-  - `Queues`: Produces to `gs-jobs`.
-  - `Services`: `API` (points to `gs-api`).
+  - `KV Namespaces`: `GATEWAY_KV`.
+  - `Queues`: Produces `CHECKOUT_EVENTS_QUEUE` and `CONTACT_EVENTS_QUEUE` with env-specific queue names:
+    - `gs-platform-checkout-events-dev|preview|prod`
+    - `gs-platform-contact-events-dev|preview|prod`
+  - `Services`: `API` (points to `gs-api`) and `AGENT` (points to `gs-agent`).
   - `AI`: Cloudflare Workers AI binding.
-  - `Vars`: `ENV` ("production"), `API_ORIGIN` ("https://api.goldshore.ai").
-- **Compatibility Date:** inferred from project settings or `wrangler.toml`.
-- **Main Entry:** `src/index.ts` (implied).
-- **Purpose:** Primary entry point for API traffic, routing requests to `gs-api` or handling them directly (e.g., cached responses).
+  - `Vars`: `ENV`, `API_ORIGIN`, `CLOUDFLARE_ACCESS_AUDIENCE`, `CLOUDFLARE_TEAM_DOMAIN`.
+- **Compatibility Date:** `2024-11-01`
+- **Main Entry:** `src/index.ts`
+- **Purpose:** Primary entry point for API traffic, routing requests to `gs-api` or `gs-agent`, and enforcing gateway middleware.
 
 ## 4. gs-control (`apps/gs-control`)
 
@@ -55,14 +62,14 @@ The operational control plane worker.
 
 - **Directory:** `apps/gs-control`
 - **Package Name:** `@goldshore/control`
-- **Wrangler:** `wrangler.toml` (locally defined)
-- **Deployment:** CI workflow (`deploy-control-worker.yml`).
+- **Wrangler:** `apps/gs-control/wrangler.toml`
+- **Deployment:** Production CI workflow (`.github/workflows/deploy-gs-control.yml`) on `push` to `main`.
 - **Bindings:**
-  - `KV Namespaces`: `CONTROL_LOGS`.
+  - `KV Namespaces`: `CONTROL_LOGS`, `GS_CONFIG`.
   - `R2 Buckets`: `STATE`.
   - `Services`: `API`, `GATEWAY`.
-  - `Vars`: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` (secrets).
-- **Compatibility Date:** inferred.
+  - `Vars`: `ENV`, `CONTROL_SYNC_TOKEN`, `SYNC_TARGET_SUBDOMAIN`, plus Cloudflare admin secrets.
+- **Compatibility Date:** `2024-11-01`
 - **Main Entry:** `src/index.ts`
 - **Purpose:** Internal tool for managing Cloudflare resources, viewing logs, and performing administrative actions via Hono API.
 
@@ -72,9 +79,9 @@ The backend API service.
 
 - **Directory:** `apps/gs-api`
 - **Package Name:** `gs-api`
-- **Wrangler:** `wrangler.toml` (locally defined) or `infra/cloudflare/goldshore-api.wrangler.toml`.
-- **Deployment:** CI workflow (`deploy-api-worker.yml`).
-- **Bindings:** likely similar to gateway (KV, D1, etc.).
+- **Wrangler:** `apps/gs-api/wrangler.toml`
+- **Deployment:** Preview CI workflow (`.github/workflows/preview-gs-api.yml`) on `pull_request`; production CI workflow (`.github/workflows/deploy-gs-api.yml`) on `push` to `main`.
+- **Bindings:** KV, D1, R2, AI, and control-log bindings declared in `env.preview`, `env.prod`, and `env.production`.
 - **Purpose:** Core business logic and data access layer.
 
 ## Deprecated

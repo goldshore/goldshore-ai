@@ -1,0 +1,40 @@
+/* =========================================
+   Scroll-driven animation (progressive)
+   Uses CSS view-timeline where supported
+========================================= */
+
+@supports (animation-timeline: view()) {
+
+  .gs-scroll-fade {
+    opacity: 0;
+    transform: translateY(40px);
+    animation: gs-scroll-in linear forwards;
+    animation-timeline: view();
+    animation-range: entry 0% cover 30%;
+  }
+
+  @keyframes gs-scroll-in {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .gs-scroll-scale {
+    transform: scale(0.96);
+    opacity: 0.5;
+    animation: gs-scroll-scale-in linear forwards;
+    animation-timeline: view();
+    animation-range: entry 0% cover 40%;
+  }
+
+  @keyframes gs-scroll-scale-in {
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+}
+
+/* Fallback handled by IntersectionObserver in runtime */
