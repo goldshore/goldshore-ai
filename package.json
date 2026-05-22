@@ -19,7 +19,7 @@
     "validate:workers": "tsx scripts/validate-worker-names.ts",
     "validate:queues": "node scripts/validate-queue-contracts.mjs",
     "validate:workspace": "tsx scripts/validate-workspace-contract.ts",
-    "validate": "pnpm check:naming && pnpm check:workspace-protocol && pnpm validate:workspace && pnpm validate:structure && pnpm validate:names",
+    "validate": "pnpm check:naming && pnpm check:workspace-protocol && pnpm check:wrangler-placeholders && pnpm validate:workspace && pnpm validate:structure && pnpm validate:names",
     "branch:bootstrap": "bash scripts/branch-bootstrap.sh",
     "scaffold:worker": "node scripts/scaffold-worker.mjs",
     "workspaces:list": "pnpm -r list --depth -1",
@@ -33,7 +33,8 @@
     "repo:health": "node scripts/repo-health.mjs",
     "audit": "pnpm run repo:health",
     "build:api": "turbo run build --filter=@goldshore/gs-api",
-    "build:control": "turbo run build --filter=@goldshore/gs-control"
+    "build:control": "turbo run build --filter=@goldshore/gs-control",
+    "check:wrangler-placeholders": "node scripts/check-wrangler-placeholders.mjs"
   },
   "devDependencies": {
     "@astrojs/mdx": "^5.0.4",
