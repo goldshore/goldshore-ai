@@ -59,7 +59,7 @@
   },
   "pnpm": {
     "overrides": {
-      "@astrojs/cloudflare": "latest",
+      "@astrojs/cloudflare": "^12.6.12",
       "@astrojs/adapter-cloudflare": "latest",
       "postal-mime": "2.7.3",
       "wrangler": "^4.63.0",
