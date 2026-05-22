@@ -1,40 +1,201 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import {
+  getStatusLabel,
+  getStatusSummary,
+  statusSnapshot,
+} from '../data/status';
+
+const snapshot = statusSnapshot;
+const summary = getStatusSummary(snapshot.components);
+const lastUpdated = new Intl.DateTimeFormat('en-US', {
+  dateStyle: 'long',
+  timeStyle: 'short',
+  timeZone: 'UTC',
+}).format(new Date(snapshot.lastUpdated));
 ---
 
 <BaseLayout title="Status | GoldShore" description="System status">
   <section class="gs-hero">
     <div>
+      <p class={`status-eyebrow status-eyebrow--${summary.overallStatus}`}>
+        {getStatusLabel(summary.overallStatus)}
+      </p>
       <h1>System Status</h1>
-      <p>All systems are currently operational.</p>
+      <p>{summary.headline}</p>
+      <div class="status-highlights" aria-label="Status summary highlights">
+        <span class="status-highlight">
+          <strong>{summary.totalComponents}</strong> monitored systems
+        </span>
+        <span class="status-highlight">
+          <strong>{summary.impactedComponents}</strong> impacted systems
+        </span>
+        <span class="status-highlight">
+          <strong>{snapshot.source.label}</strong>
+        </span>
+      </div>
+      <div class="status-metadata" aria-label="Status metadata">
+        <p><strong>Last updated:</strong> {lastUpdated} UTC</p>
+        <p><strong>Update owner:</strong> {snapshot.source.owner}</p>
+        <p><strong>Update policy:</strong> {snapshot.source.note}</p>
+      </div>
     </div>
   </section>
 
   <section class="gs-section">
-    <div class="gs-card">
-      <ul style="list-style: none; padding: 0; display: grid; gap: 1rem;">
-        <li style="display: flex; justify-content: space-between; align-items: center;">
-          <span>API Gateway</span>
-          <span style="color: #4ade80; display: flex; align-items: center; gap: 0.5rem;">
-            <span style="width: 8px; height: 8px; border-radius: 50%; background: currentColor;"></span>
-            Operational
-          </span>
-        </li>
-        <li style="display: flex; justify-content: space-between; align-items: center;">
-          <span>Web Application</span>
-          <span style="color: #4ade80; display: flex; align-items: center; gap: 0.5rem;">
-             <span style="width: 8px; height: 8px; border-radius: 50%; background: currentColor;"></span>
-             Operational
-          </span>
-        </li>
-        <li style="display: flex; justify-content: space-between; align-items: center;">
-          <span>Background Workers</span>
-          <span style="color: #4ade80; display: flex; align-items: center; gap: 0.5rem;">
-             <span style="width: 8px; height: 8px; border-radius: 50%; background: currentColor;"></span>
-             Operational
-          </span>
-        </li>
+    <div class="gs-card status-card">
+      <ul class="status-list">
+        {
+          snapshot.components.map((component) => (
+            <li class="status-item">
+              <div class="status-copy">
+                <span class="status-name">{component.name}</span>
+                <p>{component.detail}</p>
+              </div>
+              <span class={`status-pill status-pill--${component.status}`}>
+                <span class="status-dot" aria-hidden="true" />
+                {getStatusLabel(component.status)}
+              </span>
+            </li>
+          ))
+        }
       </ul>
     </div>
   </section>
 </BaseLayout>
+
+<style>
+  .status-eyebrow,
+  .status-pill,
+  .status-highlight {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+  }
+
+  .status-eyebrow {
+    margin: 0 0 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.875rem;
+  }
+
+  .status-highlights {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+  }
+
+  .status-highlight {
+    border-radius: 999px;
+    padding: 0.45rem 0.8rem;
+    font-size: 0.95rem;
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .status-metadata {
+    display: grid;
+    gap: 0.35rem;
+    margin-top: 1.25rem;
+    color: var(--gs-text-secondary, rgba(255, 255, 255, 0.7));
+    font-size: 0.95rem;
+  }
+
+  .status-metadata p {
+    margin: 0;
+  }
+
+  .status-card {
+    padding: 1.5rem;
+  }
+
+  .status-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 1rem;
+  }
+
+  .status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .status-item:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  .status-copy {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .status-copy p,
+  .status-name {
+    margin: 0;
+  }
+
+  .status-name {
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .status-copy p {
+    color: var(--gs-text-secondary, rgba(255, 255, 255, 0.7));
+  }
+
+  .status-pill {
+    flex-shrink: 0;
+    border-radius: 999px;
+    padding: 0.45rem 0.8rem;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .status-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .status-eyebrow--operational,
+  .status-pill--operational {
+    color: #4ade80;
+  }
+
+  .status-eyebrow--maintenance,
+  .status-pill--maintenance {
+    color: #facc15;
+  }
+
+  .status-eyebrow--degraded,
+  .status-pill--degraded {
+    color: #fb923c;
+  }
+
+  .status-eyebrow--outage,
+  .status-pill--outage {
+    color: #f87171;
+  }
+
+  @media (max-width: 720px) {
+    .status-item {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .status-pill {
+      white-space: normal;
+    }
+  }
+</style>
