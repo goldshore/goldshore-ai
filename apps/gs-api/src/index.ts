@@ -20,7 +20,7 @@ import { assertSecuritySecrets } from './securitySecrets';
 type Env = {
   KV: KVNamespace;
   CONTROL_LOGS?: KVNamespace;
-  DB: D1Database;
+  CONTENT_DB: D1Database;
   TELEMETRY_DB?: D1Database;
   ASSETS: R2Bucket;
   AUTH_SESSION?: DurableObjectNamespace;
@@ -45,8 +45,8 @@ const app = new Hono<{
   Variables: { accessClaims: AccessTokenPayload | null };
 }>();
 
-const requiredBindings = ['DB', 'ASSETS', 'AI'] as const;
-const expectedD1Binding = 'DB' as const;
+const requiredBindings = ['CONTENT_DB', 'ASSETS', 'AI'] as const;
+const expectedD1Binding = 'CONTENT_DB' as const;
 const requiredSecrets = [
   'JWT_SECRET',
   'STRIPE_API_KEY',
