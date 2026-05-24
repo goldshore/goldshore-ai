@@ -21,6 +21,12 @@ The main coupling points today are:
 - `AGENT` service binding from `gs-gateway` into `gs-agent`.
 - `goldshore-jobs` queue producer in `gs-gateway` and consumer in `gs-agent`.
 
+## Canonical naming policy (refreshed)
+
+- Canonical gateway worker name: `gs-gateway`.
+- Treat `gs-platform` as a retired alias in historical notes only.
+- All binding inventories and service-binding targets should resolve gateway identity as `gs-gateway`.
+
 ## Current inventory
 
 ### Routes by worker
