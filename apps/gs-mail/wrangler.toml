@@ -2,26 +2,14 @@ name = "gs-mail"
 main = "src/index.ts"
 compatibility_date = "2026-04-18"
 compatibility_flags = ["nodejs_compat"]
+
 workers_dev = false
-routes = [
-  { pattern = "mail.goldshore.ai/*", zone_name = "goldshore.ai" }
-]
 
-[[email]]
-bindings = [
-  { name = "MAIL", type = "inbound" }
-]
+[[env.dev.queues.consumers]]
+queue = "gs-platform-checkout-events-dev"
 
-[env.dev]
-name = "gs-mail-dev"
-
-[[env.dev.kv_namespaces]]
-binding = "GS_CONFIG"
-id = "9cc2209906a94851b704be57543987a9"
-
-[env.dev.vars]
-ENV = "dev"
-MAIL_FORWARD_TO = "ops+dev@goldshore.ai"
+[[env.dev.queues.consumers]]
+queue = "gs-platform-contact-events-dev"
 
 [env.prod]
 routes = [
@@ -32,14 +20,13 @@ routes = [
 ENV = "production"
 MAIL_SERVICE = "true"
 MAIL_ALLOWED_RECIPIENTS = "ops@goldshore.ai,inbox@goldshore.ai"
+CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 
-[[env.prod.queues.producers]]
-binding = "JOBS_QUEUE"
-queue = "gs-mail-jobs"
+[[env.prod.queues.consumers]]
+queue = "gs-platform-checkout-events-prod"
 
-[[env.prod.queues.producers]]
-binding = "JOBS_QUEUE_DLQ"
-queue = "gs-mail-dead-letter"
+[[env.prod.queues.consumers]]
+queue = "gs-platform-contact-events-prod"
 
 [env.preview]
 routes = [
@@ -48,4 +35,11 @@ routes = [
 
 [env.preview.vars]
 ENV = "preview"
+CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 MAIL_FORWARD_TO = "ops+preview@goldshore.ai"
+
+[[env.preview.queues.consumers]]
+queue = "gs-platform-checkout-events-preview"
+
+[[env.preview.queues.consumers]]
+queue = "gs-platform-contact-events-preview"

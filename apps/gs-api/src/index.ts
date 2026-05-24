@@ -15,11 +15,12 @@ import admin from './routes/admin';
 import media from './routes/media';
 import pages from './routes/pages';
 import internal from './routes/internal';
+import { assertSecuritySecrets } from './securitySecrets';
 
 type Env = {
   KV: KVNamespace;
   CONTROL_LOGS?: KVNamespace;
-  DB: D1Database;
+  CONTENT_DB: D1Database;
   TELEMETRY_DB?: D1Database;
   ASSETS: R2Bucket;
   AUTH_SESSION?: DurableObjectNamespace;
@@ -44,8 +45,8 @@ const app = new Hono<{
   Variables: { accessClaims: AccessTokenPayload | null };
 }>();
 
-const requiredBindings = ['DB', 'ASSETS', 'AI'] as const;
-const expectedD1Binding = 'DB' as const;
+const requiredBindings = ['CONTENT_DB', 'ASSETS', 'AI'] as const;
+const expectedD1Binding = 'CONTENT_DB' as const;
 const requiredSecrets = [
   'JWT_SECRET',
   'STRIPE_API_KEY',
@@ -94,6 +95,9 @@ app.use('*', secureHeaders());
 
 // Runtime safety guard (fail-fast for misconfigured production runtime).
 app.use('*', async (c, next) => {
+  if (c.env.ENV === 'production') {
+    assertSecuritySecrets(c.env as Record<string, unknown>, c.env.ENV);
+  }
   if (!c.env[expectedD1Binding]) {
     throw new Error(
       `CRITICAL_MISSING_D1_BINDING: Expected D1 binding "${expectedD1Binding}" is undefined. Verify [[d1_databases]] binding in wrangler.toml.`,
