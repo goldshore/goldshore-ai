@@ -45,7 +45,7 @@ id = "gs_config_001"
 binding = "GATEWAY_KV"
 # TODO: Replace with actual namespace ID from CF dashboard (Storage → KV).
 # Create if missing: wrangler kv namespace create GATEWAY_KV
-id = "REPLACE_WITH_GATEWAY_KV_NAMESPACE_ID"
+id = "17840f9b6ac64cb1a51aeff085efe24c"
 
 # ── D1 Databases ───────────────────────────────────────────
 [[env.prod.d1_databases]]
