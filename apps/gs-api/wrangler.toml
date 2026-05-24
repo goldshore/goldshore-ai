@@ -26,7 +26,7 @@ binding = "ASSETS"
 bucket_name = "gs-platform-assets"
 
 [[env.prod.d1_databases]]
-binding = "DB"
+binding = "CONTENT_DB"
 database_name = "goldshore"
 database_id = "f77de112-d201-4e54-a785-a4583814a6c3"
 
@@ -58,7 +58,7 @@ binding = "ASSETS"
 bucket_name = "gs-platform-assets"
 
 [[env.production.d1_databases]]
-binding = "DB"
+binding = "CONTENT_DB"
 database_name = "goldshore"
 database_id = "f77de112-d201-4e54-a785-a4583814a6c3"
 
@@ -84,7 +84,7 @@ binding = "ASSETS"
 bucket_name = "gs-platform-assets"
 
 [[env.preview.d1_databases]]
-binding = "DB"
+binding = "CONTENT_DB"
 database_name = "goldshore"
 database_id = "f77de112-d201-4e54-a785-a4583814a6c3"
 

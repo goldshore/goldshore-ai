@@ -49,7 +49,7 @@ id = "REPLACE_WITH_GATEWAY_KV_NAMESPACE_ID"
 
 # ── D1 Databases ───────────────────────────────────────────
 [[env.prod.d1_databases]]
-binding = "DB"
+binding = "PLATFORM_DB"
 database_name = "gs_platform_db"
 database_id = "gs_platform_db"
 
