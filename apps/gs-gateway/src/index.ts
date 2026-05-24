@@ -74,12 +74,6 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): 
 
 const app = new Hono<{ Bindings: GatewayEnv }>();
 
-function isNonCriticalSignalsPath(pathname: string): boolean {
-  return NON_CRITICAL_SIGNAL_PATHS.some((base) => pathname === base || pathname.startsWith(`${base}/`));
-}
-
-const app = new Hono<{ Bindings: GatewayEnv }>();
-
 // ── Security headers ───────────────────────────────────────
 app.use("*", secureHeaders());
 
