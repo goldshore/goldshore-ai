@@ -20,8 +20,11 @@ export const getActor = (claims: AccessTokenPayload | null, request: Request) =>
 
 export const logAdminAction = async (env: Env, entry: Omit<AuditEvent, "timestamp">) => {
   const timestamp = new Date().toISOString();
-  const key = `audit:admin:${timestamp}:${crypto.randomUUID()}`;
   const payload: AuditEvent = { ...entry, timestamp };
+  if (!env?.KV || typeof env.KV.put !== "function") {
+    return payload;
+  }
+  const key = `audit:admin:${timestamp}:${crypto.randomUUID()}`;
   await env.KV.put(key, JSON.stringify(payload));
   return payload;
 };

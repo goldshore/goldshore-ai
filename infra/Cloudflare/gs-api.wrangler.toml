@@ -1,3 +1,4 @@
+# Worker Builds token for this service must be the gs-control build token.
 # wrangler.toml for the Hono API Worker
 
 name = "gs-api" # Base name, will be suffixed per environment

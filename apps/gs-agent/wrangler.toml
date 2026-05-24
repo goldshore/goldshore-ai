@@ -1,37 +1,28 @@
 name = "gs-agent"
 main = "src/index.ts"
-compatibility_date = "2025-01-10"
+compatibility_date = "2026-04-18"
 compatibility_flags = ["nodejs_compat"]
-tsconfig = "tsconfig.json"
 
-[vars]
-ENV = "production"
+workers_dev = false
 
-[ai]
-binding = "AI"
-
-# This Worker is a Consumer, not a Producer. 
-# It listens for jobs sent by gs-gateway and gs-api.
 [[queues.consumers]]
 queue = "goldshore-jobs"
 max_batch_size = 10
 max_batch_timeout = 5
 
-[[kv_namespaces]]
-binding = "AGENT_KV"
-id = "9cc2209906a94851b704be57543987a9" # Shared GS_API_DATA for config
-
-# --- Environment Configurations ---
-
-[env.dev]
-name = "gs-agent-dev"
-[env.dev.vars]
-  ENV = "development"
-
 [env.prod]
-name = "gs-agent"
+routes = []
+
 [env.prod.vars]
-  ENV = "production"
+ENV = "production"
+
 [[env.prod.queues.consumers]]
-  queue = "goldshore-jobs"
-  max_batch_size = 10
+queue = "goldshore-jobs"
+max_batch_size = 10
+max_batch_timeout = 5
+
+[env.preview]
+routes = []
+
+[env.preview.vars]
+ENV = "preview"

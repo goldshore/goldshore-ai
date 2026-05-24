@@ -1,2 +1,2 @@
-export * from './verify';
-export * from './rbac';
+export * from './verify.ts';
+export * from './rbac.ts';

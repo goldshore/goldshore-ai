@@ -1,46 +1,43 @@
 name = "gs-mail"
 main = "src/index.ts"
-compatibility_date = "2026-03-03"
+compatibility_date = "2026-04-18"
 compatibility_flags = ["nodejs_compat"]
+
 workers_dev = false
+
+[[env.dev.queues.consumers]]
+queue = "gs-platform-checkout-events-dev"
+
+[[env.dev.queues.consumers]]
+queue = "gs-platform-contact-events-dev"
+
+[env.prod]
 routes = [
   { pattern = "mail.goldshore.ai/*", zone_name = "goldshore.ai" }
 ]
 
-[[email]]
-bindings = [
-  { name = "MAIL", type = "inbound" }
-]
+[env.prod.vars]
+ENV = "production"
+MAIL_SERVICE = "true"
+MAIL_ALLOWED_RECIPIENTS = "ops@goldshore.ai,inbox@goldshore.ai"
 
-[env.dev]
-name = "gs-mail-dev"
+[[env.prod.queues.consumers]]
+queue = "gs-platform-checkout-events-prod"
 
-[[env.dev.kv_namespaces]]
-binding = "GS_CONFIG"
-id = "9cc2209906a94851b704be57543987a9"
-
-[env.dev.vars]
-ENV = "dev"
-MAIL_FORWARD_TO = "ops+dev@goldshore.ai"
+[[env.prod.queues.consumers]]
+queue = "gs-platform-contact-events-prod"
 
 [env.preview]
-name = "gs-mail-preview"
-
-[[env.preview.kv_namespaces]]
-binding = "GS_CONFIG"
-id = "9cc2209906a94851b704be57543987a9"
+routes = [
+  { pattern = "mail-preview.goldshore.ai/*", zone_name = "goldshore.ai" }
+]
 
 [env.preview.vars]
 ENV = "preview"
 MAIL_FORWARD_TO = "ops+preview@goldshore.ai"
 
-[env.prod]
-name = "gs-mail"
+[[env.preview.queues.consumers]]
+queue = "gs-platform-checkout-events-preview"
 
-[[env.prod.kv_namespaces]]
-binding = "GS_CONFIG"
-id = "9cc2209906a94851b704be57543987a9"
-
-[env.prod.vars]
-ENV = "prod"
-MAIL_FORWARD_TO = "ops@goldshore.ai"
+[[env.preview.queues.consumers]]
+queue = "gs-platform-contact-events-preview"

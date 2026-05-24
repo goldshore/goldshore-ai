@@ -14,15 +14,25 @@ import siteConfig from '../data/site-config.json';
       >{siteConfig.cta.tertiary}</a
     >
   </div>
-  <p>&copy; {today.getFullYear()} GoldShore.ai. All rights reserved.</p>
+  <div class="footer-brand">
+    <img
+      src="/logo/gs-penrose.svg"
+      alt="GoldShore.ai Penrose triangle logo"
+      width="160"
+      height="160"
+    />
+    <p>&copy; {today.getFullYear()} GoldShore.ai. All rights reserved.</p>
+  </div>
 </footer>
 <style>
   footer {
     padding: 2em 1em 3em;
-    border-top: 1px solid rgb(var(--border));
-    color: rgb(var(--gray));
+    border-top: 1px solid rgba(123, 158, 204, 0.16);
+    color: rgba(212, 224, 241, 0.8);
     text-align: center;
-    background: rgb(var(--surface));
+    background:
+      linear-gradient(180deg, rgba(7, 16, 30, 0.94), rgba(5, 9, 18, 0.98)),
+      #050912;
   }
   .footer-cta-row {
     display: flex;
@@ -30,5 +40,35 @@ import siteConfig from '../data/site-config.json';
     justify-content: center;
     flex-wrap: wrap;
     margin-bottom: 1rem;
+  }
+  .footer-brand {
+    display: grid;
+    justify-items: center;
+    gap: 0.9rem;
+  }
+  .footer-brand img {
+    width: 52px;
+    height: 52px;
+    color: #7eb8ff;
+
+  @media (max-width: 560px) {
+    .footer-cta-col {
+      flex-direction: column;
+    }
+
+    .footer-cta-col .button {
+      width: 100%;
+    }
+
+    .footer-brand {
+      display: grid;
+      justify-items: center;
+      gap: 0.9rem;
+    }
+
+    .footer-brand img {
+      width: 52px;
+      height: 52px;
+    }
   }
 </style>

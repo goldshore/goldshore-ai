@@ -1,6 +1,8 @@
 import { Hono } from 'hono';
 import { RoutingTableSchema, ServiceStatusSchema } from '@goldshore/schema';
+import { requirePermission } from '../auth';
 import { Env, Variables } from '../types';
+import { getRuntimeVersion, withContractHeaders } from './contract';
 import { parseConfig, resolveServiceStatusWithConfig } from './system.config';
 
 const system = new Hono<{ Bindings: Env; Variables: Variables }>();
@@ -9,7 +11,7 @@ const system = new Hono<{ Bindings: Env; Variables: Variables }>();
  * [SOP] System Configuration & Status
  * Provides versioning and active service metadata.
  */
-system.get('/status', async (c) => {
+system.get('/status', requirePermission('system:read'), async (c) => {
   const { serviceStatus } = await resolveServiceStatusWithConfig(c.env.KV);
 
   const result = ServiceStatusSchema.safeParse(serviceStatus);
@@ -31,7 +33,7 @@ system.get('/status', async (c) => {
   });
 });
 
-system.get('/routing', async (c) => {
+system.get('/routing', requirePermission('system:read'), async (c) => {
   const table = await c.env.KV.get('ROUTING_TABLE', 'json');
   const result = RoutingTableSchema.safeParse(table);
 
@@ -41,7 +43,7 @@ system.get('/routing', async (c) => {
   });
 });
 
-system.get('/config', async (c) => {
+system.get('/config', requirePermission('system:read'), async (c) => {
   const { serviceStatus, migrationApplied } = await resolveServiceStatusWithConfig(c.env.KV);
 
   return c.json({
@@ -54,7 +56,7 @@ system.get('/config', async (c) => {
   });
 });
 
-system.put('/config', async (c) => {
+system.put('/config', requirePermission('system:write'), async (c) => {
   const body = await c.req.json().catch(() => null);
 
   if (!body || typeof body !== 'object') {
@@ -83,12 +85,17 @@ system.put('/config', async (c) => {
   });
 });
 
-system.get('/version', (c) =>
-  c.json({
-    service: 'gs-api',
-    version: c.env.GIT_SHA ?? 'unknown',
-    deploySha: c.env.GIT_SHA ?? null,
-  }),
+system.get('/version', requirePermission('system:read'), (c) =>
+  c.json(
+    withContractHeaders(
+      {
+        service: 'gs-api',
+        version: c.env.API_VERSION ?? c.env.GIT_SHA ?? 'unknown',
+        deploySha: c.env.DEPLOY_SHA ?? c.env.GIT_SHA ?? null,
+      },
+      getRuntimeVersion(c.env)
+    )
+  ),
 );
 
 export default system;

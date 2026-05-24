@@ -1,0 +1,12 @@
+:root[data-gs-skin='defense'] {
+  --gs-bg-0: #030406;
+  --gs-bg-1: #05070d;
+  --gs-bg-2: #070b14;
+  --gs-bg-3: #091023;
+  --gs-accent: #4b83ff;
+  --gs-accent-soft: rgba(75, 131, 255, 0.18);
+  --gs-signal: #ff6b00;
+  --gs-signal-soft: rgba(255, 107, 0, 0.2);
+  --gs-border: rgba(255, 255, 255, 0.055);
+  --gs-border-strong: rgba(255, 255, 255, 0.095);
+}

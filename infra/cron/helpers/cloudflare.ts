@@ -18,7 +18,7 @@ async function cfFetch<T>(path: string, init?: RequestInit): Promise<T> {
       ...(init?.headers ?? {})
     }
   });
-  if (!res.ok) throw new Error(`Cloudflare API ${path} failed: ${res.status} ${await res.text()}`);
+  if (!res.ok) throw new Error(`Cloudflare API request failed: ${res.status} ${await res.text()}`);
   const json = await res.json();
   return json.result as T;
 }

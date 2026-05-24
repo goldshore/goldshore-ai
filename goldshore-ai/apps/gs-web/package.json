@@ -18,12 +18,12 @@
     "@goldshore/config": "workspace:^",
     "@goldshore/theme": "workspace:*",
     "@goldshore/ui": "workspace:*",
-    "astro": "^5.15.9",
+    "astro": "^6.1.10",
     "fuse.js": "^7.1.0"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.6",
-    "@astrojs/cloudflare": "^12.6.12",
+    "@astrojs/cloudflare": "^13.1.10",
     "@astrojs/tailwind": "^6.0.2",
     "@playwright/test": "^1.55.0",
     "typescript": "^5.9.3"

@@ -1,7 +1,0 @@
-Contact: mailto:security@goldshore.ai
-Expires: 2027-03-05T13:43:00Z
-Encryption: https://goldshore.ai/pgp-key.txt
-Preferred-Languages: en, he, de, fr, es
-Policy: https://goldshore.ai/security-policy
-Hiring: https://goldshore.ai/careers
-Canonical: https://goldshore.ai/.well-known/security.txt
