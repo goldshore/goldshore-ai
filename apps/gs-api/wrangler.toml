@@ -28,44 +28,12 @@ bucket_name = "gs-platform-assets"
 [[env.prod.d1_databases]]
 binding = "DB"
 database_name = "goldshore"
-database_id = "f77de112-d201-4e54-a785-a4583814a6c3"
+database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
 
 [env.prod.ai]
 binding = "AI"
 
 [[env.prod.durable_objects.bindings]]
-name = "AUTH_SESSION"
-class_name = "AuthSession"
-
-[env.production]
-routes = []
-
-[env.production.vars]
-ENV = "production"
-CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
-CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-
-[[env.production.kv_namespaces]]
-binding = "KV"
-id = "gs_api_kv_001"
-
-[[env.production.kv_namespaces]]
-binding = "CONTROL_LOGS"
-id = "gs_control_logs_001"
-
-[[env.production.r2_buckets]]
-binding = "ASSETS"
-bucket_name = "gs-platform-assets"
-
-[[env.production.d1_databases]]
-binding = "DB"
-database_name = "goldshore"
-database_id = "f77de112-d201-4e54-a785-a4583814a6c3"
-
-[env.production.ai]
-binding = "AI"
-
-[[env.production.durable_objects.bindings]]
 name = "AUTH_SESSION"
 class_name = "AuthSession"
 
