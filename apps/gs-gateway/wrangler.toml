@@ -1,6 +1,6 @@
 # Worker Builds token for this service must be the gs-control build token.
 # wrangler.toml for the gs-gateway worker (deployed as gs-platform on CF)
-name = "gs-platform-legacy"
+name = "gs-gateway"
 main = "src/index.ts"
 compatibility_date = "2026-04-18"
 compatibility_flags = ["nodejs_compat"]
@@ -45,11 +45,11 @@ id = "gs_config_001"
 binding = "GATEWAY_KV"
 # TODO: Replace with actual namespace ID from CF dashboard (Storage → KV).
 # Create if missing: wrangler kv namespace create GATEWAY_KV
-id = "REPLACE_WITH_GATEWAY_KV_NAMESPACE_ID"
+id = "17840f9b6ac64cb1a51aeff085efe24c"
 
 # ── D1 Databases ───────────────────────────────────────────
 [[env.prod.d1_databases]]
-binding = "PLATFORM_DB"
+binding = "DB"
 database_name = "gs_platform_db"
 database_id = "gs_platform_db"
 
@@ -59,11 +59,13 @@ binding = "ASSETS"
 bucket_name = "gs-assets"
 
 # ── Service bindings ───────────────────────────────────────
-[[env.prod.services]]
-binding = "API_SERVICE"
-service = "gs-api"
-environment = "prod"
-
+# Uncomment each binding once the target worker is deployed on CF.
+#
+# [[env.prod.services]]
+# binding = "API_SERVICE"
+# service = "gs-api"
+# environment = "prod"
+#
 [[env.prod.services]]
 binding = "AGENT"
 service = "gs-agent"
@@ -108,14 +110,3 @@ queue = "gs-platform-checkout-events-preview"
 [[env.preview.queues.producers]]
 binding = "CONTACT_EVENTS_QUEUE"
 queue = "gs-platform-contact-events-preview"
-[[env.prod.services]]
-binding = "SECURITY"
-service = "banproof-me"
-
-[[env.prod.services]]
-binding = "SIGNALS"
-service = "gs-signals-prod"
-
-[[env.prod.queues.producers]]
-binding = "MAIL_QUEUE"
-queue = "gs-mail-jobs"
