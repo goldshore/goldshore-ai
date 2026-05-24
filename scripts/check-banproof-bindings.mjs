@@ -38,10 +38,10 @@ function hasKeyValue(section, key, value) {
 
 function hasSecretName(section, secretName) {
   const pattern = new RegExp(
-    String.raw`(^|\n)\s*(?:secret|name|binding)\s*=\s*(['"])${escapeRegExp(secretName)}\1(?=\s*(#.*)?(?:\n|$))`,
+    String.raw`(^|\n)\s*(?:secret|name|binding)\s*=\s*(['"])${escapeRegExp(secretName)}\2(?=\s*(#.*)?(?:\n|$))`,
     'm',
   );
-  return pattern.test(section) || section.includes(secretName);
+  return pattern.test(section);
 }
 
 const errors = [];
