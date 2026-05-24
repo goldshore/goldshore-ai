@@ -1,0 +1,36 @@
+---
+import AdminLayout from '../layouts/AdminLayout.astro';
+import { Card, Table, GSButton } from '@goldshore/ui';
+
+const models = [
+  { name: 'Signal classifier', status: 'Ready', latency: '22ms' },
+  { name: 'Risk forecaster', status: 'Training', latency: '—' },
+  { name: 'Anomaly detector', status: 'Ready', latency: '18ms' },
+];
+---
+<AdminLayout title="AI">
+  <section class="gs-grid columns-3">
+    {models.map((model) => (
+      <Card>
+        <div class="section-title"><span>◇</span><h3>{model.name}</h3></div>
+        <p class="gs-helper">Latency: {model.latency}</p>
+        <span class={`gs-badge ${model.status === 'Ready' ? 'success' : 'warning'}`}>{model.status}</span>
+      </Card>
+    ))}
+  </section>
+
+    <Card class="gs-table-card gs-mt-6">
+    <div class="section-title"><span>⇢</span><h3>Evaluation</h3></div>
+    <Table>
+      <thead><tr><th>Dataset</th><th>Result</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Latency soak</td><td><span class="gs-badge success">Pass</span></td><td>99.9p below 150ms</td></tr>
+        <tr><td>Drift monitor</td><td><span class="gs-badge warning">Watch</span></td><td>Retraining scheduled</td></tr>
+      </tbody>
+    </Table>
+    <div class="gs-form-actions">
+      <GSButton class="gs-button--small">Add eval</GSButton>
+      <GSButton variant="secondary" class="gs-button--small">Export report</GSButton>
+    </div>
+  </Card>
+</AdminLayout>

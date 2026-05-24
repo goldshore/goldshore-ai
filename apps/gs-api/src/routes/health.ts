@@ -26,7 +26,7 @@ health.get('/', async (c) => {
       healthData.kv = kvCheck !== null ? 'connected' : 'empty';
 
       // 2. Check D1 Database Connectivity
-      const dbCheck = await c.env.DB.prepare('SELECT 1').first();
+      const dbCheck = await c.env.CONTENT_DB.prepare('SELECT 1').first();
       healthData.db = dbCheck ? 'connected' : 'error';
     } catch (error) {
       healthData.status = 'error';

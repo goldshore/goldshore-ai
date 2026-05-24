@@ -29,18 +29,8 @@ jobs:
       - name: Install ripgrep
         run: sudo apt-get update && sudo apt-get install -y ripgrep
 
-      - name: Enforce canonical build token usage in worker deploy workflows
-        run: |
-          worker_deploy_workflows=(
-            ".github/workflows/deploy-platform.yml"
-          )
-
-          for workflow in "${worker_deploy_workflows[@]}"; do
-            grep -qE 'CLOUDFLARE_API_TOKEN:[[:space:]]+\$\{\{[[:space:]]*secrets\.CLOUDFLARE_BUILD_API_TOKEN[[:space:]]*\}\}' "$workflow" \
-              || (echo "Workflow must set CLOUDFLARE_API_TOKEN from secrets.CLOUDFLARE_BUILD_API_TOKEN: $workflow" && exit 1)
-            ! grep -qE 'secrets\.CLOUDFLARE_BUILD_API_TOKEN\s*\|\|' "$workflow" \
-              || (echo "Fallback token source is not allowed: $workflow" && exit 1)
-          done
+      - name: Enforce canonical build token usage in workflow env blocks
+        run: scripts/check-cloudflare-token-policy.sh
 
   verify-cloudflare:
     needs:
@@ -68,23 +58,25 @@ jobs:
         run: |
           python - <<'PY'
           import json, os, urllib.error, urllib.parse, urllib.request
-          def cf_get(url, context):
-              req = urllib.request.Request(url, method='GET', headers={'Authorization': f"Bearer {os.environ['CLOUDFLARE_API_TOKEN']}", 'Content-Type': 'application/json'})
+          def cf_get(url):
+              req = urllib.request.Request(url, headers={'Authorization': f"Bearer {os.environ['CLOUDFLARE_BUILD_API_TOKEN']}", 'Content-Type': 'application/json'})
               try:
                   with urllib.request.urlopen(req) as resp:
-                      data = json.loads(resp.read().decode())
+                      status = resp.getcode()
+                      body = resp.read().decode()
               except urllib.error.HTTPError as err:
-                  body = ''
-                  if err.fp is not None:
-                      body = err.read().decode('utf-8', errors='replace')
-                  print(f"[Cloudflare API HTTPError] context: {context}")
-                  print(f"[Cloudflare API HTTPError] request: {req.get_method()} {req.full_url}")
-                  print(f"[Cloudflare API HTTPError] status: {err.code} {err.reason}")
-                  if body:
-                      print(f"[Cloudflare API HTTPError] response body: {body}")
-                  raise
+                  body = err.read().decode()
+                  raise SystemExit(f"Cloudflare API error url={url} status={err.code} body={body}")
+              except urllib.error.URLError as err:
+                  raise SystemExit(f"Cloudflare API error url={url} status=network-error body={err}")
+
+              try:
+                  data = json.loads(body)
+              except json.JSONDecodeError:
+                  raise SystemExit(f"Cloudflare API error url={url} status={status} body={body}")
+
               if not data.get('success'):
-                  raise SystemExit(f"Cloudflare API error for {context} ({url}): {data}")
+                  raise SystemExit(f"Cloudflare API error url={url} status={status} body={body}")
               return data['result']
           if not os.environ.get('CLOUDFLARE_BUILD_API_TOKEN'):
               raise SystemExit('Missing required env var: CLOUDFLARE_BUILD_API_TOKEN')
