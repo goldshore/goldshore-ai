@@ -19,7 +19,7 @@ id = "gs_admin_kv_001"
 # Provision: wrangler kv namespace create gs_admin_kv_001
 
 [[d1_databases]]
-binding = "DB"
+binding = "CONTENT_DB"
 database_name = "goldshore"
 database_id = "gs_db_001"
 # Same D1 as gs-api (read-only dashboard queries)
@@ -54,7 +54,7 @@ id = "gs_admin_kv_preview"
 # Provision: wrangler kv namespace create gs_admin_kv_preview
 
 [[env.preview.d1_databases]]
-binding = "DB"
+binding = "CONTENT_DB"
 database_name = "goldshore_preview"
 database_id = "gs_db_preview"
 

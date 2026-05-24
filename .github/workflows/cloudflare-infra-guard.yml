@@ -62,19 +62,21 @@ jobs:
               req = urllib.request.Request(url, method='GET', headers={'Authorization': f"Bearer {os.environ['CLOUDFLARE_BUILD_API_TOKEN']}", 'Content-Type': 'application/json'})
               try:
                   with urllib.request.urlopen(req) as resp:
-                      data = json.loads(resp.read().decode())
+                      status = resp.getcode()
+                      body = resp.read().decode()
               except urllib.error.HTTPError as err:
-                  body = ''
-                  if err.fp is not None:
-                      body = err.read().decode('utf-8', errors='replace')
-                  print(f"[Cloudflare API HTTPError] context: {context}")
-                  print(f"[Cloudflare API HTTPError] request: {req.get_method()} {req.full_url}")
-                  print(f"[Cloudflare API HTTPError] status: {err.code} {err.reason}")
-                  if body:
-                      print(f"[Cloudflare API HTTPError] response body: {body}")
-                  raise
+                  body = err.read().decode()
+                  raise SystemExit(f"Cloudflare API error url={url} status={err.code} body={body}")
+              except urllib.error.URLError as err:
+                  raise SystemExit(f"Cloudflare API error url={url} status=network-error body={err}")
+
+              try:
+                  data = json.loads(body)
+              except json.JSONDecodeError:
+                  raise SystemExit(f"Cloudflare API error url={url} status={status} body={body}")
+
               if not data.get('success'):
-                  raise SystemExit(f"Cloudflare API error for {context} ({url}): {data}")
+                  raise SystemExit(f"Cloudflare API error url={url} status={status} body={body}")
               return data['result']
           if not os.environ.get('CLOUDFLARE_BUILD_API_TOKEN'):
               raise SystemExit('Missing required env var: CLOUDFLARE_BUILD_API_TOKEN')

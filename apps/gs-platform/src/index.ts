@@ -16,7 +16,7 @@ interface PlatformEnv {
   CLOUDFLARE_TEAM_DOMAIN?: string;
 
   // D1
-  DB: D1Database;
+  PLATFORM_DB: D1Database;
 
   // KV
   GATEWAY_KV?: KVNamespace;
