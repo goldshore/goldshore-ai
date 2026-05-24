@@ -110,14 +110,3 @@ queue = "gs-platform-checkout-events-preview"
 [[env.preview.queues.producers]]
 binding = "CONTACT_EVENTS_QUEUE"
 queue = "gs-platform-contact-events-preview"
-[[env.prod.services]]
-binding = "SECURITY"
-service = "banproof-me"
-
-[[env.prod.services]]
-binding = "SIGNALS"
-service = "gs-signals-prod"
-
-[[env.prod.queues.producers]]
-binding = "MAIL_QUEUE"
-queue = "gs-mail-jobs"
