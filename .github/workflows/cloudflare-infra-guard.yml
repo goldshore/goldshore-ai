@@ -30,7 +30,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y ripgrep
 
       - name: Enforce canonical build token usage in workflow env blocks
-        run: scripts/check-cloudflare-token-policy.sh
+        run: bash scripts/check-cloudflare-token-policy.sh
 
   verify-cloudflare:
     needs:
