@@ -14,7 +14,7 @@ jobs:
   close-stale-problem-prs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3df4d485d8ce6d2b61b8d12e8f44cdfffbea301e
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
