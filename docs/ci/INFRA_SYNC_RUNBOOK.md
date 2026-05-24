@@ -2,6 +2,8 @@
 
 Use `.github/workflows/maintenance.yml` to run Cloudflare infrastructure reconciliation separately from app deploy pipelines.
 
+For incident triage and guardrail verification, inspect `.github/workflows/cloudflare-infra-guard.yml` (the canonical replacement for the retired Cloudflare Pages guard workflow path); it runs automatically on pull requests to `main` and can also be run manually for incident triage when needed.
+
 ## Trigger model
 
 - **Manual (`workflow_dispatch`):** the only trigger; recommended for urgent reconciliation, post-incident verification, or post-rotation validation.
@@ -18,14 +20,10 @@ Run `Maintenance: Cloudflare Infra Reconcile` manually when:
 
 Set these repository secrets before enabling the workflow:
 
-- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_BUILD_API_TOKEN` (canonical token for all worker/pages deployment workflows)
 - `CLOUDFLARE_ACCOUNT_ID`
 - `CLOUDFLARE_KV_NAMESPACE_API_ID`
 - `CLOUDFLARE_KV_NAMESPACE_GATEWAY_ID`
-
-Optional for token rotation without downtime:
-
-- `CLOUDFLARE_BUILD_API_TOKEN` (if set, workflows prefer this token and fall back to `CLOUDFLARE_API_TOKEN`)
 
 Do not store Cloudflare credentials or namespace IDs in tracked workflow files or scripts.
 
@@ -49,22 +47,21 @@ For each Worker/Pages project involved in the deploy chain:
 
 Rotate the GitHub Actions secrets in the same maintenance window so preview and production jobs consume the same credential set:
 
-- Update `CLOUDFLARE_API_TOKEN` if the base deploy token changed.
-- Update `CLOUDFLARE_BUILD_API_TOKEN` if you are using the dedicated build-token override path.
+- Rotate `CLOUDFLARE_BUILD_API_TOKEN` whenever the Cloudflare Worker Builds token changes — this is the only deploy token used by all workflow files.
 - Confirm `CLOUDFLARE_ACCOUNT_ID` is still the correct target account.
 
 #### Workflow-to-secret map
 
 | Workflow | Purpose | Secrets consumed in repo | Rotation note |
 | --- | --- | --- | --- |
-| `.github/workflows/deploy-gs-api.yml` | `main` → production deploy for `gs-api` | `CLOUDFLARE_BUILD_API_TOKEN` **or** `CLOUDFLARE_API_TOKEN`, plus `CLOUDFLARE_ACCOUNT_ID` | Keep the build-token override aligned with preview so both environments rotate together. |
-| `.github/workflows/preview-gs-api.yml` | PR preview deploy for `gs-api` | `CLOUDFLARE_BUILD_API_TOKEN` **or** `CLOUDFLARE_API_TOKEN`, plus `CLOUDFLARE_ACCOUNT_ID` | Uses the same build-token fallback as production; rotate both together. |
-| `.github/workflows/deploy-gs-gateway.yml` | `main` → production deploy for `gs-gateway` | `CLOUDFLARE_BUILD_API_TOKEN` **or** `CLOUDFLARE_API_TOKEN`, plus `CLOUDFLARE_ACCOUNT_ID` | Keep the production gateway token aligned with preview because both now use the same fallback chain. |
-| `.github/workflows/preview-gs-gateway.yml` | PR preview deploy for `gs-gateway` | `CLOUDFLARE_BUILD_API_TOKEN` **or** `CLOUDFLARE_API_TOKEN`, plus `CLOUDFLARE_ACCOUNT_ID` | Prefer updating both token secrets during rotation so fallback behavior is deterministic. |
-| `.github/workflows/deploy-gs-control.yml` | `main` → production deploy for `gs-control` | `CLOUDFLARE_BUILD_API_TOKEN` **or** `CLOUDFLARE_API_TOKEN`, plus `CLOUDFLARE_ACCOUNT_ID` | Active production deploy; rotate the override token in the same window as the other worker deploys. |
-| `.github/workflows/preview-gs-agent.yml` | PR preview deploy for `gs-agent` | `CLOUDFLARE_BUILD_API_TOKEN` **or** `CLOUDFLARE_API_TOKEN`, plus `CLOUDFLARE_ACCOUNT_ID` | Include when agent preview retries share the same maintenance window. |
-| `.github/workflows/deploy-gs-agent.yml` | `main` → production deploy for `gs-agent` | `CLOUDFLARE_BUILD_API_TOKEN` **or** `CLOUDFLARE_API_TOKEN`, plus `CLOUDFLARE_ACCOUNT_ID` | Active production deploy; keep it in sync with the preview workflow because both use the same fallback token model. |
-| `.github/workflows/maintenance.yml` | manual infra reconciliation after rotation | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `GS_KV_NAMESPACE_ID` | Run after secret updates to confirm the repo can still reconcile Cloudflare state. |
+| `.github/workflows/deploy-gs-api.yml` | `main` → production deploy for `gs-api` | `CLOUDFLARE_BUILD_API_TOKEN`, plus `CLOUDFLARE_ACCOUNT_ID` | Rotate `CLOUDFLARE_BUILD_API_TOKEN` in the same window as the preview workflow so both environments stay in sync. |
+| `.github/workflows/preview-gs-api.yml` | PR preview deploy for `gs-api` | `CLOUDFLARE_BUILD_API_TOKEN`, plus `CLOUDFLARE_ACCOUNT_ID` | Uses the canonical `CLOUDFLARE_BUILD_API_TOKEN`; rotate in the same window as related deploy workflows. |
+| `.github/workflows/deploy-gs-gateway.yml` | `main` → production deploy for `gs-gateway` | `CLOUDFLARE_BUILD_API_TOKEN`, plus `CLOUDFLARE_ACCOUNT_ID` | Keep the production gateway token aligned with preview because both use the same canonical token policy. |
+| `.github/workflows/preview-gs-gateway.yml` | PR preview deploy for `gs-gateway` | `CLOUDFLARE_BUILD_API_TOKEN`, plus `CLOUDFLARE_ACCOUNT_ID` | Rotate `CLOUDFLARE_BUILD_API_TOKEN` in the same window as the production deploy workflow. |
+| `.github/workflows/deploy-gs-control.yml` | `main` → production deploy for `gs-control` | `CLOUDFLARE_BUILD_API_TOKEN`, plus `CLOUDFLARE_ACCOUNT_ID` | Active production deploy; rotate `CLOUDFLARE_BUILD_API_TOKEN` in the same window as the other worker deploys. |
+| `.github/workflows/preview-gs-agent.yml` | PR preview deploy for `gs-agent` | `CLOUDFLARE_BUILD_API_TOKEN`, plus `CLOUDFLARE_ACCOUNT_ID` | Include when agent preview retries share the same maintenance window. |
+| `.github/workflows/deploy-gs-agent.yml` | `main` → production deploy for `gs-agent` | `CLOUDFLARE_BUILD_API_TOKEN`, plus `CLOUDFLARE_ACCOUNT_ID` | Active production deploy; keep it in sync with the preview workflow because both use the same canonical token. |
+| `.github/workflows/maintenance.yml` | manual infra reconciliation after rotation | `CLOUDFLARE_BUILD_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `GS_KV_NAMESPACE_ID` | Run after secret updates to confirm the repo can still reconcile Cloudflare state. |
 
 ### 3. Reconcile preview worker environments and service names in Cloudflare
 
@@ -95,4 +92,4 @@ After Cloudflare and GitHub secrets are updated:
 1. Rerun the failed preview jobs first so branch environments recover quickly.
 2. Rerun the related production deploy jobs if they were blocked by the same token issue.
 3. Manually run `.github/workflows/maintenance.yml` to confirm the new secret set can still reconcile infra state.
-4. Record which token secret path was used (`CLOUDFLARE_API_TOKEN` only vs. `CLOUDFLARE_BUILD_API_TOKEN` override) so the next rotation stays consistent.
+4. Record that `CLOUDFLARE_BUILD_API_TOKEN` was rotated and validated across all affected workflows so the next rotation stays consistent.

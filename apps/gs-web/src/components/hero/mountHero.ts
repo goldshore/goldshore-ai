@@ -1,124 +1,187 @@
+/**
+ * GoldShore Hero — 3D perspective wave field + mouse/scroll parallax.
+ *
+ * Renders a perspective-projected sine-wave mesh on canvas, then drives
+ * multi-layer parallax via CSS transforms so the Penrose mark, copy, and
+ * background all drift at different depths.
+ */
 export const mountHero = (root: ParentNode = document) => {
-  const hero = root.querySelector('[data-reactive-hero]') as HTMLElement | null;
-  const canvas = hero?.querySelector('[data-wave-bg]') as HTMLCanvasElement | null;
-  const logo = hero?.querySelector('[data-reactive-logo]') as SVGElement | null;
-  const seam = hero?.querySelector('.gs-logo-seam') as SVGElement | null;
-  if (!hero || !canvas || !logo) return () => {};
+  const hero   = root.querySelector('[data-gs-hero]') as HTMLElement | null;
+  const canvas = hero?.querySelector('[data-gs-wave]') as HTMLCanvasElement | null;
+  const mark   = hero?.querySelector('[data-gs-mark]') as HTMLElement | null;
+  const copy   = hero?.querySelector('[data-gs-copy]') as HTMLElement | null;
+  const gridEl = hero?.querySelector('[data-gs-grid]') as HTMLElement | null;
 
+  if (!hero || !canvas) return () => {};
   const ctx = canvas.getContext('2d');
   if (!ctx) return () => {};
 
-  let rafId = 0;
-  let elapsed = 0;
-  let width = 0;
-  let height = 0;
+  // ── state ──────────────────────────────────────────────────────────────────
+  let raf = 0;
+  let t   = 0;
+  let W = 0, H = 0, dpr = 1;
 
-  const state = {
-    energy: 0,
-    targetEnergy: 0,
-    dx: 0,
-    dy: 0,
-    rot: 0,
-  };
+  const mouse  = { x: 0, y: 0 };
+  const smooth = { x: 0, y: 0 };
+  let scrollY  = 0;
 
-  const clamp = (value: number, min: number, max: number) =>
-    Math.min(max, Math.max(min, value));
+  const prefersReduced =
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  // ── resize ─────────────────────────────────────────────────────────────────
   const resize = () => {
-    const rect = hero.getBoundingClientRect();
-    const dpr = Math.max(1, window.devicePixelRatio || 1);
-    width = rect.width;
-    height = rect.height;
-    canvas.width = Math.max(1, Math.round(width * dpr));
-    canvas.height = Math.max(1, Math.round(height * dpr));
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.scale(dpr, dpr);
+    dpr = Math.max(1, devicePixelRatio || 1);
+    const r = hero.getBoundingClientRect();
+    W = r.width;
+    H = r.height;
+    canvas.width  = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    canvas.style.width  = `${W}px`;
+    canvas.style.height = `${H}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   };
 
-  const sampleWaveEnergy = (time: number) => {
-    const sx = width * 0.26;
-    const sy = height * 0.28;
+  // ── 3-D perspective wave ───────────────────────────────────────────────────
+  const COLS  = 40;
+  const ROWS  = 22;
+  const FOV   = 440;
+  const TILT  = 0.46;  // radians — camera tilt looking down into the field
+  const AMP   = 40;    // world-unit wave amplitude
+  const CAM_Z = 200;   // camera pull-back
 
-    const value =
-      Math.sin(sx * 0.012 + time * 1.15) * 0.55 +
-      Math.cos(sy * 0.018 + time * 0.82) * 0.45 +
-      Math.sin((sx + sy) * 0.006 + time * 0.55) * 0.25;
+  const cosTilt = Math.cos(TILT);
+  const sinTilt = Math.sin(TILT);
 
-    return Math.abs(value);
+  const project = (wx: number, wy: number, wz: number) => {
+    const ry = wy * cosTilt - wz * sinTilt;
+    const rz = wy * sinTilt + wz * cosTilt + CAM_Z;
+    const p  = FOV / Math.max(rz, 0.1);
+    return { sx: W * 0.5 + wx * p, sy: H * 0.54 + ry * p };
   };
 
-  const drawWaveField = (time: number) => {
-    ctx.clearRect(0, 0, width, height);
+  const waveZ = (col: number, row: number, time: number) =>
+    AMP * (
+      Math.sin(col * 0.36 + time * 1.9)          * 0.52 +
+      Math.cos(row * 0.30 + time * 1.45)         * 0.40 +
+      Math.sin((col + row) * 0.17 + time * 1.15) * 0.28 +
+      Math.cos(col * 0.50 - time * 0.80)         * 0.18
+    );
 
-    const yStep = Math.max(12, Math.round(height / 54));
-    const xStep = Math.max(10, Math.round(width / 84));
+  const drawWave = (time: number) => {
+    ctx.clearRect(0, 0, W, H);
 
-    for (let y = 0; y <= height + yStep; y += yStep) {
-      ctx.beginPath();
+    const spX = (W * 1.12) / COLS;
+    const spY = (H * 0.70) / ROWS;
 
-      for (let x = 0; x <= width + xStep; x += xStep) {
-        const wave =
-          Math.sin(x * 0.0105 + time * 1.1) * 7 +
-          Math.cos(y * 0.018 + time * 0.75) * 4 +
-          Math.sin((x + y) * 0.004 + time * 0.5) * 3;
-
-        if (x === 0) ctx.moveTo(x, y + wave);
-        else ctx.lineTo(x, y + wave);
+    const pts: { sx: number; sy: number }[] = [];
+    for (let r = 0; r <= ROWS; r++) {
+      for (let c = 0; c <= COLS; c++) {
+        const wx = (c - COLS / 2) * spX;
+        const wy = (r - ROWS / 2) * spY;
+        pts.push(project(wx, wy, waveZ(c, r, time)));
       }
+    }
 
-      const alpha = 0.04 + (y / Math.max(height, 1)) * 0.08;
+    const idx = (r: number, c: number) => r * (COLS + 1) + c;
+
+    // Horizontal strands
+    for (let r = 0; r <= ROWS; r++) {
+      ctx.beginPath();
+      for (let c = 0; c <= COLS; c++) {
+        const { sx, sy } = pts[idx(r, c)];
+        c === 0 ? ctx.moveTo(sx, sy) : ctx.lineTo(sx, sy);
+      }
+      const depth = r / ROWS;
+      const alpha = prefersReduced ? 0.10 : 0.04 + depth * 0.20;
       ctx.strokeStyle = `rgba(90,162,255,${alpha.toFixed(3)})`;
-      ctx.lineWidth = 1;
+      ctx.lineWidth   = depth < 0.15 ? 0.5 : 0.85;
       ctx.stroke();
     }
-  };
 
-  const updateLogo = (time: number) => {
-    state.targetEnergy = sampleWaveEnergy(time);
-    state.energy += (state.targetEnergy - state.energy) * 0.08;
-
-    const driftX = clamp(Math.sin(time * 1.2) * 1.2 * state.energy, -2, 2);
-    const driftY = clamp(Math.cos(time * 0.95) * 1.6 * state.energy, -2, 2);
-    const rotation = clamp(Math.sin(time * 0.7) * 0.8 * state.energy, -1.2, 1.2);
-
-    state.dx += (driftX - state.dx) * 0.12;
-    state.dy += (driftY - state.dy) * 0.12;
-    state.rot += (rotation - state.rot) * 0.12;
-
-    const glow = clamp(4 + state.energy * 8, 4, 12);
-    const glowAlpha = clamp(0.18 + state.energy * 0.24, 0.18, 0.42);
-    const opacity = clamp(0.82 + state.energy * 0.12, 0.82, 0.97);
-    const seamOpacity = clamp(0.38 + state.energy * 0.45, 0.38, 0.88);
-
-    logo.style.transform = `translate(${state.dx.toFixed(2)}px, ${state.dy.toFixed(
-      2,
-    )}px) rotate(${state.rot.toFixed(2)}deg)`;
-    logo.style.filter = `drop-shadow(0 0 ${glow.toFixed(1)}px rgba(90,162,255,${glowAlpha.toFixed(
-      3,
-    )}))`;
-    logo.style.opacity = opacity.toFixed(3);
-    logo.style.setProperty('--gs-logo-seam-opacity', seamOpacity.toFixed(3));
-
-    if (seam) {
-      seam.style.opacity = seamOpacity.toFixed(3);
+    // Vertical strands — sparser, subtler
+    for (let c = 0; c <= COLS; c += 2) {
+      ctx.beginPath();
+      for (let r = 0; r <= ROWS; r++) {
+        const { sx, sy } = pts[idx(r, c)];
+        r === 0 ? ctx.moveTo(sx, sy) : ctx.lineTo(sx, sy);
+      }
+      ctx.strokeStyle = `rgba(120,170,255,${(0.02 + (c / COLS) * 0.05).toFixed(3)})`;
+      ctx.lineWidth   = 0.55;
+      ctx.stroke();
     }
+
+    // Bright leading edge (front row)
+    ctx.beginPath();
+    for (let c = 0; c <= COLS; c++) {
+      const { sx, sy } = pts[idx(ROWS, c)];
+      c === 0 ? ctx.moveTo(sx, sy) : ctx.lineTo(sx, sy);
+    }
+    ctx.strokeStyle = 'rgba(90,162,255,0.42)';
+    ctx.lineWidth   = 1.6;
+    ctx.stroke();
   };
 
-  const frame = () => {
-    elapsed += 0.016;
-    drawWaveField(elapsed);
-    updateLogo(elapsed);
-    rafId = window.requestAnimationFrame(frame);
+  // ── parallax ───────────────────────────────────────────────────────────────
+  const applyParallax = () => {
+    if (prefersReduced) return;
+
+    const nx = (smooth.x / Math.max(W, 1) - 0.5) * 2;
+    const ny = (smooth.y / Math.max(H, 1) - 0.5) * 2;
+    const sy = scrollY;
+
+    if (mark) {
+      mark.style.transform =
+        `translate(${(nx * 16).toFixed(2)}px, ${(ny * 12 + sy * -0.20).toFixed(2)}px)`;
+    }
+    if (copy) {
+      copy.style.transform =
+        `translate(${(nx * 5).toFixed(2)}px, ${(ny * 3 + sy * -0.07).toFixed(2)}px)`;
+    }
+    if (gridEl) {
+      gridEl.style.transform =
+        `translate(${(nx * -5).toFixed(2)}px, ${(sy * 0.06).toFixed(2)}px)`;
+    }
+
+    canvas.style.transform = `
+      perspective(1000px)
+      rotateX(${(-ny * 2.8 - sy * 0.003).toFixed(2)}deg)
+      rotateY(${(nx * 1.6).toFixed(2)}deg)
+      scale(1.05)
+    `;
   };
+
+  // ── loop ───────────────────────────────────────────────────────────────────
+  const frame = () => {
+    if (!prefersReduced) t += 0.016;
+
+    smooth.x += (mouse.x - smooth.x) * 0.055;
+    smooth.y += (mouse.y - smooth.y) * 0.055;
+
+    drawWave(t);
+    applyParallax();
+    raf = requestAnimationFrame(frame);
+  };
+
+  // ── listeners ──────────────────────────────────────────────────────────────
+  const onMouse = (e: MouseEvent) => {
+    const r = hero.getBoundingClientRect();
+    mouse.x = e.clientX - r.left;
+    mouse.y = e.clientY - r.top;
+  };
+  const onScroll = () => { scrollY = window.scrollY; };
+
+  const ro = new ResizeObserver(resize);
 
   resize();
-  window.addEventListener('resize', resize);
+  ro.observe(hero);
+  hero.addEventListener('mousemove', onMouse, { passive: true });
+  window.addEventListener('scroll', onScroll, { passive: true });
   frame();
 
   return () => {
-    window.removeEventListener('resize', resize);
-    if (rafId) window.cancelAnimationFrame(rafId);
+    cancelAnimationFrame(raf);
+    ro.disconnect();
+    hero.removeEventListener('mousemove', onMouse);
+    window.removeEventListener('scroll', onScroll);
   };
 };

@@ -1,27 +1,12 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "lib": [
-      "esnext"
-    ],
-    "types": [
-      "@cloudflare/workers-types"
-    ],
+    "target": "ES2022",
     "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "target": "ESNext",
-    "strict": true,
+    "moduleResolution": "bundler",
     "skipLibCheck": true,
-    "paths": {
-      "@goldshore/schema": [
-        "../../packages/schema/src/index.ts"
-      ]
-    }
+    "lib": ["ES2022"],
+    "types": ["@cloudflare/workers-types"]
   },
-  "include": [
-    "src"
-  ],
-  "exclude": [
-    "src/**/*.test.ts"
-  ]
+  "include": ["src/**/*"]
 }

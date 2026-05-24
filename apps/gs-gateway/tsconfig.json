@@ -6,11 +6,7 @@
     "moduleResolution": "bundler",
     "skipLibCheck": true,
     "lib": ["ES2022"],
-    "types": ["@cloudflare/workers-types", "node"]
+    "types": ["@cloudflare/workers-types"]
   },
-  "include": [
-    "src/**/*",
-    "../../packages/schema/src",
-    "../../packages/auth/src"
-  ]
+  "include": ["src/**/*"]
 }

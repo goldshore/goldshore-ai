@@ -1,59 +1,45 @@
 name = "gs-mail"
 main = "src/index.ts"
-compatibility_date = "2024-11-01"
+compatibility_date = "2026-04-18"
 compatibility_flags = ["nodejs_compat"]
-tsconfig = "tsconfig.json"
 
-[[kv_namespaces]]
-binding = "GS_CONFIG"
-id = "9cc2209906a94851b704be57543987a9"
+workers_dev = false
 
-[vars]
-ENV = "production"
-MAIL_FORWARD_TO = "ops@goldshore.ai"
-MAIL_ALLOWED_RECIPIENTS = "ops@goldshore.ai,inbox@goldshore.ai"
+[[env.dev.queues.consumers]]
+queue = "gs-platform-checkout-events-dev"
 
-[observability]
-enabled = true
-
-[env.dev]
-name = "gs-mail-dev"
-[[env.dev.kv_namespaces]]
-binding = "GS_CONFIG"
-id = "9cc2209906a94851b704be57543987a9"
-[env.dev.vars]
-ENV = "development"
-MAIL_ALLOWED_RECIPIENTS = "ops@goldshore.ai,inbox@goldshore.ai"
+[[env.dev.queues.consumers]]
+queue = "gs-platform-contact-events-dev"
 
 [env.prod]
 routes = [
   { pattern = "mail.goldshore.ai/*", zone_name = "goldshore.ai" }
 ]
 
-[[env.prod.kv_namespaces]]
-binding = "GS_CONFIG"
-id = "9cc2209906a94851b704be57543987a9"
-
 [env.prod.vars]
 ENV = "production"
-MAIL_FORWARD_TO = "ops@goldshore.ai"
+MAIL_SERVICE = "true"
+MAIL_ALLOWED_RECIPIENTS = "ops@goldshore.ai,inbox@goldshore.ai"
+CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 
-[env.prod.observability]
-enabled = true
+[[env.prod.queues.consumers]]
+queue = "gs-platform-checkout-events-prod"
 
-[env.production]
+[[env.prod.queues.consumers]]
+queue = "gs-platform-contact-events-prod"
+
+[env.preview]
 routes = [
-  { pattern = "mail.goldshore.ai/*", zone_name = "goldshore.ai" }
+  { pattern = "mail-preview.goldshore.ai/*", zone_name = "goldshore.ai" }
 ]
 
-[[env.production.kv_namespaces]]
-binding = "GS_CONFIG"
-id = "9cc2209906a94851b704be57543987a9"
+[env.preview.vars]
+ENV = "preview"
+CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
+MAIL_FORWARD_TO = "ops+preview@goldshore.ai"
 
-[env.production.vars]
-ENV = "production"
-MAIL_FORWARD_TO = "ops@goldshore.ai"
+[[env.preview.queues.consumers]]
+queue = "gs-platform-checkout-events-preview"
 
-[env.production.observability]
-enabled = true
-MAIL_ALLOWED_RECIPIENTS = "ops@goldshore.ai,inbox@goldshore.ai"
+[[env.preview.queues.consumers]]
+queue = "gs-platform-contact-events-preview"

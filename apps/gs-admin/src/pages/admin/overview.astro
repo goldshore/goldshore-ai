@@ -1,4 +1,19 @@
 ---
+/**
+ * Admin dashboard — Overview
+ *
+ * Cloudflare bindings available on `Astro.locals.runtime.env`:
+ *   KV            — gs_admin_kv_001   (admin state, feature flags)
+ *   CONTENT_DB    — goldshore (D1)    (read-only metrics queries)
+ *   ASSETS        — gs-assets (R2)   (brand / media assets)
+ *   API_SERVICE   — gs-api (service binding, env: prod)
+ *
+ * These are declared in apps/gs-admin/wrangler.toml and provisioned in
+ * Cloudflare dashboard under the gs-admin Pages project → Settings → Bindings.
+ */
+
+export const prerender = false;
+
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import { GSButton } from '@goldshore/ui';
 import scanResults from '../../data/pii-scan-results.json';
@@ -76,6 +91,65 @@ const formattedScanDate = new Date(generatedAt).toLocaleString('en-US', {
                 <GSButton variant="secondary" id="check-api-config">Validate Access</GSButton>
             </div>
         </div>
+      ) : (
+        <table class="deploy-table">
+          <thead>
+            <tr>
+              <th>Service</th><th>Time</th><th>Env</th><th>Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            {recentDeploys.map(d => (
+              <tr>
+                <td>{d.label}</td>
+                <td>{d.time}</td>
+                <td><code>{d.env}</code></td>
+                <td class={d.ok ? 'ok' : 'fail'}>{d.ok ? 'Success' : 'Failed'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </section>
+
+    <!-- Bindings reference -->
+    <section class="overview__section" aria-labelledby="bindings-title">
+      <h2 class="overview__section-title" id="bindings-title">Cloudflare Bindings</h2>
+      <table class="bindings-table">
+        <thead>
+          <tr><th>Binding</th><th>Type</th><th>Resource</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>KV</code></td>
+            <td>KV Namespace</td>
+            <td>gs_admin_kv_001</td>
+            <td class={runtime?.env?.KV ? 'ok' : 'warn'}>{runtime?.env?.KV ? 'Bound' : 'Not bound'}</td>
+          </tr>
+          <tr>
+            <td><code>API_SERVICE</code></td>
+            <td>Service binding</td>
+            <td>gs-api (prod)</td>
+            <td class={runtime?.env?.API_SERVICE ? 'ok' : 'warn'}>{runtime?.env?.API_SERVICE ? 'Bound' : 'Not bound'}</td>
+          </tr>
+          <tr>
+            <td><code>CONTENT_DB</code></td>
+            <td>D1 Database</td>
+            <td>goldshore (gs_db_001)</td>
+            <td class="info">Via API service</td>
+          </tr>
+          <tr>
+            <td><code>ASSETS</code></td>
+            <td>R2 Bucket</td>
+            <td>gs-assets</td>
+            <td class="info">Via API service</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+  </div>
+</AdminLayout>
 
         <div class="gs-card space-y-4">
             <div>

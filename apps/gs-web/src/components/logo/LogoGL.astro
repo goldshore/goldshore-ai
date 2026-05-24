@@ -1,0 +1,214 @@
+---
+import LogoSVG from './LogoSVG.astro';
+---
+
+<div class="logo-lock logo" aria-label="Gold Shore signal lock">
+  <div class="logo-lock__shader-shell">
+    <div class="logo-lock__shader" data-logo-gl></div>
+  </div>
+  <div class="logo-lock__svg-layer">
+    <LogoSVG decorative={true} class="logo-lock__svg" />
+  </div>
+</div>
+
+<script>
+  // @ts-nocheck
+  import * as THREE from 'three';
+
+  const instances = new WeakMap();
+
+  const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function createLogoShader(root) {
+    if (instances.has(root)) return;
+
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+    renderer.setClearColor(0x000000, 0);
+    root.replaceChildren(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 10);
+    camera.position.z = 3.25;
+
+    const geometry = new THREE.PlaneGeometry(1.85, 2.45, 160, 160);
+    const material = new THREE.ShaderMaterial({
+      uniforms: {
+        uTime: { value: 0 },
+        uMid: { value: new THREE.Color('#1E3A8A') },
+        uEdge: { value: new THREE.Color('#5FA8FF') }
+      },
+      vertexShader: `
+        uniform float uTime;
+        varying vec2 vUv;
+        varying float vElevation;
+
+        void main() {
+          vUv = uv;
+          vec3 pos = position;
+          float wavePrimary = sin((pos.y * 4.2) + (uTime * 1.25));
+          float waveSecondary = cos((pos.x * 3.8) - (uTime * 0.85));
+          vElevation = (wavePrimary + waveSecondary) * 0.5;
+          pos.z += vElevation * 0.12;
+          pos.x += sin((pos.y * 2.6) + (uTime * 0.45)) * 0.03;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform float uTime;
+        uniform vec3 uMid;
+        uniform vec3 uEdge;
+        varying vec2 vUv;
+        varying float vElevation;
+
+        float pulse(float value, float width) {
+          return smoothstep(width, 0.0, abs(value));
+        }
+
+        void main() {
+          float scan = sin((vUv.y * 18.0) - (uTime * 1.6)) * 0.5 + 0.5;
+          float trace = pulse(fract((vUv.x * 7.0) - (uTime * 0.18)) - 0.5, 0.14);
+          float field = smoothstep(0.12, 1.0, scan * 0.7 + trace * 0.75 + vElevation * 0.15 + 0.25);
+          vec3 color = mix(uMid, uEdge, field);
+          float alpha = 0.22 + field * 0.68;
+          gl_FragColor = vec4(color, alpha);
+        }
+      `,
+      transparent: true,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    });
+
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.rotation.x = -0.32;
+    mesh.rotation.y = 0.32;
+    scene.add(mesh);
+
+    const resize = () => {
+      const { clientWidth, clientHeight } = root;
+      if (!clientWidth || !clientHeight) return;
+      renderer.setSize(clientWidth, clientHeight, false);
+      camera.aspect = clientWidth / clientHeight;
+      camera.updateProjectionMatrix();
+    };
+
+    let frame = 0;
+    const clock = new THREE.Clock();
+
+    const renderFrame = () => {
+      const elapsed = clock.getElapsedTime();
+      material.uniforms.uTime.value = elapsed;
+      mesh.rotation.y += 0.0018;
+      mesh.rotation.z = Math.sin(elapsed * 0.45) * 0.05;
+      renderer.render(scene, camera);
+      if (!prefersReducedMotion()) {
+        frame = window.requestAnimationFrame(renderFrame);
+      }
+    };
+
+    const observer = new ResizeObserver(resize);
+    observer.observe(root);
+    resize();
+    renderFrame();
+
+    const cleanup = () => {
+      window.cancelAnimationFrame(frame);
+      observer.disconnect();
+      geometry.dispose();
+      material.dispose();
+      renderer.dispose();
+      if (renderer.domElement.parentNode === root) {
+        root.removeChild(renderer.domElement);
+      }
+      instances.delete(root);
+    };
+
+    instances.set(root, cleanup);
+  }
+
+  function initLogoShaders() {
+    document.querySelectorAll('[data-logo-gl]').forEach((root) => createLogoShader(root));
+  }
+
+  function cleanupLogoShaders() {
+    document.querySelectorAll('[data-logo-gl]').forEach((root) => {
+      const cleanup = instances.get(root);
+      cleanup?.();
+    });
+  }
+
+  document.addEventListener('astro:page-load', initLogoShaders);
+  document.addEventListener('astro:before-swap', cleanupLogoShaders);
+
+  if (document.readyState !== 'loading') {
+    initLogoShaders();
+  } else {
+    document.addEventListener('DOMContentLoaded', initLogoShaders, { once: true });
+  }
+</script>
+
+<style>
+  .logo-lock {
+    position: relative;
+    width: min(100%, 26rem);
+    aspect-ratio: 4 / 5;
+    margin-inline: auto;
+    isolation: isolate;
+  }
+
+  .logo-lock__shader-shell,
+  .logo-lock__svg-layer {
+    position: absolute;
+    inset: 0;
+  }
+
+  .logo-lock__shader-shell {
+    inset: 10% 13%;
+    filter: drop-shadow(0 0 50px rgba(95, 168, 255, 0.18));
+  }
+
+  .logo-lock__shader {
+    width: 100%;
+    height: 100%;
+    mask-image: url('/logo.svg');
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+    -webkit-mask-image: url('/logo.svg');
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    -webkit-mask-size: contain;
+  }
+
+  .logo-lock__shader :global(canvas) {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .logo-lock__svg-layer {
+    display: grid;
+    place-items: center;
+    padding: 3% 8%;
+  }
+
+  .logo-lock__svg {
+    width: 100%;
+    height: auto;
+  }
+
+  .logo:hover :global(#edgePath) {
+    stroke-width: 1.4;
+    opacity: 1;
+  }
+
+  .logo:hover :global(#midPath) {
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .logo-lock__shader-shell {
+      filter: drop-shadow(0 0 30px rgba(95, 168, 255, 0.12));
+    }
+  }
+</style>

@@ -93,6 +93,24 @@ describe("/system/sync", () => {
     assert.strictEqual(auditEntries.length, 1);
   });
 
+  it("returns 400 when the request body is malformed JSON", async () => {
+    const { env, writes } = createEnv();
+    const app = createApp(async () => ({
+      email: "admin@example.com",
+      roles: ["admin"]
+    }));
+
+    const response = await app.request("http://localhost/system/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{invalid"
+    }, env);
+
+    assert.strictEqual(response.status, 400);
+    assert.deepStrictEqual(await response.json(), { error: "Invalid JSON body" });
+    assert.strictEqual(writes.size, 0);
+  });
+
   it("returns a server error when GS_CONFIG is unavailable", async () => {
     const { env } = createEnv({ GS_CONFIG: undefined as unknown as KVNamespace });
     const app = createApp(async () => ({

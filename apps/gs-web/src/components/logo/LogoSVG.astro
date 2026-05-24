@@ -1,0 +1,107 @@
+---
+const {
+  title = 'Gold Shore Signal Lock',
+  class: className,
+  decorative = false,
+  ...attrs
+} = Astro.props;
+
+const pathData = 'm111.87 92.505-41-72A1 1 0 0 0 70 20H57a1 1 0 0 0-.87.505l-41 72a1 1 0 0 0 0 .99l6.5 11.414a1 1 0 0 0 .87.506h82a1 1 0 0 0 .87-.506l6.5-11.414a1 1 0 0 0 0-.99M109.28 92H43.72l5.361-9.415H91.5a1 1 0 0 0 .87-1.494L58.72 22h10.698ZM63.5 57.265l13.28 23.32H50.22ZM17.15 93 57 23.021l32.78 57.564h-10.7l-21.21-37.25a1.04 1.04 0 0 0-1.738 0L22.5 102.392Zm86.768 10.415H24.22L57 45.85l5.35 9.394-21.22 37.261A1 1 0 0 0 42 94h67.28Z';
+---
+
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 150 200"
+  role={decorative ? undefined : 'img'}
+  aria-hidden={decorative ? 'true' : undefined}
+  aria-label={decorative ? undefined : title}
+  class:list={['signal-logo', className]}
+  {...attrs}
+>
+  {!decorative && <title>{title}</title>}
+  <g transform="translate(0 0)">
+    <path id="mainPath" class="signal-logo__main" d={pathData} />
+    <path id="midPath" class="signal-logo__mid" d={pathData} />
+    <path id="edgePath" class="signal-logo__edge" d={pathData} />
+  </g>
+</svg>
+
+<style>
+  .signal-logo {
+    --base: var(--gs-signal-base, #0a0f1c);
+    --mid: var(--gs-signal-mid, #1e3a8a);
+    --edge: var(--gs-signal-edge, #5fa8ff);
+    --stroke: 2.6;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  .signal-logo__main,
+  .signal-logo__mid,
+  .signal-logo__edge {
+    fill: none;
+    stroke-dasharray: 600;
+    stroke-dashoffset: 600;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .signal-logo__main {
+    stroke: var(--base);
+    stroke-width: var(--stroke);
+    animation: draw 1.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  }
+
+  .signal-logo__mid {
+    stroke: var(--mid);
+    stroke-width: calc(var(--stroke) * 0.55);
+    opacity: 0;
+    animation:
+      draw 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) 0.8s forwards,
+      fadeIn 0.6s ease 0.8s forwards;
+  }
+
+  .signal-logo__edge {
+    stroke: var(--edge);
+    stroke-width: 1;
+    opacity: 0;
+    filter: drop-shadow(0 0 18px color-mix(in srgb, var(--edge) 40%, transparent));
+    animation:
+      draw 1s cubic-bezier(0.2, 0.8, 0.2, 1) 1.4s forwards,
+      fadeIn 0.6s ease 1.4s forwards,
+      signalPulse 3s ease-in-out 2.5s infinite;
+  }
+
+  @keyframes draw {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @keyframes fadeIn {
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes signalPulse {
+    0%,
+    100% {
+      opacity: 0.4;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .signal-logo__main,
+    .signal-logo__mid,
+    .signal-logo__edge {
+      animation: none;
+      stroke-dashoffset: 0;
+      opacity: 1;
+    }
+  }
+</style>

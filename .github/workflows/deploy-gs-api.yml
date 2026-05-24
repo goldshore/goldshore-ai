@@ -1,4 +1,4 @@
-name: Deploy GS API Worker
+name: Deploy gs-api
 
 permissions:
   contents: read
@@ -14,16 +14,17 @@ on:
       - "pnpm-lock.yaml"
 
 jobs:
-  deploy-api:
+  deploy:
     runs-on: ubuntu-latest
     name: Deploy
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
-      - name: Install pnpm
-        run: npm install -g pnpm@9
+      - uses: pnpm/action-setup@v6.0.0
+        with:
+          run_install: false
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: 'pnpm'
@@ -40,9 +41,21 @@ jobs:
       - name: Validate canonical worker names
         run: pnpm validate:names
 
+      - name: Validate required Cloudflare deploy secrets
+        env:
+          CLOUDFLARE_BUILD_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          test -n "$CLOUDFLARE_BUILD_API_TOKEN" || (echo "Missing required secret: CLOUDFLARE_BUILD_API_TOKEN" && exit 1)
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "Missing required secret: CLOUDFLARE_ACCOUNT_ID" && exit 1)
+
+
+      - name: Validate gs-api infra bindings config
+        run: pnpm check:gs-api-infra-bindings
+
       - name: Deploy GS API worker to Cloudflare
         working-directory: apps/gs-api
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN || secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: pnpm exec wrangler deploy --env prod
+        run: pnpm run deploy

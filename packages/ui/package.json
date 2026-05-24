@@ -7,39 +7,15 @@
   "exports": {
     ".": "./index.ts"
   },
-  "peerDependencies": {
-    "astro": "^5.18.0"
-  },
-  "devDependencies": {
-    "astro": "^5.18.0"
-  }
-}
-{
-  "name": "@goldshore/ui",
-  "version": "0.1.0",
-  "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "exports": {
-    ".": "./dist/index.js"
-  },
-  "files": [
-    "dist"
-  ],
   "scripts": {
-    "build": "tsc --project tsconfig.json && find src -name '*.css' -exec cp {} dist/ \\;",
-    "dev": "tsc -w"
-  },
-  "dependencies": {
-    "react": "^18.2.0"
-  },
-  "devDependencies": {
-    "@types/react": "^18.2.45",
-    "astro": "^5.15.9",
-    "typescript": "^5.0.0"
+    "build": "echo 'ui package: no build step required (source exports)'",
+    "dev": "echo 'ui package: no dev step required'"
   },
   "peerDependencies": {
-    "astro": "^5.15.9"
+    "astro": "^6.3.1"
+  },
+  "devDependencies": {
+    "astro": "^6.3.1"
   }
 }
 

@@ -1,9 +1,9 @@
 import { Hono } from 'hono';
 import { secureHeaders } from 'hono/secure-headers';
 import { cors } from 'hono/cors';
-import { verifyAccess } from '@goldshore/auth';
 import { STATUS_PAGE_HTML } from './templates/status';
 import { type Env } from './types';
+import { checkAuth } from './auth';
 import { integrationControls } from './middleware/integration';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -23,6 +23,52 @@ const withCorrelationId = (response: Response, correlationId: string): Response 
     status: response.status,
     statusText: response.statusText,
     headers
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { secureHeaders } from "hono/secure-headers";
+import { authMiddleware } from "./middleware/auth";
+interface GatewayEnv {
+  [key: string]: any;
+  CLOUDFLARE_ACCESS_AUDIENCE?: string;
+  CLOUDFLARE_TEAM_DOMAIN?: string;
+  API_SERVICE?: Fetcher;
+  AGENT?: Fetcher;
+  SECURITY_CHECK?: Fetcher;
+  // KV
+  AI_CACHE?: KVNamespace;
+  GS_CONFIG?: KVNamespace;
+  GATEWAY_KV?: KVNamespace;
+  // D1
+  PLATFORM_DB?: D1Database;
+  // R2
+  ASSETS?: R2Bucket;
+  // Queue producers
+  MAIL_QUEUE?: Queue;   // gs-mail-jobs queue
+  // Stripe (secret — never logged, never returned in responses)
+  STRIPE_SECRET_KEY?: string;
+  // Config
+  API_ORIGIN?: string;
+  ACCESS_CLIENT_SECRET?: string;
+  ENV?: string;
+}
+
+const SECURITY_TIMEOUT_MS = 250;
+const SIGNALS_TIMEOUT_MS = 1200;
+const NON_CRITICAL_SIGNAL_PATHS = ["/signals", "/telemetry", "/events"] as const;
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${label}_TIMEOUT`)), timeoutMs);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
   });
 };
 
@@ -80,11 +126,12 @@ app.use('*', async (c, next) => {
         return;
     }
 
-    if (!c.env.CLOUDFLARE_ACCESS_AUDIENCE) {
-        console.warn('SECURITY WARNING: CLOUDFLARE_ACCESS_AUDIENCE is not set. Audience verification is disabled.');
+    if (c.env.ENV === 'production' && !c.env.CLOUDFLARE_ACCESS_AUDIENCE) {
+        console.error('SECURITY ERROR: CLOUDFLARE_ACCESS_AUDIENCE must be configured for protected gs-gateway routes in production.');
+        return c.json({ error: 'Service auth misconfigured' }, 500);
     }
 
-    const authorized = await verifyAccess(c.req.raw, c.env);
+    const authorized = await checkAuth(c.req.raw, c.env);
     if (!authorized) {
         return c.json({ error: 'Unauthorized' }, 401);
     }
@@ -169,7 +216,9 @@ app.all('/api/*', async (c) => {
         if (c.env.API_ORIGIN) {
             const url = new URL(c.req.url);
             const targetUrl = new URL(url.pathname + url.search, c.env.API_ORIGIN);
-            const response = await fetch(targetUrl.toString(), c.req.raw);
+            const upstreamRequest = new Request(targetUrl, c.req.raw);
+            upstreamRequest.headers.set(TRACE_HEADER, correlationId);
+            const response = await fetch(upstreamRequest);
             return withCorrelationId(response, correlationId);
         }
 

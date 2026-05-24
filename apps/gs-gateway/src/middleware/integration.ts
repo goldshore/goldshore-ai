@@ -3,6 +3,7 @@ import { type Env } from '../types';
 
 const INTEGRATION_PATH_PREFIXES = ['/integrations', '/market-streams'];
 const DATA_CLASSIFICATIONS = new Set(['public', 'internal', 'confidential', 'restricted']);
+const AUDIT_TRACE_ID_PATTERN = /^[A-Za-z0-9._:-]{1,128}$/;
 const SECRETS_ACCESS_POLICIES = new Set([
   'none',
   'read-only',
@@ -46,6 +47,9 @@ export const integrationControls: MiddlewareHandler<{ Bindings: Env }> = async (
   if (!auditTraceId) {
     return c.json({ error: 'Missing audit trace id.' }, 400);
   }
+  if (!AUDIT_TRACE_ID_PATTERN.test(auditTraceId)) {
+    return c.json({ error: 'Invalid audit trace id.' }, 400);
+  }
 
   const auditEntry = {
     traceId: auditTraceId,
@@ -55,13 +59,23 @@ export const integrationControls: MiddlewareHandler<{ Bindings: Env }> = async (
     path: c.req.path,
     timestamp: new Date().toISOString(),
     cfRay: c.req.header('CF-Ray') ?? null,
-    actor: c.req.header('CF-Access-User-Email') ?? 'unknown'
+    actor:
+      c.req.header('CF-Access-Authenticated-User-Email') ??
+      c.req.header('CF-Access-User-Email') ??
+      c.req.header('CF-Access-Authenticated-User-Id') ??
+      'unknown'
   };
 
   if (c.env.GATEWAY_KV) {
-    await c.env.GATEWAY_KV.put(`audit:${auditTraceId}`, JSON.stringify(auditEntry), {
-      expirationTtl: 60 * 60 * 24 * 30
-    });
+    const persistAuditEntry = c.env.GATEWAY_KV
+      .put(`audit:${auditTraceId}`, JSON.stringify(auditEntry), {
+        expirationTtl: 60 * 60 * 24 * 30
+      })
+      .catch((error) => {
+        console.error('Failed to persist gateway audit entry.', error);
+      });
+
+    c.executionCtx.waitUntil(persistAuditEntry);
   } else {
     console.warn('GATEWAY_KV is not configured for audit logging.', auditEntry);
   }

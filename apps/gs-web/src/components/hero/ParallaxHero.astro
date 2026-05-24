@@ -1,384 +1,330 @@
 ---
-const { title = "Shaping Waves with Applied Intelligence" } = Astro.props;
+import Logo from '../brand/Logo.astro';
+
+const {
+  eyebrow      = 'System Operational',
+  headline     = 'Shaping Waves with\nApplied Intelligence',
+  sub          = 'GoldShore builds resilient systems with applied intelligence, responsive operations, and disciplined control surfaces that move like instruments—not ornaments.',
+  ctaPrimary   = { label: 'Start the Experience', href: '/intake' },
+  ctaSecondary = { label: 'Contact Sales',        href: '/contact' },
+  ctaPrimaryEventName = 'hero_primary_cta_clicked',
+  ctaSecondaryEventName = 'hero_secondary_cta_clicked',
+} = Astro.props;
+
+const lines = headline.split('\n');
 ---
 
-<section class="gs-hero" data-reactive-hero aria-label="Hero">
-  <div class="gs-hero-bg" aria-hidden="true">
-    <canvas class="gs-wave-field" data-wave-bg></canvas>
-    <div class="gs-grid"></div>
-    <div class="gs-vignette"></div>
+<section class="gs-hero" data-gs-hero aria-label="Hero">
+
+  <!-- Background layers -->
+  <div class="gs-hero__bg" aria-hidden="true">
+    <canvas class="gs-hero__wave" data-gs-wave></canvas>
+    <div class="gs-hero__grid" data-gs-grid></div>
+    <div class="gs-hero__glow"></div>
+    <div class="gs-hero__vignette"></div>
   </div>
 
-  <div class="hero-mark-wrap" aria-hidden="true">
-    <svg
-      class="gs-logo-reactive"
-      viewBox="0 0 128 160"
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="1.8"
-      stroke-linejoin="round"
-      stroke-linecap="square"
-      vector-effect="non-scaling-stroke"
-      shape-rendering="geometricPrecision"
-      data-reactive-logo
-    >
-      <path
-        class="gs-logo-path"
-        d="M64 20 L17 93 H103 L64 20 M64 20 L103 93 M64 20 L17 93"
-      />
-      <path class="gs-logo-path gs-logo-seam" d="M64 58 L49 83 H79 L64 58" />
-    </svg>
+  <!-- Penrose mark — floats behind copy at its own parallax depth -->
+  <div class="gs-hero__mark-wrap" data-gs-mark aria-hidden="true">
+    <Logo variant="mark" ariaHidden={true} class="gs-hero__mark" />
   </div>
 
-  <div class="gs-hero-inner">
-    <div class="gs-hero-left hero-content">
-      <div class="gs-pill"><span class="dot"></span> SYSTEM OPERATIONAL</div>
-      <h1>{title}</h1>
-      <p class="sub">
-        GoldShore shapes resilient systems with applied intelligence, responsive operations,
-        and disciplined control surfaces that move like instruments—not ornaments.
-      </p>
+  <!-- Copy -->
+  <div class="gs-hero__copy" data-gs-copy>
 
-      <div class="actions">
-        <a class="btn primary" href="/intake">Start the Experience</a>
-        <a class="btn ghost" href="/contact">Contact Sales</a>
-      </div>
+    <div class="gs-hero__eyebrow" role="status">
+      <span class="gs-hero__dot" aria-hidden="true"></span>
+      {eyebrow}
     </div>
 
-    <div class="gs-hero-right hero-content">
-      <div class="panel" data-tilt>
-        <div class="panel-top">
-          <div class="lights"><span></span><span></span><span></span></div>
-          <div class="panel-title">GoldShore Control Surface</div>
-        </div>
-        <div class="panel-body">
-          <div class="kv">
-            <div><span>STATUS</span><b class="ok">ACTIVE</b></div>
-            <div><span>MODE</span><b class="mode">SYSTEM_RESONANCE</b></div>
-            <div><span>FIELD</span><b>WAVE_SYNC</b></div>
-          </div>
-          <div class="bars" aria-hidden="true">
-            <i></i><i></i><i></i><i></i><i></i>
-          </div>
-          <div class="terminal" aria-hidden="true">
-            <div>&gt; Sampling wave energy near hero mark…</div>
-            <div>&gt; Penrose glow aligned to local field amplitude.</div>
-            <div>&gt; Resonance stable within instrument limits.</div>
-          </div>
-        </div>
-      </div>
+    <h1 class="gs-hero__headline">
+      {lines.map((line, i) => (
+        <span class="gs-hero__headline-line" style={`animation-delay:${i * 120}ms`}>
+          {line}
+        </span>
+      ))}
+    </h1>
+
+    <p class="gs-hero__sub">{sub}</p>
+
+    <div class="gs-hero__actions">
+      <a
+        class="gs-btn gs-btn--primary"
+        href={ctaPrimary.href}
+        data-analytics-event={ctaPrimary.analyticsEvent}
+      >
+        {ctaPrimary.label}
+        <svg class="gs-btn__arrow" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+      <a
+        class="gs-btn gs-btn--ghost"
+        href={ctaSecondary.href}
+        data-analytics-event={ctaSecondary.analyticsEvent}
+      >
+        {ctaSecondary.label}
+      </a>
     </div>
+
   </div>
 
   <script>
-    import { mountHero } from "./mountHero";
+    import { mountHero } from './mountHero';
 
-    const globalState = window as typeof window & {
-      __gsReactiveHeroCleanup?: (() => void) | null;
-      __gsReactiveHeroBound?: boolean;
+    const ns = window as typeof window & {
+      __gsHeroCleanup?: (() => void) | null;
+      __gsHeroBound?: boolean;
     };
 
-    const cleanup = () => {
-      globalState.__gsReactiveHeroCleanup?.();
-      globalState.__gsReactiveHeroCleanup = null;
-    };
+    const cleanup = () => { ns.__gsHeroCleanup?.(); ns.__gsHeroCleanup = null; };
+    const boot    = () => { cleanup(); ns.__gsHeroCleanup = mountHero(document); };
 
-    const boot = () => {
-      cleanup();
-      globalState.__gsReactiveHeroCleanup = mountHero(document);
-    };
-
-    if (!globalState.__gsReactiveHeroBound) {
-      globalState.__gsReactiveHeroBound = true;
-      document.addEventListener("astro:page-load", boot);
-      document.addEventListener("astro:before-swap", cleanup);
+    if (!ns.__gsHeroBound) {
+      ns.__gsHeroBound = true;
+      document.addEventListener('astro:page-load', boot);
+      document.addEventListener('astro:before-swap', cleanup);
     }
-
     boot();
   </script>
 </section>
 
 <style>
+  /* shell */
   .gs-hero {
     position: relative;
-    overflow: hidden;
-    min-height: calc(100vh - 88px);
-    background: #0b0f18;
-    border-top: 1px solid rgba(226, 232, 240, 0.08);
-    border-bottom: 1px solid rgba(226, 232, 240, 0.08);
-  }
-
-  .gs-wave-bg,
-  .gs-grid,
-  .gs-vignette {
-    position: absolute;
-    inset: 0;
-  }
-
-  .gs-wave-bg {
-    width: 100%;
-    height: 100%;
-    z-index: 0;
-  }
-
-  .gs-grid {
-    z-index: 0;
-    background:
-      linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
-    background-size: 72px 72px;
-    opacity: 0.18;
-    mask-image: radial-gradient(circle at 30% 30%, black 35%, transparent 78%);
-    pointer-events: none;
-  }
-
-  .gs-vignette {
-    z-index: 0;
-    pointer-events: none;
-    background:
-      radial-gradient(circle at 22% 24%, rgba(90, 162, 255, 0.12), transparent 42%),
-      radial-gradient(circle at 70% 42%, rgba(59, 130, 246, 0.08), transparent 52%),
-      linear-gradient(120deg, rgba(2, 6, 23, 0.95), rgba(2, 6, 23, 0.72));
-  }
-
-  .hero-mark-wrap {
-    position: absolute;
-    left: clamp(1.5rem, 8vw, 6rem);
-    top: clamp(5rem, 18vh, 10rem);
-    z-index: 1;
-    pointer-events: none;
-  }
-
-  .gs-logo-reactive {
-    width: clamp(72px, 10vw, 132px);
-    height: auto;
-    color: #5aa2ff;
-    transform-origin: 50% 50%;
-    will-change: transform, filter, opacity;
-    transition:
-      transform 120ms linear,
-      filter 160ms linear,
-      opacity 160ms linear;
-    opacity: 0.88;
-  }
-
-  .gs-logo-path,
-  .gs-logo-seam {
-    vector-effect: non-scaling-stroke;
-  }
-
-  .gs-logo-seam {
-    opacity: 0.68;
-  }
-
-  .gs-hero-inner {
-    position: relative;
-    z-index: 2;
-    width: min(1200px, calc(100% - 48px));
-    margin: 0 auto;
-    padding: 96px 0 76px;
-    display: grid;
-    grid-template-columns: 1.15fr 0.85fr;
-    gap: 48px;
-    align-items: center;
-  }
-
-  .hero-content {
-    position: relative;
-    z-index: 2;
-  }
-
-  .gs-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 12px;
-    letter-spacing: 0.12em;
-    color: rgba(90, 162, 255, 0.95);
-    border: 1px solid rgba(90, 162, 255, 0.26);
-    background: rgba(2, 6, 23, 0.35);
-    padding: 10px 14px;
-    border-radius: 999px;
-    text-transform: uppercase;
-  }
-
-  .gs-pill .dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: rgba(90, 162, 255, 1);
-    box-shadow: 0 0 18px rgba(90, 162, 255, 0.55);
-  }
-
-  .gs-hero h1 {
-    margin: 18px 0 10px;
-    font-family: var(--gs-font-display, ui-serif, Georgia, serif);
-    font-size: clamp(44px, 5vw, 74px);
-    line-height: 1.02;
-    color: rgba(226, 232, 240, 0.98);
-    text-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
-  }
-
-  .sub {
-    max-width: 52ch;
-    color: rgba(226, 232, 240, 0.72);
-    font-size: 15.5px;
-    line-height: 1.55;
-  }
-
-  .actions {
-    margin-top: 22px;
+    min-height: 100svh;
     display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-
-  .btn {
-    display: inline-flex;
     align-items: center;
     justify-content: center;
-    height: 40px;
-    padding: 0 14px;
-    border-radius: 10px;
-    font-weight: 650;
-    font-size: 13px;
-    border: 1px solid rgba(226, 232, 240, 0.14);
-    background: rgba(2, 6, 23, 0.35);
-    color: rgba(226, 232, 240, 0.92);
-    backdrop-filter: blur(10px);
-    text-decoration: none;
-    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
-  }
-
-  .btn.primary {
-    border-color: rgba(90, 162, 255, 0.35);
-    background: linear-gradient(90deg, rgba(90, 162, 255, 0.22), rgba(59, 130, 246, 0.12));
-    box-shadow: 0 10px 30px rgba(90, 162, 255, 0.14);
-  }
-
-  .btn.ghost:hover,
-  .btn.primary:hover {
-    transform: translateY(-1px);
-  }
-
-  .panel {
-    border-radius: 18px;
-    border: 1px solid rgba(226, 232, 240, 0.12);
-    background: rgba(2, 6, 23, 0.38);
-    backdrop-filter: blur(14px);
-    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
     overflow: hidden;
-    transform: translateZ(0);
+    background: #070b14;
   }
 
-  .panel-top {
+  /* background stack */
+  .gs-hero__bg,
+  .gs-hero__wave,
+  .gs-hero__grid,
+  .gs-hero__glow,
+  .gs-hero__vignette {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .gs-hero__wave {
+    width: 100%;
+    height: 100%;
+    transform-origin: center center;
+    will-change: transform;
+  }
+
+  .gs-hero__grid {
+    background:
+      linear-gradient(rgba(148,163,184,0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148,163,184,0.07) 1px, transparent 1px);
+    background-size: 72px 72px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 20%, transparent 80%);
+    opacity: 0.55;
+    will-change: transform;
+  }
+
+  .gs-hero__glow {
+    background:
+      radial-gradient(ellipse 55% 45% at 50% 42%, rgba(90,162,255,0.13) 0%, transparent 70%),
+      radial-gradient(ellipse 30% 30% at 50% 42%, rgba(90,162,255,0.07) 0%, transparent 60%);
+  }
+
+  .gs-hero__vignette {
+    background:
+      linear-gradient(to bottom,
+        rgba(7,11,20,0.55) 0%, transparent 28%,
+        transparent 72%, rgba(7,11,20,0.88) 100%),
+      linear-gradient(to right,
+        rgba(7,11,20,0.38) 0%, transparent 18%,
+        transparent 82%, rgba(7,11,20,0.38) 100%);
+  }
+
+  /* Penrose mark */
+  .gs-hero__mark-wrap {
+    position: absolute;
+    inset: 0;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 14px 16px;
-    border-bottom: 1px solid rgba(226, 232, 240, 0.1);
+    justify-content: center;
+    z-index: 1;
+    pointer-events: none;
+    will-change: transform;
   }
 
-  .lights {
+  .gs-hero__mark {
+    width: clamp(220px, 28vw, 380px);
+    height: auto;
+    opacity: 0.18;
+    filter: blur(0.5px) drop-shadow(0 0 48px rgba(90,162,255,0.32));
+    transition: opacity 600ms ease, filter 600ms ease;
+  }
+
+  .gs-hero:hover .gs-hero__mark {
+    opacity: 0.26;
+    filter: blur(0px) drop-shadow(0 0 72px rgba(90,162,255,0.50));
+  }
+
+  /* copy */
+  .gs-hero__copy {
+    position: relative;
+    z-index: 3;
     display: flex;
-    gap: 8px;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    width: min(680px, calc(100% - 48px));
+    will-change: transform;
   }
 
-  .lights span {
-    width: 10px;
-    height: 10px;
+  /* eyebrow */
+  .gs-hero__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 18px;
+    border-radius: 999px;
+    border: 1px solid rgba(90,162,255,0.28);
+    background: rgba(7,11,20,0.48);
+    backdrop-filter: blur(12px);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(90,162,255,0.92);
+    margin-bottom: 28px;
+  }
+
+  .gs-hero__dot {
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
-    background: rgba(226, 232, 240, 0.18);
+    background: #5aa2ff;
+    box-shadow: 0 0 10px 2px rgba(90,162,255,0.7);
+    animation: dot-pulse 2s ease-in-out infinite;
+    flex-shrink: 0;
   }
 
-  .lights span:nth-child(1) { background: rgba(239, 68, 68, 0.55); }
-  .lights span:nth-child(2) { background: rgba(245, 158, 11, 0.55); }
-  .lights span:nth-child(3) { background: rgba(34, 197, 94, 0.55); }
-
-  .panel-title {
-    font-size: 12px;
-    color: rgba(226, 232, 240, 0.55);
-    letter-spacing: 0.08em;
+  @keyframes dot-pulse {
+    0%, 100% { opacity: 1;   box-shadow: 0 0 10px 2px rgba(90,162,255,0.7); }
+    50%       { opacity: 0.6; box-shadow: 0 0 18px 4px rgba(90,162,255,0.35); }
   }
 
-  .panel-body {
-    padding: 16px;
-  }
-
-  .kv {
-    display: grid;
-    gap: 10px;
-  }
-
-  .kv div {
+  /* headline */
+  .gs-hero__headline {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
+    font-family: var(--gs-font-display, Georgia, serif);
+    font-size: clamp(44px, 6vw, 80px);
+    font-weight: 600;
+    line-height: 1.06;
+    color: rgba(226,232,240,0.97);
+    text-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    margin: 0 0 24px;
+    gap: 4px;
   }
 
-  .kv span {
-    font-size: 12px;
-    color: rgba(226, 232, 240, 0.45);
-  }
-
-  .kv b {
-    font-size: 12px;
-    letter-spacing: 0.12em;
-  }
-
-  .kv .ok { color: rgba(34, 197, 94, 0.9); }
-  .kv .mode { color: rgba(90, 162, 255, 0.9); }
-
-  .bars {
-    margin: 14px 0 10px;
-    display: flex;
-    gap: 10px;
-    align-items: flex-end;
-    height: 60px;
-  }
-
-  .bars i {
+  .gs-hero__headline-line {
     display: block;
-    width: 18%;
-    background: linear-gradient(180deg, rgba(90, 162, 255, 0.75), rgba(59, 130, 246, 0.25));
-    border-radius: 8px;
-    animation: bar 1.6s ease-in-out infinite;
+    opacity: 0;
+    transform: translateY(16px);
+    animation: gs-fade-up 680ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
 
-  .bars i:nth-child(1) { height: 32%; }
-  .bars i:nth-child(2) { height: 54%; animation-delay: 0.1s; }
-  .bars i:nth-child(3) { height: 38%; animation-delay: 0.2s; }
-  .bars i:nth-child(4) { height: 68%; animation-delay: 0.3s; }
-  .bars i:nth-child(5) { height: 44%; animation-delay: 0.4s; }
-
-  @keyframes bar {
-    0%, 100% { filter: brightness(1); transform: translateY(0); }
-    50% { filter: brightness(1.15); transform: translateY(-4px); }
+  @keyframes gs-fade-up {
+    to { opacity: 1; transform: translateY(0); }
   }
 
-  .terminal {
-    margin-top: 10px;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono';
-    font-size: 12px;
-    line-height: 1.6;
-    color: rgba(226, 232, 240, 0.55);
+  /* sub */
+  .gs-hero__sub {
+    max-width: 52ch;
+    color: rgba(148,163,184,0.82);
+    font-size: clamp(15px, 1.5vw, 17px);
+    line-height: 1.65;
+    margin: 0 0 38px;
   }
 
-  @media (max-width: 980px) {
-    .gs-hero-inner {
-      grid-template-columns: 1fr;
-      padding-top: 112px;
-      gap: 32px;
-    }
+  /* actions */
+  .gs-hero__actions {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
 
-    .hero-mark-wrap {
-      left: 50%;
-      top: 2.5rem;
-      transform: translateX(-50%);
-    }
+  .gs-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 46px;
+    padding: 0 22px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+  }
 
-    .gs-grid {
-      background-size: 56px 56px;
+  .gs-btn--primary {
+    background: linear-gradient(135deg, rgba(90,162,255,0.28), rgba(59,130,246,0.16));
+    border: 1px solid rgba(90,162,255,0.42);
+    color: rgba(226,232,240,0.96);
+    box-shadow:
+      0 0 24px rgba(90,162,255,0.18),
+      inset 0 1px 0 rgba(255,255,255,0.08);
+    backdrop-filter: blur(12px);
+  }
+
+  .gs-btn--primary:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 8px 32px rgba(90,162,255,0.30),
+      inset 0 1px 0 rgba(255,255,255,0.10);
+    border-color: rgba(90,162,255,0.65);
+  }
+
+  .gs-btn--ghost {
+    background: rgba(7,11,20,0.38);
+    border: 1px solid rgba(148,163,184,0.18);
+    color: rgba(148,163,184,0.80);
+    backdrop-filter: blur(12px);
+  }
+
+  .gs-btn--ghost:hover {
+    transform: translateY(-2px);
+    border-color: rgba(148,163,184,0.36);
+    color: rgba(226,232,240,0.90);
+  }
+
+  .gs-btn__arrow {
+    width: 16px;
+    height: 16px;
+    transition: transform 200ms ease;
+    flex-shrink: 0;
+  }
+
+  .gs-btn--primary:hover .gs-btn__arrow { transform: translateX(3px); }
+
+  /* reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .gs-hero__headline-line { animation: none; opacity: 1; transform: none; }
+    .gs-hero__dot           { animation: none; }
+    .gs-hero__wave,
+    .gs-hero__mark-wrap,
+    .gs-hero__copy          { will-change: auto; }
+  }
+
+  /* mobile */
+  @media (max-width: 640px) {
+    .gs-hero__mark {
+      width: clamp(160px, 55vw, 240px);
+      opacity: 0.12;
     }
   }
 </style>

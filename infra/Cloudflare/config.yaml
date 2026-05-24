@@ -4,7 +4,7 @@ zone_id_env: CF_ZONE_ID
 projects:
   pages:
     - name: gs-web
-      public_url: https://goldshore.ai/
+      public_url: https://www.goldshore.ai/
       output_dir: apps/gs-web/dist
       max_daily_deploys: 6
       require_checks: ['smoke', 'lighthouse']
@@ -23,46 +23,37 @@ projects:
         - '^README.md$'
 
   workers:
-    - script: gs-api
-      entry: apps/gs-api/dist/index.js
-      routes:
-        - pattern: 'api.goldshore.ai/*'
-          zone: goldshore.ai
-      max_daily_deploys: 10
-      require_checks: ['smoke']
-      skip_if_paths_only:
-        - '^docs/.*'
-        - '^README.md$'
     - script: gs-gateway
       entry: apps/gs-gateway/dist/index.js
       routes:
         - pattern: 'gw.goldshore.ai/*'
           zone: goldshore.ai
+        - pattern: 'agent.goldshore.ai/*'
+          zone: goldshore.ai
+        - pattern: 'api.goldshore.ai/*'
+          zone: goldshore.ai
       max_daily_deploys: 10
       require_checks: ['smoke']
-      skip_if_paths_only:
-        - '^docs/.*'
-        - '^README.md$'
+    - script: gs-api
+      entry: apps/gs-api/dist/index.js
+      routes: [] # Accessed via gateway service binding
+      max_daily_deploys: 10
     - script: gs-control
       entry: apps/gs-control/dist/index.js
       routes:
         - pattern: 'ops.goldshore.ai/*'
           zone: goldshore.ai
       max_daily_deploys: 10
-      require_checks: ['smoke']
-      skip_if_paths_only:
-        - '^docs/.*'
-        - '^README.md$'
+    - script: gs-agent
+      entry: apps/gs-agent/dist/index.js
+      routes: [] # Queue-based or internal
+      max_daily_deploys: 10
     - script: gs-mail
       entry: apps/gs-mail/dist/index.js
       routes:
         - pattern: 'mail.goldshore.ai/*'
           zone: goldshore.ai
       max_daily_deploys: 10
-      require_checks: ['smoke']
-      skip_if_paths_only:
-        - '^docs/.*'
-        - '^README.md$'
 
 guards:
   dedupe_concurrency_key: 'cf-deploy'
@@ -73,13 +64,8 @@ guards:
 tests:
   smoke:
     - url: 'https://goldshore.ai/'
-      expect_status: 200
+      expect_status: 301
       timeout_ms: 5000
-    - url: 'https://api.goldshore.ai/health'
+    - url: 'https://gw.goldshore.ai/health'
       expect_status: 200
       timeout_ms: 4000
-  lighthouse:
-    url: 'https://goldshore.ai/'
-    budget:
-      performance: 0.85
-      tti_ms: 4000

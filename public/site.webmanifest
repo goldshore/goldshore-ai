@@ -1,0 +1,22 @@
+{
+  "name": "GoldShore.ai",
+  "short_name": "GoldShore",
+  "description": "Operational AI infrastructure and observability for mission-critical deployments.",
+  "theme_color": "#07101e",
+  "background_color": "#07101e",
+  "display": "standalone",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -10,6 +10,7 @@ describe('Integration Middleware', () => {
     headers: Record<string, string> = {},
     env: Partial<Env> = {}
   ) => {
+    const waits: Promise<unknown>[] = [];
     return {
       req: {
         path,
@@ -25,6 +26,12 @@ describe('Integration Middleware', () => {
         },
         ...env,
       },
+      executionCtx: {
+        waitUntil: mock.fn((promise: Promise<unknown>) => {
+          waits.push(promise);
+        }),
+      },
+      waits,
       json: mock.fn((data: any, status: number) => ({ data, status })),
     } as any;
   };
@@ -93,24 +100,44 @@ describe('Integration Middleware', () => {
     assert.match(c.json.mock.calls[0].arguments[0].error, /Missing audit trace id/);
   });
 
-  test('should log audit entry and proceed for valid request', async () => {
+  test('should return 400 for invalid audit trace id', async () => {
     const c = createMockContext('/integrations/test', 'POST', {
       'X-Data-Classification': 'public',
       'X-Secrets-Access-Policy': 'read-only',
-      'X-Audit-Trace-Id': 'trace-123',
+      'X-Audit-Trace-Id': 'trace with spaces',
     });
     const next = mock.fn(async () => {});
 
     await integrationControls(c, next);
 
+    assert.strictEqual(next.mock.callCount(), 0);
+    assert.strictEqual(c.json.mock.callCount(), 1);
+    assert.strictEqual(c.json.mock.calls[0].arguments[1], 400);
+    assert.match(c.json.mock.calls[0].arguments[0].error, /Invalid audit trace id/);
+  });
+
+  test('should log audit entry and proceed for valid request', async () => {
+    const c = createMockContext('/integrations/test', 'POST', {
+      'X-Data-Classification': 'public',
+      'X-Secrets-Access-Policy': 'read-only',
+      'X-Audit-Trace-Id': 'trace-123',
+      'CF-Access-Authenticated-User-Email': 'ops@goldshore.ai',
+    });
+    const next = mock.fn(async () => {});
+
+    await integrationControls(c, next);
+    await Promise.all(c.waits);
+
     assert.strictEqual(next.mock.callCount(), 1);
     assert.strictEqual(c.env.GATEWAY_KV.put.mock.callCount(), 1);
+    assert.strictEqual(c.executionCtx.waitUntil.mock.callCount(), 1);
     const [key, value] = c.env.GATEWAY_KV.put.mock.calls[0].arguments;
     assert.strictEqual(key, 'audit:trace-123');
     const parsedValue = JSON.parse(value);
     assert.strictEqual(parsedValue.traceId, 'trace-123');
     assert.strictEqual(parsedValue.classification, 'public');
     assert.strictEqual(parsedValue.secretsPolicy, 'read-only');
+    assert.strictEqual(parsedValue.actor, 'ops@goldshore.ai');
   });
 
   test('should warn if GATEWAY_KV is missing', async () => {

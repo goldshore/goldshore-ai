@@ -80,18 +80,6 @@ app.get('/system/info', (c) =>
 
 app.get('/version', (c) => c.json({ version: VERSION }));
 
-app.post('/webhook', async (c) => {
-  return c.json({ received: true });
-});
-
-app.post('/api/subscribe', async (c) => {
-  return c.json({ status: 'subscribed' });
-});
-
-app.post('/api/contact', async (c) => {
-  return c.json({ status: 'sent' });
-});
-
 export default {
   fetch: app.fetch,
 

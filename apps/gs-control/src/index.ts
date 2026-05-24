@@ -63,7 +63,12 @@ export const createApp = (verifyAccess: VerifyAccessWithClaims = verifyAccessWit
       return c.json({ error: "Missing GS_CONFIG binding." }, 500);
     }
 
-    const body = await c.req.json();
+    let body: unknown;
+    try {
+      body = await c.req.json();
+    } catch {
+      return c.json({ error: "Invalid JSON body" }, 400);
+    }
 
     // 1. Schema Validation
     const parsedPayload = parseSystemSyncWritePayload(body);
@@ -92,10 +97,10 @@ export const createApp = (verifyAccess: VerifyAccessWithClaims = verifyAccessWit
   });
 
   // Existing Automation Routes
-  app.post("/dns/apply", async (c) => c.json(await DNS.sync(c.env)));
-  app.post("/workers/reconcile", async (c) => c.json(await Workers.reconcile(c.env)));
-  app.post("/pages/deploy", async (c) => c.json(await Pages.deploy(c.env)));
-  app.post("/access/audit", async (c) => c.json(await Access.audit(c.env)));
+  app.post("/dns/apply", async (c) => { if (!isAuthorizedRole(c.get("accessClaims"), getRequiredRoles(c.env))) return c.json({ error: "Forbidden" }, 403); return c.json(await DNS.sync(c.env)); });
+  app.post("/workers/reconcile", async (c) => { if (!isAuthorizedRole(c.get("accessClaims"), getRequiredRoles(c.env))) return c.json({ error: "Forbidden" }, 403); return c.json(await Workers.reconcile(c.env)); });
+  app.post("/pages/deploy", async (c) => { if (!isAuthorizedRole(c.get("accessClaims"), getRequiredRoles(c.env))) return c.json({ error: "Forbidden" }, 403); return c.json(await Pages.deploy(c.env)); });
+  app.post("/access/audit", async (c) => { if (!isAuthorizedRole(c.get("accessClaims"), getRequiredRoles(c.env))) return c.json({ error: "Forbidden" }, 403); return c.json(await Access.audit(c.env)); });
 
   app.route("/cloudflare", cloudflareRoutes);
   return app;

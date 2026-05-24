@@ -7,26 +7,19 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "lint": "eslint .",
-    "test": "npm run test:unit",
-    "test:unit": "tsx --test tests/unit/*.test.ts"
+    "check": "astro check"
   },
   "dependencies": {
-    "@goldshore/auth": "workspace:*",
-    "@goldshore/config": "workspace:^",
-    "@goldshore/integrations": "workspace:*",
-    "@goldshore/schema": "workspace:*",
+    "@goldshore/config": "workspace:*",
     "@goldshore/theme": "workspace:*",
-    "@goldshore/ui": "workspace:*",
-    "@goldshore/utils": "workspace:*",
-    "astro": "^5.18.0",
-    "@astrojs/tailwind": "^6.0.2",
-    "tailwindcss": "^3.4.17"
+    "@goldshore/auth": "workspace:*",
+    "astro": "^6.3.1"
   },
   "devDependencies": {
-    "@astrojs/cloudflare": "^12.6.12",
-    "@types/node": "^25.3.3",
-    "tsx": "^4.21.0",
-    "typescript": "^5.4.2"
+    "@astrojs/cloudflare": "^13.1.10",
+    "@astrojs/tailwind": "^6.0.2",
+    "@cloudflare/workers-types": "^4.20260421.1",
+    "tailwindcss": "^4.3.0",
+    "typescript": "^5.4.0"
   }
 }

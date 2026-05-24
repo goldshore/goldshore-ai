@@ -40,12 +40,15 @@
     if (count) count.textContent = 'Unavailable';
   };
 
-  fetch('https://api.goldshore.ai/internal/inbox-status')
-    .then((res) => res.json())
+  fetch('/api/gs-api/inbox-status')
+    .then((res) => {
+      if (!res.ok) throw new Error(`Failed to load inbox status: ${res.status}`);
+      return res.json();
+    })
     .then((data) => {
       const recent = data?.inbox?.recent ?? [];
       const total = data?.inbox?.count ?? 0;
-      if (count) count.textContent = `${total} logged`; 
+      if (count) count.textContent = `${total} logged`;
 
       if (!recent.length) {
         if (body) body.innerHTML = '<tr><td class="py-3 text-sm gs-text-subtle" colspan="3">No incoming messages detected.</td></tr>';

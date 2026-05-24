@@ -12,18 +12,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.2
 
-      - uses: actions/setup-node@v6
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: "pnpm"
-
-      - name: Enable corepack
-        run: corepack enable
-
-      - name: Set pnpm version
-        run: corepack prepare pnpm@9.0.0 --activate
 
       - name: Install
         run: pnpm install --frozen-lockfile
@@ -34,6 +30,10 @@ jobs:
 
       - name: Build all
         run: pnpm -r build
+
+      - name: gs-web release quality gate
+        working-directory: apps/gs-web
+        run: pnpm check:release
+
       - name: Verify internal links (Developer Hub, Risk Radar, Workflows)
         run: node scripts/check-internal-links.mjs
-

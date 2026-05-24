@@ -1,7 +1,11 @@
+name = "gs-web"
+pages_build_output_dir = "./dist"
 # Worker Builds token for this service must be the gs-control build token.
 # wrangler.toml for the gs-web Astro Pages app (for Pages Functions; formerly goldshore-web)
 
 name = "gs-web" # Base name for Pages project
+compatibility_date = "2026-04-18"
+pages_build_output_dir = "./dist"
 
 # This file is primarily for configuring bindings for Cloudflare Pages Functions.
 # The actual deployment will be handled by the GitHub Action connecting to the Pages project.
@@ -33,4 +37,15 @@ name = "gs-web" # Base name for Pages project
 # Preview bindings for Pages Functions
 
 [env.prod]
-# Production bindings for Pages Functions
+routes = [
+  { pattern = "goldshore.ai", custom_domain = true },
+  { pattern = "goldshore.org", custom_domain = true },
+  { pattern = "rmarston.com", custom_domain = true }
+]
+
+[env.production]
+routes = [
+  { pattern = "goldshore.ai", custom_domain = true },
+  { pattern = "goldshore.org", custom_domain = true },
+  { pattern = "rmarston.com", custom_domain = true }
+]
