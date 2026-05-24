@@ -1,0 +1,24 @@
+---
+import AdminLayout from '../layouts/AdminLayout.astro';
+import { Card, GSButton } from '@goldshore/ui';
+---
+<AdminLayout title="Domain">
+  <section class="gs-grid columns-2">
+    <Card>
+      <div class="section-title"><span>🌐</span><h3>Domains</h3></div>
+      <ul>
+        <li>goldshore.ai</li>
+        <li>admin.goldshore.ai</li>
+        <li>status.goldshore.ai</li>
+      </ul>
+    </Card>
+    <Card>
+      <div class="section-title"><span>⚡</span><h3>DNS actions</h3></div>
+      <p class="gs-helper">Propagate changes across regions with verification checks.</p>
+      <div class="gs-form-actions">
+        <GSButton class="gs-button--small">Sync records</GSButton>
+        <GSButton variant="secondary" class="gs-button--small">Export zone</GSButton>
+      </div>
+    </Card>
+  </section>
+</AdminLayout>
