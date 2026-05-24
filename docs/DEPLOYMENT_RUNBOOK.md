@@ -34,24 +34,24 @@ pnpm -F @goldshore/auth add jose
 git add packages/auth/verify.ts
 git commit -m "[security] Verify JWT validation is not bypassed"
 
-# Deploy will happen in Step 3.2 when gs-platform redeploys
+# Deploy will happen in Step 3.2 when gs-gateway redeploys
 ```
 
 **Time:** 5 minutes
 
 ---
 
-### Step 1.2: Set `CLOUDFLARE_ACCESS_AUDIENCE` secret on `gs-platform`
+### Step 1.2: Set `CLOUDFLARE_ACCESS_AUDIENCE` secret on `gs-gateway`
 
 **Issue:** Audience validation is skipped, allowing token reuse across CF Access apps.
 
 **Action:** In Cloudflare dashboard:
 
 ```
-Workers → gs-platform → Settings → Environment Variables
+Workers → gs-gateway → Settings → Environment Variables
 → "Add variable"
   Name: CLOUDFLARE_ACCESS_AUDIENCE
-  Value: gs-platform  (or your CF Access app UUID from the dashboard)
+  Value: gs-gateway  (or your CF Access app UUID from the dashboard)
 → Save and deploy
 ```
 
@@ -60,7 +60,7 @@ Or via `wrangler` (if you have local `wrangler.toml`):
 ```bash
 wrangler secret put CLOUDFLARE_ACCESS_AUDIENCE
 # (Paste the audience value when prompted)
-wrangler deploy --name gs-platform
+wrangler deploy --name gs-gateway
 ```
 
 **Time:** 5 minutes
@@ -227,9 +227,9 @@ curl https://api.goldshore.ai/health
 
 ---
 
-### Step 3.3: Deploy `gs-gateway` → rename to `gs-platform` or fix naming
+### Step 3.3: Deploy `gs-gateway` and enforce canonical naming
 
-**Issue:** Code in `apps/gs-gateway/` is deployed as `gs-platform` on account.
+**Issue:** Code in `apps/gs-gateway/` is deployed as `gs-gateway` on account.
 
 **Action:** Option A (recommended):
 
@@ -237,9 +237,9 @@ curl https://api.goldshore.ai/health
 # Rename wrangler.toml to match CF account name
 cd apps/gs-gateway
 cp wrangler.toml wrangler.platform.toml
-# Edit wrangler.platform.toml, change name = "gs-platform"
+# Edit wrangler.platform.toml, change name = "gs-gateway"
 cat > wrangler.platform.toml <<'EOF'
-name = "gs-platform"
+name = "gs-gateway"
 main = "src/index.ts"
 compatibility_date = "2026-04-18"
 compatibility_flags = ["nodejs_compat"]
@@ -273,7 +273,7 @@ wrangler deploy --config wrangler.platform.toml --env prod
 **Verify:**
 ```bash
 curl https://gw.goldshore.ai/health
-# Should return {status: "ok", service: "gs-platform"}
+# Should return {status: "ok", service: "gs-gateway"}
 ```
 
 **Time:** 10 minutes
@@ -304,7 +304,7 @@ cd apps/gs-agent
 wrangler deploy --env prod
 ```
 
-**Verify:** Agent is now reachable via `gs-platform` gateway at `agent.goldshore.ai/*`
+**Verify:** Agent is now reachable via `gs-gateway` gateway at `agent.goldshore.ai/*`
 
 **Time:** 5 minutes
 
@@ -601,12 +601,12 @@ git commit -m "[ci] Normalize to single canonical CLOUDFLARE_BUILD_API_TOKEN"
 
 ## Validation Checklist
 
-- [ ] `CLOUDFLARE_ACCESS_AUDIENCE` set on `gs-platform`
+- [ ] `CLOUDFLARE_ACCESS_AUDIENCE` set on `gs-gateway`
 - [ ] D1 migrations applied — `worker_registry` table exists and has 8 rows
 - [ ] Stub workers deleted (`goldshore-ai`, `gs-dynamic-worker`)
 - [ ] `gs-control` deployed and reachable at `ops.goldshore.ai`
 - [ ] `gs-api` deployed and reachable at `api.goldshore.ai`
-- [ ] `gs-platform` (renamed from `gs-gateway`) deployed and reachable at `gw.goldshore.ai`
+- [ ] `gs-gateway` deployed and reachable at `gw.goldshore.ai`
 - [ ] `gs-mail` deployed (backend service, no public route)
 - [ ] `gs-agent` deployed and reachable via `agent.goldshore.ai`
 - [ ] `gs-web` Astro Pages deployed and reachable at `goldshore.ai`
@@ -646,7 +646,7 @@ pnpm run check:routes  # If this script exists
 
 ```bash
 # Verify all workers are validating JWT
-wrangler tail gs-platform --format pretty | grep -i "token verification"
+wrangler tail gs-gateway --format pretty | grep -i "token verification"
 
 # Verify secrets are not in logs
 wrangler tail gs-control --format pretty | grep -v SECRET

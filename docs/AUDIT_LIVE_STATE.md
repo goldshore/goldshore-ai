@@ -12,9 +12,9 @@
 
 | Category | Status | Notes |
 |---|---|---|
-| **Core workers** | ⚠️ Degraded | `gs-platform` (renamed from `gs-gateway`) broken JWT; missing `gs-control`, `gs-mail`, `gs-agent` |
+| **Core workers** | ⚠️ Degraded | `gs-gateway` canonical gateway worker broken JWT; missing `gs-control`, `gs-mail`, `gs-agent` |
 | **Database** | 🔴 Critical | D1 migrations never applied — both databases at 0 tables |
-| **Security** | 🔴 Critical | `gs-platform` fails open on auth — no JWKS validation happens |
+| **Security** | 🔴 Critical | `gs-gateway` fails open on auth — no JWKS validation happens |
 | **Pages projects** | ⚠️ Incomplete | `gs-web` stub instead of Astro build; `gs-admin` may not exist |
 | **Domains** | ✅ Configured | DNS mostly correct; routing ownership clear |
 | **Separate services** | ✅ Healthy | `banproof-me` worker fully functional with Workflows, D1, OpenAI, PoA tracking |
@@ -33,16 +33,16 @@
 - **Bindings verified:** Not visible from API without auth
 - **Issue:** None detected
 
-#### `gs-platform` — Gateway (Renamed from `gs-gateway`)
+#### `gs-gateway` — Gateway (Canonical name)
 - **Status:** Live ✅ but **broken** 🔴
-- **Code:** `apps/gs-gateway/wrangler.toml` → deployed as `gs-platform` on account
+- **Code:** `apps/gs-gateway/wrangler.toml` → deployed as `gs-gateway` on account
 - **Routes:** Configured as `gw.goldshore.ai/*`, `agent.goldshore.ai/*`
 - **Actual route on account:** Unclear (may be unreachable or serving stale version)
 - **Critical issue:** JWT verification is broken
   - **File:** `packages/auth/verify.ts`
   - **Problem:** Code fetches JWKS from `https://{teamDomain}/cdn-cgi/access/certs` but **never calls `jwtVerify()`**. The function returns early or errors silently, causing all requests to pass auth checks.
   - **Impact:** Any user can access protected routes. Security bypass.
-- **Missing secret:** `CLOUDFLARE_ACCESS_AUDIENCE` not set on `gs-platform` — audience validation is skipped
+- **Missing secret:** `CLOUDFLARE_ACCESS_AUDIENCE` not set on `gs-gateway` — audience validation is skipped
 - **Fix required:** Deploy corrected `verify.ts` and set secret
 
 #### `banproof-me` — Proof of Agency Gateway
@@ -83,7 +83,7 @@
 
 #### `gs-agent` — Agent Runtime
 - **Expected:** `apps/gs-agent/wrangler.toml`
-- **Routes:** `agent.goldshore.ai/*` (should route through `gs-platform` gateway)
+- **Routes:** `agent.goldshore.ai/*` (should route through `gs-gateway` gateway)
 - **Status:** Not on account ❌
 
 ---
@@ -155,7 +155,7 @@
 
 ### 🔴 CRITICAL
 
-#### Issue 1: `gs-platform` JWT bypass
+#### Issue 1: `gs-gateway` JWT bypass
 - **File:** `packages/auth/verify.ts` line 45–70
 - **Problem:** `jwtVerify()` is called but the result is not checked. Any token (valid or invalid) passes.
 - **Proof:** Function returns `null` on error but catches exceptions silently:
@@ -171,10 +171,10 @@
 - **Impact:** Any HTTP request with a malformed or forged `CF-Access-Jwt-Assertion` header passes authentication
 - **Fix:** Deployed `verify.ts` in this runbook includes proper error handling
 
-#### Issue 2: Missing `CLOUDFLARE_ACCESS_AUDIENCE` on `gs-platform`
+#### Issue 2: Missing `CLOUDFLARE_ACCESS_AUDIENCE` on `gs-gateway`
 - **Problem:** Secret not set; audience validation always skips
 - **Impact:** Tokens from other CF Access applications can be reused
-- **Fix:** Set secret in Cloudflare dashboard → gs-platform → Settings → Environment Variables
+- **Fix:** Set secret in Cloudflare dashboard → gs-gateway → Settings → Environment Variables
 
 #### Issue 3: D1 migrations never applied
 - **Problem:** Both D1 databases exist but have 0 tables
@@ -188,10 +188,10 @@
 - **Impact:** Routing conflict; `gs-web` Astro never serves
 - **Fix:** Delete stub or redirect to `gs-web`
 
-#### Issue 5: `gs-platform` name mismatch
-- **Problem:** Code is `apps/gs-gateway`, deployed as `gs-platform` on account
+#### Issue 5: Gateway naming drift
+- **Problem:** Code is `apps/gs-gateway`, deployed as `gs-gateway` on account
 - **Impact:** Confusion in documentation and deployment pipelines
-- **Fix:** Rename on account to `gs-platform-v2` or update code to match
+- **Fix:** Keep all docs, scripts, and dashboard references on `gs-gateway`.
 
 #### Issue 6: Missing `gs-control` blocks all CI deployments
 - **Problem:** `gs-control` doesn't exist; other workers can't deploy via `CLOUDFLARE_BUILD_API_TOKEN`
@@ -218,7 +218,7 @@
 - `apps/gs-web/` — Astro frontend (package: `@goldshore/gs-web`)
 - `apps/gs-admin/` — Admin cockpit (package: `@goldshore/gs-admin`)
 - `apps/gs-api/` — API worker (package: `@goldshore/gs-api`)
-- `apps/gs-gateway/` — Gateway worker (deployed as `gs-platform` on CF account)
+- `apps/gs-gateway/` — Gateway worker (deployed as `gs-gateway` on CF account)
 - `packages/auth/` — Auth library (includes `verify.ts`)
 - `infra/Cloudflare/` — Canonical wrangler manifests
 
@@ -256,7 +256,7 @@
 - [x] Domain routing policy confirmed — zone and route ownership clear
 
 ### ⚠️ Manual Verification Needed
-- [ ] `gs-platform` secret `CLOUDFLARE_ACCESS_AUDIENCE` check
+- [ ] `gs-gateway` secret `CLOUDFLARE_ACCESS_AUDIENCE` check
 - [ ] `gs-web` and `gs-admin` Pages projects existence
 - [ ] KV namespace bindings on workers
 - [ ] CI workflow token expressions
@@ -267,7 +267,7 @@
 ## 9. Recommended Action Sequence (Prioritized)
 
 1. **Deploy corrected `verify.ts`** — Fix auth bypass (CRITICAL)
-2. **Set `CLOUDFLARE_ACCESS_AUDIENCE` on `gs-platform`** — Fix audience bypass (CRITICAL)
+2. **Set `CLOUDFLARE_ACCESS_AUDIENCE` on `gs-gateway`** — Fix audience bypass (CRITICAL)
 3. **Apply D1 migrations** — Unlock database features (CRITICAL)
 4. **Delete or redirect stub workers** (`goldshore-ai`, `gs-dynamic-worker`) — Clean up routing conflicts
 5. **Deploy `gs-control`** — Unblock CI/CD
@@ -297,7 +297,7 @@
 
 | Doc | Expected | Actual | Gap |
 |---|---|---|---|
-| `infra/Cloudflare/README.md` | `gs-gateway` canonical manifest | `gs-platform` on account | Name mismatch |
+| `infra/Cloudflare/README.md` | `gs-gateway` canonical manifest | `gs-gateway` on account | No mismatch |
 | `infra/Cloudflare/BINDINGS_MAP.md` | `gs-web` Pages project | Stub worker on `goldshore.ai` | Routing conflict |
 | `docs/DNS_AND_ROUTES.md` | `gs-control`, `gs-mail`, `gs-agent` routes | Not deployed | Critical gap |
 | `packages/auth/verify.ts` | Full JWT validation | Bypass in exception handling | Security regression |
