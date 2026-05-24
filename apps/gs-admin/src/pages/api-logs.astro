@@ -1,0 +1,32 @@
+---
+import AdminLayout from '../layouts/AdminLayout.astro';
+import { Table } from '@goldshore/ui';
+
+const logs = [
+  { id: 'req_1', method: 'GET', path: '/api/v1/users', status: 200, latency: '45ms', time: '10:00:01' },
+  { id: 'req_2', method: 'POST', path: '/api/v1/auth', status: 201, latency: '120ms', time: '10:00:05' },
+  { id: 'req_3', method: 'GET', path: '/api/v1/system', status: 200, latency: '30ms', time: '10:00:10' },
+  { id: 'req_4', method: 'GET', path: '/error', status: 404, latency: '10ms', time: '10:00:15' },
+];
+---
+<AdminLayout title="API Logs">
+  <div class="gs-panel">
+    <div class="panel-header">
+      <h2>Recent Requests</h2>
+      <div class="actions">
+         <button class="gs-button gs-button--small">Refresh</button>
+         <button class="gs-button gs-button--small gs-button--secondary">Export</button>
+      </div>
+    </div>
+
+    <Table
+      headers={['Time', 'Method', 'Path', 'Status', 'Latency']}
+      rows={logs.map(l => [l.time, l.method, l.path, l.status, l.latency])}
+    />
+  </div>
+</AdminLayout>
+
+<style>
+  .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+  .gs-panel { padding: 1.5rem; background: var(--gs-color-bg-surface); border: 1px solid var(--gs-color-border); border-radius: 8px; }
+</style>
