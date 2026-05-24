@@ -56,12 +56,6 @@ function isNonCriticalSignalsPath(pathname: string): boolean {
 
 const app = new Hono<{ Bindings: GatewayEnv }>();
 
-function isNonCriticalSignalsPath(pathname: string): boolean {
-  return NON_CRITICAL_SIGNAL_PATHS.some((base) => pathname === base || pathname.startsWith(`${base}/`));
-}
-
-const app = new Hono<{ Bindings: GatewayEnv }>();
-
 // ── Security headers ───────────────────────────────────────
 app.use("*", secureHeaders());
 
@@ -122,72 +116,7 @@ app.use(
 // ── Auth (uses existing @goldshore/auth verify.ts) ─────────
 // authMiddleware skips /health, /, OPTIONS automatically.
 // Audience validation is enforced only when CLOUDFLARE_ACCESS_AUDIENCE is set.
-app.use("*", (c, next) => authMiddleware(c.req.raw, c.env, next));
-
-app.use("*", async (c, next) => {
-  const pathname = new URL(c.req.url).pathname;
-  const isHealthPath = pathname === "/health";
-  const isSignalsPath = isNonCriticalSignalsPath(pathname);
-
-  if (isHealthPath) {
-    return next();
-  }
-
-  if (!c.env.SECURITY_CHECK) {
-    console.warn(JSON.stringify({
-      event: "security_check_skipped",
-      policy: "fail-open",
-      reason: "missing_binding",
-      path: pathname,
-    }));
-    return next();
-  }
-
-  try {
-    const timeoutMs = isSignalsPath ? SIGNALS_TIMEOUT_MS : SECURITY_TIMEOUT_MS;
-    const checkResponse = await withTimeout(
-      c.env.SECURITY_CHECK.fetch(c.req.raw.clone()),
-      timeoutMs,
-      "SECURITY_CHECK",
-    );
-
-    if (!checkResponse.ok) {
-      if (isSignalsPath) {
-        console.warn(JSON.stringify({
-          event: "security_check_non_ok",
-          policy: "fail-open",
-          status: checkResponse.status,
-          path: pathname,
-        }));
-        return next();
-      }
-
-      return c.json({
-        error: "SECURITY_CHECK_FAILED",
-        message: "security policy rejected request",
-        policy: "fail-closed",
-      }, 403);
-    }
-  } catch (error) {
-    if (isSignalsPath) {
-      console.warn(JSON.stringify({
-        event: "security_check_error",
-        policy: "fail-open",
-        path: pathname,
-        error: error instanceof Error ? error.message : String(error),
-      }));
-      return next();
-    }
-
-    return c.json({
-      error: "SECURITY_CHECK_ERROR",
-      message: "security check service unavailable",
-      policy: "fail-closed",
-    }, 503);
-  }
-
-  return next();
-});
+app.use("*", authMiddleware);
 
 app.use("*", async (c, next) => {
   const pathname = new URL(c.req.url).pathname;

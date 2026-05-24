@@ -15,6 +15,7 @@ import admin from './routes/admin';
 import media from './routes/media';
 import pages from './routes/pages';
 import internal from './routes/internal';
+import { assertSecuritySecrets } from './securitySecrets';
 
 type Env = {
   KV: KVNamespace;
@@ -94,6 +95,9 @@ app.use('*', secureHeaders());
 
 // Runtime safety guard (fail-fast for misconfigured production runtime).
 app.use('*', async (c, next) => {
+  if (c.env.ENV === 'production') {
+    assertSecuritySecrets(c.env as Record<string, unknown>, c.env.ENV);
+  }
   if (!c.env[expectedD1Binding]) {
     throw new Error(
       `CRITICAL_MISSING_D1_BINDING: Expected D1 binding "${expectedD1Binding}" is undefined. Verify [[d1_databases]] binding in wrangler.toml.`,
