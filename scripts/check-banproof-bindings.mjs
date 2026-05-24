@@ -3,10 +3,10 @@ import path from 'node:path';
 
 const wranglerPath = path.resolve('apps/banproof-me/wrangler.toml');
 const required = {
-  d1: { binding: 'PLATFORM_DB', database_name: 'gs_platform_db' },
-  kv_namespaces: ['BANPROOF_KV', 'AI_CACHE'],
-  queues: ['BANPROOF_JOBS'],
-  services: [{ binding: 'GS_API', service: 'gs-api' }],
+  d1: { binding: 'BAN_DB', database_name: 'gs_platform_db' },
+  kv_namespaces: ['BANPROOF_KV', 'GOLDSHORE_KV'],
+  queues: ['BAN_EVENTS'],
+  services: [{ binding: 'API_SERVICE', service: 'gs-api' }],
   secrets: ['OPENAI_API_KEY', 'POA_TOKEN', 'AUDIT_TOKEN'],
 };
 
