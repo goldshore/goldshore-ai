@@ -126,7 +126,7 @@ app.use('*', cors({
 // ── Auth (uses existing @goldshore/auth verify.ts) ─────────
 // authMiddleware skips /health, /, OPTIONS automatically.
 // Audience validation is enforced only when CLOUDFLARE_ACCESS_AUDIENCE is set.
-app.use("*", (c, next) => authMiddleware(c.req.raw, c.env, next));
+app.use("*", authMiddleware);
 
 app.use("*", async (c, next) => {
   const pathname = new URL(c.req.url).pathname;
