@@ -1,0 +1,18 @@
+name = "gs-www-redirect"
+main = "src/index.ts"
+compatibility_date = "2026-04-04"
+workers_dev = false
+
+[env.prod]
+routes = [
+  { pattern = "www.goldshore.ai", custom_domain = true },
+  { pattern = "www.goldshore.org", custom_domain = true },
+  { pattern = "www.rmarston.com", custom_domain = true }
+]
+
+[env.production]
+routes = [
+  { pattern = "www.goldshore.ai", custom_domain = true },
+  { pattern = "www.goldshore.org", custom_domain = true },
+  { pattern = "www.rmarston.com", custom_domain = true }
+]

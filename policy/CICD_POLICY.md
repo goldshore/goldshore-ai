@@ -42,7 +42,7 @@ steps:
     run: wrangler deploy --env prod
 ```
 
-### ❌ PROHIBITED: Fallback expressions
+### ❌ PROHIBITED: Fallback expressions (except explicit migration windows)
 
 ```yaml
 # WRONG — do not do this
@@ -60,6 +60,14 @@ env:
 ```
 
 ---
+
+
+### Migration behavior from `CLOUDFLARE_API_TOKEN`
+
+- CI/deploy and infra automation must use `secrets.CLOUDFLARE_BUILD_API_TOKEN` as the primary and only token source.
+- Backward compatibility is handled by **secret mirroring at the repository/org secret store**, not by workflow `||` expressions.
+- During migration, platform ops may keep `CLOUDFLARE_API_TOKEN` secret value synchronized to the same token out-of-band, then remove legacy secret references after verification.
+- Workflow-level fallback (`secrets.A || secrets.B`) is disallowed because it obscures which credential was used during deployment.
 
 ## Workflow Standards
 

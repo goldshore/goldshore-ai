@@ -8,9 +8,6 @@ on:
 permissions:
   contents: read
 
-permissions:
-  contents: read
-
 jobs:
   deploy-gateway:
     name: Deploy gs-gateway
@@ -19,18 +16,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build gs-platform
-        run: pnpm --filter @goldshore/gs-platform build
-
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @goldshore/gs-gateway build
       - name: Deploy to Cloudflare
-        run: wrangler deploy --config apps/gs-platform/wrangler.toml --env prod
+        run: pnpm exec wrangler deploy --config apps/gs-gateway/wrangler.toml --env prod
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
