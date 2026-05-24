@@ -164,7 +164,7 @@ media.get('/', requirePermission('media:read'), async (c) => {
     }
   }
 
-  const { results } = await c.env.DB.prepare(
+  const { results } = await c.env.CONTENT_DB.prepare(
     'SELECT id, filename, url, size, type, created_at FROM media_assets ORDER BY created_at DESC LIMIT ? OFFSET ?',
   )
     .bind(limit, offset)
@@ -175,7 +175,7 @@ media.get('/', requirePermission('media:read'), async (c) => {
 
 media.get('/:id', requirePermission('media:read'), async (c) => {
   const id = c.req.param('id');
-  const result = await c.env.DB.prepare(
+  const result = await c.env.CONTENT_DB.prepare(
     'SELECT object_key, type FROM media_assets WHERE id = ?',
   )
     .bind(id)
@@ -245,7 +245,7 @@ media.post('/upload', requirePermission('media:write'), async (c) => {
   url.pathname = `/media/${id}`;
 
   const createdAt = new Date().toISOString();
-  await c.env.DB.prepare(
+  await c.env.CONTENT_DB.prepare(
     'INSERT INTO media_assets (id, filename, url, size, type, object_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
   )
     .bind(id, filename, url.toString(), size, contentType, objectKey, createdAt)

@@ -17,7 +17,7 @@ interface GatewayEnv {
   GS_CONFIG?: KVNamespace;
   GATEWAY_KV?: KVNamespace;
   // D1
-  DB?: D1Database;
+  PLATFORM_DB?: D1Database;
   // R2
   ASSETS?: R2Bucket;
   // Queue producers

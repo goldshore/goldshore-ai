@@ -4,7 +4,7 @@
  *
  * Cloudflare bindings available on `Astro.locals.runtime.env`:
  *   KV            — gs_admin_kv_001   (admin state, feature flags)
- *   DB            — goldshore (D1)    (read-only metrics queries)
+ *   CONTENT_DB    — goldshore (D1)    (read-only metrics queries)
  *   ASSETS        — gs-assets (R2)   (brand / media assets)
  *   API_SERVICE   — gs-api (service binding, env: prod)
  *
@@ -149,7 +149,7 @@ const metrics = [
             <td class={runtime?.env?.API_SERVICE ? 'ok' : 'warn'}>{runtime?.env?.API_SERVICE ? 'Bound' : 'Not bound'}</td>
           </tr>
           <tr>
-            <td><code>DB</code></td>
+            <td><code>CONTENT_DB</code></td>
             <td>D1 Database</td>
             <td>goldshore (gs_db_001)</td>
             <td class="info">Via API service</td>

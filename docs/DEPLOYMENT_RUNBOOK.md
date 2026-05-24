@@ -580,13 +580,15 @@ wrangler d1 execute gs_platform_db --remote \
 
 ```bash
 # Find fallback expressions
-grep -r "CLOUDFLARE_BUILD_API_TOKEN || CLOUDFLARE_API_TOKEN" .github/workflows/
+scripts/check-cloudflare-token-policy.sh
 
 # Replace with canonical token only
 # Example: change from
 #   env:
-#     CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN || secrets.CLOUDFLARE_API_TOKEN }}
-# to
+# Migration behavior
+# - Do NOT use workflow fallback expressions.
+# - If compatibility is needed, mirror legacy secret values in secret management temporarily.
+# Canonical
 #   env:
 #     CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
 
