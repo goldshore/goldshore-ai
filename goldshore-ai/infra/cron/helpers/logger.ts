@@ -56,7 +56,8 @@ function sanitizeArgs(args: any[]): any[] {
     const sanitized = sanitizeValue(arg);
     if (sanitized && typeof sanitized === "object") {
       try {
-        return JSON.stringify(sanitized);
+        const serialized = JSON.stringify(sanitized);
+        return sanitizeValue(serialized);
       } catch {
         return "[Unserializable object]";
       }
