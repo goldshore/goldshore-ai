@@ -53,7 +53,6 @@ jobs:
       - name: Validate gs-api infra bindings config
         run: pnpm check:gs-api-infra-bindings
 
-
       - name: Deploy GS API worker to Cloudflare
         working-directory: apps/gs-api
         env:

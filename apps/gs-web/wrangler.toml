@@ -1,4 +1,4 @@
-name = "gs-web-staging"
+name = "gs-web"
 compatibility_date = "2026-04-18"
 pages_build_output_dir = "./dist"
 
