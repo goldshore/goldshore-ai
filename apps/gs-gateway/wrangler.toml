@@ -49,7 +49,7 @@ id = "17840f9b6ac64cb1a51aeff085efe24c"
 
 # ── D1 Databases ───────────────────────────────────────────
 [[env.prod.d1_databases]]
-binding = "DB"
+binding = "PLATFORM_DB"
 database_name = "gs_platform_db"
 database_id = "gs_platform_db"
 
