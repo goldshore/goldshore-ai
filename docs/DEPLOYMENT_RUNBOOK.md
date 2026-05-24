@@ -7,6 +7,8 @@
 
 ---
 
+> Handoff: See `AGENT_HANDOFF.md` at repo root for cross-agent status, missing work, and D1 DoD checklist.
+
 ## Phase 1: Security Fixes (CRITICAL)
 
 ### Step 1.1: Deploy corrected `packages/auth/verify.ts`
