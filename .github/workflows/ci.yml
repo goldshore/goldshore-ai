@@ -28,6 +28,9 @@ jobs:
         run: pnpm run repo:health
         continue-on-error: false
 
+      - name: Enforce banproof production bindings
+        run: pnpm check:banproof-bindings
+
       - name: Build all
         run: pnpm -r build
 
