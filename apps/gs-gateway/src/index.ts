@@ -23,6 +23,52 @@ const withCorrelationId = (response: Response, correlationId: string): Response 
     status: response.status,
     statusText: response.statusText,
     headers
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { secureHeaders } from "hono/secure-headers";
+import { authMiddleware } from "./middleware/auth";
+interface GatewayEnv {
+  [key: string]: any;
+  CLOUDFLARE_ACCESS_AUDIENCE?: string;
+  CLOUDFLARE_TEAM_DOMAIN?: string;
+  API_SERVICE?: Fetcher;
+  AGENT?: Fetcher;
+  SECURITY_CHECK?: Fetcher;
+  // KV
+  AI_CACHE?: KVNamespace;
+  GS_CONFIG?: KVNamespace;
+  GATEWAY_KV?: KVNamespace;
+  // D1
+  DB?: D1Database;
+  // R2
+  ASSETS?: R2Bucket;
+  // Queue producers
+  MAIL_QUEUE?: Queue;   // gs-mail-jobs queue
+  // Stripe (secret — never logged, never returned in responses)
+  STRIPE_SECRET_KEY?: string;
+  // Config
+  API_ORIGIN?: string;
+  ACCESS_CLIENT_SECRET?: string;
+  ENV?: string;
+}
+
+const SECURITY_TIMEOUT_MS = 250;
+const SIGNALS_TIMEOUT_MS = 1200;
+const NON_CRITICAL_SIGNAL_PATHS = ["/signals", "/telemetry", "/events"] as const;
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${label}_TIMEOUT`)), timeoutMs);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
   });
 };
 
