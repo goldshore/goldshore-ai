@@ -28,7 +28,7 @@ bucket_name = "gs-platform-assets"
 [[env.prod.d1_databases]]
 binding = "CONTENT_DB"
 database_name = "goldshore"
-database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
+database_id = "f77de112-d201-4e54-a785-a4583814a6c3"
 
 [env.prod.ai]
 binding = "AI"
