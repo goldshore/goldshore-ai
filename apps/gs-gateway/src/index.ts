@@ -1,10 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
-
-const authMiddleware = async (_c: any, next: () => Promise<void>) => {
-  await next();
-};
+import { authMiddleware } from "./middleware/auth";
 interface GatewayEnv {
   [key: string]: any;
   CLOUDFLARE_ACCESS_AUDIENCE?: string;
