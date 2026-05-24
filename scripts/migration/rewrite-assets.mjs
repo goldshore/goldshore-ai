@@ -32,7 +32,7 @@ function walkText(d, acc = []) {
   if (!fs.existsSync(d)) return acc;
   for (const ent of fs.readdirSync(d, { withFileTypes: true })) {
     const fp = path.join(d, ent.name);
-    if (ent.isDirectory() && ent.name !== 'node_modules' && ent.name !== '.git') {
+    if (ent.isDirectory() && ent.name !== 'node_modules' && ent.name !== '.git' && ent.name !== 'dist' && ent.name !== 'build' && ent.name !== '.turbo' && ent.name !== '.next' && ent.name !== '.svelte-kit') {
       walkText(fp, acc);
     } else if (ent.isFile() && textExts.test(ent.name)) {
       acc.push(fp);

@@ -53,7 +53,7 @@ describe('Media Endpoint Security', () => {
         method: 'GET',
       },
       {
-        DB: mockDB,
+        CONTENT_DB: mockDB,
         ASSETS: mockAssets,
       },
     );
@@ -79,7 +79,7 @@ describe('Media Endpoint Security', () => {
     const app = createApp({ roles: ['unknown'] });
     const res = await app.request('/', {}, {
       KV: { put: async () => {} },
-      DB: {
+      CONTENT_DB: {
         prepare: () => ({
           bind: () => ({ all: async () => ({ results: [] }) }),
         }),
@@ -115,7 +115,7 @@ describe('Media Endpoint Security', () => {
     });
 
     const res = await app.fetch(req, {
-      DB: mockDB,
+      CONTENT_DB: mockDB,
       ASSETS: mockAssets,
     });
 
@@ -154,7 +154,7 @@ describe('Media Endpoint Security', () => {
     });
 
     const res = await app.fetch(req, {
-      DB: mockDB,
+      CONTENT_DB: mockDB,
       ASSETS: mockAssets,
     });
 
@@ -193,7 +193,7 @@ describe('Media Endpoint Security', () => {
     });
 
     const res = await app.fetch(req, {
-      DB: mockDB,
+      CONTENT_DB: mockDB,
       ASSETS: mockAssets,
     });
 
