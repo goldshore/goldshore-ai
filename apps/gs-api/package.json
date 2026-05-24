@@ -19,7 +19,7 @@
     "hono": "^4.12.16",
     "openai": "^6.34.0",
     "safe-stable-stringify": "^2.5.0",
-    "sanitize-html": "^2.17.3"
+    "sanitize-html": "^2.17.4"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260511.1",
