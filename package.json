@@ -34,6 +34,7 @@
     "audit": "pnpm run repo:health",
     "build:api": "turbo run build --filter=@goldshore/gs-api",
     "build:control": "turbo run build --filter=@goldshore/gs-control",
+    "check:banproof-bindings": "node scripts/check-banproof-bindings.mjs",
     "check:wrangler-placeholders": "node scripts/check-wrangler-placeholders.mjs"
   },
   "devDependencies": {

@@ -3,24 +3,99 @@
 
 name = "gs-api" # Base name, will be suffixed per environment
 main = "../../apps/gs-api/src/index.ts"
-compatibility_date = "2024-03-20"
+compatibility_date = "2026-04-18"
+compatibility_flags = ["nodejs_compat"]
 tsconfig = "../../apps/gs-api/tsconfig.json"
-
-[env.dev]
-name = "gs-api-dev"
-# Here we will add bindings for dev environment for KV, D1, R2, Queues etc.
-# Example:
-# [[d1_databases]]
-# binding = "D1_DATABASE"
-# database_name = "goldshore_cms_dev"
-# database_id = "..."
+workers_dev = false
 
 [env.preview]
 name = "gs-api-preview"
-# route = { pattern = "api-preview.goldshore.ai/*", custom_domain = true }
-# Bindings for the preview environment go here.
+routes = [
+  { pattern = "api-preview.goldshore.ai/*", zone_name = "goldshore.ai" }
+]
+
+[env.preview.vars]
+ENV = "preview"
+CLOUDFLARE_ACCESS_AUDIENCE = "SECRET_MANAGED"
+CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
+CONTROL_SYNC_TOKEN = "SECRET_MANAGED"
+
+[[env.preview.kv_namespaces]]
+binding = "KV"
+id = "gs_api_kv_preview"
+
+[[env.preview.kv_namespaces]]
+binding = "CONTROL_LOGS"
+id = "gs_control_logs_preview"
+
+[[env.preview.r2_buckets]]
+binding = "ASSETS"
+bucket_name = "gs-platform-assets"
+
+[[env.preview.d1_databases]]
+binding = "DB"
+database_name = "goldshore"
+database_id = "f77de112-d201-4e54-a785-a4583814a6c3"
+
+[[env.preview.d1_databases]]
+binding = "TELEMETRY_DB"
+database_name = "gs_telemetry_db"
+database_id = "gs_telemetry_db"
+
+[env.preview.ai]
+binding = "AI"
+
+[[env.preview.services]]
+binding = "AGENT"
+service = "gs-agent"
+environment = "preview"
+
+[[env.preview.queues.producers]]
+binding = "JOBS_QUEUE"
+queue = "goldshore-jobs"
 
 [env.prod]
 name = "gs-api-prod"
-# route = { pattern = "api.goldshore.ai/*", custom_domain = true }
-# Bindings for the production environment go here.
+routes = [
+  { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" }
+]
+
+[env.prod.vars]
+ENV = "production"
+CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
+CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
+CONTROL_SYNC_TOKEN = "__PROD_CONTROL_SYNC_TOKEN__"
+
+[[env.prod.kv_namespaces]]
+binding = "KV"
+id = "gs_api_kv_001"
+
+[[env.prod.kv_namespaces]]
+binding = "CONTROL_LOGS"
+id = "gs_control_logs_001"
+
+[[env.prod.r2_buckets]]
+binding = "ASSETS"
+bucket_name = "gs-platform-assets"
+
+[[env.prod.d1_databases]]
+binding = "DB"
+database_name = "goldshore"
+database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
+
+[[env.prod.d1_databases]]
+binding = "TELEMETRY_DB"
+database_name = "gs_telemetry_db"
+database_id = "gs_telemetry_db"
+
+[env.prod.ai]
+binding = "AI"
+
+[[env.prod.services]]
+binding = "AGENT"
+service = "gs-agent"
+environment = "prod"
+
+[[env.prod.queues.producers]]
+binding = "JOBS_QUEUE"
+queue = "goldshore-jobs"
