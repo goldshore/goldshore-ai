@@ -39,11 +39,8 @@ jobs:
       - name: Validate canonical worker names
         run: pnpm validate:names
 
-      - name: Validate preview gs-api bindings config
-        run: |
-          test -f apps/gs-api/wrangler.toml
-          grep -Eq '^\s*\[\[env\.preview\.services\]\]' apps/gs-api/wrangler.toml
-          grep -Eq '^\s*\[\[env\.preview\.queues\.(producers|consumers)\]\]' apps/gs-api/wrangler.toml
+      - name: Validate gs-api infra bindings config
+        run: pnpm check:gs-api-infra-bindings
 
       - name: Deploy GS API worker preview to Cloudflare
         working-directory: apps/gs-api
