@@ -43,6 +43,8 @@ interface D1Database {
 interface Env {
   KV: KVNamespace;
   DB: D1Database;
+  CLOUDFLARE_ACCESS_AUDIENCE?: string;
+  CLOUDFLARE_TEAM_DOMAIN?: string;
   CONTACT_TTL_SECONDS?: string;
   CONTACT_NOTIFICATION_EMAILS?: string;
   MAILCHANNELS_SENDER_EMAIL?: string;

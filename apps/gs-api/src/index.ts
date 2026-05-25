@@ -15,6 +15,7 @@ import admin from './routes/admin';
 import media from './routes/media';
 import pages from './routes/pages';
 import internal from './routes/internal';
+import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 
 type Env = {
   KV: KVNamespace;
@@ -31,6 +32,9 @@ type Env = {
   CONTROL_SYNC_TOKEN?: string;
   ALLOWED_ORIGINS?: string;
   ENV?: string;
+  API_VERSION?: string;
+  DEPLOY_SHA?: string;
+  GIT_SHA?: string;
 };
 
 const app = new Hono<{
@@ -74,6 +78,19 @@ const isLocalDevelopmentOrigin = (origin: string) => {
   );
 };
 
+const isPublicPath = (path: string, method: string) => {
+  if (method === 'OPTIONS') {
+    return true;
+  }
+
+  return (
+    path === '/' ||
+    path === '/version' ||
+    path === '/health' ||
+    path.startsWith('/health/')
+  );
+};
+
 // Sentinel: Security Middleware
 app.use('*', secureHeaders());
 
@@ -102,13 +119,7 @@ app.use(
 
 // Enforce Authentication (Defense in Depth)
 app.use('*', async (c, next) => {
-  // Allow health checks, root, and CORS preflight
-  if (
-    c.req.path === '/health' ||
-    c.req.path.startsWith('/health/') ||
-    c.req.path === '/' ||
-    c.req.method === 'OPTIONS'
-  ) {
+  if (isPublicPath(c.req.path, c.req.method)) {
     c.set('accessClaims', null);
     await next();
     return;
@@ -125,6 +136,13 @@ app.use('*', async (c, next) => {
       await next();
       return;
     }
+  }
+
+  if (!c.env.CLOUDFLARE_ACCESS_AUDIENCE) {
+    return c.json(
+      { error: 'Cloudflare Access audience is not configured for protected routes.' },
+      503,
+    );
   }
 
   // Verify Cloudflare Access JWT
@@ -166,6 +184,19 @@ app.get('/', (c) => {
     </html>
   `);
 });
+
+app.get('/version', (c) =>
+  c.json(
+    withContractHeaders(
+      {
+        service: 'gs-api',
+        version: c.env.API_VERSION ?? c.env.GIT_SHA ?? 'unknown',
+        deploySha: c.env.DEPLOY_SHA ?? c.env.GIT_SHA ?? null,
+      },
+      getRuntimeVersion(c.env)
+    )
+  )
+);
 
 // Core routes
 app.route('/health', health);

@@ -31,6 +31,9 @@ This document is the canonical reference for GoldShore domains, preview URLs, Cl
 ## Production domains
 
 - `goldshore.ai`
+- `www.goldshore.ai`
+- `goldshore.org`
+- `www.goldshore.org`
 - `api.goldshore.ai`
 - `gw.goldshore.ai` (canonical gateway hostname; not `gateway.goldshore.ai`)
 - `ops.goldshore.ai`
@@ -46,11 +49,11 @@ Cloudflare Access is enforced on internal tooling and protected previews. The ta
 
 | Access application | Policy name                                                                                                  | Domains protected           | Notes                                                                                                 |
 | ------------------ | ------------------------------------------------------------------------------------------------------------ | --------------------------- | ----------------------------------------------------------------------------------------------------- |
-| Public web         | `goldshore.ai`, `www.goldshore.ai`                                                                           | No                          | Public marketing site.                                                                                |
+| Public web         | `goldshore.ai`, `www.goldshore.ai`, `goldshore.org`, `www.goldshore.org`                                    | No                          | Public marketing site; `.org` should mirror the public `.ai` experience.                             |
 | Web previews       | `preview.goldshore.ai`, `*-preview.goldshore.ai`, `{branch}.goldshore-pages.dev`                             | Yes (GoldShore-Web-Preview) | Preview builds for the marketing site should remain Access gated.                                     |
 | Admin cockpit      | `admin.goldshore.ai`, `admin-preview.goldshore.ai`, `*-preview.goldshore.ai`, `{branch}.goldshore-pages.dev` | Yes (GoldShore-Admin-ZT)    | Internal admin dashboard, email allowlist + IdP/OTP.                                                  |
 | Control worker     | `ops.goldshore.ai`                                                                                           | Yes                         | Internal ops workflows and automation.                                                                |
-| API worker         | `api.goldshore.ai`                                                                                           | Optional                    | Enable for private endpoints only.                                                                    |
+| API worker         | `api.goldshore.ai`                                                                                           | Optional                    | Keep `/`, `/health`, and `/version` public. Protect `/admin/*`, `/internal/*`, `/system/*`, `/user*`, `/users/*`, `/templates/*`, `/media/*`, `/pages/*`, and `/ai/*`. |
 | Gateway worker     | `gw.goldshore.ai`                                                                                            | Optional                    | Canonical hostname is `gw.goldshore.ai` (not `gateway.goldshore.ai`); depends on routing/auth design. |
 | Mail handler       | `mail.goldshore.ai`                                                                                          | No                          | Cloudflare mail routing cannot authenticate.                                                          |
 
@@ -60,8 +63,9 @@ Non-interactive checks against Access-protected admin and preview hosts must use
 
 - GitHub Actions and local automation should provide `CF_ACCESS_CLIENT_ID` and `CF_ACCESS_CLIENT_SECRET`.
 - `.github/workflows/maintenance-gs-sync.yml` passes those secrets into `scripts/jules-sync.sh` for authenticated sync checks.
-- `infra/Cloudflare/tests.ts` automatically attaches the service-token headers for `admin.goldshore.ai` and `*.pages.dev` smoke checks when those environment variables are present.
+- `infra/Cloudflare/tests.ts` automatically attaches the service-token headers for `admin.goldshore.ai`, `admin-preview.goldshore.ai`, `*-preview.goldshore.ai`, and `*.goldshore-pages.dev` smoke checks when those environment variables are present.
 - Keep the Pages runtime URLs aligned with the `.ai` migration by setting explicit `public_url` values for `gs-web` and `gs-admin` in `infra/Cloudflare/config.yaml`.
+- Keep `goldshore.org` and `www.goldshore.org` attached to the public Pages project in desired-state so the `.org` mirror stays visible in repo-managed drift checks.
 
 ### Mail handler configuration
 
