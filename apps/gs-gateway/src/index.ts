@@ -133,7 +133,8 @@ app.use(
 );
 
 // ── Auth — fail-closed JWT verification ───────────────────
-// authMiddleware skips /health, /, /status, /signals and OPTIONS automatically.
+// authMiddleware skips the public paths (/health, /, /status, /signals).
+// CORS is registered above and may handle OPTIONS preflight requests before auth runs.
 // STRIPE_SECRET_KEY absence is also enforced per-request inside authMiddleware.
 app.use("*", authMiddleware);
 
