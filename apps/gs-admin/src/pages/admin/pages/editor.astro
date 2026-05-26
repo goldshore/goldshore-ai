@@ -1,0 +1,691 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+---
+<AdminLayout title="Admin | Pages Editor">
+  <div class="max-w-7xl mx-auto p-8 space-y-6">
+    <header class="space-y-2">
+      <h1 class="text-4xl gs-heading gs-text-accent">Pages Editor</h1>
+      <p class="text-lg gs-text-subtle">Compose marketing pages with draggable section modules and preview responsive layouts.</p>
+    </header>
+
+    <div class="gs-card p-6 space-y-4">
+      <div class="editor-toolbar">
+        <div class="toolbar-group">
+          <span class="text-sm gs-text-subtle">Add module</span>
+          <div class="toolbar-buttons">
+            <button class="gs-button" data-add-section="hero">Hero</button>
+            <button class="gs-button" data-add-section="grid">Grid</button>
+            <button class="gs-button" data-add-section="cta">CTA</button>
+            <button class="gs-button" data-add-section="faq">FAQ</button>
+          </div>
+        </div>
+        <div class="toolbar-group">
+          <span class="text-sm gs-text-subtle">Preview</span>
+          <div class="toolbar-buttons">
+            <button class="gs-button is-active" data-preview-mode="desktop">Desktop</button>
+            <button class="gs-button" data-preview-mode="tablet">Tablet</button>
+            <button class="gs-button" data-preview-mode="mobile">Mobile</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="editor-grid">
+        <section class="editor-panel">
+          <h2 class="text-lg font-semibold">Sections</h2>
+          <p class="text-sm gs-text-subtle">Drag to reorder. Click to edit section content.</p>
+          <div id="sections-list" class="sections-list" aria-live="polite"></div>
+        </section>
+
+        <section class="editor-panel">
+          <h2 class="text-lg font-semibold">Section Settings</h2>
+          <div id="section-editor" class="section-editor" aria-live="polite">
+            <p class="text-sm gs-text-subtle">Select a section to edit its content.</p>
+          </div>
+        </section>
+
+        <section class="editor-panel preview-panel">
+          <div class="preview-header">
+            <h2 class="text-lg font-semibold">Live Preview</h2>
+            <span id="preview-label" class="text-sm gs-text-subtle">Desktop</span>
+          </div>
+          <div id="preview-shell" class="preview-shell is-desktop">
+            <div id="preview-canvas" class="preview-canvas"></div>
+          </div>
+        </section>
+
+        <section class="editor-panel">
+          <h2 class="text-lg font-semibold">Structured JSON</h2>
+          <p class="text-sm gs-text-subtle">Persisted to local storage for now. Copy to the web renderer when ready.</p>
+          <textarea id="json-output" class="json-output" readonly rows="14"></textarea>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
+    const storageKey = 'gs-pages-editor-sections';
+    const previewModes = {
+      desktop: { label: 'Desktop', className: 'is-desktop' },
+      tablet: { label: 'Tablet', className: 'is-tablet' },
+      mobile: { label: 'Mobile', className: 'is-mobile' }
+    };
+
+    const sectionTemplates = {
+      hero: () => ({
+        id: `hero-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        type: 'hero',
+        title: 'Launch your next page faster',
+        subtitle: 'Modular sections, editable copy, and responsive layout controls.',
+        primaryCta: 'Request a demo',
+        secondaryCta: 'View docs'
+      }),
+      grid: () => ({
+        id: `grid-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        type: 'grid',
+        title: 'Core capabilities',
+        items: [
+          { title: 'Composable sections', body: 'Drag and drop modules into place with live previews.' },
+          { title: 'Structured JSON', body: 'Portable page content stored as JSON blocks.' },
+          { title: 'Astro rendering', body: 'Map every section to an Astro component.' }
+        ]
+      }),
+      cta: () => ({
+        id: `cta-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        type: 'cta',
+        headline: 'Ready to publish?',
+        body: 'Export this JSON into the web renderer and go live in minutes.',
+        buttonLabel: 'Publish update'
+      }),
+      faq: () => ({
+        id: `faq-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        type: 'faq',
+        title: 'Frequently asked questions',
+        items: [
+          { question: 'Where is the content saved?', answer: 'Locally in the browser for now; ready for API integration.' },
+          { question: 'Can I reorder sections?', answer: 'Yes. Drag a module in the list to reposition it.' }
+        ]
+      })
+    };
+
+    const defaultSections = [sectionTemplates.hero(), sectionTemplates.grid(), sectionTemplates.cta(), sectionTemplates.faq()];
+
+    const state = {
+      sections: [],
+      selectedId: null,
+      previewMode: 'desktop'
+    };
+
+    const sectionsListEl = document.getElementById('sections-list');
+    const sectionEditorEl = document.getElementById('section-editor');
+    const previewCanvasEl = document.getElementById('preview-canvas');
+    const previewShellEl = document.getElementById('preview-shell');
+    const previewLabelEl = document.getElementById('preview-label');
+    const jsonOutputEl = document.getElementById('json-output');
+
+    const loadSections = () => {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        try {
+          state.sections = JSON.parse(saved);
+          return;
+        } catch (error) {
+          console.warn('Failed to parse saved sections', error);
+        }
+      }
+      state.sections = defaultSections;
+    };
+
+    const persistSections = () => {
+      localStorage.setItem(storageKey, JSON.stringify(state.sections, null, 2));
+    };
+
+    const setPreviewMode = (mode) => {
+      const target = previewModes[mode];
+      if (!target) return;
+      previewShellEl.className = `preview-shell ${target.className}`;
+      previewLabelEl.textContent = target.label;
+      state.previewMode = mode;
+      document.querySelectorAll('[data-preview-mode]').forEach((button) => {
+        button.classList.toggle('is-active', button.dataset.previewMode === mode);
+      });
+    };
+
+    const renderSectionsList = () => {
+      if (state.sections.length === 0) {
+        sectionsListEl.innerHTML = '<p class="text-sm gs-text-subtle">No sections yet. Add a module to begin.</p>';
+        return;
+      }
+      sectionsListEl.innerHTML = state.sections
+        .map((section, index) => {
+          const isActive = section.id === state.selectedId;
+          return `
+            <div class="section-item ${isActive ? 'is-active' : ''}" draggable="true" data-section-id="${section.id}" data-index="${index}">
+              <div>
+                <p class="section-title">${section.type.toUpperCase()}</p>
+                <p class="section-subtitle">${section.title || section.headline || section.subtitle || 'Custom module'}</p>
+              </div>
+              <span class="section-hint">Drag</span>
+            </div>
+          `;
+        })
+        .join('');
+    };
+
+    const renderPreview = () => {
+      previewCanvasEl.innerHTML = state.sections
+        .map((section) => {
+          switch (section.type) {
+            case 'hero':
+              return `
+                <section class="preview-section hero">
+                  <p class="eyebrow">Hero Section</p>
+                  <h2>${section.title}</h2>
+                  <p>${section.subtitle}</p>
+                  <div class="cta-row">
+                    <button>${section.primaryCta}</button>
+                    <button class="ghost">${section.secondaryCta}</button>
+                  </div>
+                </section>
+              `;
+            case 'grid':
+              return `
+                <section class="preview-section grid">
+                  <p class="eyebrow">Grid Section</p>
+                  <h2>${section.title}</h2>
+                  <div class="grid-items">
+                    ${section.items
+                      .map(
+                        (item) => `
+                        <div class="grid-card">
+                          <h3>${item.title}</h3>
+                          <p>${item.body}</p>
+                        </div>
+                      `
+                      )
+                      .join('')}
+                  </div>
+                </section>
+              `;
+            case 'cta':
+              return `
+                <section class="preview-section cta">
+                  <p class="eyebrow">CTA Section</p>
+                  <h2>${section.headline}</h2>
+                  <p>${section.body}</p>
+                  <button>${section.buttonLabel}</button>
+                </section>
+              `;
+            case 'faq':
+              return `
+                <section class="preview-section faq">
+                  <p class="eyebrow">FAQ Section</p>
+                  <h2>${section.title}</h2>
+                  <div class="faq-items">
+                    ${section.items
+                      .map(
+                        (item) => `
+                        <div class="faq-item">
+                          <h3>${item.question}</h3>
+                          <p>${item.answer}</p>
+                        </div>
+                      `
+                      )
+                      .join('')}
+                  </div>
+                </section>
+              `;
+            default:
+              return '';
+          }
+        })
+        .join('');
+    };
+
+    const renderJsonOutput = () => {
+      jsonOutputEl.value = JSON.stringify(state.sections, null, 2);
+    };
+
+    const updateAll = () => {
+      renderSectionsList();
+      renderPreview();
+      renderJsonOutput();
+      persistSections();
+    };
+
+    const renderEditor = () => {
+      const selected = state.sections.find((section) => section.id === state.selectedId);
+      if (!selected) {
+        sectionEditorEl.innerHTML = '<p class="text-sm gs-text-subtle">Select a section to edit its content.</p>';
+        return;
+      }
+
+      const fields = [];
+      if (selected.type === 'hero') {
+        fields.push(
+          { key: 'title', label: 'Headline', value: selected.title },
+          { key: 'subtitle', label: 'Subhead', value: selected.subtitle },
+          { key: 'primaryCta', label: 'Primary CTA', value: selected.primaryCta },
+          { key: 'secondaryCta', label: 'Secondary CTA', value: selected.secondaryCta }
+        );
+      }
+      if (selected.type === 'grid') {
+        fields.push({ key: 'title', label: 'Section title', value: selected.title });
+      }
+      if (selected.type === 'cta') {
+        fields.push(
+          { key: 'headline', label: 'Headline', value: selected.headline },
+          { key: 'body', label: 'Body', value: selected.body },
+          { key: 'buttonLabel', label: 'Button label', value: selected.buttonLabel }
+        );
+      }
+      if (selected.type === 'faq') {
+        fields.push({ key: 'title', label: 'Section title', value: selected.title });
+      }
+
+      const baseFieldsMarkup = fields
+        .map(
+          (field) => `
+          <label class="field">
+            <span>${field.label}</span>
+            <input type="text" value="${field.value}" data-field="${field.key}" />
+          </label>
+        `
+        )
+        .join('');
+
+      const collectionMarkup =
+        selected.type === 'grid'
+          ? `
+          <div class="collection">
+            <p class="text-sm gs-text-subtle">Grid cards</p>
+            ${selected.items
+              .map(
+                (item, index) => `
+                <label class="field">
+                  <span>Card ${index + 1} title</span>
+                  <input type="text" value="${item.title}" data-collection="items" data-index="${index}" data-key="title" />
+                </label>
+                <label class="field">
+                  <span>Card ${index + 1} body</span>
+                  <input type="text" value="${item.body}" data-collection="items" data-index="${index}" data-key="body" />
+                </label>
+              `
+              )
+              .join('')}
+          </div>
+        `
+          : selected.type === 'faq'
+            ? `
+            <div class="collection">
+              <p class="text-sm gs-text-subtle">FAQ items</p>
+              ${selected.items
+                .map(
+                  (item, index) => `
+                  <label class="field">
+                    <span>Question ${index + 1}</span>
+                    <input type="text" value="${item.question}" data-collection="items" data-index="${index}" data-key="question" />
+                  </label>
+                  <label class="field">
+                    <span>Answer ${index + 1}</span>
+                    <input type="text" value="${item.answer}" data-collection="items" data-index="${index}" data-key="answer" />
+                  </label>
+                `
+                )
+                .join('')}
+            </div>
+          `
+            : '';
+
+      sectionEditorEl.innerHTML = `
+        <div class="editor-fields">
+          ${baseFieldsMarkup}
+          ${collectionMarkup}
+          <button class="gs-button ghost" data-remove-section="${selected.id}">Remove section</button>
+        </div>
+      `;
+    };
+
+    const selectSection = (sectionId) => {
+      state.selectedId = sectionId;
+      renderSectionsList();
+      renderEditor();
+    };
+
+    const handleFieldInput = (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement)) return;
+      const selected = state.sections.find((section) => section.id === state.selectedId);
+      if (!selected) return;
+      const field = target.dataset.field;
+      const collection = target.dataset.collection;
+      if (field) {
+        selected[field] = target.value;
+      }
+      if (collection) {
+        const index = Number(target.dataset.index);
+        const key = target.dataset.key;
+        if (selected[collection] && selected[collection][index]) {
+          selected[collection][index][key] = target.value;
+        }
+      }
+      updateAll();
+      renderEditor();
+    };
+
+    document.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+
+      const addType = target.dataset.addSection;
+      if (addType && sectionTemplates[addType]) {
+        const newSection = sectionTemplates[addType]();
+        state.sections.push(newSection);
+        state.selectedId = newSection.id;
+        updateAll();
+        renderEditor();
+      }
+
+      const mode = target.dataset.previewMode;
+      if (mode) {
+        setPreviewMode(mode);
+      }
+
+      const removeId = target.dataset.removeSection;
+      if (removeId) {
+        state.sections = state.sections.filter((section) => section.id !== removeId);
+        state.selectedId = state.sections[0]?.id ?? null;
+        updateAll();
+        renderEditor();
+      }
+
+      const sectionItem = target.closest('.section-item');
+      if (sectionItem) {
+        selectSection(sectionItem.dataset.sectionId);
+      }
+    });
+
+    sectionEditorEl.addEventListener('input', handleFieldInput);
+
+    sectionsListEl.addEventListener('dragstart', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      const sectionId = target.dataset.sectionId;
+      if (!sectionId) return;
+      event.dataTransfer.setData('text/plain', sectionId);
+      event.dataTransfer.effectAllowed = 'move';
+    });
+
+    sectionsListEl.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+    });
+
+    sectionsListEl.addEventListener('drop', (event) => {
+      event.preventDefault();
+      const sectionId = event.dataTransfer.getData('text/plain');
+      const target = event.target.closest('.section-item');
+      if (!sectionId || !target) return;
+      const targetId = target.dataset.sectionId;
+      if (!targetId || targetId === sectionId) return;
+
+      const fromIndex = state.sections.findIndex((section) => section.id === sectionId);
+      const toIndex = state.sections.findIndex((section) => section.id === targetId);
+      if (fromIndex === -1 || toIndex === -1) return;
+      const [moved] = state.sections.splice(fromIndex, 1);
+      state.sections.splice(toIndex, 0, moved);
+      updateAll();
+    });
+
+    loadSections();
+    state.selectedId = state.sections[0]?.id ?? null;
+    setPreviewMode(state.previewMode);
+    updateAll();
+    renderEditor();
+  </script>
+
+  <style>
+    .editor-toolbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .toolbar-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .gs-button {
+      background: var(--gs-surface-muted);
+      color: var(--gs-text);
+      border: 1px solid var(--gs-border-subtle);
+      padding: 0.4rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+    }
+
+    .gs-button.is-active {
+      background: var(--gs-accent);
+      color: var(--gs-surface);
+      border-color: transparent;
+    }
+
+    .gs-button.ghost {
+      background: transparent;
+    }
+
+    .editor-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .editor-panel {
+      border: 1px solid var(--gs-border-subtle);
+      border-radius: 1rem;
+      padding: 1rem;
+      background: var(--gs-surface);
+      min-height: 220px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .sections-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .section-item {
+      padding: 0.75rem 1rem;
+      border-radius: 0.75rem;
+      background: var(--gs-surface-muted);
+      border: 1px solid transparent;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: grab;
+    }
+
+    .section-item.is-active {
+      border-color: var(--gs-accent);
+      box-shadow: 0 0 0 1px var(--gs-accent);
+    }
+
+    .section-title {
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+
+    .section-subtitle {
+      font-size: 0.75rem;
+      color: var(--gs-text-subtle);
+    }
+
+    .section-hint {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--gs-text-muted);
+    }
+
+    .section-editor {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .editor-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      font-size: 0.8rem;
+    }
+
+    .field input {
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.5rem;
+      border: 1px solid var(--gs-border-subtle);
+      background: var(--gs-surface-muted);
+    }
+
+    .collection {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .preview-panel {
+      grid-column: 1 / -1;
+    }
+
+    .preview-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+
+    .preview-shell {
+      border: 1px dashed var(--gs-border-subtle);
+      border-radius: 1rem;
+      padding: 1rem;
+      background: var(--gs-surface-muted);
+    }
+
+    .preview-shell.is-desktop .preview-canvas {
+      max-width: 100%;
+    }
+
+    .preview-shell.is-tablet .preview-canvas {
+      max-width: 768px;
+    }
+
+    .preview-shell.is-mobile .preview-canvas {
+      max-width: 375px;
+    }
+
+    .preview-canvas {
+      margin: 0 auto;
+      background: #fff;
+      color: #111;
+      border-radius: 1rem;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+    }
+
+    .preview-section {
+      border: 1px solid #e2e8f0;
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .preview-section h2 {
+      font-size: 1.35rem;
+      font-weight: 700;
+    }
+
+    .preview-section .eyebrow {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #64748b;
+    }
+
+    .preview-section .cta-row {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .preview-section button {
+      background: #0f172a;
+      color: #f8fafc;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+    }
+
+    .preview-section button.ghost {
+      background: transparent;
+      color: #0f172a;
+      border: 1px solid #94a3b8;
+    }
+
+    .preview-section.grid .grid-items {
+      display: grid;
+      gap: 0.75rem;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    }
+
+    .grid-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 0.65rem;
+      padding: 0.75rem;
+    }
+
+    .faq-items {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .json-output {
+      width: 100%;
+      border-radius: 0.75rem;
+      border: 1px solid var(--gs-border-subtle);
+      background: var(--gs-surface-muted);
+      padding: 0.75rem;
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+      font-size: 0.75rem;
+      color: var(--gs-text);
+    }
+
+    @media (max-width: 900px) {
+      .preview-panel {
+        grid-column: auto;
+      }
+    }
+  </style>
+</AdminLayout>

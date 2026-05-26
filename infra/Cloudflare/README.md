@@ -22,9 +22,38 @@ Use exactly one canonical path per live service:
 | `gs-gateway` | `apps/gs-gateway/wrangler.toml` |
 | `gs-control` | `apps/gs-control/wrangler.toml` |
 | `gs-mail` | `apps/gs-mail/wrangler.toml` |
+| `banproof-me` | `apps/banproof-me/wrangler.toml` |
 
 The legacy `infra/Cloudflare/legacy/goldshore-api.wrangler.toml` file remains for reference only; production tooling should target the canonical `gs-api` manifest and `apps/gs-api` worker sources.
+
+
+## Routing source of truth
+
+For all Pages-vs-Workers route ownership and change workflow rules, use:
+
+- `infra/Cloudflare/runbooks/ROUTING_SOURCE_OF_TRUTH.md`
 
 ## Selection policy
 
 Do **not** glob `infra/Cloudflare/*.wrangler.toml` in scripts/docs. Use the explicit canonical paths above.
+
+## CI Secret Contract (Canonical)
+
+Cloudflare worker deploy workflows and infra guard checks use the following canonical GitHub Actions secrets:
+
+| Secret name | Required for | Ownership |
+|---|---|---|
+| `CLOUDFLARE_ACCOUNT_ID` | All worker deploy jobs and Cloudflare infra guard checks | Cloudflare account owner / platform ops |
+| `CLOUDFLARE_BUILD_API_TOKEN` | All worker deploy jobs (`gs-api`, `gs-agent`, `gs-gateway`, `gs-control`, `gs-mail`, `banproof-me`) and Cloudflare infra guard API calls | `gs-control` service token owner (platform ops) |
+
+Policy:
+
+- `CLOUDFLARE_BUILD_API_TOKEN` is the single canonical deploy token secret for worker CI.
+- Do not add fallback expressions (for example `secretA || secretB`) in worker deploy workflows unless a documented exception is added to Cloudflare runbooks.
+
+
+Migration behavior:
+
+- If older tooling still references `CLOUDFLARE_API_TOKEN`, migrate by updating that tooling to set runtime env `CLOUDFLARE_API_TOKEN` from `secrets.CLOUDFLARE_BUILD_API_TOKEN` in CI.
+- Do not add `||` fallbacks in workflow env blocks.
+- Temporary compatibility, if required, must be managed in secret administration (mirrored secret values), with a tracked removal task.

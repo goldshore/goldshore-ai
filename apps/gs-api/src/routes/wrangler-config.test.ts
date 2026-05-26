@@ -6,7 +6,9 @@ import { resolve } from 'node:path';
 const wranglerToml = readFileSync(resolve(import.meta.dirname, '../../wrangler.toml'), 'utf8');
 
 describe('gs-api wrangler env bindings', () => {
-  for (const envName of ['prod', 'production', 'preview']) {
+  // Canonical environments are [env.prod] and [env.preview].
+  // Legacy [env.production] has been intentionally removed.
+  for (const envName of ['prod', 'preview']) {
     it(`keeps the KV binding required by runtime handlers in ${envName}`, () => {
       assert.match(
         wranglerToml,
@@ -14,14 +16,14 @@ describe('gs-api wrangler env bindings', () => {
       );
     });
 
-    it(`defines DB, ASSETS, and AI bindings for ${envName}`, () => {
+    it(`defines CONTENT_DB, ASSETS, and AI bindings for ${envName}`, () => {
       assert.match(
         wranglerToml,
         new RegExp(`\\[\\[env\\.${envName}\\.r2_buckets\\]\\][\\s\\S]*?binding = "ASSETS"`)
       );
       assert.match(
         wranglerToml,
-        new RegExp(`\\[\\[env\\.${envName}\\.d1_databases\\]\\][\\s\\S]*?binding = "DB"`)
+        new RegExp(`\\[\\[env\\.${envName}\\.d1_databases\\]\\][\\s\\S]*?binding = "CONTENT_DB"`)
       );
       assert.match(
         wranglerToml,

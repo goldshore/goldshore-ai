@@ -1,6 +1,11 @@
 import cloudflare from "@astrojs/cloudflare";
 import tailwind from "@astrojs/tailwind";
 import { defineConfig } from "astro/config";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const tailwindConfigFile = path.resolve(__dirname, "../../../../tailwind.config.mjs");
 
 export function createAstroConfig(overrides = {}) {
   const baseNoExternal = [
@@ -22,7 +27,7 @@ export function createAstroConfig(overrides = {}) {
     integrations: [
       tailwind({
         applyBaseStyles: false,
-        configFile: "../../tailwind.config.mjs"
+        configFile: tailwindConfigFile
       })
     ],
     vite: {
@@ -68,9 +73,6 @@ export function createAstroConfig(overrides = {}) {
     }
   };
 
-  // Remove integrations from overrides in final spread if we handled it manually?
-  // Actually spread `...overrides` overwrites `integrations`.
-  // So we need to ensure `finalConfig.integrations` is correct.
   finalConfig.integrations = [
       ...config.integrations,
       ...(overrides.integrations || [])

@@ -2,6 +2,8 @@
 
 Use `.github/workflows/maintenance.yml` to run Cloudflare infrastructure reconciliation separately from app deploy pipelines.
 
+For incident triage and guardrail verification, inspect `.github/workflows/cloudflare-infra-guard.yml` (the canonical replacement for the retired Cloudflare Pages guard workflow path); it runs automatically on pull requests to `main` and can also be run manually for incident triage when needed.
+
 ## Trigger model
 
 - **Manual (`workflow_dispatch`):** the only trigger; recommended for urgent reconciliation, post-incident verification, or post-rotation validation.

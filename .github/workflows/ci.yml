@@ -12,13 +12,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.2
 
-      - uses: pnpm/action-setup@v5
-        with:
-          run_install: false
+      - uses: pnpm/action-setup@v4
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: "pnpm"
@@ -30,8 +28,15 @@ jobs:
         run: pnpm run repo:health
         continue-on-error: false
 
+      - name: Enforce banproof production bindings
+        run: pnpm check:banproof-bindings
+
       - name: Build all
         run: pnpm -r build
+
+      - name: gs-web release quality gate
+        working-directory: apps/gs-web
+        run: pnpm check:release
+
       - name: Verify internal links (Developer Hub, Risk Radar, Workflows)
         run: node scripts/check-internal-links.mjs
-

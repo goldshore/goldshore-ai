@@ -33,7 +33,7 @@ const createTestApp = (claims: any = null) => {
   // Middleware to set accessClaims
   app.use('*', async (c, next) => {
     c.set('accessClaims', claims);
-    c.env = { DB: mockDB, KV: mockKV } as any;
+    c.env = { CONTENT_DB: mockDB, KV: mockKV } as any;
     await next();
   });
 

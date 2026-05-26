@@ -16,16 +16,19 @@ on:
 jobs:
   maintenance:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.2
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v5
+      - uses: pnpm/action-setup@v6.0.0
         with:
           run_install: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
@@ -44,4 +47,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           LOG_REF: ${{ github.event.inputs.log_ref }}
           LOG_LIMIT: ${{ github.event.inputs.log_limit }}
-        run: bash scripts/branch-report.sh
+        run: bash scripts/maintenance/branch-report.sh

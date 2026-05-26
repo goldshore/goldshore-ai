@@ -68,3 +68,6 @@ textarea {
   background: rgba(90, 162, 255, 0.28);
   color: var(--gs-text);
 }
+
+/* GSL Brand Theme — navy + gold + responsive */
+@import './gs-brand-theme.css';

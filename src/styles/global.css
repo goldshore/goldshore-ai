@@ -23,6 +23,7 @@
   --space-page-block: clamp(1.25rem, 3.2vw, 3rem);
   --space-section: clamp(1.4rem, 3.5vw, 2.8rem);
   --space-card: clamp(0.85rem, 2vw, 1.35rem);
+  --box-shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
 }
 
 @font-face {
