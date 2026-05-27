@@ -17,6 +17,7 @@ const PUBLIC_WEB_HOSTS = new Set([
 
 export const onRequest: MiddlewareHandler = async (context, next) => {
   const url = new URL(context.request.url);
+  context.locals.securityPolicySource = 'response-header';
   const adminRule = getAdminRouteRule(url.pathname, context.request.method, url.hostname);
 
   if (adminRule) {
