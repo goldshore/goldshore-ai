@@ -39,19 +39,19 @@ id = "goldshore_kv_001"
 [[env.prod.d1_databases]]
 binding = "BAN_DB"
 database_name = "gs_platform_db"
-database_id = "gs_platform_db"
+database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
 
 # 4. AUDIT_DB — gs_audit_db D1 (compliance audit log)
 [[env.prod.d1_databases]]
 binding = "AUDIT_DB"
 database_name = "gs_audit_db"
-database_id = "gs_audit_db"
+database_id = "1ae71d76-188f-481b-91d9-db2d39013f68"
 
 # 5. SIGNALS_DB — gs_signals_db D1 (trading signal association for ban context)
 [[env.prod.d1_databases]]
 binding = "SIGNALS_DB"
 database_name = "gs_signals_db"
-database_id = "gs_signals_db"
+database_id = "76af4653-7f44-417b-b46e-250143d906fd"
 
 # 6. ASSETS — shared R2 bucket (media / static assets)
 [[env.prod.r2_buckets]]
@@ -88,17 +88,17 @@ id = "goldshore_kv_preview"
 [[env.preview.d1_databases]]
 binding = "BAN_DB"
 database_name = "gs_platform_db"
-database_id = "gs_platform_db"
+database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
 
 [[env.preview.d1_databases]]
 binding = "AUDIT_DB"
 database_name = "gs_audit_db"
-database_id = "gs_audit_db"
+database_id = "1ae71d76-188f-481b-91d9-db2d39013f68"
 
 [[env.preview.d1_databases]]
 binding = "SIGNALS_DB"
 database_name = "gs_signals_db"
-database_id = "gs_signals_db"
+database_id = "76af4653-7f44-417b-b46e-250143d906fd"
 
 [[env.preview.r2_buckets]]
 binding = "ASSETS"

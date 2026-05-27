@@ -28,7 +28,7 @@
 # ══════════════════════════════════════════════════════════════
 # DELETE these (keep: goldshore-admin Pages, gs-web Pages, SSO App):
 #   - gs-mail Workers (x2 — gs-mail.goldshore.workers.dev + *-gs-mail)
-#   - gs-platform Workers (x2)
+#   - gs-gateway Workers (x2)
 #   - gs-api Workers (x2)
 #   - goldshore-core Workers (x2)
 #   - gs-agent Workers (x2 — keep one if you want agent protected)
@@ -47,11 +47,11 @@
 #   Domain: api.goldshore.ai
 # OR add route: api.goldshore.ai/* in zone goldshore.ai
 
-## gw.goldshore.ai → gs-platform Worker  
-# Dashboard: Workers & Pages → gs-platform → Settings → Domains & Routes → Add Custom Domain
+## gw.goldshore.ai → gs-gateway Worker  
+# Dashboard: Workers & Pages → gs-gateway → Settings → Domains & Routes → Add Custom Domain
 #   Domain: gw.goldshore.ai
 # NOTE: gs-gateway Pages project is pointing at gs-admin.pages.dev — WRONG NAME
-#       gs-platform is the ACTUAL gateway worker. Route gw.goldshore.ai to gs-platform.
+#       gs-gateway is the ACTUAL gateway worker. Route gw.goldshore.ai to gs-gateway.
 
 ## agent.goldshore.ai → gs-agent Worker
 # Dashboard: Workers & Pages → gs-agent → Settings → Domains & Routes → Add Custom Domain
@@ -118,11 +118,11 @@
 # PRIORITY 6 — QUEUE WIRING
 # ══════════════════════════════════════════════════════════════
 # Queue "goldshore-jobs" exists
-# Producer: gs-platform (gateway) — binding QUEUE
+# Producer: gs-gateway (gateway) — binding QUEUE
 # Consumer: gs-agent — binding implicit consumer
 
 # Verify in dashboard: Queues → goldshore-jobs → should show:
-#   Producers: gs-platform, banproof-me (after fix)
+#   Producers: gs-gateway, banproof-me (after fix)
 #   Consumers: gs-agent
 
 # ══════════════════════════════════════════════════════════════
@@ -148,7 +148,7 @@
 # www.goldshore.ai  → gs-web Pages — LIVE ✓
 # goldshore.org     → goldshore-org Pages (goldshore/goldshore.github.io) — LIVE ✓
 # api.goldshore.ai  → gs-api Worker — NEEDS custom domain added
-# gw.goldshore.ai   → gs-platform Worker — NEEDS custom domain added
+# gw.goldshore.ai   → gs-gateway Worker — NEEDS custom domain added
 # admin.goldshore.ai → goldshore-admin Pages (CF Access) — LIVE, fix policy
 # agent.goldshore.ai → gs-agent Worker — NEEDS custom domain added
 # mail.goldshore.ai  → gs-mail Worker — LIVE ✓
