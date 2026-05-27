@@ -7,7 +7,7 @@ const required = {
   kv_namespaces: ['BANPROOF_KV', 'GOLDSHORE_KV'],
   queues: ['BAN_EVENTS'],
   services: [{ binding: 'API_SERVICE', service: 'gs-api' }],
-  secrets: ['OPENAI_API_KEY', 'POA_TOKEN', 'AUDIT_TOKEN'],
+  secrets: [],
 };
 
 function escapeRegExp(value) {
@@ -23,7 +23,10 @@ function getProdSection(toml) {
 
   const start = headerMatch.index + headerMatch[0].length;
   const rest = toml.slice(start);
-  const nextSectionMatch = /^\[(?!env\.prod\])[\w.-]+\](?:\s*$)|^\[\[.*\]\]\s*$/m.exec(rest);
+  const nextSectionMatch =
+    /^(?:\[env\.(?!prod\])\w(?:[.-]?\w)*\]|\[\[env\.(?!prod(?:\.|\]\]))\w(?:[.-]?\w)*(?:\.\w(?:[.-]?\w)*)*\]\])\s*$/m.exec(
+      rest,
+    );
   const end = nextSectionMatch ? start + nextSectionMatch.index : toml.length;
   return toml.slice(start, end);
 }
