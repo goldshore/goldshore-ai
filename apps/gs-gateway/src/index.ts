@@ -220,6 +220,8 @@ app.get("/health", (c) => c.json({ status: "ok", service: "gs-gateway" }));
 app.get("/", (c) => c.html(STATUS_PAGE_HTML));
 
 app.get("/templates", (c) =>
+app.get('/health', (c) => c.json({ status: 'ok', service: 'gs-gateway' }));
+app.get('/templates', (c) =>
   c.json({
     service: "gs-gateway",
     description: "Gateway template routes for routing, auth, and AI dispatch.",
@@ -236,9 +238,50 @@ app.get("/templates", (c) =>
   }),
 );
 
-// Root Status Page
-app.get('/', (c) => {
-  return c.html(STATUS_PAGE_HTML);
+app.get("/user/login", (c) => c.json({ message: "Gateway Login Placeholder" }));
+app.post("/v1/chat", (c) => c.json({ message: "Gateway Chat Placeholder" }));
+
+const inferApiOrigin = (requestUrl: string): string | undefined => {
+  const url = new URL(requestUrl);
+  const inferredHostname = url.hostname.replace(/^gs-gateway(?=\.|$)/, "gs-api");
+  if (inferredHostname === url.hostname) {
+    return undefined;
+  }
+  url.hostname = inferredHostname;
+  return url.origin;
+};
+
+// Forward /api/* to the API_SERVICE binding; fall back to API_ORIGIN if unbound.
+app.all("/api/*", async (c) => {
+  const correlationId = getCorrelationId(c.req.raw);
+  const apiOrigin = c.env.API_ORIGIN ?? inferApiOrigin(c.req.url);
+  try {
+    if (c.env.API_SERVICE) {
+      const response = await c.env.API_SERVICE.fetch(c.req.raw);
+      return withCorrelationId(response, correlationId);
+    }
+    if (apiOrigin) {
+      const url = new URL(c.req.url);
+      const targetUrl = new URL(url.pathname + url.search, apiOrigin);
+      const upstreamRequest = new Request(targetUrl, c.req.raw);
+      upstreamRequest.headers.set(TRACE_HEADER, correlationId);
+      const response = await fetch(upstreamRequest);
+      return withCorrelationId(response, correlationId);
+    }
+    console.error(`[gateway] upstream API not configured; trace=${correlationId}`);
+    return c.json(
+      { error: "Upstream API not configured", traceId: correlationId },
+      500,
+      { [TRACE_HEADER]: correlationId },
+    );
+  } catch (error) {
+    console.error(`[gateway] upstream request failed; trace=${correlationId}`, error);
+    return c.json(
+      { error: "Upstream request failed", traceId: correlationId },
+      502,
+      { [TRACE_HEADER]: correlationId },
+    );
+  }
 });
 
 // ── Integration controls ───────────────────────────────────
