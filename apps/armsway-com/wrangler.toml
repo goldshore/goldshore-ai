@@ -12,7 +12,7 @@ routes = [
 [[env.prod.d1_databases]]
 binding = "GS_AUDIT_DB"
 database_name = "gs_audit_db"
-database_id = "TODO_REPLACE_WITH_REAL_GS_AUDIT_DB_ID"
+database_id = "1ae71d76-188f-481b-91d9-db2d39013f68"
 
 [[env.prod.r2_buckets]]
 binding = "TELEMETRY_STORAGE"

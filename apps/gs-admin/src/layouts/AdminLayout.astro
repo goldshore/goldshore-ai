@@ -1,179 +1,209 @@
 ---
-import '@goldshore/theme/styles/tokens.css';
+import Sidebar from '../components/Sidebar.astro';
+import Topbar from '../components/Topbar.astro';
+import '@goldshore/theme';
+import type { AdminPermission, AdminRole } from '@goldshore/auth';
 
-const {
-  title = 'GoldShore Admin',
-  currentPath = Astro.url.pathname,
-} = Astro.props;
+interface Props {
+  title?: string;
+  requiredPermission?: AdminPermission;
+  requiredRole?: AdminRole;
+}
 
-const nav = [
-  { href: '/admin/overview',     label: 'Overview',     icon: '◈' },
-  { href: '/admin/deployments',  label: 'Deployments',  icon: '⬡' },
-  { href: '/admin/agents',       label: 'Agents',       icon: '◎' },
-  { href: '/admin/risk',         label: 'Risk',         icon: '⬟' },
-  { href: '/admin/settings',     label: 'Settings',     icon: '⊙' },
-];
+const { title = 'GoldShore Admin', requiredPermission, requiredRole } = Astro.props;
+const logoSrc = '/logo/gs-penrose.svg';
+
+const session = Astro.locals.adminSession ?? {
+  roles: [],
+  permissions: [],
+  isAuthenticated: false
+};
+const isRoleAllowed = requiredRole ? session.roles.includes(requiredRole) : true;
+const isPermissionAllowed = requiredPermission
+  ? session.permissions.includes(requiredPermission)
+  : true;
+const isAuthorized = isRoleAllowed && isPermissionAllowed;
 ---
-
-<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <title>{title}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex, nofollow" />
-    <title>{title} — GoldShore Control</title>
-    <link rel="icon" href="/logo/gs-penrose.svg" type="image/svg+xml" />
-  </head>
-  <body>
-    <div class="gs-admin-shell">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const sidebar = document.getElementById('admin-sidebar');
+        const toggle = document.getElementById('sidebar-toggle');
+        const close = document.getElementById('sidebar-close');
+        const previewButtons = document.querySelectorAll('[data-preview]');
+        const previewStorageKey = 'gs-admin-preview';
 
-      <!-- Sidebar -->
-      <aside class="gs-sidebar" aria-label="Admin navigation">
-        <div class="gs-sidebar__brand">
-          <img src="/logo/gs-penrose.svg" alt="GoldShore" width="28" height="28" />
-          <span class="gs-sidebar__wordmark">GoldShore</span>
-          <span class="gs-sidebar__tag">Admin</span>
-        </div>
+        // Check if overlay exists, else create it
+        let overlay = document.querySelector('.sidebar-overlay');
+        if (!overlay) {
+          overlay = document.createElement('div');
+          overlay.className = 'sidebar-overlay';
+          document.body.appendChild(overlay);
+        }
 
-        <nav class="gs-sidebar__nav">
-          {nav.map(link => (
-            <a
-              href={link.href}
-              class:list={['gs-sidebar__link', currentPath.startsWith(link.href) && 'is-active']}
-              aria-current={currentPath.startsWith(link.href) ? 'page' : undefined}
-            >
-              <span class="gs-sidebar__icon" aria-hidden="true">{link.icon}</span>
-              {link.label}
-            </a>
-          ))}
-        </nav>
+        const openSidebar = () => {
+          sidebar?.classList.add('is-open');
+          overlay?.classList.add('is-visible');
+          toggle?.setAttribute('aria-expanded', 'true');
+        };
 
-        <div class="gs-sidebar__footer">
-          <a href="https://goldshore.ai" class="gs-sidebar__link gs-sidebar__link--muted">
-            ← Public site
-          </a>
-        </div>
-      </aside>
+        const closeSidebar = () => {
+          sidebar?.classList.remove('is-open');
+          overlay?.classList.remove('is-visible');
+          toggle?.setAttribute('aria-expanded', 'false');
+        };
 
-      <!-- Main -->
-      <main class="gs-admin-main" id="main-content">
-        <slot />
-      </main>
-    </div>
+        toggle?.addEventListener('click', openSidebar);
+        close?.addEventListener('click', closeSidebar);
+        overlay?.addEventListener('click', closeSidebar);
 
+        const setPreview = (value) => {
+          if (!value || value === 'auto') {
+            document.body.removeAttribute('data-preview');
+            localStorage.removeItem(previewStorageKey);
+          } else {
+            document.body.setAttribute('data-preview', value);
+            localStorage.setItem(previewStorageKey, value);
+          }
+
+          previewButtons.forEach((button) => {
+            const isActive = button.dataset.preview === (value || 'auto');
+            button.classList.toggle('is-active', isActive);
+            button.setAttribute('aria-pressed', String(isActive));
+          });
+        };
+
+        previewButtons.forEach((button) => {
+          button.addEventListener('click', () => {
+            setPreview(button.dataset.preview);
+          });
+        });
+
+        const storedPreview = localStorage.getItem(previewStorageKey);
+        setPreview(storedPreview);
+
+        // Close on ESC
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && sidebar?.classList.contains('is-open')) {
+            closeSidebar();
+          }
+        });
+      });
+    </script>
     <style is:global>
-      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-      html, body {
-        height: 100%;
-        font-family: var(--gs-font-body, Inter, ui-sans-serif, system-ui, sans-serif);
-        font-size: 14px;
-        background: #070b14;
-        color: rgba(226,232,240,0.88);
-        -webkit-font-smoothing: antialiased;
+      .sidebar-toggle {
+        display: none;
+        background: none;
+        border: none;
+        color: inherit;
+        font-size: 1.5rem;
+        cursor: pointer;
+        margin-right: 1rem;
+        padding: 0;
+        line-height: 1;
       }
 
-      .gs-admin-shell {
-        display: grid;
-        grid-template-columns: 220px 1fr;
-        min-height: 100vh;
-      }
-
-      /* Sidebar */
-      .gs-sidebar {
-        display: flex;
-        flex-direction: column;
-        background: rgba(11,15,24,0.95);
-        border-right: 1px solid rgba(90,162,255,0.10);
-        position: sticky;
-        top: 0;
-        height: 100vh;
-        overflow-y: auto;
-      }
-
-      .gs-sidebar__brand {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 20px 18px 16px;
-        border-bottom: 1px solid rgba(90,162,255,0.08);
-      }
-
-      .gs-sidebar__wordmark {
-        font-weight: 700;
-        font-size: 15px;
-        color: rgba(226,232,240,0.95);
-        letter-spacing: 0.02em;
-      }
-
-      .gs-sidebar__tag {
-        font-size: 10px;
-        font-weight: 600;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        color: rgba(90,162,255,0.75);
-        background: rgba(90,162,255,0.10);
-        border: 1px solid rgba(90,162,255,0.18);
+      .sidebar-close {
+        display: none;
+        background: none;
+        border: 1px solid var(--gs-color-border);
+        color: inherit;
+        font-size: 1rem;
+        cursor: pointer;
+        padding: 0.25rem 0.5rem;
         border-radius: 4px;
-        padding: 2px 6px;
       }
 
-      .gs-sidebar__nav {
-        flex: 1;
+      .sidebar-header {
         display: flex;
-        flex-direction: column;
-        padding: 12px 10px;
-        gap: 2px;
-      }
-
-      .gs-sidebar__link {
-        display: flex;
+        justify-content: space-between;
         align-items: center;
-        gap: 10px;
-        padding: 9px 10px;
-        border-radius: 8px;
-        color: rgba(148,163,184,0.80);
-        text-decoration: none;
-        font-size: 13.5px;
-        font-weight: 500;
-        transition: background 150ms ease, color 150ms ease;
+        width: 100%;
       }
 
-      .gs-sidebar__link:hover,
-      .gs-sidebar__link.is-active {
-        background: rgba(90,162,255,0.10);
-        color: rgba(226,232,240,0.95);
+      .sidebar-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 99;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
       }
 
-      .gs-sidebar__link.is-active {
-        border-left: 2px solid rgba(90,162,255,0.70);
-        padding-left: 8px;
+      .sidebar-overlay.is-visible {
+        opacity: 1;
+        pointer-events: auto;
       }
 
-      .gs-sidebar__link--muted {
-        font-size: 12px;
-        color: rgba(100,116,139,0.70);
-      }
+      @media (max-width: 1024px) {
+        .gs-admin-grid {
+          display: block !important;
+        }
 
-      .gs-sidebar__icon {
-        width: 18px;
-        text-align: center;
-        font-size: 14px;
-        color: rgba(90,162,255,0.65);
-      }
+        .gs-admin-sidebar {
+          position: fixed;
+          inset: 0 auto 0 0;
+          width: 280px;
+          z-index: 100;
+          transform: translateX(-100%);
+          transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          box-shadow: 5px 0 25px rgba(0, 0, 0, 0.5);
+          overflow-y: auto;
+        }
 
-      .gs-sidebar__footer {
-        padding: 12px 10px 20px;
-        border-top: 1px solid rgba(90,162,255,0.08);
-      }
+        .gs-admin-sidebar.is-open {
+          transform: translateX(0);
+        }
 
-      /* Main content */
-      .gs-admin-main {
-        display: flex;
-        flex-direction: column;
-        min-height: 100vh;
-        background: #070b14;
+        .sidebar-toggle {
+          display: inline-flex;
+        }
+
+        .sidebar-close {
+          display: block;
+        }
+
+        .gs-admin-main {
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+        }
       }
     </style>
+  </head>
+  <body>
+    <a href="#admin-content" class="skip-link">Skip to content</a>
+    <div class="gs-admin-grid">
+      <Sidebar logo={logoSrc} permissions={session.permissions} />
+      <div class="gs-admin-main">
+        <Topbar title={title} session={session} />
+        <main id="admin-content" class="gs-admin-content">
+          {isAuthorized ? (
+            <slot />
+          ) : (
+            <section class="max-w-4xl mx-auto py-24 px-6">
+              <h1 class="text-3xl gs-heading mb-4">Access restricted</h1>
+              <p class="text-[var(--gs-text-secondary)] mb-6">
+                Your account does not have permission to view this section. Contact an administrator
+                if you need expanded access.
+              </p>
+              <div class="gs-panel">
+                <div class="section-title"><span>🔒</span><h3>Access summary</h3></div>
+                <p class="gs-helper">Assigned roles: {session.roles.length ? session.roles.join(', ') : 'None'}</p>
+                <p class="gs-helper">Required role: {requiredRole ?? 'None'}</p>
+                <p class="gs-helper">Required permission: {requiredPermission ?? 'None'}</p>
+              </div>
+            </section>
+          )}
+        </main>
+      </div>
+    </div>
   </body>
 </html>
