@@ -23,11 +23,33 @@ function getProdSection(toml) {
 
   const start = headerMatch.index + headerMatch[0].length;
   const rest = toml.slice(start);
-  const nextSectionMatch =
-    /^(?:\[env\.(?!prod\])\w(?:[.-]\w)*\]|\[\[env\.(?!prod(?:\.|\]\]))\w(?:[.-]\w)*(?:\.\w(?:[.-]\w)*)*\]\])\s*$/m.exec(
-      rest,
-    );
-  const end = nextSectionMatch ? start + nextSectionMatch.index : toml.length;
+
+  let cursor = 0;
+  const linePattern = /[^\n]*(?:\n|$)/g;
+  let lineMatch;
+  while ((lineMatch = linePattern.exec(rest)) !== null) {
+    const line = lineMatch[0];
+    const trimmed = line.trim();
+
+    if (trimmed) {
+      const envTable = /^\[env\.([A-Za-z0-9_][A-Za-z0-9_.-]*)\]$/.exec(trimmed);
+      if (envTable && envTable[1] !== 'prod') {
+        break;
+      }
+
+      const envArrayTable = /^\[\[env\.([A-Za-z0-9_][A-Za-z0-9_.-]*)\]\]$/.exec(trimmed);
+      if (envArrayTable) {
+        const [firstSegment] = envArrayTable[1].split('.');
+        if (firstSegment !== 'prod') {
+          break;
+        }
+      }
+    }
+
+    cursor = linePattern.lastIndex;
+  }
+
+  const end = cursor > 0 ? start + cursor : toml.length;
   return toml.slice(start, end);
 }
 
