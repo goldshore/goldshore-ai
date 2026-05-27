@@ -61,6 +61,11 @@ Never commit any of the following values or equivalents:
 
 ## Agent Pass Changelog
 
+### 2026-05-26 — Pass 2
+- **Owner:** Copilot (coding agent)
+- **Scope:** Repaired unresolved merge conflict in `apps/gs-gateway/src/index.ts` — file had three duplicate `const app = new Hono(...)` declarations, two interleaved implementations (legacy `checkAuth` and new `authMiddleware`), a duplicate security-check middleware block, and a truncated `withCorrelationId` function. Resolved to a single clean implementation using the fail-closed `authMiddleware`, unified `GatewayEnv` interface covering all wrangler.toml bindings, and restored the missing `isAgentHostnameRequest` helper. Updated `AUDIT_EXECUTIVE_SUMMARY.md` to mark JWT bypass as resolved.
+- **Status:** Completed
+
 ### 2026-05-22 — Pass 1
 - **Owner:** Codex (GPT-5.3-Codex)
 - **Scope:** Create `AGENT_HANDOFF.md`; add discovery link from deployment docs.
