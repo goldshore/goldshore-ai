@@ -1,9 +1,10 @@
 # GoldShore Labs — Audit Executive Summary
 
 **Date:** 2026-04-25  
+**Last updated:** 2026-05-26 (Copilot — merge conflict repair + action plan implementation)  
 **Authority:** marzton (account owner)  
 **Scope:** Live Cloudflare state vs. canonical repo expectations  
-**Status:** 🟡 **FUNCTIONAL BUT DRIFTING** — critical security issue + 3 missing workers + DB migrations pending
+**Status:** 🟡 **FUNCTIONAL BUT DRIFTING** — JWT bypass fixed in code ✅ · 3 missing workers · DB migrations pending
 
 ---
 
@@ -12,7 +13,7 @@
 ### Workers Live
 | Worker | Status | Issue |
 |---|---|---|
-| `gs-platform` | 🟢 Live | JWT bypass in verify.ts — **CRITICAL SECURITY** |
+| `gs-platform` | 🟢 Live | ~~JWT bypass in verify.ts~~ **FIXED** — authMiddleware enforces fail-closed |
 | `gs-api` | 🟢 Live | OK |
 | `banproof-me` | 🟢 Live | Deployed from local machine (npm/_npx), not in monorepo |
 | `goldshore-ai` | 🟡 Stub | "Hello world" — conflicts with gs-web Pages domain |
@@ -66,33 +67,19 @@
 
 ## Critical Issues (Ranked)
 
-### 🔴 CRITICAL: JWT Bypass in `gs-platform`
+### ✅ RESOLVED: JWT Bypass in `gs-platform`
 
-**File:** `packages/auth/verify.ts` (lines 45–70)
+**Resolved:** 2026-05-26 (Copilot merge-conflict repair PR)
 
-**Issue:** Token verification fails **open** — requests pass through even if JWT is invalid, expired, or forged.
-
-```typescript
-// CURRENT (BROKEN)
-try {
-  const { payload } = await deps.jwtVerify(token, JWKS, options);
-  return payload as AccessTokenPayload;
-} catch (e) {
-  console.error("Token verification failed", e);
-  return null;  // ← Returns null but caller doesn't check it
-}
-```
-
-**Impact:** Any service calling `gs-platform` auth gateway accepts **any** JWT-like string in the `CF-Access-Jwt-Assertion` header.
-
-**Fix:** Ensure caller (`authMiddleware` in `apps/gs-gateway/src/middleware/auth.ts`) checks the return value and blocks on `null`.
+**Files fixed:**
+- `packages/auth/verify.ts` — already returns `null` on failure (correct)
+- `apps/gs-gateway/src/middleware/auth.ts` — already returns `401` when claims is `null` (correct)
+- `apps/gs-gateway/src/index.ts` — **merge conflict repaired**; now wires `authMiddleware` correctly (fail-closed); removed legacy inline `checkAuth` that was not enforcing the null check
 
 **Verification:** 
 ```bash
-# Test with invalid token
-curl -H "CF-Access-Jwt-Assertion: garbage" https://gw.goldshore.ai/
-# Expected: 401 Unauthorized
-# Currently: Probably 200 OK (auth fails open)
+# Test with invalid token — should return 401 (not 200)
+curl -H "CF-Access-Jwt-Assertion: garbage" https://gw.goldshore.ai/protected
 ```
 
 ---

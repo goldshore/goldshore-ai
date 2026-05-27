@@ -42,6 +42,7 @@ jobs:
       - name: Validate preview gs-api bindings config
         run: |
           test -f apps/gs-api/wrangler.toml
+          grep -Eq '^\[env\.preview\]' apps/gs-api/wrangler.toml
           grep -Eq '^\s*\[\[env\.preview\.services\]\]' apps/gs-api/wrangler.toml
           grep -Eq '^\s*\[\[env\.preview\.queues\.(producers|consumers)\]\]' apps/gs-api/wrangler.toml
 
