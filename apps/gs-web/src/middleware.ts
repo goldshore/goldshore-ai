@@ -7,7 +7,6 @@ import {
   getCanonicalAdminUrl,
   isAdminHost,
 } from './utils/admin-access';
-import { WEB_HEADERS_CSP } from './utils/csp';
 
 const PUBLIC_WEB_HOSTS = new Set([
   'goldshore.ai',
