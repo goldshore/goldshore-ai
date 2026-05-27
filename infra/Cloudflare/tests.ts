@@ -1,9 +1,15 @@
 // infra/Cloudflare/tests.ts
 const ACCESS_PROTECTED_HOSTS = new Set([
   'admin.goldshore.ai',
+  'admin-preview.goldshore.ai',
   'gs-admin.pages.dev',
   'ops.goldshore.ai',
 ]);
+
+const ACCESS_PROTECTED_HOST_PATTERNS = [
+  /^[a-z0-9-]+-preview\.goldshore\.ai$/i,
+  /^[a-z0-9-]+\.goldshore-pages\.dev$/i,
+];
 
 function accessHeadersFor(url: string): Record<string, string> {
   const clientId = process.env.CF_ACCESS_CLIENT_ID;
@@ -12,7 +18,11 @@ function accessHeadersFor(url: string): Record<string, string> {
   if (!clientId || !clientSecret) return {};
 
   const host = new URL(url).hostname;
-  if (!ACCESS_PROTECTED_HOSTS.has(host)) return {};
+  const isProtectedHost =
+    ACCESS_PROTECTED_HOSTS.has(host) ||
+    ACCESS_PROTECTED_HOST_PATTERNS.some((pattern) => pattern.test(host));
+
+  if (!isProtectedHost) return {};
 
   return {
     'CF-Access-Client-Id': clientId,
