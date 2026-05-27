@@ -220,6 +220,43 @@ app.get('/', (c) => {
   `);
 });
 
+<<<<<<< HEAD
+const PUBLIC_VERSION_CORS_ORIGINS = new Set([
+  'https://goldshore.org',
+  'https://www.goldshore.org',
+]);
+
+function withPublicVersionCors(
+  origin: string | undefined | null,
+  response: ReturnType<typeof withContractHeaders>
+) {
+  if (!origin || !PUBLIC_VERSION_CORS_ORIGINS.has(origin)) {
+    return response;
+  }
+
+  return {
+    ...response,
+    headers: {
+      ...(response.headers ?? {}),
+      'Access-Control-Allow-Origin': origin,
+      Vary: 'Origin',
+    },
+  };
+}
+
+app.get('/version', (c) =>
+  c.json(
+    withPublicVersionCors(
+      c.req.header('Origin'),
+      withContractHeaders(
+        {
+          service: 'gs-api',
+          version: c.env.API_VERSION ?? c.env.GIT_SHA ?? 'unknown',
+          deploySha: c.env.DEPLOY_SHA ?? c.env.GIT_SHA ?? null,
+        },
+        getRuntimeVersion(c.env)
+      )
+=======
 app.get('/version', (c) =>
   c.json(
     withContractHeaders(
@@ -229,6 +266,7 @@ app.get('/version', (c) =>
         deploySha: c.env.DEPLOY_SHA ?? c.env.GIT_SHA ?? null,
       },
       getRuntimeVersion(c.env)
+>>>>>>> origin/main
     )
   )
 );
