@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import * as assert from 'node:assert/strict';
 
-import { isAllowedOrigin, isPreviewOrigin } from './index';
+import app, { isAllowedOrigin, isPreviewOrigin } from './index';
 
 test('allows documented preview goldshore.ai origins', () => {
   assert.equal(isPreviewOrigin('https://feature-123-preview.goldshore.ai'), true);
@@ -15,4 +15,45 @@ test('allows documented goldshore-pages.dev preview origins', () => {
 
 test('rejects unrelated origins', () => {
   assert.equal(isAllowedOrigin('https://evil.example.com'), false);
+});
+
+test('exposes /version without Cloudflare Access', async () => {
+  const response = await app.request(
+    '/version',
+    {},
+    {
+      API_VERSION: '2026.05.25',
+      GIT_SHA: 'abc1234',
+      DEPLOY_SHA: 'abc1234',
+    } as any,
+  );
+
+  assert.equal(response.status, 200);
+  const payload = (await response.json()) as {
+    service: string;
+    version: string;
+    deploySha: string | null;
+  };
+  assert.equal(payload.service, 'gs-api');
+  assert.equal(payload.version, '2026.05.25');
+  assert.equal(payload.deploySha, 'abc1234');
+});
+
+test('fails closed when protected routes are missing the Access audience', async () => {
+  const response = await app.request('/system/status', {}, {} as any);
+
+  assert.equal(response.status, 503);
+});
+
+test('requires Cloudflare Access on protected routes', async () => {
+  const response = await app.request(
+    '/system/status',
+    {},
+    {
+      CLOUDFLARE_ACCESS_AUDIENCE: 'test-audience',
+      CLOUDFLARE_TEAM_DOMAIN: 'goldshore.cloudflareaccess.com',
+    } as any,
+  );
+
+  assert.equal(response.status, 401);
 });
