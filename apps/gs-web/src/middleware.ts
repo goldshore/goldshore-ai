@@ -7,6 +7,10 @@ import {
   getCanonicalAdminUrl,
   isAdminHost,
 } from './utils/admin-access';
+<<<<<<< HEAD
+=======
+import { WEB_HEADERS_CSP } from './utils/csp';
+>>>>>>> origin/main
 
 const PUBLIC_WEB_HOSTS = new Set([
   'goldshore.ai',
@@ -17,7 +21,10 @@ const PUBLIC_WEB_HOSTS = new Set([
 
 export const onRequest: MiddlewareHandler = async (context, next) => {
   const url = new URL(context.request.url);
+<<<<<<< HEAD
   context.locals.securityPolicySource = 'response-header';
+=======
+>>>>>>> origin/main
   const adminRule = getAdminRouteRule(url.pathname, context.request.method, url.hostname);
 
   if (adminRule) {

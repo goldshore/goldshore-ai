@@ -220,6 +220,7 @@ app.get('/', (c) => {
   `);
 });
 
+<<<<<<< HEAD
 const PUBLIC_VERSION_CORS_ORIGINS = new Set([
   'https://goldshore.org',
   'https://www.goldshore.org',
@@ -255,6 +256,17 @@ app.get('/version', (c) =>
         },
         getRuntimeVersion(c.env)
       )
+=======
+app.get('/version', (c) =>
+  c.json(
+    withContractHeaders(
+      {
+        service: 'gs-api',
+        version: c.env.API_VERSION ?? c.env.GIT_SHA ?? 'unknown',
+        deploySha: c.env.DEPLOY_SHA ?? c.env.GIT_SHA ?? null,
+      },
+      getRuntimeVersion(c.env)
+>>>>>>> origin/main
     )
   )
 );
