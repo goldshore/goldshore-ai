@@ -4,10 +4,10 @@ import path from 'node:path';
 const wranglerPath = path.resolve('apps/banproof-me/wrangler.toml');
 const required = {
   d1: { binding: 'BAN_DB', database_name: 'gs_platform_db' },
-  kv_namespaces: ['BANPROOF_KV', 'GOLDSHORE_KV'],
+  kv_namespaces: ['GOLDSHORE_KV'],
   queues: ['BAN_EVENTS'],
   services: [{ binding: 'API_SERVICE', service: 'gs-api' }],
-  secrets: [],
+  secrets: ['OPENAI_API_KEY', 'POA_TOKEN', 'AUDIT_TOKEN'],
 };
 
 function escapeRegExp(value) {
