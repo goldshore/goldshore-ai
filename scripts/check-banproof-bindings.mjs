@@ -41,7 +41,7 @@ function hasSecretName(section, secretName) {
     String.raw`(^|\n)\s*(?:secret|name|binding)\s*=\s*(['"])${escapeRegExp(secretName)}\2(?=\s*(#.*)?(?:\n|$))`,
     'm',
   );
-  return pattern.test(section) || section.includes(secretName);
+  return pattern.test(section);
 }
 
 const errors = [];
