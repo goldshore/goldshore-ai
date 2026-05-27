@@ -15,6 +15,7 @@ on:
       - "package.json"
       - "pnpm-lock.yaml"
       - ".github/workflows/deploy-gs-admin.yml"
+      - ".github/workflows/deploy-gs-surfaces-report.yml"
   workflow_dispatch:
     inputs:
       deploy_ref:
@@ -119,7 +120,7 @@ jobs:
       - name: Deploy to Cloudflare Pages (production)
         uses: cloudflare/pages-action@f0a1cd58cd66095dee69bfa18fa5efd1dde93bca
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: gs-admin
           directory: apps/gs-admin/dist

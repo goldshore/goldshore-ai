@@ -133,8 +133,6 @@ describe('verifyAccess', () => {
         });
         const env: Env = {};
 
-        // Mock deps.jwtVerify directly as verifyAccess calls verifyAccessWithClaims
-        // which uses the real deps.jwtVerify
         const jwtVerifyMockLocal = mock.method(deps, 'jwtVerify', async () => {
             return { payload: { sub: 'user123' } };
         });
@@ -154,8 +152,6 @@ describe('verifyAccess', () => {
         const jwtVerifyMockLocal = mock.method(deps, 'jwtVerify', async () => {
             throw new Error('Invalid token');
         });
-
-        // Suppress console.error for this test
         const consoleErrorMock = mock.method(console, 'error', () => {});
 
         const result = await verifyAccess(req, env);

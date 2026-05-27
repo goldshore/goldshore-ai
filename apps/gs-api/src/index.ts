@@ -15,12 +15,13 @@ import admin from './routes/admin';
 import media from './routes/media';
 import pages from './routes/pages';
 import internal from './routes/internal';
+import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
 
 type Env = {
   KV: KVNamespace;
   CONTROL_LOGS?: KVNamespace;
-  DB: D1Database;
+  CONTENT_DB: D1Database;
   TELEMETRY_DB?: D1Database;
   ASSETS: R2Bucket;
   AUTH_SESSION?: DurableObjectNamespace;
@@ -38,6 +39,9 @@ type Env = {
   CONTROL_SYNC_TOKEN?: string;
   ALLOWED_ORIGINS?: string;
   ENV?: string;
+  API_VERSION?: string;
+  DEPLOY_SHA?: string;
+  GIT_SHA?: string;
 };
 
 const app = new Hono<{
@@ -45,8 +49,8 @@ const app = new Hono<{
   Variables: { accessClaims: AccessTokenPayload | null };
 }>();
 
-const requiredBindings = ['DB', 'ASSETS', 'AI'] as const;
-const expectedD1Binding = 'DB' as const;
+const requiredBindings = ['CONTENT_DB', 'ASSETS', 'AI'] as const;
+const expectedD1Binding = 'CONTENT_DB' as const;
 const requiredSecrets = [
   'JWT_SECRET',
   'STRIPE_API_KEY',
@@ -87,6 +91,19 @@ const isLocalDevelopmentOrigin = (origin: string) => {
   return (
     origin.startsWith('http://localhost') ||
     origin.startsWith('http://127.0.0.1')
+  );
+};
+
+const isPublicPath = (path: string, method: string) => {
+  if (method === 'OPTIONS') {
+    return true;
+  }
+
+  return (
+    path === '/' ||
+    path === '/version' ||
+    path === '/health' ||
+    path.startsWith('/health/')
   );
 };
 
@@ -137,13 +154,7 @@ app.use(
 
 // Enforce Authentication (Defense in Depth)
 app.use('*', async (c, next) => {
-  // Allow health checks, root, and CORS preflight
-  if (
-    c.req.path === '/health' ||
-    c.req.path.startsWith('/health/') ||
-    c.req.path === '/' ||
-    c.req.method === 'OPTIONS'
-  ) {
+  if (isPublicPath(c.req.path, c.req.method)) {
     c.set('accessClaims', null);
     await next();
     return;
@@ -160,6 +171,13 @@ app.use('*', async (c, next) => {
       await next();
       return;
     }
+  }
+
+  if (!c.env.CLOUDFLARE_ACCESS_AUDIENCE) {
+    return c.json(
+      { error: 'Cloudflare Access audience is not configured for protected routes.' },
+      503,
+    );
   }
 
   // Verify Cloudflare Access JWT
@@ -201,6 +219,45 @@ app.get('/', (c) => {
     </html>
   `);
 });
+
+const PUBLIC_VERSION_CORS_ORIGINS = new Set([
+  'https://goldshore.org',
+  'https://www.goldshore.org',
+]);
+
+function withPublicVersionCors(
+  origin: string | undefined | null,
+  response: ReturnType<typeof withContractHeaders>
+) {
+  if (!origin || !PUBLIC_VERSION_CORS_ORIGINS.has(origin)) {
+    return response;
+  }
+
+  return {
+    ...response,
+    headers: {
+      ...(response.headers ?? {}),
+      'Access-Control-Allow-Origin': origin,
+      Vary: 'Origin',
+    },
+  };
+}
+
+app.get('/version', (c) =>
+  c.json(
+    withPublicVersionCors(
+      c.req.header('Origin'),
+      withContractHeaders(
+        {
+          service: 'gs-api',
+          version: c.env.API_VERSION ?? c.env.GIT_SHA ?? 'unknown',
+          deploySha: c.env.DEPLOY_SHA ?? c.env.GIT_SHA ?? null,
+        },
+        getRuntimeVersion(c.env)
+      )
+    )
+  )
+);
 
 // Core routes
 app.route('/health', health);
