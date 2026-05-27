@@ -225,39 +225,24 @@ const PUBLIC_VERSION_CORS_ORIGINS = new Set([
   'https://www.goldshore.org',
 ]);
 
-function withPublicVersionCors(
-  origin: string | undefined | null,
-  response: ReturnType<typeof withContractHeaders>
-) {
-  if (!origin || !PUBLIC_VERSION_CORS_ORIGINS.has(origin)) {
-    return response;
+app.get('/version', (c) => {
+  const origin = c.req.header('Origin');
+  if (origin && PUBLIC_VERSION_CORS_ORIGINS.has(origin)) {
+    c.header('Access-Control-Allow-Origin', origin);
+    c.header('Vary', 'Origin');
   }
 
-  return {
-    ...response,
-    headers: {
-      ...(response.headers ?? {}),
-      'Access-Control-Allow-Origin': origin,
-      Vary: 'Origin',
-    },
-  };
-}
-
-app.get('/version', (c) =>
-  c.json(
-    withPublicVersionCors(
-      c.req.header('Origin'),
-      withContractHeaders(
-        {
-          service: 'gs-api',
-          version: c.env.API_VERSION ?? c.env.GIT_SHA ?? 'unknown',
-          deploySha: c.env.DEPLOY_SHA ?? c.env.GIT_SHA ?? null,
-        },
-        getRuntimeVersion(c.env)
-      )
+  return c.json(
+    withContractHeaders(
+      {
+        service: 'gs-api',
+        version: c.env.API_VERSION ?? c.env.GIT_SHA ?? 'unknown',
+        deploySha: c.env.DEPLOY_SHA ?? c.env.GIT_SHA ?? null,
+      },
+      getRuntimeVersion(c.env)
     )
-  )
-);
+  );
+});
 
 // Core routes
 app.route('/health', health);
