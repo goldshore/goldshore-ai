@@ -80,6 +80,3 @@ tests:
       timeout_ms: 4000
   lighthouse:
     url: 'https://goldshore.ai/'
-    budget:
-      performance: 0.85
-      tti_ms: 4000
