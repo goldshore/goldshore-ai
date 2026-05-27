@@ -236,6 +236,63 @@ app.get("/templates", (c) =>
   }),
 );
 
+// Root Status Page
+app.get('/', (c) => {
+  return c.html(STATUS_PAGE_HTML);
+});
+
+// ── Integration controls ───────────────────────────────────
+// Enforces X-Data-Classification, X-Secrets-Access-Policy, and X-Audit-Trace-Id
+// on /integrations/* and /market-streams/* paths.
+app.use("*", integrationControls);
+
+// ── Agent hostname routing ─────────────────────────────────
+// Requests arriving on agent.goldshore.ai are proxied to the AGENT service binding.
+app.use("*", async (c, next) => {
+  if (!isAgentHostnameRequest(c.req.raw)) {
+    return next();
+  }
+
+  const correlationId = getCorrelationId(c.req.raw);
+
+  if (!c.env.AGENT) {
+    console.error(`[gateway] downstream agent not configured; trace=${correlationId}`);
+    return c.json(
+      { error: "Downstream agent not configured", traceId: correlationId },
+      503,
+      { [TRACE_HEADER]: correlationId },
+    );
+  }
+
+  const downstreamRequest = new Request(c.req.raw, { headers: new Headers(c.req.raw.headers) });
+  downstreamRequest.headers.set(TRACE_HEADER, correlationId);
+  const response = await c.env.AGENT.fetch(downstreamRequest);
+  return withCorrelationId(response, correlationId);
+});
+
+// ── Routes ─────────────────────────────────────────────────
+
+app.get("/health", (c) => c.json({ status: "ok", service: "gs-gateway" }));
+
+app.get("/", (c) => c.html(STATUS_PAGE_HTML));
+
+app.get("/templates", (c) =>
+  c.json({
+    service: "gs-gateway",
+    description: "Gateway template routes for routing, auth, and AI dispatch.",
+    modules: [
+      { name: "routing", purpose: "Proxy requests to gs-api or partner services with consistent observability." },
+      { name: "ai-dispatch", purpose: "Send AI requests to Gemini, ChatGPT, Jules, or Cloudflare AI Gateway." },
+      { name: "market-streams", purpose: "Broker market data connections for Alpaca, Thinkorswim, and other feeds." },
+    ],
+    nextSteps: [
+      "Add per-route rate limits and request shaping.",
+      "Define queue-backed workflows for bursty workloads.",
+      "Publish route maps to admin dashboards.",
+    ],
+  }),
+);
+
 app.get("/user/login", (c) => c.json({ message: "Gateway Login Placeholder" }));
 app.post("/v1/chat", (c) => c.json({ message: "Gateway Chat Placeholder" }));
 
