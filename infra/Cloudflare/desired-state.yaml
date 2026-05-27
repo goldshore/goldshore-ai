@@ -136,8 +136,6 @@ cloudflare:
           - "www.goldshore.org"
           - "goldshore.ai"
           - "www.goldshore.ai"
-          - "goldshore.org"
-          - "www.goldshore.org"
 
       - name: "gs-admin"
         repo: "goldshore-ai"
