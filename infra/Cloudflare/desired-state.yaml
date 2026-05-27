@@ -89,12 +89,39 @@ cloudflare:
           require:
             - identity_provider: "github"
 
-      - name: "GoldShore-API-Bypass"
-        domain: "api.goldshore.ai"
-        action: "bypass"
+      - name: "GoldShore-Web-Preview"
+        domain: "preview.goldshore.ai"
+        action: "allow"
         rules:
           include:
-            - everyone: true
+            - email_domain: "goldshore.ai"
+            - email: "your.personal@email.com" # Placeholder
+          require:
+            - identity_provider: "github"
+
+      - name: "GoldShore-API-Private"
+        domain: "api.goldshore.ai"
+        action: "allow"
+        paths:
+          - "/admin/*"
+          - "/internal/*"
+          - "/system/*"
+          - "/users/*"
+          - "/user/*"
+          - "/templates/*"
+          - "/media/*"
+          - "/pages/*"
+          - "/ai/*"
+        public_paths:
+          - "/"
+          - "/health"
+          - "/version"
+        rules:
+          include:
+            - email_domain: "goldshore.ai"
+            - email: "your.personal@email.com" # Placeholder
+          require:
+            - identity_provider: "github"
 
   pages:
     projects:
@@ -109,6 +136,8 @@ cloudflare:
           - "www.goldshore.org"
           - "goldshore.ai"
           - "www.goldshore.ai"
+          - "goldshore.org"
+          - "www.goldshore.org"
 
       - name: "gs-admin"
         repo: "goldshore-ai"

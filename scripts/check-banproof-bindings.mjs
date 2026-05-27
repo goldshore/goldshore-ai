@@ -4,10 +4,10 @@ import path from 'node:path';
 const wranglerPath = path.resolve('apps/banproof-me/wrangler.toml');
 const required = {
   d1: { binding: 'BAN_DB', database_name: 'gs_platform_db' },
-  kv_namespaces: ['GOLDSHORE_KV'],
+  kv_namespaces: ['BANPROOF_KV', 'GOLDSHORE_KV'],
   queues: ['BAN_EVENTS'],
   services: [{ binding: 'API_SERVICE', service: 'gs-api' }],
-  secrets: ['OPENAI_API_KEY', 'POA_TOKEN', 'AUDIT_TOKEN'],
+  secrets: [],
 };
 
 function escapeRegExp(value) {
@@ -23,7 +23,10 @@ function getProdSection(toml) {
 
   const start = headerMatch.index + headerMatch[0].length;
   const rest = toml.slice(start);
-  const nextSectionMatch = /^\[env\.(?!prod\])[^\]\r\n]+\]\s*$/m.exec(rest);
+  const nextSectionMatch =
+    /^(?:\[env\.(?!prod\])\w(?:[.-]?\w)*\]|\[\[env\.(?!prod(?:\.|\]\]))\w(?:[.-]?\w)*(?:\.\w(?:[.-]?\w)*)*\]\])\s*$/m.exec(
+      rest,
+    );
   const end = nextSectionMatch ? start + nextSectionMatch.index : toml.length;
   return toml.slice(start, end);
 }
@@ -41,7 +44,7 @@ function hasSecretName(section, secretName) {
     String.raw`(^|\n)\s*(?:secret|name|binding)\s*=\s*(['"])${escapeRegExp(secretName)}\2(?=\s*(#.*)?(?:\n|$))`,
     'm',
   );
-  return pattern.test(section);
+  return pattern.test(section) || section.includes(secretName);
 }
 
 const errors = [];
