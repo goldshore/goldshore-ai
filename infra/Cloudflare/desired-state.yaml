@@ -118,7 +118,6 @@ cloudflare:
         rules:
           include:
             - email_domain: "goldshore.ai"
-            - email: "your.personal@email.com" # Placeholder
           require:
             - identity_provider: "github"
 
