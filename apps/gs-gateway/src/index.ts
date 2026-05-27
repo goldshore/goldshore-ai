@@ -72,9 +72,41 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): 
   });
 };
 
-const isAgentHostnameRequest = (request: Request): boolean => {
-  return new URL(request.url).hostname === AGENT_HOSTNAME;
-};
+const app = new Hono<{ Bindings: GatewayEnv }>();
+
+function isNonCriticalSignalsPath(pathname: string): boolean {
+  return NON_CRITICAL_SIGNAL_PATHS.some((base) => pathname === base || pathname.startsWith(`${base}/`));
+}
+
+const app = new Hono<{ Bindings: GatewayEnv }>();
+
+// ── Security headers ───────────────────────────────────────
+app.use("*", secureHeaders());
+
+// ── Startup binding guard (production only) ────────────────
+// Fail CLOSED: hard-stop (503) when critical bindings/secrets are absent.
+// STRIPE_SECRET_KEY absence is enforced per-request in authMiddleware (fail closed).
+app.use("*", async (c, next) => {
+  if (c.env.ENV === "production") {
+    // CRITICAL: CLOUDFLARE_ACCESS_AUDIENCE must be set in production.
+    // Without it, JWT audience verification is skipped — tokens from other
+    // CF Access applications would be accepted (auth bypass).
+    if (!c.env.CLOUDFLARE_ACCESS_AUDIENCE) {
+      console.error(
+        "CRITICAL: CLOUDFLARE_ACCESS_AUDIENCE is not set. Refusing to serve requests.",
+      );
+      return c.json(
+        {
+          error: "Service Unavailable",
+          message: "Auth configuration incomplete",
+          code: "AUDIENCE_MISSING",
+        },
+        503,
+      );
+    }
+  }
+  await next();
+});
 
 const ALLOWED_ORIGINS = [
   'https://goldshore.ai',
@@ -97,10 +129,140 @@ app.use('*', cors({
       }
     }
 
-    // Strict origin check for production (and dev non-localhost)
-    if (ALLOWED_ORIGINS.includes(origin)) {
-      return origin;
+// ── Auth (uses existing @goldshore/auth verify.ts) ─────────
+// authMiddleware skips /health, /, OPTIONS automatically.
+// Audience validation is enforced only when CLOUDFLARE_ACCESS_AUDIENCE is set.
+app.use("*", (c, next) => authMiddleware(c.req.raw, c.env, next));
+
+app.use("*", async (c, next) => {
+  const pathname = new URL(c.req.url).pathname;
+  const isHealthPath = pathname === "/health";
+  const isSignalsPath = isNonCriticalSignalsPath(pathname);
+
+  if (isHealthPath) {
+    return next();
+  }
+
+  if (!c.env.SECURITY_CHECK) {
+    console.warn(JSON.stringify({
+      event: "security_check_skipped",
+      policy: "fail-open",
+      reason: "missing_binding",
+      path: pathname,
+    }));
+    return next();
+  }
+
+  try {
+    const timeoutMs = isSignalsPath ? SIGNALS_TIMEOUT_MS : SECURITY_TIMEOUT_MS;
+    const checkResponse = await withTimeout(
+      c.env.SECURITY_CHECK.fetch(c.req.raw.clone()),
+      timeoutMs,
+      "SECURITY_CHECK",
+    );
+
+    if (!checkResponse.ok) {
+      if (isSignalsPath) {
+        console.warn(JSON.stringify({
+          event: "security_check_non_ok",
+          policy: "fail-open",
+          status: checkResponse.status,
+          path: pathname,
+        }));
+        return next();
+      }
+
+      return c.json({
+        error: "SECURITY_CHECK_FAILED",
+        message: "security policy rejected request",
+        policy: "fail-closed",
+      }, 403);
     }
+  } catch (error) {
+    if (isSignalsPath) {
+      console.warn(JSON.stringify({
+        event: "security_check_error",
+        policy: "fail-open",
+        path: pathname,
+        error: error instanceof Error ? error.message : String(error),
+      }));
+      return next();
+    }
+
+    return c.json({
+      error: "SECURITY_CHECK_ERROR",
+      message: "security check service unavailable",
+      policy: "fail-closed",
+    }, 503);
+  }
+
+  return next();
+});
+
+app.use("*", async (c, next) => {
+  const pathname = new URL(c.req.url).pathname;
+  const isHealthPath = pathname === "/health";
+  const isSignalsPath = isNonCriticalSignalsPath(pathname);
+
+  if (isHealthPath) {
+    return next();
+  }
+
+  if (!c.env.SECURITY_CHECK) {
+    console.warn(JSON.stringify({
+      event: "security_check_skipped",
+      policy: "fail-open",
+      reason: "missing_binding",
+      path: pathname,
+    }));
+    return next();
+  }
+
+  try {
+    const timeoutMs = isSignalsPath ? SIGNALS_TIMEOUT_MS : SECURITY_TIMEOUT_MS;
+    const checkResponse = await withTimeout(
+      c.env.SECURITY_CHECK.fetch(c.req.raw.clone()),
+      timeoutMs,
+      "SECURITY_CHECK",
+    );
+
+    if (!checkResponse.ok) {
+      if (isSignalsPath) {
+        console.warn(JSON.stringify({
+          event: "security_check_non_ok",
+          policy: "fail-open",
+          status: checkResponse.status,
+          path: pathname,
+        }));
+        return next();
+      }
+
+      return c.json({
+        error: "SECURITY_CHECK_FAILED",
+        message: "security policy rejected request",
+        policy: "fail-closed",
+      }, 403);
+    }
+  } catch (error) {
+    if (isSignalsPath) {
+      console.warn(JSON.stringify({
+        event: "security_check_error",
+        policy: "fail-open",
+        path: pathname,
+        error: error instanceof Error ? error.message : String(error),
+      }));
+      return next();
+    }
+
+    return c.json({
+      error: "SECURITY_CHECK_ERROR",
+      message: "security check service unavailable",
+      policy: "fail-closed",
+    }, 503);
+  }
+
+  return next();
+});
 
     return null; // Block unknown origins
   },
