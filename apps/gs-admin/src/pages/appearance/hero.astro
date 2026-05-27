@@ -1,0 +1,88 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+const variantEntries = [
+  ['orbital', { label: 'Orbital Control', description: 'Deep-space institutional hero with CSS particle field.' }],
+  ['defense', { label: 'Defense Lab', description: 'Black + silicon orange signal aesthetic.' }],
+  ['minimal', { label: 'Minimal Authority', description: 'Typography-first, no background motion.' }],
+] as const;
+---
+
+<AdminLayout title="Appearance · Hero Engine">
+  <section class="max-w-4xl mx-auto py-10 px-6">
+    <h1 class="text-3xl gs-heading mb-4">Hero Engine</h1>
+    <p class="gs-helper mb-6">
+      Select the active hero variant for gs-web. This value is stored in KV and can be switched
+      without redeploying gs-web.
+    </p>
+
+    <div class="gs-panel" style="max-width: 720px;">
+      <label for="heroVariant" class="gs-label">Homepage Hero Variant</label>
+      <select id="heroVariant" class="gs-input" style="margin-top:0.5rem;">
+        {variantEntries.map(([value, option]) => (
+          <option value={value}>{option.label}</option>
+        ))}
+      </select>
+      <p id="heroDescription" class="gs-helper" style="margin-top:0.75rem;"></p>
+      <div style="margin-top:1rem; display:flex; gap:0.75rem; flex-wrap:wrap;">
+        <button id="saveHero" class="gs-button gs-button-solid" type="button">Save</button>
+        <a class="gs-button gs-button-outline" href="https://goldshore.ai" target="_blank" rel="noreferrer">
+          Open gs-web
+        </a>
+      </div>
+      <p id="heroStatus" class="gs-helper" style="margin-top:0.9rem;"></p>
+    </div>
+  </section>
+</AdminLayout>
+
+<script type="module" define:vars={{ variantEntries }}>
+  const select = document.getElementById('heroVariant');
+  const saveButton = document.getElementById('saveHero');
+  const statusNode = document.getElementById('heroStatus');
+  const descriptionNode = document.getElementById('heroDescription');
+
+  const descriptions = Object.fromEntries(variantEntries.map(([key, value]) => [key, value.description]));
+
+  const setDescription = () => {
+    const value = select?.value;
+    if (!descriptionNode || !value) return;
+    descriptionNode.textContent = descriptions[value] || '';
+  };
+
+  const loadCurrent = async () => {
+    try {
+      const response = await fetch('/api/admin/hero');
+      const payload = await response.json();
+      if (select && payload?.variant) {
+        select.value = payload.variant;
+      }
+      setDescription();
+    } catch {
+      if (statusNode) {
+        statusNode.textContent = 'Unable to load current hero variant.';
+      }
+    }
+  };
+
+  saveButton?.addEventListener('click', async () => {
+    if (!select) return;
+
+    const variant = select.value;
+    statusNode.textContent = 'Saving…';
+
+    const response = await fetch('/api/admin/hero', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ variant }),
+    });
+
+    if (response.ok) {
+      statusNode.textContent = `Hero updated: ${variant}.`;
+      return;
+    }
+
+    statusNode.textContent = 'Failed to update hero variant.';
+  });
+
+  select?.addEventListener('change', setDescription);
+  loadCurrent();
+</script>

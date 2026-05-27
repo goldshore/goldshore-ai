@@ -50,3 +50,10 @@ Policy:
 
 - `CLOUDFLARE_BUILD_API_TOKEN` is the single canonical deploy token secret for worker CI.
 - Do not add fallback expressions (for example `secretA || secretB`) in worker deploy workflows unless a documented exception is added to Cloudflare runbooks.
+
+
+Migration behavior:
+
+- If older tooling still references `CLOUDFLARE_API_TOKEN`, migrate by updating that tooling to set runtime env `CLOUDFLARE_API_TOKEN` from `secrets.CLOUDFLARE_BUILD_API_TOKEN` in CI.
+- Do not add `||` fallbacks in workflow env blocks.
+- Temporary compatibility, if required, must be managed in secret administration (mirrored secret values), with a tracked removal task.
