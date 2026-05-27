@@ -24,7 +24,7 @@ function getProdSection(toml) {
   const start = headerMatch.index + headerMatch[0].length;
   const rest = toml.slice(start);
   const nextSectionMatch =
-    /^(?:\[env\.(?!prod\])\w(?:[.-]?\w)*\]|\[\[env\.(?!prod(?:\.|\]\]))\w(?:[.-]?\w)*(?:\.\w(?:[.-]?\w)*)*\]\])\s*$/m.exec(
+    /^(?:\[env\.(?!prod\])\w(?:[.-]\w)*\]|\[\[env\.(?!prod(?:\.|\]\]))\w(?:[.-]\w)*(?:\.\w(?:[.-]\w)*)*\]\])\s*$/m.exec(
       rest,
     );
   const end = nextSectionMatch ? start + nextSectionMatch.index : toml.length;
