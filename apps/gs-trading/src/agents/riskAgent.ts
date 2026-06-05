@@ -26,13 +26,22 @@ export function checkOrderRisk(
   const totalDayPL = accounts.reduce((s, a) => s + a.dayPL, 0);
   const isSell = order.side === 'SELL';
 
-  const positionPct = totalValue > 0 ? order.estimatedValue / totalValue : 0;
-  if (!isSell && positionPct > config.maxPositionSizePct) {
+  // For sells: only the portion that opens/enlarges a short (beyond the existing long)
+  // must satisfy position-size and concentration limits. Closing an existing long is free.
+  const existingPos = positions.find(p => p.symbol === order.symbol);
+  const existingLongQty = existingPos?.quantity ?? 0;
+  const orderQty = order.quantity ?? 0;
+  const riskableQty = isSell ? Math.max(0, orderQty - existingLongQty) : orderQty;
+  const riskableFraction = orderQty > 0 ? riskableQty / orderQty : 0;
+  const riskableValue = order.estimatedValue * riskableFraction;
+
+  const positionPct = totalValue > 0 ? riskableValue / totalValue : 0;
+  if (positionPct > config.maxPositionSizePct) {
     violations.push(
       `Order size ${(positionPct * 100).toFixed(1)}% exceeds max position size ${(config.maxPositionSizePct * 100).toFixed(1)}%`
     );
   }
-  if (!isSell && positionPct > config.maxPositionSizePct * 0.8) {
+  if (positionPct > config.maxPositionSizePct * 0.8) {
     warnings.push(`Order size approaching max position limit (${(positionPct * 100).toFixed(1)}%)`);
   }
 
@@ -43,10 +52,12 @@ export function checkOrderRisk(
     );
   }
 
-  if (!isSell) {
-    const existingPos = positions.find(p => p.symbol === order.symbol);
+  if (riskableQty > 0) {
     const existingValue = existingPos?.marketValue ?? 0;
-    const combinedValue = existingValue + order.estimatedValue;
+    // For buys, add to existing; for short-opening sells, treat as new negative exposure
+    const combinedValue = isSell
+      ? Math.max(0, existingValue - order.estimatedValue) + riskableValue
+      : existingValue + riskableValue;
     const combinedPct = totalValue > 0 ? combinedValue / totalValue : 0;
     if (combinedPct > config.maxConcentrationPct) {
       violations.push(

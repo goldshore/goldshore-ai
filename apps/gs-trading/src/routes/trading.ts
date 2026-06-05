@@ -103,26 +103,50 @@ tradingRoutes.post('/orders', async (c) => {
     return c.json({ error: 'limitPrice must be a positive number for LIMIT orders' }, 400);
   }
 
-  // Fetch live account + position data for risk checks before placement
+  // Fetch live account, position, and quote data for risk checks
   const accounts: any[] = [];
   const positions: any[] = [];
+  let estimatedPrice = orderType === 'LIMIT' ? Number(limitPrice) : 0;
+
   if (!isDemoMode(c.env)) {
     try {
+      const needsQuote = orderType === 'MARKET';
       if (broker === 'schwab' && c.env.SCHWAB_CLIENT_ID) {
         const client = new SchwabClient(c.env);
-        const [acct, pos] = await Promise.all([client.getAccount(), client.getPositions()]);
+        const [acct, pos, quoteArr] = await Promise.all([
+          client.getAccount(),
+          client.getPositions(),
+          needsQuote ? client.getQuotes([symbol]) : Promise.resolve(null),
+        ]);
         accounts.push(acct); positions.push(...pos);
+        if (needsQuote) {
+          const q = (quoteArr as any)?.[0];
+          estimatedPrice = q?.last ?? q?.ask ?? 0;
+          if (!estimatedPrice) return c.json({ error: `Could not determine market price for ${symbol}` }, 503);
+        }
       } else if (broker === 'robinhood' && c.env.ROBINHOOD_TOKEN) {
         const client = new RobinhoodClient(c.env);
-        const [acct, pos] = await Promise.all([client.getAccount(), client.getPositions()]);
+        const [acct, pos, quoteArr] = await Promise.all([
+          client.getAccount(),
+          client.getPositions(),
+          needsQuote ? client.getQuotes([symbol]) : Promise.resolve(null),
+        ]);
         accounts.push(acct); positions.push(...pos);
+        if (needsQuote) {
+          const q = (quoteArr as any)?.[0];
+          estimatedPrice = q?.last ?? q?.ask ?? 0;
+          if (!estimatedPrice) return c.json({ error: `Could not determine market price for ${symbol}` }, 503);
+        }
       }
     } catch (e: any) {
-      return c.json({ error: `Failed to fetch account data for risk check: ${e.message}` }, 503);
+      return c.json({ error: `Failed to fetch data for risk check: ${e.message}` }, 503);
     }
+  } else if (orderType === 'MARKET') {
+    // Demo mode: use mock prices so risk check has a meaningful value
+    const mockPrices: Record<string, number> = { SPY: 461.85, QQQ: 402.30, AAPL: 189.45, TSLA: 231.80, NVDA: 875.40, MSFT: 415.20, AMZN: 185.60 };
+    estimatedPrice = mockPrices[symbol] ?? 100;
   }
 
-  const estimatedPrice = Number(limitPrice ?? 0);
   const riskCheck = checkOrderRisk(
     { symbol, side, quantity, estimatedValue: estimatedPrice * quantity },
     accounts, positions,
