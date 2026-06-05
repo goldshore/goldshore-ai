@@ -3,6 +3,8 @@ name: Cloudflare Infra Guard
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -12,7 +14,7 @@ jobs:
   validate-cloudflare-secrets:
     runs-on: ubuntu-latest
     continue-on-error: true
-    if: github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'workflow_dispatch'
+    if: github.event.pull_request.head.repo.full_name == github.repository || github.event_name != 'pull_request'
     steps:
       - name: Verify required Cloudflare account and build token secrets
         env:
@@ -33,12 +35,14 @@ jobs:
       - name: Enforce canonical build token usage in workflow env blocks
         run: bash scripts/check-cloudflare-token-policy.sh
 
+  # Live Cloudflare route/DNS validation runs only after merge/deploy
+  # (push to main), so configuration-fix PRs are not gated on infra existing.
   verify-cloudflare:
     needs:
       - validate-cloudflare-secrets
       - validate-worker-token-policy
     runs-on: ubuntu-latest
-    if: (github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'workflow_dispatch') && needs.validate-cloudflare-secrets.result == 'success'
+    if: github.event_name != 'pull_request' && needs.validate-cloudflare-secrets.result == 'success'
     steps:
       - uses: actions/checkout@v4
 
