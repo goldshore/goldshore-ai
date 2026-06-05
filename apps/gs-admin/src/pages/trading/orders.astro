@@ -1,0 +1,137 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+---
+<AdminLayout title="Orders | Trading">
+  <nav class="trading-tabs">
+    <a href="/trading" class="tab">Overview</a>
+    <a href="/trading/accounts" class="tab">Accounts</a>
+    <a href="/trading/positions" class="tab">Positions</a>
+    <a href="/trading/orders" class="tab active">Orders</a>
+    <a href="/trading/quotes" class="tab">Quotes</a>
+    <a href="/trading/risk" class="tab">Risk</a>
+  </nav>
+
+  <div class="order-grid">
+    <!-- Order book -->
+    <div class="panel" style="grid-column:1/-1">
+      <div class="panel-header">
+        <h3>⇡ Order Book</h3>
+        <div class="controls">
+          <select id="broker-filter" class="select-xs">
+            <option value="">All Brokers</option>
+            <option value="schwab">Schwab</option>
+            <option value="robinhood">Robinhood</option>
+          </select>
+          <select id="status-filter" class="select-xs">
+            <option value="">All Statuses</option>
+            <option value="OPEN">Open</option>
+            <option value="PENDING">Pending</option>
+            <option value="FILLED">Filled</option>
+            <option value="CANCELLED">Cancelled</option>
+            <option value="REJECTED">Rejected</option>
+          </select>
+          <button class="btn btn-xs" id="refresh-btn">Refresh</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Broker</th><th>Symbol</th><th>Side</th><th>Qty</th><th>Type</th><th>Limit $</th><th>Status</th><th>Filled</th><th>Placed</th><th>Action</th></tr></thead>
+          <tbody id="orders-body"><tr><td colspan="11" class="empty">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</AdminLayout>
+
+<style>
+  .trading-tabs{display:flex;gap:.25rem;margin-bottom:1.5rem;border-bottom:1px solid rgba(255,255,255,.08)}
+  .tab{padding:.5rem 1rem;text-decoration:none;color:#9ca3af;font-size:.8rem;font-family:monospace;text-transform:uppercase;border-bottom:2px solid transparent}
+  .tab:hover{color:#fff}.tab.active{color:#fff;border-bottom-color:#f97316}
+  .panel{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:.5rem;padding:1.25rem}
+  .panel-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:1px solid rgba(255,255,255,.06)}
+  .panel-header h3{margin:0;font-size:.8rem;text-transform:uppercase;font-family:monospace;color:#e5e7eb}
+  .controls{display:flex;gap:.5rem;align-items:center}
+  .btn-xs{padding:.25rem .6rem;font-size:.7rem;background:rgba(255,255,255,.05);color:#9ca3af;border:1px solid rgba(255,255,255,.1);border-radius:4px;cursor:pointer;font-family:monospace}
+  .select-xs{padding:.25rem .5rem;font-size:.7rem;background:rgba(255,255,255,.05);color:#9ca3af;border:1px solid rgba(255,255,255,.1);border-radius:4px;font-family:monospace}
+  .table-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:.78rem;font-family:monospace}
+  th{color:#6b7280;font-weight:500;text-align:left;padding:.4rem .6rem;border-bottom:1px solid rgba(255,255,255,.06);text-transform:uppercase;font-size:.68rem}
+  td{padding:.45rem .6rem;border-bottom:1px solid rgba(255,255,255,.04);color:#d1d5db;vertical-align:middle}
+  tr:hover td{background:rgba(255,255,255,.02)}
+  .empty{color:#4b5563;text-align:center;padding:1.5rem}
+  .pos{color:#4ade80}.neg{color:#f87171}
+  .badge{font-size:.68rem;padding:.15rem .45rem;border-radius:3px;font-family:monospace}
+  .badge-success{background:rgba(74,222,128,.12);color:#4ade80}
+  .badge-danger{background:rgba(248,113,113,.12);color:#f87171}
+  .badge-info{background:rgba(34,211,238,.12);color:#22d3ee}
+  .badge-warn{background:rgba(250,204,21,.12);color:#facc15}
+  .cancel-btn{padding:.2rem .5rem;font-size:.68rem;background:rgba(248,113,113,.1);color:#f87171;border:1px solid rgba(248,113,113,.2);border-radius:3px;cursor:pointer;font-family:monospace}
+  .cancel-btn:hover{background:rgba(248,113,113,.2)}
+</style>
+
+<script is:inline>
+  const fmt = n => n==null?'—':new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n);
+  const statusBadge = s => {
+    const cls = {FILLED:'badge-success',REJECTED:'badge-danger',CANCELLED:'badge-danger',OPEN:'badge-info',PENDING:'badge-warn'}[s]??'badge-info';
+    return `<span class="badge ${cls}">${s}</span>`;
+  };
+
+  let allOrders = [];
+
+  async function load() {
+    const broker = document.getElementById('broker-filter').value;
+    const tbody = document.getElementById('orders-body');
+    tbody.innerHTML = '<tr><td colspan="11" class="empty">Loading…</td></tr>';
+    try {
+      const url = broker ? `/api/trading/orders?broker=${broker}` : '/api/trading/orders';
+      const { orders = [] } = await fetch(url).then(r => r.json());
+      allOrders = orders;
+      render();
+    } catch(e) {
+      tbody.innerHTML = `<tr><td colspan="11" class="empty" style="color:#f87171">Failed: ${e.message}</td></tr>`;
+    }
+  }
+
+  function render() {
+    const statusF = document.getElementById('status-filter').value;
+    const tbody = document.getElementById('orders-body');
+    const filtered = statusF ? allOrders.filter(o=>o.status===statusF) : allOrders;
+    if (filtered.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="11" class="empty">No orders</td></tr>';
+      return;
+    }
+    tbody.innerHTML = filtered.map(o => {
+      const canCancel = ['OPEN','PENDING'].includes(o.status);
+      return `<tr>
+        <td><code>${o.id.slice(-8)}</code></td>
+        <td>${o.broker}</td>
+        <td><strong>${o.symbol||'—'}</strong></td>
+        <td class="${o.side==='BUY'?'pos':'neg'}">${o.side}</td>
+        <td>${o.quantity}</td>
+        <td>${o.orderType}</td>
+        <td>${o.limitPrice!=null?fmt(o.limitPrice):'—'}</td>
+        <td>${statusBadge(o.status)}</td>
+        <td>${o.filledQuantity??0}${o.filledPrice?` @ ${fmt(o.filledPrice)}`:''}</td>
+        <td>${o.placedAt?new Date(o.placedAt).toLocaleString():'—'}</td>
+        <td>${canCancel?`<button class="cancel-btn" data-id="${o.id}" data-broker="${o.broker}">Cancel</button>`:'—'}</td>
+      </tr>`;
+    }).join('');
+
+    document.querySelectorAll('.cancel-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const {id, broker} = btn.dataset;
+        btn.textContent = '…';
+        btn.disabled = true;
+        try {
+          await fetch(`/api/trading/orders/${id}?broker=${broker}`, {method:'DELETE'});
+          load();
+        } catch { btn.textContent = 'Err'; }
+      });
+    });
+  }
+
+  document.getElementById('broker-filter').addEventListener('change', load);
+  document.getElementById('status-filter').addEventListener('change', render);
+  document.getElementById('refresh-btn').addEventListener('click', load);
+  load();
+</script>
