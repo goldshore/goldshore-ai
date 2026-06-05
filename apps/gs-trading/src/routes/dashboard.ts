@@ -484,11 +484,10 @@ function tradingDash() {
 
     get riskLimits() {
       const r = this.risk;
-      const maxConc = r.concentrations?.length
-        ? Math.max(...r.concentrations.map((c: any) => c.pct || 0))
-        : 0;
+      // Use the largest single position (concentrations is sorted descending by pct)
+      const largestPosPct = r.concentrations?.[0]?.pct ?? 0;
       return [
-        {label:'Max Position Size', desc:'Single position <= 5% portfolio', current:(maxConc*100).toFixed(1)+'%', ok:maxConc<0.05},
+        {label:'Max Position Size', desc:'Single position <= 5% portfolio', current:(largestPosPct*100).toFixed(1)+'%', ok:largestPosPct<=0.05},
         {label:'Daily Loss Limit', desc:'Daily loss <= 2% portfolio', current:Math.abs(r.totalDayPLPct||0).toFixed(2)+'%', ok:(r.totalDayPLPct||0)>-2},
         {label:'Cash Minimum', desc:'Maintain >= 10% cash', current:((r.cashPct||0)*100).toFixed(1)+'%', ok:(r.cashPct||0)>=0.10},
         {label:'Concentration', desc:'Top 5 positions <= 80%', current:((r.top5Concentration||0)*100).toFixed(1)+'%', ok:(r.top5Concentration||0)<=0.80},
@@ -618,11 +617,9 @@ function tradingDash() {
         this._portfolioChart = new Chart(pCtx,{type:'bar',data:{labels,datasets:[{label:'Account Value',data:values,backgroundColor:colors,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'#1e293b'},ticks:{color:'#94a3b8'}},y:{grid:{color:'#1e293b'},ticks:{color:'#64748b',callback:v=>'$'+Number(v/1000).toFixed(0)+'k'}}}}});
 
         // Allocation doughnut from live cash vs invested
-        const totalValue = this.accounts.reduce((s,a)=>s+a.totalValue,0);
         const cashTotal = this.accounts.reduce((s,a)=>s+a.cashBalance,0);
-        const investedTotal = Math.max(0, totalValue - cashTotal);
         const allLabels = [...labels, 'Cash'];
-        const allData = [...values.map((_,i) => Math.max(0, values[i] - (this.accounts.filter(a=>(a.broker==='schwab'&&labels[i]==='Schwab')||(a.broker==='robinhood'&&labels[i]==='Robinhood')).reduce((s,a)=>s+a.cashBalance,0)))), cashTotal];
+        const allData = [...labels.map(lbl => Math.max(0, (brokerMap[lbl]||0) - this.accounts.filter(a=>(a.broker==='schwab'&&lbl==='Schwab')||(a.broker==='robinhood'&&lbl==='Robinhood')).reduce((s,a)=>s+a.cashBalance,0))), cashTotal];
         this._allocationChart = new Chart(aCtx,{type:'doughnut',data:{labels:allLabels,datasets:[{data:allData,backgroundColor:['#3b82f6','#22c55e','#64748b'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{size:11}}}}}});
       }
     },

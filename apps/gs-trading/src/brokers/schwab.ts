@@ -25,11 +25,18 @@ export class SchwabClient {
         return cached;
       }
     }
+    // Load the most recent refresh token: KV-stored rotated token takes precedence
+    // over the env secret (which is only the initial seed value)
+    const storedRefreshToken = this.env.TRADING_KV
+      ? await this.env.TRADING_KV.get('schwab:refresh_token')
+      : null;
+    const refreshToken = storedRefreshToken ?? this.env.SCHWAB_REFRESH_TOKEN;
+
     const creds = btoa(`${this.env.SCHWAB_CLIENT_ID}:${this.env.SCHWAB_CLIENT_SECRET}`);
     const res = await fetch(TOKEN_URL, {
       method: 'POST',
       headers: { 'Authorization': `Basic ${creds}`, 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: this.env.SCHWAB_REFRESH_TOKEN }),
+      body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: refreshToken }),
     });
     if (!res.ok) throw new Error(`Schwab token refresh failed: ${res.status}`);
     const data = await res.json() as { access_token: string; expires_in: number; refresh_token?: string };
@@ -40,7 +47,7 @@ export class SchwabClient {
       await Promise.all([
         this.env.TRADING_KV.put('schwab:access_token', data.access_token, { expirationTtl: data.expires_in - 60 }),
         this.env.TRADING_KV.put('schwab:token_expiry', String(this.tokenExpiry)),
-        // Update refresh token if rotation occurred
+        // Always persist the returned refresh token — Schwab rotates it on every use
         ...(data.refresh_token ? [this.env.TRADING_KV.put('schwab:refresh_token', data.refresh_token)] : []),
       ]);
     }
