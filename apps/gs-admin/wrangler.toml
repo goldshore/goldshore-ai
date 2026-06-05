@@ -35,6 +35,12 @@ service = "gs-api"
 environment = "prod"
 # Zero-hop service binding to gs-api worker — no public network request
 
+[[services]]
+binding = "TRADING_SERVICE"
+service = "gs-trading"
+environment = "prod"
+# Zero-hop service binding to gs-trading worker (Schwab + Robinhood)
+
 [vars]
 ENV = "production"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
@@ -66,6 +72,11 @@ bucket_name = "gs-assets-preview"
 binding = "API_SERVICE"
 service = "gs-api"
 environment = "preview"
+
+[[env.preview.services]]
+binding = "TRADING_SERVICE"
+service = "gs-trading"
+environment = "prod"
 
 [env.preview.vars]
 ENV = "preview"

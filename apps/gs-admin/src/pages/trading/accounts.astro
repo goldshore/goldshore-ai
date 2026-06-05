@@ -1,0 +1,87 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+---
+<AdminLayout title="Accounts | Trading">
+  <nav class="trading-tabs">
+    <a href="/trading" class="tab">Overview</a>
+    <a href="/trading/accounts" class="tab active">Accounts</a>
+    <a href="/trading/positions" class="tab">Positions</a>
+    <a href="/trading/orders" class="tab">Orders</a>
+    <a href="/trading/quotes" class="tab">Quotes</a>
+    <a href="/trading/risk" class="tab">Risk</a>
+  </nav>
+
+  <div class="panel">
+    <div class="panel-header">
+      <h3>● Broker Accounts</h3>
+      <button class="btn btn-xs" id="refresh-btn">Refresh</button>
+    </div>
+    <div id="accounts-grid" class="accounts-grid">
+      <div class="loading">Loading account data…</div>
+    </div>
+  </div>
+</AdminLayout>
+
+<style>
+  .trading-tabs { display:flex; gap:.25rem; margin-bottom:1.5rem; border-bottom:1px solid rgba(255,255,255,.08); }
+  .tab { padding:.5rem 1rem; text-decoration:none; color:#9ca3af; font-size:.8rem; font-family:monospace; text-transform:uppercase; border-bottom:2px solid transparent; }
+  .tab:hover { color:#fff; }
+  .tab.active { color:#fff; border-bottom-color:#f97316; }
+  .panel { background:rgba(255,255,255,.02); border:1px solid rgba(255,255,255,.06); border-radius:.5rem; padding:1.25rem; }
+  .panel-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; padding-bottom:.75rem; border-bottom:1px solid rgba(255,255,255,.06); }
+  .panel-header h3 { margin:0; font-size:.8rem; text-transform:uppercase; font-family:monospace; color:#e5e7eb; }
+  .btn { padding:.45rem 1rem; border-radius:4px; font-size:.8rem; font-family:monospace; cursor:pointer; border:none; }
+  .btn-xs { padding:.25rem .6rem; font-size:.7rem; background:rgba(255,255,255,.05); color:#9ca3af; border:1px solid rgba(255,255,255,.1); border-radius:4px; cursor:pointer; }
+  .accounts-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:1rem; }
+  .acct-card { background:rgba(255,255,255,.025); border:1px solid rgba(255,255,255,.07); border-radius:.5rem; padding:1rem 1.25rem; }
+  .acct-broker { font-size:.7rem; text-transform:uppercase; color:#6b7280; font-family:monospace; margin-bottom:.5rem; }
+  .acct-id { font-size:.78rem; color:#9ca3af; font-family:monospace; margin-bottom:.75rem; }
+  .acct-val { font-size:1.8rem; font-weight:700; color:#fff; font-family:monospace; letter-spacing:-.04em; }
+  .acct-grid { display:grid; grid-template-columns:1fr 1fr; gap:.5rem; margin-top:.75rem; }
+  .acct-metric { font-size:.75rem; font-family:monospace; }
+  .metric-label { color:#6b7280; margin-bottom:.15rem; }
+  .metric-val { color:#e5e7eb; }
+  .pos { color:#4ade80; }
+  .neg { color:#f87171; }
+  .loading { color:#4b5563; padding:2rem; text-align:center; font-family:monospace; }
+  .error-msg { color:#f87171; padding:1rem; font-family:monospace; font-size:.82rem; }
+</style>
+
+<script is:inline>
+  const fmt = n => n == null ? '—' : new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n);
+  const fmtPct = n => n == null ? '' : `${n>=0?'+':''}${n.toFixed(2)}%`;
+
+  async function load() {
+    const el = document.getElementById('accounts-grid');
+    el.innerHTML = '<div class="loading">Loading…</div>';
+    try {
+      const { accounts = [], errors = [] } = await fetch('/api/trading/accounts').then(r => r.json());
+      if (accounts.length === 0 && errors.length > 0) {
+        el.innerHTML = `<div class="error-msg">Errors: ${errors.map(e=>e.broker+': '+e.error).join(' | ')}</div>`;
+        return;
+      }
+      el.innerHTML = accounts.map(a => {
+        const plClass = a.dayPL >= 0 ? 'pos' : 'neg';
+        return `<div class="acct-card">
+          <div class="acct-broker">${a.broker}</div>
+          <div class="acct-id">Account ${a.accountId}</div>
+          <div class="acct-val">${fmt(a.totalValue)}</div>
+          <div class="acct-grid">
+            <div class="acct-metric"><div class="metric-label">Cash</div><div class="metric-val">${fmt(a.cashBalance)}</div></div>
+            <div class="acct-metric"><div class="metric-label">Buying Power</div><div class="metric-val">${fmt(a.buyingPower)}</div></div>
+            <div class="acct-metric"><div class="metric-label">Day P&L</div><div class="metric-val ${plClass}">${fmt(a.dayPL)} (${fmtPct(a.dayPLPct)})</div></div>
+            <div class="acct-metric"><div class="metric-label">Total P&L</div><div class="metric-val">${fmt(a.totalPL)}</div></div>
+          </div>
+        </div>`;
+      }).join('');
+      if (errors.length) {
+        el.innerHTML += `<div class="error-msg">Partial errors: ${errors.map(e=>e.broker+': '+e.error).join(' | ')}</div>`;
+      }
+    } catch(e) {
+      el.innerHTML = `<div class="error-msg">Failed to load: ${e.message}</div>`;
+    }
+  }
+
+  document.getElementById('refresh-btn').addEventListener('click', load);
+  load();
+</script>
