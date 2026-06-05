@@ -123,7 +123,15 @@ with check (
 create policy form_submissions_insert
 on public.form_submissions
 for insert
-with check (true);
+with check (
+  exists (
+    select 1
+    from public.forms f
+    where f.id = form_submissions.form_id
+      and f.site_id = form_submissions.site_id
+      and f.status = 'active'
+  )
+);
 
 create policy form_submissions_org_read
 on public.form_submissions
