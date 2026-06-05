@@ -176,6 +176,9 @@ importers:
       '@goldshore/schema':
         specifier: workspace:^
         version: link:../../packages/schema
+      '@goldshore/shared':
+        specifier: workspace:^
+        version: link:../../packages/shared
       '@goldshore/utils':
         specifier: workspace:^
         version: link:../../packages/utils
@@ -439,6 +442,12 @@ importers:
       zod:
         specifier: ^4.3.6
         version: 4.4.3
+
+  packages/shared:
+    dependencies:
+      hono:
+        specifier: ^4.12.16
+        version: 4.12.21
 
   packages/theme: {}
 
