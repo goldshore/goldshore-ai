@@ -43,6 +43,9 @@ create table if not exists public.webhooks (
   updated_at timestamptz not null default now()
 );
 
+-- Prevent webhook secret material from being readable by client roles.
+revoke select (secret_hash) on public.webhooks from anon, authenticated;
+
 create index if not exists idx_api_clients_org on public.api_clients(organization_id);
 create index if not exists idx_api_keys_client on public.api_keys(api_client_id);
 create index if not exists idx_integrations_org on public.integrations(organization_id);
