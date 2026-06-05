@@ -7,6 +7,7 @@ export interface TradingEnv {
   SCHWAB_CLIENT_SECRET?: string;
   SCHWAB_REFRESH_TOKEN?: string;
   SCHWAB_ACCOUNT_HASH?: string;
+  SCHWAB_REDIRECT_URI?: string;
   ROBINHOOD_TOKEN?: string;
   ROBINHOOD_ACCOUNT_ID?: string;
 }

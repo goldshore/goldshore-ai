@@ -3,14 +3,25 @@ import type { TradingEnv, Position, Order, Quote, AccountSummary } from '../type
 const RH_BASE = 'https://api.robinhood.com';
 
 export class RobinhoodClient {
+  private _token: string | null = null;
+
   constructor(private env: TradingEnv) {}
 
+  // Resolves token from env var first, then KV fallback (set via POST /oauth/robinhood/token)
+  private async getToken(): Promise<string> {
+    if (this._token) return this._token;
+    const token = this.env.ROBINHOOD_TOKEN ?? await this.env.TRADING_KV.get('robinhood:token');
+    if (!token) throw new Error('Robinhood token not configured — set ROBINHOOD_TOKEN or POST /oauth/robinhood/token');
+    this._token = token;
+    return token;
+  }
+
   private async request<T>(path: string, options: RequestInit = {}): Promise<T> {
-    if (!this.env.ROBINHOOD_TOKEN) throw new Error('ROBINHOOD_TOKEN not configured');
+    const token = await this.getToken();
     const res = await fetch(`${RH_BASE}${path}`, {
       ...options,
       headers: {
-        'Authorization': `Bearer ${this.env.ROBINHOOD_TOKEN}`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
         ...(options.headers as Record<string, string> ?? {}),
@@ -45,15 +56,16 @@ export class RobinhoodClient {
   }
 
   async getPositions(): Promise<Position[]> {
+    const token = await this.getToken();
     const data = await this.request<any>('/positions/?nonzero=true');
     const results = data.results ?? [];
     const positions: Position[] = [];
     for (const p of results) {
       const instrument = await fetch(p.instrument, {
-        headers: { 'Authorization': `Bearer ${this.env.ROBINHOOD_TOKEN}` },
+        headers: { 'Authorization': `Bearer ${token}` },
       }).then(r => r.json()) as any;
       const quote = await fetch(instrument.quote, {
-        headers: { 'Authorization': `Bearer ${this.env.ROBINHOOD_TOKEN}` },
+        headers: { 'Authorization': `Bearer ${token}` },
       }).then(r => r.json()) as any;
       const qty = parseFloat(p.quantity ?? '0');
       const avgCost = parseFloat(p.average_buy_price ?? '0');
@@ -78,7 +90,7 @@ export class RobinhoodClient {
     return (data.results ?? []).map((o: any): Order => ({
       id: o.id ?? '',
       broker: 'robinhood',
-      symbol: '', // requires instrument fetch; resolved client-side
+      symbol: '',
       side: o.side?.toUpperCase() === 'SELL' ? 'SELL' : 'BUY',
       quantity: parseFloat(o.quantity ?? '0'),
       orderType: mapRHOrderType(o.type),
@@ -93,9 +105,7 @@ export class RobinhoodClient {
   }
 
   async getQuotes(symbols: string[]): Promise<Quote[]> {
-    const data = await this.request<any>(
-      `/quotes/?symbols=${symbols.join(',')}`
-    );
+    const data = await this.request<any>(`/quotes/?symbols=${symbols.join(',')}`);
     return (data.results ?? []).map((q: any): Quote => ({
       symbol: q.symbol ?? '',
       bid: parseFloat(q.bid_price ?? '0'),
@@ -134,10 +144,7 @@ export class RobinhoodClient {
       trigger: 'immediate',
     };
     if (order.orderType === 'LIMIT') body.price = order.limitPrice;
-    const data = await this.request<any>('/orders/', {
-      method: 'POST',
-      body: JSON.stringify(body),
-    });
+    const data = await this.request<any>('/orders/', { method: 'POST', body: JSON.stringify(body) });
     return { orderId: data.id ?? '' };
   }
 
