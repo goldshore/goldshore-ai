@@ -11,6 +11,7 @@ permissions:
 jobs:
   validate-cloudflare-secrets:
     runs-on: ubuntu-latest
+    continue-on-error: true
     if: github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'workflow_dispatch'
     steps:
       - name: Verify required Cloudflare account and build token secrets
@@ -19,7 +20,7 @@ jobs:
           CLOUDFLARE_BUILD_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
         run: |
           test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "Missing required secret: CLOUDFLARE_ACCOUNT_ID" && exit 1)
-          test -n "$CLOUDFLARE_BUILD_API_TOKEN" || (echo "Missing required secret: CLOUDFLARE_BUILD_API_TOKEN" && exit 1)
+          test -n "$CLOUDFLARE_BUILD_API_TOKEN" || (echo "Missing required secret: CLOUDFLARE_BUILD_API_TOKEN - please add this secret to the repository settings" && exit 1)
 
   validate-worker-token-policy:
     runs-on: ubuntu-latest
@@ -37,7 +38,7 @@ jobs:
       - validate-cloudflare-secrets
       - validate-worker-token-policy
     runs-on: ubuntu-latest
-    if: github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'workflow_dispatch'
+    if: (github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'workflow_dispatch') && needs.validate-cloudflare-secrets.result == 'success'
     steps:
       - uses: actions/checkout@v4
 
