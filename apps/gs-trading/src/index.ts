@@ -4,6 +4,7 @@ import { secureHeaders } from 'hono/secure-headers';
 import { verifyAccessWithClaims } from '@goldshore/auth';
 import { tradingRoutes } from './routes/trading';
 import { agentRoutes } from './routes/agents';
+import { oauthRoutes } from './routes/oauth';
 import { getDashboardHTML } from './routes/dashboard';
 import { isEnabled, setFlag, FLAGS } from './flags';
 import type { TradingEnv } from './types';
@@ -30,10 +31,22 @@ app.use('*', cors({
   credentials: true,
 }));
 
-// Cloudflare Access JWT guard — dashboard and health are public, all API routes are protected.
+// Cloudflare Access JWT guard.
+// Public paths: dashboard, health, flags read, and all OAuth routes
+// (Schwab redirects back to /oauth/schwab/callback — Access must not block it).
 app.use('*', async (c, next) => {
-  const publicPaths = ['/', '/health', '/api/flags'];
-  if (publicPaths.includes(c.req.path) || c.req.method === 'OPTIONS') return next();
+  const path = c.req.path;
+  const isPublic =
+    path === '/' ||
+    path === '/health' ||
+    path === '/api/flags' ||
+    path.startsWith('/oauth/schwab/authorize') ||
+    path.startsWith('/oauth/schwab/callback') ||
+    path.startsWith('/oauth/status') ||
+    c.req.method === 'OPTIONS';
+
+  if (isPublic) return next();
+
   if (c.env.ENV === 'production' && !c.env.CLOUDFLARE_ACCESS_AUDIENCE) {
     console.error('SECURITY ERROR: CLOUDFLARE_ACCESS_AUDIENCE must be set for gs-trading in production');
     return c.json({ error: 'Service auth misconfigured' }, 500);
@@ -44,10 +57,10 @@ app.use('*', async (c, next) => {
 });
 
 // mcp-trading feature flag guard — blocks trading + agent routes when disabled.
-// In demo/dev mode (no broker secrets) the flag defaults to enabled so local dev works.
+// In demo/dev mode the flag defaults to enabled so local dev works.
 app.use('/api/trading/*', async (c, next) => {
   const isDev = !c.env.SCHWAB_CLIENT_ID && !c.env.ROBINHOOD_TOKEN;
-  const enabled = await isEnabled(c.env, FLAGS.MCP_TRADING, /* default */ isDev || c.env.ENV !== 'production');
+  const enabled = await isEnabled(c.env, FLAGS.MCP_TRADING, isDev || c.env.ENV !== 'production');
   if (!enabled) return c.json({ error: 'mcp-trading feature is currently disabled', flag: FLAGS.MCP_TRADING }, 503);
   return next();
 });
@@ -62,7 +75,7 @@ app.use('/api/agents/*', async (c, next) => {
 app.get('/', (c) => c.html(getDashboardHTML()));
 app.get('/health', (c) => c.json({ status: 'ok', service: 'gs-trading', version: '1.0.0' }));
 
-// Flag inspection + management endpoint (auth-protected in production via the guard above)
+// Feature flag inspection + management (read is public, write requires Access)
 app.get('/api/flags', async (c) => {
   const enabled = await isEnabled(c.env, FLAGS.MCP_TRADING, true);
   return c.json({ flags: { [FLAGS.MCP_TRADING]: enabled } });
@@ -78,6 +91,7 @@ app.post('/api/flags/:key', async (c) => {
   return c.json({ flag: key, enabled: body.enabled });
 });
 
+app.route('/oauth', oauthRoutes);
 app.route('/api/trading', tradingRoutes);
 app.route('/api/agents', agentRoutes);
 
