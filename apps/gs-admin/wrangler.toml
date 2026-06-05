@@ -37,6 +37,12 @@ service = "gs-trading"
 environment = "prod"
 # Zero-hop service binding to gs-trading worker (Schwab + Robinhood)
 
+[[services]]
+binding = "TRADING_SERVICE"
+service = "gs-trading"
+environment = "prod"
+# Zero-hop service binding to gs-trading worker (Schwab + Robinhood)
+
 [vars]
 ENV = "production"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
