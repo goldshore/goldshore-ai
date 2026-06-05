@@ -3,6 +3,11 @@ name: Cloudflare Infra Guard
 on:
   pull_request:
     branches: [main]
+  # Runs after platform deploy completes, pinned to the deployed commit SHA
+  # to avoid validating requirements that differ from what was actually deployed.
+  workflow_run:
+    workflows: ["Deploy — GoldShore Platform"]
+    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -12,7 +17,7 @@ jobs:
   validate-cloudflare-secrets:
     runs-on: ubuntu-latest
     continue-on-error: true
-    if: github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'pull_request' && (github.event.pull_request.head.repo.full_name == github.repository)
     steps:
       - name: Verify required Cloudflare account and build token secrets
         env:
@@ -24,6 +29,7 @@ jobs:
 
   validate-worker-token-policy:
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
 
@@ -33,14 +39,18 @@ jobs:
       - name: Enforce canonical build token usage in workflow env blocks
         run: bash scripts/check-cloudflare-token-policy.sh
 
+  # Live Cloudflare route/DNS validation. Runs post-deploy (workflow_run) or
+  # on manual dispatch. Checks out the exact SHA that was deployed to avoid
+  # validating requirements from a different commit (e.g. a concurrent push).
   verify-cloudflare:
-    needs:
-      - validate-cloudflare-secrets
-      - validate-worker-token-policy
     runs-on: ubuntu-latest
-    if: (github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'workflow_dispatch') && needs.validate-cloudflare-secrets.result == 'success'
+    if: |
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
+      github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Install ripgrep
         run: sudo apt-get update && sudo apt-get install -y ripgrep
