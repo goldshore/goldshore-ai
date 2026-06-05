@@ -26,12 +26,21 @@ export function checkOrderRisk(
   const totalDayPL = accounts.reduce((s, a) => s + a.dayPL, 0);
   const isSell = order.side === 'SELL';
 
-  // For sells: only the portion that opens/enlarges a short (beyond the existing long)
-  // must satisfy position-size and concentration limits. Closing an existing long is free.
+  // Separate existing long and short quantities to handle both directions correctly.
+  // existingLong > 0: currently long; existingShort < 0: currently short.
   const existingPos = positions.find(p => p.symbol === order.symbol);
-  const existingLongQty = existingPos?.quantity ?? 0;
+  const existingQty = existingPos?.quantity ?? 0;
+  const existingLong = Math.max(0, existingQty);
+  const existingShort = Math.min(0, existingQty); // negative or 0
   const orderQty = order.quantity ?? 0;
-  const riskableQty = isSell ? Math.max(0, orderQty - existingLongQty) : orderQty;
+
+  // Riskable quantity:
+  // SELL: closing existing longs is free; only the short-opening portion is risk-checked.
+  // BUY:  covering existing shorts is free; only the portion beyond zero is risk-checked.
+  const riskableQty = isSell
+    ? Math.max(0, orderQty - existingLong)      // amount that opens/enlarges a short
+    : Math.max(0, orderQty + existingShort);    // amount that opens/enlarges a long (existingShort is <=0)
+
   const riskableFraction = orderQty > 0 ? riskableQty / orderQty : 0;
   const riskableValue = order.estimatedValue * riskableFraction;
 
@@ -53,11 +62,9 @@ export function checkOrderRisk(
   }
 
   if (riskableQty > 0) {
-    const existingValue = existingPos?.marketValue ?? 0;
-    // For buys, add to existing; for short-opening sells, treat as new negative exposure
-    const combinedValue = isSell
-      ? Math.max(0, existingValue - order.estimatedValue) + riskableValue
-      : existingValue + riskableValue;
+    // Use absolute market value to avoid sign errors with short positions
+    const existingAbsValue = Math.abs(existingPos?.marketValue ?? 0);
+    const combinedValue = existingAbsValue + riskableValue;
     const combinedPct = totalValue > 0 ? combinedValue / totalValue : 0;
     if (combinedPct > config.maxConcentrationPct) {
       violations.push(
