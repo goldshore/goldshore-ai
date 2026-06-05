@@ -20,9 +20,9 @@ sites.post('/', async (c) => {
   return c.json({
     status: 'accepted',
     site: {
-      id: crypto.randomUUID(),
       ...payload,
-    },
+      id: crypto.randomUUID(),
+    }
   }, 202);
 });
 
