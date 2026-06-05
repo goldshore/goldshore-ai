@@ -6,12 +6,13 @@ compatibility_flags = ["nodejs_compat"]
 # KV namespace — stores agent state, OAuth tokens, trading signals, and feature flags
 [[kv_namespaces]]
 binding = "TRADING_KV"
-id = "REPLACE_WITH_KV_ID"
+id = "your-production-kv-namespace-id"
+preview_id = "your-preview-kv-namespace-id"
 
 [vars]
 ENV = "development"
 
-# ── Production environment ────────────────────────────────────────────────────
+# ———— Production environment ————————————————————————————————————————————————————————————————————
 [env.prod]
 name = "gs-trading-prod"
 routes = [
@@ -21,14 +22,14 @@ routes = [
 # kv_namespaces is NOT inherited by named environments in Wrangler — must be re-declared.
 [[env.prod.kv_namespaces]]
 binding = "TRADING_KV"
-id = "REPLACE_WITH_KV_ID"
+id = "your-production-kv-namespace-id"
 
 [env.prod.vars]
 ENV = "production"
 # OAuth redirect URI — must match exactly what is registered in your Schwab app
 SCHWAB_REDIRECT_URI = "https://trading.goldshore.ai/oauth/schwab/callback"
 
-# ── Secrets (set via: wrangler secret put <NAME> --env prod) ─────────────────
+# ———— Secrets (set via: wrangler secret put <NAME> --env prod) ————————————————————————————
 #
 # Cloudflare Access:
 #   CLOUDFLARE_ACCESS_AUDIENCE  — CF Access Application Audience tag
@@ -44,7 +45,7 @@ SCHWAB_REDIRECT_URI = "https://trading.goldshore.ai/oauth/schwab/callback"
 #   ROBINHOOD_TOKEN             — Bearer token (also writable via POST /oauth/robinhood/token)
 #   ROBINHOOD_ACCOUNT_ID        — Robinhood account number
 #
-# ── OAuth setup quick-start ──────────────────────────────────────────────────
+# ———— OAuth setup quick-start ————————————————————————————————————————————————————————————————
 # 1. Deploy:   wrangler deploy --env prod
 # 2. Secrets:  wrangler secret put SCHWAB_CLIENT_ID --env prod  (etc.)
 # 3. Register  https://trading.goldshore.ai/oauth/schwab/callback  in your Schwab app.
