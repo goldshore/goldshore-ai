@@ -1,5 +1,4 @@
 import type { MiddlewareHandler } from 'astro';
-import { HTML_CONTENT_SECURITY_POLICY } from './security/policy';
 
 import {
   authorizeAdminRequest,
@@ -7,10 +6,7 @@ import {
   getCanonicalAdminUrl,
   isAdminHost,
 } from './utils/admin-access';
-<<<<<<< HEAD
-=======
 import { WEB_HEADERS_CSP } from './utils/csp';
->>>>>>> origin/main
 
 const PUBLIC_WEB_HOSTS = new Set([
   'goldshore.ai',
@@ -21,10 +17,7 @@ const PUBLIC_WEB_HOSTS = new Set([
 
 export const onRequest: MiddlewareHandler = async (context, next) => {
   const url = new URL(context.request.url);
-<<<<<<< HEAD
   context.locals.securityPolicySource = 'response-header';
-=======
->>>>>>> origin/main
   const adminRule = getAdminRouteRule(url.pathname, context.request.method, url.hostname);
 
   if (adminRule) {
@@ -47,7 +40,7 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   }
 
   const response = await next();
-  response.headers.set('Content-Security-Policy', HTML_CONTENT_SECURITY_POLICY);
+  response.headers.set('Content-Security-Policy', WEB_HEADERS_CSP);
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
