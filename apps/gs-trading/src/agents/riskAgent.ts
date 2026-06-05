@@ -26,14 +26,23 @@ export function checkOrderRisk(
   const totalDayPL = accounts.reduce((s, a) => s + a.dayPL, 0);
   const isSell = order.side === 'SELL';
 
-  const positionPct = totalValue > 0 ? order.estimatedValue / totalValue : 0;
-  if (!isSell && positionPct > config.maxPositionSizePct) {
+  // For sells: only exempt the portion that closes an existing long position.
+  // Any quantity sold beyond current holdings creates short exposure subject to risk limits.
+  const existingPos = positions.find(p => p.symbol === order.symbol);
+  const heldQty = existingPos?.quantity ?? 0;
+  const orderQty = order.quantity ?? 0;
+  const pricePerUnit = orderQty > 0 ? order.estimatedValue / orderQty : 0;
+  const shortExcessQty = isSell ? Math.max(0, orderQty - heldQty) : 0;
+  const riskableValue = isSell ? shortExcessQty * pricePerUnit : order.estimatedValue;
+
+  const positionPct = totalValue > 0 ? riskableValue / totalValue : 0;
+  if (positionPct > config.maxPositionSizePct) {
     violations.push(
-      `Order size ${(positionPct * 100).toFixed(1)}% exceeds max position size ${(config.maxPositionSizePct * 100).toFixed(1)}%`
+      `${isSell ? 'Short exposure' : 'Order size'} ${(positionPct * 100).toFixed(1)}% exceeds max position size ${(config.maxPositionSizePct * 100).toFixed(1)}%`
     );
   }
-  if (!isSell && positionPct > config.maxPositionSizePct * 0.8) {
-    warnings.push(`Order size approaching max position limit (${(positionPct * 100).toFixed(1)}%)`);
+  if (positionPct > config.maxPositionSizePct * 0.8) {
+    warnings.push(`${isSell ? 'Short exposure' : 'Order size'} approaching max position limit (${(positionPct * 100).toFixed(1)}%)`);
   }
 
   const dailyLossPct = totalValue > 0 ? Math.abs(totalDayPL) / totalValue : 0;
@@ -44,13 +53,20 @@ export function checkOrderRisk(
   }
 
   if (!isSell) {
-    const existingPos = positions.find(p => p.symbol === order.symbol);
     const existingValue = existingPos?.marketValue ?? 0;
     const combinedValue = existingValue + order.estimatedValue;
     const combinedPct = totalValue > 0 ? combinedValue / totalValue : 0;
     if (combinedPct > config.maxConcentrationPct) {
       violations.push(
         `Combined concentration ${(combinedPct * 100).toFixed(1)}% exceeds max ${(config.maxConcentrationPct * 100).toFixed(1)}%`
+      );
+    }
+  } else if (shortExcessQty > 0) {
+    // Short exposure concentration check
+    const shortConcentrationPct = totalValue > 0 ? riskableValue / totalValue : 0;
+    if (shortConcentrationPct > config.maxConcentrationPct) {
+      violations.push(
+        `Short concentration ${(shortConcentrationPct * 100).toFixed(1)}% exceeds max ${(config.maxConcentrationPct * 100).toFixed(1)}%`
       );
     }
   }

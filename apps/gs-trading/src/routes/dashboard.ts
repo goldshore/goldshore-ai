@@ -6,8 +6,8 @@ export function getDashboardHTML(): string {
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>GoldShore Trading — Multi-Agent Dashboard</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 <style>
   [x-cloak]{display:none!important}
   body{background:#0f172a;color:#e2e8f0;font-family:system-ui,sans-serif}
@@ -434,6 +434,7 @@ function tradingDash() {
     tab: 'overview',
     positions: [], orders: [], agents: [], signals: [], risk: {},
     accounts: [],
+    isDemo: false,
     posBrokerFilter: '', posTypeFilter: '',
     newOrder: { broker: 'schwab', symbol: '', side: 'BUY', quantity: 1, orderType: 'MARKET', limitPrice: null },
     placingOrder: false, orderMessage: '', orderError: false,
@@ -473,8 +474,11 @@ function tradingDash() {
 
     get riskLimits() {
       const r = this.risk;
+      const maxConc = r.concentrations?.length
+        ? Math.max(...r.concentrations.map((c: any) => c.pct || 0))
+        : 0;
       return [
-        {label:'Max Position Size', desc:'Single position <= 5% portfolio', current:(r.top5Concentration*100/5||0).toFixed(1)+'%', ok:(r.top5Concentration||0)<0.25},
+        {label:'Max Position Size', desc:'Single position <= 5% portfolio', current:(maxConc*100).toFixed(1)+'%', ok:maxConc<0.05},
         {label:'Daily Loss Limit', desc:'Daily loss <= 2% portfolio', current:Math.abs(r.totalDayPLPct||0).toFixed(2)+'%', ok:(r.totalDayPLPct||0)>-2},
         {label:'Cash Minimum', desc:'Maintain >= 10% cash', current:((r.cashPct||0)*100).toFixed(1)+'%', ok:(r.cashPct||0)>=0.10},
         {label:'Concentration', desc:'Top 5 positions <= 80%', current:((r.top5Concentration||0)*100).toFixed(1)+'%', ok:(r.top5Concentration||0)<=0.80},
@@ -510,7 +514,7 @@ function tradingDash() {
       this.lastUpdated = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
     },
 
-    async loadAccounts() { try{ const d=await fetch('/api/trading/accounts').then(r=>r.json()); this.accounts=d.accounts?.flat()||[]; }catch{} },
+    async loadAccounts() { try{ const d=await fetch('/api/trading/accounts').then(r=>r.json()); this.accounts=d.accounts?.flat()||[]; this.isDemo=d.demo===true; }catch{} },
     async loadPositions() { try{ const d=await fetch('/api/trading/positions').then(r=>r.json()); this.positions=d.positions||[]; }catch{} },
     async loadOrders() { try{ const d=await fetch('/api/trading/orders').then(r=>r.json()); this.orders=d.orders||[]; }catch{} },
     async loadAgents() { try{ const d=await fetch('/api/agents').then(r=>r.json()); this.agents=d.agents||[]; }catch{} },
@@ -574,10 +578,28 @@ function tradingDash() {
         const pCtx=document.getElementById('portfolioChart');
         const aCtx=document.getElementById('allocationChart');
         if(!pCtx||!aCtx) return;
-        const labels=['Jun 6','Jun 9','Jun 10','Jun 11','Jun 12','Jun 13','Jun 16','Jun 17','Jun 18','Jun 19','Jun 20','Jun 23','Jun 24','Jun 25','Jun 26','Jun 27','Jun 30','Jul 1','Jul 2','Jul 3','Jul 7','Jul 8','Jul 9','Jul 10','Jul 11','Jul 14','Jul 15','Jul 16','Jul 17','Jul 18'];
-        const values=[119000,120400,119800,121000,122500,121800,123200,124000,123400,125000,124800,126200,127400,126800,128000,129500,130200,131000,130400,132000,131600,133000,134200,133600,135000,136400,137800,139000,141200,144180];
-        new Chart(pCtx,{type:'line',data:{labels,datasets:[{label:'Portfolio Value',data:values,borderColor:'#8b5cf6',backgroundColor:'rgba(139,92,246,0.08)',borderWidth:2,pointRadius:0,tension:0.4,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:true,grid:{color:'#1e293b'},ticks:{color:'#64748b',callback:v=>'$'+Number(v/1000).toFixed(0)+'k'}}}}})
-        new Chart(aCtx,{type:'doughnut',data:{labels:['Schwab','Robinhood','Cash'],datasets:[{data:[85,10,5],backgroundColor:['#3b82f6','#22c55e','#64748b'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{size:11}}}}}})
+
+        // Portfolio history — only show demo series in demo mode; in live mode show current value
+        if(this.isDemo){
+          const labels=['Jun 6','Jun 9','Jun 10','Jun 11','Jun 12','Jun 13','Jun 16','Jun 17','Jun 18','Jun 19','Jun 20','Jun 23','Jun 24','Jun 25','Jun 26','Jun 27','Jun 30','Jul 1','Jul 2','Jul 3','Jul 7','Jul 8','Jul 9','Jul 10','Jul 11','Jul 14','Jul 15','Jul 16','Jul 17','Jul 18'];
+          const values=[119000,120400,119800,121000,122500,121800,123200,124000,123400,125000,124800,126200,127400,126800,128000,129500,130200,131000,130400,132000,131600,133000,134200,133600,135000,136400,137800,139000,141200,144180];
+          new Chart(pCtx,{type:'line',data:{labels,datasets:[{label:'Portfolio Value (Demo)',data:values,borderColor:'#8b5cf6',backgroundColor:'rgba(139,92,246,0.08)',borderWidth:2,pointRadius:0,tension:0.4,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#64748b',font:{size:10}}}},scales:{x:{display:false},y:{display:true,grid:{color:'#1e293b'},ticks:{color:'#64748b',callback:v=>'$'+Number(v/1000).toFixed(0)+'k'}}}}});
+        } else {
+          const total=this.accounts.reduce((s,a)=>s+a.totalValue,0);
+          new Chart(pCtx,{type:'line',data:{labels:['Now'],datasets:[{label:'Portfolio Value',data:[total],borderColor:'#8b5cf6',backgroundColor:'rgba(139,92,246,0.08)',borderWidth:2,pointRadius:4,tension:0.4,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:true,grid:{color:'#1e293b'},ticks:{color:'#64748b',callback:v=>'$'+Number(v/1000).toFixed(0)+'k'}}}}});
+        }
+
+        // Allocation chart — derive from real positions data
+        const schwabVal=this.positions.filter(p=>p.broker==='schwab').reduce((s,p)=>s+p.marketValue,0);
+        const robinhoodVal=this.positions.filter(p=>p.broker==='robinhood').reduce((s,p)=>s+p.marketValue,0);
+        const totalVal=this.accounts.reduce((s,a)=>s+a.totalValue,0);
+        const cashVal=Math.max(0,totalVal-schwabVal-robinhoodVal);
+        const allocData=this.isDemo ? [85,10,5] : [
+          totalVal>0?Math.round(schwabVal/totalVal*100):0,
+          totalVal>0?Math.round(robinhoodVal/totalVal*100):0,
+          totalVal>0?Math.round(cashVal/totalVal*100):0,
+        ];
+        new Chart(aCtx,{type:'doughnut',data:{labels:['Schwab','Robinhood','Cash'],datasets:[{data:allocData,backgroundColor:['#3b82f6','#22c55e','#64748b'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{size:11}}}}}});
       },300);
     },
   };

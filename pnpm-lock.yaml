@@ -308,6 +308,25 @@ importers:
         specifier: ^4.63.0
         version: 4.93.1(@cloudflare/workers-types@4.20260522.1)
 
+  apps/gs-trading:
+    dependencies:
+      '@goldshore/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
+      hono:
+        specifier: ^4.12.16
+        version: 4.12.21
+    devDependencies:
+      '@cloudflare/workers-types':
+        specifier: ^4.20260511.1
+        version: 4.20260522.1
+      typescript:
+        specifier: ^5.4.2
+        version: 5.9.3
+      wrangler:
+        specifier: ^4.63.0
+        version: 4.93.1(@cloudflare/workers-types@4.20260522.1)
+
   apps/gs-web:
     dependencies:
       '@astrojs/react':
