@@ -51,7 +51,8 @@ app.route('/api/agents', agentRoutes);
 app.notFound((c) => c.json({ error: 'Not found', path: c.req.path }, 404));
 app.onError((err, c) => {
   console.error('gs-trading error:', err);
-  return c.json({ error: err.message }, 500);
+  // Return a generic message — broker errors can include upstream response bodies
+  return c.json({ error: 'Internal server error' }, 500);
 });
 
 export default { fetch: app.fetch };

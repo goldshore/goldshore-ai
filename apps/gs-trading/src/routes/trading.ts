@@ -188,13 +188,25 @@ tradingRoutes.delete('/orders/:id', async (c) => {
 
 tradingRoutes.get('/risk', async (c) => {
   if (isDemoMode(c.env)) return c.json({ metrics: getMockRiskMetrics(), demo: true });
+  // Collect data from each broker independently so one outage does not zero out the other
   const accounts: any[] = [];
   const positions: any[] = [];
-  try {
-    if (c.env.SCHWAB_CLIENT_ID) { const s = new SchwabClient(c.env); accounts.push(await s.getAccount()); positions.push(...await s.getPositions()); }
-    if (c.env.ROBINHOOD_TOKEN) { const r = new RobinhoodClient(c.env); accounts.push(await r.getAccount()); positions.push(...await r.getPositions()); }
-  } catch {}
-  return c.json({ metrics: getPortfolioRiskMetrics(positions, accounts) });
+  const errors: any[] = [];
+  if (c.env.SCHWAB_CLIENT_ID) {
+    try {
+      const s = new SchwabClient(c.env);
+      const [acct, pos] = await Promise.all([s.getAccount(), s.getPositions()]);
+      accounts.push(acct); positions.push(...pos);
+    } catch (e: any) { errors.push({ broker: 'schwab', error: e.message }); }
+  }
+  if (c.env.ROBINHOOD_TOKEN) {
+    try {
+      const r = new RobinhoodClient(c.env);
+      const [acct, pos] = await Promise.all([r.getAccount(), r.getPositions()]);
+      accounts.push(acct); positions.push(...pos);
+    } catch (e: any) { errors.push({ broker: 'robinhood', error: e.message }); }
+  }
+  return c.json({ metrics: getPortfolioRiskMetrics(positions, accounts), errors });
 });
 
 tradingRoutes.post('/risk/check', async (c) => {
