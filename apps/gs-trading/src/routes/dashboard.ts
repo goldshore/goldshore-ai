@@ -6,8 +6,8 @@ export function getDashboardHTML(): string {
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>GoldShore Trading — Multi-Agent Dashboard</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.10/dist/cdn.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <style>
   [x-cloak]{display:none!important}
   body{background:#0f172a;color:#e2e8f0;font-family:system-ui,sans-serif}
