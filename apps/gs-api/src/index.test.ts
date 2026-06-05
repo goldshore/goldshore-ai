@@ -2,7 +2,6 @@ import { test } from 'node:test';
 import * as assert from 'node:assert/strict';
 
 import app, { isAllowedOrigin, isPreviewOrigin } from './index';
-<<<<<<< HEAD
 
 const requiredRuntimeEnv = {
   CONTENT_DB: {} as any,
@@ -13,8 +12,6 @@ const requiredRuntimeEnv = {
   SENDGRID_API_KEY: 'test-sendgrid-key',
   ACCESS_CLIENT_SECRET: 'test-access-client-secret',
 };
-=======
->>>>>>> origin/main
 
 test('allows documented preview goldshore.ai origins', () => {
   assert.equal(isPreviewOrigin('https://feature-123-preview.goldshore.ai'), true);
@@ -35,10 +32,7 @@ test('exposes /version without Cloudflare Access', async () => {
     '/version',
     {},
     {
-<<<<<<< HEAD
       ...requiredRuntimeEnv,
-=======
->>>>>>> origin/main
       API_VERSION: '2026.05.25',
       GIT_SHA: 'abc1234',
       DEPLOY_SHA: 'abc1234',
@@ -57,11 +51,7 @@ test('exposes /version without Cloudflare Access', async () => {
 });
 
 test('fails closed when protected routes are missing the Access audience', async () => {
-<<<<<<< HEAD
   const response = await app.request('/system/status', {}, { ...requiredRuntimeEnv } as any);
-=======
-  const response = await app.request('/system/status', {}, {} as any);
->>>>>>> origin/main
 
   assert.equal(response.status, 503);
 });
@@ -71,10 +61,7 @@ test('requires Cloudflare Access on protected routes', async () => {
     '/system/status',
     {},
     {
-<<<<<<< HEAD
       ...requiredRuntimeEnv,
-=======
->>>>>>> origin/main
       CLOUDFLARE_ACCESS_AUDIENCE: 'test-audience',
       CLOUDFLARE_TEAM_DOMAIN: 'goldshore.cloudflareaccess.com',
     } as any,
