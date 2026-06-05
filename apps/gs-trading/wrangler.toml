@@ -3,9 +3,7 @@ main = "src/index.ts"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 
-[env.prod]
-name = "gs-trading-prod"
-
+# KV namespace — stores agent state, OAuth tokens, and trading signals
 [[kv_namespaces]]
 binding = "TRADING_KV"
 id = "REPLACE_WITH_KV_ID"
@@ -13,12 +11,32 @@ id = "REPLACE_WITH_KV_ID"
 [vars]
 ENV = "development"
 
-# Secrets (set via wrangler secret put):
-# SCHWAB_CLIENT_ID
-# SCHWAB_CLIENT_SECRET
-# SCHWAB_REFRESH_TOKEN
-# SCHWAB_ACCOUNT_HASH
-# ROBINHOOD_TOKEN
-# ROBINHOOD_ACCOUNT_ID
-# CLOUDFLARE_ACCESS_AUDIENCE
-# CLOUDFLARE_TEAM_DOMAIN
+[env.prod]
+name = "gs-trading-prod"
+
+[env.prod.vars]
+# Must be set so the Cloudflare Access audience guard runs in production
+ENV = "production"
+
+# Required secrets (set via: wrangler secret put <NAME> --env prod)
+#
+# Cloudflare Access (JWT authentication for all /api/* routes):
+#   CLOUDFLARE_ACCESS_AUDIENCE  — CF Access Application Audience tag
+#   CLOUDFLARE_TEAM_DOMAIN      — e.g. "yourteam.cloudflareaccess.com"
+#
+# Schwab / ThinkorSwim OAuth 2.0:
+#   SCHWAB_CLIENT_ID            — OAuth app client ID
+#   SCHWAB_CLIENT_SECRET        — OAuth app client secret
+#   SCHWAB_REFRESH_TOKEN        — Initial long-lived refresh token (seed value)
+#   SCHWAB_ACCOUNT_HASH         — Encrypted account hash from Schwab /accounts
+#
+# Robinhood:
+#   ROBINHOOD_TOKEN             — Bearer token (refresh flow TBD)
+#   ROBINHOOD_ACCOUNT_ID        — Robinhood account number
+#
+# Notes:
+#   - Schwab access tokens are cached in TRADING_KV with TTL to reduce token refreshes.
+#   - Rotated Schwab refresh tokens are stored in TRADING_KV under schwab:refresh_token.
+#     The env secret SCHWAB_REFRESH_TOKEN is only used as the initial seed.
+#   - Call GET /api/trading/auth/status to verify broker auth health.
+#   - Without any broker secrets, the service runs in demo mode with mock data.
