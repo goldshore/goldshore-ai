@@ -3,8 +3,11 @@ name: Cloudflare Infra Guard
 on:
   pull_request:
     branches: [main]
-  push:
-    branches: [main]
+  # Live Cloudflare validation runs only after the platform deploy completes,
+  # so route/DNS checks never race ahead of the deployment that creates them.
+  workflow_run:
+    workflows: ["Deploy — GoldShore Platform"]
+    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -14,7 +17,7 @@ jobs:
   validate-cloudflare-secrets:
     runs-on: ubuntu-latest
     continue-on-error: true
-    if: github.event.pull_request.head.repo.full_name == github.repository || github.event_name != 'pull_request'
+    if: github.event_name == 'pull_request' && (github.event.pull_request.head.repo.full_name == github.repository)
     steps:
       - name: Verify required Cloudflare account and build token secrets
         env:
@@ -26,6 +29,7 @@ jobs:
 
   validate-worker-token-policy:
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
 
@@ -35,14 +39,14 @@ jobs:
       - name: Enforce canonical build token usage in workflow env blocks
         run: bash scripts/check-cloudflare-token-policy.sh
 
-  # Live Cloudflare route/DNS validation runs only after merge/deploy
-  # (push to main), so configuration-fix PRs are not gated on infra existing.
+  # Live Cloudflare route/DNS validation. Runs post-deploy (workflow_run) or
+  # on manual dispatch; never as a PR gate, so config PRs are not blocked on
+  # infrastructure that the PR itself will create on deploy.
   verify-cloudflare:
-    needs:
-      - validate-cloudflare-secrets
-      - validate-worker-token-policy
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' && needs.validate-cloudflare-secrets.result == 'success'
+    if: |
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
+      github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
 
