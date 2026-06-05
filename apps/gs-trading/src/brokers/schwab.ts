@@ -1,6 +1,7 @@
 import type { TradingEnv, Position, Order, Quote, AccountSummary } from '../types';
 
-const SCHWAB_BASE = 'https://api.schwabapi.com/trader/v1';
+const SCHWAB_TRADER_BASE = 'https://api.schwabapi.com/trader/v1';
+const SCHWAB_MARKETDATA_BASE = 'https://api.schwabapi.com/marketdata/v1';
 const TOKEN_URL = 'https://api.schwabapi.com/v1/oauth/token';
 
 export class SchwabClient {
@@ -35,9 +36,9 @@ export class SchwabClient {
     return this.accessToken;
   }
 
-  private async request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  private async request<T>(base: string, path: string, options: RequestInit = {}): Promise<T> {
     const token = await this.getAccessToken();
-    const res = await fetch(`${SCHWAB_BASE}${path}`, {
+    const res = await fetch(`${base}${path}`, {
       ...options,
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -52,9 +53,17 @@ export class SchwabClient {
     return res.json() as Promise<T>;
   }
 
+  private async traderRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
+    return this.request<T>(SCHWAB_TRADER_BASE, path, options);
+  }
+
+  private async marketDataRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
+    return this.request<T>(SCHWAB_MARKETDATA_BASE, path, options);
+  }
+
   async getAccount(): Promise<AccountSummary> {
     if (!this.env.SCHWAB_ACCOUNT_HASH) throw new Error('SCHWAB_ACCOUNT_HASH not configured');
-    const data = await this.request<any>(`/accounts/${this.env.SCHWAB_ACCOUNT_HASH}?fields=positions`);
+    const data = await this.traderRequest<any>(`/accounts/${this.env.SCHWAB_ACCOUNT_HASH}?fields=positions`);
     const agg = data.securitiesAccount?.currentBalances ?? {};
     const initial = data.securitiesAccount?.initialBalances ?? {};
     return {
@@ -73,7 +82,7 @@ export class SchwabClient {
 
   async getPositions(): Promise<Position[]> {
     if (!this.env.SCHWAB_ACCOUNT_HASH) throw new Error('SCHWAB_ACCOUNT_HASH not configured');
-    const data = await this.request<any>(`/accounts/${this.env.SCHWAB_ACCOUNT_HASH}?fields=positions`);
+    const data = await this.traderRequest<any>(`/accounts/${this.env.SCHWAB_ACCOUNT_HASH}?fields=positions`);
     const raw = data.securitiesAccount?.positions ?? [];
     return raw.map((p: any): Position => ({
       symbol: p.instrument?.symbol ?? '',
@@ -92,7 +101,7 @@ export class SchwabClient {
     if (!this.env.SCHWAB_ACCOUNT_HASH) throw new Error('SCHWAB_ACCOUNT_HASH not configured');
     const fromDate = new Date(Date.now() - 7 * 86400 * 1000).toISOString().split('T')[0];
     const toDate = new Date().toISOString().split('T')[0];
-    const data = await this.request<any[]>(
+    const data = await this.traderRequest<any[]>(
       `/accounts/${this.env.SCHWAB_ACCOUNT_HASH}/orders?fromEnteredTime=${fromDate}&toEnteredTime=${toDate}&maxResults=50`
     );
     return (data ?? []).map((o: any): Order => ({
@@ -113,8 +122,9 @@ export class SchwabClient {
   }
 
   async getQuotes(symbols: string[]): Promise<Quote[]> {
-    const data = await this.request<Record<string, any>>(
-      `/marketdata/v1/quotes?symbols=${symbols.join(',')}&fields=quote`
+    // Quotes live under the separate marketdata base URL, not trader/v1
+    const data = await this.marketDataRequest<Record<string, any>>(
+      `/quotes?symbols=${symbols.join(',')}&fields=quote`
     );
     return Object.entries(data).map(([symbol, d]: [string, any]): Quote => ({
       symbol,
@@ -151,10 +161,11 @@ export class SchwabClient {
       }],
     };
     if (order.orderType === 'LIMIT') body.price = order.limitPrice;
-    const res = await fetch(`${SCHWAB_BASE}/accounts/${this.env.SCHWAB_ACCOUNT_HASH}/orders`, {
+    const token = await this.getAccessToken();
+    const res = await fetch(`${SCHWAB_TRADER_BASE}/accounts/${this.env.SCHWAB_ACCOUNT_HASH}/orders`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${await this.getAccessToken()}`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(body),
@@ -167,10 +178,15 @@ export class SchwabClient {
 
   async cancelOrder(orderId: string): Promise<void> {
     if (!this.env.SCHWAB_ACCOUNT_HASH) throw new Error('SCHWAB_ACCOUNT_HASH not configured');
-    await fetch(`${SCHWAB_BASE}/accounts/${this.env.SCHWAB_ACCOUNT_HASH}/orders/${orderId}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${await this.getAccessToken()}` },
-    });
+    const token = await this.getAccessToken();
+    const res = await fetch(
+      `${SCHWAB_TRADER_BASE}/accounts/${this.env.SCHWAB_ACCOUNT_HASH}/orders/${orderId}`,
+      { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }
+    );
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Cancel order ${orderId} failed (${res.status}): ${text}`);
+    }
   }
 }
 

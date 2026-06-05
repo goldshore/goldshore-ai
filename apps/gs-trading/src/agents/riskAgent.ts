@@ -23,28 +23,30 @@ export function checkOrderRisk(
   const violations: string[] = [];
   const warnings: string[] = [];
   const totalValue = accounts.reduce((s, a) => s + a.totalValue, 0);
-  const maxDailyLoss = accounts.reduce((s, a) => s + a.dayPL, 0);
+  const totalDayPL = accounts.reduce((s, a) => s + a.dayPL, 0);
+  const isSell = order.side === 'SELL';
 
   const positionPct = totalValue > 0 ? order.estimatedValue / totalValue : 0;
-  if (positionPct > config.maxPositionSizePct) {
+  if (!isSell && positionPct > config.maxPositionSizePct) {
     violations.push(
       `Order size ${(positionPct * 100).toFixed(1)}% exceeds max position size ${(config.maxPositionSizePct * 100).toFixed(1)}%`
     );
   }
-  if (positionPct > config.maxPositionSizePct * 0.8) {
+  if (!isSell && positionPct > config.maxPositionSizePct * 0.8) {
     warnings.push(`Order size approaching max position limit (${(positionPct * 100).toFixed(1)}%)`);
   }
 
-  const dailyLossPct = totalValue > 0 ? Math.abs(maxDailyLoss) / totalValue : 0;
-  if (maxDailyLoss < 0 && dailyLossPct > config.maxDailyLossPct) {
+  const dailyLossPct = totalValue > 0 ? Math.abs(totalDayPL) / totalValue : 0;
+  if (totalDayPL < 0 && dailyLossPct > config.maxDailyLossPct) {
     violations.push(
       `Daily loss ${(dailyLossPct * 100).toFixed(2)}% exceeds max ${(config.maxDailyLossPct * 100).toFixed(2)}%`
     );
   }
 
-  const existingPos = positions.find(p => p.symbol === order.symbol);
-  if (existingPos) {
-    const combinedValue = existingPos.marketValue + order.estimatedValue;
+  if (!isSell) {
+    const existingPos = positions.find(p => p.symbol === order.symbol);
+    const existingValue = existingPos?.marketValue ?? 0;
+    const combinedValue = existingValue + order.estimatedValue;
     const combinedPct = totalValue > 0 ? combinedValue / totalValue : 0;
     if (combinedPct > config.maxConcentrationPct) {
       violations.push(

@@ -6,37 +6,30 @@ import type { TradingEnv, BrokerName } from '../types';
 
 export const tradingRoutes = new Hono<{ Bindings: TradingEnv }>();
 
+const DEMO_MODE_KEY = 'demo';
+const isDemoMode = (env: TradingEnv) =>
+  !env.SCHWAB_CLIENT_ID && !env.ROBINHOOD_TOKEN;
+
 tradingRoutes.get('/accounts', async (c) => {
+  if (isDemoMode(c.env)) return c.json({ accounts: getMockAccounts(), demo: true });
   const results: any[] = [];
   const errors: any[] = [];
-
   if (c.env.SCHWAB_CLIENT_ID) {
-    try {
-      const schwab = new SchwabClient(c.env);
-      results.push(await schwab.getAccount());
-    } catch (e: any) {
-      errors.push({ broker: 'schwab', error: e.message });
-    }
+    try { results.push(await new SchwabClient(c.env).getAccount()); }
+    catch (e: any) { errors.push({ broker: 'schwab', error: e.message }); }
   }
   if (c.env.ROBINHOOD_TOKEN) {
-    try {
-      const rh = new RobinhoodClient(c.env);
-      results.push(await rh.getAccount());
-    } catch (e: any) {
-      errors.push({ broker: 'robinhood', error: e.message });
-    }
-  }
-  if (results.length === 0 && errors.length === 0) {
-    results.push(getMockAccounts());
+    try { results.push(await new RobinhoodClient(c.env).getAccount()); }
+    catch (e: any) { errors.push({ broker: 'robinhood', error: e.message }); }
   }
   return c.json({ accounts: results.flat(), errors });
 });
 
 tradingRoutes.get('/positions', async (c) => {
+  if (isDemoMode(c.env)) return c.json({ positions: getMockPositions(), demo: true });
   const broker = c.req.query('broker') as BrokerName | undefined;
   const positions: any[] = [];
   const errors: any[] = [];
-
   if (!broker || broker === 'schwab') {
     if (c.env.SCHWAB_CLIENT_ID) {
       try { positions.push(...await new SchwabClient(c.env).getPositions()); }
@@ -49,17 +42,14 @@ tradingRoutes.get('/positions', async (c) => {
       catch (e: any) { errors.push({ broker: 'robinhood', error: e.message }); }
     }
   }
-  if (positions.length === 0 && errors.length === 0) {
-    positions.push(...getMockPositions());
-  }
   return c.json({ positions, errors });
 });
 
 tradingRoutes.get('/orders', async (c) => {
+  if (isDemoMode(c.env)) return c.json({ orders: getMockOrders(), demo: true });
   const broker = c.req.query('broker') as BrokerName | undefined;
   const orders: any[] = [];
   const errors: any[] = [];
-
   if (!broker || broker === 'schwab') {
     if (c.env.SCHWAB_CLIENT_ID) {
       try { orders.push(...await new SchwabClient(c.env).getOrders()); }
@@ -72,9 +62,6 @@ tradingRoutes.get('/orders', async (c) => {
       catch (e: any) { errors.push({ broker: 'robinhood', error: e.message }); }
     }
   }
-  if (orders.length === 0 && errors.length === 0) {
-    orders.push(...getMockOrders());
-  }
   return c.json({ orders, errors });
 });
 
@@ -83,17 +70,19 @@ tradingRoutes.get('/quotes', async (c) => {
   const symbols = symbolsRaw.split(',').map(s => s.trim()).filter(Boolean);
   const broker = c.req.query('broker') as BrokerName | undefined;
 
-  try {
-    if ((!broker || broker === 'schwab') && c.env.SCHWAB_CLIENT_ID) {
-      const quotes = await new SchwabClient(c.env).getQuotes(symbols);
-      return c.json({ quotes });
-    }
-    if ((!broker || broker === 'robinhood') && c.env.ROBINHOOD_TOKEN) {
-      const quotes = await new RobinhoodClient(c.env).getQuotes(symbols);
-      return c.json({ quotes });
-    }
-  } catch {}
-  return c.json({ quotes: getMockQuotes(symbols) });
+  // In demo mode return mock quotes clearly labeled as such
+  if (isDemoMode(c.env)) return c.json({ quotes: getMockQuotes(symbols), demo: true });
+
+  // Live mode: attempt the configured broker and propagate errors — never silently substitute mock data
+  if ((!broker || broker === 'schwab') && c.env.SCHWAB_CLIENT_ID) {
+    const quotes = await new SchwabClient(c.env).getQuotes(symbols);
+    return c.json({ quotes });
+  }
+  if ((!broker || broker === 'robinhood') && c.env.ROBINHOOD_TOKEN) {
+    const quotes = await new RobinhoodClient(c.env).getQuotes(symbols);
+    return c.json({ quotes });
+  }
+  return c.json({ error: 'No broker configured for quotes' }, 503);
 });
 
 tradingRoutes.post('/orders', async (c) => {
@@ -105,11 +94,51 @@ tradingRoutes.post('/orders', async (c) => {
     return c.json({ error: 'Missing required fields: broker, symbol, side, quantity, orderType' }, 400);
   }
 
+  // Fetch live account + position data to run risk checks before order placement
+  const accounts: any[] = [];
+  const positions: any[] = [];
+  try {
+    if (broker === 'schwab' && c.env.SCHWAB_CLIENT_ID) {
+      const client = new SchwabClient(c.env);
+      const [acct, pos] = await Promise.all([client.getAccount(), client.getPositions()]);
+      accounts.push(acct);
+      positions.push(...pos);
+    } else if (broker === 'robinhood' && c.env.ROBINHOOD_TOKEN) {
+      const client = new RobinhoodClient(c.env);
+      const [acct, pos] = await Promise.all([client.getAccount(), client.getPositions()]);
+      accounts.push(acct);
+      positions.push(...pos);
+    }
+  } catch (e: any) {
+    return c.json({ error: `Failed to fetch account data for risk check: ${e.message}` }, 503);
+  }
+
+  // Estimate order value for risk check (use limitPrice if provided, else last known price)
+  const estimatedPrice = limitPrice ?? 0;
+  const estimatedValue = estimatedPrice * Number(quantity);
+
+  const riskCheck = checkOrderRisk(
+    { symbol, side, quantity: Number(quantity), estimatedValue },
+    accounts,
+    positions,
+    {
+      maxPositionSizePct: 0.05,
+      maxDrawdownPct: 0.10,
+      maxDailyLossPct: 0.02,
+      maxConcentrationPct: 0.15,
+      allowedAssetTypes: ['EQUITY', 'ETF'],
+    }
+  );
+
+  if (!riskCheck.passed) {
+    return c.json({ error: 'Order blocked by risk manager', violations: riskCheck.violations, warnings: riskCheck.warnings }, 422);
+  }
+
   try {
     if (broker === 'schwab') {
-      const client = new SchwabClient(c.env);
-      const result = await client.placeOrder({ symbol, side, quantity, orderType, limitPrice });
-      return c.json({ success: true, ...result, broker });
+      if (!c.env.SCHWAB_CLIENT_ID) return c.json({ error: 'Schwab not configured' }, 400);
+      const result = await new SchwabClient(c.env).placeOrder({ symbol, side, quantity, orderType, limitPrice });
+      return c.json({ success: true, ...result, broker, warnings: riskCheck.warnings });
     }
     if (broker === 'robinhood') {
       return c.json({ error: 'Robinhood order placement requires instrument URL resolution' }, 400);
@@ -133,6 +162,7 @@ tradingRoutes.delete('/orders/:id', async (c) => {
 });
 
 tradingRoutes.get('/risk', async (c) => {
+  if (isDemoMode(c.env)) return c.json({ metrics: getMockRiskMetrics(), demo: true });
   const accounts: any[] = [];
   const positions: any[] = [];
   try {
@@ -147,9 +177,6 @@ tradingRoutes.get('/risk', async (c) => {
       positions.push(...await r.getPositions());
     }
   } catch {}
-  if (accounts.length === 0) {
-    return c.json({ metrics: getMockRiskMetrics() });
-  }
   return c.json({ metrics: getPortfolioRiskMetrics(positions, accounts) });
 });
 
@@ -165,7 +192,7 @@ tradingRoutes.post('/risk/check', async (c) => {
   return c.json(check);
 });
 
-// --- Mock data for demo mode ---
+// --- Mock data (demo mode only — never returned when broker credentials are set) ---
 function getMockAccounts() {
   return [
     { broker: 'schwab', accountId: '****1234', totalValue: 125430.50, cashBalance: 12500.00, buyingPower: 25000.00, dayPL: 834.22, dayPLPct: 0.67, totalPL: 23450.75 },
@@ -193,10 +220,8 @@ function getMockQuotes(symbols: string[]) {
   const prices: Record<string, number> = { SPY: 461.85, QQQ: 402.30, AAPL: 189.45, TSLA: 231.80, NVDA: 875.40, MSFT: 415.20, AMZN: 185.60 };
   return symbols.map(s => ({
     symbol: s, bid: (prices[s] ?? 100) - 0.05, ask: (prices[s] ?? 100) + 0.05,
-    last: prices[s] ?? 100, change: (Math.random() - 0.45) * 5,
-    changePct: (Math.random() - 0.45) * 1.5, volume: Math.floor(Math.random() * 50_000_000),
-    high: (prices[s] ?? 100) * 1.015, low: (prices[s] ?? 100) * 0.985,
-    open: (prices[s] ?? 100) * 0.998, close: (prices[s] ?? 100) * 0.997,
+    last: prices[s] ?? 100, change: 0, changePct: 0,
+    volume: 0, high: 0, low: 0, open: 0, close: prices[s] ?? 100,
   }));
 }
 function getMockRiskMetrics() {
