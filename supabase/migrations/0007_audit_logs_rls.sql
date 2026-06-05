@@ -33,7 +33,7 @@ for insert
 with check (public.is_goldshore_admin());
 
 create or replace view public.public_domain_health
-with (security_invoker = true)
+with (security_barrier = true)
 as
 select
   d.hostname,
