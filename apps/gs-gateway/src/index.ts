@@ -181,7 +181,6 @@ app.use("*", async (c, next) => {
     return c.json({ error: "SECURITY_CHECK_ERROR", message: "security check service unavailable", policy: "fail-closed" }, 503);
   }
 
-<<<<<<< HEAD
   return next();
 });
 
@@ -221,10 +220,8 @@ app.get("/health", (c) => c.json({ status: "ok", service: "gs-gateway" }));
 app.get("/", (c) => c.html(STATUS_PAGE_HTML));
 
 app.get("/templates", (c) =>
-=======
 app.get('/health', (c) => c.json({ status: 'ok', service: 'gs-gateway' }));
 app.get('/templates', (c) =>
->>>>>>> origin/main
   c.json({
     service: "gs-gateway",
     description: "Gateway template routes for routing, auth, and AI dispatch.",
@@ -244,7 +241,6 @@ app.get('/templates', (c) =>
 app.get("/user/login", (c) => c.json({ message: "Gateway Login Placeholder" }));
 app.post("/v1/chat", (c) => c.json({ message: "Gateway Chat Placeholder" }));
 
-<<<<<<< HEAD
 const inferApiOrigin = (requestUrl: string): string | undefined => {
   const url = new URL(requestUrl);
   const inferredHostname = url.hostname.replace(/^gs-gateway(?=\.|$)/, "gs-api");
@@ -288,7 +284,6 @@ app.all("/api/*", async (c) => {
   }
 });
 
-=======
 // ── Integration controls ───────────────────────────────────
 // Enforces X-Data-Classification, X-Secrets-Access-Policy, and X-Audit-Trace-Id
 // on /integrations/* and /market-streams/* paths.
@@ -387,7 +382,6 @@ app.all("/api/*", async (c) => {
   }
 });
 
->>>>>>> origin/main
 app.all("*", (c) => c.json({ error: "Not found" }, 404));
 
 export default app;
