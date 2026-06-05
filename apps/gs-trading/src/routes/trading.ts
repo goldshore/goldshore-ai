@@ -84,7 +84,7 @@ tradingRoutes.post('/orders', async (c) => {
   let body: any;
   try { body = await c.req.json(); } catch { return c.json({ error: 'Invalid JSON' }, 400); }
 
-  const { broker, symbol, side, orderType, limitPrice, estimatedPrice: bodyEstimatedPrice } = body;
+  const { broker, symbol, side, orderType, limitPrice } = body;
   const quantity = Number(body.quantity);
 
   if (!broker || !symbol || !side || !quantity || !orderType) {
@@ -102,34 +102,51 @@ tradingRoutes.post('/orders', async (c) => {
   if (orderType === 'LIMIT' && (!limitPrice || !Number.isFinite(Number(limitPrice)) || Number(limitPrice) <= 0)) {
     return c.json({ error: 'limitPrice must be a positive number for LIMIT orders' }, 400);
   }
-  // MARKET orders require an estimated price to perform meaningful risk checks
-  if (orderType !== 'LIMIT') {
-    const ep = Number(bodyEstimatedPrice);
-    if (!bodyEstimatedPrice || !Number.isFinite(ep) || ep <= 0) {
-      return c.json({ error: 'estimatedPrice is required for MARKET orders to perform risk checks (provide the current market price)' }, 400);
-    }
-  }
 
-  // Fetch live account + position data for risk checks before placement
+  // Fetch live account, position, and quote data for risk checks
   const accounts: any[] = [];
   const positions: any[] = [];
+  let estimatedPrice = orderType === 'LIMIT' ? Number(limitPrice) : 0;
+
   if (!isDemoMode(c.env)) {
     try {
+      const needsQuote = orderType === 'MARKET';
       if (broker === 'schwab' && c.env.SCHWAB_CLIENT_ID) {
         const client = new SchwabClient(c.env);
-        const [acct, pos] = await Promise.all([client.getAccount(), client.getPositions()]);
+        const [acct, pos, quoteArr] = await Promise.all([
+          client.getAccount(),
+          client.getPositions(),
+          needsQuote ? client.getQuotes([symbol]) : Promise.resolve(null),
+        ]);
         accounts.push(acct); positions.push(...pos);
+        if (needsQuote) {
+          const q = (quoteArr as any)?.[0];
+          estimatedPrice = q?.last ?? q?.ask ?? 0;
+          if (!estimatedPrice) return c.json({ error: `Could not determine market price for ${symbol}` }, 503);
+        }
       } else if (broker === 'robinhood' && c.env.ROBINHOOD_TOKEN) {
         const client = new RobinhoodClient(c.env);
-        const [acct, pos] = await Promise.all([client.getAccount(), client.getPositions()]);
+        const [acct, pos, quoteArr] = await Promise.all([
+          client.getAccount(),
+          client.getPositions(),
+          needsQuote ? client.getQuotes([symbol]) : Promise.resolve(null),
+        ]);
         accounts.push(acct); positions.push(...pos);
+        if (needsQuote) {
+          const q = (quoteArr as any)?.[0];
+          estimatedPrice = q?.last ?? q?.ask ?? 0;
+          if (!estimatedPrice) return c.json({ error: `Could not determine market price for ${symbol}` }, 503);
+        }
       }
     } catch (e: any) {
-      return c.json({ error: `Failed to fetch account data for risk check: ${e.message}` }, 503);
+      return c.json({ error: `Failed to fetch data for risk check: ${e.message}` }, 503);
     }
+  } else if (orderType === 'MARKET') {
+    // Demo mode: use mock prices so risk check has a meaningful value
+    const mockPrices: Record<string, number> = { SPY: 461.85, QQQ: 402.30, AAPL: 189.45, TSLA: 231.80, NVDA: 875.40, MSFT: 415.20, AMZN: 185.60 };
+    estimatedPrice = mockPrices[symbol] ?? 100;
   }
 
-  const estimatedPrice = orderType === 'LIMIT' ? Number(limitPrice) : Number(bodyEstimatedPrice);
   const riskCheck = checkOrderRisk(
     { symbol, side, quantity, estimatedValue: estimatedPrice * quantity },
     accounts, positions,
@@ -171,24 +188,25 @@ tradingRoutes.delete('/orders/:id', async (c) => {
 
 tradingRoutes.get('/risk', async (c) => {
   if (isDemoMode(c.env)) return c.json({ metrics: getMockRiskMetrics(), demo: true });
+  // Collect data from each broker independently so one outage does not zero out the other
   const accounts: any[] = [];
   const positions: any[] = [];
   const errors: any[] = [];
   if (c.env.SCHWAB_CLIENT_ID) {
     try {
       const s = new SchwabClient(c.env);
-      accounts.push(await s.getAccount());
-      positions.push(...await s.getPositions());
+      const [acct, pos] = await Promise.all([s.getAccount(), s.getPositions()]);
+      accounts.push(acct); positions.push(...pos);
     } catch (e: any) { errors.push({ broker: 'schwab', error: e.message }); }
   }
   if (c.env.ROBINHOOD_TOKEN) {
     try {
       const r = new RobinhoodClient(c.env);
-      accounts.push(await r.getAccount());
-      positions.push(...await r.getPositions());
+      const [acct, pos] = await Promise.all([r.getAccount(), r.getPositions()]);
+      accounts.push(acct); positions.push(...pos);
     } catch (e: any) { errors.push({ broker: 'robinhood', error: e.message }); }
   }
-  return c.json({ metrics: getPortfolioRiskMetrics(positions, accounts), ...(errors.length ? { errors } : {}) });
+  return c.json({ metrics: getPortfolioRiskMetrics(positions, accounts), errors });
 });
 
 tradingRoutes.post('/risk/check', async (c) => {

@@ -26,23 +26,23 @@ export function checkOrderRisk(
   const totalDayPL = accounts.reduce((s, a) => s + a.dayPL, 0);
   const isSell = order.side === 'SELL';
 
-  // For sells: only exempt the portion that closes an existing long position.
-  // Any quantity sold beyond current holdings creates short exposure subject to risk limits.
+  // For sells: only the portion that opens/enlarges a short (beyond the existing long)
+  // must satisfy position-size and concentration limits. Closing an existing long is free.
   const existingPos = positions.find(p => p.symbol === order.symbol);
-  const heldQty = existingPos?.quantity ?? 0;
+  const existingLongQty = existingPos?.quantity ?? 0;
   const orderQty = order.quantity ?? 0;
-  const pricePerUnit = orderQty > 0 ? order.estimatedValue / orderQty : 0;
-  const shortExcessQty = isSell ? Math.max(0, orderQty - heldQty) : 0;
-  const riskableValue = isSell ? shortExcessQty * pricePerUnit : order.estimatedValue;
+  const riskableQty = isSell ? Math.max(0, orderQty - existingLongQty) : orderQty;
+  const riskableFraction = orderQty > 0 ? riskableQty / orderQty : 0;
+  const riskableValue = order.estimatedValue * riskableFraction;
 
   const positionPct = totalValue > 0 ? riskableValue / totalValue : 0;
   if (positionPct > config.maxPositionSizePct) {
     violations.push(
-      `${isSell ? 'Short exposure' : 'Order size'} ${(positionPct * 100).toFixed(1)}% exceeds max position size ${(config.maxPositionSizePct * 100).toFixed(1)}%`
+      `Order size ${(positionPct * 100).toFixed(1)}% exceeds max position size ${(config.maxPositionSizePct * 100).toFixed(1)}%`
     );
   }
   if (positionPct > config.maxPositionSizePct * 0.8) {
-    warnings.push(`${isSell ? 'Short exposure' : 'Order size'} approaching max position limit (${(positionPct * 100).toFixed(1)}%)`);
+    warnings.push(`Order size approaching max position limit (${(positionPct * 100).toFixed(1)}%)`);
   }
 
   const dailyLossPct = totalValue > 0 ? Math.abs(totalDayPL) / totalValue : 0;
@@ -52,21 +52,16 @@ export function checkOrderRisk(
     );
   }
 
-  if (!isSell) {
+  if (riskableQty > 0) {
     const existingValue = existingPos?.marketValue ?? 0;
-    const combinedValue = existingValue + order.estimatedValue;
+    // For buys, add to existing; for short-opening sells, treat as new negative exposure
+    const combinedValue = isSell
+      ? Math.max(0, existingValue - order.estimatedValue) + riskableValue
+      : existingValue + riskableValue;
     const combinedPct = totalValue > 0 ? combinedValue / totalValue : 0;
     if (combinedPct > config.maxConcentrationPct) {
       violations.push(
         `Combined concentration ${(combinedPct * 100).toFixed(1)}% exceeds max ${(config.maxConcentrationPct * 100).toFixed(1)}%`
-      );
-    }
-  } else if (shortExcessQty > 0) {
-    // Short exposure concentration check
-    const shortConcentrationPct = totalValue > 0 ? riskableValue / totalValue : 0;
-    if (shortConcentrationPct > config.maxConcentrationPct) {
-      violations.push(
-        `Short concentration ${(shortConcentrationPct * 100).toFixed(1)}% exceeds max ${(config.maxConcentrationPct * 100).toFixed(1)}%`
       );
     }
   }
