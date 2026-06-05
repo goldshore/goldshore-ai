@@ -3,8 +3,8 @@ name: Cloudflare Infra Guard
 on:
   pull_request:
     branches: [main]
-  # Live Cloudflare validation runs only after the platform deploy completes,
-  # so route/DNS checks never race ahead of the deployment that creates them.
+  # Runs after platform deploy completes, pinned to the deployed commit SHA
+  # to avoid validating requirements that differ from what was actually deployed.
   workflow_run:
     workflows: ["Deploy — GoldShore Platform"]
     types: [completed]
@@ -40,8 +40,8 @@ jobs:
         run: bash scripts/check-cloudflare-token-policy.sh
 
   # Live Cloudflare route/DNS validation. Runs post-deploy (workflow_run) or
-  # on manual dispatch; never as a PR gate, so config PRs are not blocked on
-  # infrastructure that the PR itself will create on deploy.
+  # on manual dispatch. Checks out the exact SHA that was deployed to avoid
+  # validating requirements from a different commit (e.g. a concurrent push).
   verify-cloudflare:
     runs-on: ubuntu-latest
     if: |
@@ -49,6 +49,8 @@ jobs:
       github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Install ripgrep
         run: sudo apt-get update && sudo apt-get install -y ripgrep
