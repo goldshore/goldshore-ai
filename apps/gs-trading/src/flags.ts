@@ -1,38 +1,23 @@
 import type { TradingEnv } from './types';
 
-const FLAG_PREFIX = 'flag:';
+export const FLAGS = {
+  MCP_TRADING: 'flag:mcp-trading',
+} as const;
 
 /**
- * Read a feature flag from TRADING_KV.
- * Returns true if the flag value is exactly "true".
- * Falls back to `defaultValue` if the key is absent or KV is unavailable.
+ * Returns whether a feature flag is enabled.
+ * Reads from TRADING_KV; falls back to `defaultValue` if the key is absent.
  */
 export async function isEnabled(
   env: TradingEnv,
-  flagKey: string,
+  flag: string,
   defaultValue = false,
 ): Promise<boolean> {
-  if (!env.TRADING_KV) return defaultValue;
-  try {
-    const val = await env.TRADING_KV.get(`${FLAG_PREFIX}${flagKey}`);
-    if (val === null) return defaultValue;
-    return val === 'true';
-  } catch {
-    return defaultValue;
-  }
+  const val = await env.TRADING_KV.get(flag);
+  if (val === null) return defaultValue;
+  return val === 'true';
 }
 
-/**
- * Write a feature flag value to TRADING_KV.
- */
-export async function setFlag(
-  env: TradingEnv,
-  flagKey: string,
-  enabled: boolean,
-): Promise<void> {
-  await env.TRADING_KV.put(`${FLAG_PREFIX}${flagKey}`, enabled ? 'true' : 'false');
+export async function setFlag(env: TradingEnv, flag: string, enabled: boolean): Promise<void> {
+  await env.TRADING_KV.put(flag, String(enabled));
 }
-
-export const FLAGS = {
-  MCP_TRADING: 'mcp-trading',
-} as const;
