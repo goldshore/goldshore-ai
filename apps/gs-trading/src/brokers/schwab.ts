@@ -12,9 +12,12 @@ export class SchwabClient {
 
   private async getAccessToken(): Promise<string> {
     if (this.accessToken && Date.now() < this.tokenExpiry) return this.accessToken;
-    if (!this.env.SCHWAB_CLIENT_ID || !this.env.SCHWAB_CLIENT_SECRET || !this.env.SCHWAB_REFRESH_TOKEN) {
-      throw new Error('Schwab credentials not configured');
+
+    // CLIENT_ID and CLIENT_SECRET are always required
+    if (!this.env.SCHWAB_CLIENT_ID || !this.env.SCHWAB_CLIENT_SECRET) {
+      throw new Error('Schwab credentials not configured (missing SCHWAB_CLIENT_ID or SCHWAB_CLIENT_SECRET)');
     }
+
     // Try KV-cached access token first
     if (this.env.TRADING_KV) {
       const cached = await this.env.TRADING_KV.get('schwab:access_token');
@@ -25,12 +28,15 @@ export class SchwabClient {
         return cached;
       }
     }
-    // Load the most recent refresh token: KV-stored rotated token takes precedence
-    // over the env secret (which is only the initial seed value)
+
+    // KV-stored rotated token takes precedence over the env secret seed
     const storedRefreshToken = this.env.TRADING_KV
       ? await this.env.TRADING_KV.get('schwab:refresh_token')
       : null;
     const refreshToken = storedRefreshToken ?? this.env.SCHWAB_REFRESH_TOKEN;
+    if (!refreshToken) {
+      throw new Error('No Schwab refresh token available — complete OAuth at /oauth/schwab/authorize');
+    }
 
     const creds = btoa(`${this.env.SCHWAB_CLIENT_ID}:${this.env.SCHWAB_CLIENT_SECRET}`);
     const res = await fetch(TOKEN_URL, {
@@ -42,12 +48,10 @@ export class SchwabClient {
     const data = await res.json() as { access_token: string; expires_in: number; refresh_token?: string };
     this.accessToken = data.access_token;
     this.tokenExpiry = Date.now() + (data.expires_in - 60) * 1000;
-    // Cache in KV so all Worker instances share the token
     if (this.env.TRADING_KV) {
       await Promise.all([
         this.env.TRADING_KV.put('schwab:access_token', data.access_token, { expirationTtl: data.expires_in - 60 }),
         this.env.TRADING_KV.put('schwab:token_expiry', String(this.tokenExpiry)),
-        // Always persist the returned refresh token — Schwab rotates it on every use
         ...(data.refresh_token ? [this.env.TRADING_KV.put('schwab:refresh_token', data.refresh_token)] : []),
       ]);
     }
@@ -94,7 +98,6 @@ export class SchwabClient {
       const shortQty = p.shortQuantity ?? 0;
       const netQty = longQty - shortQty;
       const marketValue = p.marketValue ?? 0;
-      // Compute current price from net quantity; guard divide-by-zero
       const currentPrice = netQty !== 0 ? marketValue / netQty : (p.averagePrice ?? 0);
       return {
         symbol: p.instrument?.symbol ?? '',
@@ -135,7 +138,6 @@ export class SchwabClient {
   }
 
   async getQuotes(symbols: string[]): Promise<Quote[]> {
-    // Uses the separate marketdata base URL — NOT the trader/v1 base
     const data = await this.marketDataRequest<Record<string, any>>(`/quotes?symbols=${symbols.join(',')}&fields=quote`);
     return Object.entries(data).map(([symbol, d]: [string, any]): Quote => ({
       symbol,

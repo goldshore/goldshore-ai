@@ -4,7 +4,9 @@ import { secureHeaders } from 'hono/secure-headers';
 import { verifyAccessWithClaims } from '@goldshore/auth';
 import { tradingRoutes } from './routes/trading';
 import { agentRoutes } from './routes/agents';
+import { oauthRoutes } from './routes/oauth';
 import { getDashboardHTML } from './routes/dashboard';
+import { isEnabled, setFlag, FLAGS } from './flags';
 import type { TradingEnv } from './types';
 
 const ALLOWED_ORIGINS = [
@@ -29,10 +31,23 @@ app.use('*', cors({
   credentials: true,
 }));
 
-// Cloudflare Access JWT guard — dashboard and health are public, all API routes are protected.
+// Cloudflare Access JWT guard.
+// Public paths: dashboard, health, flag read, and the Schwab callback only
+// (Schwab redirects there after authorization — Access must not block it).
+// /oauth/schwab/authorize is intentionally NOT public: only an authenticated
+// operator should be able to initiate a flow that overwrites the service-wide tokens.
 app.use('*', async (c, next) => {
-  const publicPaths = ['/', '/health'];
-  if (publicPaths.includes(c.req.path) || c.req.method === 'OPTIONS') return next();
+  const path = c.req.path;
+  const isPublic =
+    path === '/' ||
+    path === '/health' ||
+    path === '/api/flags' ||
+    path.startsWith('/oauth/schwab/callback') ||
+    path.startsWith('/oauth/status') ||
+    c.req.method === 'OPTIONS';
+
+  if (isPublic) return next();
+
   if (c.env.ENV === 'production' && !c.env.CLOUDFLARE_ACCESS_AUDIENCE) {
     console.error('SECURITY ERROR: CLOUDFLARE_ACCESS_AUDIENCE must be set for gs-trading in production');
     return c.json({ error: 'Service auth misconfigured' }, 500);
@@ -42,16 +57,53 @@ app.use('*', async (c, next) => {
   return next();
 });
 
+// mcp-trading feature flag guard — blocks trading + agent routes when disabled.
+// Defaults to enabled in demo/dev mode so local development works without KV.
+app.use('/api/trading/*', async (c, next) => {
+  const isDev = !c.env.SCHWAB_CLIENT_ID && !c.env.ROBINHOOD_TOKEN;
+  const defaultOn = isDev || c.env.ENV !== 'production';
+  const enabled = await isEnabled(c.env, FLAGS.MCP_TRADING, defaultOn);
+  if (!enabled) return c.json({ error: 'mcp-trading feature is currently disabled', flag: FLAGS.MCP_TRADING }, 503);
+  return next();
+});
+
+app.use('/api/agents/*', async (c, next) => {
+  const isDev = !c.env.SCHWAB_CLIENT_ID && !c.env.ROBINHOOD_TOKEN;
+  const defaultOn = isDev || c.env.ENV !== 'production';
+  const enabled = await isEnabled(c.env, FLAGS.MCP_TRADING, defaultOn);
+  if (!enabled) return c.json({ error: 'mcp-trading feature is currently disabled', flag: FLAGS.MCP_TRADING }, 503);
+  return next();
+});
+
 app.get('/', (c) => c.html(getDashboardHTML()));
 app.get('/health', (c) => c.json({ status: 'ok', service: 'gs-trading', version: '1.0.0' }));
 
+// Feature flag inspection (read is public) and management (write requires Access).
+// Uses the same production default as the trading/agent guards so status is consistent.
+app.get('/api/flags', async (c) => {
+  const isDev = !c.env.SCHWAB_CLIENT_ID && !c.env.ROBINHOOD_TOKEN;
+  const defaultOn = isDev || c.env.ENV !== 'production';
+  const enabled = await isEnabled(c.env, FLAGS.MCP_TRADING, defaultOn);
+  return c.json({ flags: { [FLAGS.MCP_TRADING]: enabled } });
+});
+
+app.post('/api/flags/:key', async (c) => {
+  const key = c.req.param('key');
+  if (key !== FLAGS.MCP_TRADING) return c.json({ error: 'Unknown flag' }, 400);
+  let body: any;
+  try { body = await c.req.json(); } catch { return c.json({ error: 'Invalid JSON' }, 400); }
+  if (typeof body.enabled !== 'boolean') return c.json({ error: 'body.enabled (boolean) is required' }, 400);
+  await setFlag(c.env, key, body.enabled);
+  return c.json({ flag: key, enabled: body.enabled });
+});
+
+app.route('/oauth', oauthRoutes);
 app.route('/api/trading', tradingRoutes);
 app.route('/api/agents', agentRoutes);
 
 app.notFound((c) => c.json({ error: 'Not found', path: c.req.path }, 404));
 app.onError((err, c) => {
   console.error('gs-trading error:', err);
-  // Return a generic message — broker errors can include upstream response bodies
   return c.json({ error: 'Internal server error' }, 500);
 });
 
