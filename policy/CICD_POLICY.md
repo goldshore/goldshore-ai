@@ -42,7 +42,7 @@ steps:
     run: wrangler deploy --env prod
 ```
 
-### ❌ PROHIBITED: Fallback expressions
+### ❌ PROHIBITED: Fallback expressions (except explicit migration windows)
 
 ```yaml
 # WRONG — do not do this
