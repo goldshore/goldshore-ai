@@ -1,14 +1,28 @@
-steps:
-  - name: Install pnpm
-    uses: pnpm/action-setup@v6.0.0
-    with:
-      run_install: false
+name: Copilot Setup Steps
 
-  - name: Setup Node.js
-    uses: actions/setup-node@v6
-    with:
-      node-version: 22
-      cache: 'pnpm'
+on: workflow_dispatch
 
-  - name: Install dependencies
-    run: pnpm install
+permissions:
+  contents: read
+
+jobs:
+  copilot-setup-steps:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
