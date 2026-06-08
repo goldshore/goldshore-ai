@@ -1,4 +1,0 @@
-{
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "//": "Deploy-time Cloudflare values must be provided by the deployment environment; do not define them here as Worker runtime vars."
-}
