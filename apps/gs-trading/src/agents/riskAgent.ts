@@ -26,6 +26,28 @@ export function checkOrderRisk(
   const maxDailyLoss = accounts.reduce((s, a) => s + a.dayPL, 0);
 
   const positionPct = totalValue > 0 ? order.estimatedValue / totalValue : 0;
+  const totalDayPL = accounts.reduce((s, a) => s + a.dayPL, 0);
+  const isSell = order.side === 'SELL';
+
+  // Separate existing long and short quantities to handle both directions correctly.
+  // existingLong > 0: currently long; existingShort < 0: currently short.
+  const existingPos = positions.find(p => p.symbol === order.symbol);
+  const existingQty = existingPos?.quantity ?? 0;
+  const existingLong = Math.max(0, existingQty);
+  const existingShort = Math.min(0, existingQty); // negative or 0
+  const orderQty = order.quantity ?? 0;
+
+  // Riskable quantity:
+  // SELL: closing existing longs is free; only the short-opening portion is risk-checked.
+  // BUY:  covering existing shorts is free; only the portion beyond zero is risk-checked.
+  const riskableQty = isSell
+    ? Math.max(0, orderQty - existingLong)      // amount that opens/enlarges a short
+    : Math.max(0, orderQty + existingShort);    // amount that opens/enlarges a long (existingShort is <=0)
+
+  const riskableFraction = orderQty > 0 ? riskableQty / orderQty : 0;
+  const riskableValue = order.estimatedValue * riskableFraction;
+
+  const positionPct = totalValue > 0 ? riskableValue / totalValue : 0;
   if (positionPct > config.maxPositionSizePct) {
     violations.push(
       `Order size ${(positionPct * 100).toFixed(1)}% exceeds max position size ${(config.maxPositionSizePct * 100).toFixed(1)}%`
@@ -35,8 +57,8 @@ export function checkOrderRisk(
     warnings.push(`Order size approaching max position limit (${(positionPct * 100).toFixed(1)}%)`);
   }
 
-  const dailyLossPct = totalValue > 0 ? Math.abs(maxDailyLoss) / totalValue : 0;
-  if (maxDailyLoss < 0 && dailyLossPct > config.maxDailyLossPct) {
+  const dailyLossPct = totalValue > 0 ? Math.abs(totalDayPL) / totalValue : 0;
+  if (totalDayPL < 0 && dailyLossPct > config.maxDailyLossPct) {
     violations.push(
       `Daily loss ${(dailyLossPct * 100).toFixed(2)}% exceeds max ${(config.maxDailyLossPct * 100).toFixed(2)}%`
     );
@@ -45,6 +67,10 @@ export function checkOrderRisk(
   const existingPos = positions.find(p => p.symbol === order.symbol);
   if (existingPos) {
     const combinedValue = existingPos.marketValue + order.estimatedValue;
+  if (riskableQty > 0) {
+    // Use absolute market value to avoid sign errors with short positions
+    const existingAbsValue = Math.abs(existingPos?.marketValue ?? 0);
+    const combinedValue = existingAbsValue + riskableValue;
     const combinedPct = totalValue > 0 ? combinedValue / totalValue : 0;
     if (combinedPct > config.maxConcentrationPct) {
       violations.push(
