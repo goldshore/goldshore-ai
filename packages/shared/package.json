@@ -1,0 +1,27 @@
+{
+  "name": "@goldshore/shared",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./domain-registry": {
+      "types": "./src/domain-registry.ts",
+      "import": "./src/domain-registry.ts",
+      "default": "./src/domain-registry.ts"
+    },
+    "./cors": {
+      "types": "./src/cors.ts",
+      "import": "./src/cors.ts",
+      "default": "./src/cors.ts"
+    }
+  },
+  "dependencies": {
+    "hono": "^4.12.16"
+  }
+}

@@ -30,32 +30,23 @@ import { STATUS_PAGE_HTML } from "./templates/status";
 import { authMiddleware } from "./middleware/auth";
 import { integrationControls } from "./middleware/integration";
 
-// GatewayEnv covers all bindings declared in wrangler.toml (prod/preview/dev).
 interface GatewayEnv {
   [key: string]: any;
-  // Auth
   CLOUDFLARE_ACCESS_AUDIENCE?: string;
   CLOUDFLARE_TEAM_DOMAIN?: string;
-  // Service bindings
   API_SERVICE?: Fetcher;
   AGENT?: Fetcher;
   SECURITY_CHECK?: Fetcher;
   SIGNALS?: Fetcher;
-  // KV
   AI_CACHE?: KVNamespace;
   GS_CONFIG?: KVNamespace;
   GATEWAY_KV?: KVNamespace;
-  // D1
   PLATFORM_DB?: D1Database;
-  // R2
   ASSETS?: R2Bucket;
-  // Queue producers
   MAIL_QUEUE?: Queue;
   CHECKOUT_EVENTS_QUEUE?: Queue;
   CONTACT_EVENTS_QUEUE?: Queue;
-  // Stripe (secret — never logged, never returned in responses)
   STRIPE_SECRET_KEY?: string;
-  // Config
   API_ORIGIN?: string;
   ACCESS_CLIENT_SECRET?: string;
   ENV?: string;
@@ -73,11 +64,7 @@ const getCorrelationId = (request: Request): string =>
 const withCorrelationId = (response: Response, correlationId: string): Response => {
   const headers = new Headers(response.headers);
   headers.set(TRACE_HEADER, correlationId);
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers,
-  });
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
 };
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
@@ -91,116 +78,72 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): 
 }
 
 function isNonCriticalSignalsPath(pathname: string): boolean {
-  return NON_CRITICAL_SIGNAL_PATHS.some(
-    (base) => pathname === base || pathname.startsWith(`${base}/`),
-  );
+  return NON_CRITICAL_SIGNAL_PATHS.some((base) => pathname === base || pathname.startsWith(`${base}/`));
 }
 
 function isAgentHostnameRequest(request: Request): boolean {
-  try {
-    return new URL(request.url).hostname === AGENT_HOSTNAME;
-  } catch {
-    return false;
-  }
+  try { return new URL(request.url).hostname === AGENT_HOSTNAME; }
+  catch { return false; }
 }
 
 const app = new Hono<{ Bindings: GatewayEnv }>();
 
-// ── Security headers ───────────────────────────────────────
+// ── Security headers ──────────────────────────────
 app.use("*", secureHeaders());
 
-// ── Startup binding guard (production only) ────────────────
-// Fail CLOSED: refuse all requests when CLOUDFLARE_ACCESS_AUDIENCE is absent in
-// production, preventing token-reuse across CF Access applications.
+// ── Startup binding guard (production only) ────────────
 app.use("*", async (c, next) => {
   if (c.env.ENV === "production" && !c.env.CLOUDFLARE_ACCESS_AUDIENCE) {
     console.error("CRITICAL: CLOUDFLARE_ACCESS_AUDIENCE is not set. Refusing to serve requests.");
-    return c.json(
-      { error: "Service Unavailable", message: "Auth configuration incomplete", code: "AUDIENCE_MISSING" },
-      503,
-    );
+    return c.json({ error: "Service Unavailable", message: "Auth configuration incomplete", code: "AUDIENCE_MISSING" }, 503);
   }
   await next();
 });
 
-// ── CORS ───────────────────────────────────────────────────
-app.use(
-  "*",
-  cors({
-    origin: (origin, c) => {
-      if (c.env.ENV !== "production") {
-        if (origin && (origin.startsWith("http://localhost") || origin.startsWith("http://127.0.0.1"))) {
-          return origin;
-        }
-      }
-      const allowed = [
-        "https://goldshore.ai",
-        "https://www.goldshore.ai",
-        "https://admin.goldshore.ai",
-        "https://gw.goldshore.ai",
-        "https://api.goldshore.ai",
-      ];
-      return allowed.includes(origin ?? "") ? origin : null;
-    },
-    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowHeaders: [
-      "Content-Type",
-      "Authorization",
-      "CF-Access-Jwt-Assertion",
-      "X-Data-Classification",
-      "X-Secrets-Access-Policy",
-      "X-Audit-Trace-Id",
-    ],
-    exposeHeaders: ["Content-Length"],
-    maxAge: 600,
-    credentials: true,
-  }),
-);
+// ── CORS ──────────────────────────────────
+app.use("*", cors({
+  origin: (origin, c) => {
+    if (c.env.ENV !== "production") {
+      if (origin && (origin.startsWith("http://localhost") || origin.startsWith("http://127.0.0.1"))) return origin;
+    }
+    const allowed = [
+      "https://goldshore.ai", "https://www.goldshore.ai", "https://admin.goldshore.ai",
+      "https://gw.goldshore.ai", "https://api.goldshore.ai",
+    ];
+    return allowed.includes(origin ?? "") ? origin : null;
+  },
+  allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowHeaders: ["Content-Type", "Authorization", "CF-Access-Jwt-Assertion", "X-Data-Classification", "X-Secrets-Access-Policy", "X-Audit-Trace-Id"],
+  exposeHeaders: ["Content-Length"],
+  maxAge: 600,
+  credentials: true,
+}));
 
-// ── Auth — fail-closed JWT verification ───────────────────
-// authMiddleware skips the public paths (/health, /, /status, /signals).
-// CORS is registered above and may handle OPTIONS preflight requests before auth runs.
-// STRIPE_SECRET_KEY absence is also enforced per-request inside authMiddleware.
+// ── Auth — fail-closed JWT verification ───────────
 app.use("*", authMiddleware);
 
-// ── Security check (banproof-me service binding) ───────────
-// /health bypasses; signals paths fail-open on error; everything else fails closed.
+// ── Security check (banproof-me service binding) ───────
 app.use("*", async (c, next) => {
   const pathname = new URL(c.req.url).pathname;
-  if (pathname === "/health") {
-    return next();
-  }
-
+  if (pathname === "/health") return next();
   if (!c.env.SECURITY_CHECK) {
-    console.warn(
-      JSON.stringify({ event: "security_check_skipped", policy: "fail-open", reason: "missing_binding", path: pathname }),
-    );
+    console.warn(JSON.stringify({ event: "security_check_skipped", policy: "fail-open", reason: "missing_binding", path: pathname }));
     return next();
   }
-
   const isSignalsPath = isNonCriticalSignalsPath(pathname);
   try {
     const timeoutMs = isSignalsPath ? SIGNALS_TIMEOUT_MS : SECURITY_TIMEOUT_MS;
-    const checkResponse = await withTimeout(
-      c.env.SECURITY_CHECK.fetch(c.req.raw.clone()),
-      timeoutMs,
-      "SECURITY_CHECK",
-    );
-
+    const checkResponse = await withTimeout(c.env.SECURITY_CHECK.fetch(c.req.raw.clone()), timeoutMs, "SECURITY_CHECK");
     if (!checkResponse.ok) {
       if (isSignalsPath) {
-        console.warn(
-          JSON.stringify({ event: "security_check_non_ok", policy: "fail-open", status: checkResponse.status, path: pathname }),
-        );
+        console.warn(JSON.stringify({ event: "security_check_non_ok", policy: "fail-open", status: checkResponse.status, path: pathname }));
         return next();
       }
       return c.json({ error: "SECURITY_CHECK_FAILED", message: "security policy rejected request", policy: "fail-closed" }, 403);
     }
   } catch (error) {
     if (isSignalsPath) {
-      console.warn(
-        JSON.stringify({ event: "security_check_error", policy: "fail-open", path: pathname, error: error instanceof Error ? error.message : String(error) }),
-      );
+      console.warn(JSON.stringify({ event: "security_check_error", policy: "fail-open", path: pathname, error: error instanceof Error ? error.message : String(error) }));
       return next();
     }
     return c.json({ error: "SECURITY_CHECK_ERROR", message: "security check service unavailable", policy: "fail-closed" }, 503);
@@ -239,11 +182,15 @@ app.get('/', (c) => {
 });
 
 // ── Integration controls ───────────────────────────────────
+  return next();
+});
+
+// ── Integration controls ────────────────────────
 // Enforces X-Data-Classification, X-Secrets-Access-Policy, and X-Audit-Trace-Id
 // on /integrations/* and /market-streams/* paths.
 app.use("*", integrationControls);
 
-// ── Agent hostname routing ─────────────────────────────────
+// ── Agent hostname routing ──────────────────────
 // Requests arriving on agent.goldshore.ai are proxied to the AGENT service binding.
 app.use("*", async (c, next) => {
   if (!isAgentHostnameRequest(c.req.raw)) {
@@ -267,8 +214,7 @@ app.use("*", async (c, next) => {
   return withCorrelationId(response, correlationId);
 });
 
-// ── Routes ─────────────────────────────────────────────────
-
+// ── Routes ──────────────────────────────
 app.get("/health", (c) => c.json({ status: "ok", service: "gs-gateway" }));
 
 app.get("/", (c) => c.html(STATUS_PAGE_HTML));
@@ -296,9 +242,7 @@ app.post("/v1/chat", (c) => c.json({ message: "Gateway Chat Placeholder" }));
 const inferApiOrigin = (requestUrl: string): string | undefined => {
   const url = new URL(requestUrl);
   const inferredHostname = url.hostname.replace(/^gs-gateway(?=\.|$)/, "gs-api");
-  if (inferredHostname === url.hostname) {
-    return undefined;
-  }
+  if (inferredHostname === url.hostname) return undefined;
   url.hostname = inferredHostname;
   return url.origin;
 };
@@ -321,18 +265,10 @@ app.all("/api/*", async (c) => {
       return withCorrelationId(response, correlationId);
     }
     console.error(`[gateway] upstream API not configured; trace=${correlationId}`);
-    return c.json(
-      { error: "Upstream API not configured", traceId: correlationId },
-      500,
-      { [TRACE_HEADER]: correlationId },
-    );
+    return c.json({ error: "Upstream API not configured", traceId: correlationId }, 500, { [TRACE_HEADER]: correlationId });
   } catch (error) {
     console.error(`[gateway] upstream request failed; trace=${correlationId}`, error);
-    return c.json(
-      { error: "Upstream request failed", traceId: correlationId },
-      502,
-      { [TRACE_HEADER]: correlationId },
-    );
+    return c.json({ error: "Upstream request failed", traceId: correlationId }, 502, { [TRACE_HEADER]: correlationId });
   }
 });
 
