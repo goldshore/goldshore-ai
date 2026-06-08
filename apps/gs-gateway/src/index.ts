@@ -88,10 +88,10 @@ function isAgentHostnameRequest(request: Request): boolean {
 
 const app = new Hono<{ Bindings: GatewayEnv }>();
 
-// ── Security headers ───────────────────────────────────────
+// ── Security headers ──────────────────────────────
 app.use("*", secureHeaders());
 
-// ── Startup binding guard (production only) ────────────────
+// ── Startup binding guard (production only) ────────────
 app.use("*", async (c, next) => {
   if (c.env.ENV === "production" && !c.env.CLOUDFLARE_ACCESS_AUDIENCE) {
     console.error("CRITICAL: CLOUDFLARE_ACCESS_AUDIENCE is not set. Refusing to serve requests.");
@@ -100,7 +100,7 @@ app.use("*", async (c, next) => {
   await next();
 });
 
-// ── CORS ───────────────────────────────────────────────────
+// ── CORS ──────────────────────────────────
 app.use("*", cors({
   origin: (origin, c) => {
     if (c.env.ENV !== "production") {
@@ -119,10 +119,10 @@ app.use("*", cors({
   credentials: true,
 }));
 
-// ── Auth — fail-closed JWT verification ───────────────────
+// ── Auth — fail-closed JWT verification ───────────
 app.use("*", authMiddleware);
 
-// ── Security check (banproof-me service binding) ───────────
+// ── Security check (banproof-me service binding) ───────
 app.use("*", async (c, next) => {
   const pathname = new URL(c.req.url).pathname;
   if (pathname === "/health") return next();
@@ -152,12 +152,12 @@ app.use("*", async (c, next) => {
   return next();
 });
 
-// ── Integration controls ───────────────────────────────────
+// ── Integration controls ────────────────────────
 // Enforces X-Data-Classification, X-Secrets-Access-Policy, and X-Audit-Trace-Id
 // on /integrations/* and /market-streams/* paths.
 app.use("*", integrationControls);
 
-// ── Agent hostname routing ─────────────────────────────────
+// ── Agent hostname routing ──────────────────────
 // Requests arriving on agent.goldshore.ai are proxied to the AGENT service binding.
 app.use("*", async (c, next) => {
   if (!isAgentHostnameRequest(c.req.raw)) {
@@ -316,6 +316,7 @@ const inferApiOrigin = (requestUrl: string): string | undefined => {
   return url.origin;
 };
 
+// Forward /api/* to the API_SERVICE binding; fall back to API_ORIGIN if unbound.
 app.all("/api/*", async (c) => {
   const correlationId = getCorrelationId(c.req.raw);
   const apiOrigin = c.env.API_ORIGIN ?? inferApiOrigin(c.req.url);
