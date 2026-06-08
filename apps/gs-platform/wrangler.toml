@@ -25,7 +25,7 @@ CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 
 # ── D1 ───────────────────────────────────────────────────────────────────────
 [[env.prod.d1_databases]]
-binding = "DB"
+binding = "PLATFORM_DB"
 database_name = "gs_platform_db"
 database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
 

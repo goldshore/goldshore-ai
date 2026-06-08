@@ -1,0 +1,1 @@
+export { formConfigs, getFormConfig, forms } from '../forms';
