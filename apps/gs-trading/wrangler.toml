@@ -13,6 +13,10 @@ preview_id = "your-preview-kv-namespace-id"
 ENV = "development"
 
 # ———— Production environment ————————————————————————————————————————————————————————————————————
+[vars]
+ENV = "development"
+
+# ---- Production environment --------------------------------------------------
 [env.prod]
 name = "gs-trading-prod"
 routes = [
@@ -31,10 +35,30 @@ SCHWAB_REDIRECT_URI = "https://trading.goldshore.ai/oauth/schwab/callback"
 
 # ———— Secrets (set via: wrangler secret put <NAME> --env prod) ————————————————————————————
 #
+[[env.prod.kv_namespaces]]
+binding = "TRADING_KV"
+id = "9b3314c3b7af40a284a8c9b6e2990709"
+
+[env.prod.vars]
+ENV = "production"
+SCHWAB_REDIRECT_URI = "https://trading.goldshore.ai/oauth/schwab/callback"
+
+# ---- Preview environment -----------------------------------------------------
+[env.preview]
+routes = []
+
+[[env.preview.kv_namespaces]]
+binding = "TRADING_KV"
+id = "2c14b79b76e6453ab57c6dde6116a11d"
+
+[env.preview.vars]
+ENV = "preview"
+SCHWAB_REDIRECT_URI = "https://preview.goldshore.ai/oauth/schwab/callback"
+
+# ---- Secrets (set via: wrangler secret put <NAME> --env prod) ----------------
 # Cloudflare Access:
 #   CLOUDFLARE_ACCESS_AUDIENCE  — CF Access Application Audience tag
 #   CLOUDFLARE_TEAM_DOMAIN      — e.g. "yourteam.cloudflareaccess.com"
-#
 # Schwab / ThinkorSwim OAuth 2.0:
 #   SCHWAB_CLIENT_ID            — OAuth app client ID
 #   SCHWAB_CLIENT_SECRET        — OAuth app client secret
