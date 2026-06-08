@@ -1,3 +1,28 @@
+import { Hono } from 'hono';
+import { secureHeaders } from 'hono/secure-headers';
+import { cors } from 'hono/cors';
+import { STATUS_PAGE_HTML } from './templates/status';
+import { type Env } from './types';
+import { checkAuth } from './auth';
+import { integrationControls } from './middleware/integration';
+
+const app = new Hono<{ Bindings: Env }>();
+
+const TRACE_HEADER = 'X-Correlation-Id';
+const AGENT_HOSTNAME = 'agent.goldshore.ai';
+
+const getCorrelationId = (request: Request): string => {
+  return request.headers.get(TRACE_HEADER) ?? crypto.randomUUID();
+};
+
+const withCorrelationId = (response: Response, correlationId: string): Response => {
+  const headers = new Headers(response.headers);
+  headers.set(TRACE_HEADER, correlationId);
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
@@ -181,114 +206,38 @@ app.use("*", async (c, next) => {
     return c.json({ error: "SECURITY_CHECK_ERROR", message: "security check service unavailable", policy: "fail-closed" }, 503);
   }
 
-<<<<<<< HEAD
-  return next();
-});
-
-// ── Integration controls ───────────────────────────────────
-// Enforces X-Data-Classification, X-Secrets-Access-Policy, and X-Audit-Trace-Id
-// on /integrations/* and /market-streams/* paths.
-app.use("*", integrationControls);
-
-// ── Agent hostname routing ─────────────────────────────────
-// Requests arriving on agent.goldshore.ai are proxied to the AGENT service binding.
-app.use("*", async (c, next) => {
-  if (!isAgentHostnameRequest(c.req.raw)) {
-    return next();
-  }
-
-  const correlationId = getCorrelationId(c.req.raw);
-
-  if (!c.env.AGENT) {
-    console.error(`[gateway] downstream agent not configured; trace=${correlationId}`);
-    return c.json(
-      { error: "Downstream agent not configured", traceId: correlationId },
-      503,
-      { [TRACE_HEADER]: correlationId },
-    );
-  }
-
-  const downstreamRequest = new Request(c.req.raw, { headers: new Headers(c.req.raw.headers) });
-  downstreamRequest.headers.set(TRACE_HEADER, correlationId);
-  const response = await c.env.AGENT.fetch(downstreamRequest);
-  return withCorrelationId(response, correlationId);
-});
-
-// ── Routes ─────────────────────────────────────────────────
-
-app.get("/health", (c) => c.json({ status: "ok", service: "gs-gateway" }));
-
-app.get("/", (c) => c.html(STATUS_PAGE_HTML));
-
-app.get("/templates", (c) =>
-=======
 app.get('/health', (c) => c.json({ status: 'ok', service: 'gs-gateway' }));
 app.get('/templates', (c) =>
->>>>>>> origin/main
   c.json({
-    service: "gs-gateway",
-    description: "Gateway template routes for routing, auth, and AI dispatch.",
+    service: 'gs-gateway',
+    description: 'Gateway template routes for routing, auth, and AI dispatch.',
     modules: [
-      { name: "routing", purpose: "Proxy requests to gs-api or partner services with consistent observability." },
-      { name: "ai-dispatch", purpose: "Send AI requests to Gemini, ChatGPT, Jules, or Cloudflare AI Gateway." },
-      { name: "market-streams", purpose: "Broker market data connections for Alpaca, Thinkorswim, and other feeds." },
+      {
+        name: 'routing',
+        purpose: 'Proxy requests to gs-api or partner services with consistent observability.'
+      },
+      {
+        name: 'ai-dispatch',
+        purpose: 'Send AI requests to Gemini, ChatGPT, Jules, or Cloudflare AI Gateway.'
+      },
+      {
+        name: 'market-streams',
+        purpose: 'Broker market data connections for Alpaca, Thinkorswim, and other feeds.'
+      }
     ],
     nextSteps: [
-      "Add per-route rate limits and request shaping.",
-      "Define queue-backed workflows for bursty workloads.",
-      "Publish route maps to admin dashboards.",
-    ],
-  }),
+      'Add per-route rate limits and request shaping.',
+      'Define queue-backed workflows for bursty workloads.',
+      'Publish route maps to admin dashboards.'
+    ]
+  })
 );
 
-app.get("/user/login", (c) => c.json({ message: "Gateway Login Placeholder" }));
-app.post("/v1/chat", (c) => c.json({ message: "Gateway Chat Placeholder" }));
-
-<<<<<<< HEAD
-const inferApiOrigin = (requestUrl: string): string | undefined => {
-  const url = new URL(requestUrl);
-  const inferredHostname = url.hostname.replace(/^gs-gateway(?=\.|$)/, "gs-api");
-  if (inferredHostname === url.hostname) {
-    return undefined;
-  }
-  url.hostname = inferredHostname;
-  return url.origin;
-};
-
-// Forward /api/* to the API_SERVICE binding; fall back to API_ORIGIN if unbound.
-app.all("/api/*", async (c) => {
-  const correlationId = getCorrelationId(c.req.raw);
-  const apiOrigin = c.env.API_ORIGIN ?? inferApiOrigin(c.req.url);
-  try {
-    if (c.env.API_SERVICE) {
-      const response = await c.env.API_SERVICE.fetch(c.req.raw);
-      return withCorrelationId(response, correlationId);
-    }
-    if (apiOrigin) {
-      const url = new URL(c.req.url);
-      const targetUrl = new URL(url.pathname + url.search, apiOrigin);
-      const upstreamRequest = new Request(targetUrl, c.req.raw);
-      upstreamRequest.headers.set(TRACE_HEADER, correlationId);
-      const response = await fetch(upstreamRequest);
-      return withCorrelationId(response, correlationId);
-    }
-    console.error(`[gateway] upstream API not configured; trace=${correlationId}`);
-    return c.json(
-      { error: "Upstream API not configured", traceId: correlationId },
-      500,
-      { [TRACE_HEADER]: correlationId },
-    );
-  } catch (error) {
-    console.error(`[gateway] upstream request failed; trace=${correlationId}`, error);
-    return c.json(
-      { error: "Upstream request failed", traceId: correlationId },
-      502,
-      { [TRACE_HEADER]: correlationId },
-    );
-  }
+// Root Status Page
+app.get('/', (c) => {
+  return c.html(STATUS_PAGE_HTML);
 });
 
-=======
 // ── Integration controls ───────────────────────────────────
 // Enforces X-Data-Classification, X-Secrets-Access-Policy, and X-Audit-Trace-Id
 // on /integrations/* and /market-streams/* paths.
@@ -387,7 +336,6 @@ app.all("/api/*", async (c) => {
   }
 });
 
->>>>>>> origin/main
 app.all("*", (c) => c.json({ error: "Not found" }, 404));
 
 export default app;
