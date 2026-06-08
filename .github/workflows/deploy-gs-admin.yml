@@ -1,3 +1,0 @@
-# REMOVED: duplicate of deploy-platform.yml deploy-admin job
-# This file is intentionally empty and will be deleted in the next cleanup pass.
-# See deploy-platform.yml for the canonical deploy workflow.
