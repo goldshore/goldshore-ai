@@ -1,5 +1,5 @@
 import cloudflare from "@astrojs/cloudflare";
-import tailwindcss from "tailwindcss/vite";
+import tailwindcss from "tailwindcss";
 import { defineConfig } from "astro/config";
 
 export function createAstroConfig(overrides = {}) {
