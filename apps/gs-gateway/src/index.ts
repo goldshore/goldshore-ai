@@ -1,3 +1,28 @@
+import { Hono } from 'hono';
+import { secureHeaders } from 'hono/secure-headers';
+import { cors } from 'hono/cors';
+import { STATUS_PAGE_HTML } from './templates/status';
+import { type Env } from './types';
+import { checkAuth } from './auth';
+import { integrationControls } from './middleware/integration';
+
+const app = new Hono<{ Bindings: Env }>();
+
+const TRACE_HEADER = 'X-Correlation-Id';
+const AGENT_HOSTNAME = 'agent.goldshore.ai';
+
+const getCorrelationId = (request: Request): string => {
+  return request.headers.get(TRACE_HEADER) ?? crypto.randomUUID();
+};
+
+const withCorrelationId = (response: Response, correlationId: string): Response => {
+  const headers = new Headers(response.headers);
+  headers.set(TRACE_HEADER, correlationId);
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
@@ -124,6 +149,39 @@ app.use("*", async (c, next) => {
     return c.json({ error: "SECURITY_CHECK_ERROR", message: "security check service unavailable", policy: "fail-closed" }, 503);
   }
 
+app.get('/health', (c) => c.json({ status: 'ok', service: 'gs-gateway' }));
+app.get('/templates', (c) =>
+  c.json({
+    service: 'gs-gateway',
+    description: 'Gateway template routes for routing, auth, and AI dispatch.',
+    modules: [
+      {
+        name: 'routing',
+        purpose: 'Proxy requests to gs-api or partner services with consistent observability.'
+      },
+      {
+        name: 'ai-dispatch',
+        purpose: 'Send AI requests to Gemini, ChatGPT, Jules, or Cloudflare AI Gateway.'
+      },
+      {
+        name: 'market-streams',
+        purpose: 'Broker market data connections for Alpaca, Thinkorswim, and other feeds.'
+      }
+    ],
+    nextSteps: [
+      'Add per-route rate limits and request shaping.',
+      'Define queue-backed workflows for bursty workloads.',
+      'Publish route maps to admin dashboards.'
+    ]
+  })
+);
+
+// Root Status Page
+app.get('/', (c) => {
+  return c.html(STATUS_PAGE_HTML);
+});
+
+// ── Integration controls ───────────────────────────────────
   return next();
 });
 
