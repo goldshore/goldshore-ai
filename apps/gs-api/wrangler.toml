@@ -15,11 +15,11 @@ CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 
 [[env.prod.kv_namespaces]]
 binding = "KV"
-id = "gs_api_kv_001"
+id = "e0b8b807191346c3b0afc25fe716d2cd"
 
 [[env.prod.kv_namespaces]]
 binding = "CONTROL_LOGS"
-id = "gs_control_logs_001"
+id = "a52e94cb331c4e3db08f2aa507e6df09"
 
 [[env.prod.r2_buckets]]
 binding = "ASSETS"
@@ -45,7 +45,7 @@ ENV = "preview"
 
 [[env.preview.kv_namespaces]]
 binding = "KV"
-id = "gs_api_kv_preview"
+id = "d4d20cee39094b999dea3f7e5f4c533a"
 
 [[env.preview.r2_buckets]]
 binding = "ASSETS"
@@ -54,7 +54,7 @@ bucket_name = "gs-platform-assets"
 [[env.preview.d1_databases]]
 binding = "CONTENT_DB"
 database_name = "goldshore"
-database_id = "f77de112-d201-4e54-a785-a4583814a6c3"
+database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
 
 [env.preview.ai]
 binding = "AI"
