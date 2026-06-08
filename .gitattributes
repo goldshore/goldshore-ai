@@ -1,4 +1,12 @@
-# High-churn files auto-resolve to the branch version (`merge=ours`) to keep rebases deterministic.
-pnpm-lock.yaml merge=ours
+# High-churn docs auto-resolve to the branch version (`merge=ours`) to keep rebases deterministic.
+#
+# NOTE: pnpm-lock.yaml was intentionally REMOVED from this list. The `merge=ours`
+# driver is a custom driver that is not configured in CI / GitHub's PR-merge
+# machinery (.git/config has no [merge "ours"] driver), so the lockfile fell back
+# to a concatenation-style merge when GitHub computed refs/pull/<n>/merge. That
+# produced a two-document pnpm-lock.yaml in the merge ref, breaking every PR with
+# `ERR_PNPM_BROKEN_LOCKFILE: expected a single document in the stream, but found
+# more` — even though the committed lockfile on every branch was clean. Letting
+# git do a normal 3-way merge of the lockfile avoids that corruption.
 README.md merge=ours
 CURRENT_MONOREPO_STATE.md merge=ours
