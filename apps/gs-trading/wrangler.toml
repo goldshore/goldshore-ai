@@ -3,6 +3,25 @@ main = "src/index.ts"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 
+[env.prod]
+name = "gs-trading-prod"
+
+[[kv_namespaces]]
+binding = "TRADING_KV"
+id = "REPLACE_WITH_KV_ID"
+
+[vars]
+ENV = "development"
+
+# Secrets (set via wrangler secret put):
+# SCHWAB_CLIENT_ID
+# SCHWAB_CLIENT_SECRET
+# SCHWAB_REFRESH_TOKEN
+# SCHWAB_ACCOUNT_HASH
+# ROBINHOOD_TOKEN
+# ROBINHOOD_ACCOUNT_ID
+# CLOUDFLARE_ACCESS_AUDIENCE
+# CLOUDFLARE_TEAM_DOMAIN
 # KV namespace — stores agent state, OAuth tokens, trading signals, and feature flags
 [[kv_namespaces]]
 binding = "TRADING_KV"
