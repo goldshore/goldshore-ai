@@ -11,36 +11,41 @@ compatibility_flags = ["nodejs_compat"]
 
 pages_build_output_dir = "dist"
 
-# ── Production bindings ────────────────────────────────────────────────────────
+# ── Production bindings ──────────────────────────────────────────────────────────
 
 [[kv_namespaces]]
 binding = "KV"
-id = "gs_admin_kv_001"
-# Provision: wrangler kv namespace create gs_admin_kv_001
+id = "d02c0c7951a244a7987e23d8af16b7b2"
 
 [[d1_databases]]
 binding = "CONTENT_DB"
 database_name = "goldshore"
-database_id = "gs_db_001"
-# Same D1 as gs-api (read-only dashboard queries)
+database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
 
 [[r2_buckets]]
 binding = "ASSETS"
 bucket_name = "gs-assets"
-# Same R2 as gs-api (brand assets, logos)
 
 [[services]]
 binding = "API_SERVICE"
 service = "gs-api"
 environment = "prod"
-# Zero-hop service binding to gs-api worker — no public network request
+
+[[services]]
+binding = "TRADING_SERVICE"
+service = "gs-trading"
+environment = "prod"
+# Zero-hop service binding to gs-trading worker (Schwab + Robinhood)
+
+[[services]]
+binding = "TRADING_SERVICE"
+service = "gs-trading"
+environment = "prod"
+# Zero-hop service binding to gs-trading worker (Schwab + Robinhood)
 
 [vars]
 ENV = "production"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-# AUD tag for the GoldShore-Admin-ZT Access application.
-# Public identifier used to verify Cloudflare Access JWTs — not a secret.
-# Rotate via: Cloudflare Access → gs-admin application → Revoke Token.
 CLOUDFLARE_ACCESS_AUDIENCE = "8b6e1890f664c52ad265a240948a1f3315a757e19b4a0fa180ffe952b81a0daf"
 
 # ── Preview bindings ───────────────────────────────────────────────────────────
@@ -50,13 +55,12 @@ pages_build_output_dir = "dist"
 
 [[env.preview.kv_namespaces]]
 binding = "KV"
-id = "gs_admin_kv_preview"
-# Provision: wrangler kv namespace create gs_admin_kv_preview
+id = "1f71a79b34db4090824954634dbd78c3"
 
 [[env.preview.d1_databases]]
 binding = "CONTENT_DB"
 database_name = "goldshore_preview"
-database_id = "gs_db_preview"
+database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
 
 [[env.preview.r2_buckets]]
 binding = "ASSETS"
@@ -66,6 +70,11 @@ bucket_name = "gs-assets-preview"
 binding = "API_SERVICE"
 service = "gs-api"
 environment = "preview"
+
+[[env.preview.services]]
+binding = "TRADING_SERVICE"
+service = "gs-trading"
+environment = "prod"
 
 [env.preview.vars]
 ENV = "preview"
