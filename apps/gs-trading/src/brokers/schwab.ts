@@ -91,6 +91,19 @@ export class SchwabClient {
 
   async getPositions(): Promise<Position[]> {
     if (!this.env.SCHWAB_ACCOUNT_HASH) throw new Error('SCHWAB_ACCOUNT_HASH not configured');
+    const data = await this.request<any>(`/accounts/${this.env.SCHWAB_ACCOUNT_HASH}?fields=positions`);
+    const raw = data.securitiesAccount?.positions ?? [];
+    return raw.map((p: any): Position => ({
+      symbol: p.instrument?.symbol ?? '',
+      quantity: p.longQuantity - p.shortQuantity,
+      avgCost: p.averagePrice ?? 0,
+      currentPrice: p.marketValue / (p.longQuantity || 1),
+      marketValue: p.marketValue ?? 0,
+      unrealizedPL: p.currentDayProfitLoss ?? 0,
+      unrealizedPLPct: p.currentDayProfitLossPercentage ?? 0,
+      broker: 'schwab',
+      assetType: p.instrument?.assetType === 'OPTION' ? 'OPTION' : 'EQUITY',
+    }));
     const data = await this.traderRequest<any>(`/accounts/${this.env.SCHWAB_ACCOUNT_HASH}?fields=positions`);
     const raw = data.securitiesAccount?.positions ?? [];
     return raw.map((p: any): Position => {
@@ -167,22 +180,33 @@ export class SchwabClient {
       session: 'NORMAL',
       duration: 'DAY',
       orderStrategyType: 'SINGLE',
-      orderLegCollection: [{ instruction: order.side, quantity: order.quantity, instrument: { symbol: order.symbol, assetType: 'EQUITY' } }],
+      orderLegCollection: [{
+        instruction: order.side,
+        quantity: order.quantity,
+        instrument: { symbol: order.symbol, assetType: 'EQUITY' },
+      }],
     };
     if (order.orderType === 'LIMIT') body.price = order.limitPrice;
-    const token = await this.getAccessToken();
-    const res = await fetch(`${SCHWAB_TRADER_BASE}/accounts/${this.env.SCHWAB_ACCOUNT_HASH}/orders`, {
+    const res = await fetch(`${SCHWAB_BASE}/accounts/${this.env.SCHWAB_ACCOUNT_HASH}/orders`, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: {
+        'Authorization': `Bearer ${await this.getAccessToken()}`,
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(body),
     });
     if (!res.ok) throw new Error(`Order failed: ${await res.text()}`);
     const location = res.headers.get('Location') ?? '';
-    return { orderId: location.split('/').pop() ?? String(Date.now()) };
+    const orderId = location.split('/').pop() ?? String(Date.now());
+    return { orderId };
   }
 
   async cancelOrder(orderId: string): Promise<void> {
     if (!this.env.SCHWAB_ACCOUNT_HASH) throw new Error('SCHWAB_ACCOUNT_HASH not configured');
+    await fetch(`${SCHWAB_BASE}/accounts/${this.env.SCHWAB_ACCOUNT_HASH}/orders/${orderId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${await this.getAccessToken()}` },
+    });
     const token = await this.getAccessToken();
     const res = await fetch(
       `${SCHWAB_TRADER_BASE}/accounts/${this.env.SCHWAB_ACCOUNT_HASH}/orders/${orderId}`,
