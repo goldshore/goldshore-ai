@@ -43,6 +43,8 @@ jobs:
         run: |
           test -f apps/gs-api/wrangler.toml
           grep -Eq '^\[env\.preview\]' apps/gs-api/wrangler.toml
+          grep -Eq '^\s*\[\[env\.preview\.services\]\]' apps/gs-api/wrangler.toml
+          grep -Eq '^\s*\[\[env\.preview\.queues\.(producers|consumers)\]\]' apps/gs-api/wrangler.toml
 
       - name: Deploy GS API worker preview to Cloudflare
         working-directory: apps/gs-api
