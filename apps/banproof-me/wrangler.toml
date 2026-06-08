@@ -28,12 +28,12 @@ vars = { ENV = "production" }
 # 1. BANPROOF_KV — ban cache (fast IP / user lookups)
 [[env.prod.kv_namespaces]]
 binding = "BANPROOF_KV"
-id = "banproof_kv_001"
+id = "714ee6be6df54291a4a4ade053e9f9ae"
 
 # 2. GOLDSHORE_KV — shared platform config / feature flags
 [[env.prod.kv_namespaces]]
 binding = "GOLDSHORE_KV"
-id = "goldshore_kv_001"
+id = "5f13370575784c9dacff522121104cb3"
 
 # 3. BAN_DB — gs_platform_db D1 (ban records, user reputation)
 [[env.prod.d1_databases]]
@@ -79,11 +79,11 @@ vars = { ENV = "preview" }
 
 [[env.preview.kv_namespaces]]
 binding = "BANPROOF_KV"
-id = "banproof_kv_preview"
+id = "714ee6be6df54291a4a4ade053e9f9ae"
 
 [[env.preview.kv_namespaces]]
 binding = "GOLDSHORE_KV"
-id = "goldshore_kv_preview"
+id = "5f13370575784c9dacff522121104cb3"
 
 [[env.preview.d1_databases]]
 binding = "BAN_DB"
