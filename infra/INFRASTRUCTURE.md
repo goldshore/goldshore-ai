@@ -38,6 +38,7 @@
 | `rmarston-com` | rmarston.com personal site | rmarston.com | Fail open (public) |
 | `goldshore-ai` | (Audit pending — may be stub) | — | TBD |
 | `gs-todo` | (Audit pending — may be internal tool) | — | TBD |
+| `gs-trading` | Schwab + Robinhood brokerage integration, trading API, risk engine | — | Fail closed |
 
 **Workers NOT on this list must not exist. Any unrecognized worker = immediate audit.**
 
@@ -126,6 +127,14 @@ service = "gs-mail"
 [[services]]
 binding = "CORE"
 service = "gs-core-worker"
+```
+
+```toml
+# gs-admin → gs-trading (service binding — added for trading dashboard)
+[[services]]
+binding = "TRADING_SERVICE"
+service = "gs-trading"
+environment = "prod"
 ```
 
 ---
