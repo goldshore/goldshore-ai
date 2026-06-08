@@ -1,0 +1,100 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+---
+<AdminLayout title="Quotes | Trading">
+  <nav class="trading-tabs">
+    <a href="/trading" class="tab">Overview</a>
+    <a href="/trading/accounts" class="tab">Accounts</a>
+    <a href="/trading/positions" class="tab">Positions</a>
+    <a href="/trading/orders" class="tab">Orders</a>
+    <a href="/trading/quotes" class="tab active">Quotes</a>
+    <a href="/trading/risk" class="tab">Risk</a>
+  </nav>
+
+  <div class="panel">
+    <div class="panel-header">
+      <h3>⌗ Live Quotes</h3>
+      <div class="controls">
+        <input id="symbols-input" class="symbols-input" value="SPY,QQQ,AAPL,TSLA,NVDA" placeholder="SPY,AAPL,NVDA" />
+        <select id="broker-select" class="select-xs">
+          <option value="">Best available</option>
+          <option value="schwab">Schwab</option>
+          <option value="robinhood">Robinhood</option>
+        </select>
+        <button class="btn btn-xs" id="fetch-btn">Fetch</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Symbol</th><th>Last</th><th>Bid</th><th>Ask</th><th>Change</th><th>Change %</th><th>High</th><th>Low</th><th>Open</th><th>Volume</th></tr></thead>
+        <tbody id="quotes-body"><tr><td colspan="10" class="empty">Enter symbols and click Fetch</td></tr></tbody>
+      </table>
+    </div>
+    <div class="last-updated" id="last-updated"></div>
+  </div>
+</AdminLayout>
+
+<style>
+  .trading-tabs{display:flex;gap:.25rem;margin-bottom:1.5rem;border-bottom:1px solid rgba(255,255,255,.08)}
+  .tab{padding:.5rem 1rem;text-decoration:none;color:#9ca3af;font-size:.8rem;font-family:monospace;text-transform:uppercase;border-bottom:2px solid transparent}
+  .tab:hover{color:#fff}.tab.active{color:#fff;border-bottom-color:#f97316}
+  .panel{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:.5rem;padding:1.25rem}
+  .panel-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:1px solid rgba(255,255,255,.06);flex-wrap:wrap;gap:.5rem}
+  .panel-header h3{margin:0;font-size:.8rem;text-transform:uppercase;font-family:monospace;color:#e5e7eb}
+  .controls{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+  .symbols-input{padding:.25rem .6rem;font-size:.78rem;background:rgba(255,255,255,.05);color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:4px;font-family:monospace;width:220px}
+  .select-xs{padding:.25rem .5rem;font-size:.7rem;background:rgba(255,255,255,.05);color:#9ca3af;border:1px solid rgba(255,255,255,.1);border-radius:4px;font-family:monospace}
+  .btn-xs{padding:.25rem .6rem;font-size:.7rem;background:rgba(255,255,255,.05);color:#9ca3af;border:1px solid rgba(255,255,255,.1);border-radius:4px;cursor:pointer;font-family:monospace}
+  .table-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:.8rem;font-family:monospace}
+  th{color:#6b7280;font-weight:500;text-align:left;padding:.4rem .6rem;border-bottom:1px solid rgba(255,255,255,.06);text-transform:uppercase;font-size:.7rem}
+  td{padding:.5rem .6rem;border-bottom:1px solid rgba(255,255,255,.04);color:#d1d5db}
+  tr:hover td{background:rgba(255,255,255,.02)}
+  .empty{color:#4b5563;text-align:center;padding:1.5rem}
+  .pos{color:#4ade80}.neg{color:#f87171}
+  .last-updated{font-size:.7rem;color:#4b5563;font-family:monospace;margin-top:.75rem;text-align:right}
+</style>
+
+<script is:inline>
+  const fmt = (n,d=2) => n==null?'—':new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',minimumFractionDigits:d}).format(n);
+  const fmtPct = n => `${n>=0?'+':''}${(n??0).toFixed(2)}%`;
+  const fmtVol = n => n==null?'—':new Intl.NumberFormat('en-US',{notation:'compact'}).format(n);
+
+  async function fetchQuotes() {
+    const symbols = document.getElementById('symbols-input').value.trim();
+    const broker = document.getElementById('broker-select').value;
+    const tbody = document.getElementById('quotes-body');
+    if (!symbols) return;
+    tbody.innerHTML = '<tr><td colspan="10" class="empty">Fetching…</td></tr>';
+    try {
+      const qs = broker ? `?symbols=${symbols}&broker=${broker}` : `?symbols=${symbols}`;
+      const { quotes = [] } = await fetch(`/api/trading/quotes${qs}`).then(r => r.json());
+      if (quotes.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" class="empty">No quotes returned</td></tr>';
+        return;
+      }
+      tbody.innerHTML = quotes.map(q => {
+        const chCls = q.change>=0?'pos':'neg';
+        return `<tr>
+          <td><strong>${q.symbol}</strong></td>
+          <td>${fmt(q.last)}</td>
+          <td>${fmt(q.bid)}</td>
+          <td>${fmt(q.ask)}</td>
+          <td class="${chCls}">${fmt(q.change)}</td>
+          <td class="${chCls}">${fmtPct(q.changePct)}</td>
+          <td>${fmt(q.high)}</td>
+          <td>${fmt(q.low)}</td>
+          <td>${fmt(q.open)}</td>
+          <td>${fmtVol(q.volume)}</td>
+        </tr>`;
+      }).join('');
+      document.getElementById('last-updated').textContent = `Updated: ${new Date().toLocaleTimeString()}`;
+    } catch(e) {
+      tbody.innerHTML = `<tr><td colspan="10" class="empty" style="color:#f87171">Failed: ${e.message}</td></tr>`;
+    }
+  }
+
+  document.getElementById('fetch-btn').addEventListener('click', fetchQuotes);
+  document.getElementById('symbols-input').addEventListener('keydown', e => { if(e.key==='Enter') fetchQuotes(); });
+  fetchQuotes();
+</script>
