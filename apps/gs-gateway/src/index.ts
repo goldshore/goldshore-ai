@@ -214,8 +214,7 @@ app.use("*", async (c, next) => {
   return withCorrelationId(response, correlationId);
 });
 
-// ── Routes ─────────────────────────────────────────────────
-
+// ── Routes ──────────────────────────────
 app.get("/health", (c) => c.json({ status: "ok", service: "gs-gateway" }));
 
 app.get("/", (c) => c.html(STATUS_PAGE_HTML));
@@ -257,9 +256,7 @@ app.post("/v1/chat", (c) => c.json({ message: "Gateway Chat Placeholder" }));
 const inferApiOrigin = (requestUrl: string): string | undefined => {
   const url = new URL(requestUrl);
   const inferredHostname = url.hostname.replace(/^gs-gateway(?=\.|$)/, "gs-api");
-  if (inferredHostname === url.hostname) {
-    return undefined;
-  }
+  if (inferredHostname === url.hostname) return undefined;
   url.hostname = inferredHostname;
   return url.origin;
 };
@@ -282,18 +279,10 @@ app.all("/api/*", async (c) => {
       return withCorrelationId(response, correlationId);
     }
     console.error(`[gateway] upstream API not configured; trace=${correlationId}`);
-    return c.json(
-      { error: "Upstream API not configured", traceId: correlationId },
-      500,
-      { [TRACE_HEADER]: correlationId },
-    );
+    return c.json({ error: "Upstream API not configured", traceId: correlationId }, 500, { [TRACE_HEADER]: correlationId });
   } catch (error) {
     console.error(`[gateway] upstream request failed; trace=${correlationId}`, error);
-    return c.json(
-      { error: "Upstream request failed", traceId: correlationId },
-      502,
-      { [TRACE_HEADER]: correlationId },
-    );
+    return c.json({ error: "Upstream request failed", traceId: correlationId }, 502, { [TRACE_HEADER]: correlationId });
   }
 });
 
