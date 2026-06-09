@@ -3,11 +3,18 @@ import type { TradingEnv, Position, Order, Quote, AccountSummary } from '../type
 const RH_BASE = 'https://api.robinhood.com';
 
 export class RobinhoodClient {
+  constructor(private env: TradingEnv) {}
+
+  private async request<T>(path: string, options: RequestInit = {}): Promise<T> {
+    if (!this.env.ROBINHOOD_TOKEN) throw new Error('ROBINHOOD_TOKEN not configured');
+    const res = await fetch(`${RH_BASE}${path}`, {
+      ...options,
+      headers: {
+        'Authorization': `Bearer ${this.env.ROBINHOOD_TOKEN}`,
   private _token: string | null = null;
 
   constructor(private env: TradingEnv) {}
 
-  // Resolves token from env var first, then KV fallback (set via POST /oauth/robinhood/token)
   private async getToken(): Promise<string> {
     if (this._token) return this._token;
     const token = this.env.ROBINHOOD_TOKEN ?? await this.env.TRADING_KV.get('robinhood:token');
@@ -62,10 +69,10 @@ export class RobinhoodClient {
     const positions: Position[] = [];
     for (const p of results) {
       const instrument = await fetch(p.instrument, {
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { 'Authorization': `Bearer ${this.env.ROBINHOOD_TOKEN}` },
       }).then(r => r.json()) as any;
       const quote = await fetch(instrument.quote, {
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { 'Authorization': `Bearer ${this.env.ROBINHOOD_TOKEN}` },
       }).then(r => r.json()) as any;
       const qty = parseFloat(p.quantity ?? '0');
       const avgCost = parseFloat(p.average_buy_price ?? '0');
@@ -90,7 +97,7 @@ export class RobinhoodClient {
     return (data.results ?? []).map((o: any): Order => ({
       id: o.id ?? '',
       broker: 'robinhood',
-      symbol: '',
+      symbol: '', // requires instrument fetch; resolved client-side
       side: o.side?.toUpperCase() === 'SELL' ? 'SELL' : 'BUY',
       quantity: parseFloat(o.quantity ?? '0'),
       orderType: mapRHOrderType(o.type),

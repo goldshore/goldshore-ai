@@ -37,9 +37,7 @@ type Env = {
   STRIPE_API_KEY?: string;
   SENDGRID_API_KEY?: string;
   ACCESS_CLIENT_SECRET?: string;
-  // Sentinel: Added support for Audience verification to prevent auth bypass
   CLOUDFLARE_ACCESS_AUDIENCE?: string;
-  // Sentinel: Added support for dynamic team domain
   CLOUDFLARE_TEAM_DOMAIN?: string;
   CONTROL_SYNC_TOKEN?: string;
   ALLOWED_ORIGINS?: string;
@@ -86,10 +84,7 @@ const isAllowedOrigin = (origin: string, allowedOrigins?: string) => {
 };
 
 const isPublicPath = (path: string, method: string) => {
-  if (method === 'OPTIONS') {
-    return true;
-  }
-
+  if (method === 'OPTIONS') return true;
   return (
     path === '/' ||
     path === '/version' ||
@@ -98,10 +93,8 @@ const isPublicPath = (path: string, method: string) => {
   );
 };
 
-// Sentinel: Security Middleware
 app.use('*', secureHeaders());
 
-// Runtime safety guard (fail-fast for misconfigured production runtime).
 app.use('*', async (c, next) => {
   if (c.env.ENV === 'production') {
     assertSecuritySecrets(c.env as Record<string, unknown>, c.env.ENV);
@@ -111,7 +104,6 @@ app.use('*', async (c, next) => {
       `CRITICAL_MISSING_D1_BINDING: Expected D1 binding "${expectedD1Binding}" is undefined. Verify [[d1_databases]] binding in wrangler.toml.`,
     );
   }
-
   for (const key of [...requiredBindings, ...requiredSecrets]) {
     if (!c.env[key]) {
       throw new Error(`CRITICAL_MISSING: ${key}. Terminating.`);
@@ -120,7 +112,6 @@ app.use('*', async (c, next) => {
   await next();
 });
 
-// Enforce CORS to allow legitimate browser clients
 app.use(
   '*',
   createCorsMiddleware({
@@ -128,7 +119,6 @@ app.use(
   }),
 );
 
-// Enforce Authentication (Defense in Depth)
 app.use('*', async (c, next) => {
   if (isPublicPath(c.req.path, c.req.method)) {
     c.set('accessClaims', null);
@@ -156,7 +146,6 @@ app.use('*', async (c, next) => {
     );
   }
 
-  // Verify Cloudflare Access JWT
   const claims = await verifyAccessWithClaims(c.req.raw, c.env);
   if (!claims) {
     return c.json({ error: 'Unauthorized' }, 401);
@@ -165,7 +154,6 @@ app.use('*', async (c, next) => {
   await next();
 });
 
-// Root API Info Page
 app.get('/', (c) => {
   return c.html(`
     <!DOCTYPE html>
@@ -185,7 +173,7 @@ app.get('/', (c) => {
     <body>
       <div class="container">
         <h1>GoldShore API</h1>
-        <p>Core Services & Intelligence</p>
+        <p>Core Services &amp; Intelligence</p>
         <div class="status">ONLINE</div>
         <p style="margin-top: 1rem; font-size: 0.9rem;">
           Docs available at <a href="https://goldshore.ai/developer" style="color: #a78bfa;">goldshore.ai/developer</a>
@@ -203,10 +191,43 @@ const PUBLIC_VERSION_CORS_ORIGINS = new Set([
 
 app.get('/version', (c) => {
   const origin = c.req.header('Origin');
+  const data = withContractHeaders(
+    {
+      service: 'gs-api',
+      version: c.env.API_VERSION ?? c.env.GIT_SHA ?? 'unknown',
+      deploySha: c.env.DEPLOY_SHA ?? c.env.GIT_SHA ?? null,
+    },
+    getRuntimeVersion(c.env),
+  );
   if (origin && PUBLIC_VERSION_CORS_ORIGINS.has(origin)) {
     c.header('Access-Control-Allow-Origin', origin);
-    c.header('Vary', 'Origin', { append: true });
+    c.header('Vary', 'Origin');
   }
+
+  return {
+    ...response,
+    headers: {
+      ...(response.headers ?? {}),
+      'Access-Control-Allow-Origin': origin,
+      Vary: 'Origin',
+    },
+  };
+}
+
+app.get('/version', (c) =>
+  c.json(
+    withPublicVersionCors(
+      c.req.header('Origin'),
+      withContractHeaders(
+        {
+          service: 'gs-api',
+          version: c.env.API_VERSION ?? c.env.GIT_SHA ?? 'unknown',
+          deploySha: c.env.DEPLOY_SHA ?? c.env.GIT_SHA ?? null,
+        },
+        getRuntimeVersion(c.env)
+      )
+    )
+  )
   return c.json(
     withContractHeaders(
       {
@@ -217,6 +238,7 @@ app.get('/version', (c) => {
       getRuntimeVersion(c.env),
     ),
   );
+  return c.json(data);
 });
 
 app.get('/version.json', (c) =>
@@ -228,7 +250,6 @@ app.get('/version.json', (c) =>
   }),
 );
 
-// Core routes
 app.route('/health', health);
 app.route('/ai', ai);
 app.route('/users', users);
@@ -240,9 +261,7 @@ app.route('/media', media);
 app.route('/pages', pages);
 app.route('/internal', internal);
 
-// V1 Routes
 const v1 = new Hono<{ Bindings: Env }>();
-
 v1.route('/users', users);
 v1.route('/domains', domains);
 v1.route('/sites', sites);
@@ -250,8 +269,6 @@ v1.route('/forms', forms);
 v1.route('/deployments', deployments);
 v1.route('/gearswipe', gearswipe);
 v1.get('/leads', (c) => c.json({ leads: [] }));
-// Placeholder routes removed — v1/agents, v1/models, and v1/logs
-// returned hardcoded fake data. Implement with real handlers when needed.
 
 app.route('/v1', v1);
 
