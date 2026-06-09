@@ -3,14 +3,6 @@ import type { TradingEnv, Position, Order, Quote, AccountSummary } from '../type
 const RH_BASE = 'https://api.robinhood.com';
 
 export class RobinhoodClient {
-  constructor(private env: TradingEnv) {}
-
-  private async request<T>(path: string, options: RequestInit = {}): Promise<T> {
-    if (!this.env.ROBINHOOD_TOKEN) throw new Error('ROBINHOOD_TOKEN not configured');
-    const res = await fetch(`${RH_BASE}${path}`, {
-      ...options,
-      headers: {
-        'Authorization': `Bearer ${this.env.ROBINHOOD_TOKEN}`,
   private _token: string | null = null;
 
   constructor(private env: TradingEnv) {}
@@ -69,10 +61,10 @@ export class RobinhoodClient {
     const positions: Position[] = [];
     for (const p of results) {
       const instrument = await fetch(p.instrument, {
-        headers: { 'Authorization': `Bearer ${this.env.ROBINHOOD_TOKEN}` },
+        headers: { 'Authorization': `Bearer ${token}` },
       }).then(r => r.json()) as any;
       const quote = await fetch(instrument.quote, {
-        headers: { 'Authorization': `Bearer ${this.env.ROBINHOOD_TOKEN}` },
+        headers: { 'Authorization': `Bearer ${token}` },
       }).then(r => r.json()) as any;
       const qty = parseFloat(p.quantity ?? '0');
       const avgCost = parseFloat(p.average_buy_price ?? '0');
@@ -97,7 +89,7 @@ export class RobinhoodClient {
     return (data.results ?? []).map((o: any): Order => ({
       id: o.id ?? '',
       broker: 'robinhood',
-      symbol: '', // requires instrument fetch; resolved client-side
+      symbol: '',
       side: o.side?.toUpperCase() === 'SELL' ? 'SELL' : 'BUY',
       quantity: parseFloat(o.quantity ?? '0'),
       orderType: mapRHOrderType(o.type),
