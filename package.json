@@ -1,7 +1,7 @@
 {
   "name": "goldshore-ai",
   "private": true,
-  "packageManager": "pnpm@9.0.0",
+  "packageManager": "pnpm@9.15.4",
   "scripts": {
     "dev": "turbo run dev --parallel",
     "build": "pnpm build:openapi && turbo run build",
@@ -34,6 +34,7 @@
     "audit": "pnpm run repo:health",
     "build:api": "turbo run build --filter=@goldshore/gs-api",
     "build:control": "turbo run build --filter=@goldshore/gs-control",
+    "check:banproof-bindings": "node scripts/check-banproof-bindings.mjs",
     "check:wrangler-placeholders": "node scripts/check-wrangler-placeholders.mjs"
   },
   "devDependencies": {

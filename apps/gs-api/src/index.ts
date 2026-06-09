@@ -1,10 +1,10 @@
 import { Hono } from 'hono';
 import { secureHeaders } from 'hono/secure-headers';
-import { cors } from 'hono/cors';
 import {
   verifyAccessWithClaims,
   type AccessTokenPayload,
 } from '@goldshore/auth';
+import { createCorsMiddleware, APPROVED_API_ORIGINS } from '@goldshore/shared';
 import users from './routes/users';
 import health from './routes/health';
 import ai from './routes/ai';
@@ -15,12 +15,18 @@ import admin from './routes/admin';
 import media from './routes/media';
 import pages from './routes/pages';
 import internal from './routes/internal';
+import domains from './routes/domains';
+import sites from './routes/sites';
+import forms from './routes/forms';
+import deployments from './routes/deployments';
+import gearswipe from './routes/gearswipe';
+import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
 
 type Env = {
   KV: KVNamespace;
   CONTROL_LOGS?: KVNamespace;
-  DB: D1Database;
+  CONTENT_DB: D1Database;
   TELEMETRY_DB?: D1Database;
   ASSETS: R2Bucket;
   AUTH_SESSION?: DurableObjectNamespace;
@@ -31,13 +37,14 @@ type Env = {
   STRIPE_API_KEY?: string;
   SENDGRID_API_KEY?: string;
   ACCESS_CLIENT_SECRET?: string;
-  // Sentinel: Added support for Audience verification to prevent auth bypass
   CLOUDFLARE_ACCESS_AUDIENCE?: string;
-  // Sentinel: Added support for dynamic team domain
   CLOUDFLARE_TEAM_DOMAIN?: string;
   CONTROL_SYNC_TOKEN?: string;
   ALLOWED_ORIGINS?: string;
   ENV?: string;
+  API_VERSION?: string;
+  DEPLOY_SHA?: string;
+  GIT_SHA?: string;
 };
 
 const app = new Hono<{
@@ -45,8 +52,8 @@ const app = new Hono<{
   Variables: { accessClaims: AccessTokenPayload | null };
 }>();
 
-const requiredBindings = ['DB', 'ASSETS', 'AI'] as const;
-const expectedD1Binding = 'DB' as const;
+const requiredBindings = ['CONTENT_DB', 'ASSETS', 'AI'] as const;
+const expectedD1Binding = 'CONTENT_DB' as const;
 const requiredSecrets = [
   'JWT_SECRET',
   'STRIPE_API_KEY',
@@ -54,14 +61,7 @@ const requiredSecrets = [
   'ACCESS_CLIENT_SECRET',
 ] as const;
 
-const DEFAULT_ALLOWED_ORIGINS = [
-  'https://goldshore.ai',
-  'https://www.goldshore.ai',
-  'https://admin.goldshore.ai',
-  'https://ops.goldshore.ai',
-  'https://admin-preview.goldshore.ai',
-  'https://preview.goldshore.ai',
-];
+const DEFAULT_ALLOWED_ORIGINS = [...APPROVED_API_ORIGINS];
 
 const PREVIEW_ORIGIN_PATTERNS = [
   /^https:\/\/[a-z0-9-]+-preview\.goldshore\.ai$/i,
@@ -83,17 +83,18 @@ const isAllowedOrigin = (origin: string, allowedOrigins?: string) => {
   return configuredOrigins.includes(origin) || isPreviewOrigin(origin);
 };
 
-const isLocalDevelopmentOrigin = (origin: string) => {
+const isPublicPath = (path: string, method: string) => {
+  if (method === 'OPTIONS') return true;
   return (
-    origin.startsWith('http://localhost') ||
-    origin.startsWith('http://127.0.0.1')
+    path === '/' ||
+    path === '/version' ||
+    path === '/health' ||
+    path.startsWith('/health/')
   );
 };
 
-// Sentinel: Security Middleware
 app.use('*', secureHeaders());
 
-// Runtime safety guard (fail-fast for misconfigured production runtime).
 app.use('*', async (c, next) => {
   if (c.env.ENV === 'production') {
     assertSecuritySecrets(c.env as Record<string, unknown>, c.env.ENV);
@@ -103,7 +104,6 @@ app.use('*', async (c, next) => {
       `CRITICAL_MISSING_D1_BINDING: Expected D1 binding "${expectedD1Binding}" is undefined. Verify [[d1_databases]] binding in wrangler.toml.`,
     );
   }
-
   for (const key of [...requiredBindings, ...requiredSecrets]) {
     if (!c.env[key]) {
       throw new Error(`CRITICAL_MISSING: ${key}. Terminating.`);
@@ -112,38 +112,15 @@ app.use('*', async (c, next) => {
   await next();
 });
 
-// Enforce CORS to allow legitimate browser clients
 app.use(
   '*',
-  cors({
-    origin: (origin, c) => {
-      if (!origin) {
-        return null;
-      }
-
-      if (c.env.ENV !== 'production' && isLocalDevelopmentOrigin(origin)) {
-        return origin;
-      }
-
-      return isAllowedOrigin(origin, c.env.ALLOWED_ORIGINS) ? origin : null;
-    },
-    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowHeaders: ['Content-Type', 'Authorization', 'CF-Access-Jwt-Assertion'],
-    exposeHeaders: ['Content-Length'],
-    credentials: true,
-    maxAge: 600,
+  createCorsMiddleware({
+    allowLocalhost: true,
   }),
 );
 
-// Enforce Authentication (Defense in Depth)
 app.use('*', async (c, next) => {
-  // Allow health checks, root, and CORS preflight
-  if (
-    c.req.path === '/health' ||
-    c.req.path.startsWith('/health/') ||
-    c.req.path === '/' ||
-    c.req.method === 'OPTIONS'
-  ) {
+  if (isPublicPath(c.req.path, c.req.method)) {
     c.set('accessClaims', null);
     await next();
     return;
@@ -162,7 +139,13 @@ app.use('*', async (c, next) => {
     }
   }
 
-  // Verify Cloudflare Access JWT
+  if (!c.env.CLOUDFLARE_ACCESS_AUDIENCE) {
+    return c.json(
+      { error: 'Cloudflare Access audience is not configured for protected routes.' },
+      503,
+    );
+  }
+
   const claims = await verifyAccessWithClaims(c.req.raw, c.env);
   if (!claims) {
     return c.json({ error: 'Unauthorized' }, 401);
@@ -171,7 +154,6 @@ app.use('*', async (c, next) => {
   await next();
 });
 
-// Root API Info Page
 app.get('/', (c) => {
   return c.html(`
     <!DOCTYPE html>
@@ -191,7 +173,7 @@ app.get('/', (c) => {
     <body>
       <div class="container">
         <h1>GoldShore API</h1>
-        <p>Core Services & Intelligence</p>
+        <p>Core Services &amp; Intelligence</p>
         <div class="status">ONLINE</div>
         <p style="margin-top: 1rem; font-size: 0.9rem;">
           Docs available at <a href="https://goldshore.ai/developer" style="color: #a78bfa;">goldshore.ai/developer</a>
@@ -202,7 +184,72 @@ app.get('/', (c) => {
   `);
 });
 
-// Core routes
+const PUBLIC_VERSION_CORS_ORIGINS = new Set([
+  'https://goldshore.org',
+  'https://www.goldshore.org',
+]);
+
+app.get('/version', (c) => {
+  const origin = c.req.header('Origin');
+  const data = withContractHeaders(
+    {
+      service: 'gs-api',
+      version: c.env.API_VERSION ?? c.env.GIT_SHA ?? 'unknown',
+      deploySha: c.env.DEPLOY_SHA ?? c.env.GIT_SHA ?? null,
+    },
+    getRuntimeVersion(c.env),
+  );
+  if (origin && PUBLIC_VERSION_CORS_ORIGINS.has(origin)) {
+    c.header('Access-Control-Allow-Origin', origin);
+    c.header('Vary', 'Origin');
+  }
+
+  return {
+    ...response,
+    headers: {
+      ...(response.headers ?? {}),
+      'Access-Control-Allow-Origin': origin,
+      Vary: 'Origin',
+    },
+  };
+}
+
+app.get('/version', (c) =>
+  c.json(
+    withPublicVersionCors(
+      c.req.header('Origin'),
+      withContractHeaders(
+        {
+          service: 'gs-api',
+          version: c.env.API_VERSION ?? c.env.GIT_SHA ?? 'unknown',
+          deploySha: c.env.DEPLOY_SHA ?? c.env.GIT_SHA ?? null,
+        },
+        getRuntimeVersion(c.env)
+      )
+    )
+  )
+  return c.json(
+    withContractHeaders(
+      {
+        service: 'gs-api',
+        version: c.env.API_VERSION ?? c.env.GIT_SHA ?? 'unknown',
+        deploySha: c.env.DEPLOY_SHA ?? c.env.GIT_SHA ?? null,
+      },
+      getRuntimeVersion(c.env),
+    ),
+  );
+  return c.json(data);
+});
+
+app.get('/version.json', (c) =>
+  c.json({
+    service: 'gs-api',
+    commit: c.env.GIT_SHA ?? c.env.DEPLOY_SHA ?? 'unknown',
+    deployedAt: new Date().toISOString(),
+    environment: c.env.ENV ?? 'production',
+  }),
+);
+
 app.route('/health', health);
 app.route('/ai', ai);
 app.route('/users', users);
@@ -214,12 +261,14 @@ app.route('/media', media);
 app.route('/pages', pages);
 app.route('/internal', internal);
 
-// V1 Routes
 const v1 = new Hono<{ Bindings: Env }>();
-
 v1.route('/users', users);
-// Placeholder routes removed — v1/agents, v1/models, and v1/logs
-// returned hardcoded fake data. Implement with real handlers when needed.
+v1.route('/domains', domains);
+v1.route('/sites', sites);
+v1.route('/forms', forms);
+v1.route('/deployments', deployments);
+v1.route('/gearswipe', gearswipe);
+v1.get('/leads', (c) => c.json({ leads: [] }));
 
 app.route('/v1', v1);
 
