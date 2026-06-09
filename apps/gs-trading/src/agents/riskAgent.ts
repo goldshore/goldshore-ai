@@ -23,6 +23,9 @@ export function checkOrderRisk(
   const violations: string[] = [];
   const warnings: string[] = [];
   const totalValue = accounts.reduce((s, a) => s + a.totalValue, 0);
+  const maxDailyLoss = accounts.reduce((s, a) => s + a.dayPL, 0);
+
+  const positionPct = totalValue > 0 ? order.estimatedValue / totalValue : 0;
   const totalDayPL = accounts.reduce((s, a) => s + a.dayPL, 0);
   const isSell = order.side === 'SELL';
 
@@ -61,6 +64,9 @@ export function checkOrderRisk(
     );
   }
 
+  const existingPos = positions.find(p => p.symbol === order.symbol);
+  if (existingPos) {
+    const combinedValue = existingPos.marketValue + order.estimatedValue;
   if (riskableQty > 0) {
     const existingAbsValue = Math.abs(existingPos?.marketValue ?? 0);
     const combinedValue = existingAbsValue + riskableValue;
