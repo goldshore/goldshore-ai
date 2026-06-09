@@ -13,7 +13,13 @@ const PUBLIC_WEB_HOSTS = new Set([
   'www.goldshore.ai',
   'goldshore.org',
   'www.goldshore.org',
+  // Cloudflare Pages preview deployments
+  'gs-web-bon.pages.dev',
 ]);
+
+function isPreviewHost(hostname: string): boolean {
+  return hostname.endsWith('.pages.dev');
+}
 
 export const onRequest: MiddlewareHandler = async (context, next) => {
   const url = new URL(context.request.url);
@@ -22,8 +28,9 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
 
   if (adminRule) {
     const isProtectedAdminHost = isAdminHost(url.hostname);
+    const isAllowedWebHost = PUBLIC_WEB_HOSTS.has(url.hostname) || isPreviewHost(url.hostname);
 
-    if (!isProtectedAdminHost && PUBLIC_WEB_HOSTS.has(url.hostname)) {
+    if (!isProtectedAdminHost && isAllowedWebHost) {
       if (adminRule.kind === 'page') {
         return context.redirect(getCanonicalAdminUrl(adminRule.canonicalPath), 302);
       }
