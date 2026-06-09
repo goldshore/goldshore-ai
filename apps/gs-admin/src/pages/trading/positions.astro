@@ -1,0 +1,109 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+---
+<AdminLayout title="Positions | Trading">
+  <nav class="trading-tabs">
+    <a href="/trading" class="tab">Overview</a>
+    <a href="/trading/accounts" class="tab">Accounts</a>
+    <a href="/trading/positions" class="tab active">Positions</a>
+    <a href="/trading/orders" class="tab">Orders</a>
+    <a href="/trading/quotes" class="tab">Quotes</a>
+    <a href="/trading/risk" class="tab">Risk</a>
+  </nav>
+
+  <div class="panel">
+    <div class="panel-header">
+      <h3>⇄ Open Positions</h3>
+      <div class="controls">
+        <select id="broker-filter" class="select-xs">
+          <option value="">All Brokers</option>
+          <option value="schwab">Schwab</option>
+          <option value="robinhood">Robinhood</option>
+        </select>
+        <button class="btn btn-xs" id="refresh-btn">Refresh</button>
+      </div>
+    </div>
+    <div id="pos-summary" class="pos-summary" style="display:none">
+      <div class="sum-item"><span class="sum-label">Total Value</span><span id="sum-value">—</span></div>
+      <div class="sum-item"><span class="sum-label">Unrealised P&L</span><span id="sum-pl" class="pos">—</span></div>
+      <div class="sum-item"><span class="sum-label">Positions</span><span id="sum-count">—</span></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Symbol</th><th>Broker</th><th>Type</th><th>Qty</th><th>Avg Cost</th><th>Current</th><th>Market Val</th><th>Unr. P&L</th><th>Unr. %</th></tr></thead>
+        <tbody id="positions-body"><tr><td colspan="9" class="empty">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</AdminLayout>
+
+<style>
+  .trading-tabs{display:flex;gap:.25rem;margin-bottom:1.5rem;border-bottom:1px solid rgba(255,255,255,.08)}
+  .tab{padding:.5rem 1rem;text-decoration:none;color:#9ca3af;font-size:.8rem;font-family:monospace;text-transform:uppercase;border-bottom:2px solid transparent}
+  .tab:hover{color:#fff}.tab.active{color:#fff;border-bottom-color:#f97316}
+  .panel{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:.5rem;padding:1.25rem}
+  .panel-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:1px solid rgba(255,255,255,.06)}
+  .panel-header h3{margin:0;font-size:.8rem;text-transform:uppercase;font-family:monospace;color:#e5e7eb}
+  .controls{display:flex;gap:.5rem;align-items:center}
+  .btn-xs{padding:.25rem .6rem;font-size:.7rem;background:rgba(255,255,255,.05);color:#9ca3af;border:1px solid rgba(255,255,255,.1);border-radius:4px;cursor:pointer;font-family:monospace}
+  .select-xs{padding:.25rem .5rem;font-size:.7rem;background:rgba(255,255,255,.05);color:#9ca3af;border:1px solid rgba(255,255,255,.1);border-radius:4px;font-family:monospace}
+  .pos-summary{display:flex;gap:2rem;margin-bottom:1rem;padding:.75rem 1rem;background:rgba(255,255,255,.02);border-radius:4px}
+  .sum-item{font-family:monospace;font-size:.82rem}
+  .sum-label{color:#6b7280;margin-right:.5rem}
+  .table-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:.8rem;font-family:monospace}
+  th{color:#6b7280;font-weight:500;text-align:left;padding:.4rem .6rem;border-bottom:1px solid rgba(255,255,255,.06);text-transform:uppercase;font-size:.7rem}
+  td{padding:.5rem .6rem;border-bottom:1px solid rgba(255,255,255,.04);color:#d1d5db}
+  tr:hover td{background:rgba(255,255,255,.02)}
+  .empty{color:#4b5563;text-align:center;padding:1.5rem}
+  .pos{color:#4ade80}.neg{color:#f87171}
+  .broker-tag{font-size:.7rem;padding:.1rem .4rem;border-radius:3px;background:rgba(255,255,255,.07);color:#9ca3af}
+</style>
+
+<script is:inline>
+  const fmt = n => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n??0);
+  const fmtPct = n => `${n>=0?'+':''}${(n??0).toFixed(2)}%`;
+
+  async function load() {
+    const broker = document.getElementById('broker-filter').value;
+    const tbody = document.getElementById('positions-body');
+    tbody.innerHTML = '<tr><td colspan="9" class="empty">Loading…</td></tr>';
+    try {
+      const url = broker ? `/api/trading/positions?broker=${broker}` : '/api/trading/positions';
+      const { positions = [], errors = [] } = await fetch(url).then(r => r.json());
+      const summary = document.getElementById('pos-summary');
+      if (positions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="empty">No positions found</td></tr>';
+        summary.style.display = 'none';
+        return;
+      }
+      const totalValue = positions.reduce((s,p)=>s+(p.marketValue??0),0);
+      const totalPL    = positions.reduce((s,p)=>s+(p.unrealizedPL??0),0);
+      document.getElementById('sum-value').textContent = fmt(totalValue);
+      document.getElementById('sum-pl').textContent = fmt(totalPL);
+      document.getElementById('sum-pl').className = totalPL>=0?'pos':'neg';
+      document.getElementById('sum-count').textContent = positions.length;
+      summary.style.display = 'flex';
+      tbody.innerHTML = positions.map(p => {
+        const plClass = p.unrealizedPL >= 0 ? 'pos' : 'neg';
+        return `<tr>
+          <td><strong>${p.symbol}</strong></td>
+          <td><span class="broker-tag">${p.broker}</span></td>
+          <td>${p.assetType}</td>
+          <td>${p.quantity}</td>
+          <td>${fmt(p.avgCost)}</td>
+          <td>${fmt(p.currentPrice)}</td>
+          <td>${fmt(p.marketValue)}</td>
+          <td class="${plClass}">${fmt(p.unrealizedPL)}</td>
+          <td class="${plClass}">${fmtPct(p.unrealizedPLPct)}</td>
+        </tr>`;
+      }).join('');
+    } catch(e) {
+      tbody.innerHTML = `<tr><td colspan="9" class="empty" style="color:#f87171">Failed: ${e.message}</td></tr>`;
+    }
+  }
+
+  document.getElementById('broker-filter').addEventListener('change', load);
+  document.getElementById('refresh-btn').addEventListener('click', load);
+  load();
+</script>
