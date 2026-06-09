@@ -8,7 +8,7 @@ declare namespace Cloudflare {
 	interface Env {
 		KV: KVNamespace;
 		ASSETS: R2Bucket;
-		DB: D1Database;
+		CONTENT_DB: D1Database;
 		AI: Ai;
 		ENV: "production";
 		CLOUDFLARE_ACCESS_AUDIENCE: "YOUR_AUDIENCE_TAG_HERE";

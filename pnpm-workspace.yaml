@@ -7,6 +7,7 @@ packages:
   - 'apps/gs-platform'
   - 'apps/gs-agent'
   - 'apps/gs-mail'
+  - 'apps/gs-www-redirect'
   - 'apps/gs-core-worker'
   - 'apps/armsway-com'
   - 'apps/banproof-me'

@@ -28,6 +28,10 @@ jobs:
         run: pnpm run repo:health
         continue-on-error: false
 
+      - name: Enforce banproof production bindings
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: pnpm check:banproof-bindings
+
       - name: Build all
         run: pnpm -r build
 
