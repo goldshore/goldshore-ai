@@ -37,6 +37,15 @@ binding = "AI"
 name = "AUTH_SESSION"
 class_name = "AuthSession"
 
+[[env.prod.services]]
+binding = "AGENT"
+service = "gs-agent"
+environment = "prod"
+
+[[env.prod.queues.producers]]
+binding = "JOBS_QUEUE"
+queue = "goldshore-jobs"
+
 [env.preview]
 routes = []
 
@@ -58,6 +67,15 @@ database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
 
 [env.preview.ai]
 binding = "AI"
+
+[[env.preview.services]]
+binding = "AGENT"
+service = "gs-agent"
+environment = "preview"
+
+[[env.preview.queues.producers]]
+binding = "JOBS_QUEUE"
+queue = "goldshore-jobs"
 
 [[migrations]]
 tag = "v1-auth-session"
