@@ -13,12 +13,10 @@ export class SchwabClient {
   private async getAccessToken(): Promise<string> {
     if (this.accessToken && Date.now() < this.tokenExpiry) return this.accessToken;
 
-    // CLIENT_ID and CLIENT_SECRET are always required
     if (!this.env.SCHWAB_CLIENT_ID || !this.env.SCHWAB_CLIENT_SECRET) {
       throw new Error('Schwab credentials not configured (missing SCHWAB_CLIENT_ID or SCHWAB_CLIENT_SECRET)');
     }
 
-    // Try KV-cached access token first
     if (this.env.TRADING_KV) {
       const cached = await this.env.TRADING_KV.get('schwab:access_token');
       const expiry = await this.env.TRADING_KV.get('schwab:token_expiry');
@@ -29,7 +27,6 @@ export class SchwabClient {
       }
     }
 
-    // KV-stored rotated token takes precedence over the env secret seed
     const storedRefreshToken = this.env.TRADING_KV
       ? await this.env.TRADING_KV.get('schwab:refresh_token')
       : null;

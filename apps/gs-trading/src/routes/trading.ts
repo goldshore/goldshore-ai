@@ -157,7 +157,6 @@ tradingRoutes.post('/orders', async (c) => {
   if (!['schwab', 'robinhood'].includes(broker)) return c.json({ error: 'broker must be schwab or robinhood' }, 400);
   if (quantity <= 0 || !Number.isFinite(quantity)) return c.json({ error: 'quantity must be a positive number' }, 400);
 
-  // Validate broker is actually configured
   if (!isDemoMode(c.env)) {
     if (broker === 'schwab' && !c.env.SCHWAB_CLIENT_ID) {
       return c.json({ error: 'Schwab is not configured on this deployment' }, 503);
@@ -167,7 +166,6 @@ tradingRoutes.post('/orders', async (c) => {
     }
   }
 
-  // Schwab only supports MARKET and LIMIT order types
   const schwabOrderTypes = ['MARKET', 'LIMIT'] as const;
   if (broker === 'schwab' && !schwabOrderTypes.includes(orderType)) {
     return c.json({ error: `Schwab does not support order type '${orderType}'. Supported: MARKET, LIMIT` }, 400);
@@ -176,7 +174,6 @@ tradingRoutes.post('/orders', async (c) => {
     return c.json({ error: 'limitPrice must be a positive number for LIMIT orders' }, 400);
   }
 
-  // Fetch ALL configured brokers for risk check (cross-broker daily loss must be enforced)
   const accounts: any[] = [];
   const positions: any[] = [];
   let estimatedPrice = orderType === 'LIMIT' ? Number(limitPrice) : 0;
@@ -184,7 +181,6 @@ tradingRoutes.post('/orders', async (c) => {
   if (!isDemoMode(c.env)) {
     try {
       const needsQuote = orderType === 'MARKET';
-      // Always collect all brokers so risk check sees the full portfolio
       const tasks: Promise<void>[] = [];
 
       if (c.env.SCHWAB_CLIENT_ID) {
@@ -233,7 +229,6 @@ tradingRoutes.post('/orders', async (c) => {
       return c.json({ error: `Failed to fetch data for risk check: ${e.message}` }, 503);
     }
   } else if (orderType === 'MARKET') {
-    // Demo mode: use mock prices so risk check has a meaningful value
     const mockPrices: Record<string, number> = { SPY: 461.85, QQQ: 402.30, AAPL: 189.45, TSLA: 231.80, NVDA: 875.40, MSFT: 415.20, AMZN: 185.60 };
     estimatedPrice = mockPrices[symbol] ?? 100;
   }
@@ -298,7 +293,6 @@ tradingRoutes.get('/risk', async (c) => {
   }
   return c.json({ metrics: getPortfolioRiskMetrics(positions, accounts) });
   if (isDemoMode(c.env)) return c.json({ metrics: getMockRiskMetrics(), demo: true });
-  // Collect data from each broker independently so one outage does not zero out the other
   const accounts: any[] = [];
   const positions: any[] = [];
   const errors: any[] = [];
