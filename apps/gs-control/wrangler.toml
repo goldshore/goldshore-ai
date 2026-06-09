@@ -17,11 +17,11 @@ CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 
 [[env.prod.kv_namespaces]]
 binding = "GS_CONFIG"
-id = "gs_config_001"
+id = "68f52b467dc0413991b2195ef9081cae"
 
 [[env.prod.kv_namespaces]]
 binding = "CONTROL_LOGS"
-id = "gs_control_logs_001"
+id = "a52e94cb331c4e3db08f2aa507e6df09"
 
 [env.preview]
 routes = [
@@ -34,8 +34,8 @@ CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 
 [[env.preview.kv_namespaces]]
 binding = "GS_CONFIG"
-id = "gs_config_preview"
+id = "dddc8b83775c41e58208bf8de87b7052"
 
 [[env.preview.kv_namespaces]]
 binding = "CONTROL_LOGS"
-id = "gs_control_logs_preview"
+id = "09e43cb8bd4749fdaaed0dc9d4ff2284"
