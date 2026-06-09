@@ -33,7 +33,7 @@ jobs:
         run: pnpm check:banproof-bindings
 
       - name: Build all
-        run: pnpm -r build
+        run: pnpm -r --sequential build
 
       - name: gs-web release quality gate
         working-directory: apps/gs-web
