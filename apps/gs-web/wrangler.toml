@@ -1,3 +1,61 @@
-name = "gs-web-staging"
+name = "gs-web"
 compatibility_date = "2026-04-18"
 pages_build_output_dir = "./dist"
+
+[env.prod]
+routes = [
+  { pattern = "goldshore.ai", custom_domain = true },
+  { pattern = "goldshore.org", custom_domain = true },
+  { pattern = "rmarston.com", custom_domain = true }
+]
+
+[[env.prod.kv_namespaces]]
+binding = "SITE_KV"
+id = "a59a5e2f446348629f59fb21ea69d795"
+
+[[env.prod.d1_databases]]
+binding = "CONTENT_DB"
+database_name = "goldshore"
+database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
+
+[[env.prod.r2_buckets]]
+binding = "ASSETS"
+bucket_name = "gs-assets"
+
+[[env.prod.services]]
+binding = "API_SERVICE"
+service = "gs-api"
+environment = "prod"
+
+[[env.prod.services]]
+binding = "GATEWAY"
+service = "gs-gateway"
+environment = "prod"
+
+[env.preview]
+routes = [
+  { pattern = "preview.goldshore.ai", custom_domain = true }
+]
+
+[[env.preview.kv_namespaces]]
+binding = "SITE_KV"
+id = "a59a5e2f446348629f59fb21ea69d795"
+
+[[env.preview.d1_databases]]
+binding = "CONTENT_DB"
+database_name = "goldshore"
+database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
+
+[[env.preview.r2_buckets]]
+binding = "ASSETS"
+bucket_name = "gs-assets-preview"
+
+[[env.preview.services]]
+binding = "API_SERVICE"
+service = "gs-api"
+environment = "preview"
+
+[[env.preview.services]]
+binding = "GATEWAY"
+service = "gs-gateway"
+environment = "preview"

@@ -1,5 +1,5 @@
-# Worker Builds token for this service must be the gs-control build token.
-# wrangler.toml for the gs-gateway worker (deployed as gs-platform on CF)
+# Worker name matches the repo directory (gs-gateway).
+# The live Cloudflare worker was previously named gs-platform; update that via wrangler rename if needed.
 name = "gs-gateway"
 main = "src/index.ts"
 compatibility_date = "2026-04-18"
@@ -32,46 +32,41 @@ routes = [
 ENV = "production"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 
-# ── KV Namespaces ──────────────────────────────────────────
+# ── KV Namespaces ─────────────────────────────────────────────────
 [[env.prod.kv_namespaces]]
 binding = "AI_CACHE"
-id = "gs-ai-cache"
+id = "a02882aa2e2248158505d3a0aac8e9e2"
 
 [[env.prod.kv_namespaces]]
 binding = "GS_CONFIG"
-id = "gs_config_001"
+id = "68f52b467dc0413991b2195ef9081cae"
 
 [[env.prod.kv_namespaces]]
 binding = "GATEWAY_KV"
-# TODO: Replace with actual namespace ID from CF dashboard (Storage → KV).
-# Create if missing: wrangler kv namespace create GATEWAY_KV
-id = "REPLACE_WITH_GATEWAY_KV_NAMESPACE_ID"
+id = "17840f9b6ac64cb1a51aeff085efe24c"
 
-# ── D1 Databases ───────────────────────────────────────────
+# ── D1 Databases ──────────────────────────────────────────────
 [[env.prod.d1_databases]]
-binding = "DB"
+binding = "PLATFORM_DB"
 database_name = "gs_platform_db"
-database_id = "gs_platform_db"
+database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
 
-# ── R2 Buckets ─────────────────────────────────────────────
+# ── R2 Buckets ─────────────────────────────────────────────────
 [[env.prod.r2_buckets]]
 binding = "ASSETS"
 bucket_name = "gs-assets"
 
-# ── Service bindings ───────────────────────────────────────
-# Uncomment each binding once the target worker is deployed on CF.
-#
-# [[env.prod.services]]
-# binding = "API_SERVICE"
-# service = "gs-api"
-# environment = "prod"
-#
+# ── Service bindings ──────────────────────────────────────────
+[[env.prod.services]]
+binding = "API_SERVICE"
+service = "gs-api"
+environment = "prod"
+
 [[env.prod.services]]
 binding = "AGENT"
 service = "gs-agent"
 environment = "prod"
 
-# ── Phase 2: Joinery — security + signals spokes ──────────
 [[env.prod.services]]
 binding = "SECURITY_CHECK"
 service = "banproof-me"
@@ -80,7 +75,7 @@ service = "banproof-me"
 binding = "SIGNALS"
 service = "gs-signals-prod"
 
-# ── Phase 2: Queue producer for mail jobs ─────────────────
+# ── Queue producers ─────────────────────────────────────────────
 [[env.prod.queues.producers]]
 binding = "MAIL_QUEUE"
 queue = "gs-mail-jobs"
