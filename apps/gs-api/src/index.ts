@@ -1,10 +1,10 @@
 import { Hono } from 'hono';
 import { secureHeaders } from 'hono/secure-headers';
-import { cors } from 'hono/cors';
 import {
   verifyAccessWithClaims,
   type AccessTokenPayload,
 } from '@goldshore/auth';
+import { createCorsMiddleware, APPROVED_API_ORIGINS } from '@goldshore/shared';
 import users from './routes/users';
 import health from './routes/health';
 import ai from './routes/ai';
@@ -15,6 +15,11 @@ import admin from './routes/admin';
 import media from './routes/media';
 import pages from './routes/pages';
 import internal from './routes/internal';
+import domains from './routes/domains';
+import sites from './routes/sites';
+import forms from './routes/forms';
+import deployments from './routes/deployments';
+import gearswipe from './routes/gearswipe';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
 
@@ -58,14 +63,7 @@ const requiredSecrets = [
   'ACCESS_CLIENT_SECRET',
 ] as const;
 
-const DEFAULT_ALLOWED_ORIGINS = [
-  'https://goldshore.ai',
-  'https://www.goldshore.ai',
-  'https://admin.goldshore.ai',
-  'https://ops.goldshore.ai',
-  'https://admin-preview.goldshore.ai',
-  'https://preview.goldshore.ai',
-];
+const DEFAULT_ALLOWED_ORIGINS = [...APPROVED_API_ORIGINS];
 
 const PREVIEW_ORIGIN_PATTERNS = [
   /^https:\/\/[a-z0-9-]+-preview\.goldshore\.ai$/i,
@@ -85,13 +83,6 @@ const isPreviewOrigin = (origin: string) => {
 const isAllowedOrigin = (origin: string, allowedOrigins?: string) => {
   const configuredOrigins = parseAllowedOrigins(allowedOrigins);
   return configuredOrigins.includes(origin) || isPreviewOrigin(origin);
-};
-
-const isLocalDevelopmentOrigin = (origin: string) => {
-  return (
-    origin.startsWith('http://localhost') ||
-    origin.startsWith('http://127.0.0.1')
-  );
 };
 
 const isPublicPath = (path: string, method: string) => {
@@ -132,23 +123,8 @@ app.use('*', async (c, next) => {
 // Enforce CORS to allow legitimate browser clients
 app.use(
   '*',
-  cors({
-    origin: (origin, c) => {
-      if (!origin) {
-        return null;
-      }
-
-      if (c.env.ENV !== 'production' && isLocalDevelopmentOrigin(origin)) {
-        return origin;
-      }
-
-      return isAllowedOrigin(origin, c.env.ALLOWED_ORIGINS) ? origin : null;
-    },
-    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowHeaders: ['Content-Type', 'Authorization', 'CF-Access-Jwt-Assertion'],
-    exposeHeaders: ['Content-Length'],
-    credentials: true,
-    maxAge: 600,
+  createCorsMiddleware({
+    allowLocalhost: true,
   }),
 );
 
@@ -220,17 +196,36 @@ app.get('/', (c) => {
   `);
 });
 
-app.get('/version', (c) =>
-  c.json(
+const PUBLIC_VERSION_CORS_ORIGINS = new Set([
+  'https://goldshore.org',
+  'https://www.goldshore.org',
+]);
+
+app.get('/version', (c) => {
+  const origin = c.req.header('Origin');
+  if (origin && PUBLIC_VERSION_CORS_ORIGINS.has(origin)) {
+    c.header('Access-Control-Allow-Origin', origin);
+    c.header('Vary', 'Origin', { append: true });
+  }
+  return c.json(
     withContractHeaders(
       {
         service: 'gs-api',
         version: c.env.API_VERSION ?? c.env.GIT_SHA ?? 'unknown',
         deploySha: c.env.DEPLOY_SHA ?? c.env.GIT_SHA ?? null,
       },
-      getRuntimeVersion(c.env)
-    )
-  )
+      getRuntimeVersion(c.env),
+    ),
+  );
+});
+
+app.get('/version.json', (c) =>
+  c.json({
+    service: 'gs-api',
+    commit: c.env.GIT_SHA ?? c.env.DEPLOY_SHA ?? 'unknown',
+    deployedAt: new Date().toISOString(),
+    environment: c.env.ENV ?? 'production',
+  }),
 );
 
 // Core routes
@@ -249,6 +244,12 @@ app.route('/internal', internal);
 const v1 = new Hono<{ Bindings: Env }>();
 
 v1.route('/users', users);
+v1.route('/domains', domains);
+v1.route('/sites', sites);
+v1.route('/forms', forms);
+v1.route('/deployments', deployments);
+v1.route('/gearswipe', gearswipe);
+v1.get('/leads', (c) => c.json({ leads: [] }));
 // Placeholder routes removed — v1/agents, v1/models, and v1/logs
 // returned hardcoded fake data. Implement with real handlers when needed.
 
