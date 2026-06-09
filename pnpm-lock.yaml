@@ -11,3 +11,79 @@ overrides:
   wrangler: ^4.63.0
   typescript: ^5.4.2
   esbuild: 0.25.12
+
+importers:
+
+  .:
+    dependencies:
+      '@astrojs/cloudflare':
+        specifier: 13.1.10
+        version: 13.1.10(@types/node@25.9.2)(astro@6.4.4(@types/node@25.9.2)(rollup@4.61.1)(tsx@4.22.4)(yaml@2.9.0))(tsx@4.22.4)(workerd@1.20260603.1)(wrangler@4.98.0(@cloudflare/workers-types@4.20260608.1))(yaml@2.9.0)
+      p-limit:
+        specifier: ^7.3.0
+        version: 7.3.0
+      turbo:
+        specifier: ^2.9.12
+        version: 2.9.16
+    devDependencies:
+      '@astrojs/mdx':
+        specifier: ^5.0.4
+        version: 5.0.6(astro@6.4.4(@types/node@25.9.2)(rollup@4.61.1)(tsx@4.22.4)(yaml@2.9.0))
+      '@astrojs/sitemap':
+        specifier: ^3.7.2
+        version: 3.7.3
+      '@astrojs/tailwind':
+        specifier: ^6.0.2
+        version: 6.0.2(astro@6.4.4(@types/node@25.9.2)(rollup@4.61.1)(tsx@4.22.4)(yaml@2.9.0))(tailwindcss@4.3.0)
+      '@types/node':
+        specifier: ^25.7.0
+        version: 25.9.2
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^8.57.2
+        version: 8.61.0(@typescript-eslint/parser@8.61.0(eslint@10.4.1)(typescript@5.9.3))(eslint@10.4.1)(typescript@5.9.3)
+      '@typescript-eslint/parser':
+        specifier: ^8.57.2
+        version: 8.61.0(eslint@10.4.1)(typescript@5.9.3)
+      astro:
+        specifier: ^6.3.1
+        version: 6.4.4(@types/node@25.9.2)(rollup@4.61.1)(tsx@4.22.4)(yaml@2.9.0)
+      eslint:
+        specifier: ^10.1.0
+        version: 10.4.1
+      eslint-plugin-astro:
+        specifier: ^1.6.0
+        version: 1.7.0(eslint@10.4.1)
+      form-data:
+        specifier: ^4.0.5
+        version: 4.0.5
+      octokit:
+        specifier: ^5.0.5
+        version: 5.0.5
+      prettier:
+        specifier: ^3.2.5
+        version: 3.8.3
+      prettier-plugin-astro:
+        specifier: ^0.14.1
+        version: 0.14.1
+      svgo:
+        specifier: ^4.0.1
+        version: 4.0.1
+      tailwindcss:
+        specifier: ^4.3.0
+        version: 4.3.0
+      tsx:
+        specifier: ^4.21.0
+        version: 4.22.4
+      typescript:
+        specifier: ^5.4.2
+        version: 5.9.3
+      wrangler:
+        specifier: ^4.63.0
+        version: 4.98.0(@cloudflare/workers-types@4.20260608.1)
+      yaml:
+        specifier: ^2.8.4
+        version: 2.9.0
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
+REMOVED_FOR_SPACE
