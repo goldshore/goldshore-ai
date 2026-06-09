@@ -66,6 +66,20 @@ tests:
     - url: 'https://goldshore.ai/'
       expect_status: 301
       timeout_ms: 5000
+    - url: 'https://goldshore.org/'
+      expect_status: 200
+      timeout_ms: 5000
+    - url: 'https://api.goldshore.ai/health'
+      expect_status: 200
+      timeout_ms: 4000
+    - url: 'https://api.goldshore.ai/version'
+      expect_status: 200
+      timeout_ms: 4000
     - url: 'https://gw.goldshore.ai/health'
       expect_status: 200
       timeout_ms: 4000
+  lighthouse:
+    url: 'https://goldshore.ai/'
+    budget:
+      performance: 0.85
+      tti_ms: 4000

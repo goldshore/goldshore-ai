@@ -1,13 +1,53 @@
 import type { MiddlewareHandler } from 'astro';
-import { HTML_CONTENT_SECURITY_POLICY } from './security/policy';
+
+import {
+  authorizeAdminRequest,
+  getAdminRouteRule,
+  getCanonicalAdminUrl,
+  isAdminHost,
+} from './utils/admin-access';
+import { WEB_HEADERS_CSP } from './utils/csp';
+
+const PUBLIC_WEB_HOSTS = new Set([
+  'goldshore.ai',
+  'www.goldshore.ai',
+  'goldshore.org',
+  'www.goldshore.org',
+  // Cloudflare Pages preview deployments
+  'gs-web-bon.pages.dev',
+]);
+
+function isPreviewHost(hostname: string): boolean {
+  return hostname.endsWith('.pages.dev');
+}
 
 export const onRequest: MiddlewareHandler = async (context, next) => {
-  // Response headers are authoritative for Astro-rendered HTML. Static files
-  // that can bypass middleware keep their own platform config in public/_headers.
+  const url = new URL(context.request.url);
   context.locals.securityPolicySource = 'response-header';
+  const adminRule = getAdminRouteRule(url.pathname, context.request.method, url.hostname);
+
+  if (adminRule) {
+    const isProtectedAdminHost = isAdminHost(url.hostname);
+    const isAllowedWebHost = PUBLIC_WEB_HOSTS.has(url.hostname) || isPreviewHost(url.hostname);
+
+    if (!isProtectedAdminHost && isAllowedWebHost) {
+      if (adminRule.kind === 'page') {
+        return context.redirect(getCanonicalAdminUrl(adminRule.canonicalPath), 302);
+      }
+
+      return new Response('Forbidden', { status: 403 });
+    }
+
+    const env = context.locals.runtime?.env;
+    const auth = await authorizeAdminRequest(context.request, env, adminRule);
+
+    if (!auth.ok) {
+      return new Response(auth.error, { status: auth.status });
+    }
+  }
 
   const response = await next();
-  response.headers.set('Content-Security-Policy', HTML_CONTENT_SECURITY_POLICY);
+  response.headers.set('Content-Security-Policy', WEB_HEADERS_CSP);
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');

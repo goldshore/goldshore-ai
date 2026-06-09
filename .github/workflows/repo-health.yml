@@ -19,7 +19,7 @@ jobs:
       - name: Install ripgrep
         run: sudo apt-get update && sudo apt-get install -y ripgrep
 
-      - uses: pnpm/action-setup@08c4be7e2e672a47d11bd04269e27e5f3e8529cb
+      - uses: pnpm/action-setup@v4
 
       - uses: actions/setup-node@v4
         with:

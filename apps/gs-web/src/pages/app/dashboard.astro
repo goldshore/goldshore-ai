@@ -1,11 +1,424 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export const prerender = false;
+
+const operatorEmail =
+  Astro.request.headers.get('CF-Access-Authenticated-User-Email') ?? 'Authenticated operator';
+
+const postureCards = [
+  {
+    label: 'Public probes',
+    value: '/, /health, /version',
+    detail: 'Health-style checks stay public on api.goldshore.ai while admin and internal surfaces remain protected.',
+  },
+  {
+    label: 'Protected surfaces',
+    value: '/admin, /system, /internal',
+    detail: 'Private API paths require Cloudflare Access plus role-based application authorization.',
+  },
+  {
+    label: 'Admin host',
+    value: 'admin.goldshore.ai',
+    detail: 'The admin hostname is expected to remain Cloudflare Access gated and should not serve the public marketing experience.',
+  },
+];
+
+const inventoryCards = [
+  {
+    title: 'Pages',
+    items: [
+      'gs-web serves goldshore.ai, www.goldshore.ai, and the desired goldshore.org mirror domains.',
+      'gs-admin remains part of the documented Cloudflare desired state and should be reconciled against the repo.',
+    ],
+  },
+  {
+    title: 'Workers',
+    items: [
+      'gs-api handles public health checks plus protected admin, system, media, pages, and internal routes.',
+      'Desired-state still tracks gs-gateway, gs-control, and gs-mail as separate worker services.',
+    ],
+  },
+  {
+    title: 'Storage and data',
+    items: [
+      'KV stores service status, routing, audit, and sync metadata.',
+      'D1 and R2 back protected admin workflows, media delivery, and operational history.',
+    ],
+  },
+  {
+    title: 'Access and sync',
+    items: [
+      'Cloudflare Access should protect admin.goldshore.ai, ops.goldshore.ai, preview hosts, and private API paths.',
+      'Service-token smoke checks should cover admin hosts, preview hosts, and pages.dev previews when credentials are present.',
+    ],
+  },
+];
+
+const surfaces = [
+  {
+    title: 'API health',
+    href: 'https://api.goldshore.ai/health',
+    detail: 'Public heartbeat endpoint for shallow and deep health checks.',
+  },
+  {
+    title: 'API version',
+    href: 'https://api.goldshore.ai/version',
+    detail: 'Public deploy fingerprint for smoke tests and release verification.',
+  },
+  {
+    title: 'System status',
+    href: 'https://api.goldshore.ai/system/status',
+    detail: 'Protected service-status snapshot sourced from runtime KV state.',
+  },
+  {
+    title: 'System config',
+    href: 'https://api.goldshore.ai/system/config',
+    detail: 'Protected API config surface used for operator review and sync validation.',
+  },
+  {
+    title: 'DNS sync',
+    href: 'https://api.goldshore.ai/internal/dns-sync-status',
+    detail: 'Protected DNS drift and last-sync report sourced from control logs.',
+  },
+  {
+    title: 'Inbox and logs',
+    href: 'https://api.goldshore.ai/internal/inbox-status',
+    detail: 'Protected mail and orchestration snapshot for recent sync and queue review.',
+  },
+];
+
+const actions = [
+  { href: '/admin/lead-submissions', label: 'Review inbound leads' },
+  { href: 'https://api.goldshore.ai/system/status', label: 'Open system status' },
+  { href: 'https://api.goldshore.ai/internal/dns-sync-status', label: 'Open DNS sync status' },
+];
 ---
-<BaseLayout title="Dashboard | GoldShore">
-    <section class="max-w-4xl mx-auto py-24 px-6">
-        <h1 class="text-4xl gs-heading mb-4">User Dashboard</h1>
-        <p class="text-lg text-[var(--gs-text-secondary)]">
-            Dashboard features will be added here soon.
-        </p>
-    </section>
+
+<BaseLayout
+  title="Operations Dashboard | GoldShore"
+  description="Cloudflare, API, and admin operational overview"
+>
+  <section class="dashboard-hero gs-shell-section">
+    <div class="dashboard-hero__copy">
+      <p class="gs-eyebrow">Operations dashboard</p>
+      <h1>Admin and Cloudflare posture in one operating surface.</h1>
+      <p class="dashboard-lead">
+        Use this cockpit to verify what should stay public, what must stay behind Access,
+        and which Cloudflare resources back the live GoldShore edge.
+      </p>
+      <div class="dashboard-highlights">
+        <span class="dashboard-pill">
+          <strong>Operator</strong>
+          {operatorEmail}
+        </span>
+        <span class="dashboard-pill">
+          <strong>Primary host</strong>
+          admin.goldshore.ai
+        </span>
+        <span class="dashboard-pill">
+          <strong>API edge</strong>
+          api.goldshore.ai
+        </span>
+      </div>
+    </div>
+
+    <aside class="dashboard-panel">
+      <h2>Immediate checks</h2>
+      <ul>
+        <li>Confirm public probes stay limited to `/`, `/health`, and `/version`.</li>
+        <li>Confirm Access + RBAC gate admin pages, forms, and internal API surfaces.</li>
+        <li>Reconcile desired-state Pages and Workers inventory against live Cloudflare.</li>
+      </ul>
+    </aside>
+  </section>
+
+  <section class="dashboard-grid gs-shell-section" aria-labelledby="posture-title">
+    <div class="section-heading">
+      <p class="gs-eyebrow">Security posture</p>
+      <h2 id="posture-title">Public checks are narrow. Private operations are explicit.</h2>
+    </div>
+    <div class="card-grid card-grid--three">
+      {postureCards.map((card) => (
+        <article class="dashboard-card">
+          <span class="dashboard-card__label">{card.label}</span>
+          <strong>{card.value}</strong>
+          <p>{card.detail}</p>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <section class="dashboard-grid gs-shell-section" aria-labelledby="inventory-title">
+    <div class="section-heading">
+      <p class="gs-eyebrow">Cloudflare inventory</p>
+      <h2 id="inventory-title">Pages, Workers, storage, and Access coverage.</h2>
+    </div>
+    <div class="card-grid card-grid--two">
+      {inventoryCards.map((card) => (
+        <article class="dashboard-card dashboard-card--list">
+          <h3>{card.title}</h3>
+          <ul>
+            {card.items.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <section class="dashboard-grid gs-shell-section" aria-labelledby="surface-title">
+    <div class="section-heading">
+      <p class="gs-eyebrow">Operational surfaces</p>
+      <h2 id="surface-title">Health, config, DNS sync, workers, storage, and recent log views.</h2>
+    </div>
+    <div class="surface-list">
+      {surfaces.map((surface) => (
+        <article class="surface-item">
+          <div>
+            <h3>{surface.title}</h3>
+            <p>{surface.detail}</p>
+          </div>
+          <a href={surface.href} target="_blank" rel="noreferrer">
+            Open surface
+          </a>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <section class="dashboard-actions gs-shell-section" aria-labelledby="actions-title">
+    <div>
+      <p class="gs-eyebrow">Workstream shortcuts</p>
+      <h2 id="actions-title">Move from posture review into operator tasks.</h2>
+    </div>
+    <div class="dashboard-actions__links">
+      {actions.map((action) => (
+        <a class="dashboard-action" href={action.href}>
+          {action.label}
+        </a>
+      ))}
+    </div>
+  </section>
 </BaseLayout>
+
+<style>
+  .dashboard-hero,
+  .dashboard-grid,
+  .dashboard-actions {
+    padding-top: 2.5rem;
+  }
+
+  .dashboard-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+    gap: 1.25rem;
+    align-items: stretch;
+  }
+
+  .dashboard-hero__copy,
+  .dashboard-panel,
+  .dashboard-card,
+  .surface-item,
+  .dashboard-actions {
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 24px;
+    background: rgba(10, 18, 36, 0.76);
+    box-shadow: var(--gs-shadow);
+  }
+
+  .dashboard-hero__copy {
+    padding: clamp(1.4rem, 3vw, 2rem);
+    background:
+      linear-gradient(180deg, rgba(90, 162, 255, 0.08), rgba(10, 18, 36, 0)),
+      rgba(10, 18, 36, 0.76);
+  }
+
+  .dashboard-hero__copy h1,
+  .section-heading h2,
+  .dashboard-actions h2 {
+    margin: 0.75rem 0 0;
+    font-size: clamp(2.2rem, 5vw, 3.8rem);
+    line-height: 1.02;
+    letter-spacing: -0.04em;
+    color: #fff;
+    text-wrap: balance;
+  }
+
+  .dashboard-lead,
+  .dashboard-card p,
+  .dashboard-panel li,
+  .surface-item p {
+    color: rgba(233, 238, 252, 0.8);
+    line-height: 1.7;
+  }
+
+  .dashboard-highlights {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+
+  .dashboard-pill {
+    display: inline-grid;
+    gap: 0.15rem;
+    padding: 0.8rem 0.95rem;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(90, 162, 255, 0.14);
+    min-width: 180px;
+  }
+
+  .dashboard-pill strong,
+  .dashboard-card__label {
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.75rem;
+    color: rgba(178, 215, 255, 0.88);
+  }
+
+  .dashboard-panel {
+    padding: 1.4rem;
+  }
+
+  .dashboard-panel h2,
+  .dashboard-card h3,
+  .surface-item h3 {
+    margin: 0;
+    color: #fff;
+  }
+
+  .dashboard-panel ul,
+  .dashboard-card ul {
+    margin: 1rem 0 0;
+    padding-left: 1.15rem;
+    display: grid;
+    gap: 0.8rem;
+  }
+
+  .section-heading {
+    margin-bottom: 1.2rem;
+    max-width: 58rem;
+  }
+
+  .card-grid {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .card-grid--three {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .card-grid--two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-card {
+    padding: 1.25rem;
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .dashboard-card strong {
+    font-size: clamp(1.3rem, 1.05rem + 0.9vw, 1.85rem);
+    color: #fff;
+  }
+
+  .dashboard-card p,
+  .surface-item p {
+    margin: 0;
+  }
+
+  .dashboard-card--list li {
+    color: rgba(233, 238, 252, 0.82);
+    line-height: 1.65;
+  }
+
+  .surface-list {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .surface-item {
+    padding: 1.1rem 1.2rem;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .surface-item a,
+  .dashboard-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.8rem 1rem;
+    border-radius: 999px;
+    text-decoration: none;
+    color: #fff;
+    border: 1px solid rgba(90, 162, 255, 0.24);
+    background: rgba(90, 162, 255, 0.14);
+    transition:
+      transform 160ms ease,
+      border-color 160ms ease,
+      background 160ms ease;
+  }
+
+  .surface-item a:hover,
+  .surface-item a:focus-visible,
+  .dashboard-action:hover,
+  .dashboard-action:focus-visible {
+    transform: translateY(-1px);
+    border-color: rgba(90, 162, 255, 0.4);
+    background: rgba(90, 162, 255, 0.2);
+  }
+
+  .dashboard-actions {
+    padding: 1.4rem;
+    display: flex;
+    justify-content: space-between;
+    gap: 1.5rem;
+    align-items: center;
+    margin-bottom: 4rem;
+  }
+
+  .dashboard-actions__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    justify-content: flex-end;
+  }
+
+  @media (max-width: 960px) {
+    .dashboard-hero,
+    .card-grid--three,
+    .card-grid--two,
+    .dashboard-actions {
+      grid-template-columns: 1fr;
+    }
+
+    .dashboard-actions {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .dashboard-actions__links {
+      justify-content: flex-start;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .surface-item {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .surface-item a,
+    .dashboard-action {
+      width: 100%;
+    }
+  }
+</style>

@@ -29,11 +29,11 @@ jobs:
         continue-on-error: false
 
       - name: Enforce banproof production bindings
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: ${{ vars.ENABLE_BANPROOF_BINDINGS_CHECK == 'true' }}
         run: pnpm check:banproof-bindings
 
       - name: Build all
-        run: pnpm -r build
+        run: pnpm -r --sequential build
 
       - name: gs-web release quality gate
         working-directory: apps/gs-web

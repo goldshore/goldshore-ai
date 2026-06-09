@@ -1,0 +1,52 @@
+name: Regenerate pnpm lockfile
+
+# Run this when the lockfile is broken in CI (ERR_PNPM_BROKEN_LOCKFILE).
+# It installs with --no-frozen-lockfile, commits the updated pnpm-lock.yaml,
+# and pushes back to the triggering branch.
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch to regenerate the lockfile on
+        required: true
+        default: main
+        type: string
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          ref: ${{ inputs.branch }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: pnpm/action-setup@08c4be7e2e672a47d11bd04269e27e5f3e8529cb
+        with:
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Regenerate lockfile
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Commit updated lockfile
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet pnpm-lock.yaml; then
+            echo "pnpm-lock.yaml unchanged — nothing to commit."
+          else
+            git add pnpm-lock.yaml
+            git commit -m "chore(ci): regenerate pnpm-lock.yaml [skip ci]"
+            git push origin HEAD:${{ inputs.branch }}
+            echo "Lockfile regenerated and pushed to ${{ inputs.branch }}."
+          fi
