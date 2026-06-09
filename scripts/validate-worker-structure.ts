@@ -16,6 +16,17 @@ const DEPLOYMENT_CONFIG_FILES = [
   "infra/Cloudflare/legacy/goldshore-api.wrangler.toml",
 ] as const;
 
+// Workers that are known but not subject to canonical-worker enforcement.
+// gs-admin and gs-web are frontend apps; the others are platform/auxiliary workers.
+const KNOWN_NON_CANONICAL = new Set([
+  'gs-admin',
+  'gs-web',
+  'gs-core-worker',
+  'gs-platform',
+  'gs-trading',
+  'gs-www-redirect',
+]);
+
 function findWorkerDirectories(): string[] {
   return readdirSync(APPS_DIR)
     .map((entry) => path.join(APPS_DIR, entry))
@@ -52,8 +63,8 @@ export function validateWorkerStructure(): string[] {
 
   for (const workerDir of findWorkerDirectories()) {
     const folderName = path.basename(workerDir);
-    // Ignore frontend apps for typical worker validation
-    if (folderName === 'gs-admin' || folderName === 'gs-web') continue;
+    // Ignore frontend apps and known non-canonical workers for file checks
+    if (KNOWN_NON_CANONICAL.has(folderName)) continue;
 
     const missingFiles = REQUIRED_FILES.filter((file) => !existsSync(path.join(workerDir, file)));
 
@@ -109,7 +120,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     .sort();
 
   const unexpectedWorkers = appsDirs.filter(
-    (dir) => existsSync(join(APPS_DIR, dir, "wrangler.toml")) && !CANONICAL_WORKERS.includes(dir) && dir !== 'gs-admin' && dir !== 'gs-web',
+    (dir) => existsSync(join(APPS_DIR, dir, "wrangler.toml")) && !CANONICAL_WORKERS.includes(dir) && !KNOWN_NON_CANONICAL.has(dir),
   );
 
   if (unexpectedWorkers.length > 0) {
