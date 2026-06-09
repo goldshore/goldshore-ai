@@ -176,6 +176,7 @@ const inferApiOrigin = (requestUrl: string): string | undefined => {
   return url.origin;
 };
 
+// Forward /api/* to the API_SERVICE binding; fall back to API_ORIGIN if unbound.
 app.all("/api/*", async (c) => {
   const correlationId = getCorrelationId(c.req.raw);
   const apiOrigin = c.env.API_ORIGIN ?? inferApiOrigin(c.req.url);
