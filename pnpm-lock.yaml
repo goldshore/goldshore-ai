@@ -1,1 +1,13 @@
-LOCKFILE_CONTENT_PLACEHOLDER
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+overrides:
+  '@astrojs/cloudflare': 13.1.10
+  '@astrojs/adapter-cloudflare': 12.6.12
+  postal-mime: 2.7.3
+  wrangler: ^4.63.0
+  typescript: ^5.4.2
+  esbuild: 0.25.12
