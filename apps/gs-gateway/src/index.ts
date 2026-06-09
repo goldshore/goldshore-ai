@@ -1,28 +1,3 @@
-import { Hono } from 'hono';
-import { secureHeaders } from 'hono/secure-headers';
-import { cors } from 'hono/cors';
-import { STATUS_PAGE_HTML } from './templates/status';
-import { type Env } from './types';
-import { checkAuth } from './auth';
-import { integrationControls } from './middleware/integration';
-
-const app = new Hono<{ Bindings: Env }>();
-
-const TRACE_HEADER = 'X-Correlation-Id';
-const AGENT_HOSTNAME = 'agent.goldshore.ai';
-
-const getCorrelationId = (request: Request): string => {
-  return request.headers.get(TRACE_HEADER) ?? crypto.randomUUID();
-};
-
-const withCorrelationId = (response: Response, correlationId: string): Response => {
-  const headers = new Headers(response.headers);
-  headers.set(TRACE_HEADER, correlationId);
-
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
@@ -88,10 +63,10 @@ function isAgentHostnameRequest(request: Request): boolean {
 
 const app = new Hono<{ Bindings: GatewayEnv }>();
 
-// ── Security headers ──────────────────────────────
+// ── Security headers ─────────────────────────────────────
 app.use("*", secureHeaders());
 
-// ── Startup binding guard (production only) ────────────
+// ── Startup binding guard (production only) ───────────────
 app.use("*", async (c, next) => {
   if (c.env.ENV === "production" && !c.env.CLOUDFLARE_ACCESS_AUDIENCE) {
     console.error("CRITICAL: CLOUDFLARE_ACCESS_AUDIENCE is not set. Refusing to serve requests.");
@@ -100,7 +75,7 @@ app.use("*", async (c, next) => {
   await next();
 });
 
-// ── CORS ──────────────────────────────────
+// ── CORS ─────────────────────────────────────────────────
 app.use("*", cors({
   origin: (origin, c) => {
     if (c.env.ENV !== "production") {
@@ -119,10 +94,10 @@ app.use("*", cors({
   credentials: true,
 }));
 
-// ── Auth — fail-closed JWT verification ───────────
+// ── Auth — fail-closed JWT verification ──────────────────
 app.use("*", authMiddleware);
 
-// ── Security check (banproof-me service binding) ───────
+// ── Security check (banproof-me service binding) ─────────
 app.use("*", async (c, next) => {
   const pathname = new URL(c.req.url).pathname;
   if (pathname === "/health") return next();
@@ -467,12 +442,10 @@ app.all("/api/*", async (c) => {
   }
 });
 
-// ── Integration controls ───────────────────────────────────
-// Enforces X-Data-Classification, X-Secrets-Access-Policy, and X-Audit-Trace-Id
-// on /integrations/* and /market-streams/* paths.
+// ── Integration controls ─────────────────────────────────
 app.use("*", integrationControls);
 
-// ── Agent hostname routing ─────────────────────────────────
+// ── Agent hostname routing ────────────────────────────────
 app.use("*", async (c, next) => {
   if (!isAgentHostnameRequest(c.req.raw)) return next();
   const correlationId = getCorrelationId(c.req.raw);
@@ -486,7 +459,7 @@ app.use("*", async (c, next) => {
   return withCorrelationId(response, correlationId);
 });
 
-// ── Routes ─────────────────────────────────────────────────
+// ── Routes ───────────────────────────────────────────────
 app.get("/health", (c) => c.json({ status: "ok", service: "gs-gateway" }));
 
 app.get("/", (c) => c.html(STATUS_PAGE_HTML));
@@ -519,7 +492,6 @@ const inferApiOrigin = (requestUrl: string): string | undefined => {
   return url.origin;
 };
 
-// Forward /api/* to the API_SERVICE binding; fall back to API_ORIGIN if unbound.
 app.all("/api/*", async (c) => {
   const correlationId = getCorrelationId(c.req.raw);
   const apiOrigin = c.env.API_ORIGIN ?? inferApiOrigin(c.req.url);
