@@ -33,14 +33,14 @@ binding = "ASSETS"
 bucket_name = "gs-platform-assets"
 
 [[env.preview.d1_databases]]
-binding = "DB"
+binding = "CONTENT_DB"
 database_name = "goldshore"
 database_id = "f77de112-d201-4e54-a785-a4583814a6c3"
 
 [[env.preview.d1_databases]]
 binding = "TELEMETRY_DB"
 database_name = "gs_telemetry_db"
-database_id = "gs_telemetry_db"
+database_id = "1ae71d76-188f-481b-91d9-db2d39013f68"
 
 [env.preview.ai]
 binding = "AI"
@@ -79,14 +79,14 @@ binding = "ASSETS"
 bucket_name = "gs-platform-assets"
 
 [[env.prod.d1_databases]]
-binding = "DB"
+binding = "CONTENT_DB"
 database_name = "goldshore"
 database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
 
 [[env.prod.d1_databases]]
 binding = "TELEMETRY_DB"
 database_name = "gs_telemetry_db"
-database_id = "gs_telemetry_db"
+database_id = "1ae71d76-188f-481b-91d9-db2d39013f68"
 
 [env.prod.ai]
 binding = "AI"

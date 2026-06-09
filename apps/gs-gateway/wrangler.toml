@@ -51,7 +51,7 @@ id = "17840f9b6ac64cb1a51aeff085efe24c"
 [[env.prod.d1_databases]]
 binding = "PLATFORM_DB"
 database_name = "gs_platform_db"
-database_id = "gs_platform_db"
+database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
 
 # ── R2 Buckets ─────────────────────────────────────────────
 [[env.prod.r2_buckets]]

@@ -50,6 +50,27 @@ test('exposes /version without Cloudflare Access', async () => {
   assert.equal(payload.deploySha, 'abc1234');
 });
 
+test('adds CORS header on /version for allowed public origins', async () => {
+  const response = await app.request(
+    '/version',
+    {
+      headers: {
+        Origin: 'https://goldshore.org',
+      },
+    },
+    {
+      ...requiredRuntimeEnv,
+      API_VERSION: '2026.05.25',
+      GIT_SHA: 'abc1234',
+      DEPLOY_SHA: 'abc1234',
+    } as any,
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('Access-Control-Allow-Origin'), 'https://goldshore.org');
+  assert.match(response.headers.get('Vary') ?? '', /(^|,\s*)Origin(,|$)/);
+});
+
 test('fails closed when protected routes are missing the Access audience', async () => {
   const response = await app.request('/system/status', {}, { ...requiredRuntimeEnv } as any);
 
