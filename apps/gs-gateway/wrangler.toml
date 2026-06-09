@@ -1,6 +1,6 @@
-# Worker name matches the live Cloudflare worker (gs-platform).
-# The repo directory remains apps/gs-gateway/ for clarity.
-name = "gs-platform"
+# Worker name matches the repo directory (gs-gateway).
+# The live Cloudflare worker was previously named gs-platform; update that via wrangler rename if needed.
+name = "gs-gateway"
 main = "src/index.ts"
 compatibility_date = "2026-04-18"
 compatibility_flags = ["nodejs_compat"]

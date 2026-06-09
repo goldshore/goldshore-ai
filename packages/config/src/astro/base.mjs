@@ -1,5 +1,4 @@
 import cloudflare from "@astrojs/cloudflare";
-import tailwindcss from "tailwindcss";
 import { defineConfig } from "astro/config";
 
 export function createAstroConfig(overrides = {}) {
@@ -20,7 +19,7 @@ export function createAstroConfig(overrides = {}) {
     adapter: cloudflare(),
     integrations: [],
     vite: {
-      plugins: [tailwindcss()],
+      plugins: [],
       ssr: {
         noExternal: mergedNoExternal
       },
