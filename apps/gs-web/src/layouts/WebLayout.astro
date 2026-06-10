@@ -60,7 +60,7 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist+Mono:wght@300;400;500&family=Geist:wght@300;400;500;600&display=swap"
       rel="stylesheet"
     />
     <link rel="manifest" href="/site.webmanifest"/>
@@ -224,6 +224,42 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
     </script>
 
     <style is:global>
+      /* GoldShore brand palette — gold-on-void with serif display type.
+         Overrides @goldshore/theme tokens so all pages share the homepage's look. */
+      :root {
+        --gs-gold: #c9a84c;
+        --gs-gold-soft: rgba(201, 168, 76, 0.14);
+        --gs-gold-glow: rgba(201, 168, 76, 0.06);
+
+        --gs-font-body: 'Geist', system-ui, sans-serif;
+        --gs-font-display: 'Instrument Serif', Georgia, serif;
+        --gs-font-mono: 'Geist Mono', 'Courier New', monospace;
+        --gs-line-height-heading: 1.1;
+
+        --gs-color-primary: var(--gs-gold);
+        --gs-color-bg: #060810;
+        --gs-color-surface: #0c1120;
+        --gs-color-surface-strong: #111827;
+        --gs-color-border: rgba(201, 168, 76, 0.15);
+        --gs-color-border-strong: rgba(201, 168, 76, 0.3);
+        --gs-color-text: #e8edf8;
+        --gs-color-subtle: rgba(232, 237, 248, 0.5);
+        --gs-color-faint: rgba(232, 237, 248, 0.25);
+        --gs-accent: var(--gs-gold);
+        --gs-accent-strong: #b8963d;
+        --gs-accent-soft: var(--gs-gold-soft);
+        --gs-accent-contrast: #060810;
+      }
+
+      h1, h2, h3, .gs-display {
+        font-family: var(--gs-font-display);
+        font-weight: 400;
+      }
+
+      .gs-eyebrow, .kicker, code, pre {
+        font-family: var(--gs-font-mono);
+      }
+
       .skip-link {
         position: absolute;
         left: 1rem;
@@ -349,7 +385,7 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
       .desktop-nav__links a:hover,
       .desktop-nav__links a[aria-current='page'] {
         color: var(--gs-text);
-        background: rgba(90, 162, 255, 0.09);
+        background: var(--gs-gold-glow);
       }
 
       .header-cta {
@@ -359,8 +395,8 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
         padding: 0.82rem 1.2rem;
         border-radius: 999px;
         text-decoration: none;
-        background: linear-gradient(135deg, rgba(90, 162, 255, 0.28), rgba(90, 162, 255, 0.16));
-        border: 1px solid rgba(90, 162, 255, 0.34);
+        background: linear-gradient(135deg, rgba(201, 168, 76, 0.28), rgba(201, 168, 76, 0.16));
+        border: 1px solid rgba(201, 168, 76, 0.34);
         color: var(--gs-text);
         font-weight: 700;
         white-space: nowrap;
@@ -370,7 +406,7 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
       .header-cta:hover,
       .header-cta:focus-visible {
         transform: translateY(-1px);
-        background: linear-gradient(135deg, rgba(90, 162, 255, 0.34), rgba(90, 162, 255, 0.2));
+        background: linear-gradient(135deg, rgba(201, 168, 76, 0.34), rgba(201, 168, 76, 0.2));
       }
 
       .menu-button,
@@ -387,7 +423,7 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
         gap: 4px;
         border-radius: 999px;
         border: 1px solid var(--gs-border);
-        background: rgba(90, 162, 255, 0.08);
+        background: var(--gs-gold-glow);
         cursor: pointer;
       }
 
@@ -478,7 +514,7 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
       .menu-panel__links a[aria-current='page'] {
         color: var(--gs-text);
         border-color: var(--gs-border);
-        background: rgba(90, 162, 255, 0.08);
+        background: var(--gs-gold-glow);
       }
 
       .menu-panel__actions {
