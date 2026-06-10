@@ -21,10 +21,12 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Verify INFRASTRUCTURE.md exists
-        run: test -f infra/INFRASTRUCTURE.md || (echo "FAIL: infra/INFRASTRUCTURE.md is missing" && exit 1)
+        run: |
+          test -f infra/INFRASTRUCTURE.md || (echo "FAIL: infra/INFRASTRUCTURE.md is missing" && exit 1)
 
       - name: Verify branch-protection.json exists
-        run: test -f infra/branch-protection.json || (echo "FAIL: infra/branch-protection.json is missing" && exit 1)
+        run: |
+          test -f infra/branch-protection.json || (echo "FAIL: infra/branch-protection.json is missing" && exit 1)
 
       - name: Verify all wrangler configs reference canonical worker names
         run: |
