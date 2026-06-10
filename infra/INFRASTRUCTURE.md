@@ -17,7 +17,7 @@
 
 ---
 
-## Workers (canonical set — 17 active)
+## Workers (canonical set — 18 active)
 
 | Worker name | Purpose | Domains served | Fail policy |
 |---|---|---|---|
@@ -39,6 +39,7 @@
 | `goldshore-ai` | (Audit pending — may be stub) | — | TBD |
 | `gs-todo` | (Audit pending — may be internal tool) | — | TBD |
 | `gs-trading` | Schwab + Robinhood brokerage integration, trading API, risk engine | — | Fail closed |
+| `armsway-com` | armsway.com site worker | armsway.com | Fail open (public) |
 
 **Workers NOT on this list must not exist. Any unrecognized worker = immediate audit.**
 
