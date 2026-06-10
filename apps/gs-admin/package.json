@@ -10,11 +10,13 @@
     "check": "astro check"
   },
   "dependencies": {
+    "@goldshore/auth": "workspace:*",
     "@goldshore/config": "workspace:*",
     "@goldshore/integrations": "workspace:*",
     "@goldshore/schema": "workspace:*",
     "@goldshore/theme": "workspace:*",
-    "@goldshore/auth": "workspace:*",
+    "@goldshore/ui": "workspace:*",
+    "@goldshore/utils": "workspace:*",
     "astro": "^6.3.1"
   },
   "devDependencies": {
