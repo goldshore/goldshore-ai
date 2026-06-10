@@ -23,7 +23,7 @@ jobs:
       - name: Deploy to Cloudflare
         run: pnpm exec wrangler deploy --config apps/gs-api/wrangler.toml --env prod
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_WORKERS_BUILDS }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
   # Gateway deploys after api (has API_SERVICE binding)
@@ -45,7 +45,7 @@ jobs:
       - name: Deploy to Cloudflare
         run: pnpm exec wrangler deploy --config apps/gs-gateway/wrangler.toml --env prod
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_WORKERS_BUILDS }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
   deploy-agent:
@@ -62,7 +62,7 @@ jobs:
       - name: Deploy to Cloudflare
         run: pnpm exec wrangler deploy --config apps/gs-agent/wrangler.toml --env prod
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_WORKERS_BUILDS }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
   deploy-control:
@@ -79,7 +79,7 @@ jobs:
       - name: Deploy to Cloudflare
         run: pnpm exec wrangler deploy --config apps/gs-control/wrangler.toml --env prod
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_WORKERS_BUILDS }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
   deploy-trading:
@@ -96,7 +96,7 @@ jobs:
       - name: Deploy to Cloudflare
         run: pnpm exec wrangler deploy --config apps/gs-trading/wrangler.toml --env prod
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_WORKERS_BUILDS }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
   deploy-mail:
@@ -113,7 +113,7 @@ jobs:
       - name: Deploy to Cloudflare
         run: pnpm exec wrangler deploy --config apps/gs-mail/wrangler.toml --env prod
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_WORKERS_BUILDS }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
   deploy-web:
@@ -130,7 +130,7 @@ jobs:
       - name: Deploy to Cloudflare Pages
         run: pnpm exec wrangler pages deploy apps/gs-web/dist --project-name gs-web
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_WORKERS_BUILDS }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
   deploy-admin:
@@ -147,5 +147,5 @@ jobs:
       - name: Deploy to Cloudflare Pages
         run: pnpm exec wrangler pages deploy apps/gs-admin/dist --project-name gs-admin
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_WORKERS_BUILDS }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

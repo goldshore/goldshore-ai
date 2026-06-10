@@ -154,20 +154,20 @@ jobs:
       - name: Verify Cloudflare credentials
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_BUILD_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+          CF_WORKERS_BUILDS: ${{ secrets.CF_WORKERS_BUILDS }}
         run: |
           test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "Missing: CLOUDFLARE_ACCOUNT_ID" && exit 1)
-          test -n "$CLOUDFLARE_BUILD_API_TOKEN" || (echo "Missing: CLOUDFLARE_BUILD_API_TOKEN" && exit 1)
+          test -n "$CF_WORKERS_BUILDS" || (echo "Missing: CF_WORKERS_BUILDS" && exit 1)
 
       - name: Audit live Cloudflare state against manifest
         env:
-          CLOUDFLARE_BUILD_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+          CF_WORKERS_BUILDS: ${{ secrets.CF_WORKERS_BUILDS }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           python3 - <<'PY'
           import json, os, urllib.request, urllib.error
 
-          TOKEN = os.environ["CLOUDFLARE_BUILD_API_TOKEN"]
+          TOKEN = os.environ["CF_WORKERS_BUILDS"]
           ACCOUNT = os.environ["CLOUDFLARE_ACCOUNT_ID"]
 
           def cf_get(path):
@@ -196,7 +196,7 @@ jobs:
 
           # Extract worker names only from the Workers section
           import re
-          workers_section = re.search(r"(?ms)^## Workers\s*$\n(.*?)(?=^## |\Z)", manifest)
+          workers_section = re.search(r"(?ms)^## Workers[^\n]*\n(.*?)(?=^## |\Z)", manifest)
           if not workers_section:
               raise SystemExit("Could not find '## Workers' section in infra/INFRASTRUCTURE.md")
           canonical = sorted(set(re.findall(r"\| `([a-z0-9_-]+)` \|", workers_section.group(1))))
