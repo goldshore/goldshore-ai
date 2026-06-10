@@ -66,6 +66,23 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_WORKERS_BUILDS }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
+  deploy-agent:
+    name: Deploy gs-agent
+    runs-on: ubuntu-latest
+    needs: [deploy-api]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @goldshore/gs-agent build
+      - name: Deploy to Cloudflare
+        run: pnpm exec wrangler deploy --config apps/gs-agent/wrangler.toml --env prod
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_WORKERS_BUILDS }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
   deploy-control:
     name: Deploy gs-control
     runs-on: ubuntu-latest
