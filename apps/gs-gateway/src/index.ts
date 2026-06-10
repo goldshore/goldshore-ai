@@ -123,6 +123,7 @@ app.use("*", async (c, next) => {
     }
     return c.json({ error: "SECURITY_CHECK_ERROR", message: "security check service unavailable", policy: "fail-closed" }, 503);
   }
+  await next();
 
 app.get('/health', (c) => c.json({ status: 'ok', service: 'gs-gateway' }));
 app.get('/templates', (c) =>
@@ -492,6 +493,7 @@ const inferApiOrigin = (requestUrl: string): string | undefined => {
   return url.origin;
 };
 
+// Forward /api/* to the API_SERVICE binding; fall back to API_ORIGIN if unbound.
 app.all("/api/*", async (c) => {
   const correlationId = getCorrelationId(c.req.raw);
   const apiOrigin = c.env.API_ORIGIN ?? inferApiOrigin(c.req.url);
