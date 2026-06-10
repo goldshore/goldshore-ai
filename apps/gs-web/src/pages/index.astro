@@ -119,21 +119,24 @@ const intelligenceCards = [
   </main>
 
   <style>
-    .home { width: min(1100px, 92vw); margin: 0 auto; padding: 5rem 0 6rem; color: #f5f7fb; }
-    .hero { padding: 4rem 0 3rem; border-bottom: 1px solid rgba(255,255,255,.12); }
-    .kicker { color: #d8b56b; text-transform: uppercase; letter-spacing: .12em; font-size: .8rem; }
-    h1 { font-size: clamp(2rem, 5vw, 3.8rem); line-height: 1.05; max-width: 15ch; }
-    .lead,.intro { color: rgba(232,236,247,.82); max-width: 72ch; line-height: 1.7; }
-    .trust { color: #b8c5dd; font-weight: 600; }
+    .home { width: min(1100px, 92vw); margin: 0 auto; padding: 5rem 0 6rem; color: var(--gs-color-text); }
+    .hero { padding: 4rem 0 3rem; border-bottom: 1px solid var(--gs-color-border); }
+    .kicker { color: var(--gs-gold); text-transform: uppercase; letter-spacing: .18em; font-size: .78rem; }
+    h1 { font-size: clamp(2.4rem, 5.5vw, 4.2rem); line-height: 1.05; max-width: 18ch; }
+    .lead,.intro { color: var(--gs-color-subtle); max-width: 72ch; line-height: 1.7; }
+    .trust { color: var(--gs-color-subtle); font-family: var(--gs-font-mono); font-size: .85rem; letter-spacing: .08em; text-transform: uppercase; }
     .actions { display: flex; gap: .75rem; flex-wrap: wrap; margin-top: 1.25rem; }
-    .btn { border: 1px solid rgba(216,181,107,.45); color: #edf2ff; border-radius: 999px; padding: .7rem 1.05rem; text-decoration: none; }
-    .btn-primary { background: rgba(216,181,107,.15); border-color: #d8b56b; }
+    .btn { border: 1px solid rgba(201,168,76,.45); color: var(--gs-color-text); border-radius: 999px; padding: .7rem 1.05rem; text-decoration: none; transition: background 160ms var(--gs-ease, ease), border-color 160ms ease; }
+    .btn:hover { background: var(--gs-gold-glow); }
+    .btn-primary { background: var(--gs-gold-soft); border-color: var(--gs-gold); }
+    .btn-primary:hover { background: rgba(201,168,76,.24); }
     .section { padding: 3.5rem 0 1rem; }
-    h2 { font-size: clamp(1.7rem, 3vw, 2.5rem); margin-bottom: .65rem; }
+    h2 { font-size: clamp(1.8rem, 3.2vw, 2.7rem); margin-bottom: .65rem; }
     .grid, .three-col { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); margin-top: 1.1rem; }
-    .card { background: rgba(16,20,30,.78); border: 1px solid rgba(154,171,201,.22); border-radius: 14px; padding: 1rem; text-decoration: none; color: inherit; }
-    .card h3 { margin: 0 0 .5rem; font-size: 1.05rem; }
-    .card p { margin: 0; color: rgba(226,233,247,.8); line-height: 1.6; }
+    .card { background: var(--gs-color-surface); border: 1px solid var(--gs-color-border); border-radius: 14px; padding: 1.1rem; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease; }
+    .card:hover { border-color: var(--gs-color-border-strong); transform: translateY(-2px); }
+    .card h3 { margin: 0 0 .5rem; font-size: 1.25rem; color: var(--gs-gold); }
+    .card p { margin: 0; color: var(--gs-color-subtle); line-height: 1.6; font-size: .95rem; }
     .contact { padding-bottom: 4rem; }
   </style>
 </WebLayout>
