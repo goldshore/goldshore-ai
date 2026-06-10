@@ -443,7 +443,7 @@ app.all("/api/*", async (c) => {
   }
 });
 
-// ── Integration controls ─────────────────────────────────
+// ── Integration controls ──────────────────────────────────
 app.use("*", integrationControls);
 
 // ── Agent hostname routing ────────────────────────────────

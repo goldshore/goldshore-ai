@@ -11,8 +11,8 @@ if rg -n 'CLOUDFLARE_(BUILD_)?API_TOKEN:\s*\$\{\{[^}]*\|\|[^}]*\}\}' "$workflows
 fi
 
 echo "Checking canonical deploy token wiring..."
-if ! rg -n 'CLOUDFLARE_API_TOKEN:\s*\$\{\{\s*secrets\.CLOUDFLARE_BUILD_API_TOKEN\s*\}\}' "$workflows_dir/deploy-platform.yml" >/dev/null; then
-  echo "❌ deploy-platform.yml must set CLOUDFLARE_API_TOKEN from secrets.CLOUDFLARE_BUILD_API_TOKEN"
+if ! rg -n 'CLOUDFLARE_API_TOKEN:\s*\$\{\{\s*secrets\.CF_WORKERS_BUILDS\s*\}\}' "$workflows_dir/deploy-platform.yml" >/dev/null; then
+  echo "❌ deploy-platform.yml must set CLOUDFLARE_API_TOKEN from secrets.CF_WORKERS_BUILDS"
   exit 1
 fi
 
