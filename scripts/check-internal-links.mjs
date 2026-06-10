@@ -2,9 +2,13 @@ import { access, readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const DEFAULT_DIST_DIR = 'apps/gs-web/dist';
-const DEFAULT_ROUTES = ['/developer', '/risk-radar', '/workflows'];
+// /workflows has no page yet; Risk Radar lives at /apps/risk-radar.
+const DEFAULT_ROUTES = ['/developer', '/apps/risk-radar'];
 
-const distDir = path.resolve(process.env.DIST_DIR ?? DEFAULT_DIST_DIR);
+const baseDistDir = path.resolve(process.env.DIST_DIR ?? DEFAULT_DIST_DIR);
+// Cloudflare Pages adapter v13+ outputs pre-rendered pages to dist/client/
+const clientDistDir = path.join(baseDistDir, 'client');
+const distDir = await access(clientDistDir).then(() => clientDistDir, () => baseDistDir);
 const routes = (process.env.LINK_CHECK_ROUTES ?? DEFAULT_ROUTES.join(','))
   .split(',')
   .map((route) => route.trim())
