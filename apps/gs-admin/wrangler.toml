@@ -11,7 +11,7 @@ compatibility_flags = ["nodejs_compat"]
 
 pages_build_output_dir = "dist"
 
-# ── Production bindings ──────────────────────────────────────────────────────────
+# ── Production bindings ───────────────────────────────────────────────────
 
 [[kv_namespaces]]
 binding = "KV"
@@ -23,7 +23,7 @@ database_name = "goldshore"
 database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
 
 [[r2_buckets]]
-binding = "ASSETS"
+binding = "GS_ASSETS"
 bucket_name = "gs-assets"
 
 [[services]]
@@ -35,14 +35,13 @@ environment = "prod"
 binding = "TRADING_SERVICE"
 service = "gs-trading"
 environment = "prod"
-# Zero-hop service binding to gs-trading worker (Schwab + Robinhood)
 
 [vars]
 ENV = "production"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 CLOUDFLARE_ACCESS_AUDIENCE = "8b6e1890f664c52ad265a240948a1f3315a757e19b4a0fa180ffe952b81a0daf"
 
-# ── Preview bindings ───────────────────────────────────────────────────────────
+# ── Preview bindings ──────────────────────────────────────────────────
 
 [env.preview]
 pages_build_output_dir = "dist"
@@ -57,7 +56,7 @@ database_name = "goldshore_preview"
 database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
 
 [[env.preview.r2_buckets]]
-binding = "ASSETS"
+binding = "GS_ASSETS"
 bucket_name = "gs-assets-preview"
 
 [[env.preview.services]]
@@ -74,5 +73,5 @@ environment = "prod"
 ENV = "preview"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 
-# ── Secret bindings (set via CLI or dashboard, never committed) ────────────────
+# ── Secret bindings (set via CLI or dashboard, never committed) ──────────────
 # wrangler pages secret put ADMIN_API_KEY --project-name gs-admin

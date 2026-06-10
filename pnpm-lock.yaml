@@ -123,9 +123,21 @@ importers:
       '@goldshore/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@goldshore/integrations':
+        specifier: workspace:*
+        version: link:../../packages/integrations
+      '@goldshore/schema':
+        specifier: workspace:*
+        version: link:../../packages/schema
       '@goldshore/theme':
         specifier: workspace:*
         version: link:../../packages/theme
+      '@goldshore/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      '@goldshore/utils':
+        specifier: workspace:*
+        version: link:../../packages/utils
       astro:
         specifier: ^6.3.1
         version: 6.4.4(@types/node@25.9.2)(rollup@4.61.1)(tsx@4.22.4)(yaml@2.9.0)
@@ -216,9 +228,18 @@ importers:
       '@goldshore/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@goldshore/utils':
+        specifier: workspace:*
+        version: link:../../packages/utils
+      '@hono/zod-validator':
+        specifier: ^0.7.0
+        version: 0.7.6(hono@4.12.24)(zod@4.4.3)
       hono:
         specifier: ^4.12.16
         version: 4.12.24
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^4.20260511.1
@@ -968,6 +989,12 @@ packages:
     peerDependencies:
       hono: '>=3.9.0'
       zod: ^3.19.1
+
+  '@hono/zod-validator@0.7.6':
+    resolution: {integrity: sha512-Io1B6d011Gj1KknV4rXYz4le5+5EubcWEU/speUjuw9XMMIaP3n78yXLhjd2A3PXaXaUwEAluOiAyLqhBEJgsw==}
+    peerDependencies:
+      hono: '>=3.9.0'
+      zod: ^3.25.0 || ^4.0.0
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -4897,6 +4924,11 @@ snapshots:
     dependencies:
       hono: 4.12.24
       zod: 3.25.76
+
+  '@hono/zod-validator@0.7.6(hono@4.12.24)(zod@4.4.3)':
+    dependencies:
+      hono: 4.12.24
+      zod: 4.4.3
 
   '@humanfs/core@0.19.2':
     dependencies:
