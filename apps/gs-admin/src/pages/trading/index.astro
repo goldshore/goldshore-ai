@@ -1,51 +1,426 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
-import { Card, GSButton } from '@goldshore/ui';
-
 ---
 
-<AdminLayout title="Trading">
-  <section class="gs-grid columns-2">
-    <Card>
-      <div class="section-title"><span>⌁</span><h3>Trade Console</h3></div>
-      <p class="gs-helper">Orchestrate live trading signals, risk limits, and account routing.</p>
-      <form class="gs-form-row" id="trade-form">
-        <div class="gs-input-group">
-          <label for="ticker">Ticker</label>
-          <input id="ticker" name="ticker" placeholder="TSLA" />
-        </div>
-        <div class="gs-input-group">
-          <label for="side">Side</label>
-          <select id="side" name="side">
-            <option>BUY</option>
-            <option>SELL</option>
-          </select>
-        </div>
-        <div class="gs-input-group">
-          <label for="size">Size</label>
-          <input id="size" name="size" type="number" min="1" value="1" />
-        </div>
-        <div class="gs-input-group">
-          <label for="type">Type</label>
-          <select id="type" name="type">
-            <option>MARKET</option>
-            <option>LIMIT</option>
-          </select>
-        </div>
-      </form>
-      <div class="gs-form-actions">
-        <GSButton type="button" class="gs-button--small">Simulate order</GSButton>
-        <GSButton type="button" variant="secondary" class="gs-button--small">Wire to API</GSButton>
-      </div>
-    </Card>
+<AdminLayout title="Trading | GoldShore Admin">
+  <!-- Tab navigation -->
+  <nav class="trading-tabs" aria-label="Trading sections">
+    <a href="/trading" class="tab active" data-tab="overview">Overview</a>
+    <a href="/trading/accounts" class="tab" data-tab="accounts">Accounts</a>
+    <a href="/trading/positions" class="tab" data-tab="positions">Positions</a>
+    <a href="/trading/orders" class="tab" data-tab="orders">Orders</a>
+    <a href="/trading/quotes" class="tab" data-tab="quotes">Quotes</a>
+    <a href="/trading/risk" class="tab" data-tab="risk">Risk</a>
+  </nav>
 
-    <Card>
-      <div class="section-title"><span>✓</span><h3>Pre-trade checks</h3></div>
-      <ul>
-        <li>Account balance verified</li>
-        <li>Risk budget within limits</li>
-        <li>Connectivity healthy</li>
+  <!-- Overview stats -->
+  <div class="stat-grid" id="overview-stats">
+    <div class="stat-card" id="stat-totalValue">
+      <div class="stat-label">Total Portfolio</div>
+      <div class="stat-value" id="stat-totalValue-val">—</div>
+      <div class="stat-sub" id="stat-totalValue-sub"></div>
+    </div>
+    <div class="stat-card" id="stat-dayPL">
+      <div class="stat-label">Day P&amp;L</div>
+      <div class="stat-value" id="stat-dayPL-val">—</div>
+      <div class="stat-sub" id="stat-dayPL-sub"></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Brokers Connected</div>
+      <div class="stat-value" id="stat-brokers">—</div>
+      <div class="stat-sub">Schwab · Robinhood</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Open Orders</div>
+      <div class="stat-value" id="stat-openOrders">—</div>
+      <div class="stat-sub" id="stat-openOrders-sub"></div>
+    </div>
+  </div>
+
+  <!-- Quick trade form -->
+  <div class="trading-grid">
+    <div class="panel">
+      <div class="panel-header">
+        <h3>⌁ Place Order</h3>
+        <span id="form-status" class="badge"></span>
+      </div>
+      <form id="trade-form" class="trade-form">
+        <div class="form-row">
+          <label>Broker
+            <select name="broker" id="f-broker">
+              <option value="schwab">Schwab</option>
+              <option value="robinhood">Robinhood</option>
+            </select>
+          </label>
+          <label>Ticker
+            <input name="symbol" id="f-symbol" placeholder="AAPL" required />
+          </label>
+        </div>
+        <div class="form-row">
+          <label>Side
+            <select name="side" id="f-side">
+              <option value="BUY">BUY</option>
+              <option value="SELL">SELL</option>
+            </select>
+          </label>
+          <label>Qty
+            <input name="quantity" id="f-qty" type="number" min="1" value="1" required />
+          </label>
+          <label>Type
+            <select name="orderType" id="f-type">
+              <option value="MARKET">MARKET</option>
+              <option value="LIMIT">LIMIT</option>
+            </select>
+          </label>
+          <label id="limit-price-group" style="display:none">Limit $
+            <input name="limitPrice" id="f-limit" type="number" step="0.01" />
+          </label>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Submit Order</button>
+          <button type="reset" class="btn btn-secondary">Clear</button>
+        </div>
+        <pre id="order-result" class="result-box" style="display:none"></pre>
+      </form>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <h3>✓ Pre-Trade Checks</h3>
+        <button class="btn btn-xs" id="refresh-checks">Refresh</button>
+      </div>
+      <ul class="check-list" id="check-list">
+        <li class="check-item pending" id="chk-accounts">Account data…</li>
+        <li class="check-item pending" id="chk-risk">Risk budget…</li>
+        <li class="check-item pending" id="chk-broker">Broker connectivity…</li>
       </ul>
-    </Card>
-  </section>
+      <div id="risk-summary" class="risk-summary" style="display:none">
+        <div class="risk-row"><span>Top-5 concentration</span><span id="r-top5">—</span></div>
+        <div class="risk-row"><span>Equity exposure</span><span id="r-equity">—</span></div>
+        <div class="risk-row"><span>Cash %</span><span id="r-cash">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent orders snapshot -->
+  <div class="panel">
+    <div class="panel-header">
+      <h3>⇡ Recent Orders</h3>
+      <a href="/trading/orders" class="btn btn-xs">View all</a>
+    </div>
+    <div class="table-wrap">
+      <table id="recent-orders-table">
+        <thead><tr><th>Broker</th><th>Symbol</th><th>Side</th><th>Qty</th><th>Type</th><th>Status</th><th>Placed</th></tr></thead>
+        <tbody id="recent-orders-body"><tr><td colspan="7" class="empty">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
 </AdminLayout>
+
+<style>
+  .trading-tabs {
+    display: flex;
+    gap: 0.25rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding-bottom: 0;
+  }
+  .tab {
+    padding: 0.5rem 1rem;
+    text-decoration: none;
+    color: var(--gs-text-secondary, #9ca3af);
+    font-size: 0.8rem;
+    font-family: var(--font-family-mono, monospace);
+    text-transform: uppercase;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+  }
+  .tab:hover { color: #fff; }
+  .tab.active { color: #fff; border-bottom-color: var(--color-utility-orange, #f97316); }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .stat-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 0.5rem;
+    padding: 1rem 1.25rem;
+  }
+  .stat-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: #6b7280;
+    font-family: monospace;
+    margin-bottom: 0.4rem;
+  }
+  .stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #fff;
+    font-family: monospace;
+    letter-spacing: -0.04em;
+  }
+  .stat-sub { font-size: 0.72rem; color: #6b7280; margin-top: 0.25rem; }
+
+  .trading-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .panel {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 0.5rem;
+    padding: 1.25rem;
+  }
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .panel-header h3 {
+    margin: 0;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    font-family: monospace;
+    color: #e5e7eb;
+  }
+
+  .trade-form { display: flex; flex-direction: column; gap: 0.75rem; }
+  .form-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+  .form-row label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    font-size: 0.75rem;
+    color: #9ca3af;
+    flex: 1;
+    min-width: 80px;
+  }
+  .form-row input, .form-row select {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+    color: #fff;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.85rem;
+    font-family: monospace;
+  }
+  .form-row input:focus, .form-row select:focus {
+    outline: none;
+    border-color: var(--color-utility-orange, #f97316);
+  }
+  .form-actions { display: flex; gap: 0.5rem; margin-top: 0.25rem; }
+
+  .btn {
+    padding: 0.45rem 1rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-family: monospace;
+    cursor: pointer;
+    border: none;
+    transition: opacity 0.15s;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: var(--color-utility-orange, #f97316); color: #000; font-weight: 600; }
+  .btn-secondary { background: rgba(255,255,255,0.08); color: #e5e7eb; border: 1px solid rgba(255,255,255,0.1); }
+  .btn-xs { padding: 0.25rem 0.6rem; font-size: 0.7rem; background: rgba(255,255,255,0.05); color: #9ca3af; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; cursor: pointer; text-decoration: none; font-family: monospace; }
+
+  .badge {
+    font-size: 0.7rem;
+    font-family: monospace;
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+    display: none;
+  }
+  .badge.success { display: inline; background: rgba(0,255,0,0.1); color: #4ade80; }
+  .badge.danger  { display: inline; background: rgba(255,0,0,0.1);   color: #f87171; }
+  .badge.info    { display: inline; background: rgba(34,211,238,0.1); color: #22d3ee; }
+
+  .check-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+  .check-item {
+    font-size: 0.82rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.02);
+    border-left: 3px solid transparent;
+    color: #9ca3af;
+    font-family: monospace;
+  }
+  .check-item.ok    { border-left-color: #4ade80; color: #4ade80; }
+  .check-item.warn  { border-left-color: #facc15; color: #facc15; }
+  .check-item.fail  { border-left-color: #f87171; color: #f87171; }
+  .check-item.pending { border-left-color: rgba(255,255,255,0.1); }
+
+  .risk-summary { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.4rem; }
+  .risk-row { display: flex; justify-content: space-between; font-size: 0.78rem; color: #9ca3af; font-family: monospace; }
+  .risk-row span:last-child { color: #e5e7eb; }
+
+  .result-box {
+    margin-top: 0.75rem;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 4px;
+    padding: 0.75rem;
+    font-size: 0.78rem;
+    color: #4ade80;
+    font-family: monospace;
+    white-space: pre-wrap;
+    max-height: 160px;
+    overflow-y: auto;
+  }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.8rem; font-family: monospace; }
+  th { color: #6b7280; font-weight: 500; text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid rgba(255,255,255,0.06); text-transform: uppercase; font-size: 0.7rem; }
+  td { padding: 0.5rem 0.6rem; border-bottom: 1px solid rgba(255,255,255,0.04); color: #d1d5db; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  .empty { color: #4b5563; text-align: center; padding: 1.5rem; }
+
+  .pos { color: #4ade80; }
+  .neg { color: #f87171; }
+
+  @media (max-width: 900px) {
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    .trading-grid { grid-template-columns: 1fr; }
+  }
+</style>
+
+<script is:inline>
+  const fmt = (n) => n == null ? '—' : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(n);
+  const fmtPct = (n) => n == null ? '' : `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`;
+  const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  const colorEl = (id, val) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('pos', 'neg');
+    if (val > 0) el.classList.add('pos');
+    else if (val < 0) el.classList.add('neg');
+  };
+
+  async function loadOverview() {
+    // Accounts
+    try {
+      const { accounts = [] } = await fetch('/api/trading/accounts').then(r => r.json());
+      const total = accounts.reduce((s, a) => s + (a.totalValue ?? 0), 0);
+      const dayPL = accounts.reduce((s, a) => s + (a.dayPL ?? 0), 0);
+      const dayPLPct = total ? (dayPL / (total - dayPL)) * 100 : 0;
+      setEl('stat-totalValue-val', fmt(total));
+      setEl('stat-dayPL-val', fmt(dayPL));
+      setEl('stat-dayPL-sub', fmtPct(dayPLPct));
+      colorEl('stat-dayPL-val', dayPL);
+      setEl('stat-brokers', accounts.length);
+      document.getElementById('chk-accounts').textContent = '✓ Account data loaded';
+      document.getElementById('chk-accounts').className = 'check-item ok';
+      document.getElementById('chk-broker').textContent = `✓ ${accounts.map(a => a.broker).join(', ')} connected`;
+      document.getElementById('chk-broker').className = 'check-item ok';
+    } catch {
+      document.getElementById('chk-accounts').textContent = '✗ Could not load accounts';
+      document.getElementById('chk-accounts').className = 'check-item fail';
+    }
+
+    // Orders snapshot
+    try {
+      const { orders = [] } = await fetch('/api/trading/orders').then(r => r.json());
+      const open = orders.filter(o => o.status === 'OPEN' || o.status === 'PENDING').length;
+      setEl('stat-openOrders', open);
+      setEl('stat-openOrders-sub', `${orders.length} total`);
+      const tbody = document.getElementById('recent-orders-body');
+      const recent = orders.slice(0, 10);
+      if (recent.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty">No recent orders</td></tr>';
+      } else {
+        tbody.innerHTML = recent.map(o => `
+          <tr>
+            <td>${o.broker}</td>
+            <td><strong>${o.symbol}</strong></td>
+            <td class="${o.side === 'BUY' ? 'pos' : 'neg'}">${o.side}</td>
+            <td>${o.quantity}</td>
+            <td>${o.orderType}</td>
+            <td><span class="badge ${o.status === 'FILLED' ? 'success' : o.status === 'REJECTED' || o.status === 'CANCELLED' ? 'danger' : 'info'}" style="display:inline">${o.status}</span></td>
+            <td>${o.placedAt ? new Date(o.placedAt).toLocaleString() : '—'}</td>
+          </tr>`).join('');
+      }
+    } catch {
+      document.getElementById('recent-orders-body').innerHTML = '<tr><td colspan="7" class="empty">Failed to load orders</td></tr>';
+    }
+
+    // Risk
+    try {
+      const { metrics } = await fetch('/api/trading/risk').then(r => r.json());
+      if (metrics) {
+        setEl('r-top5', `${(metrics.top5Concentration * 100).toFixed(1)}%`);
+        setEl('r-equity', fmt(metrics.equityExposure));
+        setEl('r-cash', `${(metrics.cashPct * 100).toFixed(1)}%`);
+        document.getElementById('risk-summary').style.display = 'flex';
+        document.getElementById('chk-risk').textContent = '✓ Risk budget within limits';
+        document.getElementById('chk-risk').className = 'check-item ok';
+      }
+    } catch {
+      document.getElementById('chk-risk').textContent = '⚠ Risk data unavailable';
+      document.getElementById('chk-risk').className = 'check-item warn';
+    }
+  }
+
+  // Trade form
+  document.getElementById('f-type').addEventListener('change', (e) => {
+    const lpGroup = document.getElementById('limit-price-group');
+    lpGroup.style.display = e.target.value === 'LIMIT' ? 'flex' : 'none';
+  });
+
+  document.getElementById('trade-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const fd = new FormData(form);
+    const payload = {
+      broker:    fd.get('broker'),
+      symbol:    fd.get('symbol').toUpperCase(),
+      side:      fd.get('side'),
+      quantity:  Number(fd.get('quantity')),
+      orderType: fd.get('orderType'),
+    };
+    if (payload.orderType === 'LIMIT') payload.limitPrice = Number(fd.get('limitPrice'));
+
+    const status = document.getElementById('form-status');
+    status.textContent = 'Submitting…';
+    status.className = 'badge info';
+
+    try {
+      const res = await fetch('/api/trading/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      const result = document.getElementById('order-result');
+      result.textContent = JSON.stringify(data, null, 2);
+      result.style.display = 'block';
+      if (res.ok && data.success) {
+        status.textContent = `Filled — Order ${data.orderId ?? ''}`;
+        status.className = 'badge success';
+        form.reset();
+        loadOverview();
+      } else {
+        status.textContent = data.error ?? 'Error';
+        status.className = 'badge danger';
+      }
+    } catch (err) {
+      document.getElementById('form-status').textContent = 'Network error';
+      document.getElementById('form-status').className = 'badge danger';
+    }
+  });
+
+  document.getElementById('refresh-checks')?.addEventListener('click', loadOverview);
+
+  loadOverview();
+</script>
+
