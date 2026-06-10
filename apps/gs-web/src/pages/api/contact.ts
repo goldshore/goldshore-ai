@@ -535,6 +535,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return buildError(403, 'form_inactive', 'Form is not accepting submissions.');
   }
 
+  const normalizedSubmission = normalizeContactSubmission(submission);
+
   const missingFields = validateRequiredFields(normalizedSubmission, formConfig.fields);
   if (missingFields.length > 0) {
     console.warn('contact_submission_validation_failed', {
