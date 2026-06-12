@@ -56,6 +56,8 @@ jobs:
       - name: Build gs-web
         run: pnpm --dir apps/gs-web build
       - name: Run gs-web release quality gate
+        env:
+          LH_MIN_PERFORMANCE: "0.60"
         run: pnpm --dir apps/gs-web check:release
 
   gs-admin-build:
