@@ -3,16 +3,18 @@ main = "src/index.ts"
 compatibility_date = "2026-04-04"
 workers_dev = false
 
+# Redirects www.* → apex for GoldShore domains only.
+# rmarston.com is managed independently via its own worker/pages project.
+# armsway.com is managed independently via the armsway-com worker.
+
 [env.prod]
 routes = [
   { pattern = "www.goldshore.ai", custom_domain = true },
-  { pattern = "www.goldshore.org", custom_domain = true },
-  { pattern = "www.rmarston.com", custom_domain = true }
+  { pattern = "www.goldshore.org", custom_domain = true }
 ]
 
 [env.production]
 routes = [
   { pattern = "www.goldshore.ai", custom_domain = true },
-  { pattern = "www.goldshore.org", custom_domain = true },
-  { pattern = "www.rmarston.com", custom_domain = true }
+  { pattern = "www.goldshore.org", custom_domain = true }
 ]
