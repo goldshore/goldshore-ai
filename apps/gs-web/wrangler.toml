@@ -23,10 +23,12 @@ bucket_name = "gs-assets"
 ENV = "production"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 CLOUDFLARE_ACCESS_AUDIENCE = "8b6e1890f664c52ad265a240948a1f3315a757e19b4a0fa180ffe952b81a0daf"
+CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
+MAILCHANNELS_SENDER_NAME = "GoldShore"
 
-# Secrets — set via Cloudflare dashboard or:
+# Secrets (never commit — set via CLI or dashboard):
 #   wrangler pages secret put MAILCHANNELS_SENDER_EMAIL --project-name gs-web
-#   wrangler pages secret put CONTACT_NOTIFICATION_EMAILS --project-name gs-web
+#   Value: hello@goldshore.ai  (domain must have SPF record for MailChannels)
 
 # ── Custom domains (Pages project) ───────────────────────────────────────────
 # rmarston.com is served by the standalone rmarston-com worker (separate repo/project).
@@ -54,6 +56,8 @@ bucket_name = "gs-assets"
 ENV = "production"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 CLOUDFLARE_ACCESS_AUDIENCE = "8b6e1890f664c52ad265a240948a1f3315a757e19b4a0fa180ffe952b81a0daf"
+CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
+MAILCHANNELS_SENDER_NAME = "GoldShore"
 
 # ── Preview environment ───────────────────────────────────────────────────────
 
