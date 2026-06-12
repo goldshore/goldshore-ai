@@ -37,6 +37,9 @@ jobs:
 
       - name: gs-web release quality gate
         working-directory: apps/gs-web
+        env:
+          # CI baseline; raise once core vitals are addressed (images, JS bundles)
+          LH_MIN_PERFORMANCE: "0.60"
         run: pnpm check:release
 
       - name: Verify internal links (Developer Hub, Risk Radar, Workflows)

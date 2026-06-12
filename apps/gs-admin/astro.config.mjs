@@ -4,7 +4,7 @@ export default createAstroConfig({
   site: 'https://admin.goldshore.ai',
   vite: {
     ssr: {
-      noExternal: ['@goldshore/schema', '@goldshore/integrations'],
+      noExternal: ['@goldshore/schema', '@goldshore/integrations', '@goldshore/utils'],
     },
   },
 });
