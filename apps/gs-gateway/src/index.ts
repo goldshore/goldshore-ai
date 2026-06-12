@@ -176,6 +176,14 @@ app.get("/templates", (c) =>
 app.get("/user/login", (c) => c.json({ message: "Gateway Login Placeholder" }));
 app.post("/v1/chat", (c) => c.json({ message: "Gateway Chat Placeholder" }));
 
+const inferApiOrigin = (requestUrl: string): string | undefined => {
+  const url = new URL(requestUrl);
+  const inferredHostname = url.hostname.replace(/^gs-gateway(?=\.|$)/, "gs-api");
+  if (inferredHostname === url.hostname) return undefined;
+  url.hostname = inferredHostname;
+  return url.origin;
+};
+
 // Forward /api/* to the API_SERVICE binding; fall back to API_ORIGIN if unbound.
 app.all("/api/*", async (c) => {
   const correlationId = getCorrelationId(c.req.raw);
