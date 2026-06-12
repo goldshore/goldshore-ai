@@ -12,9 +12,8 @@ workers_dev = false
 
 [env.prod]
 routes = [
-  { pattern = "goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "www.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "admin.goldshore.ai/*", zone_name = "goldshore.ai" },
+  # goldshore.ai and admin.goldshore.ai are served by Cloudflare Pages projects (gs-web, gs-admin).
+  # Worker routes with /* would intercept Pages traffic — those routes are intentionally omitted.
   { pattern = "armsway.com/*", zone_name = "armsway.com" },
   { pattern = "www.armsway.com/*", zone_name = "armsway.com" },
 ]

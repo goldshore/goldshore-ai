@@ -1,6 +1,34 @@
 name = "gs-web"
 compatibility_date = "2026-04-18"
+compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = "./dist"
+
+# ── Top-level bindings (used by wrangler dev and Pages Functions locally) ─────
+# Binding names KV and DB match what env.d.ts declares and the contact API uses.
+
+[[kv_namespaces]]
+binding = "KV"
+id = "5f13370575784c9dacff522121104cb3"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "gs_platform_db"
+database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
+
+[[r2_buckets]]
+binding = "ASSETS"
+bucket_name = "gs-assets"
+
+[vars]
+ENV = "production"
+CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
+CLOUDFLARE_ACCESS_AUDIENCE = "8b6e1890f664c52ad265a240948a1f3315a757e19b4a0fa180ffe952b81a0daf"
+
+# Secrets — set via Cloudflare dashboard or:
+#   wrangler pages secret put MAILCHANNELS_SENDER_EMAIL --project-name gs-web
+#   wrangler pages secret put CONTACT_NOTIFICATION_EMAILS --project-name gs-web
+
+# ── Custom domains (Pages project) ───────────────────────────────────────────
 
 [env.prod]
 routes = [
@@ -10,27 +38,24 @@ routes = [
 ]
 
 [[env.prod.kv_namespaces]]
-binding = "SITE_KV"
-id = "a59a5e2f446348629f59fb21ea69d795"
+binding = "KV"
+id = "5f13370575784c9dacff522121104cb3"
 
 [[env.prod.d1_databases]]
-binding = "CONTENT_DB"
-database_name = "goldshore"
+binding = "DB"
+database_name = "gs_platform_db"
 database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
 
 [[env.prod.r2_buckets]]
 binding = "ASSETS"
 bucket_name = "gs-assets"
 
-[[env.prod.services]]
-binding = "API_SERVICE"
-service = "gs-api"
-environment = "prod"
+[env.prod.vars]
+ENV = "production"
+CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
+CLOUDFLARE_ACCESS_AUDIENCE = "8b6e1890f664c52ad265a240948a1f3315a757e19b4a0fa180ffe952b81a0daf"
 
-[[env.prod.services]]
-binding = "GATEWAY"
-service = "gs-gateway"
-environment = "prod"
+# ── Preview environment ───────────────────────────────────────────────────────
 
 [env.preview]
 routes = [
@@ -38,24 +63,19 @@ routes = [
 ]
 
 [[env.preview.kv_namespaces]]
-binding = "SITE_KV"
-id = "a59a5e2f446348629f59fb21ea69d795"
+binding = "KV"
+id = "5f13370575784c9dacff522121104cb3"
 
 [[env.preview.d1_databases]]
-binding = "CONTENT_DB"
-database_name = "goldshore"
+binding = "DB"
+database_name = "gs_platform_db"
 database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
 
 [[env.preview.r2_buckets]]
 binding = "ASSETS"
 bucket_name = "gs-assets-preview"
 
-[[env.preview.services]]
-binding = "API_SERVICE"
-service = "gs-api"
-environment = "preview"
-
-[[env.preview.services]]
-binding = "GATEWAY"
-service = "gs-gateway"
-environment = "preview"
+[env.preview.vars]
+ENV = "preview"
+CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
+CLOUDFLARE_ACCESS_AUDIENCE = "8b6e1890f664c52ad265a240948a1f3315a757e19b4a0fa180ffe952b81a0daf"

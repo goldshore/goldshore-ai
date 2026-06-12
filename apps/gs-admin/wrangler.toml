@@ -1,9 +1,8 @@
 # gs-admin — Cloudflare Pages Functions wrangler config
 #
-# This file declares bindings for the Pages Functions runtime.
-# Secrets (API tokens, sync tokens) are managed via:
-#   wrangler pages secret put <KEY> --project-name gs-admin
-# or the Cloudflare dashboard → gs-admin → Settings → Environment variables.
+# Deploy: pnpm --filter gs-admin build && wrangler pages deploy dist --project-name gs-admin
+# Secrets: wrangler pages secret put <KEY> --project-name gs-admin
+# Custom domain: admin.goldshore.ai (set in CF Pages dashboard → Custom domains)
 
 name = "gs-admin"
 compatibility_date = "2026-04-18"
@@ -11,31 +10,42 @@ compatibility_flags = ["nodejs_compat"]
 
 pages_build_output_dir = "dist"
 
-# ── Production bindings ──────────────────────────────────────────────────────────
+# ── Production bindings ────────────────────────────────────────────────────────
 
 [[kv_namespaces]]
 binding = "KV"
 id = "d02c0c7951a244a7987e23d8af16b7b2"
 
+[[kv_namespaces]]
+binding = "KV_SESSIONS"
+id = "d0b889d0ba314b42892f5b959356ceda"
+
 [[d1_databases]]
 binding = "CONTENT_DB"
-database_name = "goldshore"
+database_name = "gs_platform_db"
 database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
+
+[[d1_databases]]
+binding = "AUDIT_DB"
+database_name = "gs_audit_db"
+database_id = "1ae71d76-188f-481b-91d9-db2d39013f68"
 
 [[r2_buckets]]
 binding = "ASSETS"
 bucket_name = "gs-assets"
 
-[[services]]
-binding = "API_SERVICE"
-service = "gs-api"
-environment = "prod"
-
+# gs-trading service binding — zero-hop access to trading worker
 [[services]]
 binding = "TRADING_SERVICE"
 service = "gs-trading"
 environment = "prod"
-# Zero-hop service binding to gs-trading worker (Schwab + Robinhood)
+
+# gs-api is not yet deployed as a separate worker.
+# Uncomment once gs-api is deployed:
+# [[services]]
+# binding = "API_SERVICE"
+# service = "gs-api"
+# environment = "prod"
 
 [vars]
 ENV = "production"
@@ -51,19 +61,23 @@ pages_build_output_dir = "dist"
 binding = "KV"
 id = "1f71a79b34db4090824954634dbd78c3"
 
+[[env.preview.kv_namespaces]]
+binding = "KV_SESSIONS"
+id = "d0b889d0ba314b42892f5b959356ceda"
+
 [[env.preview.d1_databases]]
 binding = "CONTENT_DB"
-database_name = "goldshore_preview"
+database_name = "gs_platform_db"
 database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
+
+[[env.preview.d1_databases]]
+binding = "AUDIT_DB"
+database_name = "gs_audit_db"
+database_id = "1ae71d76-188f-481b-91d9-db2d39013f68"
 
 [[env.preview.r2_buckets]]
 binding = "ASSETS"
 bucket_name = "gs-assets-preview"
-
-[[env.preview.services]]
-binding = "API_SERVICE"
-service = "gs-api"
-environment = "preview"
 
 [[env.preview.services]]
 binding = "TRADING_SERVICE"
@@ -73,6 +87,4 @@ environment = "prod"
 [env.preview.vars]
 ENV = "preview"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-
-# ── Secret bindings (set via CLI or dashboard, never committed) ────────────────
-# wrangler pages secret put ADMIN_API_KEY --project-name gs-admin
+CLOUDFLARE_ACCESS_AUDIENCE = "8b6e1890f664c52ad265a240948a1f3315a757e19b4a0fa180ffe952b81a0daf"
