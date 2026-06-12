@@ -3,6 +3,12 @@ main = "src/index.ts"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 
+# KV namespace — stores agent state, OAuth tokens, trading signals, and feature flags
+[[kv_namespaces]]
+binding = "TRADING_KV"
+id = "9b3314c3b7af40a284a8c9b6e2990709"
+preview_id = "2c14b79b76e6453ab57c6dde6116a11d"
+
 [vars]
 ENV = "development"
 
@@ -13,12 +19,14 @@ routes = [
   { pattern = "trading.goldshore.ai/*", zone_name = "goldshore.ai" },
 ]
 
+# kv_namespaces is NOT inherited by named environments in Wrangler — must be re-declared.
 [[env.prod.kv_namespaces]]
 binding = "TRADING_KV"
 id = "9b3314c3b7af40a284a8c9b6e2990709"
 
 [env.prod.vars]
 ENV = "production"
+# OAuth redirect URI — must match exactly what is registered in your Schwab app
 SCHWAB_REDIRECT_URI = "https://trading.goldshore.ai/oauth/schwab/callback"
 
 # ---- Preview environment -----------------------------------------------------
@@ -43,5 +51,5 @@ SCHWAB_REDIRECT_URI = "https://preview.goldshore.ai/oauth/schwab/callback"
 #   SCHWAB_ACCOUNT_HASH         -- Encrypted account hash from Schwab /accounts
 #   SCHWAB_REFRESH_TOKEN        -- Optional seed; overridden by KV rotation after OAuth
 # Robinhood:
-#   ROBINHOOD_TOKEN             -- Bearer token
-#   ROBINHOOD_ACCOUNT_ID        -- Robinhood account number
+#   ROBINHOOD_TOKEN             — Bearer token (also writable via POST /oauth/robinhood/token)
+#   ROBINHOOD_ACCOUNT_ID        — Robinhood account number

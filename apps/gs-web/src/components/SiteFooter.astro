@@ -22,13 +22,16 @@ const legalLinks = [
       <div class="gs-grid columns-2" style="gap: var(--gs-space-2);">
         <div class="gs-nav gs-nav--vertical">
           <strong><span class="aria-icon aria-icon-orbit" aria-hidden="true"></span>Company</strong>
-          <a href="/about" aria-current={currentPath === '/about' ? 'page' : undefined}>About</a>
-          <a href="/team" aria-current={currentPath === '/team' ? 'page' : undefined}>Team</a>
-          <a href="/services" aria-current={currentPath === '/services' ? 'page' : undefined}>Services</a>
+          <a href="/" aria-current={currentPath === '/' ? 'page' : undefined}>Home</a>
+          <a href="https://admin.goldshore.ai" rel="noopener noreferrer">Admin</a>
         </div>
         <div class="gs-nav gs-nav--vertical-support">
           <strong><span class="aria-icon aria-icon-signal" aria-hidden="true"></span>Support</strong>
-          <a href="/contact" aria-current={currentPath === '/contact' ? 'page' : undefined}>Contact</a>
+          <button
+            type="button"
+            id="footer-contact-trigger"
+            class="gs-footer-contact-btn"
+          >Contact</button>
           {legalLinks.map((link) => (
             <a href={link.href} aria-current={currentPath === link.href ? 'page' : undefined}>{link.label}</a>
           ))}
@@ -37,3 +40,35 @@ const legalLinks = [
     </div>
   </div>
 </footer>
+
+<script is:inline>
+  document.getElementById('footer-contact-trigger')?.addEventListener('click', () => {
+    const modal = document.getElementById('contact-modal');
+    const openBtn = document.getElementById('contact-modal-trigger');
+    if (modal) {
+      modal.removeAttribute('hidden');
+      document.body.style.overflow = 'hidden';
+      modal.querySelector('input, textarea')?.focus();
+    } else if (openBtn) {
+      openBtn.click();
+    }
+  });
+</script>
+
+<style>
+  .gs-footer-contact-btn {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 0;
+    text-align: left;
+    font: inherit;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    transition: text-decoration-color 140ms;
+  }
+  .gs-footer-contact-btn:hover {
+    text-decoration-color: currentColor;
+  }
+</style>

@@ -61,9 +61,17 @@ function isAgentHostnameRequest(request: Request): boolean {
   catch { return false; }
 }
 
+const inferApiOrigin = (requestUrl: string): string | undefined => {
+  const url = new URL(requestUrl);
+  const inferredHostname = url.hostname.replace(/^gs-gateway(?=\.|$)/, "gs-api");
+  if (inferredHostname === url.hostname) return undefined;
+  url.hostname = inferredHostname;
+  return url.origin;
+};
+
 const app = new Hono<{ Bindings: GatewayEnv }>();
 
-// ── Security headers ─────────────────────────────────────
+// ── Security headers ──────────────────────────────────────
 app.use("*", secureHeaders());
 
 // ── Startup binding guard (production only) ───────────────
@@ -75,7 +83,7 @@ app.use("*", async (c, next) => {
   await next();
 });
 
-// ── CORS ─────────────────────────────────────────────────
+// ── CORS ──────────────────────────────────────────────────
 app.use("*", cors({
   origin: (origin, c) => {
     if (c.env.ENV !== "production") {
@@ -94,10 +102,10 @@ app.use("*", cors({
   credentials: true,
 }));
 
-// ── Auth — fail-closed JWT verification ──────────────────
+// ── Auth — fail-closed JWT verification ───────────────────
 app.use("*", authMiddleware);
 
-// ── Security check (banproof-me service binding) ─────────
+// ── Security check (banproof-me service binding) ──────────
 app.use("*", async (c, next) => {
   const pathname = new URL(c.req.url).pathname;
   if (pathname === "/health") return next();
@@ -126,7 +134,7 @@ app.use("*", async (c, next) => {
   await next();
 });
 
-// ── Integration controls ─────────────────────────────────
+// ── Integration controls ──────────────────────────────────
 app.use("*", integrationControls);
 
 // ── Agent hostname routing ────────────────────────────────
