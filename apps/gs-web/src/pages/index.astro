@@ -1,5 +1,6 @@
 ---
 import WebLayout from '../layouts/WebLayout.astro';
+import TickerFeed from '../components/TickerFeed.astro';
 
 export const prerender = true;
 
@@ -116,6 +117,11 @@ const ventureCards = [
         <button type="button" class="btn" id="contact-modal-trigger">Get in touch</button>
       </div>
     </section>
+
+    <!-- ── Market ticker ─────────────────────────────────────── -->
+    <div class="ticker-wrapper">
+      <TickerFeed id="home-ticker" />
+    </div>
 
     <!-- ── Architecture diagram (text) ──────────────────────── -->
     <section class="section arch-section" id="platform">
@@ -266,6 +272,9 @@ const ventureCards = [
 
   <style>
     .home { width: min(1100px, 92vw); margin: 0 auto; padding: 5rem 0 6rem; color: var(--gs-color-text); }
+
+    /* ── Ticker ─────────────────────────────────────────────── */
+    .ticker-wrapper { margin: 1.5rem 0 2.5rem; }
 
     /* ── Hero ──────────────────────────────────────────────── */
     .hero { padding: 4rem 0 3rem; border-bottom: 1px solid var(--gs-color-border); }
