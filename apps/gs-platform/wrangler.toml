@@ -11,12 +11,13 @@ workers_dev = false
 # ─── Production ──────────────────────────────────────────────────────────────
 
 [env.prod]
-routes = [
-  # goldshore.ai and admin.goldshore.ai are served by Cloudflare Pages projects (gs-web, gs-admin).
-  # Worker routes with /* would intercept Pages traffic — those routes are intentionally omitted.
-  { pattern = "armsway.com/*", zone_name = "armsway.com" },
-  { pattern = "www.armsway.com/*", zone_name = "armsway.com" },
-]
+# All domain routes removed from gs-platform:
+#   goldshore.ai / goldshore.org  → gs-web Pages (custom domain)
+#   admin.goldshore.ai            → gs-admin Pages (custom domain)
+#   armsway.com                   → armsway-com worker (its own wrangler.toml)
+#   rmarston.com                  → rmarston-com worker (standalone)
+# gs-platform now serves only internal service-binding traffic.
+routes = []
 
 [env.prod.vars]
 ENV = "production"
@@ -58,10 +59,8 @@ binding = "MAIL"
 service = "gs-mail"
 environment = "prod"
 
-[[env.prod.services]]
-binding = "CORE"
-service = "gs-core-worker"
-environment = "prod"
+# gs-core-worker is no longer proxied through gs-platform.
+# armsway-com worker binds directly to gs-core-worker for its own needs.
 
 # ─── Preview ─────────────────────────────────────────────────────────────────
 

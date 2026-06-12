@@ -29,7 +29,6 @@ interface PlatformEnv {
   SECURITY?: Fetcher; // banproof-me
   SIGNALS?: Fetcher; // gs-signals-prod
   MAIL?: Fetcher; // gs-mail
-  CORE?: Fetcher; // gs-core-worker
 
   // Runtime
   ENV?: string;
@@ -162,14 +161,6 @@ app.get("/health", (c) =>
 // ---------------------------------------------------------------------------
 app.all("*", async (c) => {
   const host = new URL(c.req.url).hostname.toLowerCase();
-
-  // armsway.com → CORE service binding (Gearswipe / StellarAIO)
-  if (host === "armsway.com" || host === "www.armsway.com") {
-    if (!c.env.CORE) {
-      return c.json({ error: "CORE service binding not configured" }, 500);
-    }
-    return c.env.CORE.fetch(c.req.raw);
-  }
 
   // admin.goldshore.ai — this worker no longer intercepts admin traffic.
   // gs-admin Pages project serves admin.goldshore.ai directly via custom domain.

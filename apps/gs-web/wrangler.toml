@@ -29,12 +29,12 @@ CLOUDFLARE_ACCESS_AUDIENCE = "8b6e1890f664c52ad265a240948a1f3315a757e19b4a0fa180
 #   wrangler pages secret put CONTACT_NOTIFICATION_EMAILS --project-name gs-web
 
 # ── Custom domains (Pages project) ───────────────────────────────────────────
+# rmarston.com is served by the standalone rmarston-com worker (separate repo/project).
 
 [env.prod]
 routes = [
   { pattern = "goldshore.ai", custom_domain = true },
-  { pattern = "goldshore.org", custom_domain = true },
-  { pattern = "rmarston.com", custom_domain = true }
+  { pattern = "goldshore.org", custom_domain = true }
 ]
 
 [[env.prod.kv_namespaces]]
