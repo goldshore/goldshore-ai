@@ -1,4 +1,4 @@
-name: Deploy banproof-me
+name: Deploy gs-api
 
 permissions:
   contents: read
@@ -8,11 +8,11 @@ on:
     branches:
       - main
     paths:
-      - "apps/banproof-me/**"
+      - "apps/gs-api/**"
       - "packages/**"
       - "package.json"
       - "pnpm-lock.yaml"
-      - ".github/workflows/deploy-banproof-me.yml"
+      - ".github/workflows/deploy-gs-api.yml"
   workflow_dispatch:
 
 jobs:
@@ -22,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
-      - uses: pnpm/action-setup@v6.0.0
+      - uses: pnpm/action-setup@v4
         with:
           run_install: false
 
@@ -51,8 +51,8 @@ jobs:
           test -n "$CF_WORKERS_BUILDS" || (echo "Missing required secret: CF_WORKERS_BUILDS" && exit 1)
           test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "Missing required secret: CLOUDFLARE_ACCOUNT_ID" && exit 1)
 
-      - name: Deploy banproof-me worker to Cloudflare
-        working-directory: apps/banproof-me
+      - name: Deploy gs-api worker to Cloudflare
+        working-directory: apps/gs-api
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_WORKERS_BUILDS }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

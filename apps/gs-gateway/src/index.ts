@@ -61,12 +61,20 @@ function isAgentHostnameRequest(request: Request): boolean {
   catch { return false; }
 }
 
+const inferApiOrigin = (requestUrl: string): string | undefined => {
+  const url = new URL(requestUrl);
+  const inferredHostname = url.hostname.replace(/^gs-gateway(?=\.|$)/, "gs-api");
+  if (inferredHostname === url.hostname) return undefined;
+  url.hostname = inferredHostname;
+  return url.origin;
+};
+
 const app = new Hono<{ Bindings: GatewayEnv }>();
 
-// ── Security headers ──────────────────────────────
+// ── Security headers ──────────────────────────────────────
 app.use("*", secureHeaders());
 
-// ── Startup binding guard (production only) ────────────
+// ── Startup binding guard (production only) ───────────────
 app.use("*", async (c, next) => {
   if (c.env.ENV === "production" && !c.env.CLOUDFLARE_ACCESS_AUDIENCE) {
     console.error("CRITICAL: CLOUDFLARE_ACCESS_AUDIENCE is not set. Refusing to serve requests.");
@@ -75,7 +83,7 @@ app.use("*", async (c, next) => {
   await next();
 });
 
-// ── CORS ──────────────────────────────────
+// ── CORS ──────────────────────────────────────────────────
 app.use("*", cors({
   origin: (origin, c) => {
     if (c.env.ENV !== "production") {
@@ -94,10 +102,10 @@ app.use("*", cors({
   credentials: true,
 }));
 
-// ── Auth — fail-closed JWT verification ───────────
+// ── Auth — fail-closed JWT verification ───────────────────
 app.use("*", authMiddleware);
 
-// ── Security check (banproof-me service binding) ───────
+// ── Security check (banproof-me service binding) ──────────
 app.use("*", async (c, next) => {
   const pathname = new URL(c.req.url).pathname;
   if (pathname === "/health") return next();
@@ -123,40 +131,27 @@ app.use("*", async (c, next) => {
     }
     return c.json({ error: "SECURITY_CHECK_ERROR", message: "security check service unavailable", policy: "fail-closed" }, 503);
   }
-
-  return next();
+  await next();
 });
 
-// ── Integration controls ────────────────────────
-// Enforces X-Data-Classification, X-Secrets-Access-Policy, and X-Audit-Trace-Id
-// on /integrations/* and /market-streams/* paths.
+// ── Integration controls ──────────────────────────────────
 app.use("*", integrationControls);
 
-// ── Agent hostname routing ──────────────────────
-// Requests arriving on agent.goldshore.ai are proxied to the AGENT service binding.
+// ── Agent hostname routing ────────────────────────────────
 app.use("*", async (c, next) => {
-  if (!isAgentHostnameRequest(c.req.raw)) {
-    return next();
-  }
-
+  if (!isAgentHostnameRequest(c.req.raw)) return next();
   const correlationId = getCorrelationId(c.req.raw);
-
   if (!c.env.AGENT) {
     console.error(`[gateway] downstream agent not configured; trace=${correlationId}`);
-    return c.json(
-      { error: "Downstream agent not configured", traceId: correlationId },
-      503,
-      { [TRACE_HEADER]: correlationId },
-    );
+    return c.json({ error: "Downstream agent not configured", traceId: correlationId }, 503, { [TRACE_HEADER]: correlationId });
   }
-
   const downstreamRequest = new Request(c.req.raw, { headers: new Headers(c.req.raw.headers) });
   downstreamRequest.headers.set(TRACE_HEADER, correlationId);
   const response = await c.env.AGENT.fetch(downstreamRequest);
   return withCorrelationId(response, correlationId);
 });
 
-// ── Routes ──────────────────────────────
+// ── Routes ───────────────────────────────────────────────
 app.get("/health", (c) => c.json({ status: "ok", service: "gs-gateway" }));
 
 app.get("/", (c) => c.html(STATUS_PAGE_HTML));

@@ -7,7 +7,6 @@ export class RobinhoodClient {
 
   constructor(private env: TradingEnv) {}
 
-  // Resolves token from env var first, then KV fallback (set via POST /oauth/robinhood/token)
   private async getToken(): Promise<string> {
     if (this._token) return this._token;
     const token = this.env.ROBINHOOD_TOKEN ?? await this.env.TRADING_KV.get('robinhood:token');

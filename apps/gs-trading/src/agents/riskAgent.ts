@@ -31,15 +31,15 @@ export function checkOrderRisk(
   const existingPos = positions.find(p => p.symbol === order.symbol);
   const existingQty = existingPos?.quantity ?? 0;
   const existingLong = Math.max(0, existingQty);
-  const existingShort = Math.min(0, existingQty); // negative or 0
+  const existingShort = Math.min(0, existingQty);
   const orderQty = order.quantity ?? 0;
 
   // Riskable quantity:
   // SELL: closing existing longs is free; only the short-opening portion is risk-checked.
   // BUY:  covering existing shorts is free; only the portion beyond zero is risk-checked.
   const riskableQty = isSell
-    ? Math.max(0, orderQty - existingLong)      // amount that opens/enlarges a short
-    : Math.max(0, orderQty + existingShort);    // amount that opens/enlarges a long (existingShort is <=0)
+    ? Math.max(0, orderQty - existingLong)
+    : Math.max(0, orderQty + existingShort);
 
   const riskableFraction = orderQty > 0 ? riskableQty / orderQty : 0;
   const riskableValue = order.estimatedValue * riskableFraction;
@@ -62,7 +62,6 @@ export function checkOrderRisk(
   }
 
   if (riskableQty > 0) {
-    // Use absolute market value to avoid sign errors with short positions
     const existingAbsValue = Math.abs(existingPos?.marketValue ?? 0);
     const combinedValue = existingAbsValue + riskableValue;
     const combinedPct = totalValue > 0 ? combinedValue / totalValue : 0;
