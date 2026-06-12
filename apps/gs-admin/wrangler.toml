@@ -31,7 +31,7 @@ database_name = "gs_audit_db"
 database_id = "1ae71d76-188f-481b-91d9-db2d39013f68"
 
 [[r2_buckets]]
-binding = "ASSETS"
+binding = "GS_ASSETS"
 bucket_name = "gs-assets"
 
 # gs-trading service binding — zero-hop access to trading worker
@@ -52,7 +52,7 @@ ENV = "production"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 CLOUDFLARE_ACCESS_AUDIENCE = "8b6e1890f664c52ad265a240948a1f3315a757e19b4a0fa180ffe952b81a0daf"
 
-# ── Preview bindings ───────────────────────────────────────────────────────────
+# ── Preview bindings ──────────────────────────────────────────────────
 
 [env.preview]
 pages_build_output_dir = "dist"
@@ -76,7 +76,7 @@ database_name = "gs_audit_db"
 database_id = "1ae71d76-188f-481b-91d9-db2d39013f68"
 
 [[env.preview.r2_buckets]]
-binding = "ASSETS"
+binding = "GS_ASSETS"
 bucket_name = "gs-assets-preview"
 
 [[env.preview.services]]
@@ -88,3 +88,6 @@ environment = "prod"
 ENV = "preview"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 CLOUDFLARE_ACCESS_AUDIENCE = "8b6e1890f664c52ad265a240948a1f3315a757e19b4a0fa180ffe952b81a0daf"
+
+# ── Secret bindings (set via CLI or dashboard, never committed) ──────────────
+# wrangler pages secret put ADMIN_API_KEY --project-name gs-admin

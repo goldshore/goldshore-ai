@@ -43,14 +43,13 @@ SCHWAB_REDIRECT_URI = "https://preview.goldshore.ai/oauth/schwab/callback"
 
 # ---- Secrets (set via: wrangler secret put <NAME> --env prod) ----------------
 # Cloudflare Access:
-#   CLOUDFLARE_ACCESS_AUDIENCE  — CF Access Application Audience tag
-#   CLOUDFLARE_TEAM_DOMAIN      — e.g. "yourteam.cloudflareaccess.com"
+#   CLOUDFLARE_ACCESS_AUDIENCE  -- CF Access Application Audience tag
+#   CLOUDFLARE_TEAM_DOMAIN      -- e.g. "yourteam.cloudflareaccess.com"
 # Schwab / ThinkorSwim OAuth 2.0:
-#   SCHWAB_CLIENT_ID            — OAuth app client ID
-#   SCHWAB_CLIENT_SECRET        — OAuth app client secret
-#   SCHWAB_ACCOUNT_HASH         — Encrypted account hash from Schwab /accounts
-#   SCHWAB_REFRESH_TOKEN        — Optional seed; overridden by KV rotation after OAuth
-#
+#   SCHWAB_CLIENT_ID            -- OAuth app client ID
+#   SCHWAB_CLIENT_SECRET        -- OAuth app client secret
+#   SCHWAB_ACCOUNT_HASH         -- Encrypted account hash from Schwab /accounts
+#   SCHWAB_REFRESH_TOKEN        -- Optional seed; overridden by KV rotation after OAuth
 # Robinhood:
 #   ROBINHOOD_TOKEN             — Bearer token (also writable via POST /oauth/robinhood/token)
 #   ROBINHOOD_ACCOUNT_ID        — Robinhood account number
