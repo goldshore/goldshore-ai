@@ -136,13 +136,10 @@ cloudflare:
         production_branch: "main"
         build_command: "pnpm --filter @goldshore/gs-web build"
         output_dir: "apps/gs-web/dist"
+        # goldshore.org and www.goldshore.org owned by goldshore-org Worker (redirects → goldshore.ai)
         custom_domains:
-          - "goldshore.org"
-          - "www.goldshore.org"
           - "goldshore.ai"
           - "www.goldshore.ai"
-          - "goldshore.org"
-          - "www.goldshore.org"
 
       - name: "gs-admin"
         repo: "goldshore-ai"
@@ -238,14 +235,14 @@ cloudflare:
           destination: "your.personal.email@goldshore.ai"
 
   redirects:
-    canonical_host: "goldshore.org"
+    canonical_host: "goldshore.ai"
     rules:
-      - from: "www.goldshore.org/*"
-        to: "https://goldshore.org/$1"
-        status: 301
-      - from: "goldshore.ai/*"
-        to: "https://goldshore.org/$1"
-        status: 301
       - from: "www.goldshore.ai/*"
-        to: "https://goldshore.org/$1"
-        status: 301
+        to: "https://goldshore.ai/$1"
+        status: 308
+      - from: "goldshore.org/*"
+        to: "https://goldshore.ai/$1"
+        status: 308
+      - from: "www.goldshore.org/*"
+        to: "https://goldshore.ai/$1"
+        status: 308

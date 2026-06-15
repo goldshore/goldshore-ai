@@ -34,9 +34,9 @@ MAILCHANNELS_SENDER_NAME = "GoldShore"
 # rmarston.com is served by the standalone rmarston-com worker (separate repo/project).
 
 [env.prod]
+# goldshore.org is owned by goldshore-org Worker (redirects → goldshore.ai)
 routes = [
-  { pattern = "goldshore.ai", custom_domain = true },
-  { pattern = "goldshore.org", custom_domain = true }
+  { pattern = "goldshore.ai", custom_domain = true }
 ]
 
 [[env.prod.kv_namespaces]]
