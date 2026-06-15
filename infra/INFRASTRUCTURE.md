@@ -238,7 +238,7 @@ All gates above must be ✅ before trading dashboard Phase 1 begins.
 | 7d | `https://admin.goldshore.ai` | CF Access login wall | ⬜ TODO |
 | 7e | `https://admin.goldshore.org` | CF Access login wall | ⬜ TODO |
 | 7f | `https://trading.goldshore.ai` | CF Access login wall | ⬜ TODO |
-| 7g | `https://status.goldshore.ai/status` | JSON health response | ⬜ TODO |
+| 7g | `https://gw.goldshore.ai/status` | JSON binding health response (status.goldshore.ai reserved for gs-status Pages — not yet built) | ⬜ TODO |
 | 7h | Contact form → email delivered to marstonr6@gmail.com | End-to-end mail test | ⬜ TODO |
 | 7i | Update `Last certified` date at top of this file and commit | This file | ⬜ TODO |
 
