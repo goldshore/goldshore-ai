@@ -201,6 +201,7 @@ app.all("/api/*", async (c) => {
   }
 });
 
+
 app.all("*", (c) => c.json({ error: "Not found" }, 404));
 
 export default app;
