@@ -201,22 +201,14 @@ jobs:
               raise SystemExit("Could not find '## Workers (canonical' section in infra/INFRASTRUCTURE.md")
           canonical = sorted(set(re.findall(r"\| `([a-z0-9_-]+)` \|", workers_section.group(1))))
 
-          # Extract pending-audit workers (warn but don't fail)
-          pending_section = re.search(r"(?ms)^## Workers — Pending Audit[^\n]*\n(.*?)(?=^## |\Z)", manifest)
-          pending = sorted(set(re.findall(r"\| `([a-z0-9_-]+)` \|", pending_section.group(1)))) if pending_section else []
-
           print(f"Live workers:      {live_names}")
           print(f"Canonical workers: {canonical}")
-          print(f"Pending audit:     {pending}")
 
-          unknown = set(live_names) - set(canonical) - set(pending)
-          needs_audit = set(live_names) & set(pending)
-
-          if needs_audit:
-              print(f"WARNING: Workers pending audit (tracked, not yet approved): {needs_audit}")
+          unknown = set(live_names) - set(canonical)
           if unknown:
               print(f"ERROR: Unrecognized workers in account: {unknown}")
-              print("These workers are NOT in infra/INFRASTRUCTURE.md — audit required.")
+              print("These workers are NOT in the canonical set — complete Gate 1 in infra/INFRASTRUCTURE.md")
+              print("to delete or promote each worker before this audit will pass.")
               raise SystemExit("Failing audit: unrecognized workers must not exist in the account.")
 
           print("Cloudflare live state audit complete.")

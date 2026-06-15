@@ -43,17 +43,7 @@
 | `gs-www-redirect` | www → apex redirect worker | www.goldshore.ai | Fail open |
 | `banproof` | BanProof legacy worker | — | Fail closed |
 
-**Workers NOT on this list (and not in the Pending Audit table below) must not exist. Any unrecognized worker = immediate audit.**
-
----
-
-## Workers — Pending Audit
-
-Workers in this table exist in the Cloudflare account but have not yet been verified. CI warns for these but does not fail. Complete Gate 1 to move each to the canonical table above or delete it.
-
-| Worker name | Status | Notes |
-|---|---|---|
-| `partners-in-pools` | ⬜ UNVERIFIED | Origin unknown — appeared in live state audit. Investigate and delete or document. |
+**Workers NOT on this list must not exist. Any live worker absent from this table will fail the CI audit. See Gate 1 below.**
 
 ---
 
@@ -218,7 +208,7 @@ Create one Access application per protected subdomain group. All require Gate 4 
 | # | Subdomain(s) | Application name | Policy | Where | Status |
 |---|---|---|---|---|---|
 | 5a | `admin.goldshore.ai`, `admin.goldshore.org` | Goldshore Admin | Email = marstonr6@gmail.com (allow) | [CF Access Apps](https://one.dash.cloudflare.com/f77de112d2019e5456a3198a8bb50bd2/access/apps) | ⬜ TODO |
-| 5b | `trading.goldshore.ai` | Goldshore Trading | Email = marstonr6@gmail.com (allow) | CF Access Apps | ⬜ TODO |
+| 5b | `trading.goldshore.ai` | Goldshore Trading | Email = marstonr6@gmail.com (allow). Add **bypass policy** for `/oauth/schwab/callback` and `/oauth/robinhood/callback` (everyone) — Schwab/Robinhood redirect to these paths without an Access session. | CF Access Apps | ⬜ TODO |
 | 5c | `ops.goldshore.ai` | Goldshore Ops | Email = marstonr6@gmail.com (allow) | CF Access Apps | ⬜ TODO |
 | 5d | `api.goldshore.ai` + `agent.goldshore.ai` | Goldshore Gateway | Email = marstonr6@gmail.com (allow). Add **bypass policy** for paths `/health`, `/status`, and `/version` (everyone) — these are required by monitoring scripts in `infra/Cloudflare/config.yaml` and `scripts/deployment-audit.sh`. | CF Access Apps | ⬜ TODO |
 | 5e | Copy the **Audience (AUD) tag** for each app and store it as a GitHub Actions secret (`CLOUDFLARE_ACCESS_AUDIENCE_ADMIN`, `CLOUDFLARE_ACCESS_AUDIENCE_TRADING`, `CLOUDFLARE_ACCESS_AUDIENCE_GATEWAY`) and as wrangler secrets in each Worker. | CF Access App → Overview tab | ⬜ TODO |
@@ -229,8 +219,8 @@ Create one Access application per protected subdomain group. All require Gate 4 
 
 | # | Action | Where | Status |
 |---|--------|--------|--------|
-| 6a | Go to CF Dashboard → Pages → `gs-admin` → Custom Domains → Add `admin.goldshore.org` | [CF Pages gs-admin](https://dash.cloudflare.com/f77de112d2019e5456a3198a8bb50bd2/pages/view/gs-admin) | ⬜ TODO |
-| 6b | Verify DNS: CF should auto-create a CNAME for `admin.goldshore.org` pointing to the Pages project | CF DNS → goldshore.org zone | ⬜ TODO |
+| 6a | Go to CF Dashboard → Pages → `gs-admin` → Custom Domains → Add `admin.goldshore.org` (`infra/Cloudflare/desired-state.yaml` already documents this) | [CF Pages gs-admin](https://dash.cloudflare.com/f77de112d2019e5456a3198a8bb50bd2/pages/view/gs-admin) | ⬜ TODO |
+| 6b | Verify DNS: CF should auto-create a CNAME for `admin.goldshore.org` → `gs-admin.pages.dev` in the goldshore.org zone | CF DNS → goldshore.org zone | ⬜ TODO |
 | 6c | After Gate 5a — verify login wall appears at `https://admin.goldshore.org` | Browser | ⬜ TODO |
 
 ---

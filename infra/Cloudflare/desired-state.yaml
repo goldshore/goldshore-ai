@@ -24,11 +24,17 @@ cloudflare:
         content: "gs-web.pages.dev"
         proxied: true
 
-      # B. Admin App (gs-admin)
+      # B. Admin App (gs-admin — both .ai and .org)
       - name: "admin"
         type: CNAME
         content: "gs-admin.pages.dev"
         proxied: true
+        zone: goldshore.ai
+      - name: "admin"
+        type: CNAME
+        content: "gs-admin.pages.dev"
+        proxied: true
+        zone: goldshore.org
 
       # C. API Gateway Worker
       - name: "gw"
@@ -146,6 +152,7 @@ cloudflare:
         output_dir: "apps/gs-admin/dist"
         custom_domains:
           - "admin.goldshore.ai"
+          - "admin.goldshore.org"
         bindings:
           kv:
             - name: "KV"
