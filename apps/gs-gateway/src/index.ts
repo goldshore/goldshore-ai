@@ -169,11 +169,11 @@ app.use("*", async (c, next) => {
 // ── Routes ───────────────────────────────────────────────
 app.get("/health", (c) => c.json({ status: "ok", service: "gs-gateway", ts: Date.now() }));
 
-// status.goldshore.ai — public health page
+// status.goldshore.ai — gateway + binding configuration status (not downstream health)
 app.get("/status", (c) => c.json({
   status: "ok",
-  services: {
-    gateway: "up",
+  note: "binding_presence_only — bound does not imply downstream availability",
+  bindings: {
     api: c.env.API_SERVICE ? "bound" : "unbound",
     agent: c.env.AGENT ? "bound" : "unbound",
     security: c.env.SECURITY_CHECK ? "bound" : "unbound",
