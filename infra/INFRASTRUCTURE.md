@@ -233,8 +233,8 @@ All gates above must be ✅ before trading dashboard Phase 1 begins.
 | # | Check | Expected result | Status |
 |---|-------|-----------------|--------|
 | 7a | `https://goldshore.ai` | Public homepage loads | ⬜ TODO |
-| 7b | `https://goldshore.org` | 301 → goldshore.ai | ⬜ TODO |
-| 7c | `https://www.goldshore.ai` | 301 → goldshore.ai | ⬜ TODO |
+| 7b | `https://goldshore.org` | 308 → goldshore.ai | ⬜ TODO |
+| 7c | `https://www.goldshore.ai` | 308 → goldshore.ai | ⬜ TODO |
 | 7d | `https://admin.goldshore.ai` | CF Access login wall | ⬜ TODO |
 | 7e | `https://admin.goldshore.org` | CF Access login wall | ⬜ TODO |
 | 7f | `https://trading.goldshore.ai` | CF Access login wall | ⬜ TODO |
