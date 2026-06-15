@@ -71,6 +71,22 @@ const inferApiOrigin = (requestUrl: string): string | undefined => {
 
 const app = new Hono<{ Bindings: GatewayEnv }>();
 
+// ── www + org redirect (before auth) ─────────────────────
+// www.goldshore.ai → goldshore.ai (301)
+// www.goldshore.org → goldshore.ai (301, until org has own content)
+// dashboard.goldshore.ai → admin.goldshore.ai (301)
+app.use("*", async (c, next) => {
+  const host = new URL(c.req.url).hostname.toLowerCase();
+  const path = new URL(c.req.url).pathname + new URL(c.req.url).search;
+  if (host === "www.goldshore.ai") {
+    return c.redirect(`https://goldshore.ai${path}`, 301);
+  }
+  if (host === "dashboard.goldshore.ai") {
+    return c.redirect(`https://admin.goldshore.ai${path}`, 301);
+  }
+  return next();
+});
+
 // ── Security headers ──────────────────────────────────────
 app.use("*", secureHeaders());
 
@@ -152,7 +168,19 @@ app.use("*", async (c, next) => {
 });
 
 // ── Routes ───────────────────────────────────────────────
-app.get("/health", (c) => c.json({ status: "ok", service: "gs-gateway" }));
+app.get("/health", (c) => c.json({ status: "ok", service: "gs-gateway", ts: Date.now() }));
+
+// status.goldshore.ai — public health page
+app.get("/status", (c) => c.json({
+  status: "ok",
+  services: {
+    gateway: "up",
+    api: c.env.API_SERVICE ? "bound" : "unbound",
+    agent: c.env.AGENT ? "bound" : "unbound",
+    security: c.env.SECURITY_CHECK ? "bound" : "unbound",
+  },
+  ts: Date.now(),
+}));
 
 app.get("/", (c) => c.html(STATUS_PAGE_HTML));
 
