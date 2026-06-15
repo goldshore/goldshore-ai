@@ -17,7 +17,7 @@
 
 ---
 
-## Workers (canonical set — 21 active)
+## Workers (canonical set — 20 active)
 
 | Worker name | Purpose | Domains served | Fail policy |
 |---|---|---|---|
@@ -42,9 +42,18 @@
 | `armsway-com` | armsway.com site worker | armsway.com | Fail open (public) |
 | `gs-www-redirect` | www → apex redirect worker | www.goldshore.ai | Fail open |
 | `banproof` | BanProof legacy worker | — | Fail closed |
-| `partners-in-pools` | (Audit pending — origin unknown, live in account) | — | TBD |
 
-**Workers NOT on this list must not exist. Any unrecognized worker = immediate audit.**
+**Workers NOT on this list (and not in the Pending Audit table below) must not exist. Any unrecognized worker = immediate audit.**
+
+---
+
+## Workers — Pending Audit
+
+Workers in this table exist in the Cloudflare account but have not yet been verified. CI warns for these but does not fail. Complete Gate 1 to move each to the canonical table above or delete it.
+
+| Worker name | Status | Notes |
+|---|---|---|
+| `partners-in-pools` | ⬜ UNVERIFIED | Origin unknown — appeared in live state audit. Investigate and delete or document. |
 
 ---
 
@@ -177,15 +186,14 @@ Merge PR #12 in `marzton/goldshore-org` so `goldshore.org` and `www.goldshore.or
 
 ### GATE 3 — Deploy gs-gateway subdomain routes (BLOCKS: dashboard, status subdomains)
 
-Merge PR #5117. `dashboard.goldshore.ai` and `status.goldshore.ai` use Worker Custom Domains (auto-provision DNS). `www.goldshore.ai` is owned by `gs-platform`/`gs-www-redirect` — the redirect middleware in gs-gateway handles it if traffic arrives there, but the route is not claimed by gs-gateway (avoids Wrangler conflict).
+Merge PR #5117. `dashboard.goldshore.ai` uses Worker Custom Domain (auto-provisions DNS). `www.goldshore.ai` is owned by `gs-www-redirect` Worker (308 redirect there). `status.goldshore.ai` is reserved for the `gs-status` Pages project (see MODULE_B2_RUNTIME_WIRING.md) — not claimed by gs-gateway.
 
 | # | Action | Where | Status |
 |---|--------|--------|--------|
 | 3a | Merge `marzton/goldshore-ai` PR #5117 | [goldshore-ai/pull/5117](https://github.com/marzton/goldshore-ai/pull/5117) | ⬜ TODO |
-| 3b | Confirm `wrangler deploy --env prod` for `gs-gateway` runs (CI or manual). Custom domains will auto-create DNS. | CF Dashboard → gs-gateway | ⬜ TODO |
-| 3c | Verify: `curl -I https://www.goldshore.ai` → `308` to `https://goldshore.ai` (handled by gs-platform/gs-www-redirect) | Browser or curl | ⬜ TODO |
+| 3b | Confirm `wrangler deploy --env prod` for `gs-gateway` and `gs-www-redirect` run (CI or manual). Custom domains will auto-create DNS. | CF Dashboard | ⬜ TODO |
+| 3c | Verify: `curl -I https://www.goldshore.ai` → `308` to `https://goldshore.ai` (handled by gs-www-redirect) | Browser or curl | ⬜ TODO |
 | 3d | Verify: `curl -I https://dashboard.goldshore.ai` → `308` to `https://admin.goldshore.ai` | Browser or curl | ⬜ TODO |
-| 3e | Verify: `curl https://status.goldshore.ai/status` → `{"status":"ok",...}` JSON | Browser or curl | ⬜ TODO |
 
 ---
 
@@ -212,7 +220,7 @@ Create one Access application per protected subdomain group. All require Gate 4 
 | 5a | `admin.goldshore.ai`, `admin.goldshore.org` | Goldshore Admin | Email = marstonr6@gmail.com (allow) | [CF Access Apps](https://one.dash.cloudflare.com/f77de112d2019e5456a3198a8bb50bd2/access/apps) | ⬜ TODO |
 | 5b | `trading.goldshore.ai` | Goldshore Trading | Email = marstonr6@gmail.com (allow) | CF Access Apps | ⬜ TODO |
 | 5c | `ops.goldshore.ai` | Goldshore Ops | Email = marstonr6@gmail.com (allow) | CF Access Apps | ⬜ TODO |
-| 5d | `api.goldshore.ai` + `agent.goldshore.ai` | Goldshore Gateway | Email = marstonr6@gmail.com (allow). Add **bypass policy** for paths `/health` and `/status` (everyone). | CF Access Apps | ⬜ TODO |
+| 5d | `api.goldshore.ai` + `agent.goldshore.ai` | Goldshore Gateway | Email = marstonr6@gmail.com (allow). Add **bypass policy** for paths `/health`, `/status`, and `/version` (everyone) — these are required by monitoring scripts in `infra/Cloudflare/config.yaml` and `scripts/deployment-audit.sh`. | CF Access Apps | ⬜ TODO |
 | 5e | Copy the **Audience (AUD) tag** for each app and store it as a GitHub Actions secret (`CLOUDFLARE_ACCESS_AUDIENCE_ADMIN`, `CLOUDFLARE_ACCESS_AUDIENCE_TRADING`, `CLOUDFLARE_ACCESS_AUDIENCE_GATEWAY`) and as wrangler secrets in each Worker. | CF Access App → Overview tab | ⬜ TODO |
 
 ---

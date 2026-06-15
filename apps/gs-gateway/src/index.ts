@@ -71,15 +71,12 @@ const inferApiOrigin = (requestUrl: string): string | undefined => {
 
 const app = new Hono<{ Bindings: GatewayEnv }>();
 
-// ── www + dashboard redirect (before auth) ────────────────
-// www.goldshore.ai → goldshore.ai (308 — preserves POST method)
-// dashboard.goldshore.ai → admin.goldshore.ai (308)
+// ── dashboard redirect (before auth) ─────────────────────
+// dashboard.goldshore.ai → admin.goldshore.ai (308, method-preserving)
+// www.goldshore.ai is owned by gs-www-redirect Worker (308 there)
 app.use("*", async (c, next) => {
   const host = new URL(c.req.url).hostname.toLowerCase();
   const path = new URL(c.req.url).pathname + new URL(c.req.url).search;
-  if (host === "www.goldshore.ai") {
-    return c.redirect(`https://goldshore.ai${path}`, 308);
-  }
   if (host === "dashboard.goldshore.ai") {
     return c.redirect(`https://admin.goldshore.ai${path}`, 308);
   }
@@ -90,7 +87,10 @@ app.use("*", async (c, next) => {
 app.use("*", secureHeaders());
 
 // ── Startup binding guard (production only) ───────────────
+// /health and /status are exempt — they must stay reachable before Gate 5e audience is configured
 app.use("*", async (c, next) => {
+  const pathname = new URL(c.req.url).pathname;
+  if (pathname === "/health" || pathname === "/status") return next();
   if (c.env.ENV === "production" && !c.env.CLOUDFLARE_ACCESS_AUDIENCE) {
     console.error("CRITICAL: CLOUDFLARE_ACCESS_AUDIENCE is not set. Refusing to serve requests.");
     return c.json({ error: "Service Unavailable", message: "Auth configuration incomplete", code: "AUDIENCE_MISSING" }, 503);
