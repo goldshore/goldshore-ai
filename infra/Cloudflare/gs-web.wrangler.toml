@@ -6,30 +6,15 @@ name = "gs-web"
 compatibility_date = "2026-04-18"
 pages_build_output_dir = "./dist"
 
-# This file is primarily for configuring bindings for Cloudflare Pages Functions.
-# The actual deployment is handled by the GitHub Action connected to the Pages project.
-
 [vars]
 # Runtime configuration note:
 # - `GS_CONFIG` is intentionally not bound to gs-web today.
 # - Current gs-web runtime consumers read mutable config indirectly via
 #   `PUBLIC_API`/content fetches or admin-generated content, not from the
 #   shared gs-control/gs-admin KV namespace.
-# - If a future Pages Function needs live runtime config, add a concrete
-#   read-only consumer in `apps/gs-web` first, then declare a `GS_CONFIG`
-#   binding in the target environment blocks below.
 
 [env.dev]
 # Dev bindings for Pages Functions.
-# [[d1_databases]]
-# binding = "D1_DATABASE"
-# database_name = "goldshore_cms_dev"
-# database_id = "..."
-#
-# [[kv_namespaces]]
-# binding = "KV_SITE"
-# id = "..."
-# preview_id = "..."
 
 [env.preview]
 # Preview bindings for Pages Functions.
@@ -37,11 +22,7 @@ pages_build_output_dir = "./dist"
 [env.prod]
 routes = [
   { pattern = "goldshore.ai", custom_domain = true },
-  { pattern = "goldshore.org", custom_domain = true }
-]
-
-[env.production]
-routes = [
-  { pattern = "goldshore.ai", custom_domain = true },
-  { pattern = "goldshore.org", custom_domain = true }
+  { pattern = "www.goldshore.ai", custom_domain = true },
+  { pattern = "goldshore.org", custom_domain = true },
+  { pattern = "www.goldshore.org", custom_domain = true }
 ]
