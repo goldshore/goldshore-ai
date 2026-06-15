@@ -175,16 +175,16 @@ Merge PR #12 in `marzton/goldshore-org` so `goldshore.org` and `www.goldshore.or
 
 ---
 
-### GATE 3 — Deploy gs-gateway subdomain routes (BLOCKS: www, dashboard, status subdomains)
+### GATE 3 — Deploy gs-gateway subdomain routes (BLOCKS: dashboard, status subdomains)
 
-Merge PR #5117 in `marzton/goldshore-ai` so `www`, `dashboard`, and `status` subdomains are live.
+Merge PR #5117. `dashboard.goldshore.ai` and `status.goldshore.ai` use Worker Custom Domains (auto-provision DNS). `www.goldshore.ai` is owned by `gs-platform`/`gs-www-redirect` — the redirect middleware in gs-gateway handles it if traffic arrives there, but the route is not claimed by gs-gateway (avoids Wrangler conflict).
 
 | # | Action | Where | Status |
 |---|--------|--------|--------|
 | 3a | Merge `marzton/goldshore-ai` PR #5117 | [goldshore-ai/pull/5117](https://github.com/marzton/goldshore-ai/pull/5117) | ⬜ TODO |
-| 3b | Confirm `wrangler deploy --env prod` for `gs-gateway` runs (CI or manual) | CF Dashboard → gs-gateway | ⬜ TODO |
-| 3c | Verify: `curl -I https://www.goldshore.ai` → `301` to `https://goldshore.ai` | Browser or curl | ⬜ TODO |
-| 3d | Verify: `curl -I https://dashboard.goldshore.ai` → `301` to `https://admin.goldshore.ai` | Browser or curl | ⬜ TODO |
+| 3b | Confirm `wrangler deploy --env prod` for `gs-gateway` runs (CI or manual). Custom domains will auto-create DNS. | CF Dashboard → gs-gateway | ⬜ TODO |
+| 3c | Verify: `curl -I https://www.goldshore.ai` → `308` to `https://goldshore.ai` (handled by gs-platform/gs-www-redirect) | Browser or curl | ⬜ TODO |
+| 3d | Verify: `curl -I https://dashboard.goldshore.ai` → `308` to `https://admin.goldshore.ai` | Browser or curl | ⬜ TODO |
 | 3e | Verify: `curl https://status.goldshore.ai/status` → `{"status":"ok",...}` JSON | Browser or curl | ⬜ TODO |
 
 ---
@@ -205,14 +205,15 @@ You must configure Google and GitHub as OAuth providers in Cloudflare Zero Trust
 
 Create one Access application per protected subdomain group. All require Gate 4 to be complete.
 
+**Important:** `api.goldshore.ai` and `agent.goldshore.ai` both route to the same `gs-gateway` Worker, which holds a single `CLOUDFLARE_ACCESS_AUDIENCE` binding. They **must share one Access application** so the same AUD tag validates tokens from either subdomain. Public probes (`/health`, `/status`) must be excluded via a bypass policy so monitoring scripts don't hit the login wall.
+
 | # | Subdomain(s) | Application name | Policy | Where | Status |
 |---|---|---|---|---|---|
 | 5a | `admin.goldshore.ai`, `admin.goldshore.org` | Goldshore Admin | Email = marstonr6@gmail.com (allow) | [CF Access Apps](https://one.dash.cloudflare.com/f77de112d2019e5456a3198a8bb50bd2/access/apps) | ⬜ TODO |
 | 5b | `trading.goldshore.ai` | Goldshore Trading | Email = marstonr6@gmail.com (allow) | CF Access Apps | ⬜ TODO |
 | 5c | `ops.goldshore.ai` | Goldshore Ops | Email = marstonr6@gmail.com (allow) | CF Access Apps | ⬜ TODO |
-| 5d | `api.goldshore.ai` | Goldshore API | Email = marstonr6@gmail.com (allow) | CF Access Apps | ⬜ TODO |
-| 5e | `agent.goldshore.ai` | Goldshore Agent | Email = marstonr6@gmail.com (allow) | CF Access Apps | ⬜ TODO |
-| 5f | Copy the **Audience (AUD) tag** for each app and store it as a secret in GitHub Actions + wrangler secrets | CF Access App → Overview tab | ⬜ TODO |
+| 5d | `api.goldshore.ai` + `agent.goldshore.ai` | Goldshore Gateway | Email = marstonr6@gmail.com (allow). Add **bypass policy** for paths `/health` and `/status` (everyone). | CF Access Apps | ⬜ TODO |
+| 5e | Copy the **Audience (AUD) tag** for each app and store it as a GitHub Actions secret (`CLOUDFLARE_ACCESS_AUDIENCE_ADMIN`, `CLOUDFLARE_ACCESS_AUDIENCE_TRADING`, `CLOUDFLARE_ACCESS_AUDIENCE_GATEWAY`) and as wrangler secrets in each Worker. | CF Access App → Overview tab | ⬜ TODO |
 
 ---
 

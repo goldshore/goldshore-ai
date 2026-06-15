@@ -22,13 +22,14 @@ binding = "CONTACT_EVENTS_QUEUE"
 queue = "gs-platform-contact-events-dev"
 
 [env.prod]
+# www.goldshore.ai is owned by gs-platform/gs-www-redirect — redirect middleware handles it if traffic arrives here
+# dashboard + status use custom_domain to auto-provision DNS records
 routes = [
   { pattern = "gw.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "www.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "dashboard.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "status.goldshore.ai/*", zone_name = "goldshore.ai" }
+  { pattern = "dashboard.goldshore.ai", custom_domain = true },
+  { pattern = "status.goldshore.ai", custom_domain = true }
 ]
 
 [env.prod.vars]

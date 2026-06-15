@@ -71,18 +71,17 @@ const inferApiOrigin = (requestUrl: string): string | undefined => {
 
 const app = new Hono<{ Bindings: GatewayEnv }>();
 
-// ── www + org redirect (before auth) ─────────────────────
-// www.goldshore.ai → goldshore.ai (301)
-// www.goldshore.org → goldshore.ai (301, until org has own content)
-// dashboard.goldshore.ai → admin.goldshore.ai (301)
+// ── www + dashboard redirect (before auth) ────────────────
+// www.goldshore.ai → goldshore.ai (308 — preserves POST method)
+// dashboard.goldshore.ai → admin.goldshore.ai (308)
 app.use("*", async (c, next) => {
   const host = new URL(c.req.url).hostname.toLowerCase();
   const path = new URL(c.req.url).pathname + new URL(c.req.url).search;
   if (host === "www.goldshore.ai") {
-    return c.redirect(`https://goldshore.ai${path}`, 301);
+    return c.redirect(`https://goldshore.ai${path}`, 308);
   }
   if (host === "dashboard.goldshore.ai") {
-    return c.redirect(`https://admin.goldshore.ai${path}`, 301);
+    return c.redirect(`https://admin.goldshore.ai${path}`, 308);
   }
   return next();
 });
@@ -124,7 +123,7 @@ app.use("*", authMiddleware);
 // ── Security check (banproof-me service binding) ──────────
 app.use("*", async (c, next) => {
   const pathname = new URL(c.req.url).pathname;
-  if (pathname === "/health") return next();
+  if (pathname === "/health" || pathname === "/status") return next();
   if (!c.env.SECURITY_CHECK) {
     console.warn(JSON.stringify({ event: "security_check_skipped", policy: "fail-open", reason: "missing_binding", path: pathname }));
     return next();
