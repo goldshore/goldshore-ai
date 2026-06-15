@@ -32,11 +32,15 @@ MAILCHANNELS_SENDER_NAME = "GoldShore"
 
 # ── Custom domains (Pages project) ───────────────────────────────────────────
 # rmarston.com is served by the standalone rmarston-com worker (separate repo/project).
+# goldshore.org is intentionally owned by gs-web in this monorepo; the standalone
+# goldshore-org repository should be treated as legacy/non-canonical unless revived.
 
 [env.prod]
 routes = [
   { pattern = "goldshore.ai", custom_domain = true },
-  { pattern = "goldshore.org", custom_domain = true }
+  { pattern = "www.goldshore.ai", custom_domain = true },
+  { pattern = "goldshore.org", custom_domain = true },
+  { pattern = "www.goldshore.org", custom_domain = true }
 ]
 
 [[env.prod.kv_namespaces]]
