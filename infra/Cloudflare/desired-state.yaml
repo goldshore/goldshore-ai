@@ -11,11 +11,7 @@ cloudflare:
         type: CNAME
         content: "gs-web.pages.dev"
         proxied: true
-      # www.goldshore.ai — owned by gs-www-redirect Worker (custom_domain auto-provisions DNS)
-      - name: "www"
-        type: CNAME
-        content: "gs-www-redirect.goldshore-account.workers.dev"
-        proxied: true
+      # www.goldshore.ai — DNS auto-provisioned by gs-www-redirect Worker custom_domain; do NOT add a manual CNAME here
       # goldshore.org + www.goldshore.org — owned by goldshore-org Worker (route-based, needs proxied DNS)
       - name: "goldshore.org"
         type: CNAME
