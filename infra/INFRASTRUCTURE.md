@@ -17,7 +17,7 @@
 
 ---
 
-## Workers (canonical set — 20 active)
+## Workers (canonical set — 21 active)
 
 | Worker name | Purpose | Domains served | Fail policy |
 |---|---|---|---|
@@ -42,6 +42,7 @@
 | `armsway-com` | armsway.com site worker | armsway.com | Fail open (public) |
 | `gs-www-redirect` | www → apex redirect worker | www.goldshore.ai | Fail open |
 | `banproof` | BanProof legacy worker | — | Fail closed |
+| `partners-in-pools` | Matteo's pool business client site (partnersinpools.com) | partnersinpools.com | Fail open (public) |
 
 **Workers NOT on this list must not exist. Any live worker absent from this table will fail the CI audit. See Gate 1 below.**
 
@@ -156,7 +157,7 @@ Two workers in your account have unknown origin. You must decide to keep or dele
 
 | # | Action | Where | Status |
 |---|--------|--------|--------|
-| 1a | Go to CF Dashboard → Workers & Pages → find `partners-in-pools`. Determine if it is yours. If not → delete it. If yes → update `infra/INFRASTRUCTURE.md` row with real purpose. | [CF Dashboard](https://dash.cloudflare.com/f77de112d2019e5456a3198a8bb50bd2/workers-and-pages) | ⬜ TODO |
+| 1a | `partners-in-pools` — Matteo's pool business client site. Added to canonical table. | — | ✅ DONE |
 | 1b | Same for `goldshore-ai` worker — determine if it is a stub/duplicate or actively used. Delete or document. | [CF Dashboard](https://dash.cloudflare.com/f77de112d2019e5456a3198a8bb50bd2/workers-and-pages) | ⬜ TODO |
 | 1c | Same for `gs-todo` — keep or delete. | [CF Dashboard](https://dash.cloudflare.com/f77de112d2019e5456a3198a8bb50bd2/workers-and-pages) | ⬜ TODO |
 
