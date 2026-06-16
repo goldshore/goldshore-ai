@@ -79,6 +79,7 @@ async function deployPages(p: any) {
   if (p.require_checks?.includes('smoke')) {
     await smoke(url, 200, 8000);
     if (p.name === 'gs-web') {
+      // goldshore.org 308-redirects to goldshore.ai; fetch follows redirect so assert final 200
       await smoke('https://goldshore.org/', 200, 8000);
     }
   }

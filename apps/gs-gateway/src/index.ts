@@ -71,11 +71,26 @@ const inferApiOrigin = (requestUrl: string): string | undefined => {
 
 const app = new Hono<{ Bindings: GatewayEnv }>();
 
+// ── dashboard redirect (before auth) ─────────────────────
+// dashboard.goldshore.ai → admin.goldshore.ai (308, method-preserving)
+// www.goldshore.ai is owned by gs-www-redirect Worker (308 there)
+app.use("*", async (c, next) => {
+  const host = new URL(c.req.url).hostname.toLowerCase();
+  const path = new URL(c.req.url).pathname + new URL(c.req.url).search;
+  if (host === "dashboard.goldshore.ai") {
+    return c.redirect(`https://admin.goldshore.ai${path}`, 308);
+  }
+  return next();
+});
+
 // ── Security headers ──────────────────────────────────────
 app.use("*", secureHeaders());
 
 // ── Startup binding guard (production only) ───────────────
+// /health and /status are exempt — they must stay reachable before Gate 5e audience is configured
 app.use("*", async (c, next) => {
+  const pathname = new URL(c.req.url).pathname;
+  if (pathname === "/health" || pathname === "/status") return next();
   if (c.env.ENV === "production" && !c.env.CLOUDFLARE_ACCESS_AUDIENCE) {
     console.error("CRITICAL: CLOUDFLARE_ACCESS_AUDIENCE is not set. Refusing to serve requests.");
     return c.json({ error: "Service Unavailable", message: "Auth configuration incomplete", code: "AUDIENCE_MISSING" }, 503);
@@ -108,7 +123,7 @@ app.use("*", authMiddleware);
 // ── Security check (banproof-me service binding) ──────────
 app.use("*", async (c, next) => {
   const pathname = new URL(c.req.url).pathname;
-  if (pathname === "/health") return next();
+  if (pathname === "/health" || pathname === "/status") return next();
   if (!c.env.SECURITY_CHECK) {
     console.warn(JSON.stringify({ event: "security_check_skipped", policy: "fail-open", reason: "missing_binding", path: pathname }));
     return next();
@@ -152,7 +167,19 @@ app.use("*", async (c, next) => {
 });
 
 // ── Routes ───────────────────────────────────────────────
-app.get("/health", (c) => c.json({ status: "ok", service: "gs-gateway" }));
+app.get("/health", (c) => c.json({ status: "ok", service: "gs-gateway", ts: Date.now() }));
+
+// status.goldshore.ai — gateway + binding configuration status (not downstream health)
+app.get("/status", (c) => c.json({
+  status: "ok",
+  note: "binding_presence_only — bound does not imply downstream availability",
+  bindings: {
+    api: c.env.API_SERVICE ? "bound" : "unbound",
+    agent: c.env.AGENT ? "bound" : "unbound",
+    security: c.env.SECURITY_CHECK ? "bound" : "unbound",
+  },
+  ts: Date.now(),
+}));
 
 app.get("/", (c) => c.html(STATUS_PAGE_HTML));
 
@@ -175,14 +202,6 @@ app.get("/templates", (c) =>
 
 app.get("/user/login", (c) => c.json({ message: "Gateway Login Placeholder" }));
 app.post("/v1/chat", (c) => c.json({ message: "Gateway Chat Placeholder" }));
-
-const inferApiOrigin = (requestUrl: string): string | undefined => {
-  const url = new URL(requestUrl);
-  const inferredHostname = url.hostname.replace(/^gs-gateway(?=\.|$)/, "gs-api");
-  if (inferredHostname === url.hostname) return undefined;
-  url.hostname = inferredHostname;
-  return url.origin;
-};
 
 // Forward /api/* to the API_SERVICE binding; fall back to API_ORIGIN if unbound.
 app.all("/api/*", async (c) => {
@@ -208,6 +227,7 @@ app.all("/api/*", async (c) => {
     return c.json({ error: "Upstream request failed", traceId: correlationId }, 502, { [TRACE_HEADER]: correlationId });
   }
 });
+
 
 app.all("*", (c) => c.json({ error: "Not found" }, 404));
 
