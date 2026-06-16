@@ -36,6 +36,7 @@ MAILCHANNELS_SENDER_NAME = "GoldShore"
 # goldshore-org repository should be treated as legacy/non-canonical unless revived.
 
 [env.prod]
+# goldshore.org is owned by goldshore-org Worker (redirects → goldshore.ai)
 routes = [
   { pattern = "goldshore.ai", custom_domain = true },
   { pattern = "www.goldshore.ai", custom_domain = true },
