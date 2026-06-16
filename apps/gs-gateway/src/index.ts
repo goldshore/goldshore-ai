@@ -98,7 +98,7 @@ app.use("*", async (c, next) => {
   await next();
 });
 
-// ── CORS ─────────────────────────────────────────────────
+// ── CORS ──────────────────────────────────────────────────
 app.use("*", cors({
   origin: (origin, c) => {
     if (c.env.ENV !== "production") {
@@ -475,9 +475,10 @@ app.all("/api/*", async (c) => {
     console.error(`[gateway] upstream request failed; trace=${correlationId}`, error);
     return c.json({ error: "Upstream request failed", traceId: correlationId }, 502, { [TRACE_HEADER]: correlationId });
   }
+  await next();
 });
 
-// ── Integration controls ─────────────────────────────────
+// ── Integration controls ──────────────────────────────────
 app.use("*", integrationControls);
 
 // ── Agent hostname routing ────────────────────────────────
@@ -496,6 +497,7 @@ app.use("*", async (c, next) => {
 
 // ── Routes ───────────────────────────────────────────────
 app.get("/health", (c) => c.json({ status: "ok", service: "gs-gateway", ts: Date.now() }));
+app.get("/version", (c) => c.json({ service: "gs-gateway", version: "1.0.0" }));
 
 // status.goldshore.ai — gateway + binding configuration status (not downstream health)
 app.get("/status", (c) => c.json({
