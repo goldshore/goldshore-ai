@@ -168,6 +168,7 @@ app.use("*", async (c, next) => {
 
 // ── Routes ───────────────────────────────────────────────
 app.get("/health", (c) => c.json({ status: "ok", service: "gs-gateway", ts: Date.now() }));
+app.get("/version", (c) => c.json({ service: "gs-gateway", version: "1.0.0" }));
 
 // status.goldshore.ai — gateway + binding configuration status (not downstream health)
 app.get("/status", (c) => c.json({

@@ -94,7 +94,6 @@ Non-interactive checks against Access-protected admin and preview hosts must use
 - `.github/workflows/maintenance-gs-sync.yml` passes those secrets into `scripts/jules-sync.sh` for authenticated sync checks.
 - `infra/Cloudflare/tests.ts` automatically attaches the service-token headers for `admin.goldshore.ai`, `admin-preview.goldshore.ai`, `*-preview.goldshore.ai`, and `*.goldshore-pages.dev` smoke checks when those environment variables are present.
 - Keep the Pages runtime URLs aligned with the `.ai` migration by setting explicit `public_url` values for `gs-web` and `gs-admin` in `infra/Cloudflare/config.yaml`.
-- Keep `goldshore.org` and `www.goldshore.org` attached to the public Pages project in desired-state so the `.org` mirror stays visible in repo-managed drift checks.
 
 ### Mail handler configuration
 
