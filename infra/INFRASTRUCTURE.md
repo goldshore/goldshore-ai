@@ -17,7 +17,7 @@
 
 ---
 
-## Workers (canonical set — 17 active)
+## Workers (canonical set — 21 active)
 
 | Worker name | Purpose | Domains served | Fail policy |
 |---|---|---|---|
@@ -39,8 +39,12 @@
 | `goldshore-ai` | (Audit pending — may be stub) | — | TBD |
 | `gs-todo` | (Audit pending — may be internal tool) | — | TBD |
 | `gs-trading` | Schwab + Robinhood brokerage integration, trading API, risk engine | — | Fail closed |
+| `armsway-com` | armsway.com site worker | armsway.com | Fail open (public) |
+| `gs-www-redirect` | www → apex redirect worker | www.goldshore.ai | Fail open |
+| `banproof` | BanProof legacy worker | — | Fail closed |
+| `partners-in-pools` | Matteo's pool business client site (partnersinpools.com) | partnersinpools.com | Fail open (public) |
 
-**Workers NOT on this list must not exist. Any unrecognized worker = immediate audit.**
+**Workers NOT on this list must not exist. Any live worker absent from this table will fail the CI audit. See Gate 1 below.**
 
 ---
 
@@ -136,6 +140,107 @@ binding = "TRADING_SERVICE"
 service = "gs-trading"
 environment = "prod"
 ```
+
+---
+
+## Manual Setup Checkpoints
+
+> These actions cannot be automated via code — they require you to act in the Cloudflare Dashboard or GitHub.
+> Each checkpoint is a hard gate. Work in the section below it is blocked until it is done.
+> When you complete one, update the `Status` column and commit this file.
+
+---
+
+### GATE 1 — Audit unknown workers (BLOCKS: everything below)
+
+Two workers in your account have unknown origin. You must decide to keep or delete them before anything else.
+
+| # | Action | Where | Status |
+|---|--------|--------|--------|
+| 1a | `partners-in-pools` — Matteo's pool business client site. Added to canonical table. | — | ✅ DONE |
+| 1b | Same for `goldshore-ai` worker — determine if it is a stub/duplicate or actively used. Delete or document. | [CF Dashboard](https://dash.cloudflare.com/f77de112d2019e5456a3198a8bb50bd2/workers-and-pages) | ⬜ TODO |
+| 1c | Same for `gs-todo` — keep or delete. | [CF Dashboard](https://dash.cloudflare.com/f77de112d2019e5456a3198a8bb50bd2/workers-and-pages) | ⬜ TODO |
+
+---
+
+### GATE 2 — Deploy goldshore-org redirect (BLOCKS: goldshore.org routing)
+
+Merge PR #12 in `marzton/goldshore-org` so `goldshore.org` and `www.goldshore.org` 301-redirect to `goldshore.ai`.
+
+| # | Action | Where | Status |
+|---|--------|--------|--------|
+| 2a | Merge `marzton/goldshore-org` PR #12 | [goldshore-org/pull/12](https://github.com/marzton/goldshore-org/pull/12) | ⬜ TODO |
+| 2b | Run `wrangler deploy --env prod` in `goldshore-org` repo (or confirm CI deploys it) | Terminal / CF Dashboard | ⬜ TODO |
+| 2c | Verify: `curl -I https://goldshore.org` → `301` to `https://goldshore.ai` | Browser or curl | ⬜ TODO |
+
+---
+
+### GATE 3 — Deploy gs-gateway subdomain routes (BLOCKS: dashboard, status subdomains)
+
+Merge PR #5117. `dashboard.goldshore.ai` uses Worker Custom Domain (auto-provisions DNS). `www.goldshore.ai` is owned by `gs-www-redirect` Worker (308 redirect there). `status.goldshore.ai` is reserved for the `gs-status` Pages project (see MODULE_B2_RUNTIME_WIRING.md) — not claimed by gs-gateway.
+
+| # | Action | Where | Status |
+|---|--------|--------|--------|
+| 3a | Merge `marzton/goldshore-ai` PR #5117 | [goldshore-ai/pull/5117](https://github.com/marzton/goldshore-ai/pull/5117) | ⬜ TODO |
+| 3b | Confirm `wrangler deploy --env prod` for `gs-gateway` and `gs-www-redirect` run (CI or manual). Custom domains will auto-create DNS. | CF Dashboard | ⬜ TODO |
+| 3c | Verify: `curl -I https://www.goldshore.ai` → `308` to `https://goldshore.ai` (handled by gs-www-redirect) | Browser or curl | ⬜ TODO |
+| 3d | Verify: `curl -I https://dashboard.goldshore.ai` → `308` to `https://admin.goldshore.ai` | Browser or curl | ⬜ TODO |
+
+---
+
+### GATE 4 — CF Access identity providers (BLOCKS: SSO on any subdomain)
+
+You must configure Google and GitHub as OAuth providers in Cloudflare Zero Trust before any Access app policy works.
+
+| # | Action | Where | Status |
+|---|--------|--------|--------|
+| 4a | Go to CF Zero Trust → Settings → Authentication → Add Google as identity provider. Requires a Google OAuth client ID + secret (create one at console.cloud.google.com). | [CF Zero Trust](https://one.dash.cloudflare.com/f77de112d2019e5456a3198a8bb50bd2/settings/authentication) | ⬜ TODO |
+| 4b | Add GitHub as identity provider. Requires a GitHub OAuth App (create at github.com/settings/developers). Callback URL = `https://goldshore.cloudflareaccess.com/cdn-cgi/access/callback`. | [CF Zero Trust](https://one.dash.cloudflare.com/f77de112d2019e5456a3198a8bb50bd2/settings/authentication) | ⬜ TODO |
+| 4c | Test both logins — CF will show a "Test" button next to each provider after saving. | CF Zero Trust UI | ⬜ TODO |
+
+---
+
+### GATE 5 — CF Access applications (BLOCKS: protected subdomains accepting logins)
+
+Create one Access application per protected subdomain group. All require Gate 4 to be complete.
+
+**Important:** `api.goldshore.ai` and `agent.goldshore.ai` both route to the same `gs-gateway` Worker, which holds a single `CLOUDFLARE_ACCESS_AUDIENCE` binding. They **must share one Access application** so the same AUD tag validates tokens from either subdomain. Public probes (`/health`, `/status`) must be excluded via a bypass policy so monitoring scripts don't hit the login wall.
+
+| # | Subdomain(s) | Application name | Policy | Where | Status |
+|---|---|---|---|---|---|
+| 5a | `admin.goldshore.ai`, `admin.goldshore.org` | Goldshore Admin | Email = marstonr6@gmail.com (allow) | [CF Access Apps](https://one.dash.cloudflare.com/f77de112d2019e5456a3198a8bb50bd2/access/apps) | ⬜ TODO |
+| 5b | `trading.goldshore.ai` | Goldshore Trading | Email = marstonr6@gmail.com (allow). Add **bypass policy** for `/oauth/schwab/callback` and `/oauth/robinhood/callback` (everyone) — Schwab/Robinhood redirect to these paths without an Access session. | CF Access Apps | ⬜ TODO |
+| 5c | `ops.goldshore.ai` | Goldshore Ops | Email = marstonr6@gmail.com (allow) | CF Access Apps | ⬜ TODO |
+| 5d | `gw.goldshore.ai` + `api.goldshore.ai` + `agent.goldshore.ai` | Goldshore Gateway | All three route to the same `gs-gateway` Worker — must share one Access app and one AUD tag. Email = marstonr6@gmail.com (allow). Add **bypass policy** for paths `/health`, `/status`, and `/version` (everyone). | CF Access Apps | ⬜ TODO |
+| 5e | Copy the **Audience (AUD) tag** for each app and store it as a GitHub Actions secret (`CLOUDFLARE_ACCESS_AUDIENCE_ADMIN`, `CLOUDFLARE_ACCESS_AUDIENCE_TRADING`, `CLOUDFLARE_ACCESS_AUDIENCE_GATEWAY`) and as wrangler secrets in each Worker. | CF Access App → Overview tab | ⬜ TODO |
+
+---
+
+### GATE 6 — gs-admin Pages custom domain for .org (BLOCKS: admin.goldshore.org)
+
+| # | Action | Where | Status |
+|---|--------|--------|--------|
+| 6a | Go to CF Dashboard → Pages → `gs-admin` → Custom Domains → Add `admin.goldshore.org` (`infra/Cloudflare/desired-state.yaml` already documents this) | [CF Pages gs-admin](https://dash.cloudflare.com/f77de112d2019e5456a3198a8bb50bd2/pages/view/gs-admin) | ⬜ TODO |
+| 6b | Verify DNS: CF should auto-create a CNAME for `admin.goldshore.org` → `gs-admin.pages.dev` in the goldshore.org zone | CF DNS → goldshore.org zone | ⬜ TODO |
+| 6c | After Gate 5a — verify login wall appears at `https://admin.goldshore.org` | Browser | ⬜ TODO |
+
+---
+
+### GATE 7 — End-to-end smoke test (BLOCKS: trading dashboard work)
+
+All gates above must be ✅ before trading dashboard Phase 1 begins.
+
+| # | Check | Expected result | Status |
+|---|-------|-----------------|--------|
+| 7a | `https://goldshore.ai` | Public homepage loads | ⬜ TODO |
+| 7b | `https://goldshore.org` | 308 → goldshore.ai | ⬜ TODO |
+| 7c | `https://www.goldshore.ai` | 308 → goldshore.ai | ⬜ TODO |
+| 7d | `https://admin.goldshore.ai` | CF Access login wall | ⬜ TODO |
+| 7e | `https://admin.goldshore.org` | CF Access login wall | ⬜ TODO |
+| 7f | `https://trading.goldshore.ai` | CF Access login wall | ⬜ TODO |
+| 7g | `https://gw.goldshore.ai/status` | JSON binding health response (status.goldshore.ai reserved for gs-status Pages — not yet built) | ⬜ TODO |
+| 7h | Contact form → email delivered to marstonr6@gmail.com | End-to-end mail test | ⬜ TODO |
+| 7i | Update `Last certified` date at top of this file and commit | This file | ⬜ TODO |
 
 ---
 

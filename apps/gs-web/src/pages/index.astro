@@ -1,139 +1,335 @@
 ---
 import WebLayout from '../layouts/WebLayout.astro';
+import TickerFeed from '../components/TickerFeed.astro';
 
 export const prerender = true;
 
-const platformCards = [
+// ── Node layer: the actual deployed Cloudflare infrastructure ─────────────
+const nodeCards = [
+  {
+    title: 'gs-gateway',
+    tag: 'Edge Router',
+    body: 'Cloudflare Worker at gw.goldshore.ai. Authenticates via CF Access JWT, enforces CORS, routes /api/* to gs-api, proxies agent.goldshore.ai to the agent binding, and fan-outs security checks to banproof-me — all at the edge with sub-millisecond overhead.',
+  },
+  {
+    title: 'gs-trading',
+    tag: 'Simulation Engine',
+    body: 'Paper-trading command center at trading.goldshore.ai. Connects to Schwab and Robinhood OAuth for live market data, runs a multi-agent system (signal, risk, execution, scheduler, monitor) against a KV-backed paper ledger. No live order execution — simulation only.',
+  },
+  {
+    title: 'gs-platform',
+    tag: 'Service Hub',
+    body: 'Internal hub worker with service bindings to banproof-me, gs-mail, and gs-signals-prod. Holds the shared D1 database, KV config namespaces, and R2 asset bucket. Now routes via service bindings only — no public routes.',
+  },
+  {
+    title: 'banproof-me',
+    tag: 'Security Layer',
+    body: 'Security-check worker bound to every inbound request via gs-gateway. Validates requests for ban indicators, rate signals, and access anomalies. Also the standalone API at banproof.me for consumer dispute and account resilience tooling.',
+  },
+  {
+    title: 'gs-mail',
+    tag: 'Email Queue',
+    body: 'Cloudflare Queue consumer for outbound email. Decouples email delivery from request paths — any worker pushes to the queue, gs-mail drains it via Resend with retry logic, audit logging, and suppression list enforcement.',
+  },
+  {
+    title: 'armsway-com',
+    tag: 'Commerce Node',
+    body: 'Standalone Worker for armsway.com. Tracks e-commerce events (Gearswipe / StellarAIO), writes telemetry to R2, audits to D1, and exposes health and tracking endpoints protected by a shared worker secret.',
+  },
+];
+
+// ── Data layer ────────────────────────────────────────────────────────────
+const dataCards = [
+  {
+    title: 'KV Store',
+    body: 'Ten namespaces across the platform — per-worker config, OAuth tokens (Schwab, Robinhood), feature flags (mcp-trading), session state, trading paper ledger, admin sessions, and a shared GS_CONFIG namespace readable by all workers.',
+  },
+  {
+    title: 'D1 (SQLite at edge)',
+    body: 'gs_platform_db for platform data; gs_audit_db for audit trails shared across banproof-me, armsway-com, and gs-admin; gs_signals_db for market signal history. All accessed via Drizzle ORM with @goldshore/core-schema types.',
+  },
+  {
+    title: 'R2 Object Storage',
+    body: 'gs-assets for static assets, gs-telemetry-storage for armsway commerce telemetry. Bound to workers directly — no public bucket URLs. Content served through Workers responses with cache headers.',
+  },
+  {
+    title: 'Queues',
+    body: 'GS_EVENTS queue for platform-wide event fan-out. MAIL_QUEUE consumed by gs-mail for reliable email delivery. CHECKOUT_EVENTS_QUEUE and CONTACT_EVENTS_QUEUE routed through gs-gateway for intake decoupling.',
+  },
+];
+
+// ── Intelligence layer ────────────────────────────────────────────────────
+const agentCards = [
+  {
+    title: 'Signal Agent',
+    body: 'Generates buy/sell/hold signals from RSI, MACD, and EMA crossovers on live market data pulled from Schwab and Robinhood APIs. Feeds the orchestrator with scored recommendations.',
+  },
+  {
+    title: 'Risk Agent',
+    body: 'Validates every order against position limits (≤5% per position), daily loss ceiling (≤2%), sector concentration (≤15%), and minimum cash reserve (≥10%). Rejects non-compliant orders before paper execution.',
+  },
+  {
+    title: 'Orchestrator',
+    body: 'Coordinates the signal → risk → execution pipeline. Assembles recommendations, applies human-approval gates, and dispatches approved orders to the paper ledger. Never touches a live broker.',
+  },
+  {
+    title: 'Monitor',
+    body: 'Tracks portfolio drift, P&L thresholds, and agent health. Pushes notifications via email webhook, HTTP webhook, or SMS when configured triggers fire.',
+  },
+];
+
+// ── Ventures ──────────────────────────────────────────────────────────────
+const ventureCards = [
+  {
+    title: 'BanProof',
+    body: 'Consumer protection and account resilience tooling. Dispute recovery, escalation workflows, and real-time ban signal detection.',
+  },
+  {
+    title: 'GearSwipe',
+    body: 'Commerce intelligence for the resale market. Affiliate infrastructure, product discovery, and market-routing automation via armsway.com.',
+  },
   {
     title: 'Risk Radar',
-    body: 'Real-time risk awareness, signal monitoring, sector mapping, and decision-support tooling for fast-moving environments.',
+    body: 'Financial signal tooling for markets, sectors, volatility, and asymmetric decision environments — built on the same gs-trading agent infrastructure.',
   },
-  {
-    title: 'Sentinel',
-    body: 'Persistent monitoring infrastructure for alerts, anomalies, system health, access events, and operational continuity.',
-  },
-  {
-    title: 'AI Oracle',
-    body: 'A structured intelligence interface for querying systems, documents, markets, workflows, and decision histories.',
-  },
-  {
-    title: 'Workflow Engine',
-    body: 'Automation pipelines for intake, routing, review, escalation, fulfillment, and reporting.',
-  },
-  {
-    title: 'Operator Infrastructure',
-    body: 'Resilient digital systems for founders, analysts, administrators, and teams operating across fragmented tools.',
-  },
-];
-
-const serviceCards = [
-  { title: 'Digital Strategy', body: 'Roadmaps, system audits, product positioning, automation planning, and operational architecture.' },
-  { title: 'AI Implementation', body: 'Practical AI integration for internal tools, document workflows, customer operations, research, and reporting.' },
-  { title: 'Systems Integration', body: 'Connecting websites, databases, APIs, CRMs, analytics, cloud services, and internal dashboards.' },
-  { title: 'Design & Development', body: 'Web platforms, landing pages, dashboards, internal portals, prototypes, and product interfaces.' },
-  { title: 'Consulting', body: 'Strategic advisory for founders, operators, analysts, and teams navigating digital complexity.' },
-];
-
-const ventureCards = [
-  { title: 'BanProof', body: 'Consumer protection, dispute recovery, account resilience, and escalation tooling for users navigating platform failure.' },
-  { title: 'GearSwipe', body: 'Commerce intelligence, resale workflows, affiliate infrastructure, product discovery, and market-routing automation.' },
-  { title: 'Risk Radar', body: 'Financial and operational signal tooling for markets, sectors, volatility, and asymmetric decision environments.' },
-  { title: 'Future Schemas', body: 'A research layer for emerging product categories, novel data structures, automation models, and operator-first intelligence systems.' },
-];
-
-const intelligenceCards = [
-  { title: 'Financial Signals', body: 'Market movement, sector risk, ticker monitoring, macro events, and volatility-aware signal interpretation.' },
-  { title: 'Risk Tooling', body: 'Systems for identifying exposure, operational fragility, platform dependency, and decision bottlenecks.' },
-  { title: 'Reports', body: 'Briefings, audits, research notes, product maps, technical documentation, and strategic summaries.' },
-  { title: 'Market Systems', body: 'Tools and frameworks for understanding how capital, attention, infrastructure, and behavior move together.' },
 ];
 ---
 
 <WebLayout
-  title="GoldShore | Applied Intelligence Systems"
-  description="Institutional AI systems, risk tooling, and resilient operator infrastructure."
+  title="GoldShore | Personal Cloudflare Node Network"
+  description="A distributed personal API built on Cloudflare Workers, D1, KV, R2, and Queues — with a paper-trading engine, multi-agent intelligence layer, and edge security."
   canonicalPath="/"
 >
   <main class="home">
+
+    <!-- ── Hero ─────────────────────────────────────────────── -->
     <section class="hero" id="top">
-      <p class="kicker">Applied Intelligence · Digital Systems · Consulting</p>
-      <h1>Applied intelligence systems for operators, institutions, and resilient digital infrastructure.</h1>
-      <p class="lead">GoldShore builds AI-enabled platforms, risk tooling, workflow systems, and digital strategy infrastructure for teams that need clarity, control, and durable execution.</p>
-      <p class="trust">Cross-sector. Full-stack. Built to last.</p>
+      <p class="kicker">Edge Network · Agent Intelligence · Personal Infrastructure</p>
+      <h1>A personal Cloudflare node network, wired end-to-end.</h1>
+      <p class="lead">
+        GoldShore is a distributed system running across Cloudflare Workers, D1, KV, R2, and Queues —
+        with an edge gateway, paper-trading engine, multi-agent intelligence layer, security middleware,
+        and admin dashboard, all deployed from a single pnpm monorepo.
+      </p>
+      <p class="trust">Workers · D1 · KV · R2 · Queues · CF Access · OAuth · Hono · Astro</p>
       <div class="actions">
-        <a href="#platform" class="btn btn-primary">Explore Platform</a>
-        <a href="#contact" class="btn">Start a Consultation</a>
+        <a href="#nodes" class="btn btn-primary">Explore the nodes</a>
+        <button type="button" class="btn" id="contact-modal-trigger">Get in touch</button>
       </div>
     </section>
 
-    <section id="platform" class="section">
-      <h2>Platform</h2>
-      <p class="intro">A modular intelligence layer for risk sensing, workflow automation, signal interpretation, and operator support.</p>
-      <div class="grid">{platformCards.map((card) => <article class="card"><h3>{card.title}</h3><p>{card.body}</p></article>)}</div>
+    <!-- ── Market ticker ─────────────────────────────────────── -->
+    <div class="ticker-wrapper">
+      <TickerFeed id="home-ticker" />
+    </div>
+
+    <!-- ── Architecture diagram (text) ──────────────────────── -->
+    <section class="section arch-section" id="platform">
+      <h2>Architecture</h2>
+      <p class="intro">
+        Every domain runs on its own isolated Cloudflare Worker. Workers communicate via service bindings —
+        no public API hops between nodes. Data flows through D1 for persistent state, KV for fast edge
+        reads, R2 for objects, and Queues for async fan-out.
+      </p>
+      <div class="arch-diagram" aria-label="Network topology diagram">
+        <div class="arch-row">
+          <div class="arch-node arch-node--edge">CF Access</div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-node arch-node--gateway">gs-gateway<span class="arch-sub">gw.goldshore.ai</span></div>
+        </div>
+        <div class="arch-bindings">
+          <div class="arch-branch">
+            <div class="arch-node arch-node--worker">gs-api<span class="arch-sub">api.goldshore.ai</span></div>
+          </div>
+          <div class="arch-branch">
+            <div class="arch-node arch-node--worker">gs-platform<span class="arch-sub">service hub</span></div>
+            <div class="arch-leaf-row">
+              <div class="arch-node arch-node--leaf">banproof-me</div>
+              <div class="arch-node arch-node--leaf">gs-mail</div>
+              <div class="arch-node arch-node--leaf">gs-signals</div>
+            </div>
+          </div>
+          <div class="arch-branch">
+            <div class="arch-node arch-node--worker">gs-trading<span class="arch-sub">trading.goldshore.ai</span></div>
+            <div class="arch-leaf-row">
+              <div class="arch-node arch-node--agent">signal-agent</div>
+              <div class="arch-node arch-node--agent">risk-agent</div>
+              <div class="arch-node arch-node--agent">orchestrator</div>
+            </div>
+          </div>
+        </div>
+        <div class="arch-row arch-data-row">
+          <div class="arch-node arch-node--data">D1 (SQLite)</div>
+          <div class="arch-node arch-node--data">KV (10 ns)</div>
+          <div class="arch-node arch-node--data">R2 (objects)</div>
+          <div class="arch-node arch-node--data">Queues</div>
+        </div>
+      </div>
     </section>
 
-    <section id="services" class="section">
-      <h2>Services</h2>
-      <p class="intro">GoldShore helps organizations design, implement, and stabilize intelligent systems across strategy, automation, infrastructure, and interface design.</p>
-      <div class="grid">{serviceCards.map((card) => <article class="card"><h3>{card.title}</h3><p>{card.body}</p></article>)}</div>
+    <!-- ── Worker nodes ──────────────────────────────────────── -->
+    <span id="services" aria-hidden="true"></span>
+    <section id="nodes" class="section">
+      <h2>Worker Nodes</h2>
+      <p class="intro">
+        Six workers deployed from this monorepo, each owning its domain, bindings, and data.
+        No shared runtime state — isolation is enforced at the Cloudflare layer.
+      </p>
+      <div class="grid">
+        {nodeCards.map((card) => (
+          <article class="card">
+            <div class="card-meta">
+              <h3>{card.title}</h3>
+              <span class="tag">{card.tag}</span>
+            </div>
+            <p>{card.body}</p>
+          </article>
+        ))}
+      </div>
     </section>
 
+    <!-- ── Data layer ─────────────────────────────────────────── -->
+    <section id="data" class="section">
+      <h2>Data Layer</h2>
+      <p class="intro">
+        Persistent state lives in D1 and KV, co-located at Cloudflare's edge.
+        All bindings are declared per-worker — no shared connection strings, no ORMs outside the monorepo.
+      </p>
+      <div class="grid">
+        {dataCards.map((card) => (
+          <article class="card">
+            <h3>{card.title}</h3>
+            <p>{card.body}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <!-- ── Agent intelligence ────────────────────────────────── -->
+    <span id="intelligence" aria-hidden="true"></span>
+    <section id="agents" class="section">
+      <h2>Agent Intelligence</h2>
+      <p class="intro">
+        The trading node runs a multi-agent system for paper simulation — signal generation, risk validation,
+        and orchestrated execution, with human approval gates and a persistent paper ledger.
+        Three isolated states: live broker data, paper simulation, and agentic recommendations.
+      </p>
+      <div class="grid">
+        {agentCards.map((card) => (
+          <article class="card">
+            <h3>{card.title}</h3>
+            <p>{card.body}</p>
+          </article>
+        ))}
+      </div>
+      <div class="callout">
+        <strong>Mode: Paper.</strong> live_trading_enabled: false · broker_execution_enabled: false · human_approval_required: true
+      </div>
+    </section>
+
+    <!-- ── Ventures ───────────────────────────────────────────── -->
+    <span id="company" aria-hidden="true"></span>
     <section id="ventures" class="section">
       <h2>Ventures</h2>
-      <p class="intro">GoldShore develops product concepts and independent systems around defensible workflows, market inefficiencies, and high-friction digital problems.</p>
-      <div class="grid">{ventureCards.map((card) => <article class="card"><h3>{card.title}</h3><p>{card.body}</p></article>)}</div>
-    </section>
-
-    <section id="intelligence" class="section">
-      <h2>Intelligence</h2>
-      <p class="intro">GoldShore treats information as infrastructure: something to be structured, monitored, interpreted, and deployed.</p>
-      <div class="grid">{intelligenceCards.map((card) => <article class="card"><h3>{card.title}</h3><p>{card.body}</p></article>)}</div>
-    </section>
-
-    <section id="why" class="section">
-      <h2>Built for operators who need systems that hold.</h2>
-      <p class="intro">Most digital systems are fragmented, reactive, and dependent on scattered tools. GoldShore designs intelligence infrastructure that helps teams see what matters, automate what repeats, and preserve control when complexity increases.</p>
+      <p class="intro">
+        Products built on the same infrastructure — each with its own worker, domain, and data bindings.
+      </p>
       <div class="three-col">
-        <article class="card"><h3>Clarity</h3><p>Turn scattered inputs into structured signals, dashboards, workflows, and decisions.</p></article>
-        <article class="card"><h3>Control</h3><p>Design systems that reduce dependency, preserve auditability, and support operational continuity.</p></article>
-        <article class="card"><h3>Durability</h3><p>Build platforms and processes that can evolve across markets, tools, teams, and technology cycles.</p></article>
+        {ventureCards.map((card) => (
+          <article class="card">
+            <h3>{card.title}</h3>
+            <p>{card.body}</p>
+          </article>
+        ))}
       </div>
     </section>
 
-    <section id="company" class="section">
-      <h2>Company</h2>
-      <p class="intro">GoldShore is an applied intelligence and digital systems company focused on AI implementation, risk tooling, workflow infrastructure, and strategic consulting.</p>
-      <div class="grid simple-links">
-        <a href="/about" class="card"><h3>About</h3></a>
-        <a href="/team" class="card"><h3>Team</h3></a>
-        <a href="/developer" class="card"><h3>Developer Hub</h3></a>
-        <a href="/status" class="card"><h3>Status</h3></a>
-      </div>
-    </section>
-
+    <!-- ── CTA ───────────────────────────────────────────────── -->
     <section id="contact" class="section contact">
-      <h2>Start with the system.</h2>
-      <p class="intro">Whether you need a platform audit, AI workflow, risk tool, website, dashboard, or product strategy map, GoldShore can help structure the next layer.</p>
-      <a class="btn btn-primary" href="/contact">Request Consultation</a>
+      <h2>Built in the open. Let's connect.</h2>
+      <p class="intro">
+        Questions about the architecture, want to collaborate, or looking to build something similar?
+      </p>
+      <button type="button" class="btn btn-primary" id="contact-modal-trigger-footer">Get in touch</button>
     </section>
+
   </main>
 
+  <script is:inline>
+    // Wire footer CTA to header modal
+    document.getElementById('contact-modal-trigger-footer')?.addEventListener('click', () => {
+      const modal = document.getElementById('contact-modal');
+      const trigger = document.getElementById('contact-modal-trigger');
+      if (modal) {
+        modal.removeAttribute('hidden');
+        document.body.style.overflow = 'hidden';
+        modal.querySelector('input, textarea')?.focus();
+      } else {
+        trigger?.click();
+      }
+    });
+  </script>
+
   <style>
-    .home { width: min(1100px, 92vw); margin: 0 auto; padding: 5rem 0 6rem; color: #f5f7fb; }
-    .hero { padding: 4rem 0 3rem; border-bottom: 1px solid rgba(255,255,255,.12); }
-    .kicker { color: #d8b56b; text-transform: uppercase; letter-spacing: .12em; font-size: .8rem; }
-    h1 { font-size: clamp(2rem, 5vw, 3.8rem); line-height: 1.05; max-width: 15ch; }
-    .lead,.intro { color: rgba(232,236,247,.82); max-width: 72ch; line-height: 1.7; }
-    .trust { color: #b8c5dd; font-weight: 600; }
+    .home { width: min(1100px, 92vw); margin: 0 auto; padding: 5rem 0 6rem; color: var(--gs-color-text); }
+
+    /* ── Ticker ─────────────────────────────────────────────── */
+    .ticker-wrapper { margin: 1.5rem 0 2.5rem; }
+
+    /* ── Hero ──────────────────────────────────────────────── */
+    .hero { padding: 4rem 0 3rem; border-bottom: 1px solid var(--gs-color-border); }
+    .kicker { color: var(--gs-gold); text-transform: uppercase; letter-spacing: .18em; font-size: .78rem; }
+    h1 { font-size: clamp(2.4rem, 5.5vw, 4.2rem); line-height: 1.05; max-width: 22ch; }
+    .lead, .intro { color: var(--gs-color-subtle); max-width: 72ch; line-height: 1.7; }
+    .trust { color: var(--gs-color-subtle); font-family: var(--gs-font-mono); font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; margin-top: .5rem; }
     .actions { display: flex; gap: .75rem; flex-wrap: wrap; margin-top: 1.25rem; }
-    .btn { border: 1px solid rgba(216,181,107,.45); color: #edf2ff; border-radius: 999px; padding: .7rem 1.05rem; text-decoration: none; }
-    .btn-primary { background: rgba(216,181,107,.15); border-color: #d8b56b; }
+    .btn { border: 1px solid rgba(201,168,76,.45); color: var(--gs-color-text); border-radius: 999px; padding: .7rem 1.05rem; text-decoration: none; cursor: pointer; background: transparent; font: inherit; transition: background 160ms ease, border-color 160ms ease; }
+    .btn:hover { background: var(--gs-gold-glow, rgba(201,168,76,.08)); }
+    .btn-primary { background: var(--gs-gold-soft, rgba(201,168,76,.14)); border-color: var(--gs-gold); }
+    .btn-primary:hover { background: rgba(201,168,76,.24); }
+
+    /* ── Sections ──────────────────────────────────────────── */
     .section { padding: 3.5rem 0 1rem; }
-    h2 { font-size: clamp(1.7rem, 3vw, 2.5rem); margin-bottom: .65rem; }
-    .grid, .three-col { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); margin-top: 1.1rem; }
-    .card { background: rgba(16,20,30,.78); border: 1px solid rgba(154,171,201,.22); border-radius: 14px; padding: 1rem; text-decoration: none; color: inherit; }
-    .card h3 { margin: 0 0 .5rem; font-size: 1.05rem; }
-    .card p { margin: 0; color: rgba(226,233,247,.8); line-height: 1.6; }
-    .contact { padding-bottom: 4rem; }
+    h2 { font-size: clamp(1.8rem, 3.2vw, 2.7rem); margin-bottom: .65rem; }
+    .grid, .three-col { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); margin-top: 1.1rem; }
+
+    /* ── Cards ─────────────────────────────────────────────── */
+    .card { background: var(--gs-color-surface); border: 1px solid var(--gs-color-border); border-radius: 14px; padding: 1.25rem; color: inherit; transition: border-color 160ms ease, transform 160ms ease; }
+    .card:hover { border-color: var(--gs-color-border-strong, rgba(201,168,76,.3)); transform: translateY(-2px); }
+    .card-meta { display: flex; align-items: baseline; gap: .6rem; margin-bottom: .4rem; flex-wrap: wrap; }
+    .card h3 { margin: 0; font-size: 1.1rem; color: var(--gs-gold); }
+    .card p { margin: 0; color: var(--gs-color-subtle); line-height: 1.6; font-size: .92rem; }
+    .tag { font-family: var(--gs-font-mono, monospace); font-size: .7rem; padding: .15rem .45rem; border: 1px solid rgba(201,168,76,.3); border-radius: 4px; color: var(--gs-gold); white-space: nowrap; }
+
+    /* ── Architecture diagram ──────────────────────────────── */
+    .arch-section { }
+    .arch-diagram { margin-top: 1.5rem; font-family: var(--gs-font-mono, monospace); font-size: .82rem; display: flex; flex-direction: column; gap: 1rem; }
+    .arch-row { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+    .arch-arrow { color: var(--gs-color-subtle); font-size: 1.2rem; }
+    .arch-bindings { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; padding: .75rem; border: 1px dashed rgba(255,255,255,.08); border-radius: 10px; }
+    .arch-branch { display: flex; flex-direction: column; gap: .5rem; }
+    .arch-leaf-row { display: flex; gap: .4rem; flex-wrap: wrap; padding-left: .5rem; }
+    .arch-data-row { display: flex; flex-wrap: wrap; gap: .5rem; border-top: 1px solid rgba(255,255,255,.06); padding-top: 1rem; }
+    .arch-node { padding: .4rem .7rem; border-radius: 6px; display: flex; flex-direction: column; gap: .15rem; white-space: nowrap; }
+    .arch-sub { font-size: .68rem; color: var(--gs-color-subtle); }
+    .arch-node--edge { background: rgba(239,68,68,.12); border: 1px solid rgba(239,68,68,.25); color: #fca5a5; }
+    .arch-node--gateway { background: rgba(201,168,76,.12); border: 1px solid rgba(201,168,76,.3); color: var(--gs-gold); }
+    .arch-node--worker { background: rgba(90,162,255,.10); border: 1px solid rgba(90,162,255,.25); color: #93c5fd; }
+    .arch-node--agent { background: rgba(167,139,250,.10); border: 1px solid rgba(167,139,250,.2); color: #c4b5fd; font-size: .75rem; padding: .25rem .5rem; }
+    .arch-node--leaf { background: rgba(52,211,153,.08); border: 1px solid rgba(52,211,153,.2); color: #6ee7b7; font-size: .75rem; padding: .25rem .5rem; }
+    .arch-node--data { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); color: var(--gs-color-subtle); }
+
+    /* ── Callout ───────────────────────────────────────────── */
+    .callout { margin-top: 1.25rem; padding: .85rem 1.1rem; border: 1px solid rgba(52,211,153,.2); border-radius: 10px; background: rgba(52,211,153,.05); font-family: var(--gs-font-mono, monospace); font-size: .82rem; color: #6ee7b7; }
+    .callout strong { color: #a7f3d0; }
+
+    /* ── Contact ───────────────────────────────────────────── */
+    .contact { padding-bottom: 4rem; text-align: left; }
+
+    /* ── Responsive ────────────────────────────────────────── */
+    @media (max-width: 640px) {
+      .arch-bindings { grid-template-columns: 1fr; }
+      .arch-data-row { }
+    }
   </style>
 </WebLayout>
