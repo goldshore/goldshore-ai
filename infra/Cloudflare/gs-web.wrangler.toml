@@ -20,6 +20,7 @@ pages_build_output_dir = "./dist"
 # Preview bindings for Pages Functions.
 
 [env.prod]
+# goldshore.org is owned by goldshore-org Worker (redirects → goldshore.ai)
 routes = [
   { pattern = "goldshore.ai", custom_domain = true },
   { pattern = "www.goldshore.ai", custom_domain = true },
