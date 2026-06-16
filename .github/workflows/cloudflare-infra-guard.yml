@@ -3,6 +3,11 @@ name: Cloudflare Infra Guard
 on:
   pull_request:
     branches: [main]
+  # Runs after platform deploy completes, pinned to the deployed commit SHA
+  # to avoid validating requirements that differ from what was actually deployed.
+  workflow_run:
+    workflows: ["Deploy — GoldShore Platform"]
+    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -11,20 +16,22 @@ permissions:
 jobs:
   validate-cloudflare-secrets:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'workflow_dispatch'
+    continue-on-error: true
+    if: github.event_name == 'pull_request' && (github.event.pull_request.head.repo.full_name == github.repository)
     steps:
       - name: Verify required Cloudflare account and build token secrets
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_BUILD_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+          CF_WORKERS_BUILDS: ${{ secrets.CF_WORKERS_BUILDS }}
         run: |
           test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "Missing required secret: CLOUDFLARE_ACCOUNT_ID" && exit 1)
-          test -n "$CLOUDFLARE_BUILD_API_TOKEN" || (echo "Missing required secret: CLOUDFLARE_BUILD_API_TOKEN" && exit 1)
+          test -n "$CF_WORKERS_BUILDS" || (echo "Missing required secret: CF_WORKERS_BUILDS - please add this secret to the repository settings" && exit 1)
 
   validate-worker-token-policy:
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install ripgrep
         run: sudo apt-get update && sudo apt-get install -y ripgrep
@@ -32,14 +39,18 @@ jobs:
       - name: Enforce canonical build token usage in workflow env blocks
         run: bash scripts/check-cloudflare-token-policy.sh
 
+  # Live Cloudflare route/DNS validation. Runs post-deploy (workflow_run) or
+  # on manual dispatch. Checks out the exact SHA that was deployed to avoid
+  # validating requirements from a different commit (e.g. a concurrent push).
   verify-cloudflare:
-    needs:
-      - validate-cloudflare-secrets
-      - validate-worker-token-policy
     runs-on: ubuntu-latest
-    if: github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'workflow_dispatch'
+    if: |
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
+      github.event_name == 'workflow_dispatch'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Install ripgrep
         run: sudo apt-get update && sudo apt-get install -y ripgrep
@@ -47,19 +58,19 @@ jobs:
       - run: test -f ops/cloudflare-required.json
       - name: Verify Cloudflare deploy token is present
         env:
-          CLOUDFLARE_BUILD_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+          CF_WORKERS_BUILDS: ${{ secrets.CF_WORKERS_BUILDS }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          test -n "$CLOUDFLARE_BUILD_API_TOKEN" || (echo "Missing required secret: CLOUDFLARE_BUILD_API_TOKEN" && exit 1)
+          test -n "$CF_WORKERS_BUILDS" || (echo "Missing required secret: CF_WORKERS_BUILDS" && exit 1)
           test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "Missing required secret: CLOUDFLARE_ACCOUNT_ID" && exit 1)
       - name: Validate routes and DNS
         env:
-          CLOUDFLARE_BUILD_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+          CF_WORKERS_BUILDS: ${{ secrets.CF_WORKERS_BUILDS }}
         run: |
           python - <<'PY'
           import json, os, urllib.error, urllib.parse, urllib.request
           def cf_get(url, context):
-              req = urllib.request.Request(url, method='GET', headers={'Authorization': f"Bearer {os.environ['CLOUDFLARE_BUILD_API_TOKEN']}", 'Content-Type': 'application/json'})
+              req = urllib.request.Request(url, method='GET', headers={'Authorization': f"Bearer {os.environ['CF_WORKERS_BUILDS']}", 'Content-Type': 'application/json'})
               try:
                   with urllib.request.urlopen(req) as resp:
                       status = resp.getcode()
@@ -78,8 +89,8 @@ jobs:
               if not data.get('success'):
                   raise SystemExit(f"Cloudflare API error url={url} status={status} body={body}")
               return data['result']
-          if not os.environ.get('CLOUDFLARE_BUILD_API_TOKEN'):
-              raise SystemExit('Missing required env var: CLOUDFLARE_BUILD_API_TOKEN')
+          if not os.environ.get('CF_WORKERS_BUILDS'):
+              raise SystemExit('Missing required env var: CF_WORKERS_BUILDS')
           cfg = json.load(open('ops/cloudflare-required.json', 'r', encoding='utf-8'))
           zone_name = urllib.parse.quote(cfg['zone_name'])
           zones_lookup_url = f"https://api.cloudflare.com/client/v4/zones?name={zone_name}"

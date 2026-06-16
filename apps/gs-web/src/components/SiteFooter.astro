@@ -3,11 +3,6 @@ const {
   currentPath = '',
   logoSrc = '/logo.svg'
 } = Astro.props;
-
-const legalLinks = [
-  { href: '/legal/privacy', label: 'Privacy' },
-  { href: '/legal/terms', label: 'Terms' }
-];
 ---
 
 <footer class="gs-footer">
@@ -19,21 +14,58 @@ const legalLinks = [
         </div>
         <p>Applied intelligence, resilient infrastructure, and responsive operations.</p>
       </div>
-      <div class="gs-grid columns-2" style="gap: var(--gs-space-2);">
+      <div class="gs-grid columns-3" style="gap: var(--gs-space-2);">
         <div class="gs-nav gs-nav--vertical">
-          <strong><span class="aria-icon aria-icon-orbit" aria-hidden="true"></span>Company</strong>
+          <strong>Company</strong>
           <a href="/about" aria-current={currentPath === '/about' ? 'page' : undefined}>About</a>
-          <a href="/team" aria-current={currentPath === '/team' ? 'page' : undefined}>Team</a>
-          <a href="/services" aria-current={currentPath === '/services' ? 'page' : undefined}>Services</a>
+          <button
+            type="button"
+            id="footer-contact-trigger"
+            class="gs-footer-contact-btn"
+          >Contact</button>
         </div>
-        <div class="gs-nav gs-nav--vertical-support">
-          <strong><span class="aria-icon aria-icon-signal" aria-hidden="true"></span>Support</strong>
-          <a href="/contact" aria-current={currentPath === '/contact' ? 'page' : undefined}>Contact</a>
-          {legalLinks.map((link) => (
-            <a href={link.href} aria-current={currentPath === link.href ? 'page' : undefined}>{link.label}</a>
-          ))}
+        <div class="gs-nav gs-nav--vertical">
+          <strong>Product</strong>
+          <a href="/developer/api" aria-current={currentPath === '/developer/api' ? 'page' : undefined}>API Docs</a>
+        </div>
+        <div class="gs-nav gs-nav--vertical">
+          <strong>Legal</strong>
+          <a href="/legal/privacy" aria-current={currentPath === '/legal/privacy' ? 'page' : undefined}>Privacy</a>
+          <a href="/legal/terms" aria-current={currentPath === '/legal/terms' ? 'page' : undefined}>Terms</a>
         </div>
       </div>
     </div>
   </div>
 </footer>
+
+<script is:inline>
+  document.getElementById('footer-contact-trigger')?.addEventListener('click', () => {
+    const modal = document.getElementById('contact-modal');
+    const openBtn = document.getElementById('contact-modal-trigger');
+    if (modal) {
+      modal.removeAttribute('hidden');
+      document.body.style.overflow = 'hidden';
+      modal.querySelector('input, textarea')?.focus();
+    } else if (openBtn) {
+      openBtn.click();
+    }
+  });
+</script>
+
+<style>
+  .gs-footer-contact-btn {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 0;
+    text-align: left;
+    font: inherit;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    transition: text-decoration-color 140ms;
+  }
+  .gs-footer-contact-btn:hover {
+    text-decoration-color: currentColor;
+  }
+</style>
