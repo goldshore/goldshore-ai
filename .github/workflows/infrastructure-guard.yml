@@ -18,7 +18,7 @@ jobs:
     name: Manifest integrity check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Verify INFRASTRUCTURE.md exists
         run: |
@@ -149,7 +149,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'workflow_dispatch'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Verify Cloudflare credentials
         env:
@@ -194,20 +194,21 @@ jobs:
           with open("infra/INFRASTRUCTURE.md") as f:
               manifest = f.read()
 
-          # Extract worker names only from the Workers section
+          # Extract worker names from canonical Workers section (fail if found outside this)
           import re
-          workers_section = re.search(r"(?ms)^## Workers[^\n]*\n(.*?)(?=^## |\Z)", manifest)
+          workers_section = re.search(r"(?ms)^## Workers \(canonical[^\n]*\n(.*?)(?=^## |\Z)", manifest)
           if not workers_section:
-              raise SystemExit("Could not find '## Workers' section in infra/INFRASTRUCTURE.md")
+              raise SystemExit("Could not find '## Workers (canonical' section in infra/INFRASTRUCTURE.md")
           canonical = sorted(set(re.findall(r"\| `([a-z0-9_-]+)` \|", workers_section.group(1))))
 
-          print(f"Live workers:     {live_names}")
+          print(f"Live workers:      {live_names}")
           print(f"Canonical workers: {canonical}")
 
           unknown = set(live_names) - set(canonical)
           if unknown:
-              print(f"WARNING: Unrecognized workers in account: {unknown}")
-              print("These workers are NOT in infra/INFRASTRUCTURE.md — audit required.")
+              print(f"ERROR: Unrecognized workers in account: {unknown}")
+              print("These workers are NOT in the canonical set — complete Gate 1 in infra/INFRASTRUCTURE.md")
+              print("to delete or promote each worker before this audit will pass.")
               raise SystemExit("Failing audit: unrecognized workers must not exist in the account.")
 
           print("Cloudflare live state audit complete.")
