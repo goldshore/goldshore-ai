@@ -1,37 +1,29 @@
 import type { APIRoute } from 'astro';
+import { getServerEnv } from '../../../lib/server-env';
 
-export const GET: APIRoute = async () => {
-  const accountId = import.meta.env.CF_ACCOUNT_ID;
-  const apiToken = import.meta.env.CF_API_TOKEN;
+type ControlEnv = {
+  GS_CONTROL?: { fetch(req: Request): Promise<Response> };
+};
 
-  if (!accountId || !apiToken) {
-    return new Response(JSON.stringify({ error: 'CF credentials not configured' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
+export const GET: APIRoute = async ({ request, locals }) => {
+  const env = getServerEnv(locals as Record<string, unknown>) as ControlEnv;
+
+  if (!env.GS_CONTROL) {
+    return new Response(JSON.stringify({ error: 'GS_CONTROL binding not configured' }), {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 
-  const cfRes = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/scripts`,
-    {
-      headers: {
-        Authorization: `Bearer ${apiToken}`,
-        'Content-Type': 'application/json'
-      }
-    }
-  );
+  const upstream = new Request('https://gs-control/cloudflare/workers/status', {
+    headers: request.headers,
+  });
 
-  if (!cfRes.ok) {
-    return new Response(JSON.stringify({ error: 'CF API error', status: cfRes.status }), {
-      status: 502,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
+  const res = await env.GS_CONTROL.fetch(upstream);
+  const data = await res.json();
 
-  const data = await cfRes.json();
-
-  return new Response(JSON.stringify({ result: data.result ?? [], accountId }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' }
+  return new Response(JSON.stringify(data), {
+    status: res.status,
+    headers: { 'Content-Type': 'application/json' },
   });
 };

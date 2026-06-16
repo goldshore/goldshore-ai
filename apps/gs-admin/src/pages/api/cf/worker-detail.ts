@@ -1,69 +1,52 @@
 import type { APIRoute } from 'astro';
+import { getServerEnv } from '../../../lib/server-env';
 
-export const GET: APIRoute = async ({ url }) => {
-  const accountId = import.meta.env.CF_ACCOUNT_ID;
-  const apiToken = import.meta.env.CF_API_TOKEN;
+type ControlEnv = {
+  GS_CONTROL?: { fetch(req: Request): Promise<Response> };
+};
 
-  if (!accountId || !apiToken) {
-    return new Response(JSON.stringify({ error: 'CF credentials not configured' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
+export const GET: APIRoute = async ({ request, url, locals }) => {
+  const env = getServerEnv(locals as Record<string, unknown>) as ControlEnv;
 
   const name = url.searchParams.get('name');
   if (!name) {
     return new Response(JSON.stringify({ error: 'Missing required query param: name' }), {
       status: 400,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 
-  const headers = {
-    Authorization: `Bearer ${apiToken}`,
-    'Content-Type': 'application/json'
-  };
-
-  const [bindingsRes, routesRes] = await Promise.all([
-    fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/scripts/${encodeURIComponent(name)}/bindings`,
-      { headers }
-    ),
-    fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/routes?zone_name=goldshore.ai`,
-      { headers }
-    )
-  ]);
-
-  if (!bindingsRes.ok) {
-    return new Response(JSON.stringify({ error: 'CF API error fetching bindings', status: bindingsRes.status }), {
-      status: 502,
-      headers: { 'Content-Type': 'application/json' }
+  if (!env.GS_CONTROL) {
+    return new Response(JSON.stringify({ error: 'GS_CONTROL binding not configured' }), {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 
-  if (!routesRes.ok) {
-    return new Response(JSON.stringify({ error: 'CF API error fetching routes', status: routesRes.status }), {
-      status: 502,
-      headers: { 'Content-Type': 'application/json' }
-    });
+  // Fetch DNS records — filter for routes belonging to this worker
+  const dnsRes = await env.GS_CONTROL.fetch(
+    new Request('https://gs-control/cloudflare/dns/records?per_page=100', {
+      headers: request.headers,
+    })
+  );
+
+  let routes: Array<{ pattern: string; zone_name?: string; created_on?: string }> = [];
+  if (dnsRes.ok) {
+    const dnsData = await dnsRes.json() as { result?: Array<{ name: string; content?: string; created_on?: string }> };
+    routes = (dnsData.result ?? [])
+      .filter((r) => r.content === name || r.name?.includes(name))
+      .map((r) => ({ pattern: r.name, created_on: r.created_on }));
   }
-
-  const bindingsData = await bindingsRes.json();
-  const routesData = await routesRes.json();
-
-  const allRoutes: Array<{ script: string; pattern: string; zone_name?: string; created_on?: string }> =
-    routesData.result ?? [];
-  const filteredRoutes = allRoutes.filter((r) => r.script === name);
 
   return new Response(
     JSON.stringify({
-      bindings: bindingsData.result ?? [],
-      routes: filteredRoutes
+      bindings: [],
+      _bindingsNote: 'Per-worker bindings require a /cloudflare/workers/:name/bindings endpoint in gs-control',
+      routes,
     }),
     {
       status: 200,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     }
   );
 };
