@@ -4,7 +4,7 @@ zone_id_env: CF_ZONE_ID
 projects:
   pages:
     - name: gs-web
-      public_url: https://www.goldshore.ai/
+      public_url: https://goldshore.ai/
       output_dir: apps/gs-web/dist
       max_daily_deploys: 6
       require_checks: ['smoke', 'lighthouse']
@@ -64,10 +64,10 @@ guards:
 tests:
   smoke:
     - url: 'https://goldshore.ai/'
-      expect_status: 301
+      expect_status: 200
       timeout_ms: 5000
     - url: 'https://goldshore.org/'
-      expect_status: 200
+      expect_status: 200  # fetch follows 308 redirect; assert final goldshore.ai response
       timeout_ms: 5000
     - url: 'https://api.goldshore.ai/health'
       expect_status: 200
