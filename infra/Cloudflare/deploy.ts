@@ -78,6 +78,10 @@ async function deployPages(p: any) {
 
   if (p.require_checks?.includes('smoke')) {
     await smoke(url, 200, 8000);
+    if (p.name === 'gs-web') {
+      // goldshore.org 308-redirects to goldshore.ai; fetch follows redirect so assert final 200
+      await smoke('https://goldshore.org/', 200, 8000);
+    }
   }
   if (p.require_checks?.includes('lighthouse')) {
     await lighthouse(url, 0.8);
@@ -130,6 +134,7 @@ async function deployWorker(w: any) {
 
   if (w.require_checks?.includes('smoke')) {
     await smoke('https://api.goldshore.ai/health', 200, 8000);
+    await smoke('https://api.goldshore.ai/version', 200, 8000);
   }
 
   console.log(`[worker:${w.script}] Deploy OK.`);

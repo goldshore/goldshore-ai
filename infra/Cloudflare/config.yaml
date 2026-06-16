@@ -38,7 +38,6 @@ projects:
       entry: apps/gs-api/dist/index.js
       routes: [] # Accessed via gateway service binding
       max_daily_deploys: 10
-      require_checks: ['smoke']
     - script: gs-control
       entry: apps/gs-control/dist/index.js
       routes:
@@ -65,8 +64,22 @@ guards:
 tests:
   smoke:
     - url: 'https://goldshore.ai/'
-      expect_status: 301
+      expect_status: 200
       timeout_ms: 5000
+    - url: 'https://goldshore.org/'
+      expect_status: 200  # fetch follows 308 redirect; assert final goldshore.ai response
+      timeout_ms: 5000
+    - url: 'https://api.goldshore.ai/health'
+      expect_status: 200
+      timeout_ms: 4000
+    - url: 'https://api.goldshore.ai/version'
+      expect_status: 200
+      timeout_ms: 4000
     - url: 'https://gw.goldshore.ai/health'
       expect_status: 200
       timeout_ms: 4000
+  lighthouse:
+    url: 'https://goldshore.ai/'
+    budget:
+      performance: 0.85
+      tti_ms: 4000

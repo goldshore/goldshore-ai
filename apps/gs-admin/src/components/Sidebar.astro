@@ -1,0 +1,73 @@
+---
+import { SharedHeader } from '@goldshore/ui';
+import type { AdminPermission } from '@goldshore/auth';
+
+const links: Array<{ href: string; label: string; requiredPermission?: AdminPermission; group?: string }> = [
+  { href: '/', label: 'Dashboard' },
+  { href: '/admin/users', label: 'Users', requiredPermission: 'users:read' },
+  { href: '/admin/logs', label: 'Logs', requiredPermission: 'audit:read' },
+  { href: '/admin/settings', label: 'Settings' },
+];
+
+const tradingLinks: Array<{ href: string; label: string }> = [
+  { href: '/trading', label: 'Overview' },
+  { href: '/trading/positions', label: 'Positions' },
+  { href: '/trading/orders', label: 'Orders' },
+];
+
+const { logo, permissions = [] } = Astro.props;
+
+const visibleLinks = links.filter((link) =>
+  link.requiredPermission ? permissions.includes(link.requiredPermission) : true
+);
+
+// Enhanced active state detection for nested routes
+const isActive = (href: string) => {
+  const currentPath = Astro.url.pathname;
+
+  // Clean trailing slashes for consistent comparison
+  const cleanCurrent = currentPath.endsWith('/') ? currentPath.slice(0, -1) : currentPath;
+  const cleanHref = href.endsWith('/') ? href.slice(0, -1) : href;
+
+  // Exact match
+  if (cleanCurrent === cleanHref) return true;
+
+  // Nested match (e.g., /admin/system/details starts with /admin/system)
+  // Ensure we don't partial match distinct roots (e.g. /admin/user vs /admin/users)
+  return cleanCurrent.startsWith(cleanHref + '/');
+};
+---
+<aside class="gs-admin-sidebar" id="admin-sidebar" aria-label="Admin navigation">
+  <SharedHeader
+    class="sidebar-header"
+    href="https://goldshore.ai"
+    target="_blank"
+    rel="noopener noreferrer"
+    logoSrc={logo?.src || logo || '/logo/gs-penrose.svg'}
+    logoAlt="GoldShore logo"
+  >
+    <span slot="brand-text">GoldShore</span>
+    <button id="sidebar-close" class="sidebar-close" aria-label="Close menu">✕</button>
+  </SharedHeader>
+  <nav class="gs-sidebar-links">
+    {visibleLinks.map((link) => (
+      <a
+        class={`gs-nav-block ${isActive(link.href) ? 'active' : ''}`}
+        href={link.href}
+        aria-current={isActive(link.href) ? 'page' : undefined}
+      >
+        {link.label}
+      </a>
+    ))}
+    <div class="gs-nav-group-label">Trading</div>
+    {tradingLinks.map((link) => (
+      <a
+        class={`gs-nav-block gs-nav-block--sub ${isActive(link.href) ? 'active' : ''}`}
+        href={link.href}
+        aria-current={isActive(link.href) ? 'page' : undefined}
+      >
+        {link.label}
+      </a>
+    ))}
+  </nav>
+</aside>

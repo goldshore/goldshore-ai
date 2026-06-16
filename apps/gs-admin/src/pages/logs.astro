@@ -1,0 +1,53 @@
+---
+import AdminLayout from '../layouts/AdminLayout.astro';
+import { Card, Table } from '@goldshore/ui';
+
+const logs = [
+  { ts: '2024-05-12 10:40:12', level: 'info', message: 'Admin login from okta session.' },
+  { ts: '2024-05-12 10:35:02', level: 'warn', message: 'Rate limit approaching 90% threshold.' },
+  { ts: '2024-05-12 10:15:22', level: 'error', message: 'Upstream latency breach on gateway-us-east.' },
+];
+---
+<AdminLayout title="Logs">
+  <section class="gs-grid columns-2">
+    <Card>
+      <div class="section-title"><span>☰</span><h3>Filters</h3></div>
+      <div class="gs-form-row">
+        <div class="gs-input-group">
+          <label for="level">Level</label>
+          <select id="level" name="level">
+            <option>All</option>
+            <option>Info</option>
+            <option>Warning</option>
+            <option>Error</option>
+          </select>
+        </div>
+        <div class="gs-input-group">
+          <label for="range">Range</label>
+          <select id="range" name="range">
+            <option>Last hour</option>
+            <option>Last 24h</option>
+            <option>Last 7d</option>
+          </select>
+        </div>
+      </div>
+      <p class="gs-helper">Filters are illustrative and wired to the shared theme for spacing and focus states.</p>
+    </Card>
+
+    <Card class="gs-table-card">
+      <div class="section-title"><span>◎</span><h3>Recent events</h3></div>
+      <Table>
+        <thead><tr><th>Timestamp</th><th>Level</th><th>Message</th></tr></thead>
+        <tbody>
+          {logs.map((log) => (
+            <tr>
+              <td>{log.ts}</td>
+              <td><span class={`gs-badge ${log.level === 'error' ? 'danger' : log.level === 'warn' ? 'warning' : 'info'}`}>{log.level}</span></td>
+              <td>{log.message}</td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+    </Card>
+  </section>
+</AdminLayout>

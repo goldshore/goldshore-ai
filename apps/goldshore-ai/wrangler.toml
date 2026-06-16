@@ -1,0 +1,10 @@
+# Stub worker — no routes, workers_dev disabled.
+# This neutralizes the old goldshore-ai worker so it no longer intercepts
+# goldshore.ai traffic. The Cloudflare Pages gs-web project owns that domain.
+name = "goldshore-ai"
+main = "src/index.ts"
+compatibility_date = "2026-04-18"
+
+workers_dev = false
+
+# No routes — intentional. Pages handles goldshore.ai.
