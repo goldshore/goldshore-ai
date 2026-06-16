@@ -1,28 +1,3 @@
-import { Hono } from 'hono';
-import { secureHeaders } from 'hono/secure-headers';
-import { cors } from 'hono/cors';
-import { STATUS_PAGE_HTML } from './templates/status';
-import { type Env } from './types';
-import { checkAuth } from './auth';
-import { integrationControls } from './middleware/integration';
-
-const app = new Hono<{ Bindings: Env }>();
-
-const TRACE_HEADER = 'X-Correlation-Id';
-const AGENT_HOSTNAME = 'agent.goldshore.ai';
-
-const getCorrelationId = (request: Request): string => {
-  return request.headers.get(TRACE_HEADER) ?? crypto.randomUUID();
-};
-
-const withCorrelationId = (response: Response, correlationId: string): Response => {
-  const headers = new Headers(response.headers);
-  headers.set(TRACE_HEADER, correlationId);
-
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
@@ -86,13 +61,36 @@ function isAgentHostnameRequest(request: Request): boolean {
   catch { return false; }
 }
 
+const inferApiOrigin = (requestUrl: string): string | undefined => {
+  const url = new URL(requestUrl);
+  const inferredHostname = url.hostname.replace(/^gs-gateway(?=\.|$)/, "gs-api");
+  if (inferredHostname === url.hostname) return undefined;
+  url.hostname = inferredHostname;
+  return url.origin;
+};
+
 const app = new Hono<{ Bindings: GatewayEnv }>();
 
-// ── Security headers ──────────────────────────────
+// ── dashboard redirect (before auth) ─────────────────────
+// dashboard.goldshore.ai → admin.goldshore.ai (308, method-preserving)
+// www.goldshore.ai is owned by gs-www-redirect Worker (308 there)
+app.use("*", async (c, next) => {
+  const host = new URL(c.req.url).hostname.toLowerCase();
+  const path = new URL(c.req.url).pathname + new URL(c.req.url).search;
+  if (host === "dashboard.goldshore.ai") {
+    return c.redirect(`https://admin.goldshore.ai${path}`, 308);
+  }
+  return next();
+});
+
+// ── Security headers ──────────────────────────────────────
 app.use("*", secureHeaders());
 
-// ── Startup binding guard (production only) ────────────
+// ── Startup binding guard (production only) ───────────────
+// /health and /status are exempt — they must stay reachable before Gate 5e audience is configured
 app.use("*", async (c, next) => {
+  const pathname = new URL(c.req.url).pathname;
+  if (pathname === "/health" || pathname === "/status") return next();
   if (c.env.ENV === "production" && !c.env.CLOUDFLARE_ACCESS_AUDIENCE) {
     console.error("CRITICAL: CLOUDFLARE_ACCESS_AUDIENCE is not set. Refusing to serve requests.");
     return c.json({ error: "Service Unavailable", message: "Auth configuration incomplete", code: "AUDIENCE_MISSING" }, 503);
@@ -100,7 +98,7 @@ app.use("*", async (c, next) => {
   await next();
 });
 
-// ── CORS ──────────────────────────────────
+// ── CORS ──────────────────────────────────────────────────
 app.use("*", cors({
   origin: (origin, c) => {
     if (c.env.ENV !== "production") {
@@ -119,13 +117,13 @@ app.use("*", cors({
   credentials: true,
 }));
 
-// ── Auth — fail-closed JWT verification ───────────
+// ── Auth — fail-closed JWT verification ───────────────────
 app.use("*", authMiddleware);
 
-// ── Security check (banproof-me service binding) ───────
+// ── Security check (banproof-me service binding) ──────────
 app.use("*", async (c, next) => {
   const pathname = new URL(c.req.url).pathname;
-  if (pathname === "/health") return next();
+  if (pathname === "/health" || pathname === "/status") return next();
   if (!c.env.SECURITY_CHECK) {
     console.warn(JSON.stringify({ event: "security_check_skipped", policy: "fail-open", reason: "missing_binding", path: pathname }));
     return next();
@@ -388,12 +386,10 @@ app.all("/api/*", async (c) => {
   }
 });
 
-// ── Integration controls ───────────────────────────────────
-// Enforces X-Data-Classification, X-Secrets-Access-Policy, and X-Audit-Trace-Id
-// on /integrations/* and /market-streams/* paths.
+// ── Integration controls ──────────────────────────────────
 app.use("*", integrationControls);
 
-// ── Agent hostname routing ─────────────────────────────────
+// ── Agent hostname routing ────────────────────────────────
 app.use("*", async (c, next) => {
   if (!isAgentHostnameRequest(c.req.raw)) return next();
   const correlationId = getCorrelationId(c.req.raw);
@@ -407,14 +403,24 @@ app.use("*", async (c, next) => {
   return withCorrelationId(response, correlationId);
 });
 
-// ── Routes ─────────────────────────────────────────────────
-app.get("/health", (c) => c.json({ status: "ok", service: "gs-gateway" }));
+// ── Routes ───────────────────────────────────────────────
+app.get("/health", (c) => c.json({ status: "ok", service: "gs-gateway", ts: Date.now() }));
+
+// status.goldshore.ai — gateway + binding configuration status (not downstream health)
+app.get("/status", (c) => c.json({
+  status: "ok",
+  note: "binding_presence_only — bound does not imply downstream availability",
+  bindings: {
+    api: c.env.API_SERVICE ? "bound" : "unbound",
+    agent: c.env.AGENT ? "bound" : "unbound",
+    security: c.env.SECURITY_CHECK ? "bound" : "unbound",
+  },
+  ts: Date.now(),
+}));
 
 app.get("/", (c) => c.html(STATUS_PAGE_HTML));
 
 app.get("/templates", (c) =>
-app.get('/health', (c) => c.json({ status: 'ok', service: 'gs-gateway' }));
-app.get('/templates', (c) =>
   c.json({
     service: "gs-gateway",
     description: "Gateway template routes for routing, auth, and AI dispatch.",
@@ -433,14 +439,6 @@ app.get('/templates', (c) =>
 
 app.get("/user/login", (c) => c.json({ message: "Gateway Login Placeholder" }));
 app.post("/v1/chat", (c) => c.json({ message: "Gateway Chat Placeholder" }));
-
-const inferApiOrigin = (requestUrl: string): string | undefined => {
-  const url = new URL(requestUrl);
-  const inferredHostname = url.hostname.replace(/^gs-gateway(?=\.|$)/, "gs-api");
-  if (inferredHostname === url.hostname) return undefined;
-  url.hostname = inferredHostname;
-  return url.origin;
-};
 
 // Forward /api/* to the API_SERVICE binding; fall back to API_ORIGIN if unbound.
 app.all("/api/*", async (c) => {
@@ -467,82 +465,6 @@ app.all("/api/*", async (c) => {
   }
 });
 
-// ── Integration controls ───────────────────────────────────
-// Enforces X-Data-Classification, X-Secrets-Access-Policy, and X-Audit-Trace-Id
-// on /integrations/* and /market-streams/* paths.
-app.use("*", integrationControls);
-
-// ── Agent hostname routing ─────────────────────────────────
-app.use("*", async (c, next) => {
-  if (!isAgentHostnameRequest(c.req.raw)) return next();
-  const correlationId = getCorrelationId(c.req.raw);
-  if (!c.env.AGENT) {
-    console.error(`[gateway] downstream agent not configured; trace=${correlationId}`);
-    return c.json({ error: "Downstream agent not configured", traceId: correlationId }, 503, { [TRACE_HEADER]: correlationId });
-  }
-  const downstreamRequest = new Request(c.req.raw, { headers: new Headers(c.req.raw.headers) });
-  downstreamRequest.headers.set(TRACE_HEADER, correlationId);
-  const response = await c.env.AGENT.fetch(downstreamRequest);
-  return withCorrelationId(response, correlationId);
-});
-
-// ── Routes ─────────────────────────────────────────────────
-app.get("/health", (c) => c.json({ status: "ok", service: "gs-gateway" }));
-
-app.get("/", (c) => c.html(STATUS_PAGE_HTML));
-
-app.get("/templates", (c) =>
-  c.json({
-    service: "gs-gateway",
-    description: "Gateway template routes for routing, auth, and AI dispatch.",
-    modules: [
-      { name: "routing", purpose: "Proxy requests to gs-api or partner services with consistent observability." },
-      { name: "ai-dispatch", purpose: "Send AI requests to Gemini, ChatGPT, Jules, or Cloudflare AI Gateway." },
-      { name: "market-streams", purpose: "Broker market data connections for Alpaca, Thinkorswim, and other feeds." },
-    ],
-    nextSteps: [
-      "Add per-route rate limits and request shaping.",
-      "Define queue-backed workflows for bursty workloads.",
-      "Publish route maps to admin dashboards.",
-    ],
-  }),
-);
-
-app.get("/user/login", (c) => c.json({ message: "Gateway Login Placeholder" }));
-app.post("/v1/chat", (c) => c.json({ message: "Gateway Chat Placeholder" }));
-
-const inferApiOrigin = (requestUrl: string): string | undefined => {
-  const url = new URL(requestUrl);
-  const inferredHostname = url.hostname.replace(/^gs-gateway(?=\.|$)/, "gs-api");
-  if (inferredHostname === url.hostname) return undefined;
-  url.hostname = inferredHostname;
-  return url.origin;
-};
-
-// Forward /api/* to the API_SERVICE binding; fall back to API_ORIGIN if unbound.
-app.all("/api/*", async (c) => {
-  const correlationId = getCorrelationId(c.req.raw);
-  const apiOrigin = c.env.API_ORIGIN ?? inferApiOrigin(c.req.url);
-  try {
-    if (c.env.API_SERVICE) {
-      const response = await c.env.API_SERVICE.fetch(c.req.raw);
-      return withCorrelationId(response, correlationId);
-    }
-    if (apiOrigin) {
-      const url = new URL(c.req.url);
-      const targetUrl = new URL(url.pathname + url.search, apiOrigin);
-      const upstreamRequest = new Request(targetUrl, c.req.raw);
-      upstreamRequest.headers.set(TRACE_HEADER, correlationId);
-      const response = await fetch(upstreamRequest);
-      return withCorrelationId(response, correlationId);
-    }
-    console.error(`[gateway] upstream API not configured; trace=${correlationId}`);
-    return c.json({ error: "Upstream API not configured", traceId: correlationId }, 500, { [TRACE_HEADER]: correlationId });
-  } catch (error) {
-    console.error(`[gateway] upstream request failed; trace=${correlationId}`, error);
-    return c.json({ error: "Upstream request failed", traceId: correlationId }, 502, { [TRACE_HEADER]: correlationId });
-  }
-});
 
 app.all("*", (c) => c.json({ error: "Not found" }, 404));
 

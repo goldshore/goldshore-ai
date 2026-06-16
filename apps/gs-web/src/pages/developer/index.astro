@@ -1,16 +1,430 @@
 ---
-import MarketingLayout from '../../layouts/MarketingLayout.astro';
+import WebLayout from '../../layouts/WebLayout.astro';
+import TickerFeed from '../../components/TickerFeed.astro';
+
+export const prerender = true;
+
+const apiEndpoints = [
+  { method: 'GET',    path: '/health',                    worker: 'gs-api',     description: 'Worker health check — version, uptime, binding status.' },
+  { method: 'GET',    path: '/v1/flags',                  worker: 'gs-api',     description: 'Feature flag state: mcp-trading, mcp-agents, admin gates.' },
+  { method: 'POST',   path: '/v1/chat',                   worker: 'gs-gateway', description: 'Agent orchestration. Requires CF Access JWT.' },
+  { method: 'GET',    path: '/paper/portfolio',           worker: 'gs-trading', description: 'Paper portfolio — positions, cash balance, unrealized P&L.' },
+  { method: 'POST',   path: '/paper/orders',              worker: 'gs-trading', description: 'Submit a paper order: { symbol, side, quantity, order_type }.' },
+  { method: 'DELETE', path: '/paper/orders/:id',          worker: 'gs-trading', description: 'Cancel a pending or open paper order.' },
+  { method: 'GET',    path: '/paper/pnl',                 worker: 'gs-trading', description: 'Daily and total P&L summary.' },
+  { method: 'GET',    path: '/agents/recommendations',    worker: 'gs-trading', description: 'Pending agent recommendations awaiting human approval.' },
+  { method: 'POST',   path: '/agents/recommendations/:id/approve', worker: 'gs-trading', description: 'Approve a recommendation — creates a paper order.' },
+  { method: 'GET',    path: '/oauth/status',              worker: 'gs-trading', description: 'Broker OAuth token status for Schwab and Robinhood.' },
+  { method: 'GET',    path: '/health',                    worker: 'gs-gateway', description: 'Gateway health — bound workers and integration control state.' },
+];
+
+const workerDocs = [
+  {
+    name: 'gs-gateway',
+    domain: 'gw.goldshore.ai',
+    role: 'Edge router and security middleware',
+    bindings: ['SECURITY (banproof-me)', 'SIGNALS', 'MAIL'],
+    auth: 'CF Access JWT on all routes',
+  },
+  {
+    name: 'gs-api',
+    domain: 'api.goldshore.ai',
+    role: 'Platform REST API',
+    bindings: ['KV (GOLDSHORE-API)', 'D1 (gs_platform_db)', 'AI (Workers AI)'],
+    auth: 'CF Access JWT',
+  },
+  {
+    name: 'gs-trading',
+    domain: 'trading.goldshore.ai',
+    role: 'Paper-trading engine + agent system',
+    bindings: ['KV (GS_TRADING_KV)', 'D1 (PAPER_DB)', 'Schwab OAuth', 'Robinhood OAuth'],
+    auth: 'CF Access JWT + mcp-trading feature flag',
+  },
+  {
+    name: 'gs-platform',
+    domain: 'Internal only',
+    role: 'Service hub (no public routes)',
+    bindings: ['D1 (gs_platform_db)', 'KV (GOLDSHORE-AI)', 'R2 (gs-assets)', 'Queue (GS_EVENTS)'],
+    auth: 'Service binding only',
+  },
+  {
+    name: 'banproof-me',
+    domain: 'banproof.me',
+    role: 'Security validation middleware',
+    bindings: ['KV (BANPROOF-ME)', 'D1 (gs_audit_db)'],
+    auth: 'Worker secret (BANPROOF_WORKER_SECRET)',
+  },
+  {
+    name: 'gs-mail',
+    domain: 'mail.goldshore.ai',
+    role: 'Inbound email handler + queue consumer',
+    bindings: ['KV (GS_CONFIG)', 'Queue (MAIL_QUEUE)'],
+    auth: 'CF Email Routing',
+  },
+];
 ---
 
-<MarketingLayout title="Developers – GoldShore">
-  <section style="padding:2rem;">
-    <h1>Developer Hub</h1>
-    <p>APIs, gateway routing, workers, and documentation.</p>
+<WebLayout
+  title="Developer Hub | GoldShore"
+  description="API reference, worker documentation, and live market signals for the GoldShore personal Cloudflare node network."
+  canonicalPath="/developer"
+>
+  <main class="dev-page">
 
-    <ul>
-      <li><a href="/developer/docs">Documentation</a></li>
-      <li><a href="https://admin.goldshore.ai">Admin Dashboard</a></li>
-      <li><a href="/status">System Status</a></li>
-    </ul>
-  </section>
-</MarketingLayout>
+    <header class="dev-header">
+      <p class="dev-eyebrow">Developer Hub</p>
+      <h1>APIs, workers, and infrastructure reference.</h1>
+      <p class="dev-lead">
+        Full API surface, worker binding maps, and deployment context for the GoldShore
+        Cloudflare node network. All workers run on Hono + Cloudflare Workers with CF Access JWT auth.
+      </p>
+      <nav class="dev-nav" aria-label="Developer sections">
+        <a href="#market">Market Feed</a>
+        <a href="#api">API Reference</a>
+        <a href="#workers">Workers</a>
+        <a href="/developer/docs">Docs</a>
+        <a href="/status">Status</a>
+        <a href="https://admin.goldshore.ai" rel="noopener noreferrer">Admin →</a>
+      </nav>
+    </header>
+
+    <!-- ── Market ticker ─────────────────────────────────────── -->
+    <section id="market" class="dev-section">
+      <h2>Market Feed</h2>
+      <p class="dev-section-lead">
+        Signals tracked by the gs-trading agent system. Click any ticker to expand detail.
+        Live paper-trading positions at <a href="https://trading.goldshore.ai">trading.goldshore.ai</a>.
+      </p>
+      <TickerFeed id="dev-ticker" />
+    </section>
+
+    <!-- ── Trading constraints callout ──────────────────────── -->
+    <div class="dev-callout">
+      <span class="dev-callout-badge">PAPER SIMULATION</span>
+      <code>mode: paper · live_trading_enabled: false · broker_execution_enabled: false · human_approval_required: true</code>
+    </div>
+
+    <!-- ── API reference ─────────────────────────────────────── -->
+    <section id="api" class="dev-section">
+      <h2>API Reference</h2>
+      <p class="dev-section-lead">
+        All endpoints require a valid CF Access JWT.
+        Base URLs: <code>https://api.goldshore.ai</code>, <code>https://trading.goldshore.ai</code>, <code>https://gw.goldshore.ai</code>.
+      </p>
+      <div class="dev-table-wrap">
+        <table class="dev-table">
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Path</th>
+              <th>Worker</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            {apiEndpoints.map((ep) => (
+              <tr>
+                <td><span class={`dev-method dev-method--${ep.method.toLowerCase()}`}>{ep.method}</span></td>
+                <td><code class="dev-path">{ep.path}</code></td>
+                <td><span class="dev-worker-badge">{ep.worker}</span></td>
+                <td class="dev-desc">{ep.description}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ── Workers ────────────────────────────────────────────── -->
+    <section id="workers" class="dev-section">
+      <h2>Workers</h2>
+      <p class="dev-section-lead">
+        Each domain runs on its own isolated worker. Workers communicate via service bindings — no public API hops.
+      </p>
+      <div class="dev-worker-grid">
+        {workerDocs.map((w) => (
+          <article class="dev-worker-card">
+            <div class="dev-worker-head">
+              <span class="dev-worker-name">{w.name}</span>
+              <span class="dev-worker-domain">{w.domain}</span>
+            </div>
+            <p class="dev-worker-role">{w.role}</p>
+            <div class="dev-worker-detail">
+              <div>
+                <span class="dev-kv-label">Bindings</span>
+                <ul class="dev-binding-list">
+                  {w.bindings.map((b) => <li>{b}</li>)}
+                </ul>
+              </div>
+              <div>
+                <span class="dev-kv-label">Auth</span>
+                <span class="dev-auth-val">{w.auth}</span>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <!-- ── Quick links ────────────────────────────────────────── -->
+    <section class="dev-links">
+      <a href="/developer/docs" class="dev-link-tile">
+        <span class="dev-link-title">Documentation</span>
+        <span class="dev-link-sub">Guides, schemas, and setup</span>
+      </a>
+      <a href="/status" class="dev-link-tile">
+        <span class="dev-link-title">System Status</span>
+        <span class="dev-link-sub">Live worker health checks</span>
+      </a>
+      <a href="https://trading.goldshore.ai" rel="noopener noreferrer" class="dev-link-tile">
+        <span class="dev-link-title">Trading Dashboard</span>
+        <span class="dev-link-sub">Paper simulation + agent signals</span>
+      </a>
+      <a href="https://admin.goldshore.ai" rel="noopener noreferrer" class="dev-link-tile">
+        <span class="dev-link-title">Admin Console</span>
+        <span class="dev-link-sub">Users, logs, settings</span>
+      </a>
+    </section>
+
+  </main>
+</WebLayout>
+
+<style>
+  .dev-page {
+    width: min(1100px, 92vw);
+    margin: 0 auto;
+    padding: 5rem 0 6rem;
+    color: var(--gs-color-text, #e5e7eb);
+  }
+
+  .dev-header {
+    padding-bottom: 2.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    margin-bottom: 3rem;
+  }
+
+  .dev-eyebrow {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #22d3ee;
+    margin: 0 0 0.6rem;
+  }
+
+  .dev-header h1 {
+    font-size: clamp(2rem, 4.5vw, 3.2rem);
+    line-height: 1.08;
+    margin: 0 0 1rem;
+  }
+
+  .dev-lead {
+    color: #9ca3af;
+    max-width: 68ch;
+    line-height: 1.7;
+    margin: 0 0 1.5rem;
+  }
+
+  .dev-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .dev-nav a {
+    font-family: monospace;
+    font-size: 0.78rem;
+    padding: 0.35rem 0.85rem;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px;
+    color: #9ca3af;
+    text-decoration: none;
+    transition: all 0.15s;
+  }
+
+  .dev-nav a:hover { border-color: #22d3ee; color: #e5e7eb; }
+
+  .dev-section { margin-bottom: 4rem; }
+
+  .dev-section h2 {
+    font-size: 1.1rem;
+    font-family: monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #e5e7eb;
+    margin: 0 0 0.5rem;
+  }
+
+  .dev-section-lead {
+    color: #9ca3af;
+    font-size: 0.88rem;
+    max-width: 70ch;
+    margin: 0 0 1.25rem;
+    line-height: 1.6;
+  }
+
+  .dev-section-lead a { color: #22d3ee; text-decoration: none; }
+
+  .dev-callout {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid rgba(34,197,94,0.2);
+    border-radius: 8px;
+    background: rgba(34,197,94,0.04);
+    margin-bottom: 3rem;
+    flex-wrap: wrap;
+  }
+
+  .dev-callout-badge {
+    font-family: monospace;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: #22c55e;
+    background: rgba(34,197,94,0.12);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  .dev-callout code { font-size: 0.78rem; color: #6b7280; }
+
+  .dev-table-wrap {
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 10px;
+  }
+
+  .dev-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+  }
+
+  .dev-table th {
+    text-align: left;
+    padding: 0.65rem 1rem;
+    font-family: monospace;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #6b7280;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    background: rgba(255,255,255,0.02);
+  }
+
+  .dev-table td {
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    vertical-align: middle;
+  }
+
+  .dev-table tr:last-child td { border-bottom: none; }
+  .dev-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .dev-method {
+    font-family: monospace;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    letter-spacing: 0.06em;
+  }
+
+  .dev-method--get    { background: rgba(34,211,238,0.12); color: #22d3ee; }
+  .dev-method--post   { background: rgba(34,197,94,0.12);  color: #22c55e; }
+  .dev-method--delete { background: rgba(239,68,68,0.12);  color: #ef4444; }
+
+  .dev-path     { font-family: monospace; font-size: 0.78rem; color: #e5e7eb; }
+  .dev-desc     { color: #9ca3af; }
+
+  .dev-worker-badge {
+    font-family: monospace;
+    font-size: 0.68rem;
+    color: #f59e0b;
+    background: rgba(245,158,11,0.1);
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  .dev-worker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+  }
+
+  .dev-worker-card {
+    padding: 1.1rem 1.25rem;
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 10px;
+    background: rgba(255,255,255,0.02);
+    transition: border-color 0.15s;
+  }
+
+  .dev-worker-card:hover { border-color: rgba(34,211,238,0.2); }
+
+  .dev-worker-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .dev-worker-name { font-family: monospace; font-size: 0.9rem; font-weight: 700; color: #22d3ee; }
+  .dev-worker-domain { font-family: monospace; font-size: 0.68rem; color: #6b7280; }
+  .dev-worker-role { font-size: 0.82rem; color: #9ca3af; margin: 0 0 0.85rem; }
+
+  .dev-worker-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    font-size: 0.78rem;
+  }
+
+  .dev-kv-label {
+    display: block;
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #4b5563;
+    margin-bottom: 0.2rem;
+  }
+
+  .dev-binding-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.12rem;
+  }
+
+  .dev-binding-list li,
+  .dev-auth-val { font-family: monospace; font-size: 0.7rem; color: #6b7280; }
+
+  .dev-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 0.75rem;
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .dev-link-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 10px;
+    text-decoration: none;
+    transition: all 0.15s;
+  }
+
+  .dev-link-tile:hover { border-color: #22d3ee; background: rgba(34,211,238,0.04); }
+  .dev-link-title { font-size: 0.88rem; font-weight: 600; color: #e5e7eb; }
+  .dev-link-sub   { font-size: 0.73rem; color: #6b7280; }
+</style>

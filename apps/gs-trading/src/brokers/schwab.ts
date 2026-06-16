@@ -13,12 +13,10 @@ export class SchwabClient {
   private async getAccessToken(): Promise<string> {
     if (this.accessToken && Date.now() < this.tokenExpiry) return this.accessToken;
 
-    // CLIENT_ID and CLIENT_SECRET are always required
     if (!this.env.SCHWAB_CLIENT_ID || !this.env.SCHWAB_CLIENT_SECRET) {
       throw new Error('Schwab credentials not configured (missing SCHWAB_CLIENT_ID or SCHWAB_CLIENT_SECRET)');
     }
 
-    // Try KV-cached access token first
     if (this.env.TRADING_KV) {
       const cached = await this.env.TRADING_KV.get('schwab:access_token');
       const expiry = await this.env.TRADING_KV.get('schwab:token_expiry');
@@ -29,7 +27,6 @@ export class SchwabClient {
       }
     }
 
-    // KV-stored rotated token takes precedence over the env secret seed
     const storedRefreshToken = this.env.TRADING_KV
       ? await this.env.TRADING_KV.get('schwab:refresh_token')
       : null;
@@ -91,19 +88,6 @@ export class SchwabClient {
 
   async getPositions(): Promise<Position[]> {
     if (!this.env.SCHWAB_ACCOUNT_HASH) throw new Error('SCHWAB_ACCOUNT_HASH not configured');
-    const data = await this.request<any>(`/accounts/${this.env.SCHWAB_ACCOUNT_HASH}?fields=positions`);
-    const raw = data.securitiesAccount?.positions ?? [];
-    return raw.map((p: any): Position => ({
-      symbol: p.instrument?.symbol ?? '',
-      quantity: p.longQuantity - p.shortQuantity,
-      avgCost: p.averagePrice ?? 0,
-      currentPrice: p.marketValue / (p.longQuantity || 1),
-      marketValue: p.marketValue ?? 0,
-      unrealizedPL: p.currentDayProfitLoss ?? 0,
-      unrealizedPLPct: p.currentDayProfitLossPercentage ?? 0,
-      broker: 'schwab',
-      assetType: p.instrument?.assetType === 'OPTION' ? 'OPTION' : 'EQUITY',
-    }));
     const data = await this.traderRequest<any>(`/accounts/${this.env.SCHWAB_ACCOUNT_HASH}?fields=positions`);
     const raw = data.securitiesAccount?.positions ?? [];
     return raw.map((p: any): Position => {
@@ -187,10 +171,11 @@ export class SchwabClient {
       }],
     };
     if (order.orderType === 'LIMIT') body.price = order.limitPrice;
-    const res = await fetch(`${SCHWAB_BASE}/accounts/${this.env.SCHWAB_ACCOUNT_HASH}/orders`, {
+    const token = await this.getAccessToken();
+    const res = await fetch(`${SCHWAB_TRADER_BASE}/accounts/${this.env.SCHWAB_ACCOUNT_HASH}/orders`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${await this.getAccessToken()}`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(body),
@@ -203,10 +188,6 @@ export class SchwabClient {
 
   async cancelOrder(orderId: string): Promise<void> {
     if (!this.env.SCHWAB_ACCOUNT_HASH) throw new Error('SCHWAB_ACCOUNT_HASH not configured');
-    await fetch(`${SCHWAB_BASE}/accounts/${this.env.SCHWAB_ACCOUNT_HASH}/orders/${orderId}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${await this.getAccessToken()}` },
-    });
     const token = await this.getAccessToken();
     const res = await fetch(
       `${SCHWAB_TRADER_BASE}/accounts/${this.env.SCHWAB_ACCOUNT_HASH}/orders/${orderId}`,
