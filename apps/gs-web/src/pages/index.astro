@@ -244,6 +244,23 @@ const ventureCards = [
       </div>
     </section>
 
+    <!-- ── Subscribe strip ──────────────────────────────────── -->
+    <section class="gs-subscribe-strip">
+      <div class="subscribe-inner">
+        <div>
+          <p class="gs-eyebrow kicker">Early access</p>
+          <h2>Get notified when SEL goes live</h2>
+          <p class="lead">Signal feed access, backtests, and API docs — first to subscribers.</p>
+        </div>
+        <form class="subscribe-form" action="/api/contact" method="post">
+          <input type="hidden" name="formType" value="subscribe" />
+          <input type="hidden" name="redirectTo" value="/thank-you" />
+          <input type="email" name="email" placeholder="your@email.com" required autocomplete="email" />
+          <button type="submit" class="btn btn-primary">Notify me</button>
+        </form>
+      </div>
+    </section>
+
     <!-- ── CTA ───────────────────────────────────────────────── -->
     <section id="contact" class="section contact">
       <h2>Built in the open. Let's connect.</h2>
@@ -322,6 +339,43 @@ const ventureCards = [
     /* ── Callout ───────────────────────────────────────────── */
     .callout { margin-top: 1.25rem; padding: .85rem 1.1rem; border: 1px solid rgba(52,211,153,.2); border-radius: 10px; background: rgba(52,211,153,.05); font-family: var(--gs-font-mono, monospace); font-size: .82rem; color: #6ee7b7; }
     .callout strong { color: #a7f3d0; }
+
+    /* ── Subscribe strip ──────────────────────────────────── */
+    .gs-subscribe-strip {
+      padding: 3rem 0;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      background: rgba(10,20,40,0.6);
+      margin: 2rem 0;
+      border-radius: 14px;
+    }
+    .subscribe-inner {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+    .subscribe-inner > div { flex: 1; min-width: 220px; }
+    .subscribe-inner h2 { margin: 0.3rem 0 0.5rem; font-size: clamp(1.3rem, 2.5vw, 1.8rem); }
+    .subscribe-inner .lead { margin: 0; }
+    .subscribe-form { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .subscribe-form input[type="email"] {
+      flex: 1;
+      min-width: 200px;
+      padding: 0.6rem 1rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.05);
+      color: #fff;
+      font-size: 0.9rem;
+      font-family: inherit;
+    }
+    .subscribe-form input[type="email"]::placeholder { color: rgba(255,255,255,0.35); }
+    .subscribe-form input[type="email"]:focus {
+      outline: none;
+      border-color: rgba(201,168,76,0.5);
+      background: rgba(255,255,255,0.08);
+    }
 
     /* ── Contact ───────────────────────────────────────────── */
     .contact { padding-bottom: 4rem; text-align: left; }
