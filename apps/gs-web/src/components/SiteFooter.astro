@@ -14,7 +14,7 @@ const {
         </div>
         <p>Applied intelligence, resilient infrastructure, and responsive operations.</p>
       </div>
-      <div class="gs-grid columns-3" style="gap: var(--gs-space-2);">
+      <div class="gs-grid columns-4" style="gap: var(--gs-space-2);">
         <div class="gs-nav gs-nav--vertical">
           <strong>Company</strong>
           <a href="/about" aria-current={currentPath === '/about' ? 'page' : undefined}>About</a>
@@ -26,7 +26,17 @@ const {
         </div>
         <div class="gs-nav gs-nav--vertical">
           <strong>Product</strong>
+          <a href="/services" aria-current={currentPath === '/services' ? 'page' : undefined}>Services</a>
+          <a href="/services#sel">SEL Signal Feed</a>
+          <a href="/developer" aria-current={currentPath === '/developer' ? 'page' : undefined}>Developer Hub</a>
           <a href="/developer/api" aria-current={currentPath === '/developer/api' ? 'page' : undefined}>API Docs</a>
+          <a href="https://gw.goldshore.ai/status" target="_blank" rel="noopener noreferrer">Status</a>
+        </div>
+        <div class="gs-nav gs-nav--vertical">
+          <strong>Platform</strong>
+          <a href="https://admin.goldshore.ai" target="_blank" rel="noopener noreferrer">Admin Login</a>
+          <a href="/intake">Sign up</a>
+          <a href="https://trading.goldshore.ai" target="_blank" rel="noopener noreferrer">Trading</a>
         </div>
         <div class="gs-nav gs-nav--vertical">
           <strong>Legal</strong>
