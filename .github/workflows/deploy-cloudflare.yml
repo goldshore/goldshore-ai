@@ -17,11 +17,12 @@ on:
   workflow_dispatch:
     inputs:
       target:
-        description: "App/service to deploy"
+        description: "App/service to deploy (or 'all')"
         required: true
-        default: "gs-web"
+        default: "all"
         type: choice
         options:
+          - all
           - gs-web
           - gs-admin
           - gs-api
@@ -31,6 +32,8 @@ on:
           - gs-agent
           - gs-trading
           - banproof-me
+          - gs-www-redirect
+          - gs-core-worker
           - armsway-com
       environment:
         description: "Cloudflare environment"
@@ -42,17 +45,27 @@ on:
           - preview
 
 concurrency:
-  group: cloudflare-${{ github.event_name == 'workflow_dispatch' && inputs.target || github.ref }}-${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'prod' }}
+  group: deploy-cf-${{ github.ref }}
   cancel-in-progress: true
 
 env:
   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
   CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
 
+# ── Shared setup ──────────────────────────────────────────────────────────────
+# Each job repeats the three setup steps (checkout / pnpm / node) because
+# GitHub Actions has no reusable step blocks. Jobs run in parallel so the
+# repeated setup is cheaper than serialising through a setup job.
+
 jobs:
+
+  # ── gs-web (Cloudflare Pages) ───────────────────────────────────────────────
   deploy-web:
-    name: Deploy gs-web Pages
-    if: github.event_name == 'push' || inputs.target == 'gs-web'
+    name: Deploy gs-web (Pages)
+    if: >
+      github.event_name == 'push' ||
+      inputs.target == 'all' ||
+      inputs.target == 'gs-web'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -67,12 +80,17 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @goldshore/gs-web build
-      - name: Deploy gs-web to Cloudflare Pages
+      - name: Deploy to Cloudflare Pages
+        # --branch sets the Pages deployment alias; main branch maps to production
         run: pnpm exec wrangler pages deploy apps/gs-web/dist --project-name=gs-web --branch=${{ github.ref_name }}
 
+  # ── gs-admin (Cloudflare Pages) ─────────────────────────────────────────────
   deploy-admin:
-    name: Deploy gs-admin Pages
-    if: github.event_name == 'workflow_dispatch' && inputs.target == 'gs-admin'
+    name: Deploy gs-admin (Pages)
+    if: >
+      github.event_name == 'push' ||
+      inputs.target == 'all' ||
+      inputs.target == 'gs-admin'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -87,15 +105,50 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @goldshore/gs-admin build
-      - name: Deploy gs-admin to Cloudflare Pages
+      - name: Deploy to Cloudflare Pages
         run: pnpm exec wrangler pages deploy apps/gs-admin/dist --project-name=gs-admin --branch=${{ github.ref_name }}
 
-  deploy-worker:
-    name: Deploy Worker
-    if: github.event_name == 'workflow_dispatch' && contains(fromJSON('["gs-api","gs-gateway","gs-control","gs-mail","gs-agent","gs-trading","banproof-me","armsway-com"]'), inputs.target)
+  # ── Workers (matrix) ────────────────────────────────────────────────────────
+  # wrangler deploy auto-creates the worker if it doesn't exist and updates it
+  # if it does. Route/custom-domain binding is declared in each wrangler.toml
+  # and applied on every deploy — no manual DNS setup needed for custom_domain=true.
+  #
+  # Workers with route-based patterns (zone_name) require a proxied DNS record
+  # to already exist for the zone. Those records are managed in desired-state.yaml
+  # and applied by infra/Cloudflare/deploy.ts (or manually via CF Dashboard).
+  deploy-workers:
+    name: Deploy ${{ matrix.app }}
+    if: >
+      github.event_name == 'push' ||
+      inputs.target == 'all' ||
+      inputs.target == matrix.app
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    strategy:
+      fail-fast: false   # one broken worker does not cancel the others
+      matrix:
+        include:
+          - app: gs-gateway
+            filter: "@goldshore/gs-gateway"
+          - app: gs-api
+            filter: "@goldshore/gs-api"
+          - app: gs-agent
+            filter: "@goldshore/gs-agent"
+          - app: gs-control
+            filter: "@goldshore/gs-control"
+          - app: gs-trading
+            filter: "@goldshore/gs-trading"
+          - app: gs-mail
+            filter: "@goldshore/gs-mail"
+          - app: banproof-me
+            filter: "@goldshore/banproof-me"
+          - app: gs-www-redirect
+            filter: "@goldshore/gs-www-redirect"
+          - app: gs-core-worker
+            filter: "@goldshore/gs-core-worker"
+          - app: armsway-com
+            filter: "@goldshore/armsway-com"
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -106,8 +159,10 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Dry-run build selected worker
-        run: pnpm --filter @goldshore/${{ inputs.target }} build
-      - name: Deploy selected worker
-        working-directory: apps/${{ inputs.target }}
-        run: pnpm exec wrangler deploy --env ${{ inputs.environment }}
+      - name: Build ${{ matrix.app }}
+        run: pnpm --filter ${{ matrix.filter }} build
+      - name: Deploy ${{ matrix.app }}
+        working-directory: apps/${{ matrix.app }}
+        run: |
+          ENV=${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'prod' }}
+          pnpm exec wrangler deploy --env $ENV
