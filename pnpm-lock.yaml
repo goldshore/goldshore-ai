@@ -18,7 +18,7 @@ importers:
     dependencies:
       '@astrojs/cloudflare':
         specifier: 13.1.10
-        version: 13.1.10(@types/node@25.9.2)(astro@6.4.5(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0))(tsx@4.22.4)(workerd@1.20260603.1)(wrangler@4.98.0(@cloudflare/workers-types@4.20260608.1))(yaml@2.9.0)
+        version: 13.1.10(@types/node@25.9.2)(astro@6.4.6(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0))(tsx@4.22.4)(workerd@1.20260603.1)(wrangler@4.98.0(@cloudflare/workers-types@4.20260608.1))(yaml@2.9.0)
       p-limit:
         specifier: ^7.3.0
         version: 7.3.0
@@ -28,13 +28,13 @@ importers:
     devDependencies:
       '@astrojs/mdx':
         specifier: ^5.0.4
-        version: 5.0.6(astro@6.4.5(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0))
+        version: 5.0.6(astro@6.4.6(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0))
       '@astrojs/sitemap':
         specifier: ^3.7.2
         version: 3.7.3
       '@astrojs/tailwind':
         specifier: ^6.0.2
-        version: 6.0.2(astro@6.4.5(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0))(tailwindcss@4.3.0)
+        version: 6.0.2(astro@6.4.6(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0))(tailwindcss@4.3.0)
       '@types/node':
         specifier: ^25.7.0
         version: 25.9.2
@@ -45,8 +45,8 @@ importers:
         specifier: ^8.57.2
         version: 8.61.0(eslint@10.4.1)(typescript@5.9.3)
       astro:
-        specifier: ^6.4.5
-        version: 6.4.5(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0)
+        specifier: ^6.4.6
+        version: 6.4.6(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0)
       eslint:
         specifier: ^10.1.0
         version: 10.4.1
@@ -102,8 +102,8 @@ importers:
   apps/banproof-me:
     dependencies:
       hono:
-        specifier: ^4.10.2
-        version: 4.12.24
+        specifier: ^4.12.25
+        version: 4.12.25
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^4.20260421.1
@@ -139,15 +139,15 @@ importers:
         specifier: workspace:*
         version: link:../../packages/utils
       astro:
-        specifier: ^6.4.5
-        version: 6.4.5(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0)
+        specifier: ^6.4.6
+        version: 6.4.6(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0)
     devDependencies:
       '@astrojs/cloudflare':
         specifier: 13.1.10
-        version: 13.1.10(@types/node@25.9.2)(astro@6.4.5(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0))(tsx@4.22.4)(workerd@1.20260603.1)(wrangler@4.98.0(@cloudflare/workers-types@4.20260608.1))(yaml@2.9.0)
+        version: 13.1.10(@types/node@25.9.2)(astro@6.4.6(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0))(tsx@4.22.4)(workerd@1.20260603.1)(wrangler@4.98.0(@cloudflare/workers-types@4.20260608.1))(yaml@2.9.0)
       '@astrojs/tailwind':
         specifier: ^6.0.2
-        version: 6.0.2(astro@6.4.5(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0))(tailwindcss@4.3.0)
+        version: 6.0.2(astro@6.4.6(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0))(tailwindcss@4.3.0)
       '@cloudflare/workers-types':
         specifier: ^4.20260421.1
         version: 4.20260608.1
@@ -164,8 +164,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/auth
       hono:
-        specifier: ^4.12.16
-        version: 4.12.24
+        specifier: ^4.12.25
+        version: 4.12.25
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^4.20260511.1
@@ -198,8 +198,8 @@ importers:
         specifier: ^2.16.0
         version: 2.16.1
       hono:
-        specifier: ^4.12.16
-        version: 4.12.24
+        specifier: ^4.12.25
+        version: 4.12.25
       openai:
         specifier: ^6.34.0
         version: 6.42.0(ws@8.20.1)(zod@4.4.3)
@@ -233,10 +233,10 @@ importers:
         version: link:../../packages/utils
       '@hono/zod-validator':
         specifier: ^0.7.0
-        version: 0.7.6(hono@4.12.24)(zod@4.4.3)
+        version: 0.7.6(hono@4.12.25)(zod@4.4.3)
       hono:
-        specifier: ^4.12.16
-        version: 4.12.24
+        specifier: ^4.12.25
+        version: 4.12.25
       zod:
         specifier: ^4.3.6
         version: 4.4.3
@@ -272,8 +272,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/auth
       hono:
-        specifier: ^4.12.16
-        version: 4.12.24
+        specifier: ^4.12.25
+        version: 4.12.25
       zod:
         specifier: ^4.3.6
         version: 4.4.3
@@ -297,8 +297,8 @@ importers:
   apps/gs-mail:
     dependencies:
       hono:
-        specifier: ^4.12.16
-        version: 4.12.24
+        specifier: ^4.12.25
+        version: 4.12.25
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^4.20260511.1
@@ -316,8 +316,8 @@ importers:
         specifier: workspace:^
         version: link:../../packages/auth
       hono:
-        specifier: ^4.12.16
-        version: 4.12.24
+        specifier: ^4.12.25
+        version: 4.12.25
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^4.20260511.1
@@ -335,8 +335,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/auth
       hono:
-        specifier: ^4.12.16
-        version: 4.12.24
+        specifier: ^4.12.25
+        version: 4.12.25
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^4.20260511.1
@@ -355,7 +355,7 @@ importers:
         version: 5.0.7(@types/node@25.9.2)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tsx@4.22.4)(yaml@2.9.0)
       '@astrojs/tailwind':
         specifier: ^6.0.2
-        version: 6.0.2(astro@6.4.5(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0))(tailwindcss@4.3.0)
+        version: 6.0.2(astro@6.4.6(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0))(tailwindcss@4.3.0)
       '@goldshore/auth':
         specifier: workspace:^
         version: link:../../packages/auth
@@ -384,8 +384,8 @@ importers:
         specifier: ^2.104.0
         version: 2.108.0
       astro:
-        specifier: ^6.4.5
-        version: 6.4.5(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0)
+        specifier: ^6.4.6
+        version: 6.4.6(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0)
       framer-motion:
         specifier: ^12.38.0
         version: 12.40.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -410,7 +410,7 @@ importers:
         version: 0.9.9(prettier-plugin-astro@0.14.1)(prettier@3.8.3)(typescript@5.9.3)
       '@astrojs/cloudflare':
         specifier: 13.1.10
-        version: 13.1.10(@types/node@25.9.2)(astro@6.4.5(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0))(tsx@4.22.4)(workerd@1.20260603.1)(wrangler@4.98.0(@cloudflare/workers-types@4.20260608.1))(yaml@2.9.0)
+        version: 13.1.10(@types/node@25.9.2)(astro@6.4.6(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0))(tsx@4.22.4)(workerd@1.20260603.1)(wrangler@4.98.0(@cloudflare/workers-types@4.20260608.1))(yaml@2.9.0)
       '@playwright/test':
         specifier: ^1.59.1
         version: 1.60.0
@@ -486,16 +486,16 @@ importers:
   packages/shared:
     dependencies:
       hono:
-        specifier: ^4.12.16
-        version: 4.12.24
+        specifier: ^4.12.25
+        version: 4.12.25
 
   packages/theme: {}
 
   packages/ui:
     devDependencies:
       astro:
-        specifier: ^6.4.5
-        version: 6.4.5(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0)
+        specifier: ^6.4.6
+        version: 6.4.6(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0)
 
   packages/utils: {}
 
@@ -2007,8 +2007,8 @@ packages:
     engines: {node: 18.20.8 || ^20.3.0 || >=22.0.0, npm: '>=9.6.5', pnpm: '>=7.1.0'}
     hasBin: true
 
-  astro@6.4.5:
-    resolution: {integrity: sha512-0R7WLD1+WD/mTPcZxyKtcF0CztQi9ahFRtGM7oChJhxjNbr4lSBenxi+mk91k5bPTaUEoZ6edg1fDo2qP8bCwg==}
+  astro@6.4.6:
+    resolution: {integrity: sha512-48OBTBKR9ctbf+DQxpOuxGl8ebfn59zTuNQMBzptmG/Mi/H8IdfMSbJgGuX1I/4U6g9yazG1p4BHlf4+2hWU4Q==}
     engines: {node: '>=22.12.0', npm: '>=9.6.5', pnpm: '>=7.1.0'}
     hasBin: true
 
@@ -2871,8 +2871,8 @@ packages:
   hls.js@1.6.16:
     resolution: {integrity: sha512-VSIRpLfRwlAAdGL4wiTucx2ScRipo0ed1FBatWkyt832jC4CReKstga6yIhYVwGu9LOBjuX9wzmRMeQdBJtzEA==}
 
-  hono@4.12.24:
-    resolution: {integrity: sha512-I36D1s+HgQc55KbhEr4iybfxv/9o1zdpw+XEM6dJa91LqQD0HCoSGdxpRJCZE+aavs87j4V3Ls2OJzq8C/U4iw==}
+  hono@4.12.25:
+    resolution: {integrity: sha512-2NFaIyNVgJmBs/ecmtGzlmluTFs5cHEWGTdu0t1HBwYzoGXOL5nUQBRMXsXWla5i4KkG//QMzVP88m1+I3fdAQ==}
     engines: {node: '>=16.9.0'}
 
   html-escaper@3.0.3:
@@ -4489,12 +4489,12 @@ snapshots:
       - prettier
       - prettier-plugin-astro
 
-  '@astrojs/cloudflare@13.1.10(@types/node@25.9.2)(astro@6.4.5(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0))(tsx@4.22.4)(workerd@1.20260603.1)(wrangler@4.98.0(@cloudflare/workers-types@4.20260608.1))(yaml@2.9.0)':
+  '@astrojs/cloudflare@13.1.10(@types/node@25.9.2)(astro@6.4.6(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0))(tsx@4.22.4)(workerd@1.20260603.1)(wrangler@4.98.0(@cloudflare/workers-types@4.20260608.1))(yaml@2.9.0)':
     dependencies:
       '@astrojs/internal-helpers': 0.8.0
       '@astrojs/underscore-redirects': 1.0.3
       '@cloudflare/vite-plugin': 1.40.0(vite@7.3.5(@types/node@25.9.2)(tsx@4.22.4)(yaml@2.9.0))(workerd@1.20260603.1)(wrangler@4.98.0(@cloudflare/workers-types@4.20260608.1))
-      astro: 6.4.5(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0)
+      astro: 6.4.6(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0)
       piccolore: 0.1.3
       tinyglobby: 0.2.17
       vite: 7.3.5(@types/node@25.9.2)(tsx@4.22.4)(yaml@2.9.0)
@@ -4642,12 +4642,12 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@astrojs/mdx@5.0.6(astro@6.4.5(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0))':
+  '@astrojs/mdx@5.0.6(astro@6.4.6(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0))':
     dependencies:
       '@astrojs/markdown-remark': 7.1.2
       '@mdx-js/mdx': 3.1.1
       acorn: 8.16.0
-      astro: 6.4.5(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0)
+      astro: 6.4.6(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0)
       es-module-lexer: 2.1.0
       estree-util-visit: 2.0.0
       hast-util-to-html: 9.0.5
@@ -4700,9 +4700,9 @@ snapshots:
       stream-replace-string: 2.0.0
       zod: 4.4.3
 
-  '@astrojs/tailwind@6.0.2(astro@6.4.5(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0))(tailwindcss@4.3.0)':
+  '@astrojs/tailwind@6.0.2(astro@6.4.6(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0))(tailwindcss@4.3.0)':
     dependencies:
-      astro: 6.4.5(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0)
+      astro: 6.4.6(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0)
       autoprefixer: 10.5.0(postcss@8.5.15)
       postcss: 8.5.15
       postcss-load-config: 4.0.2(postcss@8.5.15)
@@ -5060,18 +5060,18 @@ snapshots:
       '@eslint/core': 1.2.1
       levn: 0.4.1
 
-  '@hono/node-server@1.19.14(hono@4.12.24)':
+  '@hono/node-server@1.19.14(hono@4.12.25)':
     dependencies:
-      hono: 4.12.24
+      hono: 4.12.25
 
-  '@hono/zod-validator@0.2.2(hono@4.12.24)(zod@3.25.76)':
+  '@hono/zod-validator@0.2.2(hono@4.12.25)(zod@3.25.76)':
     dependencies:
-      hono: 4.12.24
+      hono: 4.12.25
       zod: 3.25.76
 
-  '@hono/zod-validator@0.7.6(hono@4.12.24)(zod@4.4.3)':
+  '@hono/zod-validator@0.7.6(hono@4.12.25)(zod@4.4.3)':
     dependencies:
-      hono: 4.12.24
+      hono: 4.12.25
       zod: 4.4.3
 
   '@humanfs/core@0.19.2':
@@ -6203,7 +6203,7 @@ snapshots:
       - uploadthing
       - yaml
 
-  astro@6.4.5(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0):
+  astro@6.4.6(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0):
     dependencies:
       '@astrojs/compiler': 4.0.0
       '@astrojs/internal-helpers': 0.10.0
@@ -6585,8 +6585,8 @@ snapshots:
   drizzle-kit@0.20.18:
     dependencies:
       '@esbuild-kit/esm-loader': 2.6.5
-      '@hono/node-server': 1.19.14(hono@4.12.24)
-      '@hono/zod-validator': 0.2.2(hono@4.12.24)(zod@3.25.76)
+      '@hono/node-server': 1.19.14(hono@4.12.25)
+      '@hono/zod-validator': 0.2.2(hono@4.12.25)(zod@3.25.76)
       camelcase: 7.0.1
       chalk: 5.6.2
       commander: 9.5.0
@@ -6595,7 +6595,7 @@ snapshots:
       esbuild-register: 3.6.0(esbuild@0.25.12)
       glob: 8.1.0
       hanji: 0.0.5
-      hono: 4.12.24
+      hono: 4.12.25
       json-diff: 0.9.0
       minimatch: 7.4.9
       semver: 7.8.3
@@ -7202,7 +7202,7 @@ snapshots:
 
   hls.js@1.6.16: {}
 
-  hono@4.12.24: {}
+  hono@4.12.25: {}
 
   html-escaper@3.0.3: {}
 
