@@ -203,6 +203,41 @@ app.get('/version', (c) => {
     c.header('Access-Control-Allow-Origin', origin);
     c.header('Vary', 'Origin');
   }
+
+  return {
+    ...response,
+    headers: {
+      ...(response.headers ?? {}),
+      'Access-Control-Allow-Origin': origin,
+      Vary: 'Origin',
+    },
+  };
+}
+
+app.get('/version', (c) =>
+  c.json(
+    withPublicVersionCors(
+      c.req.header('Origin'),
+      withContractHeaders(
+        {
+          service: 'gs-api',
+          version: c.env.API_VERSION ?? c.env.GIT_SHA ?? 'unknown',
+          deploySha: c.env.DEPLOY_SHA ?? c.env.GIT_SHA ?? null,
+        },
+        getRuntimeVersion(c.env)
+      )
+    )
+  )
+  return c.json(
+    withContractHeaders(
+      {
+        service: 'gs-api',
+        version: c.env.API_VERSION ?? c.env.GIT_SHA ?? 'unknown',
+        deploySha: c.env.DEPLOY_SHA ?? c.env.GIT_SHA ?? null,
+      },
+      getRuntimeVersion(c.env),
+    ),
+  );
   return c.json(data);
 });
 

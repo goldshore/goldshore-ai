@@ -7,7 +7,7 @@ const REQUIRED_FILES = ["wrangler.toml", "package.json", "tsconfig.json", "src/i
 const LEGACY_API_WORKER_PATH = "apps/api-worker";
 const GS_API_PATH = "apps/gs-api";
 const DEPLOYMENT_CONFIG_FILES = [
-  ".github/workflows/deploy-gs-api.yml",
+  ".github/workflows/deploy-platform.yml",
   ".github/workflows/preview-gs-api.yml",
   ".github/workflows-disabled/deploy-api-worker.yml",
   "infra/Cloudflare/config.yaml",
