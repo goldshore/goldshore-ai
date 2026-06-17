@@ -71,9 +71,7 @@ const inferApiOrigin = (requestUrl: string): string | undefined => {
 
 const app = new Hono<{ Bindings: GatewayEnv }>();
 
-// ── dashboard redirect (before auth) ─────────────────────
-// dashboard.goldshore.ai → admin.goldshore.ai (308, method-preserving)
-// www.goldshore.ai is owned by gs-www-redirect Worker (308 there)
+// ── Dashboard redirect (before auth) ─────────────────────
 app.use("*", async (c, next) => {
   const host = new URL(c.req.url).hostname.toLowerCase();
   const path = new URL(c.req.url).pathname + new URL(c.req.url).search;
@@ -87,7 +85,6 @@ app.use("*", async (c, next) => {
 app.use("*", secureHeaders());
 
 // ── Startup binding guard (production only) ───────────────
-// /health and /status are exempt — they must stay reachable before Gate 5e audience is configured
 app.use("*", async (c, next) => {
   const pathname = new URL(c.req.url).pathname;
   if (pathname === "/health" || pathname === "/status") return next();
@@ -384,6 +381,7 @@ app.all("/api/*", async (c) => {
     console.error(`[gateway] upstream request failed; trace=${correlationId}`, error);
     return c.json({ error: "Upstream request failed", traceId: correlationId }, 502, { [TRACE_HEADER]: correlationId });
   }
+  await next();
 });
 
 // ── Integration controls ──────────────────────────────────
@@ -406,7 +404,6 @@ app.use("*", async (c, next) => {
 // ── Routes ───────────────────────────────────────────────
 app.get("/health", (c) => c.json({ status: "ok", service: "gs-gateway", ts: Date.now() }));
 
-// status.goldshore.ai — gateway + binding configuration status (not downstream health)
 app.get("/status", (c) => c.json({
   status: "ok",
   note: "binding_presence_only — bound does not imply downstream availability",
@@ -464,7 +461,6 @@ app.all("/api/*", async (c) => {
     return c.json({ error: "Upstream request failed", traceId: correlationId }, 502, { [TRACE_HEADER]: correlationId });
   }
 });
-
 
 app.all("*", (c) => c.json({ error: "Not found" }, 404));
 
