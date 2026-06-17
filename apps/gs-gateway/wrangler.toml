@@ -29,8 +29,7 @@ routes = [
   { pattern = "gw.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "dashboard.goldshore.ai", custom_domain = true }
-  { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" }
+  { pattern = "dashboard.goldshore.ai", custom_domain = true },
 ]
 
 [env.prod.vars]
