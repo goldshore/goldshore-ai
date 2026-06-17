@@ -40,6 +40,12 @@ binding = "TRADING_SERVICE"
 service = "gs-trading"
 environment = "prod"
 
+# gs-control service binding — CF API proxy (workers, DNS, pages, KV)
+[[services]]
+binding = "GS_CONTROL"
+service = "gs-control"
+environment = "prod"
+
 # gs-api is not yet deployed as a separate worker.
 # Uncomment once gs-api is deployed:
 # [[services]]
@@ -82,6 +88,11 @@ bucket_name = "gs-assets-preview"
 [[env.preview.services]]
 binding = "TRADING_SERVICE"
 service = "gs-trading"
+environment = "prod"
+
+[[env.preview.services]]
+binding = "GS_CONTROL"
+service = "gs-control"
 environment = "prod"
 
 [env.preview.vars]
