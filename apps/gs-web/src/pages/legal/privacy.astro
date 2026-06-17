@@ -3,9 +3,131 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
 export const prerender = true;
 ---
-<BaseLayout title="Privacy Policy | GoldShore" description="Privacy policy overview">
-  <section class="gs-section">
-    <h1>Privacy Policy</h1>
-    <p>Full privacy policy coming soon. We prioritize clear communication about data handling and access boundaries.</p>
+<BaseLayout
+  title="Privacy Policy | GoldShore"
+  description="How GoldShore collects, uses, and protects your data."
+  canonicalPath="/legal/privacy"
+>
+  <section class="gs-section gs-shell-section legal-prose">
+    <div class="legal-inner">
+      <p class="gs-eyebrow">Legal</p>
+      <h1>Privacy Policy</h1>
+      <p class="meta">Last updated: June 2026</p>
+
+      <p>GoldShore Labs (&ldquo;GoldShore,&rdquo; &ldquo;we,&rdquo; &ldquo;our,&rdquo; or &ldquo;us&rdquo;) operates a suite of B2B SaaS and fintech products, including the GoldShore platform, Systematic Earnings Logic (SEL) signal service, and associated developer infrastructure. This Privacy Policy explains what data we collect, how we use it, and the choices you have.</p>
+      <p>By using any GoldShore service, you agree to the practices described here. If you do not agree, please discontinue use and contact us at <a href="mailto:privacy@goldshore.ai">privacy@goldshore.ai</a> to request data deletion.</p>
+
+      <h2>1. Data We Collect</h2>
+      <p>We collect only the data necessary to deliver and improve our services.</p>
+      <h3>Account and Identity Information</h3>
+      <p>When you create an account or request access, we collect your name, email address, organization name, and any information you provide during onboarding. Authentication is handled via Cloudflare Access (SSO / OAuth). We do not store raw passwords.</p>
+      <h3>Usage and Telemetry Data</h3>
+      <p>We log page views, feature interactions, API request counts, error events, and session metadata. This data is aggregated and used to monitor platform health and improve the product. It is not sold or shared with advertisers.</p>
+      <h3>API Access Logs</h3>
+      <p>All API requests to GoldShore infrastructure (gs-gateway, gs-api, SEL endpoints) are logged with timestamp, endpoint path, HTTP status, and anonymized IP. Logs are retained for up to 90 days for security and debugging purposes.</p>
+      <h3>Trading Simulation Data</h3>
+      <p>If you use the GoldShore paper-trading platform, we store your simulated portfolio positions, order history, and performance metrics. This is simulation data only — no real orders are placed and no real funds are involved.</p>
+      <h3>Billing Information</h3>
+      <p>Payments are processed by Stripe. GoldShore does not store full credit card numbers or CVV codes. We receive and store transaction IDs, subscription status, and billing contact details for invoice and support purposes.</p>
+      <h3>Communications</h3>
+      <p>If you contact us via email or the contact form, we retain the content of that communication to respond and track resolution.</p>
+
+      <h2>2. How We Use Your Data</h2>
+      <ul>
+        <li><strong>Service delivery:</strong> provisioning accounts, routing API requests, generating SEL signals, and maintaining your paper-trading ledger.</li>
+        <li><strong>Analytics and improvement:</strong> understanding feature usage patterns to prioritize product development. We use aggregated, non-personally-identifiable data for this purpose.</li>
+        <li><strong>Security and fraud prevention:</strong> detecting anomalous access patterns, enforcing rate limits, and responding to abuse reports via our banproof-me security layer.</li>
+        <li><strong>Billing and support:</strong> processing subscriptions, sending invoices, and responding to support requests.</li>
+        <li><strong>Legal compliance:</strong> retaining records as required by applicable law and responding to lawful requests from authorities.</li>
+      </ul>
+      <p>We do not use your data to train third-party AI models, and we do not sell, rent, or trade your personal information to any third party for commercial purposes.</p>
+
+      <h2>3. Data Storage and Infrastructure</h2>
+      <p>GoldShore runs on Cloudflare infrastructure, including Cloudflare Workers, D1 (SQLite at the edge), KV, R2, and Queues. Data is stored and processed primarily in US-based Cloudflare data centers. Cloudflare's data processing practices are governed by their Data Processing Addendum, available at cloudflare.com.</p>
+      <p>We apply encryption in transit (TLS 1.2+) for all data moving between your browser or API client and our edge workers. Data at rest in D1 and R2 is encrypted by Cloudflare's default storage encryption.</p>
+
+      <h2>4. Third-Party Services</h2>
+      <p>We integrate with a limited set of third-party services to operate the platform:</p>
+      <ul>
+        <li><strong>Stripe</strong> — payment processing and subscription billing. Subject to Stripe's Privacy Policy.</li>
+        <li><strong>Resend</strong> — transactional email delivery (account confirmations, alerts, invoices). Email content is passed to Resend for delivery; Resend does not use it for advertising.</li>
+        <li><strong>Schwab and Robinhood</strong> — read-only OAuth connections for live market data in the paper-trading engine. We request read-only scopes only. We do not store your brokerage credentials; OAuth tokens are stored in encrypted KV and never exposed in API responses.</li>
+        <li><strong>Cloudflare Access</strong> — identity and SSO for platform authentication.</li>
+      </ul>
+      <p>We do not use tracking pixels, ad networks, behavioral retargeting, or any third-party analytics that share your data with advertisers.</p>
+
+      <h2>5. Cookies and Local Storage</h2>
+      <p>We use session cookies strictly necessary for authentication (Cloudflare Access JWT). We do not use persistent tracking cookies, third-party cookies, or fingerprinting scripts. If you block cookies, authenticated areas of the platform will not function.</p>
+
+      <h2>6. Data Retention</h2>
+      <p>We retain account data for the duration of your active subscription plus 90 days after cancellation, at which point it is scheduled for deletion. API logs are retained for 90 days. Billing records are retained for seven years as required by financial recordkeeping regulations. You may request earlier deletion by contacting <a href="mailto:privacy@goldshore.ai">privacy@goldshore.ai</a>.</p>
+
+      <h2>7. Your Rights</h2>
+      <p>Depending on your jurisdiction, you may have the following rights with respect to your personal data:</p>
+      <ul>
+        <li><strong>Access:</strong> request a copy of the personal data we hold about you.</li>
+        <li><strong>Correction:</strong> request correction of inaccurate or incomplete data.</li>
+        <li><strong>Deletion:</strong> request deletion of your account and associated personal data, subject to legal retention requirements.</li>
+        <li><strong>Portability:</strong> request your data in a machine-readable format.</li>
+        <li><strong>Objection:</strong> object to processing based on legitimate interest.</li>
+      </ul>
+      <p>To exercise any of these rights, email <a href="mailto:privacy@goldshore.ai">privacy@goldshore.ai</a> with the subject line &ldquo;Data Request.&rdquo; We will respond within 30 days.</p>
+
+      <h2>8. Children</h2>
+      <p>GoldShore services are not directed at individuals under 18. We do not knowingly collect personal data from minors. If you believe a minor has provided us data, contact us immediately.</p>
+
+      <h2>9. Changes to This Policy</h2>
+      <p>We may update this policy as our services evolve. Material changes will be communicated by email to account holders at least 14 days before they take effect. The &ldquo;Last updated&rdquo; date at the top of this page reflects the most recent revision.</p>
+
+      <h2>10. Contact</h2>
+      <p>Questions or requests regarding this Privacy Policy should be directed to:</p>
+      <p>
+        GoldShore Labs<br />
+        <a href="mailto:privacy@goldshore.ai">privacy@goldshore.ai</a>
+      </p>
+    </div>
   </section>
 </BaseLayout>
+
+<style>
+  .legal-prose {
+    padding: 4rem 1.5rem 6rem;
+  }
+  .legal-inner {
+    max-width: 80ch;
+    margin: 0 auto;
+  }
+  .meta {
+    color: var(--gs-text-dim, rgba(255,255,255,0.45));
+    font-size: 0.85rem;
+    margin-bottom: 2rem;
+  }
+  .legal-inner h1 {
+    margin: 0.3rem 0 0.25rem;
+    font-size: clamp(2rem, 4vw, 3rem);
+  }
+  .legal-inner h2 {
+    margin: 2.5rem 0 0.6rem;
+    font-size: 1.25rem;
+    color: var(--gs-gold, #c9a84c);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding-bottom: 0.4rem;
+  }
+  .legal-inner h3 {
+    margin: 1.5rem 0 0.35rem;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  .legal-inner p,
+  .legal-inner li {
+    line-height: 1.75;
+    color: var(--gs-text-dim, rgba(255,255,255,0.72));
+  }
+  .legal-inner ul {
+    padding-left: 1.4rem;
+    margin: 0.6rem 0 1rem;
+  }
+  .legal-inner li { margin-bottom: 0.4rem; }
+  .legal-inner a { color: var(--gs-blue, #5aa2ff); text-decoration: underline; text-underline-offset: 2px; }
+  .legal-inner a:hover { color: #fff; }
+</style>
