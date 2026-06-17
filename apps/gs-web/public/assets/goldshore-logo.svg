@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Gold Shore Labs">
+  <title>Gold Shore Labs</title>
+  <defs>
+    <!-- Blue gradient for the three faces -->
+    <linearGradient id="face-top" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4fa3e8"/>
+      <stop offset="100%" stop-color="#1a6bbf"/>
+    </linearGradient>
+    <linearGradient id="face-left" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1a5fa8"/>
+      <stop offset="100%" stop-color="#1258a0"/>
+    </linearGradient>
+    <linearGradient id="face-right" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2878c8"/>
+      <stop offset="100%" stop-color="#0e4a8a"/>
+    </linearGradient>
+    <!-- Inner shadow edges -->
+    <linearGradient id="edge-top" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#5bb8f5"/>
+      <stop offset="100%" stop-color="#3a90d8"/>
+    </linearGradient>
+    <linearGradient id="edge-left" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0d4282"/>
+      <stop offset="100%" stop-color="#0a3568"/>
+    </linearGradient>
+    <linearGradient id="edge-right" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1858a2"/>
+      <stop offset="100%" stop-color="#0f4080"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="400" fill="#1a1a2e" rx="20"/>
+
+  <!--
+    Penrose impossible triangle
+    The triangle has three beams that appear to connect impossibly.
+
+    Outer triangle points (equilateral, centered):
+      Top:        200, 58
+      Bottom-left:  58, 318
+      Bottom-right: 342, 318
+
+    Each beam is a parallelogram with a thick face + thin inner edge.
+    Beam thickness: ~52px
+  -->
+
+  <!-- TOP BEAM (top-left face, slants from top-right to bottom-left) -->
+  <!-- Outer face -->
+  <polygon points="200,58 252,58 178,188 126,188" fill="url(#face-top)"/>
+  <!-- Inner darker edge (bottom of top beam) -->
+  <polygon points="178,188 252,58 264,78 190,200" fill="url(#edge-top)" opacity="0.6"/>
+
+  <!-- RIGHT BEAM (right face, vertical right side) -->
+  <!-- Outer face -->
+  <polygon points="252,58 342,318 290,318 200,158" fill="url(#face-right)"/>
+  <!-- Inner edge (left side of right beam) -->
+  <polygon points="200,158 264,78 252,58 200,158" fill="url(#edge-right)" opacity="0.5"/>
+
+  <!-- BOTTOM BEAM (bottom face, horizontal) -->
+  <!-- Outer face -->
+  <polygon points="290,318 342,318 58,318 58,266" fill="url(#face-left)"/>
+  <!-- Inner edge (top of bottom beam) -->
+  <polygon points="58,266 126,188 178,188 110,266" fill="url(#edge-left)" opacity="0.6"/>
+
+  <!-- JUNCTION overlaps to sell the impossible illusion -->
+  <!-- Top-left corner junction: top beam goes OVER left beam -->
+  <polygon points="126,188 178,188 110,266 58,266" fill="url(#face-top)"/>
+
+  <!-- Bottom-right corner: right beam goes OVER bottom beam -->
+  <polygon points="290,318 342,318 342,266 290,266" fill="url(#face-right)"/>
+
+  <!-- Top corner: top beam cap -->
+  <polygon points="200,58 252,58 226,108" fill="#5cc0f8" opacity="0.3"/>
+
+  <!-- TEXT on each face -->
+  <!-- "GOLD" on top-left face — rotated along the diagonal -->
+  <text
+    x="200" y="135"
+    text-anchor="middle"
+    font-family="'Arial Black', Arial, sans-serif"
+    font-size="22"
+    font-weight="900"
+    letter-spacing="3"
+    fill="white"
+    opacity="0.92"
+    transform="rotate(-60, 200, 135)"
+  >GOLD</text>
+
+  <!-- "SHORE" on right face — rotated along right diagonal -->
+  <text
+    x="275" y="210"
+    text-anchor="middle"
+    font-family="'Arial Black', Arial, sans-serif"
+    font-size="22"
+    font-weight="900"
+    letter-spacing="3"
+    fill="white"
+    opacity="0.92"
+    transform="rotate(60, 275, 210)"
+  >SHORE</text>
+
+  <!-- "LABS" on bottom face — horizontal -->
+  <text
+    x="190" y="300"
+    text-anchor="middle"
+    font-family="'Arial Black', Arial, sans-serif"
+    font-size="22"
+    font-weight="900"
+    letter-spacing="4"
+    fill="white"
+    opacity="0.92"
+  >LABS</text>
+
+</svg>

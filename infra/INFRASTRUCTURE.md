@@ -89,17 +89,26 @@
 
 ## Domain → Worker routing
 
-| Domain | Worker | Tier | Fail policy |
+| Domain | Worker / Pages | Tier | Notes |
 |---|---|---|---|
-| `goldshore.ai` | `gs-platform` / `gs-web` | 1 (public) | Fail open |
-| `www.goldshore.ai` | `gs-platform` | 1 (public) | Fail open |
-| `admin.goldshore.ai` | `gs-platform` | 3 (admin) | Fail closed |
-| `goldshore.org` | `goldshore-org` | 1 (public) | Fail open |
+| `goldshore.ai` | `gs-web` (Pages) | 1 (public) | Canonical hostname |
+| `www.goldshore.ai` | `gs-www-redirect` | 1 (public) | 308 → goldshore.ai |
+| `dashboard.goldshore.ai` | `gs-gateway` | 1 (public) | 308 → admin.goldshore.ai |
+| `gw.goldshore.ai` | `gs-gateway` | 2 (auth) | Fail closed |
+| `api.goldshore.ai` | `gs-gateway` → `gs-api` | 2 (auth) | Fail closed; /health /version /status public |
+| `agent.goldshore.ai` | `gs-gateway` → `gs-agent` | 2 (auth) | Fail closed |
+| `trading.goldshore.ai` | `gs-trading` | 3 (admin) | Fail closed |
+| `ops.goldshore.ai` | `gs-control` | 3 (admin) | Fail closed |
+| `admin.goldshore.ai` | `gs-admin` (Pages) | 3 (admin) | Fail closed |
+| `admin.goldshore.org` | `gs-admin` (Pages) | 3 (admin) | Same app as admin.goldshore.ai |
+| `goldshore.org` | `goldshore-org` | 1 (public) | 308 → goldshore.ai |
+| `www.goldshore.org` | `goldshore-org` | 1 (public) | 308 → goldshore.ai |
+| `mail.goldshore.ai` | `gs-mail` | — | CF mail routing |
 | `banproof.me` | `banproof-me` | 1 | Fail closed |
 | `rmarston.com` | `rmarston-com` | 1 (public) | Fail open |
-| `www.rmarston.com` | `rmarston-com` | 1 (public) | Fail open |
+| `www.rmarston.com` | `gs-www-redirect` | 1 (public) | 308 → rmarston.com (via Worker) |
 | `armsway.com` | `gs-platform` | 1 (public) | Fail open |
-| `www.armsway.com` | `gs-platform` | 1 (public) | Fail open |
+| `partnersinpools.com` | `partners-in-pools` | 1 (public) | Matteo's pool business |
 
 ---
 
