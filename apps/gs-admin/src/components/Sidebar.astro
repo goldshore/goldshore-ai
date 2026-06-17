@@ -1,42 +1,20 @@
 ---
 import { SharedHeader } from '@goldshore/ui';
-import type { AdminPermission } from '@goldshore/auth';
 
-const links: Array<{ href: string; label: string; requiredPermission?: AdminPermission; group?: string }> = [
-  { href: '/', label: 'Overview' },
-  { href: '/dashboard', label: 'Ops Dashboard' },
-  { href: '/admin/overview', label: 'Operational Overview' },
-  { href: '/admin/analytics', label: 'Analytics' },
-  { href: '/admin/content', label: 'Content Studio' },
-  { href: '/admin/monetization', label: 'Monetization' },
-  { href: '/admin/forms', label: 'Forms', requiredPermission: 'forms:read' },
-  { href: '/admin/media', label: 'Media Library', requiredPermission: 'media:read' },
-  { href: '/admin/page-editor', label: 'Page Editor' },
-  { href: '/admin/pages', label: 'Pages' },
-  { href: '/admin/page-editor', label: 'Pages Editor' },
-  { href: '/admin/system', label: 'System' },
-  { href: '/admin/workers', label: 'Workers' },
-  { href: '/admin/users', label: 'Users', requiredPermission: 'users:read' },
-  { href: '/admin/pii-scans', label: 'PII Scans' },
-  { href: '/admin/logs', label: 'Logs', requiredPermission: 'audit:read' },
-  { href: '/admin/settings', label: 'Settings' },
-  { href: '/appearance/hero', label: 'Hero Engine' }
+const workerLinks: Array<{ href: string; label: string }> = [
+  { href: '/admin/workers/status', label: 'Status' },
+  { href: '/admin/workers/bindings', label: 'Bindings' },
+  { href: '/admin/workers/routes', label: 'Routes' },
 ];
 
-const tradingLinks: Array<{ href: string; label: string }> = [
-  { href: '/trading', label: 'Overview' },
-  { href: '/trading/accounts', label: 'Accounts' },
-  { href: '/trading/positions', label: 'Positions' },
-  { href: '/trading/orders', label: 'Orders' },
-  { href: '/trading/quotes', label: 'Quotes' },
-  { href: '/trading/risk', label: 'Risk' },
+const systemLinks: Array<{ href: string; label: string }> = [
+  { href: '/admin/system/dns', label: 'DNS' },
+  { href: '/admin/system/secrets', label: 'Secrets' },
+  { href: '/admin/system/storage', label: 'Storage' },
+  { href: '/admin/system/pages', label: 'Pages' },
 ];
 
 const { logo, permissions = [] } = Astro.props;
-
-const visibleLinks = links.filter((link) =>
-  link.requiredPermission ? permissions.includes(link.requiredPermission) : true
-);
 
 // Enhanced active state detection for nested routes
 const isActive = (href: string) => {
@@ -67,17 +45,16 @@ const isActive = (href: string) => {
     <button id="sidebar-close" class="sidebar-close" aria-label="Close menu">✕</button>
   </SharedHeader>
   <nav class="gs-sidebar-links">
-    {visibleLinks.map((link) => (
-      <a
-        class={`gs-nav-block ${isActive(link.href) ? 'active' : ''}`}
-        href={link.href}
-        aria-current={isActive(link.href) ? 'page' : undefined}
-      >
-        {link.label}
-      </a>
-    ))}
-    <div class="gs-nav-group-label">Trading</div>
-    {tradingLinks.map((link) => (
+    <a
+      class={`gs-nav-block ${isActive('/') && Astro.url.pathname === '/' ? 'active' : ''}`}
+      href="/"
+      aria-current={Astro.url.pathname === '/' ? 'page' : undefined}
+    >
+      Dashboard
+    </a>
+
+    <div class="gs-nav-group-label">Workers</div>
+    {workerLinks.map((link) => (
       <a
         class={`gs-nav-block gs-nav-block--sub ${isActive(link.href) ? 'active' : ''}`}
         href={link.href}
@@ -86,5 +63,38 @@ const isActive = (href: string) => {
         {link.label}
       </a>
     ))}
+
+    <div class="gs-nav-group-label">System</div>
+    {systemLinks.map((link) => (
+      <a
+        class={`gs-nav-block gs-nav-block--sub ${isActive(link.href) ? 'active' : ''}`}
+        href={link.href}
+        aria-current={isActive(link.href) ? 'page' : undefined}
+      >
+        {link.label}
+      </a>
+    ))}
+
+    <a
+      class={`gs-nav-block ${isActive('/admin/users') ? 'active' : ''}`}
+      href="/admin/users"
+      aria-current={isActive('/admin/users') ? 'page' : undefined}
+    >
+      Users
+    </a>
+    <a
+      class={`gs-nav-block ${isActive('/trading') ? 'active' : ''}`}
+      href="/trading"
+      aria-current={isActive('/trading') ? 'page' : undefined}
+    >
+      Trading
+    </a>
+    <a
+      class={`gs-nav-block ${isActive('/admin/settings') ? 'active' : ''}`}
+      href="/admin/settings"
+      aria-current={isActive('/admin/settings') ? 'page' : undefined}
+    >
+      Settings
+    </a>
   </nav>
 </aside>
