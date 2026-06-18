@@ -71,7 +71,6 @@ binding = "AI"
 [[env.preview.services]]
 binding = "AGENT"
 service = "gs-agent"
-environment = "preview"
 
 [[env.preview.queues.producers]]
 binding = "JOBS_QUEUE"
