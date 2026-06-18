@@ -22,12 +22,12 @@ binding = "CONTROL_LOGS"
 id = "a52e94cb331c4e3db08f2aa507e6df09"
 
 [[env.prod.r2_buckets]]
-binding = "ASSETS"
+binding = "GS_ASSETS"
 bucket_name = "gs-assets"
 
 [[env.prod.d1_databases]]
-binding = "CONTENT_DB"
-database_name = "goldshore"
+binding = "PLATFORM_DB"
+database_name = "gs_platform_db"
 database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
 
 [env.prod.ai]
@@ -57,12 +57,12 @@ binding = "KV"
 id = "d4d20cee39094b999dea3f7e5f4c533a"
 
 [[env.preview.r2_buckets]]
-binding = "ASSETS"
+binding = "GS_ASSETS"
 bucket_name = "gs-assets-preview"
 
 [[env.preview.d1_databases]]
-binding = "CONTENT_DB"
-database_name = "goldshore"
+binding = "PLATFORM_DB"
+database_name = "gs_platform_db"
 database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
 
 [env.preview.ai]
@@ -71,7 +71,6 @@ binding = "AI"
 [[env.preview.services]]
 binding = "AGENT"
 service = "gs-agent"
-environment = "preview"
 
 [[env.preview.queues.producers]]
 binding = "JOBS_QUEUE"
