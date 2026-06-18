@@ -174,13 +174,13 @@ Two workers in your account have unknown origin. You must decide to keep or dele
 
 ### GATE 2 — Deploy goldshore-org redirect (BLOCKS: goldshore.org routing)
 
-Merge PR #12 in `marzton/goldshore-org` so `goldshore.org` and `www.goldshore.org` 308-redirect to `goldshore.ai`.
+Merge PR #12 in `marzton/goldshore-org` so `goldshore.org` and `www.goldshore.org` 301-redirect to `goldshore.ai`.
 
 | # | Action | Where | Status |
 |---|--------|--------|--------|
 | 2a | Merge `marzton/goldshore-org` PR #12 | [goldshore-org/pull/12](https://github.com/marzton/goldshore-org/pull/12) | ⬜ TODO |
 | 2b | Run `wrangler deploy --env prod` in `goldshore-org` repo (or confirm CI deploys it) | Terminal / CF Dashboard | ⬜ TODO |
-| 2c | Verify: `curl -I https://goldshore.org` → `308` to `https://goldshore.ai` | Browser or curl | ⬜ TODO |
+| 2c | Verify: `curl -I https://goldshore.org` → `301` to `https://goldshore.ai` | Browser or curl | ⬜ TODO |
 
 ---
 
@@ -221,7 +221,7 @@ Create one Access application per protected subdomain group. All require Gate 4 
 | 5b | `trading.goldshore.ai` | Goldshore Trading | Email = marstonr6@gmail.com (allow). Add **bypass policy** for `/oauth/schwab/callback` and `/oauth/robinhood/callback` (everyone) — Schwab/Robinhood redirect to these paths without an Access session. | CF Access Apps | ⬜ TODO |
 | 5c | `ops.goldshore.ai` | Goldshore Ops | Email = marstonr6@gmail.com (allow) | CF Access Apps | ⬜ TODO |
 | 5d | `gw.goldshore.ai` + `api.goldshore.ai` + `agent.goldshore.ai` | Goldshore Gateway | All three route to the same `gs-gateway` Worker — must share one Access app and one AUD tag. Email = marstonr6@gmail.com (allow). Add **bypass policy** for paths `/health`, `/status`, and `/version` (everyone). | CF Access Apps | ⬜ TODO |
-| 5e | Copy the **Audience (AUD) tag** for each app and configure as follows: (1) Store as GitHub Actions secrets (`CLOUDFLARE_ACCESS_AUDIENCE_ADMIN`, `CLOUDFLARE_ACCESS_AUDIENCE_TRADING`, `CLOUDFLARE_ACCESS_AUDIENCE_GATEWAY`). (2) Set as wrangler secret on each Worker: `gs-gateway`, `gs-agent` (both use the Gateway AUD), `gs-admin`, `gs-trading`. (3) **Remove the hardcoded `CLOUDFLARE_ACCESS_AUDIENCE` var from `apps/gs-api/wrangler.toml`** — gs-api validates the gateway AUD forwarded via service binding; the pinned `d303…` value will reject tokens from the new shared app. | CF Access App → Overview tab | ⬜ TODO |
+| 5e | Copy the **Audience (AUD) tag** for each app and store it as a GitHub Actions secret (`CLOUDFLARE_ACCESS_AUDIENCE_ADMIN`, `CLOUDFLARE_ACCESS_AUDIENCE_TRADING`, `CLOUDFLARE_ACCESS_AUDIENCE_GATEWAY`) and as wrangler secrets in each Worker. | CF Access App → Overview tab | ⬜ TODO |
 
 ---
 

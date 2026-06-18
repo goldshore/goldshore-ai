@@ -69,6 +69,23 @@ const services = [
     timeline: 'Monthly retainer (minimum 3 months)',
     bestFit: 'Growth-stage organizations that need a hands-on partner to accelerate delivery across multiple streams.',
     cta: '/contact?intent=embedded-delivery-partner'
+  },
+  {
+    name: 'Systematic Earnings Logic (SEL)',
+    overview: 'AI-powered earnings signal service that surfaces pre- and post-earnings trade opportunities before consensus forms.',
+    scope: [
+      'Earnings call transcript analysis and guidance revision scoring',
+      'Options flow anomaly detection around earnings windows',
+      'Signal delivery via API, webhook, or the GoldShore dashboard'
+    ],
+    deliverables: [
+      'Real-time earnings signal feed with confidence scores',
+      'Historical backtests across 5+ earnings cycles',
+      'Alert configuration and dashboard access'
+    ],
+    timeline: 'SaaS — live access within 48 hours of onboarding',
+    bestFit: 'Active traders and quant teams that want an edge on earnings moves without building the data pipeline themselves.',
+    cta: '/intake?intent=sel'
   }
 ];
 ---
@@ -100,14 +117,12 @@ const services = [
       {services.map((service) => (
         <article class="gs-card service-card">
           <h3>{service.name}</h3>
-          <p>{service.detail}</p>
-          {service.bullets ? (
-            <ul class="gs-text-sm">
-              {service.bullets.map((item) => (
-                <li>{item}</li>
-              ))}
-            </ul>
-          ) : null}
+          <p>{service.overview}</p>
+          <ul class="gs-text-sm">
+            {service.scope.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
           <GSButton
             href={service.cta}
             variant="secondary"
