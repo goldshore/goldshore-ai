@@ -15,5 +15,5 @@ database_name = "gs_audit_db"
 database_id = "1ae71d76-188f-481b-91d9-db2d39013f68"
 
 [[env.prod.r2_buckets]]
-binding = "TELEMETRY_STORAGE"
+binding = "GS_TELEMETRY"
 bucket_name = "gs-telemetry-storage"
