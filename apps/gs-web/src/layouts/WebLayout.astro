@@ -3,25 +3,57 @@ import '@goldshore/theme/styles/tokens.css';
 import '@goldshore/theme/styles/base.css';
 import '@goldshore/theme/styles/components.css';
 import '@goldshore/theme/styles/layout.css';
-import Logo from '../components/brand/Logo.astro';
 import { HTML_CSP_META_FALLBACK } from '../security/policy';
 import { WEB_META_CSP } from '../utils/csp';
 
 const navLinks = [
-  { href: '/#platform', pathname: '/', label: 'Platform' },
-  { href: '/#services', pathname: '/', label: 'Services' },
+  { href: '/platform', pathname: '/platform', label: 'Platform' },
+  { href: '/services', pathname: '/services', label: 'Services' },
   { href: '/#ventures', pathname: '/', label: 'Ventures' },
   { href: '/#intelligence', pathname: '/', label: 'Intelligence' },
-  { href: '/#company', pathname: '/', label: 'Company' },
-  { href: '/#contact', pathname: '/', label: 'Contact' },
+  { href: '/about', pathname: '/about', label: 'Company' },
+  { href: '/contact', pathname: '/contact', label: 'Contact' },
 ];
+
+const footerNav = [
+  {
+    heading: 'Platform',
+    links: [
+      { href: '/apps/risk-radar', label: 'Risk Radar' },
+      { href: '/platform/financial-signals', label: 'Financial Signals' },
+      { href: '/platform/workflow-engine', label: 'Workflow Engine' },
+      { href: '/platform/sentinel', label: 'Sentinel' },
+      { href: '/platform/ai-oracle', label: 'AI Oracle' },
+    ],
+  },
+  {
+    heading: 'Services',
+    links: [
+      { href: '/services/digital-strategy', label: 'Digital Strategy' },
+      { href: '/services/ai-implementation', label: 'AI Implementation' },
+      { href: '/services/systems-integration', label: 'Systems Integration' },
+      { href: '/services/design-dev', label: 'Design & Dev' },
+      { href: '/services/consulting', label: 'Consulting' },
+    ],
+  },
+  {
+    heading: 'Company',
+    links: [
+      { href: '/about', label: 'About' },
+      { href: '/team', label: 'Team' },
+      { href: '/developer', label: 'Developer Hub' },
+      { href: '/status', label: 'Status' },
+      { href: '/contact', label: 'Contact' },
+    ],
+  },
+];
+
 const footerLinks = [
   { href: '/legal/privacy', label: 'Privacy' },
-  { href: '/legal/terms', label: 'Terms' },
 ];
 const mobileNavId = 'mobile-navigation';
 
-const CANONICAL_ORIGIN = 'https://goldshore.org';
+const CANONICAL_ORIGIN = 'https://goldshore.ai';
 
 const {
   title = 'GoldShore',
@@ -71,7 +103,15 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
       <header class="header" data-menu-open="false">
         <div class="header__inner">
           <a href="/" class="gs-logo-link" aria-label="Gold Shore home">
-            <Logo class="gs-logo gs-logo--lockup" title="Gold Shore" variant="lockup" />
+            <img
+              src="/assets/goldshore-logo.svg"
+              alt="Gold Shore Labs"
+              class="gs-logo gs-logo--header"
+              width="40"
+              height="40"
+              loading="eager"
+              decoding="async"
+            />
           </a>
 
           <nav class="desktop-nav" aria-label="Primary navigation">
@@ -102,7 +142,7 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
           <div class="menu-panel__inner">
             <div class="menu-panel__header">
               <a href="/" class="gs-logo-link gs-logo-link--mobile" aria-label="GoldShore home">
-                <Logo class="gs-logo" title="GoldShore" />
+                <img src="/assets/goldshore-logo.svg" alt="Gold Shore Labs" class="gs-logo" width="32" height="32" loading="lazy" decoding="async" />
                 <div class="brand-lockup">
                   <strong>GoldShore</strong>
                   <span>Institutional AI systems</span>
@@ -133,19 +173,26 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
 
       <footer class="gs-footer">
         <div class="gs-footer__inner">
-          <div class="footer-brand-copy">
-            <div class="footer-brand">
-              <Logo class="gs-logo gs-logo--footer" title="Gold Shore" />
-              <div class="brand-lockup brand-lockup--footer">
-                <strong>Gold Shore</strong>
-                <span>Operational AI, observability, and control systems</span>
-              </div>
-            </div>
-            <p>
-              Infrastructure for high-trust AI, risk tooling, and resilient operator systems.
-            </p>
+          <div class="footer-brand-col">
+            <a href="/" class="footer-logo-link" aria-label="Gold Shore home">
+              <img src="/assets/goldshore-logo.svg" alt="Gold Shore Labs" width="48" height="48" loading="lazy" decoding="async" />
+            </a>
+            <p class="footer-tagline">Operational AI, observability, and control systems.</p>
+            <p class="footer-coords">© 2026 Gold Shore Labs. All rights reserved.<br/>40°42′N · 074°00′W · goldshore.ai</p>
           </div>
-          <div class="gs-footer__links">
+
+          <nav class="footer-nav" aria-label="Footer navigation">
+            {footerNav.map((col) => (
+              <div class="footer-nav__col">
+                <strong class="footer-nav__heading">{col.heading}</strong>
+                {col.links.map((link) => (
+                  <a href={link.href}>{link.label}</a>
+                ))}
+              </div>
+            ))}
+          </nav>
+
+          <div class="footer-legal">
             {footerLinks.map((link) => (
               <a href={link.href}>{link.label}</a>
             ))}
@@ -318,10 +365,6 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
         height: auto;
         color: var(--gs-primary);
         flex-shrink: 0;
-      }
-
-      .gs-logo--lockup {
-        width: clamp(220px, 24vw, 320px);
       }
 
       .gs-logo--footer {
@@ -562,36 +605,82 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
         align-items: flex-start;
       }
 
-      .footer-brand-copy {
+      .footer-brand-col {
         display: grid;
-        gap: 1rem;
+        gap: 0.9rem;
+        align-content: start;
+        min-width: 180px;
       }
 
-      .footer-brand {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.8rem;
-      }
+      .footer-logo-link { display: inline-flex; }
 
-      .gs-footer p {
-        max-width: 42ch;
+      .footer-tagline {
+        max-width: 30ch;
         color: var(--gs-text-dim);
+        line-height: 1.6;
+        margin: 0;
+        font-size: 0.88rem;
+      }
+
+      .footer-coords {
+        color: var(--gs-text-dim);
+        font-size: 0.76rem;
         line-height: 1.7;
         margin: 0;
+        opacity: 0.6;
       }
 
-      .gs-footer__links {
+      .footer-nav {
+        display: flex;
+        gap: 2.5rem;
+        flex-wrap: wrap;
+      }
+
+      .footer-nav__col {
         display: grid;
-        gap: 0.65rem;
+        gap: 0.55rem;
+        align-content: start;
       }
 
-      .gs-footer__links a {
+      .footer-nav__heading {
+        font-size: 0.76rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--gs-text);
+        margin-bottom: 0.3rem;
+      }
+
+      .footer-nav__col a {
         color: var(--gs-text-dim);
         text-decoration: none;
+        font-size: 0.88rem;
+        transition: color 140ms;
       }
 
-      .gs-footer__links a:hover {
-        color: var(--gs-text);
+      .footer-nav__col a:hover { color: var(--gs-text); }
+
+      .footer-legal {
+        display: flex;
+        gap: 1rem;
+        align-items: flex-end;
+        padding-bottom: 0.25rem;
+        flex-shrink: 0;
+      }
+
+      .footer-legal a {
+        color: var(--gs-text-dim);
+        font-size: 0.78rem;
+        text-decoration: none;
+        opacity: 0.6;
+        transition: opacity 140ms;
+      }
+
+      .footer-legal a:hover { opacity: 1; }
+
+      .gs-logo--header {
+        width: 40px;
+        height: 40px;
+        object-fit: contain;
       }
 
       .gs-shell-section {
@@ -616,9 +705,6 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
           display: inline-grid;
         }
 
-        .gs-logo--lockup {
-          width: clamp(190px, 44vw, 260px);
-        }
       }
 
       @media (max-width: 720px) {

@@ -3,6 +3,6 @@ export default {
     const url = new URL(request.url);
     const apex = url.hostname.replace(/^www\./, "");
     url.hostname = apex;
-    return Response.redirect(url.toString(), 301);
+    return Response.redirect(url.toString(), 308);
   },
 };
