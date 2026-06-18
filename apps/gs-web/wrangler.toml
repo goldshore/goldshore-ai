@@ -39,9 +39,7 @@ MAILCHANNELS_SENDER_NAME = "GoldShore"
 # goldshore.org is owned by goldshore-org Worker (redirects → goldshore.ai)
 routes = [
   { pattern = "goldshore.ai", custom_domain = true },
-  { pattern = "www.goldshore.ai", custom_domain = true },
-  { pattern = "goldshore.org", custom_domain = true },
-  { pattern = "www.goldshore.org", custom_domain = true }
+  { pattern = "goldshore.org", custom_domain = true }
 ]
 
 [[env.prod.kv_namespaces]]

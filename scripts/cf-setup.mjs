@@ -39,7 +39,7 @@ async function cf(method, path, body) {
 // alongside our GH Actions workflow. We patch each project to:
 //   a) Set correct build command / output dir / root dir
 //   b) Disable CF's built-in GitHub auto-deploy (deployments_enabled: false)
-//      so ONLY our deploy-cloudflare.yml workflow fires.
+//      so ONLY our deploy-platform.yml workflow fires.
 
 const PAGES_PROJECTS = [
   {
@@ -68,7 +68,7 @@ for (const p of PAGES_PROJECTS) {
       source: {
         config: {
           // Disable CF Pages' own GitHub-triggered deploys.
-          // Our deploy-cloudflare.yml uses `wrangler pages deploy` directly.
+          // Our deploy-platform.yml uses `wrangler pages deploy` directly.
           deployments_enabled: false,
         },
       },
