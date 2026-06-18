@@ -378,6 +378,168 @@ export function getDashboardHTML(): string {
         </div>
       </div>
 
+      <!-- PAPER TRADING TAB -->
+      <div x-show="tab==='paper'" x-cloak>
+        <!-- Three-state panel header -->
+        <div class="grid grid-cols-3 gap-4 mb-6">
+          <!-- LIVE BROKER DATA -->
+          <div class="card p-4" style="border-color:#3b82f6">
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-2 h-2 rounded-full bg-green-400 pulse"></div>
+              <div class="text-sm font-semibold text-blue-400">LIVE BROKER DATA</div>
+            </div>
+            <div class="space-y-1 text-xs text-slate-400">
+              <template x-for="a in accounts" :key="a.broker+a.accountId">
+                <div class="flex justify-between">
+                  <span class="capitalize" x-text="a.broker"></span>
+                  <span class="text-white font-mono" x-text="fmt(a.totalValue)"></span>
+                </div>
+              </template>
+              <div x-show="accounts.length===0" class="text-slate-500">No brokers connected</div>
+            </div>
+          </div>
+          <!-- PAPER SIMULATION -->
+          <div class="card p-4" style="border-color:#6366f1">
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-2 h-2 rounded-full bg-blue-400"></div>
+              <div class="text-sm font-semibold text-indigo-400">PAPER SIMULATION</div>
+            </div>
+            <div class="space-y-1 text-xs text-slate-400">
+              <div class="flex justify-between">
+                <span>Cash Balance</span>
+                <span class="text-white font-mono" x-text="paperPortfolio ? fmt(paperPortfolio.cash) : '—'"></span>
+              </div>
+              <div class="flex justify-between">
+                <span>Total Equity</span>
+                <span class="text-white font-mono" x-text="paperPortfolio ? fmt(paperPortfolio.totalEquity) : '—'"></span>
+              </div>
+              <div class="flex justify-between">
+                <span>Unrealized P&amp;L</span>
+                <span :class="(paperPortfolio?.unrealizedPnL??0)>=0?'positive':'negative'" x-text="paperPortfolio ? fmtPL(paperPortfolio.unrealizedPnL) : '—'"></span>
+              </div>
+              <div class="flex justify-between">
+                <span>Positions</span>
+                <span class="text-white" x-text="(paperPortfolio?.positions?.length ?? 0) + ' open'"></span>
+              </div>
+            </div>
+          </div>
+          <!-- AGENTIC ACCOUNT -->
+          <div class="card p-4" style="border-color:#f59e0b">
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-2 h-2 rounded-full bg-yellow-400"></div>
+              <div class="text-sm font-semibold text-yellow-400">AGENTIC ACCOUNT</div>
+            </div>
+            <div class="space-y-1 text-xs text-slate-400">
+              <div class="flex justify-between">
+                <span>Pending Approvals</span>
+                <span class="text-yellow-400 font-bold" x-text="agentRecs.length"></span>
+              </div>
+              <div class="flex justify-between">
+                <span>Agents Running</span>
+                <span class="text-white" x-text="agents.filter(a=>a.status==='RUNNING').length"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Paper order entry + positions -->
+        <div class="grid grid-cols-2 gap-6 mb-6">
+          <!-- Paper Order Entry -->
+          <div class="card p-5">
+            <div class="text-sm font-semibold mb-4" style="color:#a78bfa">Paper Order Entry</div>
+            <div class="space-y-3">
+              <div class="grid grid-cols-2 gap-2">
+                <div><label class="text-xs text-slate-400 block mb-1">Symbol</label>
+                  <input x-model="paperOrder.symbol" placeholder="AAPL" class="w-full text-sm uppercase" /></div>
+                <div><label class="text-xs text-slate-400 block mb-1">Side</label>
+                  <select x-model="paperOrder.side" class="w-full text-sm">
+                    <option value="buy">BUY</option><option value="sell">SELL</option>
+                  </select></div>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div><label class="text-xs text-slate-400 block mb-1">Type</label>
+                  <select x-model="paperOrder.order_type" class="w-full text-sm">
+                    <option value="market">MARKET</option>
+                    <option value="limit">LIMIT</option>
+                    <option value="stop">STOP</option>
+                  </select></div>
+                <div><label class="text-xs text-slate-400 block mb-1">Qty</label>
+                  <input type="number" x-model="paperOrder.quantity" placeholder="10" class="w-full text-sm" /></div>
+              </div>
+              <div x-show="paperOrder.order_type!=='market'">
+                <label class="text-xs text-slate-400 block mb-1">Price</label>
+                <input type="number" x-model="paperOrder.limit_price" placeholder="0.00" class="w-full text-sm" step="0.01" />
+              </div>
+              <div x-show="paperOrderMsg" class="text-xs p-2 rounded" :class="paperOrderErr?'bg-red-900/30 text-red-400':'bg-green-900/30 text-green-400'" x-text="paperOrderMsg"></div>
+              <button @click="placePaperOrder()" class="primary w-full" :disabled="paperPlacing">
+                <span x-show="!paperPlacing">Submit Paper Order</span>
+                <span x-show="paperPlacing">Submitting...</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Paper Positions -->
+          <div class="card p-5">
+            <div class="text-sm font-semibold mb-3" style="color:#a78bfa">Paper Positions</div>
+            <div class="space-y-2 text-sm">
+              <template x-for="p in (paperPortfolio?.positions ?? [])" :key="p.id">
+                <div class="flex items-center justify-between p-2 rounded" style="background:#0f172a">
+                  <div>
+                    <span class="font-semibold" x-text="p.symbol"></span>
+                    <span class="text-xs text-slate-400 ml-2" x-text="p.quantity + ' shares @ ' + fmt(p.avg_cost)"></span>
+                  </div>
+                  <span class="text-xs text-indigo-400 uppercase" x-text="p.side"></span>
+                </div>
+              </template>
+              <div x-show="(paperPortfolio?.positions?.length ?? 0)===0" class="text-slate-500 text-xs text-center py-3">No open paper positions</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Agent Recommendations (Human in the Loop) -->
+        <div class="card p-5 mb-6">
+          <div class="flex items-center justify-between mb-4">
+            <div class="text-sm font-semibold text-yellow-400">Agent Recommendations — Pending Approval</div>
+            <button @click="loadAgentRecs()" class="ghost text-xs">Refresh</button>
+          </div>
+          <div class="space-y-3">
+            <template x-for="rec in agentRecs" :key="rec.id">
+              <div class="flex items-start gap-4 p-3 rounded" style="background:#0f172a;border:1px solid #334155">
+                <div class="flex-shrink-0 w-12 h-12 rounded-lg flex flex-col items-center justify-center"
+                  :class="rec.action==='buy'?'bg-green-900/50':rec.action==='sell'?'bg-red-900/50':'bg-slate-700/50'">
+                  <div class="text-lg font-bold" :class="rec.action==='buy'?'text-green-400':rec.action==='sell'?'text-red-400':'text-slate-400'"
+                    x-text="rec.action==='buy'?'↑':rec.action==='sell'?'↓':'→'"></div>
+                </div>
+                <div class="flex-1">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="font-bold text-sm" x-text="rec.symbol"></span>
+                    <span class="text-xs text-slate-400 uppercase" x-text="rec.action"></span>
+                    <span x-show="rec.quantity" class="text-xs text-slate-500" x-text="'× ' + rec.quantity"></span>
+                    <span x-show="rec.confidence" class="text-xs text-slate-400" x-text="'(' + (rec.confidence*100).toFixed(0)+'% confidence)'"></span>
+                  </div>
+                  <div class="text-xs text-slate-400" x-text="rec.rationale || 'No rationale provided'"></div>
+                  <div class="text-xs text-slate-600 mt-1" x-text="'Agent: ' + rec.agent + ' · Expires: ' + fmtTime(new Date(rec.expires_at).toISOString())"></div>
+                </div>
+                <div class="flex gap-2 flex-shrink-0">
+                  <button @click="approveRec(rec.id)" class="primary text-xs">Approve</button>
+                  <button @click="rejectRec(rec.id)" class="danger text-xs">Reject</button>
+                </div>
+              </div>
+            </template>
+            <div x-show="agentRecs.length===0" class="text-slate-500 text-sm text-center py-4">No pending agent recommendations</div>
+          </div>
+        </div>
+
+        <!-- Paper P&L Equity Curve -->
+        <div class="card p-5">
+          <div class="flex items-center justify-between mb-3">
+            <div class="text-sm font-semibold" style="color:#a78bfa">Paper Trading Equity Curve (30d)</div>
+            <div class="text-xs text-slate-400" x-text="paperPnL ? 'Total Realized: ' + fmtPL(paperPnL.total?.realized) : ''"></div>
+          </div>
+          <canvas id="paperEquityChart" height="120"></canvas>
+        </div>
+      </div>
+
       <!-- RISK TAB -->
       <div x-show="tab==='risk'" x-cloak>
         <div class="grid grid-cols-3 gap-4 mb-6">
@@ -449,7 +611,10 @@ function tradingDash() {
     placingOrder: false, orderMessage: '', orderError: false,
     lastUpdated: '', currentTime: '', isMarketOpen: false,
     agentLogs: [],
-    _portfolioChart: null, _allocationChart: null,
+    _portfolioChart: null, _allocationChart: null, _paperEquityChart: null,
+    paperPortfolio: null, agentRecs: [], paperPnL: null,
+    paperOrder: { symbol: '', side: 'buy', quantity: 1, order_type: 'market', limit_price: null },
+    paperPlacing: false, paperOrderMsg: '', paperOrderErr: false,
     nav: [
       {id:'overview', label:'Overview', icon:'<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>'},
       {id:'positions', label:'Positions', icon:'<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>'},
@@ -518,7 +683,8 @@ function tradingDash() {
     async refresh() {
       await Promise.allSettled([
         this.loadAccounts(), this.loadPositions(), this.loadOrders(),
-        this.loadAgents(), this.loadSignals(), this.loadRisk()
+        this.loadAgents(), this.loadSignals(), this.loadRisk(),
+        this.loadPaperPortfolio(), this.loadAgentRecs(), this.loadPaperPnL(),
       ]);
       this.lastUpdated = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
       this.$nextTick(()=>this.renderCharts());
@@ -536,6 +702,39 @@ function tradingDash() {
     async loadAgents() { try{ const d=await fetch('/api/agents').then(r=>r.json()); this.agents=d.agents||[]; }catch{} },
     async loadSignals() { try{ const d=await fetch('/api/agents/signals/all').then(r=>r.json()); this.signals=d.signals||[]; }catch{} },
     async loadRisk() { try{ const d=await fetch('/api/trading/risk').then(r=>r.json()); this.risk=d.metrics||{}; }catch{} },
+    async loadPaperPortfolio() { try{ const d=await fetch('/paper/portfolio').then(r=>r.json()); if(!d.error) this.paperPortfolio=d; }catch{} },
+    async loadAgentRecs() { try{ const d=await fetch('/api/agents/recommendations').then(r=>r.json()); this.agentRecs=d.recommendations||[]; }catch{} },
+    async loadPaperPnL() { try{ const d=await fetch('/paper/pnl').then(r=>r.json()); if(!d.error) this.paperPnL=d; }catch{} },
+
+    async placePaperOrder() {
+      this.paperPlacing=true; this.paperOrderMsg=''; this.paperOrderErr=false;
+      try{
+        const body={...this.paperOrder, symbol: this.paperOrder.symbol.toUpperCase(), quantity: Number(this.paperOrder.quantity)};
+        const res=await fetch('/paper/orders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+        const d=await res.json();
+        if(d.error||d.rejected){ this.paperOrderErr=true; this.paperOrderMsg=d.error||d.reason||'Order rejected'; }
+        else{ this.paperOrderMsg='Order submitted! Status: '+(d.order?.status||'filled'); await this.loadPaperPortfolio(); }
+      }catch(e){ this.paperOrderErr=true; this.paperOrderMsg='Network error: '+e.message; }
+      this.paperPlacing=false;
+    },
+
+    async approveRec(id) {
+      try{
+        const res=await fetch('/api/agents/recommendations/'+id+'/approve',{method:'POST'});
+        const d=await res.json();
+        if(d.error){ this.addLog('ERROR','Approve failed: '+d.error); }
+        else{ this.addLog('INFO','Recommendation approved, order: '+d.orderId); await this.loadAgentRecs(); }
+      }catch(e){ this.addLog('ERROR','Approve failed: '+e.message); }
+    },
+
+    async rejectRec(id) {
+      try{
+        const res=await fetch('/api/agents/recommendations/'+id+'/reject',{method:'POST'});
+        const d=await res.json();
+        if(d.error){ this.addLog('ERROR','Reject failed: '+d.error); }
+        else{ this.addLog('INFO','Recommendation rejected'); await this.loadAgentRecs(); }
+      }catch(e){ this.addLog('ERROR','Reject failed: '+e.message); }
+    },
 
     async agentCmd(id,action) {
       try{
@@ -589,6 +788,45 @@ function tradingDash() {
       if(this.agentLogs.length>50) this.agentLogs.pop();
     },
 
+    async renderPaperEquityChart() {
+      const ctx = document.getElementById('paperEquityChart');
+      if (!ctx) return;
+      if (this._paperEquityChart) { this._paperEquityChart.destroy(); this._paperEquityChart = null; }
+      try {
+        const d = await fetch('/paper/performance?days=30').then(r=>r.json());
+        const history = d.history || [];
+        if (history.length > 0) {
+          this._paperEquityChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: history.map(h=>h.date),
+              datasets: [{
+                label: 'Realized P&L',
+                data: history.map(h=>h.realized),
+                borderColor: '#6366f1',
+                backgroundColor: 'rgba(99,102,241,0.08)',
+                borderWidth: 2, pointRadius: 3, tension: 0.3, fill: true,
+              }]
+            },
+            options: {
+              responsive: true, maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+                x: { display: true, grid: { color: '#1e293b' }, ticks: { color: '#64748b', maxTicksLimit: 8 } },
+                y: { display: true, grid: { color: '#1e293b' }, ticks: { color: '#64748b', callback: v => '$'+Number(v).toFixed(0) } },
+              }
+            }
+          });
+        } else {
+          this._paperEquityChart = new Chart(ctx, {
+            type: 'line',
+            data: { labels: ['No data yet'], datasets: [{ label: 'P&L', data: [0], borderColor: '#475569' }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+          });
+        }
+      } catch {}
+    },
+
     renderCharts() {
       const pCtx = document.getElementById('portfolioChart');
       const aCtx = document.getElementById('allocationChart');
@@ -597,6 +835,7 @@ function tradingDash() {
       // Destroy existing chart instances before re-creating
       if (this._portfolioChart) { this._portfolioChart.destroy(); this._portfolioChart = null; }
       if (this._allocationChart) { this._allocationChart.destroy(); this._allocationChart = null; }
+      if (this.tab === 'paper') this.renderPaperEquityChart();
 
       if (this.demoMode) {
         // Demo: 30-day simulated history line chart
