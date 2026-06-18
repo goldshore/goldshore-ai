@@ -5,7 +5,9 @@ const { currentPath = Astro.url.pathname } = Astro.props;
 
 const navLinks = [
   { href: '/', label: 'Home' },
-  { href: '/contact', label: 'Contact' },
+  { href: '/about', label: 'About' },
+  { href: '/services', label: 'Services' },
+  { href: '/developer', label: 'Developer' },
 ];
 ---
 
@@ -35,7 +37,7 @@ const navLinks = [
       id="contact-modal-trigger"
       aria-haspopup="dialog"
     >
-      Get in touch
+      Contact
     </button>
     <a
       href="https://admin.goldshore.ai"
