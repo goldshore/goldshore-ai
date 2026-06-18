@@ -3,7 +3,6 @@ import { buildLeadAutoResponder } from '../../emails/leadAutoResponder';
 import { isValidEmail } from '../../utils/security';
 import { parseJson } from '@goldshore/utils';
 
-// Default to 90 days if not set in environment
 const DEFAULT_CONTACT_TTL_SECONDS = 60 * 60 * 24 * 90;
 const DEFAULT_MAILCHANNELS_API_URL = 'https://api.mailchannels.net/tx/v1/send';
 
@@ -65,27 +64,44 @@ type FormConfig = {
   updatedAt: string;
 };
 
-type ApiResponseBody = {
-  success: boolean;
-  code: string;
-  message: string;
-  submissionId?: string;
-  redirectTo?: string;
+type ApiSuccessPayload = {
+  ok: true;
+  submissionId: string;
+  redirectTo: string;
+  mail: {
+    notification: 'sent' | 'failed' | 'skipped';
+    autoResponder: 'sent' | 'failed' | 'skipped';
+  };
 };
 
-const jsonResponse = (status: number, body: ApiResponseBody) =>
-  new Response(JSON.stringify(body), {
+type ApiErrorPayload = {
+  ok: false;
+  error: {
+    code: string;
+    message: string;
+    details?: Record<string, unknown>;
+  };
+};
+
+const jsonResponse = (payload: ApiSuccessPayload | ApiErrorPayload, status = 200) =>
+  new Response(JSON.stringify(payload), {
     status,
     headers: {
       'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'no-store',
     },
   });
 
-const requestExpectsJson = (request: Request) => {
-  const accept = request.headers.get('accept') ?? '';
-  const requestedWith = request.headers.get('x-requested-with') ?? '';
-  return accept.includes('application/json') || requestedWith === 'XMLHttpRequest';
-};
+const buildError = (
+  status: number,
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+) => jsonResponse({ ok: false, error: { code, message, details } }, status);
+
+const shouldReturnJson = (request: Request) =>
+  request.headers.get('x-gs-request-mode') === 'spa' ||
+  request.headers.get('accept')?.includes('application/json');
 
 const storeInKv = async (
   kv: KVNamespace,
@@ -187,26 +203,6 @@ const normalizeContactSubmission = (submission: Submission) => {
     message: normalizeMultiline(submission.message),
     dedupeKey: submission.dedupeKey?.trim().toLowerCase() || '',
   };
-};
-
-const validateContactSubmission = (submission: Submission): string[] => {
-  const errors: string[] = [];
-  if (!submission.name || submission.name.length < 2 || submission.name.length > 120) {
-    errors.push('name');
-  }
-  if (!submission.email || !isValidEmail(submission.email)) {
-    errors.push('email');
-  }
-  if (!submission.inquiry || !allowedInquiryTypes.has(submission.inquiry)) {
-    errors.push('inquiry');
-  }
-  if (!submission.message || submission.message.length < 20 || submission.message.length > 4000) {
-    errors.push('message');
-  }
-  if (!submission.dedupeKey || !/^[a-f0-9]{64}$/.test(submission.dedupeKey)) {
-    errors.push('dedupeKey');
-  }
-  return errors;
 };
 
 const isSpamSubmission = (formData: FormData) => {
@@ -333,45 +329,6 @@ const safeRedirect = (redirectTo: string | null, origin: string) => {
   return new URL(trimmed, origin);
 };
 
-type ApiSuccessPayload = {
-  ok: true;
-  submissionId: string;
-  redirectTo: string;
-  mail: {
-    notification: 'sent' | 'failed' | 'skipped';
-    autoResponder: 'sent' | 'failed' | 'skipped';
-  };
-};
-
-type ApiErrorPayload = {
-  ok: false;
-  error: {
-    code: string;
-    message: string;
-    details?: Record<string, unknown>;
-  };
-};
-
-const jsonResponse = (payload: ApiSuccessPayload | ApiErrorPayload, status = 200) =>
-  new Response(JSON.stringify(payload), {
-    status,
-    headers: {
-      'content-type': 'application/json; charset=utf-8',
-      'cache-control': 'no-store',
-    },
-  });
-
-const buildError = (
-  status: number,
-  code: string,
-  message: string,
-  details?: Record<string, unknown>,
-) => jsonResponse({ ok: false, error: { code, message, details } }, status);
-
-const shouldReturnJson = (request: Request) =>
-  request.headers.get('x-gs-request-mode') === 'spa' ||
-  request.headers.get('accept')?.includes('application/json');
-
 const parseNotificationRecipients = (
   configRecipients: FormRecipient[],
   fallbackRecipients: string | undefined,
@@ -407,35 +364,20 @@ export const sendMail = async (
   }
 
   const payload = {
-    personalizations: [
-      {
-        to,
-      },
-    ],
-    from: {
-      email: fromEmail,
-      name: fromName,
-    },
+    personalizations: [{ to }],
+    from: { email: fromEmail, name: fromName },
     ...(replyTo ? { reply_to: replyTo } : {}),
     subject,
     content: [
-      {
-        type: 'text/plain',
-        value: text,
-      },
-      {
-        type: 'text/html',
-        value: html,
-      },
+      { type: 'text/plain', value: text },
+      { type: 'text/html', value: html },
     ],
   };
 
   const endpoint = env.MAILCHANNELS_API_URL || DEFAULT_MAILCHANNELS_API_URL;
   const response = await fetch(endpoint, {
     method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-    },
+    headers: { 'content-type': 'application/json' },
     body: JSON.stringify(payload),
   });
 
@@ -447,48 +389,51 @@ export const sendMail = async (
   };
 };
 
-export const POST: APIRoute = async ({ request, locals }) => {
-  const respondJson = shouldReturnJson(request);
 
-  if (!request.headers.get('content-type')?.includes('form')) {
-    return buildError(415, 'unsupported_payload', 'Unsupported payload.');
-  }
+const buildSubmissionFromFormData = (request: Request, formData: FormData, formType: string): Submission => ({
+  id: crypto.randomUUID(),
+  formType,
+  status: 'new',
+  name: extractString(formData.get('name')),
+  email: extractString(formData.get('email')),
+  company: extractString(formData.get('company')),
+  role: extractString(formData.get('role')),
+  website: extractString(formData.get('website')),
+  teamSize: extractString(formData.get('teamSize')),
+  industry: extractString(formData.get('industry')),
+  timeline: extractString(formData.get('timeline')),
+  budget: extractString(formData.get('budget')),
+  goals: extractString(formData.get('goals')),
+  message: extractString(formData.get('message')),
+  receivedAt: new Date().toISOString(),
+  ipAddress: request.headers.get('CF-Connecting-IP') ?? undefined,
+  userAgent: request.headers.get('User-Agent') ?? undefined,
+  inquiry: extractString(formData.get('inquiry')),
+  dedupeKey: extractString(formData.get('dedupeKey')),
+});
 
-  const formData = await request.formData();
-  const formType = extractString(formData.get('formType')) || 'contact';
-  const redirectTo = extractString(formData.get('redirectTo'));
-  const isSpam = isSpamSubmission(formData);
-  const env = locals.runtime?.env as Env | undefined;
+const handleSpam = async (
+  env: Env | undefined,
+  submission: Submission,
+  redirectTo: string,
+  request: Request,
+  respondJson: boolean
+): Promise<Response> => {
+  console.info('contact_submission_spam_blocked', {
+    submissionId: submission.id,
+    formType: submission.formType,
+    ipAddress: submission.ipAddress,
+  });
 
-  const submission: Submission = {
-    id: crypto.randomUUID(),
-    formType,
-    status: 'new',
-    name: extractString(formData.get('name')),
-    email: extractString(formData.get('email')),
-    company: extractString(formData.get('company')),
-    role: extractString(formData.get('role')),
-    website: extractString(formData.get('website')),
-    teamSize: extractString(formData.get('teamSize')),
-    industry: extractString(formData.get('industry')),
-    timeline: extractString(formData.get('timeline')),
-    budget: extractString(formData.get('budget')),
-    goals: extractString(formData.get('goals')),
-    message: extractString(formData.get('message')),
-    receivedAt: new Date().toISOString(),
-    ipAddress: request.headers.get('CF-Connecting-IP') ?? undefined,
-    userAgent: request.headers.get('User-Agent') ?? undefined,
-    inquiry: extractString(formData.get('inquiry')),
-    dedupeKey: extractString(formData.get('dedupeKey')),
-  };
+  const normalizedSubmission = normalizeContactSubmission(submission);
 
-  const env = locals.runtime?.env as Env | undefined;
-
-  if (isSpam) {
-    console.info('contact_submission_spam_blocked', {
+  const redirectUrl = safeRedirect(redirectTo, new URL(request.url).origin);
+  if (respondJson) {
+    return jsonResponse({
+      ok: true,
       submissionId: submission.id,
-      formType,
-      ipAddress: submission.ipAddress,
+      redirectTo: redirectUrl.pathname,
+      mail: { notification: 'skipped', autoResponder: 'skipped' },
     });
     if (env?.DB) {
       await logSubmissionStatus(env.DB, submission.id, formType, 'blocked_spam', 'Spam submission blocked.');
@@ -499,79 +444,78 @@ export const POST: APIRoute = async ({ request, locals }) => {
         ok: true,
         submissionId: submission.id,
         redirectTo: redirectUrl.pathname,
-        mail: {
-          notification: 'skipped',
-          autoResponder: 'skipped',
-        },
+        mail: { notification: 'skipped', autoResponder: 'skipped' },
       });
     }
     return Response.redirect(redirectUrl, 303);
   }
+  return Response.redirect(redirectUrl, 303);
+};
 
+const handleValidationFailures = async (
+  env: Env | undefined,
+  submission: Submission,
+  normalizedSubmission: Submission
+): Promise<{ formConfig: FormConfig | null, errorResponse: Response | null }> => {
   if (submission.email && !isValidEmail(submission.email)) {
-    console.info('contact_submission_validation_failed', {
-      submissionId: submission.id,
-      formType,
-      reason: 'invalid_email',
-    });
     if (env?.DB) {
-      await logSubmissionStatus(env.DB, submission.id, formType, 'rejected', 'Invalid email address.');
+      await logSubmissionStatus(env.DB, submission.id, submission.formType, 'rejected', 'Invalid email address.');
     }
-    return buildError(400, 'invalid_email', 'Invalid email address.');
+    return { formConfig: null, errorResponse: buildError(400, 'invalid_email', 'Invalid email address.') };
   }
 
   if (!env?.KV && !env?.DB) {
-    return buildError(503, 'storage_unavailable', 'Storage unavailable.');
+    return { formConfig: null, errorResponse: buildError(503, 'storage_unavailable', 'Storage unavailable.') };
   }
 
-  const formConfig = env?.DB ? await fetchFormConfig(env.DB, formType) : normalizeFormConfig(null, formType);
+  const formConfig = env?.DB ? await fetchFormConfig(env.DB, submission.formType) : normalizeFormConfig(null, submission.formType);
 
   if (formConfig.status !== 'active') {
     if (env?.DB) {
-      await logSubmissionStatus(env.DB, submission.id, formType, 'blocked', 'Form is not accepting submissions.', {
+      await logSubmissionStatus(env.DB, submission.id, submission.formType, 'blocked', 'Form is not accepting submissions.', {
         status: formConfig.status
       });
     }
-    return buildError(403, 'form_inactive', 'Form is not accepting submissions.');
+    return { formConfig, errorResponse: buildError(403, 'form_inactive', 'Form is not accepting submissions.') };
   }
 
   const missingFields = validateRequiredFields(normalizedSubmission, formConfig.fields);
   if (missingFields.length > 0) {
-    console.warn('contact_submission_validation_failed', {
-      formType,
-      submissionId: submission.id,
-      error: 'missing_required_fields',
-      fields: missingFields.map((field) => field.name),
-    });
     if (env?.DB) {
-      await logSubmissionStatus(env.DB, submission.id, formType, 'rejected', 'Missing required fields.', {
+      await logSubmissionStatus(env.DB, submission.id, submission.formType, 'rejected', 'Missing required fields.', {
         fields: missingFields.map((field) => field.name)
       });
     }
     console.info('contact_submission_validation_failed', {
       submissionId: submission.id,
-      formType,
+      formType: submission.formType,
       missingFields: missingFields.map((field) => field.name),
     });
-    return buildError(400, 'missing_required_fields', 'Missing required fields.', {
+    return { formConfig, errorResponse: buildError(400, 'missing_required_fields', 'Missing required fields.', {
       fields: missingFields.map((field) => field.name),
-    });
+    }) };
   }
 
-  const ttl = env?.CONTACT_TTL_SECONDS ? parseInt(env.CONTACT_TTL_SECONDS, 10) : DEFAULT_CONTACT_TTL_SECONDS;
+  return { formConfig, errorResponse: null };
+};
 
-  const autoResponder = buildLeadAutoResponder({
-    name: normalizedSubmission.name,
-    formType: normalizedSubmission.formType,
-  });
-
+const persistSubmission = async (
+  env: Env | undefined,
+  submission: Submission,
+  normalizedSubmission: Submission,
+  autoResponder: ReturnType<typeof buildLeadAutoResponder>,
+  ttl: number,
+  formConfig: FormConfig,
+  redirectTo: string,
+  request: Request
+): Promise<Response | null> => {
   if (env?.DB) {
     const isDuplicate = await checkRecentDuplicate(env.DB, normalizedSubmission);
     if (isDuplicate) {
       await logSubmissionStatus(
         env.DB,
         normalizedSubmission.id,
-        formType,
+        submission.formType,
         'duplicate',
         'Repeated submission detected within dedupe window.',
         { dedupeKey: normalizedSubmission.dedupeKey }
@@ -582,40 +526,50 @@ export const POST: APIRoute = async ({ request, locals }) => {
   }
 
   const storageTasks: Promise<unknown>[] = [];
-  if (env?.KV)
-    storageTasks.push(storeInKv(env.KV, normalizedSubmission, autoResponder, ttl));
+  if (env?.KV) storageTasks.push(storeInKv(env.KV, normalizedSubmission, autoResponder, ttl));
   if (env?.DB) storageTasks.push(storeInD1(env.DB, normalizedSubmission, autoResponder));
 
   const storageResults = await Promise.allSettled(storageTasks);
-  const storedSuccessfully = storageResults.some(
-    (result) => result.status === 'fulfilled',
-  );
+  const storedSuccessfully = storageResults.some((result) => result.status === 'fulfilled');
 
   if (!storedSuccessfully) {
-    console.error('Contact submission storage failed.', storageResults);
     console.error('contact_submission_persistence_failed', {
       submissionId: submission.id,
-      formType,
+      formType: submission.formType,
       storageResults,
     });
     if (env?.DB) {
-      await logSubmissionStatus(env.DB, submission.id, formType, 'storage_failed', 'Storage unavailable.');
+      await logSubmissionStatus(env.DB, submission.id, submission.formType, 'storage_failed', 'Storage unavailable.');
     }
     return buildError(503, 'storage_unavailable', 'Storage unavailable.');
   }
 
   if (env?.DB) {
-    await logSubmissionStatus(env.DB, normalizedSubmission.id, formType, 'stored', 'Submission stored successfully.', {
+    await logSubmissionStatus(env.DB, normalizedSubmission.id, submission.formType, 'stored', 'Submission stored successfully.', {
       dedupeKey: normalizedSubmission.dedupeKey,
       recipients: formConfig.recipients,
       integrations: formConfig.integrations
     });
   }
 
-  const recipients = parseNotificationRecipients(
-    formConfig.recipients,
-    env.CONTACT_NOTIFICATION_EMAILS,
-  );
+  return null;
+};
+
+const dispatchEmails = async (
+  env: Env | undefined,
+  submission: Submission,
+  formConfig: FormConfig,
+  formData: FormData,
+  autoResponder: ReturnType<typeof buildLeadAutoResponder>
+) => {
+  if (!env) {
+    return {
+      notificationResult: { attempted: false, reason: 'missing_env' },
+      autoResponderResult: { attempted: false, reason: 'missing_env' }
+    };
+  }
+
+  const recipients = parseNotificationRecipients(formConfig.recipients, env.CONTACT_NOTIFICATION_EMAILS);
   const notificationResult = recipients.length
     ? await sendMail(
         env,
@@ -649,23 +603,78 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
   console.info('contact_submission_outbound_email_result', {
     submissionId: submission.id,
-    formType,
+    formType: submission.formType,
     notificationResult,
     autoResponderResult,
   });
+
   if (env?.DB) {
     await logSubmissionStatus(
       env.DB,
       submission.id,
-      formType,
+      submission.formType,
       'email_attempted',
       'Outbound email attempts completed.',
-      {
-        notification: notificationResult,
-        autoResponder: autoResponderResult,
-      },
+      { notification: notificationResult, autoResponder: autoResponderResult },
     );
   }
+
+  return { notificationResult, autoResponderResult };
+};
+
+export const POST: APIRoute = async ({ request, locals }) => {
+  const respondJson = shouldReturnJson(request);
+
+  if (!request.headers.get('content-type')?.includes('form')) {
+    return buildError(415, 'unsupported_payload', 'Unsupported payload.');
+  }
+
+  const formData = await request.formData();
+  const formType = extractString(formData.get('formType')) || 'contact';
+  const redirectTo = extractString(formData.get('redirectTo'));
+  const isSpam = isSpamSubmission(formData);
+  const env = locals.runtime?.env as Env | undefined;
+
+  const submission = buildSubmissionFromFormData(request, formData, formType);
+  const normalizedSubmission = normalizeContactSubmission(submission);
+
+  if (isSpam) {
+    return handleSpam(env, submission, redirectTo, request, respondJson);
+  }
+
+  const { formConfig, errorResponse } = await handleValidationFailures(env, submission, normalizedSubmission);
+  if (errorResponse) return errorResponse;
+
+  // Now we know formConfig is non-null
+  const validFormConfig = formConfig!;
+
+  const autoResponder = buildLeadAutoResponder({
+    name: normalizedSubmission.name,
+    formType: normalizedSubmission.formType,
+  });
+
+  const ttl = env?.CONTACT_TTL_SECONDS ? parseInt(env.CONTACT_TTL_SECONDS, 10) : DEFAULT_CONTACT_TTL_SECONDS;
+
+  const persistResponse = await persistSubmission(
+    env,
+    submission,
+    normalizedSubmission,
+    autoResponder,
+    ttl,
+    validFormConfig,
+    redirectTo,
+    request
+  );
+
+  if (persistResponse) return persistResponse;
+
+  const { notificationResult, autoResponderResult } = await dispatchEmails(
+    env,
+    submission,
+    validFormConfig,
+    formData,
+    autoResponder
+  );
 
   const redirectUrl = safeRedirect(redirectTo, new URL(request.url).origin);
   const successPayload: ApiSuccessPayload = {
@@ -673,16 +682,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
     submissionId: submission.id,
     redirectTo: redirectUrl.pathname,
     mail: {
-      notification: notificationResult.attempted
-        ? notificationResult.ok
-          ? 'sent'
-          : 'failed'
-        : 'skipped',
-      autoResponder: autoResponderResult.attempted
-        ? autoResponderResult.ok
-          ? 'sent'
-          : 'failed'
-        : 'skipped',
+      notification: notificationResult.attempted ? (notificationResult.ok ? 'sent' : 'failed') : 'skipped',
+      autoResponder: autoResponderResult.attempted ? (autoResponderResult.ok ? 'sent' : 'failed') : 'skipped',
     },
   };
 
@@ -693,9 +694,4 @@ export const POST: APIRoute = async ({ request, locals }) => {
   return Response.redirect(redirectUrl, 303);
 };
 
-export const GET: APIRoute = async () =>
-  jsonResponse(405, {
-    success: false,
-    code: 'METHOD_NOT_ALLOWED',
-    message: 'Method not allowed.',
-  });
+export const GET: APIRoute = async () => buildError(405, 'METHOD_NOT_ALLOWED', 'Method not allowed.');

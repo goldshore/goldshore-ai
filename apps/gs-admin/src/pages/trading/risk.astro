@@ -1,0 +1,176 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+---
+<AdminLayout title="Risk | Trading">
+  <nav class="trading-tabs">
+    <a href="/trading" class="tab">Overview</a>
+    <a href="/trading/accounts" class="tab">Accounts</a>
+    <a href="/trading/positions" class="tab">Positions</a>
+    <a href="/trading/orders" class="tab">Orders</a>
+    <a href="/trading/quotes" class="tab">Quotes</a>
+    <a href="/trading/risk" class="tab active">Risk</a>
+  </nav>
+
+  <!-- Portfolio risk overview -->
+  <div class="metrics-grid" id="metrics-grid">
+    <div class="metric-card"><div class="m-label">Total Portfolio</div><div class="m-val" id="m-total">—</div></div>
+    <div class="metric-card"><div class="m-label">Day P&L</div><div class="m-val" id="m-daypl">—</div></div>
+    <div class="metric-card"><div class="m-label">Top-5 Concentration</div><div class="m-val" id="m-top5">—</div></div>
+    <div class="metric-card"><div class="m-label">Equity Exposure</div><div class="m-val" id="m-equity">—</div></div>
+    <div class="metric-card"><div class="m-label">Cash %</div><div class="m-val" id="m-cash">—</div></div>
+    <div class="metric-card"><div class="m-label">Option Exposure</div><div class="m-val" id="m-options">—</div></div>
+  </div>
+
+  <div class="risk-panels">
+    <!-- Concentration breakdown -->
+    <div class="panel">
+      <div class="panel-header">
+        <h3>⚖ Top Concentrations</h3>
+        <button class="btn btn-xs" id="refresh-risk">Refresh</button>
+      </div>
+      <div id="concentration-list" class="conc-list"><div class="empty">Loading…</div></div>
+    </div>
+
+    <!-- Order risk check tool -->
+    <div class="panel">
+      <div class="panel-header">
+        <h3>✓ Pre-Trade Risk Check</h3>
+        <span id="check-result-badge" class="badge" style="display:none"></span>
+      </div>
+      <form id="risk-form" class="risk-form">
+        <div class="form-row">
+          <label>Symbol<input name="symbol" placeholder="AAPL" required /></label>
+          <label>Side
+            <select name="side"><option value="BUY">BUY</option><option value="SELL">SELL</option></select>
+          </label>
+          <label>Qty<input name="quantity" type="number" min="1" value="1" required /></label>
+        </div>
+        <div class="form-row">
+          <label>Order Type
+            <select name="orderType"><option value="MARKET">MARKET</option><option value="LIMIT">LIMIT</option></select>
+          </label>
+          <label>Limit $<input name="limitPrice" type="number" step="0.01" placeholder="optional" /></label>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Run Check</button>
+        </div>
+      </form>
+      <pre id="risk-check-result" class="result-box" style="display:none"></pre>
+    </div>
+  </div>
+</AdminLayout>
+
+<style>
+  .trading-tabs{display:flex;gap:.25rem;margin-bottom:1.5rem;border-bottom:1px solid rgba(255,255,255,.08)}
+  .tab{padding:.5rem 1rem;text-decoration:none;color:#9ca3af;font-size:.8rem;font-family:monospace;text-transform:uppercase;border-bottom:2px solid transparent}
+  .tab:hover{color:#fff}.tab.active{color:#fff;border-bottom-color:#f97316}
+  .metrics-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:1rem;margin-bottom:1.5rem}
+  .metric-card{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:.5rem;padding:1rem}
+  .m-label{font-size:.68rem;text-transform:uppercase;color:#6b7280;font-family:monospace;margin-bottom:.4rem}
+  .m-val{font-size:1.4rem;font-weight:700;color:#fff;font-family:monospace;letter-spacing:-.03em}
+  .risk-panels{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+  .panel{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:.5rem;padding:1.25rem}
+  .panel-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:1px solid rgba(255,255,255,.06)}
+  .panel-header h3{margin:0;font-size:.8rem;text-transform:uppercase;font-family:monospace;color:#e5e7eb}
+  .btn{padding:.45rem 1rem;border-radius:4px;font-size:.8rem;font-family:monospace;cursor:pointer;border:none}
+  .btn-xs{padding:.25rem .6rem;font-size:.7rem;background:rgba(255,255,255,.05);color:#9ca3af;border:1px solid rgba(255,255,255,.1);border-radius:4px;cursor:pointer;font-family:monospace}
+  .btn-primary{background:#f97316;color:#000;font-weight:600}
+  .conc-list{display:flex;flex-direction:column;gap:.5rem}
+  .conc-item{display:flex;align-items:center;gap:.75rem;font-family:monospace;font-size:.8rem}
+  .conc-sym{color:#e5e7eb;font-weight:600;min-width:50px}
+  .conc-bar-wrap{flex:1;height:6px;background:rgba(255,255,255,.06);border-radius:3px}
+  .conc-bar{height:100%;background:#f97316;border-radius:3px}
+  .conc-pct{color:#9ca3af;font-size:.72rem;min-width:40px;text-align:right}
+  .empty{color:#4b5563;text-align:center;padding:1rem;font-family:monospace;font-size:.82rem}
+  .risk-form{display:flex;flex-direction:column;gap:.75rem}
+  .form-row{display:flex;gap:.75rem;flex-wrap:wrap}
+  .form-row label{display:flex;flex-direction:column;gap:.3rem;font-size:.75rem;color:#9ca3af;flex:1;min-width:80px}
+  .form-row input,.form-row select{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:4px;color:#fff;padding:.4rem .6rem;font-size:.85rem;font-family:monospace}
+  .form-actions{margin-top:.25rem}
+  .result-box{margin-top:.75rem;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.08);border-radius:4px;padding:.75rem;font-size:.78rem;font-family:monospace;white-space:pre-wrap;max-height:200px;overflow-y:auto}
+  .badge{font-size:.7rem;font-family:monospace;padding:.15rem .5rem;border-radius:3px}
+  .badge-success{background:rgba(74,222,128,.12);color:#4ade80}
+  .badge-danger{background:rgba(248,113,113,.12);color:#f87171}
+  .pos{color:#4ade80}.neg{color:#f87171}
+  @media(max-width:1200px){.metrics-grid{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:900px){.risk-panels{grid-template-columns:1fr}.metrics-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+
+<script is:inline>
+  const fmt = n => n==null?'—':new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n);
+  const fmtPct = n => `${(n??0).toFixed(1)}%`;
+
+  async function loadRisk() {
+    try {
+      const { metrics } = await fetch('/api/trading/risk').then(r => r.json());
+      if (!metrics) return;
+      document.getElementById('m-total').textContent = fmt(metrics.totalValue);
+      const dpEl = document.getElementById('m-daypl');
+      dpEl.textContent = fmt(metrics.totalDayPL);
+      dpEl.className = `m-val ${metrics.totalDayPL>=0?'pos':'neg'}`;
+      document.getElementById('m-top5').textContent = fmtPct(metrics.top5Concentration * 100);
+      document.getElementById('m-equity').textContent = fmt(metrics.equityExposure);
+      document.getElementById('m-cash').textContent = fmtPct(metrics.cashPct * 100);
+      document.getElementById('m-options').textContent = fmt(metrics.optionExposure);
+
+      const concs = metrics.concentrations ?? [];
+      const list = document.getElementById('concentration-list');
+      if (concs.length === 0) {
+        list.innerHTML = '<div class="empty">No data</div>';
+      } else {
+        list.innerHTML = concs.map(c => `
+          <div class="conc-item">
+            <span class="conc-sym">${c.symbol}</span>
+            <div class="conc-bar-wrap"><div class="conc-bar" style="width:${Math.min(c.pct*100,100)}%"></div></div>
+            <span class="conc-pct">${fmtPct(c.pct*100)}</span>
+          </div>`).join('');
+      }
+    } catch(e) {
+      document.getElementById('concentration-list').innerHTML = `<div class="empty" style="color:#f87171">Failed: ${e.message}</div>`;
+    }
+  }
+
+  document.getElementById('refresh-risk').addEventListener('click', loadRisk);
+
+  document.getElementById('risk-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const order = {
+      symbol:    fd.get('symbol').toUpperCase(),
+      side:      fd.get('side'),
+      quantity:  Number(fd.get('quantity')),
+      orderType: fd.get('orderType'),
+    };
+    const lp = fd.get('limitPrice');
+    if (lp) order.limitPrice = Number(lp);
+
+    const badge = document.getElementById('check-result-badge');
+    badge.textContent = 'Checking…';
+    badge.className = 'badge';
+    badge.style.display = 'inline';
+
+    try {
+      const res = await fetch('/api/trading/risk', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ order, accounts: [], positions: [] }),
+      });
+      const data = await res.json();
+      const result = document.getElementById('risk-check-result');
+      result.textContent = JSON.stringify(data, null, 2);
+      result.style.display = 'block';
+      if (data.approved) {
+        badge.textContent = '✓ Approved';
+        badge.className = 'badge badge-success';
+      } else {
+        badge.textContent = `✗ Blocked: ${data.reason ?? 'failed'}`;
+        badge.className = 'badge badge-danger';
+      }
+    } catch(err) {
+      badge.textContent = 'Error';
+      badge.className = 'badge badge-danger';
+    }
+  });
+
+  loadRisk();
+</script>

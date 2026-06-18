@@ -11,10 +11,10 @@
   "dependencies": {
     "@goldshore/ai-providers": "workspace:^",
     "@goldshore/auth": "workspace:^",
-    "hono": "^4.12.18",
+    "hono": "^4.12.25",
     "safe-stable-stringify": "^2.5.0",
     "@goldshore/utils": "workspace:^",
-    "dompurify": "^3.3.1",
+    "dompurify": "^3.4.9",
     "jsdom": "^28.1.0"
   },
   "devDependencies": {

@@ -1,7 +1,7 @@
 {
   "name": "goldshore-ai",
   "private": true,
-  "packageManager": "pnpm@9.0.0",
+  "packageManager": "pnpm@9.15.4",
   "scripts": {
     "dev": "turbo run dev --parallel",
     "build": "pnpm build:openapi && turbo run build",
@@ -19,7 +19,7 @@
     "validate:workers": "tsx scripts/validate-worker-names.ts",
     "validate:queues": "node scripts/validate-queue-contracts.mjs",
     "validate:workspace": "tsx scripts/validate-workspace-contract.ts",
-    "validate": "pnpm check:naming && pnpm check:workspace-protocol && pnpm validate:workspace && pnpm validate:structure && pnpm validate:names",
+    "validate": "pnpm check:naming && pnpm check:workspace-protocol && pnpm check:wrangler-placeholders && pnpm validate:workspace && pnpm validate:structure && pnpm validate:names",
     "branch:bootstrap": "bash scripts/branch-bootstrap.sh",
     "scaffold:worker": "node scripts/scaffold-worker.mjs",
     "workspaces:list": "pnpm -r list --depth -1",
@@ -33,7 +33,9 @@
     "repo:health": "node scripts/repo-health.mjs",
     "audit": "pnpm run repo:health",
     "build:api": "turbo run build --filter=@goldshore/gs-api",
-    "build:control": "turbo run build --filter=@goldshore/gs-control"
+    "build:control": "turbo run build --filter=@goldshore/gs-control",
+    "check:banproof-bindings": "node scripts/check-banproof-bindings.mjs",
+    "check:wrangler-placeholders": "node scripts/check-wrangler-placeholders.mjs"
   },
   "devDependencies": {
     "@astrojs/mdx": "^5.0.4",
@@ -42,10 +44,10 @@
     "@types/node": "^25.7.0",
     "@typescript-eslint/eslint-plugin": "^8.57.2",
     "@typescript-eslint/parser": "^8.57.2",
-    "astro": "^6.3.1",
+    "astro": "^6.4.6",
     "eslint": "^10.1.0",
     "eslint-plugin-astro": "^1.6.0",
-    "form-data": "^4.0.5",
+    "form-data": "^4.0.6",
     "octokit": "^5.0.5",
     "prettier": "^3.2.5",
     "prettier-plugin-astro": "^0.14.1",
