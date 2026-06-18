@@ -13,7 +13,7 @@ on:
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - "turbo.json"
-      - ".github/workflows/deploy-cloudflare.yml"
+      - ".github/workflows/deploy-platform.yml"
   workflow_dispatch:
     inputs:
       target:
@@ -162,6 +162,7 @@ jobs:
       - name: Build ${{ matrix.app }}
         run: pnpm --filter ${{ matrix.filter }} build
       - name: Deploy ${{ matrix.app }}
+        # canonical API worker lives at apps/gs-api
         working-directory: apps/${{ matrix.app }}
         run: |
           ENV=${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'prod' }}

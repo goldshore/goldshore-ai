@@ -164,7 +164,7 @@ media.get('/', requirePermission('media:read'), async (c) => {
     }
   }
 
-  const { results } = await c.env.CONTENT_DB.prepare(
+  const { results } = await c.env.PLATFORM_DB.prepare(
     'SELECT id, filename, url, size, type, created_at FROM media_assets ORDER BY created_at DESC LIMIT ? OFFSET ?',
   )
     .bind(limit, offset)
@@ -175,7 +175,7 @@ media.get('/', requirePermission('media:read'), async (c) => {
 
 media.get('/:id', requirePermission('media:read'), async (c) => {
   const id = c.req.param('id');
-  const result = await c.env.CONTENT_DB.prepare(
+  const result = await c.env.PLATFORM_DB.prepare(
     'SELECT object_key, type FROM media_assets WHERE id = ?',
   )
     .bind(id)
@@ -183,7 +183,7 @@ media.get('/:id', requirePermission('media:read'), async (c) => {
 
   if (!result) return c.json({ error: 'Media not found' }, 404);
 
-  const object = await c.env.ASSETS.get(result.object_key);
+  const object = await c.env.GS_ASSETS.get(result.object_key);
   if (!object) return c.json({ error: 'Asset missing from storage' }, 404);
 
   const headers = new Headers();
@@ -239,13 +239,13 @@ media.post('/upload', requirePermission('media:write'), async (c) => {
   const id = crypto.randomUUID();
   const objectKey = `media/${id}`;
 
-  await c.env.ASSETS.put(objectKey, body, { httpMetadata: { contentType } });
+  await c.env.GS_ASSETS.put(objectKey, body, { httpMetadata: { contentType } });
 
   const url = new URL(c.req.url);
   url.pathname = `/media/${id}`;
 
   const createdAt = new Date().toISOString();
-  await c.env.CONTENT_DB.prepare(
+  await c.env.PLATFORM_DB.prepare(
     'INSERT INTO media_assets (id, filename, url, size, type, object_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
   )
     .bind(id, filename, url.toString(), size, contentType, objectKey, createdAt)

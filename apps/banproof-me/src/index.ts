@@ -4,7 +4,7 @@ interface BanproofEnv {
   ENV?: string;
   BANPROOF_CONFIG: KVNamespace;
   BANPROOF_DB: D1Database;
-  ASSETS: R2Bucket;
+  GS_ASSETS: R2Bucket;
   POA_EVENTS_QUEUE: Queue;
   GS_API: Fetcher;
   GS_CONTROL: Fetcher;
