@@ -7,7 +7,6 @@ workers_dev = false
 
 [env.prod]
 routes = [
-  { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "api.goldshore.org/*", zone_name = "goldshore.org" }
 ]
 
@@ -80,6 +79,14 @@ service = "gs-agent"
 [[env.preview.queues.producers]]
 binding = "JOBS_QUEUE"
 queue = "goldshore-jobs"
+
+[[env.prod.secrets_store.bindings]]
+binding = "SECRETS"
+store_id = "b9824d3280c54573a24137c7e7143b33"
+
+[[env.preview.secrets_store.bindings]]
+binding = "SECRETS"
+store_id = "b9824d3280c54573a24137c7e7143b33"
 
 [[migrations]]
 tag = "v1-auth-session"
