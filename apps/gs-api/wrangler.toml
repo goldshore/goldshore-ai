@@ -81,6 +81,14 @@ service = "gs-agent"
 binding = "JOBS_QUEUE"
 queue = "goldshore-jobs"
 
+[[env.prod.secrets_store.bindings]]
+binding = "SECRETS"
+store_id = "b9824d3280c54573a24137c7e7143b33"
+
+[[env.preview.secrets_store.bindings]]
+binding = "SECRETS"
+store_id = "b9824d3280c54573a24137c7e7143b33"
+
 [[migrations]]
 tag = "v1-auth-session"
 new_sqlite_classes = ["AuthSession"]
