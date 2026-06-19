@@ -88,28 +88,44 @@ cloudflare:
         content: "v=DMARC1; p=reject; sp=reject; adkim=s; aspf=s; rua=mailto:1e5ceffc36ce4cc09f1bb2281b5344ae@dmarc-reports.cloudflare.net;"
 
   access:
+    # Canonical human-readable IdP matrix: docs/domains-and-auth.md.
+    # Keep these desired-state Require rules aligned with that table; do not
+    # introduce separate per-app IdP decisions here.
     policies:
       - name: "GoldShore-Admin-ZT"
-        domain: "admin.goldshore.ai"
+        domains:
+          - "admin.goldshore.ai"
+          - "admin-preview.goldshore.ai"
         action: "allow"
         rules:
           include:
             - email_domain: "goldshore.ai"
+            - email: "marstonr6@gmail.com"
           require:
+            - identity_provider: "google_workspace"
+            - identity_provider: "github_goldshore_deploy"
             - identity_provider: "github"
+            - identity_provider: "email_otp"
 
-      - name: "GoldShore-Web-Preview"
-        domain: "preview.goldshore.ai"
+      - name: "Goldshore Ops"
+        domains:
+          - "ops.goldshore.ai"
         action: "allow"
         rules:
           include:
             - email_domain: "goldshore.ai"
-            - email: "your.personal@email.com" # Placeholder
+            - email: "marstonr6@gmail.com"
           require:
+            - identity_provider: "google_workspace"
+            - identity_provider: "github_goldshore_deploy"
             - identity_provider: "github"
+            - identity_provider: "email_otp"
 
-      - name: "GoldShore-API-Private"
-        domain: "api.goldshore.ai"
+      - name: "Goldshore Gateway"
+        domains:
+          - "gw.goldshore.ai"
+          - "api.goldshore.ai"
+          - "agent.goldshore.ai"
         action: "allow"
         paths:
           - "/admin/*"
@@ -124,13 +140,29 @@ cloudflare:
         public_paths:
           - "/"
           - "/health"
+          - "/status"
           - "/version"
         rules:
           include:
             - email_domain: "goldshore.ai"
-            - email: "your.personal@email.com" # Placeholder
+            - email: "marstonr6@gmail.com"
           require:
+            - identity_provider: "github_goldshore_deploy"
             - identity_provider: "github"
+            - identity_provider: "email_otp"
+
+      - name: "GoldShore-Web-Preview"
+        domain: "preview.goldshore.ai"
+        action: "allow"
+        rules:
+          include:
+            - email_domain: "goldshore.ai"
+            - email: "marstonr6@gmail.com"
+          require:
+            - identity_provider: "google_workspace"
+            - identity_provider: "github_goldshore_deploy"
+            - identity_provider: "github"
+            - identity_provider: "email_otp"
 
   pages:
     projects:

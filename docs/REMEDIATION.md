@@ -18,11 +18,12 @@
 #     Apply the same identity-based allowlist to admin.goldshore.ai and admin-preview.goldshore.ai
 #     Auth method: Google GoldShore Workspace OR GitHub
 #
-# Also: Create a REUSABLE policy to replace the 8 legacy non-reusable ones:
-#   Name: "GoldShore Team Access"
-#   Include: Email domain = goldshore.ai
-#   Include: Specific emails: marstonr6@gmail.com
-#   Require: Identity provider = Google GoldShore Workspace
+# Also: Create reusable policies to replace the 8 legacy non-reusable ones,
+# using docs/domains-and-auth.md as the only per-app IdP source of truth.
+# Do not copy separate IdP lists into this remediation runbook. For personal
+# Gmail access without Workspace membership, the canonical matrix requires
+# either email OTP for marstonr6@gmail.com or a GitHub identity whose verified
+# email is marstonr6@gmail.com.
 
 # ══════════════════════════════════════════════════════════════
 # PRIORITY 2 — DELETE STALE CF ACCESS APPLICATIONS
