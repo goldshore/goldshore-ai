@@ -47,6 +47,7 @@ admin-preview.goldshore.ai
 ```
 api.goldshore.ai/*
 ├── gs-api worker
+├── Direct route owner; not proxied through gs-gateway
 ├── Public endpoint
 └── Methods: GET, POST, PUT, DELETE (documented)
 
@@ -144,9 +145,9 @@ This script runs in CI before deploy — if it fails, the deployment blocks.
 
 ## Gateway Forwarding Rules
 
-### gs-platform (Gateway Worker)
+### gs-platform / gs-gateway (Gateway Worker)
 
-The gateway routes inbound requests to downstream services:
+The gateway owns `gw.goldshore.ai/*` and `agent.goldshore.ai/*`. It does **not** own `api.goldshore.ai/*`; direct API traffic is served by `gs-api`. For gateway-hosted requests, it routes inbound requests to downstream services:
 
 ```
 Request: POST /query?agent=true
