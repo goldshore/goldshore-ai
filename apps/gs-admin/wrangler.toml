@@ -21,12 +21,12 @@ binding = "KV_SESSIONS"
 id = "d0b889d0ba314b42892f5b959356ceda"
 
 [[d1_databases]]
-binding = "CONTENT_DB"
+binding = "PLATFORM_DB"
 database_name = "gs_platform_db"
 database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
 
 [[d1_databases]]
-binding = "AUDIT_DB"
+binding = "GS_AUDIT_DB"
 database_name = "gs_audit_db"
 database_id = "1ae71d76-188f-481b-91d9-db2d39013f68"
 
@@ -46,12 +46,10 @@ binding = "GS_CONTROL"
 service = "gs-control"
 environment = "prod"
 
-# gs-api is not yet deployed as a separate worker.
-# Uncomment once gs-api is deployed:
-# [[services]]
-# binding = "API_SERVICE"
-# service = "gs-api"
-# environment = "prod"
+[[services]]
+binding = "API_SERVICE"
+service = "gs-api"
+environment = "prod"
 
 [vars]
 ENV = "production"
@@ -72,12 +70,12 @@ binding = "KV_SESSIONS"
 id = "d0b889d0ba314b42892f5b959356ceda"
 
 [[env.preview.d1_databases]]
-binding = "CONTENT_DB"
+binding = "PLATFORM_DB"
 database_name = "gs_platform_db"
 database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
 
 [[env.preview.d1_databases]]
-binding = "AUDIT_DB"
+binding = "GS_AUDIT_DB"
 database_name = "gs_audit_db"
 database_id = "1ae71d76-188f-481b-91d9-db2d39013f68"
 
