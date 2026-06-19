@@ -90,7 +90,9 @@ cloudflare:
   access:
     policies:
       - name: "GoldShore-Admin-ZT"
-        domain: "admin.goldshore.ai"
+        domains:
+          - "admin.goldshore.ai"
+          - "admin.goldshore.org"
         action: "allow"
         rules:
           include:
