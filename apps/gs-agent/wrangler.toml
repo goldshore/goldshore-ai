@@ -11,6 +11,7 @@ max_batch_size = 10
 max_batch_timeout = 5
 
 [env.prod]
+# agent.goldshore.ai/* is owned by gs-gateway; keep gs-agent route-free.
 routes = []
 
 [env.prod.vars]
@@ -23,6 +24,7 @@ max_batch_size = 10
 max_batch_timeout = 5
 
 [env.preview]
+# agent-preview.goldshore.ai/* is owned by gs-gateway; keep gs-agent route-free.
 routes = []
 
 [env.preview.vars]

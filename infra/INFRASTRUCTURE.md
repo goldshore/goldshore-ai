@@ -96,7 +96,7 @@
 | `dashboard.goldshore.ai` | `gs-gateway` | 1 (public) | 308 → admin.goldshore.ai |
 | `gw.goldshore.ai` | `gs-gateway` | 2 (auth) | Fail closed |
 | `api.goldshore.ai` | `gs-gateway` → `gs-api` | 2 (auth) | Fail closed; /health /version /status public |
-| `agent.goldshore.ai` | `gs-gateway` → `gs-agent` | 2 (auth) | Fail closed |
+| `agent.goldshore.ai` | `gs-gateway` → `gs-agent` | 2 (auth) | Gateway-owned route; `/health` and `/status` anonymous 200; protected paths anonymous 401 |
 | `trading.goldshore.ai` | `gs-trading` | 3 (admin) | Fail closed |
 | `ops.goldshore.ai` | `gs-control` | 3 (admin) | Fail closed |
 | `admin.goldshore.ai` | `gs-admin` (Pages) | 3 (admin) | Fail closed |
@@ -186,7 +186,7 @@ Merge PR #12 in `marzton/goldshore-org` so `goldshore.org` and `www.goldshore.or
 
 ### GATE 3 — Deploy gs-gateway subdomain routes (BLOCKS: dashboard, status subdomains)
 
-Merge PR #5117. `dashboard.goldshore.ai` uses Worker Custom Domain (auto-provisions DNS). `www.goldshore.ai` is owned by `gs-www-redirect` Worker (308 redirect there). `status.goldshore.ai` is reserved for the `gs-status` Pages project (see MODULE_B2_RUNTIME_WIRING.md) — not claimed by gs-gateway.
+Merge PR #5117. `dashboard.goldshore.ai` uses Worker Custom Domain (auto-provisions DNS). `www.goldshore.ai` is owned by `gs-www-redirect` Worker (308 redirect there). `agent.goldshore.ai/*` is owned by `gs-gateway` and forwards to `gs-agent` through the AGENT service binding; do not attach a direct custom domain to `gs-agent`. `status.goldshore.ai` is reserved for the `gs-status` Pages project (see MODULE_B2_RUNTIME_WIRING.md) — not claimed by gs-gateway.
 
 | # | Action | Where | Status |
 |---|--------|--------|--------|
@@ -213,7 +213,7 @@ You must configure Google and GitHub as OAuth providers in Cloudflare Zero Trust
 
 Create one Access application per protected subdomain group. All require Gate 4 to be complete.
 
-**Important:** `api.goldshore.ai` and `agent.goldshore.ai` both route to the same `gs-gateway` Worker, which holds a single `CLOUDFLARE_ACCESS_AUDIENCE` binding. They **must share one Access application** so the same AUD tag validates tokens from either subdomain. Public probes (`/health`, `/status`) must be excluded via a bypass policy so monitoring scripts don't hit the login wall.
+**Important:** `api.goldshore.ai` and `agent.goldshore.ai` both route to the same `gs-gateway` Worker, which holds a single `CLOUDFLARE_ACCESS_AUDIENCE` binding. `agent.goldshore.ai` is not a direct `gs-agent` custom domain. They **must share one Access application** so the same AUD tag validates tokens from either subdomain. Public probes (`/health`, `/status`) must be excluded via a bypass policy so monitoring scripts don't hit the login wall. Anonymous `agent.goldshore.ai/health` and `/status` should return `200`; anonymous protected agent paths such as `/templates` should return `401`.
 
 | # | Subdomain(s) | Application name | Policy | Where | Status |
 |---|---|---|---|---|---|

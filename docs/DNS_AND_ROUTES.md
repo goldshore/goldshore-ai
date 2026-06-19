@@ -36,10 +36,12 @@
 #       To access, you need an authorized email in the CF Access policy.
 #       Check: dash.cloudflare.com → Zero Trust → Access → Applications → admin.goldshore.ai
 
-## agent.goldshore.ai → goldshore-agent worker (MISSING — add this)
+## agent.goldshore.ai → gs-gateway worker → gs-agent service binding
 # Type: CNAME, Proxied: YES
-# Name: agent  →  goldshore-agent.<account>.workers.dev
+# Name: agent  →  gs-gateway.<account>.workers.dev
+# Worker route owner: gs-gateway (apps/gs-gateway/wrangler.toml)
 # Worker route: agent.goldshore.ai/*
+# Do NOT attach agent.goldshore.ai directly to gs-agent; apps/gs-agent/wrangler.toml stays route-free.
 
 ## mail.goldshore.ai → goldshore-mail (internal — no public DNS needed)
 # Cloudflare Email Routing handles inbound
@@ -103,12 +105,13 @@
 
 # goldshore-gateway routes:
 #   gw.goldshore.ai/*  (zone: goldshore.ai)
+#   agent.goldshore.ai/*  (zone: goldshore.ai; forwards to gs-agent service binding)
 
 # goldshore-api routes:
 #   api.goldshore.ai/*  (zone: goldshore.ai)
 
 # goldshore-agent routes:
-#   agent.goldshore.ai/*  (zone: goldshore.ai)
+#   none for public HTTP; gs-agent is reached via the gs-gateway AGENT service binding.
 
 # goldshore-admin routes:
 #   admin.goldshore.ai/*  (zone: goldshore.ai)
@@ -144,16 +147,21 @@
 #   Auth: per-route (CONTROL_SYNC_TOKEN for internal routes, public for /health)
 #   No CF Access on root — handled in worker code
 
-# agent.goldshore.ai (internal — CF Access recommended)
-#   Add CF Access application for agent.goldshore.ai
-#   CLOUDFLARE_ACCESS_AUDIENCE secret already configured in wrangler
+# agent.goldshore.ai (gateway-owned protected agent surface)
+#   Include agent.goldshore.ai in the shared Goldshore Gateway CF Access application.
+#   Bypass anonymous probes for /health and /status.
+#   Expected anonymous responses through gs-gateway → gs-agent:
+#     GET /health  → 200
+#     GET /status  → 200
+#     Protected agent paths, e.g. /templates → 401 without a valid CF Access JWT
+#   CLOUDFLARE_ACCESS_AUDIENCE secret must be configured on gs-gateway and gs-agent.
 
 # ══════════════════════════════════════════════════════════════
 # IMMEDIATE ACTIONS (in order)
 # ══════════════════════════════════════════════════════════════
 
 # 1. Add DNS CNAME: gw.goldshore.ai → goldshore-gateway worker
-# 2. Add DNS CNAME: agent.goldshore.ai → goldshore-agent worker
+# 2. Add DNS CNAME: agent.goldshore.ai → gs-gateway worker (not directly to gs-agent)
 # 3. Fix api.goldshore.ai worker route (currently 404)
 #    → wrangler deploy --name goldshore-api (with routes in wrangler.jsonc)
 # 4. Deploy rmarston-com with fixed wrangler.toml (routes now attached)
