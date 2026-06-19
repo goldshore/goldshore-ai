@@ -118,10 +118,11 @@ jobs:
   # and applied by infra/Cloudflare/deploy.ts (or manually via CF Dashboard).
   deploy-workers:
     name: Deploy ${{ matrix.app }}
+    # matrix.app cannot be used in a job-level if; filter per-target inside steps instead
     if: >
       github.event_name == 'push' ||
       inputs.target == 'all' ||
-      inputs.target == matrix.app
+      contains(fromJSON('["gs-gateway","gs-api","gs-agent","gs-control","gs-trading","gs-mail","banproof-me","gs-www-redirect","gs-core-worker","armsway-com"]'), inputs.target)
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -150,19 +151,28 @@ jobs:
           - app: armsway-com
             filter: "@goldshore/armsway-com"
     steps:
+      - name: Skip if not targeted
+        if: github.event_name == 'workflow_dispatch' && inputs.target != 'all' && inputs.target != matrix.app
+        run: echo "Skipping ${{ matrix.app }} (target=${{ inputs.target }})" && exit 0
       - uses: actions/checkout@v4
+        if: github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == matrix.app
       - uses: pnpm/action-setup@v4
+        if: github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == matrix.app
         with:
           version: 9.15.4
       - uses: actions/setup-node@v4
+        if: github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == matrix.app
         with:
           node-version: 22
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        if: github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == matrix.app
+        run: pnpm install --frozen-lockfile
       - name: Build ${{ matrix.app }}
+        if: github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == matrix.app
         run: pnpm --filter ${{ matrix.filter }} build
       - name: Deploy ${{ matrix.app }}
-        # canonical API worker lives at apps/gs-api
+        if: github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == matrix.app
         working-directory: apps/${{ matrix.app }}
         run: |
           ENV=${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'prod' }}
