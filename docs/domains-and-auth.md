@@ -15,7 +15,7 @@ This document captures the Cloudflare Access applications and policies that prot
 
 Preview applications should mirror production configuration wherever Access is enforced:
 
-- **Identity providers:** Use the same IdPs as production (currently the admin Access policy requires GitHub as the identity provider).
+- **Identity providers:** Use the canonical IdP matrix below for every protected application; do not restate per-app IdP decisions in downstream runbooks.
 - **Session policy:** Keep session duration, re-authentication, and device posture requirements aligned with production to avoid preview-only auth drift.
 
 ## Source-of-truth references
@@ -85,6 +85,22 @@ Cloudflare Access is enforced on internal tooling and protected previews. The ta
 | API worker         | `api.goldshore.ai`                                                                                           | Optional                    | Keep `/`, `/health`, and `/version` public. Protect `/admin/*`, `/internal/*`, `/system/*`, `/user*`, `/users/*`, `/templates/*`, `/media/*`, `/pages/*`, and `/ai/*`. |
 | Gateway worker     | `gw.goldshore.ai`                                                                                            | Optional                    | Canonical hostname is `gw.goldshore.ai` (not `gateway.goldshore.ai`); depends on routing/auth design. |
 | Mail handler       | `mail.goldshore.ai`                                                                                          | No                          | Cloudflare mail routing cannot authenticate.                                                          |
+
+
+## Canonical Cloudflare Access IdP matrix
+
+This table is the single source of truth for Cloudflare Access identity-provider requirements on protected GoldShore applications. Each Access policy's **Require** rules must allow exactly the IdPs listed for that application: no additional IdPs and no missing IdPs.
+
+| Protected app | Access application / policy | Allowed IdPs in **Require** rules | Personal Gmail path | Notes |
+| --- | --- | --- | --- | --- |
+| `admin.goldshore.ai` | `GoldShore-Admin-ZT` | Google Workspace; GitHub GoldShore Deploy; generic GitHub; email OTP | `marstonr6@gmail.com` must be allowed through email OTP or through a GitHub identity with verified email `marstonr6@gmail.com`. | Production admin cockpit. |
+| `admin-preview.goldshore.ai` | `GoldShore-Admin-ZT` | Google Workspace; GitHub GoldShore Deploy; generic GitHub; email OTP | Same as production admin. | Admin preview must mirror production admin IdP requirements. |
+| `ops.goldshore.ai` | `Goldshore Ops` | Google Workspace; GitHub GoldShore Deploy; generic GitHub; email OTP | `marstonr6@gmail.com` must be allowed through email OTP or through a GitHub identity with verified email `marstonr6@gmail.com`. | Internal control plane. |
+| `gw.goldshore.ai` | `Goldshore Gateway` | GitHub GoldShore Deploy; generic GitHub; email OTP | `marstonr6@gmail.com` must be allowed through email OTP or through a GitHub identity with verified email `marstonr6@gmail.com`. | Gateway Access app; keep public probe bypasses separate from IdP requirements. |
+| `api.goldshore.ai` | `Goldshore Gateway` | GitHub GoldShore Deploy; generic GitHub; email OTP | `marstonr6@gmail.com` must be allowed through email OTP or through a GitHub identity with verified email `marstonr6@gmail.com`. | Shares the gateway Access application/AUD where Access is enforced for protected paths. |
+| `agent.goldshore.ai` | `Goldshore Gateway` | GitHub GoldShore Deploy; generic GitHub; email OTP | `marstonr6@gmail.com` must be allowed through email OTP or through a GitHub identity with verified email `marstonr6@gmail.com`. | Shares the gateway Access application/AUD with gateway/API routes. |
+
+When changing Cloudflare Zero Trust, verify each Access policy's **Require** rules against this matrix. If personal Gmail access is needed without Google Workspace membership, do not rely on Workspace domain membership; keep either the email OTP path for `marstonr6@gmail.com` or the verified-email GitHub path enabled.
 
 ## Cloudflare Access service-token handling
 

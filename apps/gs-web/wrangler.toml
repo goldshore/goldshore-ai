@@ -16,7 +16,7 @@ database_name = "gs_platform_db"
 database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
 
 [[r2_buckets]]
-binding = "ASSETS"
+binding = "GS_ASSETS"
 bucket_name = "gs-assets"
 
 [vars]
@@ -39,9 +39,7 @@ MAILCHANNELS_SENDER_NAME = "GoldShore"
 # goldshore.org is owned by goldshore-org Worker (redirects → goldshore.ai)
 routes = [
   { pattern = "goldshore.ai", custom_domain = true },
-  { pattern = "www.goldshore.ai", custom_domain = true },
-  { pattern = "goldshore.org", custom_domain = true },
-  { pattern = "www.goldshore.org", custom_domain = true }
+  { pattern = "goldshore.org", custom_domain = true }
 ]
 
 [[env.prod.kv_namespaces]]
@@ -54,7 +52,7 @@ database_name = "gs_platform_db"
 database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
 
 [[env.prod.r2_buckets]]
-binding = "ASSETS"
+binding = "GS_ASSETS"
 bucket_name = "gs-assets"
 
 [env.prod.vars]
@@ -81,7 +79,7 @@ database_name = "gs_platform_db"
 database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
 
 [[env.preview.r2_buckets]]
-binding = "ASSETS"
+binding = "GS_ASSETS"
 bucket_name = "gs-assets-preview"
 
 [env.preview.vars]
