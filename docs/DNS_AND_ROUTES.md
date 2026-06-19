@@ -22,11 +22,11 @@
 # Worker route (in Cloudflare Dashboard → Workers → goldshore-gateway → Triggers):
 #   Pattern: gw.goldshore.ai/*   Zone: goldshore.ai
 
-## api.goldshore.ai → goldshore-api worker
+## api.goldshore.ai → gs-api worker (direct ownership)
 # Type: CNAME, Proxied: YES
-# Name: api  →  goldshore-api.<account>.workers.dev
-# Worker route: api.goldshore.ai/*  (check routes in dashboard — currently 404)
-# FIX: Ensure wrangler.jsonc has routes = [{pattern:"api.goldshore.ai/*", zone_name:"goldshore.ai"}]
+# Name: api  →  gs-api.<account>.workers.dev
+# Worker route: api.goldshore.ai/*
+# Source of truth: apps/gs-api/wrangler.toml [env.prod]. Do not also attach this route to gs-gateway.
 
 ## admin.goldshore.ai → goldshore-admin worker (CF Access protected — WORKING CORRECTLY)
 # Type: CNAME, Proxied: YES
@@ -104,7 +104,7 @@
 # goldshore-gateway routes:
 #   gw.goldshore.ai/*  (zone: goldshore.ai)
 
-# goldshore-api routes:
+# gs-api routes:
 #   api.goldshore.ai/*  (zone: goldshore.ai)
 
 # goldshore-agent routes:
@@ -154,8 +154,8 @@
 
 # 1. Add DNS CNAME: gw.goldshore.ai → goldshore-gateway worker
 # 2. Add DNS CNAME: agent.goldshore.ai → goldshore-agent worker
-# 3. Fix api.goldshore.ai worker route (currently 404)
-#    → wrangler deploy --name goldshore-api (with routes in wrangler.jsonc)
+# 3. Deploy gs-api with the direct api.goldshore.ai worker route
+#    → wrangler deploy --env prod from apps/gs-api (routes in wrangler.toml)
 # 4. Deploy rmarston-com with fixed wrangler.toml (routes now attached)
 # 5. Deploy armsway with new medical theme
 # 6. Verify CF Access on admin.goldshore.ai allows your email

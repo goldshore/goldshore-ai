@@ -6,7 +6,9 @@ compatibility_flags = ["nodejs_compat"]
 workers_dev = false
 
 [env.prod]
-routes = []
+routes = [
+  { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" }
+]
 
 [env.prod.vars]
 ENV = "production"
