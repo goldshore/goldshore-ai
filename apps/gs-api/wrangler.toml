@@ -6,7 +6,10 @@ compatibility_flags = ["nodejs_compat"]
 workers_dev = false
 
 [env.prod]
-routes = []
+routes = [
+  { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "api.goldshore.org/*", zone_name = "goldshore.org" }
+]
 
 [env.prod.vars]
 ENV = "production"
@@ -47,7 +50,9 @@ binding = "JOBS_QUEUE"
 queue = "goldshore-jobs"
 
 [env.preview]
-routes = []
+routes = [
+  { pattern = "api-preview.goldshore.ai/*", zone_name = "goldshore.ai" }
+]
 
 [env.preview.vars]
 ENV = "preview"
