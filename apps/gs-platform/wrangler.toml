@@ -42,7 +42,7 @@ id = "5f13370575784c9dacff522121104cb3"
 
 # ── R2 ──────────────────────────────────────────────────────────────────────────
 [[env.prod.r2_buckets]]
-binding = "ASSETS"
+binding = "GS_ASSETS"
 bucket_name = "gs-assets"
 
 # ── Service bindings (hub → spoke) ───────────────────────────────────────────
@@ -53,7 +53,7 @@ environment = "prod"
 
 [[env.prod.services]]
 binding = "SIGNALS"
-service = "gs-signals-prod"
+service = "gs-core-worker"
 environment = "prod"
 
 [[env.prod.services]]
