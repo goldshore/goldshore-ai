@@ -47,6 +47,7 @@ admin-preview.goldshore.ai
 ```
 api.goldshore.ai/*
 ├── gs-api worker
+├── Direct route owner; not proxied through gs-gateway
 ├── Public endpoint
 └── Methods: GET, POST, PUT, DELETE (documented)
 
@@ -145,9 +146,9 @@ This script runs in CI before deploy — if it fails, the deployment blocks.
 
 ## Gateway Forwarding Rules
 
-### gs-platform (Gateway Worker)
+### gs-platform / gs-gateway (Gateway Worker)
 
-The gateway routes inbound requests to downstream services:
+The gateway owns `gw.goldshore.ai/*` and `agent.goldshore.ai/*`. It does **not** own `api.goldshore.ai/*`; direct API traffic is served by `gs-api`. For gateway-hosted requests, it routes inbound requests to downstream services:
 
 ```
 Request: POST /query?agent=true
@@ -224,8 +225,8 @@ When accessed via:
 
 | Route | Zone | Audience | Policy |
 |---|---|---|---|
-| `admin.goldshore.ai` | goldshore.ai | gs-admin | Email: @goldshore.ai, @marzton.dev |
-| `admin-preview.goldshore.ai` | goldshore.ai | gs-admin-preview | Same as admin |
+| `admin.goldshore.ai` | goldshore.ai | gs-admin | Identity-based allow: Email domains `@goldshore.ai`, `@marzton.dev`; Specific email: `marstonr6@gmail.com` |
+| `admin-preview.goldshore.ai` | goldshore.ai | gs-admin-preview | Identity-based allow: Email domains `@goldshore.ai`, `@marzton.dev`; Specific email: `marstonr6@gmail.com` |
 | `ops.goldshore.ai` | goldshore.ai | gs-control | Email: @goldshore.ai (ops team only) |
 | `agent.goldshore.ai/*` | goldshore.ai | Goldshore Gateway shared AUD | Bypass `/health` and `/status`; protect all other agent paths |
 
