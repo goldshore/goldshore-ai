@@ -12,10 +12,6 @@ preview_id = "your-preview-kv-namespace-id"
 [vars]
 ENV = "development"
 
-# ———— Production environment ————————————————————————————————————————————————————————————————————
-[vars]
-ENV = "development"
-
 # ---- Production environment --------------------------------------------------
 [env.prod]
 name = "gs-trading-prod"
@@ -24,17 +20,7 @@ routes = [
 ]
 
 # kv_namespaces is NOT inherited by named environments in Wrangler — must be re-declared.
-[[env.prod.kv_namespaces]]
-binding = "TRADING_KV"
-id = "your-production-kv-namespace-id"
-
-[env.prod.vars]
-ENV = "production"
-# OAuth redirect URI — must match exactly what is registered in your Schwab app
-SCHWAB_REDIRECT_URI = "https://trading.goldshore.ai/oauth/schwab/callback"
-
-# ———— Secrets (set via: wrangler secret put <NAME> --env prod) ————————————————————————————
-#
+# OAuth redirect URI must match exactly what is registered in the Schwab app.
 [[env.prod.kv_namespaces]]
 binding = "TRADING_KV"
 id = "9b3314c3b7af40a284a8c9b6e2990709"
