@@ -89,18 +89,18 @@ Cloudflare Access is enforced on internal tooling and protected previews. The ta
 
 ## Canonical Cloudflare Access IdP matrix
 
-This table is the single source of truth for Cloudflare Access identity-provider requirements on protected GoldShore applications. Each Access policy's **Require** rules must allow exactly the IdPs listed for that application: no additional IdPs and no missing IdPs.
+This table is the single source of truth for Cloudflare Access identity-provider requirements on protected GoldShore applications. Configure these IdPs as alternative login methods for the Access application (or as separate OR policies), not as multiple **Require** selectors; Cloudflare evaluates multiple Require selectors conjunctively.
 
-| Protected app | Access application / policy | Allowed IdPs in **Require** rules | Personal Gmail path | Notes |
+| Protected app | Access application / policy | Allowed IdPs / login methods | Personal Gmail path | Notes |
 | --- | --- | --- | --- | --- |
 | `admin.goldshore.ai` | `GoldShore-Admin-ZT` | Google Workspace; GitHub GoldShore Deploy; generic GitHub; email OTP | `marstonr6@gmail.com` must be allowed through email OTP or through a GitHub identity with verified email `marstonr6@gmail.com`. | Production admin cockpit. |
 | `admin-preview.goldshore.ai` | `GoldShore-Admin-ZT` | Google Workspace; GitHub GoldShore Deploy; generic GitHub; email OTP | Same as production admin. | Admin preview must mirror production admin IdP requirements. |
 | `ops.goldshore.ai` | `Goldshore Ops` | Google Workspace; GitHub GoldShore Deploy; generic GitHub; email OTP | `marstonr6@gmail.com` must be allowed through email OTP or through a GitHub identity with verified email `marstonr6@gmail.com`. | Internal control plane. |
 | `gw.goldshore.ai` | `Goldshore Gateway` | GitHub GoldShore Deploy; generic GitHub; email OTP | `marstonr6@gmail.com` must be allowed through email OTP or through a GitHub identity with verified email `marstonr6@gmail.com`. | Gateway Access app; keep public probe bypasses separate from IdP requirements. |
-| `api.goldshore.ai` | `Goldshore Gateway` | GitHub GoldShore Deploy; generic GitHub; email OTP | `marstonr6@gmail.com` must be allowed through email OTP or through a GitHub identity with verified email `marstonr6@gmail.com`. | Shares the gateway Access application/AUD where Access is enforced for protected paths. |
-| `agent.goldshore.ai` | `Goldshore Gateway` | GitHub GoldShore Deploy; generic GitHub; email OTP | `marstonr6@gmail.com` must be allowed through email OTP or through a GitHub identity with verified email `marstonr6@gmail.com`. | Shares the gateway Access application/AUD with gateway/API routes. |
+| `api.goldshore.ai` | `Goldshore API` | GitHub GoldShore Deploy; generic GitHub; email OTP | `marstonr6@gmail.com` must be allowed through email OTP or through a GitHub identity with verified email `marstonr6@gmail.com`. | Use the API Access application/AUD (`d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b`) expected by `gs-api`; keep public probe bypasses separate from IdP requirements. |
+| `agent.goldshore.ai` | `Goldshore Gateway` | GitHub GoldShore Deploy; generic GitHub; email OTP | `marstonr6@gmail.com` must be allowed through email OTP or through a GitHub identity with verified email `marstonr6@gmail.com`. | Shares the gateway Access application/AUD with gateway and agent routes; API traffic keeps the API Access AUD. |
 
-When changing Cloudflare Zero Trust, verify each Access policy's **Require** rules against this matrix. If personal Gmail access is needed without Google Workspace membership, do not rely on Workspace domain membership; keep either the email OTP path for `marstonr6@gmail.com` or the verified-email GitHub path enabled.
+When changing Cloudflare Zero Trust, verify each Access application's allowed login methods or OR policies against this matrix. Do not place alternative IdPs in the same policy's **Require** list. If personal Gmail access is needed without Google Workspace membership, do not rely on Workspace domain membership; keep either the email OTP path for `marstonr6@gmail.com` or the verified-email GitHub path enabled.
 
 ## Cloudflare Access service-token handling
 
