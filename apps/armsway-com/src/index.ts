@@ -1,6 +1,6 @@
 export interface Env {
   GS_AUDIT_DB: D1Database;
-  TELEMETRY_STORAGE: R2Bucket;
+  GS_TELEMETRY: R2Bucket;
   WORKER_SECRET?: string;
 }
 
@@ -55,8 +55,8 @@ export default {
           ).bind(payload.orderId, payload.productId, payload.quantity, Date.now()).run();
         }
 
-        // 2. Pipe all transaction logs into TELEMETRY_STORAGE for compliance
-        await env.TELEMETRY_STORAGE.put(`transactions/${payload.orderId}.json`, transactionLog, {
+        // 2. Pipe all transaction logs into GS_TELEMETRY for compliance
+        await env.GS_TELEMETRY.put(`transactions/${payload.orderId}.json`, transactionLog, {
           httpMetadata: { contentType: 'application/json' }
         });
 

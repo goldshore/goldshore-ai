@@ -57,7 +57,7 @@ database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
 
 # ── R2 Buckets ───────────────────────────────────────────────────
 [[env.prod.r2_buckets]]
-binding = "ASSETS"
+binding = "GS_ASSETS"
 bucket_name = "gs-assets"
 
 # ── Service bindings ──────────────────────────────────────────────
@@ -77,7 +77,8 @@ service = "banproof-me"
 
 [[env.prod.services]]
 binding = "SIGNALS"
-service = "gs-signals-prod"
+service = "gs-core-worker"
+environment = "prod"
 
 # ── Queue producers ───────────────────────────────────────────────
 [[env.prod.queues.producers]]

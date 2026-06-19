@@ -53,8 +53,8 @@ describe('Media Endpoint Security', () => {
         method: 'GET',
       },
       {
-        CONTENT_DB: mockDB,
-        ASSETS: mockAssets,
+        PLATFORM_DB: mockDB,
+        GS_ASSETS: mockAssets,
       },
     );
 
@@ -79,7 +79,7 @@ describe('Media Endpoint Security', () => {
     const app = createApp({ roles: ['unknown'] });
     const res = await app.request('/', {}, {
       KV: { put: async () => {} },
-      CONTENT_DB: {
+      PLATFORM_DB: {
         prepare: () => ({
           bind: () => ({ all: async () => ({ results: [] }) }),
         }),
@@ -115,8 +115,8 @@ describe('Media Endpoint Security', () => {
     });
 
     const res = await app.fetch(req, {
-      CONTENT_DB: mockDB,
-      ASSETS: mockAssets,
+      PLATFORM_DB: mockDB,
+      GS_ASSETS: mockAssets,
     });
 
     assert.strictEqual(res.status, 200);
@@ -154,8 +154,8 @@ describe('Media Endpoint Security', () => {
     });
 
     const res = await app.fetch(req, {
-      CONTENT_DB: mockDB,
-      ASSETS: mockAssets,
+      PLATFORM_DB: mockDB,
+      GS_ASSETS: mockAssets,
     });
 
     assert.strictEqual(res.status, 200);
@@ -193,8 +193,8 @@ describe('Media Endpoint Security', () => {
     });
 
     const res = await app.fetch(req, {
-      CONTENT_DB: mockDB,
-      ASSETS: mockAssets,
+      PLATFORM_DB: mockDB,
+      GS_ASSETS: mockAssets,
     });
 
     assert.strictEqual(res.status, 413, 'Should return 413 Payload Too Large');
