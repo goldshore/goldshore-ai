@@ -5,6 +5,7 @@ import { verifyAccessWithClaims } from '@goldshore/auth';
 import { tradingRoutes } from './routes/trading';
 import { agentRoutes } from './routes/agents';
 import { oauthRoutes } from './routes/oauth';
+import { paperRoutes } from './routes/paper';
 import { getDashboardHTML } from './routes/dashboard';
 import { isEnabled, setFlag, FLAGS } from './flags';
 import type { TradingEnv } from './types';
@@ -100,6 +101,15 @@ app.post('/api/flags/:key', async (c) => {
 app.route('/oauth', oauthRoutes);
 app.route('/api/trading', tradingRoutes);
 app.route('/api/agents', agentRoutes);
+
+app.use('/paper/*', async (c, next) => {
+  const isDev = !c.env.SCHWAB_CLIENT_ID && !c.env.ROBINHOOD_TOKEN;
+  const defaultOn = isDev || c.env.ENV !== 'production';
+  const enabled = await isEnabled(c.env, FLAGS.MCP_TRADING, defaultOn);
+  if (!enabled) return c.json({ error: 'mcp-trading feature is currently disabled' }, 503);
+  return next();
+});
+app.route('/paper', paperRoutes);
 
 app.notFound((c) => c.json({ error: 'Not found', path: c.req.path }, 404));
 app.onError((err, c) => {

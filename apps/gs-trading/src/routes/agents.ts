@@ -42,3 +42,48 @@ agentRoutes.post('/signals/generate', async (c) => {
   const signals = await orch.generateDemoSignals();
   return c.json({ signals, count: signals.length });
 });
+
+// GET /api/agents/recommendations
+agentRoutes.get('/recommendations', async (c) => {
+  if (!c.env.PAPER_DB) return c.json({ error: 'PAPER_DB not configured' }, 503);
+  const result = await c.env.PAPER_DB.prepare(
+    "SELECT * FROM agent_recommendations WHERE status = 'pending' ORDER BY created_at DESC"
+  ).all();
+  return c.json({ mode: 'AGENTIC ACCOUNT', recommendations: result.results ?? [] });
+});
+
+// POST /api/agents/recommendations/:id/approve
+agentRoutes.post('/recommendations/:id/approve', async (c) => {
+  if (!c.env.PAPER_DB) return c.json({ error: 'PAPER_DB not configured' }, 503);
+  const id = c.req.param('id');
+  const db = c.env.PAPER_DB;
+  const rec = await db.prepare('SELECT * FROM agent_recommendations WHERE id = ?').bind(id).first<any>();
+  if (!rec) return c.json({ error: 'Recommendation not found' }, 404);
+  if (rec.status !== 'pending') return c.json({ error: `Cannot approve recommendation with status: ${rec.status}` }, 400);
+  if (rec.expires_at < Date.now()) {
+    await db.prepare("UPDATE agent_recommendations SET status = 'expired' WHERE id = ?").bind(id).run();
+    return c.json({ error: 'Recommendation has expired' }, 400);
+  }
+
+  const now = Date.now();
+  const orderId = crypto.randomUUID();
+  await db.batch([
+    db.prepare("UPDATE agent_recommendations SET status = 'approved' WHERE id = ?").bind(id),
+    db.prepare('INSERT INTO paper_orders (id, symbol, side, quantity, order_type, limit_price, status, fill_price, fill_quantity, source, agent_recommendation_id, approved_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .bind(orderId, rec.symbol, rec.action === 'buy' ? 'buy' : 'sell', rec.quantity ?? 1, 'market', null, 'pending', null, 0, 'agent', id, 'human', now, now),
+  ]);
+
+  return c.json({ mode: 'AGENTIC ACCOUNT', approved: true, orderId, recommendation: rec });
+});
+
+// POST /api/agents/recommendations/:id/reject
+agentRoutes.post('/recommendations/:id/reject', async (c) => {
+  if (!c.env.PAPER_DB) return c.json({ error: 'PAPER_DB not configured' }, 503);
+  const id = c.req.param('id');
+  const db = c.env.PAPER_DB;
+  const rec = await db.prepare('SELECT * FROM agent_recommendations WHERE id = ?').bind(id).first<any>();
+  if (!rec) return c.json({ error: 'Recommendation not found' }, 404);
+  if (rec.status !== 'pending') return c.json({ error: `Cannot reject recommendation with status: ${rec.status}` }, 400);
+  await db.prepare("UPDATE agent_recommendations SET status = 'rejected' WHERE id = ?").bind(id).run();
+  return c.json({ mode: 'AGENTIC ACCOUNT', rejected: true, id });
+});

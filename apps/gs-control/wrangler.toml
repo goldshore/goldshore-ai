@@ -23,6 +23,20 @@ id = "68f52b467dc0413991b2195ef9081cae"
 binding = "CONTROL_LOGS"
 id = "a52e94cb331c4e3db08f2aa507e6df09"
 
+[[env.prod.r2_buckets]]
+binding = "STATE"
+bucket_name = "gs-control-state"
+
+[[env.prod.services]]
+binding = "API"
+service = "gs-api"
+environment = "prod"
+
+[[env.prod.services]]
+binding = "GATEWAY"
+service = "gs-gateway"
+environment = "prod"
+
 [env.preview]
 routes = [
   { pattern = "ops-preview.goldshore.ai/*", zone_name = "goldshore.ai" }
