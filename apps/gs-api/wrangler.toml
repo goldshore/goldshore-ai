@@ -10,17 +10,23 @@ workers_dev = false
 # ══════════════════════════════════════════════════════════════════════════════
 
 [env.prod]
-routes = [
-  { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" }
-  { pattern = "api.goldshore.org/*", zone_name = "goldshore.org" }
-]
+
+# wrangler 4.98 crashes on zone_name inside inline-table routes syntax;
+# use array-of-tables format instead.
+[[env.prod.routes]]
+pattern = "api.goldshore.ai/*"
+zone_name = "goldshore.ai"
+
+[[env.prod.routes]]
+pattern = "api.goldshore.org/*"
+zone_name = "goldshore.org"
 
 [env.prod.vars]
 ENV = "production"
 CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 
-# ── KV ────────────────────────────────────────────────────────────────────────
+# ── KV ────────────────────────────────────────────────────────────────────────────
 [[env.prod.kv_namespaces]]
 binding = "KV"
 id = "e0b8b807191346c3b0afc25fe716d2cd"
@@ -29,7 +35,7 @@ id = "e0b8b807191346c3b0afc25fe716d2cd"
 binding = "CONTROL_LOGS"
 id = "a52e94cb331c4e3db08f2aa507e6df09"
 
-# ── R2 ────────────────────────────────────────────────────────────────────────
+# ── R2 ────────────────────────────────────────────────────────────────────────────
 [[env.prod.r2_buckets]]
 binding = "GS_ASSETS"
 bucket_name = "gs-assets"
@@ -38,7 +44,7 @@ bucket_name = "gs-assets"
 binding = "TELEMETRY"
 bucket_name = "gs-telemetry-storage"
 
-# ── D1 ────────────────────────────────────────────────────────────────────────
+# ── D1 ────────────────────────────────────────────────────────────────────────────
 [[env.prod.d1_databases]]
 binding = "PLATFORM_DB"
 database_name = "gs_platform_db"
@@ -59,7 +65,7 @@ binding = "JOBS_DB"
 database_name = "gs_jobs_db"
 database_id = "750c469c-788d-49e8-9254-77231cffd70f"
 
-# ── AI ────────────────────────────────────────────────────────────────────────
+# ── AI ────────────────────────────────────────────────────────────────────────────
 [env.prod.ai]
 binding = "AI"
 
@@ -93,7 +99,7 @@ binding = "GOLDSHORE_AI"
 service = "goldshore-ai"
 environment = "prod"
 
-# ── Queues (producers) ────────────────────────────────────────────────────────
+# ── Queues (producers) ───────────────────────────────────────────────────────
 [[env.prod.queues.producers]]
 binding = "JOBS_QUEUE"
 queue = "goldshore-jobs"
@@ -110,7 +116,7 @@ queue = "gs-mail-jobs"
 binding = "DEAD_LETTER_QUEUE"
 queue = "gs-mail-dead-letter"
 
-# ── Workflows ─────────────────────────────────────────────────────────────────
+# ── Workflows ────────────────────────────────────────────────────────────────────
 [[env.prod.workflows]]
 binding = "GS_SIGNALS"
 name = "signals-evaluator"
@@ -184,6 +190,10 @@ service = "gs-mail"
 binding = "GS_WEB"
 service = "gs-web"
 
+[[env.preview.services]]
+binding = "API_SERVICE"
+service = "gs-api"
+
 [[env.preview.queues.producers]]
 binding = "JOBS_QUEUE"
 queue = "goldshore-jobs"
@@ -200,7 +210,7 @@ queue = "gs-mail-jobs"
 binding = "SECRETS"
 store_id = "b9824d3280c54573a24137c7e7143b33"
 
-# ── Durable Object migrations ─────────────────────────────────────────────────
+# ── Durable Object migrations ───────────────────────────────────────────────
 [[migrations]]
 tag = "v1-auth-session"
 new_sqlite_classes = ["AuthSession"]
