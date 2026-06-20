@@ -24,7 +24,7 @@ app.use('*', cors({
 
 // 2. Auth Guard (Public vs Protected)
 app.use('*', async (c, next) => {
-	const publicPaths = ['/', '/health'];
+	const publicPaths = ['/', '/health', '/status'];
 	if (publicPaths.includes(c.req.path)) {
 		await next();
 		return;
@@ -68,6 +68,11 @@ app.get('/', (c) => {
 });
 
 app.get('/health', (c) => c.json({ status: 'ok', service: 'gs-agent' }));
+app.get('/status', (c) => c.json({
+	status: 'ok',
+	service: 'gs-agent',
+	note: 'agent.goldshore.ai is gateway-owned; this response is served by gs-agent through the gs-gateway service binding.',
+}));
 
 // 4. Template Engine with KV integration
 app.get('/templates', async (c) => {
