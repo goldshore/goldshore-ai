@@ -10,12 +10,10 @@ workers_dev = false
 # ══════════════════════════════════════════════════════════════════════════════
 
 [env.prod]
-
-# Routes — use array-of-tables to avoid wrangler 4.98 TOML parser crash on
-# zone_name inside inline table (routes = [{zone_name=...}] format)
-[[env.prod.routes]]
-pattern = "api.goldshore.org/*"
-zone_name = "goldshore.org"
+routes = [
+  { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" }
+  { pattern = "api.goldshore.org/*", zone_name = "goldshore.org" }
+]
 
 [env.prod.vars]
 ENV = "production"
