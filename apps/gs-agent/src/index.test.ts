@@ -16,6 +16,13 @@ test('keeps the status and health endpoints public', async () => {
   } as any);
 
   assert.strictEqual(healthResponse.status, 200);
+
+  const statusResponse = await worker.fetch(new Request('https://agent.goldshore.ai/status'), {
+    ENV: 'production',
+    AGENT_KV: { get: async () => null }
+  } as any);
+
+  assert.strictEqual(statusResponse.status, 200);
 });
 
 test('protects templates from anonymous access', async () => {
