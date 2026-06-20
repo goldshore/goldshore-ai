@@ -23,9 +23,9 @@ function getHref(slug: string) {
     {pages.map((page) => (
       <li>
         <a
-          href={getHref(page.id)}
-          class={currentSlug === page.id ? "active" : ""}
-          aria-current={currentSlug === page.id ? "page" : undefined}
+          href={getHref(page.slug)}
+          class={currentSlug === page.slug ? 'active' : ''}
+          aria-current={currentSlug === page.slug ? 'page' : undefined}
         >
           {page.data.title}
         </a>
