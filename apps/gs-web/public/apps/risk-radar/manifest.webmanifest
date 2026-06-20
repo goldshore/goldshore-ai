@@ -1,0 +1,20 @@
+{
+    "name": "Risk Radar",
+    "short_name": "RiskRadar",
+    "start_url": "./",
+    "display": "standalone",
+    "background_color": "#1a1a1a",
+    "theme_color": "#4ade80",
+    "icons": [
+        {
+            "src": "icon-192.svg",
+            "sizes": "192x192",
+            "type": "image/svg+xml"
+        },
+        {
+            "src": "icon-512.svg",
+            "sizes": "512x512",
+            "type": "image/svg+xml"
+        }
+    ]
+}
