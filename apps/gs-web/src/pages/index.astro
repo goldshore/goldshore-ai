@@ -1,6 +1,7 @@
 ---
 import Logo from '../components/brand/Logo.astro';
 import ParallaxHero from '../components/hero/ParallaxHero.astro';
+import RiskRadar from '../components/RiskRadar.astro';
 import WebLayout from '../layouts/WebLayout.astro';
 
 export const prerender = true;
@@ -49,6 +50,21 @@ const capabilities = [
   {
     title: 'Proven controls',
     body: 'Controls are demonstrated in live use with logs, thresholds, review modes, and fallback paths.',
+  },
+];
+
+const proofPoints = [
+  {
+    title: 'Human-in-the-loop by default',
+    body: 'Every high-stakes model decision routes through a configured review step before action is taken.',
+  },
+  {
+    title: 'Full observability stack',
+    body: 'Events, thresholds, and evidence logs are captured at runtime and retained for regulatory review.',
+  },
+  {
+    title: 'Controlled deployment posture',
+    body: 'Staged rollouts, feature flags, and rollback paths are wired into the deployment pipeline from day one.',
   },
 ];
 ---
