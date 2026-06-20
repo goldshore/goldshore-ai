@@ -4,8 +4,8 @@ import * as assert from 'node:assert/strict';
 import app, { isAllowedOrigin, isPreviewOrigin } from './index';
 
 const requiredRuntimeEnv = {
-  CONTENT_DB: {} as any,
-  ASSETS: {} as any,
+  PLATFORM_DB: {} as any,
+  GS_ASSETS: {} as any,
   AI: {} as any,
   JWT_SECRET: 'test-jwt-secret',
   STRIPE_API_KEY: 'test-stripe-key',
