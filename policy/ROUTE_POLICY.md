@@ -10,6 +10,8 @@
 
 | Zone | Owner | Pages Project | Worker Routes | Access Policy |
 |---|---|---|---|---|
+| `goldshore.ai` | GoldShore Labs | gs-web | api.*, gw.*, ops.*, agent.* | Public for web; CF Access for admin |
+| `goldshore.org` | GoldShore Labs | gs-admin for admin subdomain; (external Pages) for public org content | goldshore-org router | Public for apex/www; CF Access for admin |
 | `goldshore.ai` | GoldShore Labs | gs-web | api.*, gw.*, ops.*, agent.* | Public for web; CF Access for protected gateway/admin routes |
 | `goldshore.org` | GoldShore Labs | (external Pages) | goldshore-org router | Public |
 | `banproof.me` | GoldShore Labs (BanProof) | — | banproof-me | Public |
@@ -74,6 +76,15 @@ ops.goldshore.ai/*
 ```
 
 ### Zone: `goldshore.org`
+
+#### Pages (Custom Domains)
+```
+admin.goldshore.org
+├── gs-admin Pages project
+├── Owner: gs-admin
+├── Hosting: Cloudflare Pages
+└── Cloudflare Access application/policy: GoldShore Admin / GoldShore-Admin-ZT
+```
 
 #### Workers (Routes)
 ```
@@ -225,6 +236,9 @@ When accessed via:
 
 | Route | Zone | Audience | Policy |
 |---|---|---|---|
+| `admin.goldshore.ai` | goldshore.ai | gs-admin | Email: @goldshore.ai, @marzton.dev |
+| `admin.goldshore.org` | goldshore.org | gs-admin | Same GoldShore Admin application/policy (`GoldShore-Admin-ZT`) as admin.goldshore.ai |
+| `admin-preview.goldshore.ai` | goldshore.ai | gs-admin-preview | Same as admin |
 | `admin.goldshore.ai` | goldshore.ai | gs-admin | Identity-based allow: Email domains `@goldshore.ai`, `@marzton.dev`; Specific email: `marstonr6@gmail.com` |
 | `admin-preview.goldshore.ai` | goldshore.ai | gs-admin-preview | Identity-based allow: Email domains `@goldshore.ai`, `@marzton.dev`; Specific email: `marstonr6@gmail.com` |
 | `ops.goldshore.ai` | goldshore.ai | gs-control | Email: @goldshore.ai (ops team only) |
