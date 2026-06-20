@@ -23,10 +23,7 @@ function getProdSection(toml) {
 
   const start = headerMatch.index + headerMatch[0].length;
   const rest = toml.slice(start);
-  const nextSectionMatch =
-    /^(?:\[env\.(?!prod\])\w(?:[.-]?\w)*\]|\[\[env\.(?!prod(?:\.|\]\]))\w(?:[.-]?\w)*(?:\.\w(?:[.-]?\w)*)*\]\])\s*$/m.exec(
-      rest,
-    );
+  const nextSectionMatch = /^\[env\.(?!prod\])[^\]\r\n]+\]\s*$/m.exec(rest);
   const end = nextSectionMatch ? start + nextSectionMatch.index : toml.length;
   return toml.slice(start, end);
 }
@@ -44,7 +41,7 @@ function hasSecretName(section, secretName) {
     String.raw`(^|\n)\s*(?:secret|name|binding)\s*=\s*(['"])${escapeRegExp(secretName)}\2(?=\s*(#.*)?(?:\n|$))`,
     'm',
   );
-  return pattern.test(section) || section.includes(secretName);
+  return pattern.test(section);
 }
 
 const errors = [];

@@ -51,6 +51,7 @@ export function checkOrderRisk(
   const riskableQty = isSell
     ? Math.max(0, orderQty - existingLong)
     : Math.max(0, orderQty + existingShort);
+
   const riskableFraction = orderQty > 0 ? riskableQty / orderQty : 0;
   const riskableValue = order.estimatedValue * riskableFraction;
 
@@ -86,6 +87,7 @@ export function checkOrderRisk(
   }
 
   if (riskableQty > 0) {
+    const existingAbsValue = Math.abs(existingPos?.marketValue ?? 0);
     const combinedValue = existingAbsValue + riskableValue;
     const combinedPct = totalValue > 0 ? combinedValue / totalValue : 0;
     if (combinedPct > config.maxConcentrationPct) {

@@ -1,14 +1,14 @@
 ---
-const {
-  currentPath = Astro.url.pathname,
-  navLinks = [
-    { href: '/', label: 'Home' },
-    { href: '/about', label: 'About' },
-    { href: '/services', label: 'Services' },
-    { href: '/team', label: 'Team' },
-    { href: '/contact', label: 'Contact' }
-  ]
-} = Astro.props;
+import ContactForm from './ContactForm.astro';
+
+const { currentPath = Astro.url.pathname } = Astro.props;
+
+const navLinks = [
+  { href: '/', label: 'Home' },
+  { href: '/about', label: 'About' },
+  { href: '/services', label: 'Services' },
+  { href: '/developer', label: 'Developer' },
+];
 ---
 
 <header class="gs-header" data-menu-open="false">
@@ -23,69 +23,213 @@ const {
   </button>
 
   <nav class="gs-nav" id="primary-navigation" aria-label="Primary">
-    {
-      navLinks.map((link) => (
-        <a href={link.href} aria-current={currentPath === link.href ? 'page' : undefined}>
-          {link.label}
-        </a>
-      ))
-    }
+    {navLinks.map((link) => (
+      <a href={link.href} aria-current={currentPath === link.href ? 'page' : undefined}>
+        {link.label}
+      </a>
+    ))}
   </nav>
+
+  <div class="gs-header-actions">
+    <button
+      type="button"
+      class="gs-btn gs-btn--ghost gs-btn--sm"
+      id="contact-modal-trigger"
+      aria-haspopup="dialog"
+    >
+      Contact
+    </button>
+    <a
+      href="https://admin.goldshore.ai"
+      class="gs-btn gs-btn--primary gs-btn--sm"
+      rel="noopener noreferrer"
+    >
+      Sign in
+    </a>
+  </div>
 </header>
 
+<!-- Contact overlay modal -->
+<div
+  id="contact-modal"
+  class="gs-modal-overlay"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Contact GoldShore"
+  hidden
+>
+  <div class="gs-modal-backdrop" data-modal-close></div>
+  <div class="gs-modal-panel">
+    <button class="gs-modal-close" type="button" data-modal-close aria-label="Close">✕</button>
+    <ContactForm heading="Get in touch" compact={true} />
+  </div>
+</div>
+
 <script is:inline>
+  // ── Mobile nav toggle ────────────────────────────────────
   const header = document.querySelector('.gs-header');
   const toggle = document.querySelector('#menu-toggle');
   const menu = document.querySelector('#primary-navigation');
 
-  const firstMobileLink = () => menu?.querySelector('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])');
+  const firstMobileLink = () => menu?.querySelector('a[href], button:not([disabled])');
 
-  const setMenuState = (isOpen, options = { restoreFocus: false }) => {
-    if (!header || !toggle || !menu) {
-      return;
-    }
-
-    const value = isOpen ? 'true' : 'false';
-    header.setAttribute('data-menu-open', value);
-    toggle.setAttribute('aria-expanded', value);
+  const setMenuState = (isOpen) => {
+    if (!header || !toggle || !menu) return;
+    header.setAttribute('data-menu-open', isOpen ? 'true' : 'false');
+    toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
     menu.toggleAttribute('hidden', !isOpen);
-
-    if (isOpen) {
-      firstMobileLink()?.focus();
-    } else if (options.restoreFocus) {
-      toggle.focus();
-    }
+    if (isOpen) firstMobileLink()?.focus();
   };
 
-  const closeMenu = (options) => setMenuState(false, { restoreFocus: true, ...options });
+  toggle?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    setMenuState(toggle.getAttribute('aria-expanded') !== 'true');
+  });
 
-  toggle?.addEventListener('click', (event) => {
-    event.stopPropagation();
-
-    const isOpen = toggle.getAttribute('aria-expanded') === 'true';
-    if (isOpen) {
-      closeMenu({ restoreFocus: true });
-    } else {
-      setMenuState(true);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && toggle?.getAttribute('aria-expanded') === 'true') {
+      setMenuState(false);
+      toggle.focus();
     }
   });
 
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && toggle?.getAttribute('aria-expanded') === 'true') {
-      closeMenu({ restoreFocus: true });
-    }
-  });
-
-  document.addEventListener('click', (event) => {
+  document.addEventListener('click', (e) => {
     if (
       toggle?.getAttribute('aria-expanded') === 'true' &&
       header &&
-      event.target instanceof Node &&
-      !header.contains(event.target)
+      e.target instanceof Node &&
+      !header.contains(e.target)
     ) {
-      closeMenu({ restoreFocus: true });
+      setMenuState(false);
     }
   });
 
   setMenuState(false);
+
+  // ── Contact modal ────────────────────────────────────────
+  const modal = document.getElementById('contact-modal');
+  const openBtn = document.getElementById('contact-modal-trigger');
+
+  const openModal = () => {
+    if (!modal) return;
+    modal.removeAttribute('hidden');
+    document.body.style.overflow = 'hidden';
+    modal.querySelector('input, textarea, button:not([data-modal-close])')?.focus();
+  };
+
+  const closeModal = () => {
+    if (!modal) return;
+    modal.setAttribute('hidden', '');
+    document.body.style.overflow = '';
+    openBtn?.focus();
+  };
+
+  openBtn?.addEventListener('click', openModal);
+
+  modal?.querySelectorAll('[data-modal-close]').forEach((el) => {
+    el.addEventListener('click', closeModal);
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal && !modal.hasAttribute('hidden')) closeModal();
+  });
 </script>
+
+<style>
+  .gs-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+  }
+
+  .gs-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 140ms ease, border-color 140ms ease, transform 100ms ease;
+    white-space: nowrap;
+  }
+
+  .gs-btn--sm { padding: 0.45rem 1rem; }
+
+  .gs-btn--ghost {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.12);
+    color: var(--gs-text, #e5e7eb);
+  }
+  .gs-btn--ghost:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.24); }
+
+  .gs-btn--primary {
+    background: rgba(90,162,255,0.18);
+    border: 1px solid rgba(90,162,255,0.3);
+    color: #fff;
+  }
+  .gs-btn--primary:hover { background: rgba(90,162,255,0.28); transform: translateY(-1px); }
+
+  /* ── Modal ─────────────────────────────────────────────── */
+  .gs-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+
+  .gs-modal-overlay[hidden] { display: none; }
+
+  .gs-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.72);
+    backdrop-filter: blur(4px);
+    cursor: pointer;
+  }
+
+  .gs-modal-panel {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 580px;
+    max-height: 90vh;
+    overflow-y: auto;
+    border-radius: 24px;
+    animation: modal-in 200ms ease;
+  }
+
+  .gs-modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 2;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 999px;
+    color: #fff;
+    width: 2rem;
+    height: 2rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 140ms;
+  }
+  .gs-modal-close:hover { background: rgba(255,255,255,0.16); }
+
+  @keyframes modal-in {
+    from { opacity: 0; transform: translateY(12px) scale(0.97); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  @media (max-width: 600px) {
+    .gs-header-actions .gs-btn--ghost { display: none; }
+  }
+</style>
