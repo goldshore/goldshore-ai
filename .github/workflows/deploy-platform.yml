@@ -59,9 +59,9 @@ env:
 
 jobs:
 
-  # ── gs-web (Cloudflare Pages) ───────────────────────────────────────────────
+  # ── gs-web (Worker + Assets) ─────────────────────────────────────────────────
   deploy-web:
-    name: Deploy gs-web (Pages)
+    name: Deploy gs-web (Worker)
     if: >
       github.event_name == 'push' ||
       inputs.target == 'all' ||
@@ -80,9 +80,11 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @goldshore/gs-web build
-      - name: Deploy to Cloudflare Pages
-        # --branch sets the Pages deployment alias; main branch maps to production
-        run: pnpm exec wrangler pages deploy apps/gs-web/dist --project-name=gs-web --branch=${{ github.ref_name }}
+      - name: Deploy gs-web Worker
+        working-directory: apps/gs-web
+        run: |
+          ENV=${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'prod' }}
+          pnpm exec wrangler deploy --env $ENV
 
   # ── gs-admin (Cloudflare Pages) ─────────────────────────────────────────────
   deploy-admin:
