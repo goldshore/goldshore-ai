@@ -111,6 +111,10 @@ jobs:
         run: pnpm exec wrangler pages deploy apps/gs-admin/dist --project-name=gs-admin --branch=${{ github.ref_name }}
 
   # ── Workers (matrix) ────────────────────────────────────────────────────────
+  # Canonical worker app paths: apps/gs-api, apps/gs-gateway, apps/gs-agent,
+  # apps/gs-control, apps/gs-mail, apps/banproof-me, apps/gs-trading,
+  # apps/gs-www-redirect, apps/gs-core-worker, apps/armsway-com
+  #
   # wrangler deploy auto-creates the worker if it doesn't exist and updates it
   # if it does. Route/custom-domain binding is declared in each wrangler.toml
   # and applied on every deploy — no manual DNS setup needed for custom_domain=true.

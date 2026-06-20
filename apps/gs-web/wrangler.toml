@@ -1,12 +1,13 @@
 name = "gs-web"
-main = "dist/worker.js"
 compatibility_date = "2026-04-18"
 compatibility_flags = ["nodejs_compat"]
 
 workers_dev = false
 
-# Serve the Astro build as a Worker with Assets — same as gs-web-staging.
-# This replaces the CF Pages deployment; routes are owned by this Worker.
+# Serve the Astro build as a Worker with Assets.
+# main is omitted here — wrangler auto-discovers dist/_worker.js via the [assets]
+# binding. Specifying main = "dist/worker.js" causes @cloudflare/vite-plugin to
+# throw during astro build because dist/ doesn't exist pre-build.
 [assets]
 directory = "./dist"
 binding = "SITE_ASSETS"

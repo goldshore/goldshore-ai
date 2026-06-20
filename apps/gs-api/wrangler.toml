@@ -5,10 +5,17 @@ compatibility_flags = ["nodejs_compat"]
 
 workers_dev = false
 
+# ══════════════════════════════════════════════════════════════════════════════
+# Production environment
+# ══════════════════════════════════════════════════════════════════════════════
+
 [env.prod]
-routes = [
-  { pattern = "api.goldshore.org/*", zone_name = "goldshore.org" }
-]
+
+# Routes — use array-of-tables to avoid wrangler 4.98 TOML parser crash on
+# zone_name inside inline table (routes = [{zone_name=...}] format)
+[[env.prod.routes]]
+pattern = "api.goldshore.org/*"
+zone_name = "goldshore.org"
 
 [env.prod.vars]
 ENV = "production"
@@ -120,9 +127,10 @@ store_id = "b9824d3280c54573a24137c7e7143b33"
 # ══════════════════════════════════════════════════════════════════════════════
 
 [env.preview]
-routes = [
-  { pattern = "api-preview.goldshore.ai/*", zone_name = "goldshore.ai" }
-]
+
+[[env.preview.routes]]
+pattern = "api-preview.goldshore.ai/*"
+zone_name = "goldshore.ai"
 
 [env.preview.vars]
 ENV = "preview"
