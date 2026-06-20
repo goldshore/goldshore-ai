@@ -5,6 +5,10 @@ compatibility_flags = ["nodejs_compat"]
 
 workers_dev = false
 
+# ══════════════════════════════════════════════════════════════════════════════
+# Production environment
+# ══════════════════════════════════════════════════════════════════════════════
+
 [env.prod]
 routes = [
   { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" },
@@ -16,6 +20,7 @@ ENV = "production"
 CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 
+# ── KV ────────────────────────────────────────────────────────────────────────────
 [[env.prod.kv_namespaces]]
 binding = "KV"
 id = "e0b8b807191346c3b0afc25fe716d2cd"
@@ -24,35 +29,108 @@ id = "e0b8b807191346c3b0afc25fe716d2cd"
 binding = "CONTROL_LOGS"
 id = "a52e94cb331c4e3db08f2aa507e6df09"
 
+# ── R2 ────────────────────────────────────────────────────────────────────────────
 [[env.prod.r2_buckets]]
 binding = "GS_ASSETS"
 bucket_name = "gs-assets"
 
+[[env.prod.r2_buckets]]
+binding = "TELEMETRY"
+bucket_name = "gs-telemetry-storage"
+
+# ── D1 ────────────────────────────────────────────────────────────────────────────
 [[env.prod.d1_databases]]
 binding = "PLATFORM_DB"
 database_name = "gs_platform_db"
 database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
 
+[[env.prod.d1_databases]]
+binding = "AUDIT_DB"
+database_name = "gs_audit_db"
+database_id = "1ae71d76-188f-481b-91d9-db2d39013f68"
+
+[[env.prod.d1_databases]]
+binding = "SIGNALS_DB"
+database_name = "gs_signals_db"
+database_id = "76af4653-7f44-417b-b46e-250143d906fd"
+
+[[env.prod.d1_databases]]
+binding = "JOBS_DB"
+database_name = "gs_jobs_db"
+database_id = "750c469c-788d-49e8-9254-77231cffd70f"
+
+# ── AI ────────────────────────────────────────────────────────────────────────────
 [env.prod.ai]
 binding = "AI"
 
+# ── Durable Objects ───────────────────────────────────────────────────────────
 [[env.prod.durable_objects.bindings]]
 name = "AUTH_SESSION"
 class_name = "AuthSession"
 
+# ── Services ──────────────────────────────────────────────────────────────────
 [[env.prod.services]]
 binding = "AGENT"
 service = "gs-agent"
 environment = "prod"
 
+[[env.prod.services]]
+binding = "GS_MAIL"
+service = "gs-mail"
+environment = "prod"
+
+[[env.prod.services]]
+binding = "GS_WEB"
+service = "gs-web"
+environment = "prod"
+
+[[env.prod.services]]
+binding = "GS_WEB_STAGING"
+service = "gs-web-staging"
+
+[[env.prod.services]]
+binding = "GOLDSHORE_AI"
+service = "goldshore-ai"
+environment = "prod"
+
+# ── Queues (producers) ───────────────────────────────────────────────────────
 [[env.prod.queues.producers]]
 binding = "JOBS_QUEUE"
 queue = "goldshore-jobs"
 
+[[env.prod.queues.producers]]
+binding = "EVENTS_QUEUE"
+queue = "gs-events"
+
+[[env.prod.queues.producers]]
+binding = "MAIL_JOBS_QUEUE"
+queue = "gs-mail-jobs"
+
+[[env.prod.queues.producers]]
+binding = "DEAD_LETTER_QUEUE"
+queue = "gs-mail-dead-letter"
+
+# ── Workflows ────────────────────────────────────────────────────────────────────
+[[env.prod.workflows]]
+binding = "GS_SIGNALS"
+name = "signals-evaluator"
+class_name = "SignalsEvaluator"
+script_name = "gs-signals-prod"
+
+# ── Secrets Store ─────────────────────────────────────────────────────────────
+[[env.prod.secrets_store.bindings]]
+binding = "SECRETS"
+store_id = "b9824d3280c54573a24137c7e7143b33"
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Preview environment
+# ══════════════════════════════════════════════════════════════════════════════
+
 [env.preview]
-routes = [
-  { pattern = "api-preview.goldshore.ai/*", zone_name = "goldshore.ai" }
-]
+
+[[env.preview.routes]]
+pattern = "api-preview.goldshore.ai/*"
+zone_name = "goldshore.ai"
 
 [env.preview.vars]
 ENV = "preview"
@@ -65,30 +143,70 @@ id = "d4d20cee39094b999dea3f7e5f4c533a"
 binding = "GS_ASSETS"
 bucket_name = "gs-assets-preview"
 
+[[env.preview.r2_buckets]]
+binding = "TELEMETRY"
+bucket_name = "gs-telemetry-storage"
+
 [[env.preview.d1_databases]]
 binding = "PLATFORM_DB"
 database_name = "gs_platform_db"
 database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
 
+[[env.preview.d1_databases]]
+binding = "AUDIT_DB"
+database_name = "gs_audit_db"
+database_id = "1ae71d76-188f-481b-91d9-db2d39013f68"
+
+[[env.preview.d1_databases]]
+binding = "SIGNALS_DB"
+database_name = "gs_signals_db"
+database_id = "76af4653-7f44-417b-b46e-250143d906fd"
+
+[[env.preview.d1_databases]]
+binding = "JOBS_DB"
+database_name = "gs_jobs_db"
+database_id = "750c469c-788d-49e8-9254-77231cffd70f"
+
 [env.preview.ai]
 binding = "AI"
+
+[[env.preview.durable_objects.bindings]]
+name = "AUTH_SESSION"
+class_name = "AuthSession"
 
 [[env.preview.services]]
 binding = "AGENT"
 service = "gs-agent"
 
+[[env.preview.services]]
+binding = "GS_MAIL"
+service = "gs-mail"
+
+[[env.preview.services]]
+binding = "GS_WEB"
+service = "gs-web"
+
+[[env.preview.services]]
+binding = "API_SERVICE"
+service = "gs-api"
+
 [[env.preview.queues.producers]]
 binding = "JOBS_QUEUE"
 queue = "goldshore-jobs"
 
-[[env.prod.secrets_store.bindings]]
-binding = "SECRETS"
-store_id = "b9824d3280c54573a24137c7e7143b33"
+[[env.preview.queues.producers]]
+binding = "EVENTS_QUEUE"
+queue = "gs-events"
+
+[[env.preview.queues.producers]]
+binding = "MAIL_JOBS_QUEUE"
+queue = "gs-mail-jobs"
 
 [[env.preview.secrets_store.bindings]]
 binding = "SECRETS"
 store_id = "b9824d3280c54573a24137c7e7143b33"
 
+# ── Durable Object migrations ───────────────────────────────────────────────
 [[migrations]]
 tag = "v1-auth-session"
 new_sqlite_classes = ["AuthSession"]

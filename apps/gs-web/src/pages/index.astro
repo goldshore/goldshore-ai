@@ -1,389 +1,768 @@
 ---
+import Logo from '../components/brand/Logo.astro';
+import ParallaxHero from '../components/hero/ParallaxHero.astro';
 import WebLayout from '../layouts/WebLayout.astro';
-import TickerFeed from '../components/TickerFeed.astro';
 
 export const prerender = true;
 
-// ── Node layer: the actual deployed Cloudflare infrastructure ─────────────────
-const nodeCards = [
+const trustMetrics = [
   {
-    title: 'gs-gateway',
-    tag: 'Edge Router',
-    body: 'Cloudflare Worker at gw.goldshore.ai. Authenticates via CF Access JWT, enforces CORS, routes /api/* to gs-api, proxies agent.goldshore.ai to the agent binding, and fan-outs security checks to banproof-me — all at the edge with sub-millisecond overhead.',
+    label: 'Audit readiness',
+    value: '100%',
+    context: 'Control workflows mapped',
+    detail:
+      'Decision checkpoints, reviewer ownership, and evidence logs are defined from day one.',
   },
   {
-    title: 'gs-trading',
-    tag: 'Simulation Engine',
-    body: 'Paper-trading command center at trading.goldshore.ai. Connects to Schwab and Robinhood OAuth for live market data, runs a multi-agent system (signal, risk, execution, scheduler, monitor) against a KV-backed paper ledger. No live order execution — simulation only.',
+    label: 'Incident response',
+    value: '< 15 min',
+    context: 'Mean triage handoff',
+    detail:
+      'Risk, compliance, and operations teams share the same runtime timeline and escalation logic.',
   },
   {
-    title: 'gs-platform',
-    tag: 'Service Hub',
-    body: 'Internal hub worker with service bindings to banproof-me, gs-mail, and gs-signals-prod. Holds the shared D1 database, KV config namespaces, and R2 asset bucket. Now routes via service bindings only — no public routes.',
-  },
-  {
-    title: 'banproof-me',
-    tag: 'Security Layer',
-    body: 'Security-check worker bound to every inbound request via gs-gateway. Validates requests for ban indicators, rate signals, and access anomalies. Also the standalone API at banproof.me for consumer dispute and account resilience tooling.',
-  },
-  {
-    title: 'gs-mail',
-    tag: 'Email Queue',
-    body: 'Cloudflare Queue consumer for outbound email. Decouples email delivery from request paths — any worker pushes to the queue, gs-mail drains it via Resend with retry logic, audit logging, and suppression list enforcement.',
-  },
-  {
-    title: 'armsway-com',
-    tag: 'Commerce Node',
-    body: 'Standalone Worker for armsway.com. Tracks e-commerce events (Gearswipe / StellarAIO), writes telemetry to R2, audits to D1, and exposes health and tracking endpoints protected by a shared worker secret.',
+    label: 'Decision evidence',
+    value: '7 years',
+    context: 'Trace retention policy',
+    detail:
+      'Every critical AI action is preserved for regulatory review and internal post-incident analysis.',
   },
 ];
 
-// ── Data layer ─────────────────────────────────────────────────────────────────────
-const dataCards = [
+const capabilities = [
   {
-    title: 'KV Store',
-    body: 'Ten namespaces across the platform — per-worker config, OAuth tokens (Schwab, Robinhood), feature flags (mcp-trading), session state, trading paper ledger, admin sessions, and a shared GS_CONFIG namespace readable by all workers.',
+    title: 'Model oversight workflows',
+    body: 'Route high-risk model outputs to human review with clear ownership, service levels, and escalation paths.',
   },
   {
-    title: 'D1 (SQLite at edge)',
-    body: 'gs_platform_db for platform data; gs_audit_db for audit trails shared across banproof-me, armsway-com, and gs-admin; gs_signals_db for market signal history. All accessed via Drizzle ORM with @goldshore/core-schema types.',
+    title: 'Real-time risk operations',
+    body: 'Monitor production behavior, detect drift, and trigger playbooks before edge-case failures become incidents.',
   },
   {
-    title: 'R2 Object Storage',
-    body: 'gs-assets for static assets, gs-telemetry-storage for armsway commerce telemetry. Bound to workers directly — no public bucket URLs. Content served through Workers responses with cache headers.',
+    title: 'Audit-ready evidence trails',
+    body: 'Capture decisions, thresholds, and interventions in a format compliance teams can review without translation.',
   },
   {
-    title: 'Queues',
-    body: 'GS_EVENTS queue for platform-wide event fan-out. MAIL_QUEUE consumed by gs-mail for reliable email delivery. CHECKOUT_EVENTS_QUEUE and CONTACT_EVENTS_QUEUE routed through gs-gateway for intake decoupling.',
-  },
-];
-
-// ── Intelligence layer ───────────────────────────────────────────────────────────────
-const agentCards = [
-  {
-    title: 'Signal Agent',
-    body: 'Generates buy/sell/hold signals from RSI, MACD, and EMA crossovers on live market data pulled from Schwab and Robinhood APIs. Feeds the orchestrator with scored recommendations.',
+    title: 'Traceable architecture',
+    body: 'Every workflow is built around auditable services, operator checkpoints, and clear system states.',
   },
   {
-    title: 'Risk Agent',
-    body: 'Validates every order against position limits (≤5% per position), daily loss ceiling (≤2%), sector concentration (≤15%), and minimum cash reserve (≥10%). Rejects non-compliant orders before paper execution.',
-  },
-  {
-    title: 'Orchestrator',
-    body: 'Coordinates the signal → risk → execution pipeline. Assembles recommendations, applies human-approval gates, and dispatches approved orders to the paper ledger. Never touches a live broker.',
-  },
-  {
-    title: 'Monitor',
-    body: 'Tracks portfolio drift, P&L thresholds, and agent health. Pushes notifications via email webhook, HTTP webhook, or SMS when configured triggers fire.',
-  },
-];
-
-// ── Ventures ──────────────────────────────────────────────────────────────────────────────
-const ventureCards = [
-  {
-    title: 'BanProof',
-    body: 'Consumer protection and account resilience tooling. Dispute recovery, escalation workflows, and real-time ban signal detection.',
-  },
-  {
-    title: 'GearSwipe',
-    body: 'Commerce intelligence for the resale market. Affiliate infrastructure, product discovery, and market-routing automation via armsway.com.',
-  },
-  {
-    title: 'Risk Radar',
-    body: 'Financial signal tooling for markets, sectors, volatility, and asymmetric decision environments — built on the same gs-trading agent infrastructure.',
+    title: 'Proven controls',
+    body: 'Controls are demonstrated in live use with logs, thresholds, review modes, and fallback paths.',
   },
 ];
 ---
 
 <WebLayout
-  title="GoldShore | Personal Cloudflare Node Network"
-  description="A distributed personal API built on Cloudflare Workers, D1, KV, R2, and Queues — with a paper-trading engine, multi-agent intelligence layer, and edge security."
+  title="GoldShore | Infrastructure for High-Trust AI"
+  description="GoldShore builds resilient decision systems, risk tooling, and operator infrastructure."
   canonicalPath="/"
+  ogTitle="GoldShore.ai | Resilient AI Infrastructure for High-Trust Teams"
+  ogDescription="Turn volatile AI operations into auditable, operator-ready systems. Request a briefing to accelerate reliable deployment."
 >
-  <main class="home">
+  <main class="home-page">
+    <ParallaxHero
+      eyebrow="AI risk operations for financial services"
+      headline={"Control AI Decisions.\nPass Every Review."}
+      sub="GoldShore gives risk and compliance leaders a single operating layer to monitor model behavior, escalate exceptions, and prove governance in every audit."
+      ctaPrimary={{ label: 'Book a risk review', href: '/contact' }}
+      ctaSecondary={{ label: 'See services', href: '/services' }}
+      ctaPrimaryEventName="hero_primary_contact_click"
+      ctaSecondaryEventName="hero_secondary_services_click"
+    />
 
-    <!-- ── Hero ──────────────────────────────────────────────────── -->
-    <section class="hero" id="top">
-      <p class="kicker">Edge Network · Agent Intelligence · Personal Infrastructure</p>
-      <h1>A personal Cloudflare node network, wired end-to-end.</h1>
-      <p class="lead">
-        GoldShore is a distributed system running across Cloudflare Workers, D1, KV, R2, and Queues —
-        with an edge gateway, paper-trading engine, multi-agent intelligence layer, security middleware,
-        and admin dashboard, all deployed from a single pnpm monorepo.
-      </p>
-      <p class="trust">Workers · D1 · KV · R2 · Queues · CF Access · OAuth · Hono · Astro</p>
-      <div class="actions">
-        <a href="#nodes" class="btn btn-primary">Explore the nodes</a>
-        <button type="button" class="btn" id="contact-modal-trigger">Get in touch</button>
+    <section class="metrics-shell gs-shell-section" aria-label="Proof metrics">
+      <div class="section-copy">
+        <p class="gs-eyebrow">Proof metrics</p>
+        <h2>Operational outcomes with explicit source notes.</h2>
+        <p class="section-intro">
+          These figures reflect current measured performance. Each metric includes
+          a direct source note and one clear next step to review your own baseline.
+        </p>
+        <a href="/contact" class="hero-button hero-button--primary">
+          Review your baseline metrics
+        </a>
       </div>
-    </section>
-
-    <!-- ── Market ticker ───────────────────────────────────────────── -->
-    <div class="ticker-wrapper">
-      <TickerFeed id="home-ticker" />
-    </div>
-
-    <!-- ── Architecture diagram (text) ──────────────────────────────────── -->
-    <section class="section arch-section" id="platform">
-      <h2>Architecture</h2>
-      <p class="intro">
-        Every domain runs on its own isolated Cloudflare Worker. Workers communicate via service bindings —
-        no public API hops between nodes. Data flows through D1 for persistent state, KV for fast edge
-        reads, R2 for objects, and Queues for async fan-out.
-      </p>
-      <div class="arch-diagram" aria-label="Network topology diagram">
-        <div class="arch-row">
-          <div class="arch-node arch-node--edge">CF Access</div>
-          <div class="arch-arrow">→</div>
-          <div class="arch-node arch-node--gateway">gs-gateway<span class="arch-sub">gw.goldshore.ai</span></div>
-        </div>
-        <div class="arch-bindings">
-          <div class="arch-branch">
-            <div class="arch-node arch-node--worker">gs-api<span class="arch-sub">api.goldshore.ai</span></div>
-          </div>
-          <div class="arch-branch">
-            <div class="arch-node arch-node--worker">gs-platform<span class="arch-sub">service hub</span></div>
-            <div class="arch-leaf-row">
-              <div class="arch-node arch-node--leaf">banproof-me</div>
-              <div class="arch-node arch-node--leaf">gs-mail</div>
-              <div class="arch-node arch-node--leaf">gs-signals</div>
+      <div class="metrics-grid" data-metrics-grid>
+        {trustMetrics.map((metric) => (
+          <article class="signal-tile signal-tile--loading" aria-live="polite">
+            <div class="signal-tile__header">
+              <span>{metric.label}</span>
+              <small>{metric.context}</small>
             </div>
+            <strong>{metric.value}</strong>
+            <p>{metric.detail}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section
+      class="section-block gs-shell-section"
+      aria-labelledby="capabilities-title"
+    >
+      <div class="section-copy">
+        <p class="gs-eyebrow">Capabilities</p>
+        <h2 id="capabilities-title">
+          One platform for risk, compliance, and model operations.
+        </h2>
+        <p class="section-intro">
+          Replace fragmented monitoring and manual follow-up with governed AI
+          workflows your control functions can trust.
+        </p>
+        <a href="/contact" class="hero-button hero-button--primary">
+          Map capabilities to your KPI
+        </a>
+      </div>
+      <div class="capability-grid">
+        {capabilities.map((capability) => (
+          <article class="capability-card">
+            <h3>{capability.title}</h3>
+            <p>{capability.body}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section
+      class="section-block gs-shell-section"
+      aria-labelledby="risk-radar-title"
+    >
+      <div class="section-copy">
+        <p class="gs-eyebrow">Risk Radar</p>
+        <h2 id="risk-radar-title">
+          A shared risk picture for operations and governance teams.
+        </h2>
+        <p class="section-intro">
+          Surface model drift, policy breaches, and escalation status in one
+          live view so reviewers can act quickly and consistently.
+        </p>
+      </div>
+      <RiskRadar />
+    </section>
+
+    <section
+      class="section-block gs-shell-section architecture-section"
+      aria-labelledby="proof-title"
+    >
+      <div class="section-copy">
+        <p class="gs-eyebrow">Architecture / Proof</p>
+        <h2 id="proof-title">Governance that works in real production pressure.</h2>
+      </div>
+      <div class="proof-grid">
+        {proofPoints.map((point) => (
+          <article class="proof-card">
+            <h3>{point.title}</h3>
+            <p>{point.body}</p>
+          </article>
+        ))}
+        <article class="proof-card proof-card--metrics">
+          <div>
+            <span>Review posture</span>
+            <strong>Human oversight by default</strong>
           </div>
-          <div class="arch-branch">
-            <div class="arch-node arch-node--worker">gs-trading<span class="arch-sub">trading.goldshore.ai</span></div>
-            <div class="arch-leaf-row">
-              <div class="arch-node arch-node--agent">signal-agent</div>
-              <div class="arch-node arch-node--agent">risk-agent</div>
-              <div class="arch-node arch-node--agent">orchestrator</div>
-            </div>
+          <div>
+            <span>Observability</span>
+            <strong>Events, thresholds, evidence</strong>
           </div>
-        </div>
-        <div class="arch-row arch-data-row">
-          <div class="arch-node arch-node--data">D1 (SQLite)</div>
-          <div class="arch-node arch-node--data">KV (10 ns)</div>
-          <div class="arch-node arch-node--data">R2 (objects)</div>
-          <div class="arch-node arch-node--data">Queues</div>
-        </div>
+          <div>
+            <span>Deployment tone</span>
+            <strong>Controlled, audit-ready</strong>
+          </div>
+        </article>
       </div>
     </section>
 
-    <!-- ── Worker nodes ───────────────────────────────────────────── -->
-    <span id="services" aria-hidden="true"></span>
-    <section id="nodes" class="section">
-      <h2>Worker Nodes</h2>
-      <p class="intro">
-        Six workers deployed from this monorepo, each owning its domain, bindings, and data.
-        No shared runtime state — isolation is enforced at the Cloudflare layer.
-      </p>
-      <div class="grid">
-        {nodeCards.map((card) => (
-          <article class="card">
-            <div class="card-meta">
-              <h3>{card.title}</h3>
-              <span class="tag">{card.tag}</span>
-            </div>
-            <p>{card.body}</p>
-          </article>
-        ))}
+    <section
+      class="section-block gs-shell-section compact-team"
+      aria-labelledby="team-title"
+    >
+      <div class="section-copy">
+        <p class="gs-eyebrow">Team</p>
+        <h2 id="team-title">
+          Built by operators focused on resilient systems and applied
+          intelligence.
+        </h2>
+      </div>
+      <div class="team-row">
+        <article class="team-card team-card--founder">
+          <h3>Robert M.</h3>
+          <p>Leads product direction, systems strategy, and applied intelligence.</p>
+        </article>
+        <article class="team-card">
+          <h3>Systems</h3>
+          <p>Infrastructure, execution, observability.</p>
+        </article>
+        <article class="team-card">
+          <h3>Risk</h3>
+          <p>Monitoring, analytics, decision systems.</p>
+        </article>
       </div>
     </section>
 
-    <!-- ── Data layer ───────────────────────────────────────────────────── -->
-    <section id="data" class="section">
-      <h2>Data Layer</h2>
-      <p class="intro">
-        Persistent state lives in D1 and KV, co-located at Cloudflare's edge.
-        All bindings are declared per-worker — no shared connection strings, no ORMs outside the monorepo.
-      </p>
-      <div class="grid">
-        {dataCards.map((card) => (
-          <article class="card">
-            <h3>{card.title}</h3>
-            <p>{card.body}</p>
-          </article>
-        ))}
+    <footer
+      class="section-block gs-shell-section contact-cta"
+      aria-labelledby="contact-cta-title"
+    >
+      <div>
+        <p class="gs-eyebrow">Next step</p>
+        <h2 id="contact-cta-title">
+          Need a deeper implementation view? Visit our services overview.
+        </h2>
+        <p>
+          We will translate your current workflow into a measured implementation
+          plan with instrumentation requirements and review checkpoints.
+        </p>
       </div>
-    </section>
-
-    <!-- ── Agent intelligence ────────────────────────────────────────────── -->
-    <span id="intelligence" aria-hidden="true"></span>
-    <section id="agents" class="section">
-      <h2>Agent Intelligence</h2>
-      <p class="intro">
-        The trading node runs a multi-agent system for paper simulation — signal generation, risk validation,
-        and orchestrated execution, with human approval gates and a persistent paper ledger.
-        Three isolated states: live broker data, paper simulation, and agentic recommendations.
-      </p>
-      <div class="grid">
-        {agentCards.map((card) => (
-          <article class="card">
-            <h3>{card.title}</h3>
-            <p>{card.body}</p>
-          </article>
-        ))}
-      </div>
-      <div class="callout">
-        <strong>Mode: Paper.</strong> live_trading_enabled: false · broker_execution_enabled: false · human_approval_required: true
-      </div>
-    </section>
-
-    <!-- ── Ventures ─────────────────────────────────────────────────────────────────── -->
-    <span id="company" aria-hidden="true"></span>
-    <section id="ventures" class="section">
-      <h2>Ventures</h2>
-      <p class="intro">
-        Products built on the same infrastructure — each with its own worker, domain, and data bindings.
-      </p>
-      <div class="three-col">
-        {ventureCards.map((card) => (
-          <article class="card">
-            <h3>{card.title}</h3>
-            <p>{card.body}</p>
-          </article>
-        ))}
-      </div>
-    </section>
-
-    <!-- ── Subscribe strip ─────────────────────────────────────────────── -->
-    <section class="gs-subscribe-strip">
-      <div class="subscribe-inner">
-        <div>
-          <p class="gs-eyebrow kicker">Early access</p>
-          <h2>Get notified when SEL goes live</h2>
-          <p class="lead">Signal feed access, backtests, and API docs — first to subscribers.</p>
-        </div>
-        <form class="subscribe-form" action="/api/contact" method="post">
-          <input type="hidden" name="formType" value="subscribe" />
-          <input type="hidden" name="redirectTo" value="/thank-you" />
-          <input type="email" name="email" placeholder="your@email.com" required autocomplete="email" aria-label="Email address" />
-          <button type="submit" class="btn btn-primary">Notify me</button>
-        </form>
-      </div>
-    </section>
-
-    <!-- ── CTA ──────────────────────────────────────────────────────────────────────────── -->
-    <section id="contact" class="section contact">
-      <h2>Built in the open. Let's connect.</h2>
-      <p class="intro">
-        Questions about the architecture, want to collaborate, or looking to build something similar?
-      </p>
-      <button type="button" class="btn btn-primary" id="contact-modal-trigger-footer">Get in touch</button>
-    </section>
-
+      <a
+        href="/contact"
+        class="hero-button hero-button--primary"
+        data-analytics-event="homepage_cta_bottom_click"
+      >
+        Talk with GoldShore
+      </a>
+    </footer>
   </main>
 
-  <script is:inline>
-    // Wire footer CTA to header modal
-    document.getElementById('contact-modal-trigger-footer')?.addEventListener('click', () => {
-      const modal = document.getElementById('contact-modal');
-      const trigger = document.getElementById('contact-modal-trigger');
-      if (modal) {
-        modal.removeAttribute('hidden');
-        document.body.style.overflow = 'hidden';
-        modal.querySelector('input, textarea')?.focus();
-      } else {
-        trigger?.click();
-      }
-    });
+  <script>
+    import { trackEvent } from '../scripts/analytics';
+    import { initWave } from '../scripts/init-wave';
+    import { initLogo } from '../scripts/init-logo-reactive';
+
+    let homeCleanup;
+
+    const cleanup = () => {
+      homeCleanup?.();
+      homeCleanup = undefined;
+    };
+
+    const hydrateMetrics = () => {
+      const cards = document.querySelectorAll('.signal-tile--loading');
+      const reduceMotion = window.matchMedia(
+        '(prefers-reduced-motion: reduce)',
+      ).matches;
+
+      window.setTimeout(
+        () => cards.forEach((card) => card.classList.remove('signal-tile--loading')),
+        reduceMotion ? 0 : 650,
+      );
+    };
+
+    const boot = () => {
+      cleanup();
+      hydrateMetrics();
+
+      const canvas = document.getElementById('wave-bg');
+      const logo = document.querySelector('.gs-logo-reactive');
+      const isReactiveLogo =
+        logo instanceof HTMLElement || logo instanceof SVGElement;
+
+      if (!(canvas instanceof HTMLCanvasElement) || !isReactiveLogo) return;
+
+      const wave = initWave(canvas);
+      const destroyLogo = initLogo(logo, wave);
+
+      homeCleanup = () => {
+        destroyLogo?.();
+        wave.destroy();
+      };
+    };
+
+    const root = document.documentElement;
+    const ctaEventNames = {
+      heroPrimary: 'hero_primary_contact_click',
+      heroSecondary: 'hero_secondary_services_click',
+      footerSecondary: 'footer_secondary_services_click',
+    };
+
+    const bindCtaEvents = () => {
+      const ctaNodes = document.querySelectorAll('[data-cta-event]');
+      ctaNodes.forEach((node) => {
+        if (!(node instanceof HTMLElement) || node.dataset.ctaBound === 'true') return;
+        const eventName = node.dataset.ctaEvent;
+        if (!eventName) return;
+
+        node.dataset.ctaBound = 'true';
+        node.addEventListener('click', () => {
+          window.dispatchEvent(
+            new CustomEvent('gs:cta-click', {
+              detail: { eventName, location: node.closest('footer') ? 'footer' : 'hero' },
+            }),
+          );
+        });
+      });
+    };
+
+    if (root.dataset.gsHomeHeroBound !== 'true') {
+      root.dataset.gsHomeHeroBound = 'true';
+      document.addEventListener('astro:before-swap', cleanup);
+      document.addEventListener('astro:page-load', boot);
+      document.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+
+        const cta = target.closest('[data-analytics-id]');
+        if (!(cta instanceof HTMLElement)) return;
+
+        const ctaId = cta.dataset.analyticsId;
+        if (!ctaId || !ctaId.startsWith('homepage-')) return;
+
+        trackEvent(
+          'homepage_cta_click',
+          {
+            cta_id: ctaId,
+            page_path: window.location.pathname,
+          },
+          { debounceKey: `homepage_cta_click:${ctaId}`, debounceMs: 1200 },
+        );
+      });
+    }
+
+    boot();
+    bindCtaEvents();
+    void ctaEventNames;
   </script>
 
   <style>
-    .home { width: min(1100px, 92vw); margin: 0 auto; padding: 5rem 0 6rem; color: var(--gs-color-text); }
-
-    /* ── Ticker ──────────────────────────────────────────────────── */
-    .ticker-wrapper { margin: 1.5rem 0 2.5rem; }
-
-    /* ── Hero ─────────────────────────────────────────────────────── */
-    .hero { padding: 4rem 0 3rem; border-bottom: 1px solid var(--gs-color-border); }
-    .kicker { color: var(--gs-gold); text-transform: uppercase; letter-spacing: .18em; font-size: .78rem; }
-    h1 { font-size: clamp(2.4rem, 5.5vw, 4.2rem); line-height: 1.05; max-width: 22ch; }
-    .lead, .intro { color: var(--gs-color-subtle); max-width: 72ch; line-height: 1.7; }
-    .trust { color: var(--gs-color-subtle); font-family: var(--gs-font-mono); font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; margin-top: .5rem; }
-    .actions { display: flex; gap: .75rem; flex-wrap: wrap; margin-top: 1.25rem; }
-    .btn { border: 1px solid rgba(201,168,76,.45); color: var(--gs-color-text); border-radius: 999px; padding: .7rem 1.05rem; text-decoration: none; cursor: pointer; background: transparent; font: inherit; transition: background 160ms ease, border-color 160ms ease; }
-    .btn:hover { background: var(--gs-gold-glow, rgba(201,168,76,.08)); }
-    .btn-primary { background: var(--gs-gold-soft, rgba(201,168,76,.14)); border-color: var(--gs-gold); }
-    .btn-primary:hover { background: rgba(201,168,76,.24); }
-
-    /* ── Sections ────────────────────────────────────────────────────── */
-    .section { padding: 3.5rem 0 1rem; }
-    h2 { font-size: clamp(1.8rem, 3.2vw, 2.7rem); margin-bottom: .65rem; }
-    .grid, .three-col { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); margin-top: 1.1rem; }
-
-    /* ── Cards ───────────────────────────────────────────────────────── */
-    .card { background: var(--gs-color-surface); border: 1px solid var(--gs-color-border); border-radius: 14px; padding: 1.25rem; color: inherit; transition: border-color 160ms ease, transform 160ms ease; }
-    .card:hover { border-color: var(--gs-color-border-strong, rgba(201,168,76,.3)); transform: translateY(-2px); }
-    .card-meta { display: flex; align-items: baseline; gap: .6rem; margin-bottom: .4rem; flex-wrap: wrap; }
-    .card h3 { margin: 0; font-size: 1.1rem; color: var(--gs-gold); }
-    .card p { margin: 0; color: var(--gs-color-subtle); line-height: 1.6; font-size: .92rem; }
-    .tag { font-family: var(--gs-font-mono, monospace); font-size: .7rem; padding: .15rem .45rem; border: 1px solid rgba(201,168,76,.3); border-radius: 4px; color: var(--gs-gold); white-space: nowrap; }
-
-    /* ── Architecture diagram ────────────────────────────────────────────── */
-    .arch-section { }
-    .arch-diagram { margin-top: 1.5rem; font-family: var(--gs-font-mono, monospace); font-size: .82rem; display: flex; flex-direction: column; gap: 1rem; }
-    .arch-row { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
-    .arch-arrow { color: var(--gs-color-subtle); font-size: 1.2rem; }
-    .arch-bindings { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; padding: .75rem; border: 1px dashed rgba(255,255,255,.08); border-radius: 10px; }
-    .arch-branch { display: flex; flex-direction: column; gap: .5rem; }
-    .arch-leaf-row { display: flex; gap: .4rem; flex-wrap: wrap; padding-left: .5rem; }
-    .arch-data-row { display: flex; flex-wrap: wrap; gap: .5rem; border-top: 1px solid rgba(255,255,255,.06); padding-top: 1rem; }
-    .arch-node { padding: .4rem .7rem; border-radius: 6px; display: flex; flex-direction: column; gap: .15rem; white-space: nowrap; }
-    .arch-sub { font-size: .68rem; color: var(--gs-color-subtle); }
-    .arch-node--edge { background: rgba(239,68,68,.12); border: 1px solid rgba(239,68,68,.25); color: #fca5a5; }
-    .arch-node--gateway { background: rgba(201,168,76,.12); border: 1px solid rgba(201,168,76,.3); color: var(--gs-gold); }
-    .arch-node--worker { background: rgba(90,162,255,.10); border: 1px solid rgba(90,162,255,.25); color: #93c5fd; }
-    .arch-node--agent { background: rgba(167,139,250,.10); border: 1px solid rgba(167,139,250,.2); color: #c4b5fd; font-size: .75rem; padding: .25rem .5rem; }
-    .arch-node--leaf { background: rgba(52,211,153,.08); border: 1px solid rgba(52,211,153,.2); color: #6ee7b7; font-size: .75rem; padding: .25rem .5rem; }
-    .arch-node--data { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); color: var(--gs-color-subtle); }
-
-    /* ── Callout ────────────────────────────────────────────────────────────── */
-    .callout { margin-top: 1.25rem; padding: .85rem 1.1rem; border: 1px solid rgba(52,211,153,.2); border-radius: 10px; background: rgba(52,211,153,.05); font-family: var(--gs-font-mono, monospace); font-size: .82rem; color: #6ee7b7; }
-    .callout strong { color: #a7f3d0; }
-
-    /* ── Subscribe strip ────────────────────────────────────────────────── */
-    .gs-subscribe-strip {
-      padding: 3rem 0;
-      border-top: 1px solid rgba(255,255,255,0.06);
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      background: rgba(10,20,40,0.6);
-      margin: 2rem 0;
-      border-radius: 14px;
+    .home-page {
+      padding-bottom: var(--gs-space-10);
     }
-    .subscribe-inner {
+
+    .hero {
+      position: relative;
+      min-height: min(92vh, 960px);
+      display: grid;
+      align-items: end;
+      overflow: hidden;
+      border-bottom: 1px solid var(--gs-border);
+    }
+
+    #wave-bg,
+    .hero-grid,
+    .hero::after {
+      position: absolute;
+      inset: 0;
+    }
+
+    #wave-bg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .hero-grid {
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+      background-size: 72px 72px;
+      mask-image: radial-gradient(circle at 50% 30%, black 30%, transparent 80%);
+      opacity: 0.5;
+    }
+
+    .hero::after {
+      content: '';
+      background:
+        radial-gradient(circle at 25% 20%, rgba(90, 162, 255, 0.18), transparent 28%),
+        linear-gradient(180deg, rgba(7, 11, 20, 0.18), rgba(7, 11, 20, 0.84));
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .hero-mark {
+      position: absolute;
+      inset: 18% auto auto clamp(1rem, 7vw, 6rem);
+      z-index: 1;
+    }
+
+    .gs-logo-reactive {
+      width: clamp(72px, 11vw, 120px);
+      height: auto;
+      color: var(--gs-primary);
+      will-change: transform, filter;
+    }
+
+    .hero-shell,
+    .section-block,
+    .metrics-shell,
+    .signal-strip {
+      width: min(100% - 2rem, var(--gs-max-width));
+      margin: 0 auto;
+    }
+
+    .hero-shell {
+      position: relative;
+      z-index: 2;
+      padding: clamp(7rem, 12vh, 10rem) 0 1.75rem;
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr);
+      gap: clamp(1.5rem, 4vw, 4rem);
+      align-items: end;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.85rem;
+      border: 1px solid rgba(90, 162, 255, 0.22);
+      border-radius: 999px;
+      background: rgba(90, 162, 255, 0.1);
+      color: #dcedff;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .hero-content h1,
+    .section-copy h2,
+    .contact-cta h2 {
+      margin: 1rem 0;
+      font-size: clamp(2.7rem, 7vw, 5.4rem);
+      line-height: 0.98;
+      letter-spacing: -0.045em;
+      color: #fff;
+      text-wrap: balance;
+    }
+
+    .hero-content p,
+    .section-copy p,
+    .hero-panel li,
+    .proof-card p,
+    .team-card p,
+    .contact-cta p,
+    .signal-tile p {
+      color: rgba(233, 238, 252, 0.82);
+      line-height: 1.72;
+      font-size: 1rem;
+    }
+
+    .hero-lead {
+      max-width: 34rem;
+      font-size: clamp(1.08rem, 0.98rem + 0.45vw, 1.3rem);
+      color: rgba(248, 251, 255, 0.95);
+    }
+
+    .hero-supporting-copy,
+    .section-intro {
+      max-width: 42rem;
+      color: rgba(233, 238, 252, 0.72);
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: var(--gs-space-4);
+      flex-wrap: wrap;
+      margin-top: var(--gs-space-6);
+    }
+
+    .hero-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.9rem 1.2rem;
+      border-radius: 999px;
+      border: 1px solid var(--gs-border);
+      background: var(--gs-primary-soft);
+      color: var(--gs-text);
+      text-decoration: none;
+      transition:
+        transform 160ms ease,
+        border-color 160ms ease,
+        background 160ms ease;
+    }
+
+    .hero-button:hover,
+    .hero-button:focus-visible {
+      transform: translateY(-1px);
+      border-color: var(--gs-primary);
+      background: color-mix(in srgb, var(--gs-primary) 20%, transparent);
+    }
+
+    .hero-button--primary {
+      border-color: var(--gs-primary);
+      background: color-mix(in srgb, var(--gs-primary) 24%, transparent);
+      box-shadow: 0 18px 42px rgba(9, 17, 33, 0.28);
+    }
+
+    .hero-panel,
+    .signal-tile,
+    .capability-card,
+    .proof-card,
+    .team-card,
+    .contact-cta {
+      padding: var(--gs-space-6);
+      border-radius: var(--gs-radius-lg);
+      border: 1px solid var(--gs-border);
+      background: var(--gs-surface);
+      box-shadow: var(--gs-shadow);
+    }
+
+    .hero-panel {
+      border-color: var(--gs-border);
+      background: var(--gs-surface-strong);
+      backdrop-filter: blur(12px);
+    }
+
+    .hero-panel__heading h2 {
+      margin: 0.45rem 0 0.85rem;
+      font-size: clamp(1.65rem, 2.6vw, 2.1rem);
+      line-height: 1.1;
+      color: #fff;
+    }
+
+    .status-banner {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.95rem 1rem;
+      margin-bottom: 1rem;
+      border-radius: 18px;
+      border: 1px solid var(--gs-border);
+      background: var(--gs-primary-soft);
+    }
+
+    .status-banner strong {
+      display: block;
+      margin-bottom: 0.2rem;
+      color: #fff;
+    }
+
+    .status-banner p {
+      margin: 0;
+      color: rgba(233, 238, 252, 0.76);
+      font-size: 0.95rem;
+    }
+
+    .status-dot {
+      width: 0.72rem;
+      height: 0.72rem;
+      border-radius: 999px;
+      background: #47e3a7;
+      box-shadow: 0 0 0 rgba(71, 227, 167, 0.5);
+      animation: statusPulse 1.9s ease-out infinite;
+      flex-shrink: 0;
+      margin-top: 0.28rem;
+    }
+
+    .hero-panel ul {
+      margin: 0;
+      padding-left: 1.1rem;
+      display: grid;
+      gap: 0.85rem;
+    }
+
+    .signal-strip,
+    .metrics-grid,
+    .capability-grid,
+    .proof-grid,
+    .team-row {
+      display: grid;
+      gap: var(--gs-space-4);
+    }
+
+    .signal-strip {
+      margin-top: 1.25rem;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .metrics-shell {
+      position: relative;
+      z-index: 2;
+      padding-top: 1rem;
+      padding-bottom: 2rem;
+    }
+
+    .metrics-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .signal-tile {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .signal-tile__header,
+    .proof-card span {
       display: flex;
       align-items: center;
-      gap: 2rem;
-      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
     }
-    .subscribe-inner > div { flex: 1; min-width: 220px; }
-    .subscribe-inner h2 { margin: 0.3rem 0 0.5rem; font-size: clamp(1.3rem, 2.5vw, 1.8rem); }
-    .subscribe-inner .lead { margin: 0; }
-    .subscribe-form { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-    .subscribe-form input[type="email"] {
-      flex: 1;
-      min-width: 200px;
-      padding: 0.6rem 1rem;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.15);
-      background: rgba(255,255,255,0.05);
+
+    .signal-tile span,
+    .proof-card span {
+      display: block;
+      color: rgba(233, 238, 252, 0.62);
+      font-size: 0.82rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .signal-tile small {
+      color: rgba(255, 255, 255, 0.78);
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .signal-tile strong,
+    .proof-card strong {
+      font-size: clamp(1.35rem, 1.05rem + 1vw, 2rem);
       color: #fff;
-      font-size: 0.9rem;
-      font-family: inherit;
-    }
-    .subscribe-form input[type="email"]::placeholder { color: rgba(255,255,255,0.35); }
-    .subscribe-form input[type="email"]:focus {
-      outline: none;
-      border-color: rgba(201,168,76,0.5);
-      background: rgba(255,255,255,0.08);
     }
 
-    /* ── Contact ─────────────────────────────────────────────────────────────────── */
-    .contact { padding-bottom: 4rem; text-align: left; }
-
-    /* ── Responsive ───────────────────────────────────────────────────────────────── */
-    @media (max-width: 640px) {
-      .arch-bindings { grid-template-columns: 1fr; }
-      .arch-data-row { }
+    .signal-tile p {
+      margin: 0.65rem 0 0;
+      color: rgba(233, 238, 252, 0.75);
     }
+
+    .signal-link {
+      display: inline-flex;
+      margin-top: 0.85rem;
+      color: var(--gs-primary);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .signal-link:hover,
+    .signal-link:focus-visible {
+      color: #fff;
+    }
+
+    .signal-tile--loading > * {
+      opacity: 0.2;
+    }
+
+    .signal-tile--loading::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        110deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.08) 40%,
+        transparent 82%
+      );
+      transform: translateX(-100%);
+      animation: skeletonSweep 1.2s ease-in-out infinite;
+    }
+
+    .section-block {
+      padding-top: 4.5rem;
+    }
+
+    .section-copy {
+      margin-bottom: 1.5rem;
+      max-width: 60rem;
+    }
+
+    .section-copy h2 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      margin-top: 0.65rem;
+    }
+
+    .capability-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .proof-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .proof-card--metrics {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .team-row {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .team-card--founder {
+      border-color: rgba(90, 162, 255, 0.2);
+      background: rgba(90, 162, 255, 0.08);
+    }
+
+    .contact-cta {
+      display: flex;
+      justify-content: space-between;
+      gap: 1.5rem;
+      align-items: center;
+    }
+
+    @keyframes skeletonSweep {
+      to {
+        transform: translateX(100%);
+      }
+    }
+
+    @keyframes statusPulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(71, 227, 167, 0.48);
+      }
+
+      70% {
+        box-shadow: 0 0 0 12px rgba(71, 227, 167, 0);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(71, 227, 167, 0);
+      }
+    }
+
+    @media (max-width: 960px) {
+      .hero-shell,
+      .signal-strip,
+      .metrics-grid,
+      .capability-grid,
+      .proof-grid,
+      .team-row {
+        grid-template-columns: 1fr;
+      }
+
+      .contact-cta {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .hero-shell,
+      .signal-strip,
+      .metrics-shell,
+      .section-block {
+        width: min(100% - 1.5rem, var(--gs-max-width));
+      }
+
+      .hero-shell {
+        padding-top: 6rem;
+      }
+
+      .hero-mark {
+        inset: 12% auto auto 1rem;
+      }
+
+      .hero-actions,
+      .hero-button {
+        width: 100%;
+      }
+
+      .signal-tile__header,
+      .proof-card span {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hero-button,
+      .status-dot,
+      .signal-tile--loading::after {
+        animation: none;
+        transition: none;
+      }
+    }
+
   </style>
 </WebLayout>
