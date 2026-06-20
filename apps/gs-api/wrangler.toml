@@ -120,6 +120,8 @@ queue = "gs-mail-dead-letter"
 [[env.prod.workflows]]
 binding = "GS_SIGNALS"
 name = "signals-evaluator"
+class_name = "SignalsEvaluator"
+script_name = "gs-signals-prod"
 
 # ── Secrets Store ─────────────────────────────────────────────────────────────
 [[env.prod.secrets_store.bindings]]
