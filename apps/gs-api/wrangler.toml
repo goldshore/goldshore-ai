@@ -7,7 +7,7 @@ workers_dev = false
 
 [env.prod]
 routes = [
-  { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" }
+  { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "api.goldshore.org/*", zone_name = "goldshore.org" }
 ]
 
