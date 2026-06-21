@@ -21,7 +21,7 @@ on:
 
 env:
   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-  CLOUDFLARE_API_TOKEN: ${{ secrets.CF_TOKEN }}
+  CF_TOKEN: ${{ secrets.CF_TOKEN }}
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -46,8 +46,9 @@ jobs:
           - gs-mail
           - gs-agent
           - gs-trading
-          - banproof-me
-          - gs-www-redirect
+          - gs-web
+          - gs-admin
+          - goldshore-ai
           - goldshore-org
     steps:
       - uses: actions/checkout@v4
@@ -102,21 +103,12 @@ jobs:
             gs-control
             gs-mail
             gs-agent
-            gs-trading
-            banproof-me
-            gs-www-redirect
             goldshore-org
             gs-platform
-            armsway-com
             gs-core-worker
             gs-signals-prod
-            banproof-email-router
             goldshore-ai
-            gs-todo
-            rmarston-com
-            banproof
             gs-web-staging
-            partners-in-pools
           )
 
           echo "=== Fetching workers from Cloudflare account ==="
