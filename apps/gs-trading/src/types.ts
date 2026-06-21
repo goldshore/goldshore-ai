@@ -10,6 +10,10 @@ export interface TradingEnv {
   SCHWAB_REDIRECT_URI?: string;
   ROBINHOOD_TOKEN?: string;
   ROBINHOOD_ACCOUNT_ID?: string;
+  PAPER_DB?: D1Database;
+  NOTIFY_EMAIL_WEBHOOK?: string;
+  NOTIFY_WEBHOOK_URL?: string;
+  NOTIFY_SMS_WEBHOOK?: string;
 }
 
 export type BrokerName = 'schwab' | 'robinhood';
@@ -65,6 +69,46 @@ export interface AccountSummary {
   dayPL: number;
   dayPLPct: number;
   totalPL: number;
+}
+
+export interface PaperOrder {
+  id: string;
+  symbol: string;
+  side: 'buy' | 'sell';
+  quantity: number;
+  order_type: 'market' | 'limit' | 'stop';
+  limit_price?: number | null;
+  status: 'pending' | 'open' | 'filled' | 'cancelled' | 'rejected';
+  fill_price?: number | null;
+  fill_quantity: number;
+  source: 'manual' | 'agent';
+  agent_recommendation_id?: string | null;
+  approved_by?: string | null;
+  created_at: number;
+  updated_at: number;
+}
+
+export interface PaperPosition {
+  id: string;
+  symbol: string;
+  quantity: number;
+  avg_cost: number;
+  side: 'long' | 'short';
+  opened_at: number;
+  updated_at: number;
+}
+
+export interface AgentRecommendation {
+  id: string;
+  agent: string;
+  symbol: string;
+  action: 'buy' | 'sell' | 'hold';
+  quantity?: number | null;
+  rationale?: string | null;
+  confidence?: number | null;
+  status: 'pending' | 'approved' | 'rejected' | 'expired';
+  created_at: number;
+  expires_at: number;
 }
 
 export interface TradingSignal {
