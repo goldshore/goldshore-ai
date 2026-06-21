@@ -69,7 +69,7 @@
       "@astrojs/cloudflare": "13.7.0",
       "@astrojs/adapter-cloudflare": "12.6.12",
       "postal-mime": "2.7.3",
-      "wrangler": "4.98.0",
+      "wrangler": "^4.63.0",
       "typescript": "^5.4.2",
       "esbuild": "0.25.12"
     }
