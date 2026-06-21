@@ -83,3 +83,6 @@ textarea {
   background: rgba(217, 106, 50, 0.28);
   color: var(--gs-text);
 }
+
+/* GSL Brand Theme — copper + responsive */
+@import './gs-brand-theme.css';
