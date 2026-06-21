@@ -70,7 +70,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v4
         with:
           version: 9.15.4
@@ -97,7 +97,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v4
         with:
           version: 9.15.4
@@ -160,7 +160,7 @@ jobs:
       - name: Skip if not targeted
         if: github.event_name == 'workflow_dispatch' && inputs.target != 'all' && inputs.target != matrix.app
         run: echo "Skipping ${{ matrix.app }} (target=${{ inputs.target }})" && exit 0
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == matrix.app
       - uses: pnpm/action-setup@v4
         if: github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == matrix.app
