@@ -96,7 +96,7 @@
 | `www.goldshore.ai` | `gs-www-redirect` | 1 (public) | 308 → goldshore.ai |
 | `dashboard.goldshore.ai` | `gs-gateway` | 1 (public) | 308 → admin.goldshore.ai |
 | `gw.goldshore.ai` | `gs-gateway` | 2 (auth) | Fail closed |
-| `api.goldshore.ai` | `gs-gateway` → `gs-api` | 2 (auth) | Fail closed; /health /version /status public |
+| `api.goldshore.ai` | `gs-api` | 2 (auth) | Direct API route; fail closed; /health /version /status public |
 | `agent.goldshore.ai` | `gs-gateway` → `gs-agent` | 2 (auth) | Fail closed |
 | `trading.goldshore.ai` | `gs-trading` | 3 (admin) | Fail closed |
 | `ops.goldshore.ai` | `gs-control` | 3 (admin) | Fail closed |
@@ -187,7 +187,7 @@ Merge PR #12 in `marzton/goldshore-org` so `goldshore.org` and `www.goldshore.or
 
 ### GATE 3 — Deploy gs-gateway subdomain routes (BLOCKS: dashboard, status subdomains)
 
-Merge PR #5117. `dashboard.goldshore.ai` uses Worker Custom Domain (auto-provisions DNS). `www.goldshore.ai` is owned by `gs-www-redirect` Worker (308 redirect there). `status.goldshore.ai` is reserved for the `gs-status` Pages project (see MODULE_B2_RUNTIME_WIRING.md) — not claimed by gs-gateway.
+Merge PR #5117. `dashboard.goldshore.ai` uses Worker Custom Domain (auto-provisions DNS). `www.goldshore.ai` is owned by `gs-www-redirect` Worker (308 redirect there). `agent.goldshore.ai/*` is owned by `gs-gateway` and forwards to `gs-agent` through the AGENT service binding; do not attach a direct custom domain to `gs-agent`. `status.goldshore.ai` is reserved for the `gs-status` Pages project (see MODULE_B2_RUNTIME_WIRING.md) — not claimed by gs-gateway.
 
 | # | Action | Where | Status |
 |---|--------|--------|--------|
