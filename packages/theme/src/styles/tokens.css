@@ -38,4 +38,47 @@
   --gs-divider-signal: rgba(90, 140, 255, 0.3);
   --gs-divider-sweep: rgba(255, 107, 0, 0.15);
   --gs-panel-border-subtle: rgba(255, 255, 255, 0.05);
+
+  /* Copper palette */
+  --gs-copper: #d96a32;
+  --gs-copper-soft: rgba(217, 106, 50, 0.14);
+  --gs-copper-glow: rgba(217, 106, 50, 0.28);
+  --gs-copper-strong: rgba(217, 106, 50, 0.42);
+
+  /* Blue signal palette */
+  --gs-blue: #59a8ff;
+  --gs-blue-soft: rgba(89, 168, 255, 0.12);
+  --gs-blue-glow: rgba(89, 168, 255, 0.24);
+
+  /* Backgrounds */
+  --gs-bg: #050507;
+  --gs-surface: rgba(14, 16, 20, 0.84);
+  --gs-surface-strong: rgba(20, 23, 29, 0.94);
+
+  /* Borders */
+  --gs-border: rgba(255, 120, 54, 0.14);
+  --gs-border-subtle: rgba(255, 255, 255, 0.06);
+
+  /* Text */
+  --gs-text: #f1f4f8;
+  --gs-text-dim: #9ca5b4;
+  --gs-text-muted: #9ca5b4;
+
+  /* Semantic */
+  --gs-success: #5ddb9a;
+  --gs-warning: #f0b35b;
+  --gs-danger: #f56b6b;
+
+  /* Primary alias (copper) */
+  --gs-primary: var(--gs-copper);
+  --gs-primary-soft: var(--gs-copper-soft);
+  --gs-primary-glow: var(--gs-copper-glow);
+
+  /* Typography */
+  --gs-font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --gs-font-body: 'Inter', system-ui, sans-serif;
+  --gs-font-heading: var(--gs-font-display);
+
+  /* Layout */
+  --gs-max-width: 1200px;
 }
