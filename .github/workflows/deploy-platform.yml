@@ -74,7 +74,7 @@ jobs:
       - uses: pnpm/action-setup@v4
         with:
           version: 9.15.4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
@@ -101,7 +101,7 @@ jobs:
       - uses: pnpm/action-setup@v4
         with:
           version: 9.15.4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
@@ -166,7 +166,7 @@ jobs:
         if: github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == matrix.app
         with:
           version: 9.15.4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         if: github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == matrix.app
         with:
           node-version: 22

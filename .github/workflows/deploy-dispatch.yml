@@ -48,7 +48,7 @@ jobs:
           # For private repos the satellite must pass a read token in the payload
           # or use a deploy key. All current satellite repos are public.
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
 
