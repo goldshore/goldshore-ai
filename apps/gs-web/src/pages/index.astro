@@ -75,7 +75,7 @@ const proofPoints = [
       eyebrow="Institutional-grade Operational AI"
       headline={"Clarity, Control, and\nTrust for Live AI Systems."}
       sub="GoldShore builds resilient decision systems, risk tooling, and operator infrastructure for teams that need explainable performance under pressure."
-      ctaPrimary={{ label: 'Request Briefing', href: '/contact' }}
+      ctaPrimary={{ label: 'Get a Briefing', href: '/contact' }}
       ctaSecondary={{ label: 'View Operating Model', href: '/about' }}
     />
 
@@ -318,7 +318,7 @@ const proofPoints = [
     .hero::after {
       content: '';
       background:
-        radial-gradient(circle at 25% 20%, rgba(90, 162, 255, 0.18), transparent 28%),
+        radial-gradient(circle at 25% 20%, rgba(217, 106, 50, 0.18), transparent 28%),
         linear-gradient(180deg, rgba(7, 11, 20, 0.18), rgba(7, 11, 20, 0.84));
       pointer-events: none;
       z-index: 0;
@@ -360,9 +360,9 @@ const proofPoints = [
       align-items: center;
       gap: 0.5rem;
       padding: 0.5rem 0.85rem;
-      border: 1px solid rgba(90, 162, 255, 0.22);
+      border: 1px solid rgba(217, 106, 50, 0.22);
       border-radius: 999px;
-      background: rgba(90, 162, 255, 0.1);
+      background: rgba(217, 106, 50, 0.10);
       color: #dcedff;
       text-transform: uppercase;
       letter-spacing: 0.16em;
@@ -434,15 +434,15 @@ const proofPoints = [
     .hero-button:hover,
     .hero-button:focus-visible {
       transform: translateY(-2px);
-      border-color: rgba(108, 158, 255, 0.5);
-      background: rgba(108, 158, 255, 0.15);
-      box-shadow: 0 10px 30px rgba(108, 158, 255, 0.2);
+      border-color: rgba(217, 106, 50, 0.5);
+      background: rgba(217, 106, 50, 0.15);
+      box-shadow: 0 10px 30px rgba(217, 106, 50, 0.2);
     }
 
     .hero-button--primary {
-      border-color: rgba(108, 158, 255, 0.4);
-      background: linear-gradient(135deg, rgba(108, 158, 255, 0.2), rgba(178, 95, 255, 0.2));
-      box-shadow: 0 16px 32px rgba(108, 158, 255, 0.2);
+      border-color: rgba(217, 106, 50, 0.4);
+      background: linear-gradient(135deg, rgba(217, 106, 50, 0.2), rgba(217, 106, 50, 0.12));
+      box-shadow: 0 16px 32px rgba(217, 106, 50, 0.2);
     }
 
     .hero-panel,
@@ -466,9 +466,9 @@ const proofPoints = [
     .proof-card:hover,
     .team-card:hover {
       transform: translateY(-4px) scale(1.01);
-      border-color: rgba(108, 158, 255, 0.35);
+      border-color: rgba(217, 106, 50, 0.35);
       background: var(--gs-surface-strong);
-      box-shadow: 0 32px 64px rgba(0, 0, 0, 0.5), 0 0 30px rgba(108, 158, 255, 0.15);
+      box-shadow: 0 32px 64px rgba(0, 0, 0, 0.5), 0 0 30px rgba(217, 106, 50, 0.15);
     }
 
     .hero-panel {
@@ -491,8 +491,8 @@ const proofPoints = [
       padding: 0.95rem 1rem;
       margin-bottom: 1rem;
       border-radius: 18px;
-      border: 1px solid rgba(90, 162, 255, 0.18);
-      background: rgba(90, 162, 255, 0.08);
+      border: 1px solid rgba(217, 106, 50, 0.18);
+      background: rgba(217, 106, 50, 0.08);
     }
 
     .status-banner strong {
@@ -594,7 +594,7 @@ const proofPoints = [
     .signal-link {
       display: inline-flex;
       margin-top: 0.85rem;
-      color: #b2d7ff;
+      color: var(--gs-copper, #d96a32);
       text-decoration: none;
       font-weight: 700;
     }
@@ -654,8 +654,8 @@ const proofPoints = [
     }
 
     .team-card--founder {
-      border-color: rgba(90, 162, 255, 0.2);
-      background: rgba(90, 162, 255, 0.08);
+      border-color: var(--gs-border);
+      background: var(--gs-primary-soft, rgba(217, 106, 50, 0.14));
     }
 
     .contact-cta {
