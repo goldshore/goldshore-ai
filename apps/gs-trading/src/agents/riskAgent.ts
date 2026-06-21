@@ -14,29 +14,40 @@ export interface RiskCheck {
   warnings: string[];
 }
 
+type RiskOrder = Partial<Order> & {
+  estimatedValue: number;
+  assetType?: Position['assetType'];
+};
+
 export function checkOrderRisk(
-  order: Partial<Order> & { estimatedValue: number },
+  order: RiskOrder,
   accounts: AccountSummary[],
   positions: Position[],
   config: RiskConfig,
 ): RiskCheck {
   const violations: string[] = [];
   const warnings: string[] = [];
-  const totalValue = accounts.reduce((s, a) => s + a.totalValue, 0);
-  const totalDayPL = accounts.reduce((s, a) => s + a.dayPL, 0);
+  const totalValue = accounts.reduce((sum, account) => sum + account.totalValue, 0);
+  const totalDayPL = accounts.reduce((sum, account) => sum + account.dayPL, 0);
+  const totalPL = accounts.reduce((sum, account) => sum + account.totalPL, 0);
   const isSell = order.side === 'SELL';
 
-  // Separate existing long and short quantities to handle both directions correctly.
-  // existingLong > 0: currently long; existingShort < 0: currently short.
-  const existingPos = positions.find(p => p.symbol === order.symbol);
-  const existingQty = existingPos?.quantity ?? 0;
+  // Only positions held at the order's broker can offset the order. Aggregate all
+  // matching lots so concentration and close/open calculations cannot omit lots.
+  const matchingPositions = positions.filter(
+    (position) => position.symbol === order.symbol && position.broker === order.broker,
+  );
+  const existingQty = matchingPositions.reduce((sum, position) => sum + position.quantity, 0);
+  const existingAbsValue = matchingPositions.reduce(
+    (sum, position) => sum + Math.abs(position.marketValue),
+    0,
+  );
   const existingLong = Math.max(0, existingQty);
   const existingShort = Math.min(0, existingQty);
   const orderQty = order.quantity ?? 0;
 
-  // Riskable quantity:
-  // SELL: closing existing longs is free; only the short-opening portion is risk-checked.
-  // BUY:  covering existing shorts is free; only the portion beyond zero is risk-checked.
+  // SELL: closing broker-local longs is free; only the short-opening portion is risk-checked.
+  // BUY: covering broker-local shorts is free; only the portion beyond zero is risk-checked.
   const riskableQty = isSell
     ? Math.max(0, orderQty - existingLong)
     : Math.max(0, orderQty + existingShort);
@@ -44,20 +55,34 @@ export function checkOrderRisk(
   const riskableFraction = orderQty > 0 ? riskableQty / orderQty : 0;
   const riskableValue = order.estimatedValue * riskableFraction;
 
+  const assetType = order.assetType ?? matchingPositions[0]?.assetType;
+  if (!assetType) {
+    violations.push('Asset type is required for risk evaluation');
+  } else if (!config.allowedAssetTypes.includes(assetType)) {
+    violations.push(`Asset type ${assetType} is not allowed`);
+  }
+
   const positionPct = totalValue > 0 ? riskableValue / totalValue : 0;
   if (positionPct > config.maxPositionSizePct) {
     violations.push(
-      `Order size ${(positionPct * 100).toFixed(1)}% exceeds max position size ${(config.maxPositionSizePct * 100).toFixed(1)}%`
+      `Order size ${(positionPct * 100).toFixed(1)}% exceeds max position size ${(config.maxPositionSizePct * 100).toFixed(1)}%`,
     );
   }
   if (positionPct > config.maxPositionSizePct * 0.8) {
     warnings.push(`Order size approaching max position limit (${(positionPct * 100).toFixed(1)}%)`);
   }
 
-  const dailyLossPct = totalValue > 0 ? Math.abs(totalDayPL) / totalValue : 0;
-  if (totalDayPL < 0 && dailyLossPct > config.maxDailyLossPct) {
+  const drawdownPct = totalValue > 0 && totalPL < 0 ? Math.abs(totalPL) / totalValue : 0;
+  if (drawdownPct > config.maxDrawdownPct) {
     violations.push(
-      `Daily loss ${(dailyLossPct * 100).toFixed(2)}% exceeds max ${(config.maxDailyLossPct * 100).toFixed(2)}%`
+      `Drawdown ${(drawdownPct * 100).toFixed(2)}% exceeds max ${(config.maxDrawdownPct * 100).toFixed(2)}%`,
+    );
+  }
+
+  const dailyLossPct = totalValue > 0 && totalDayPL < 0 ? Math.abs(totalDayPL) / totalValue : 0;
+  if (dailyLossPct > config.maxDailyLossPct) {
+    violations.push(
+      `Daily loss ${(dailyLossPct * 100).toFixed(2)}% exceeds max ${(config.maxDailyLossPct * 100).toFixed(2)}%`,
     );
   }
 
@@ -67,7 +92,7 @@ export function checkOrderRisk(
     const combinedPct = totalValue > 0 ? combinedValue / totalValue : 0;
     if (combinedPct > config.maxConcentrationPct) {
       violations.push(
-        `Combined concentration ${(combinedPct * 100).toFixed(1)}% exceeds max ${(config.maxConcentrationPct * 100).toFixed(1)}%`
+        `Combined concentration ${(combinedPct * 100).toFixed(1)}% exceeds max ${(config.maxConcentrationPct * 100).toFixed(1)}%`,
       );
     }
   }

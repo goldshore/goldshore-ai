@@ -93,6 +93,10 @@ binding = "GS_CONTROL"
 service = "gs-control"
 environment = "prod"
 
+[[env.preview.services]]
+binding = "API_SERVICE"
+service = "gs-api"
+
 [env.preview.vars]
 ENV = "preview"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
