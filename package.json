@@ -55,7 +55,7 @@
     "tailwindcss": "^4.3.1",
     "tsx": "^4.21.0",
     "typescript": "^5.4.2",
-    "wrangler": "^4.83.0",
+    "wrangler": "^4.103.0",
     "yaml": "^2.8.4",
     "zod": "^4.3.6"
   },
@@ -69,7 +69,7 @@
       "@astrojs/cloudflare": "13.7.0",
       "@astrojs/adapter-cloudflare": "12.6.12",
       "postal-mime": "2.7.3",
-      "wrangler": "^4.63.0",
+      "wrangler": "^4.103.0",
       "typescript": "^5.4.2",
       "esbuild": "0.25.12"
     }
