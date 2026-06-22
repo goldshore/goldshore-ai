@@ -40,7 +40,7 @@ jobs:
           test -n "$CLOUDFLARE_API_TOKEN"  || (echo 'Missing secret: CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN' && exit 1)
 
       - name: Checkout ${{ github.event.client_payload.repo }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: ${{ github.event.client_payload.repo }}
           ref: ${{ github.event.client_payload.ref }}
@@ -48,7 +48,7 @@ jobs:
           # For private repos the satellite must pass a read token in the payload
           # or use a deploy key. All current satellite repos are public.
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
 
