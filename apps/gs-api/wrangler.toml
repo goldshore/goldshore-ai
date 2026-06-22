@@ -85,10 +85,6 @@ service = "gs-web"
 environment = "prod"
 
 [[env.prod.services]]
-binding = "GS_WEB_STAGING"
-service = "gs-web-staging"
-
-[[env.prod.services]]
 binding = "GOLDSHORE_AI"
 service = "goldshore-ai"
 environment = "prod"
