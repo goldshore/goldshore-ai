@@ -8,7 +8,7 @@ overrides:
   '@astrojs/cloudflare': 13.7.0
   '@astrojs/adapter-cloudflare': 12.6.12
   postal-mime: 2.7.3
-  wrangler: ^4.63.0
+  wrangler: ^4.103.0
   typescript: ^5.4.2
   esbuild: 0.25.12
 
@@ -78,8 +78,8 @@ importers:
         specifier: ^5.4.2
         version: 5.9.3
       wrangler:
-        specifier: ^4.63.0
-        version: 4.98.0(@cloudflare/workers-types@4.20260621.1)
+        specifier: ^4.103.0
+        version: 4.103.0(@cloudflare/workers-types@4.20260608.1)
       yaml:
         specifier: ^2.8.4
         version: 2.9.0
@@ -96,8 +96,8 @@ importers:
         specifier: ^5.4.2
         version: 5.9.3
       wrangler:
-        specifier: ^4.63.0
-        version: 4.98.0(@cloudflare/workers-types@4.20260621.1)
+        specifier: ^4.103.0
+        version: 4.103.0(@cloudflare/workers-types@4.20260608.1)
 
   apps/banproof-me:
     dependencies:
@@ -112,8 +112,8 @@ importers:
         specifier: ^5.4.2
         version: 5.9.3
       wrangler:
-        specifier: ^4.63.0
-        version: 4.98.0(@cloudflare/workers-types@4.20260621.1)
+        specifier: ^4.103.0
+        version: 4.103.0(@cloudflare/workers-types@4.20260608.1)
 
   apps/gs-admin:
     dependencies:
@@ -174,8 +174,8 @@ importers:
         specifier: ^5.4.2
         version: 5.9.3
       wrangler:
-        specifier: ^4.63.0
-        version: 4.98.0(@cloudflare/workers-types@4.20260621.1)
+        specifier: ^4.103.0
+        version: 4.103.0(@cloudflare/workers-types@4.20260608.1)
 
   apps/gs-api:
     dependencies:
@@ -220,8 +220,8 @@ importers:
         specifier: ^5.4.2
         version: 5.9.3
       wrangler:
-        specifier: ^4.63.0
-        version: 4.98.0(@cloudflare/workers-types@4.20260621.1)
+        specifier: ^4.103.0
+        version: 4.103.0(@cloudflare/workers-types@4.20260608.1)
 
   apps/gs-control:
     dependencies:
@@ -251,8 +251,8 @@ importers:
         specifier: ^5.4.2
         version: 5.9.3
       wrangler:
-        specifier: ^4.63.0
-        version: 4.98.0(@cloudflare/workers-types@4.20260621.1)
+        specifier: ^4.103.0
+        version: 4.103.0(@cloudflare/workers-types@4.20260608.1)
 
   apps/gs-core-worker:
     devDependencies:
@@ -263,8 +263,8 @@ importers:
         specifier: ^5.4.2
         version: 5.9.3
       wrangler:
-        specifier: ^4.63.0
-        version: 4.98.0(@cloudflare/workers-types@4.20260621.1)
+        specifier: ^4.103.0
+        version: 4.103.0(@cloudflare/workers-types@4.20260608.1)
 
   apps/gs-gateway:
     dependencies:
@@ -291,8 +291,8 @@ importers:
         specifier: ^5.4.2
         version: 5.9.3
       wrangler:
-        specifier: ^4.63.0
-        version: 4.98.0(@cloudflare/workers-types@4.20260621.1)
+        specifier: ^4.103.0
+        version: 4.103.0(@cloudflare/workers-types@4.20260608.1)
 
   apps/gs-mail:
     dependencies:
@@ -307,8 +307,8 @@ importers:
         specifier: ^5.4.2
         version: 5.9.3
       wrangler:
-        specifier: ^4.63.0
-        version: 4.98.0(@cloudflare/workers-types@4.20260621.1)
+        specifier: ^4.103.0
+        version: 4.103.0(@cloudflare/workers-types@4.20260608.1)
 
   apps/gs-platform:
     dependencies:
@@ -326,8 +326,8 @@ importers:
         specifier: ^5.4.2
         version: 5.9.3
       wrangler:
-        specifier: ^4.63.0
-        version: 4.98.0(@cloudflare/workers-types@4.20260621.1)
+        specifier: ^4.103.0
+        version: 4.103.0(@cloudflare/workers-types@4.20260608.1)
 
   apps/gs-trading:
     dependencies:
@@ -345,8 +345,8 @@ importers:
         specifier: ^5.4.2
         version: 5.9.3
       wrangler:
-        specifier: ^4.63.0
-        version: 4.98.0(@cloudflare/workers-types@4.20260621.1)
+        specifier: ^4.103.0
+        version: 4.103.0(@cloudflare/workers-types@4.20260608.1)
 
   apps/gs-web:
     dependencies:
@@ -381,8 +381,8 @@ importers:
         specifier: ^9.5.0
         version: 9.6.1(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(three@0.184.0)
       '@supabase/supabase-js':
-        specifier: ^2.104.0
-        version: 2.108.0
+        specifier: ^2.108.2
+        version: 2.108.2
       astro:
         specifier: ^6.4.6
         version: 6.4.6(@types/node@26.0.0)(rollup@4.62.2)(tsx@4.22.4)(yaml@2.9.0)
@@ -511,7 +511,7 @@ packages:
     resolution: {integrity: sha512-nXTB70NlhG5JcQjo2a8psart4xG4POLwYZJV498A4JFM3jauMZ51IetkVR784Dy9rjn1qMH5vUO44ng6YqtwQg==}
     peerDependencies:
       astro: ^6.3.0
-      wrangler: ^4.63.0
+      wrangler: ^4.103.0
 
   '@astrojs/compiler@2.13.1':
     resolution: {integrity: sha512-f3FN83d2G/v32ipNClRKgYv30onQlMZX1vCeZMjPsMMPl1mDpmbl0+N5BYo4S/ofzqJyS5hvwacEo0CCVDn/Qg==}
@@ -719,7 +719,7 @@ packages:
     hasBin: true
     peerDependencies:
       vite: ^6.1.0 || ^7.0.0 || ^8.0.0
-      wrangler: ^4.63.0
+      wrangler: ^4.103.0
 
   '@cloudflare/workerd-darwin-64@1.20260603.1':
     resolution: {integrity: sha512-cEXDWu6V3ZrpmwWkM4OJE9AeXjdAgOY5rh8EHhcBVCuP5rxnzUbPzLtrVOHx0UUUAcCrFq0Xsa6mZKL1VUZsKQ==}
@@ -781,8 +781,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@cloudflare/workers-types@4.20260621.1':
-    resolution: {integrity: sha512-c4xrf4shZdDOK1ihh1UKzlS/3MDYiGThT/Oqr4Y3qR9NLCSNzHB7rt+Vk/LOp0ZSNjA+7WNJEQsOhpiQtpT2GA==}
+  '@cloudflare/workers-types@4.20260608.1':
+    resolution: {integrity: sha512-Yz90KXPZBB9K/AhsnLaA321s5+i5ZpWZRFbcGx9dWjyknQJXPAS1pK5CJSFEedwY6zoEr1cf2SkpBATL1idsWA==}
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -1708,31 +1708,31 @@ packages:
   '@speed-highlight/core@1.2.15':
     resolution: {integrity: sha512-BMq1K3DsElxDWawkX6eLg9+CKJrTVGCBAWVuHXVUV2u0s2711qiChLSId6ikYPfxhdYocLNt3wWwSvDiTvFabw==}
 
-  '@supabase/auth-js@2.108.0':
-    resolution: {integrity: sha512-0CzVGVqHfNOhRQVEcAmu58Mex2Ce0zL3aGfyV+iFQjTK6OntLK/hLCLr/VDRX0E8/2CdsiY99L7fZ/8ys/op4w==}
+  '@supabase/auth-js@2.108.2':
+    resolution: {integrity: sha512-tNaQmBgodDZwgB40mRwVbxFy8IDYwjdpcZ0BYrWiwlULCSQoJj4QoG4zgJT7QRPXcqipefNOzvO/qAu4dF98ag==}
     engines: {node: '>=20.0.0'}
 
-  '@supabase/functions-js@2.108.0':
-    resolution: {integrity: sha512-lqEGDzT7QBUuKYzi5lHpV/XecXT9wikzcbXMbFo6krNpSDynD1sHM8wcsfB/BAqa4NkFuy3vF4JCV8MeakV8IQ==}
+  '@supabase/functions-js@2.108.2':
+    resolution: {integrity: sha512-RNUX8EiBy3iLwAX19jtRzLyePnl11/fHcgwDHLnpKcDSXt/5qBnh3LUwAtIjT21Q66QsmNUR2esrHziLCpNubw==}
     engines: {node: '>=20.0.0'}
 
-  '@supabase/phoenix@0.4.2':
-    resolution: {integrity: sha512-YSAGnmDAfuleFCVt3CeurQZAhxRfXWeZIIkwp7NhYzQ1UwW6ePSnzsFAiUm/mbCkfoCf70QQHKW/K6RKh52a4A==}
+  '@supabase/phoenix@0.4.4':
+    resolution: {integrity: sha512-Gt0pqoXuIqX/8dvG0OKp/wMCobXNH3klNbUPBNyOfN0YA1IswrM3HyWFMOPk1Jy+BRaIyDPcFx4jLBwHNmlyfQ==}
 
-  '@supabase/postgrest-js@2.108.0':
-    resolution: {integrity: sha512-8AwTkPqowDYv/qh016CyXeZ3Ukpw6NHyfqc7DWV4afLR2hAiapf3zRKV2ZLG+//T1LK84HrR6X8VBwfgHWmNyw==}
+  '@supabase/postgrest-js@2.108.2':
+    resolution: {integrity: sha512-GQ28/Y8hk3CFmkb3kXH1h/AQx6JIYSQfO0CJMRVBcEKZoNy6C45cXAZ4fcJvRC5Id0cs6xnkUV0+c0rIocigsw==}
     engines: {node: '>=20.0.0'}
 
-  '@supabase/realtime-js@2.108.0':
-    resolution: {integrity: sha512-N3xR0u7TNr+c5wuLSU60rcfu/H/8N0WBs7iHWwjI/NxKwY3XWSyLUbpbpU8bzmL0dA/Gk9Mupri8mxKUXBW+iw==}
+  '@supabase/realtime-js@2.108.2':
+    resolution: {integrity: sha512-aAGxCSUemZvQIibnCdvNvgaKib28I4rfrNjKbQ9cG1uBLwUsI7hVpGXgEbypCCDhLjQlDTAiJlu7rgljYUT73g==}
     engines: {node: '>=20.0.0'}
 
-  '@supabase/storage-js@2.108.0':
-    resolution: {integrity: sha512-zMYQmh87CId7d8i/1FIfv4fMDcXPutmIJSpoY58GLXi7M266MNzxWGNabDk4i555Oj1Nqtsu2i3Qo3rpWUXO6A==}
+  '@supabase/storage-js@2.108.2':
+    resolution: {integrity: sha512-TVZPQxXGxY2+A6yTtm77zUHsh70lBhYUEaJL8RQC+BghcX/ygiMG/rmXrNVBce30/WAeNPa8FiG8HbqlGeV05g==}
     engines: {node: '>=20.0.0'}
 
-  '@supabase/supabase-js@2.108.0':
-    resolution: {integrity: sha512-AjPoimM9MZLZbddnlDBGmpZ/Tas1dNcJvuZy/VD1AfmrjBC8J2RSw6UOqR4ISLLlEioOLca/5t1crFnAxa0wRQ==}
+  '@supabase/supabase-js@2.108.2':
+    resolution: {integrity: sha512-hFhnPveb5JQg4a0QYicM0swT253YHMdfeRAl2BKHOlI5VAzuHxUGSr8RbwNLYNPauWOgQMS1H8sz8bvYlgwUfQ==}
     engines: {node: '>=20.0.0'}
 
   '@turbo/darwin-64@2.9.16':
@@ -3868,6 +3868,9 @@ packages:
   tailwindcss@4.3.1:
     resolution: {integrity: sha512-hk+TB1m+K8CYNrP6rjQaq/Y+4Zylwpa87mLYBKCunwnnQ9p+fHb7kmSfGqyEJoxF/O6CDyABWVFEafNSYKll+Q==}
 
+  tailwindcss@4.3.1:
+    resolution: {integrity: sha512-hk+TB1m+K8CYNrP6rjQaq/Y+4Zylwpa87mLYBKCunwnnQ9p+fHb7kmSfGqyEJoxF/O6CDyABWVFEafNSYKll+Q==}
+
   three-mesh-bvh@0.8.3:
     resolution: {integrity: sha512-4G5lBaF+g2auKX3P0yqx+MJC6oVt6sB5k+CchS6Ob0qvH0YIhuUk1eYr7ktsIpY+albCqE80/FVQGV190PmiAg==}
     peerDependencies:
@@ -4373,12 +4376,12 @@ packages:
     engines: {node: '>=16'}
     hasBin: true
 
-  wrangler@4.98.0:
-    resolution: {integrity: sha512-cXfFUuF4rMIvE0hiMnXjEAB27ERryaCgquBJdUoPIjFzYYE1rbRdMUkEdQ18qDPUtsPvhJdqxLntixT9OfSzQw==}
+  wrangler@4.103.0:
+    resolution: {integrity: sha512-3Lv1P5t2xcSEkSTKtG+Lz+3JFryuU7YPLkaCUj7gNe+CJsjZJLtUwqsh1x595QBxkIbCE0GAvDx2DCJUU4+oqw==}
     engines: {node: '>=22.0.0'}
     hasBin: true
     peerDependencies:
-      '@cloudflare/workers-types': ^4.20260603.1
+      '@cloudflare/workers-types': ^4.20260617.1
     peerDependenciesMeta:
       '@cloudflare/workers-types':
         optional: true
@@ -4759,6 +4762,16 @@ snapshots:
     transitivePeerDependencies:
       - ts-node
 
+  '@astrojs/tailwind@6.0.2(astro@6.4.6(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0))(tailwindcss@4.3.1)':
+    dependencies:
+      astro: 6.4.6(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0)
+      autoprefixer: 10.5.0(postcss@8.5.15)
+      postcss: 8.5.15
+      postcss-load-config: 4.0.2(postcss@8.5.15)
+      tailwindcss: 4.3.1
+    transitivePeerDependencies:
+      - ts-node
+
   '@astrojs/telemetry@3.3.0':
     dependencies:
       ci-info: 4.4.0
@@ -4921,12 +4934,6 @@ snapshots:
 
   '@cloudflare/kv-asset-handler@0.5.0': {}
 
-  '@cloudflare/unenv-preset@2.16.1(unenv@2.0.0-rc.24)(workerd@1.20260603.1)':
-    dependencies:
-      unenv: 2.0.0-rc.24
-    optionalDependencies:
-      workerd: 1.20260603.1
-
   '@cloudflare/unenv-preset@2.16.1(unenv@2.0.0-rc.24)(workerd@1.20260617.1)':
     dependencies:
       unenv: 2.0.0-rc.24
@@ -4936,7 +4943,7 @@ snapshots:
   '@cloudflare/vite-plugin@1.42.1(vite@7.3.5(@types/node@26.0.0)(tsx@4.22.4)(yaml@2.9.0))(workerd@1.20260617.1)(wrangler@4.98.0(@cloudflare/workers-types@4.20260621.1))':
     dependencies:
       '@cloudflare/unenv-preset': 2.16.1(unenv@2.0.0-rc.24)(workerd@1.20260617.1)
-      miniflare: 4.20260617.1
+      miniflare: 4.20260603.0
       unenv: 2.0.0-rc.24
       vite: 7.3.5(@types/node@26.0.0)(tsx@4.22.4)(yaml@2.9.0)
       wrangler: 4.98.0(@cloudflare/workers-types@4.20260621.1)
@@ -4976,7 +4983,7 @@ snapshots:
   '@cloudflare/workerd-windows-64@1.20260617.1':
     optional: true
 
-  '@cloudflare/workers-types@4.20260621.1': {}
+  '@cloudflare/workers-types@4.20260608.1': {}
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
@@ -5785,37 +5792,37 @@ snapshots:
 
   '@speed-highlight/core@1.2.15': {}
 
-  '@supabase/auth-js@2.108.0':
+  '@supabase/auth-js@2.108.2':
     dependencies:
       tslib: 2.8.1
 
-  '@supabase/functions-js@2.108.0':
+  '@supabase/functions-js@2.108.2':
     dependencies:
       tslib: 2.8.1
 
-  '@supabase/phoenix@0.4.2': {}
+  '@supabase/phoenix@0.4.4': {}
 
-  '@supabase/postgrest-js@2.108.0':
+  '@supabase/postgrest-js@2.108.2':
     dependencies:
       tslib: 2.8.1
 
-  '@supabase/realtime-js@2.108.0':
+  '@supabase/realtime-js@2.108.2':
     dependencies:
-      '@supabase/phoenix': 0.4.2
+      '@supabase/phoenix': 0.4.4
       tslib: 2.8.1
 
-  '@supabase/storage-js@2.108.0':
+  '@supabase/storage-js@2.108.2':
     dependencies:
       iceberg-js: 0.8.1
       tslib: 2.8.1
 
-  '@supabase/supabase-js@2.108.0':
+  '@supabase/supabase-js@2.108.2':
     dependencies:
-      '@supabase/auth-js': 2.108.0
-      '@supabase/functions-js': 2.108.0
-      '@supabase/postgrest-js': 2.108.0
-      '@supabase/realtime-js': 2.108.0
-      '@supabase/storage-js': 2.108.0
+      '@supabase/auth-js': 2.108.2
+      '@supabase/functions-js': 2.108.2
+      '@supabase/postgrest-js': 2.108.2
+      '@supabase/realtime-js': 2.108.2
+      '@supabase/storage-js': 2.108.2
 
   '@turbo/darwin-64@2.9.16':
     optional: true
@@ -8605,7 +8612,9 @@ snapshots:
 
   tailwindcss@4.3.1: {}
 
-  three-mesh-bvh@0.8.3(three@0.184.0):
+  tailwindcss@4.3.1: {}
+
+  three-mesh-bvh@0.8.3(three@0.183.2):
     dependencies:
       three: 0.184.0
 
@@ -9018,16 +9027,16 @@ snapshots:
       '@cloudflare/workerd-linux-arm64': 1.20260617.1
       '@cloudflare/workerd-windows-64': 1.20260617.1
 
-  wrangler@4.98.0(@cloudflare/workers-types@4.20260621.1):
+  wrangler@4.103.0(@cloudflare/workers-types@4.20260608.1):
     dependencies:
       '@cloudflare/kv-asset-handler': 0.5.0
-      '@cloudflare/unenv-preset': 2.16.1(unenv@2.0.0-rc.24)(workerd@1.20260603.1)
+      '@cloudflare/unenv-preset': 2.16.1(unenv@2.0.0-rc.24)(workerd@1.20260617.1)
       blake3-wasm: 2.1.5
       esbuild: 0.25.12
-      miniflare: 4.20260603.0
+      miniflare: 4.20260617.1
       path-to-regexp: 6.3.0
       unenv: 2.0.0-rc.24
-      workerd: 1.20260603.1
+      workerd: 1.20260617.1
     optionalDependencies:
       '@cloudflare/workers-types': 4.20260621.1
       fsevents: 2.3.3
