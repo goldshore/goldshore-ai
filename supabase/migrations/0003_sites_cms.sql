@@ -71,7 +71,21 @@ alter table public.site_pages enable row level security;
 alter table public.page_revisions enable row level security;
 alter table public.content_blocks enable row level security;
 
-create policy sites_access
+create policy sites_access_read
+on public.sites
+for select
+using (
+  public.is_goldshore_admin()
+  or exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid()
+      and p.organization_id = sites.organization_id
+      and p.role in ('owner', 'editor', 'viewer')
+  )
+);
+
+
+create policy sites_access_write
 on public.sites
 for all
 using (
@@ -80,7 +94,7 @@ using (
     select 1 from public.profiles p
     where p.id = auth.uid()
       and p.organization_id = sites.organization_id
-      and p.role in ('owner', 'editor', 'viewer')
+      and p.role in ('owner', 'editor')
   )
 )
 with check (
@@ -93,7 +107,23 @@ with check (
   )
 );
 
-create policy site_pages_access
+create policy site_pages_access_read
+on public.site_pages
+for select
+using (
+  public.is_goldshore_admin()
+  or exists (
+    select 1
+    from public.sites s
+    join public.profiles p on p.organization_id = s.organization_id
+    where s.id = site_pages.site_id
+      and p.id = auth.uid()
+      and p.role in ('owner', 'editor', 'viewer')
+  )
+);
+
+
+create policy site_pages_access_write
 on public.site_pages
 for all
 using (
@@ -104,7 +134,7 @@ using (
     join public.profiles p on p.organization_id = s.organization_id
     where s.id = site_pages.site_id
       and p.id = auth.uid()
-      and p.role in ('owner', 'editor', 'viewer')
+      and p.role in ('owner', 'editor')
   )
 )
 with check (
@@ -119,7 +149,24 @@ with check (
   )
 );
 
-create policy page_revisions_access
+create policy page_revisions_access_read
+on public.page_revisions
+for select
+using (
+  public.is_goldshore_admin()
+  or exists (
+    select 1
+    from public.site_pages sp
+    join public.sites s on s.id = sp.site_id
+    join public.profiles p on p.organization_id = s.organization_id
+    where sp.id = page_revisions.page_id
+      and p.id = auth.uid()
+      and p.role in ('owner', 'editor', 'viewer')
+  )
+);
+
+
+create policy page_revisions_access_write
 on public.page_revisions
 for all
 using (
@@ -131,7 +178,7 @@ using (
     join public.profiles p on p.organization_id = s.organization_id
     where sp.id = page_revisions.page_id
       and p.id = auth.uid()
-      and p.role in ('owner', 'editor', 'viewer')
+      and p.role in ('owner', 'editor')
   )
 )
 with check (
@@ -147,7 +194,21 @@ with check (
   )
 );
 
-create policy content_blocks_access
+create policy content_blocks_access_read
+on public.content_blocks
+for select
+using (
+  public.is_goldshore_admin()
+  or exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid()
+      and p.organization_id = content_blocks.organization_id
+      and p.role in ('owner', 'editor', 'viewer')
+  )
+);
+
+
+create policy content_blocks_access_write
 on public.content_blocks
 for all
 using (
@@ -156,7 +217,7 @@ using (
     select 1 from public.profiles p
     where p.id = auth.uid()
       and p.organization_id = content_blocks.organization_id
-      and p.role in ('owner', 'editor', 'viewer')
+      and p.role in ('owner', 'editor')
   )
 )
 with check (

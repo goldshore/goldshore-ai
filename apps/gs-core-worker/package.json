@@ -9,7 +9,7 @@
     "build": "wrangler deploy --env prod --dry-run --outdir=dist --bundle --config wrangler.toml"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20230419.0",
+    "@cloudflare/workers-types": "^4.20260621.1",
     "typescript": "^5.4.2",
     "wrangler": "^4.63.0"
   }

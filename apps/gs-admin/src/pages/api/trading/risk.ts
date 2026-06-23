@@ -13,7 +13,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
     });
   }
 
-  const res = await proxyToTrading(env, '/trading/risk');
+  const res = await proxyToTrading(env, request, '/api/trading/risk');
   const data = await res.json().catch(() => null);
   return new Response(JSON.stringify(data), {
     status: res.status,
@@ -41,7 +41,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     });
   }
 
-  const res = await proxyToTrading(env, '/trading/risk/check', {
+  const res = await proxyToTrading(env, request, '/api/trading/risk/check', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body,
