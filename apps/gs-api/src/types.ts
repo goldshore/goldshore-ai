@@ -13,6 +13,7 @@ export type Env = {
   API_VERSION?: string;
   DEPLOY_SHA?: string;
   GIT_SHA?: string;
+  DEV_AUTH_BYPASS?: string;
 };
 
 export type Variables = {

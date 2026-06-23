@@ -1,6 +1,5 @@
 name: Deploy GS Web (goldshore.ai)
-# apps/gs-web is the public Cloudflare Pages surface. Keep this workflow separate
-# from gs-admin so future cleanup does not collapse the public/private boundary.
+# apps/gs-web is the public Cloudflare Pages surface for the unified frontend. Keep this workflow aligned with the two-app monorepo.
 
 permissions:
   contents: read
@@ -15,8 +14,6 @@ on:
       - "package.json"
       - "pnpm-lock.yaml"
       - ".github/workflows/deploy-gs-web.yml"
-      - ".github/workflows/deploy-gs-admin.yml"
-      - ".github/workflows/deploy-gs-surfaces-report.yml"
   workflow_dispatch:
     inputs:
       deploy_ref:
@@ -110,6 +107,8 @@ jobs:
       - name: Build web app
         working-directory: apps/gs-web
         env:
+          PUBLIC_API: https://api.goldshore.ai
+          PUBLIC_GATEWAY: https://gw.goldshore.ai
           PUBLIC_BUILD_TIMESTAMP: ${{ steps.metadata.outputs.build_timestamp }}
           PUBLIC_COMMIT_HASH: ${{ steps.metadata.outputs.deployed_sha }}
           PUBLIC_RELEASE_LABEL: ${{ steps.metadata.outputs.release_label }}

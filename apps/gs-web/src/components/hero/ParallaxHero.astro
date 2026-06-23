@@ -2,19 +2,20 @@
 import Logo from '../brand/Logo.astro';
 
 const {
-  eyebrow      = 'System Operational',
-  headline     = 'Shaping Waves with\nApplied Intelligence',
-  sub          = 'GoldShore builds resilient systems with applied intelligence, responsive operations, and disciplined control surfaces that move like instruments—not ornaments.',
-  ctaPrimary   = { label: 'Start the Experience', href: '/intake' },
-  ctaSecondary = { label: 'Contact Sales',        href: '/contact' },
+  eyebrow = 'Institutional-grade operational AI',
+  headline = 'Clarity, Control, and\nTrust for Live AI Systems.',
+  sub = 'GoldShore builds resilient decision systems, risk tooling, and operator infrastructure for teams that need explainable performance under pressure.',
+  ctaPrimary = { label: 'Request Briefing', href: '/contact' },
+  ctaSecondary = { label: 'View Operating Model', href: '/about' },
+  panelTitle = 'Live operating surface',
+  panelItems = [],
+  panelSignals = [],
 } = Astro.props;
 
 const lines = headline.split('\n');
 ---
 
 <section class="gs-hero" data-gs-hero aria-label="Hero">
-
-  <!-- Background layers -->
   <div class="gs-hero__bg" aria-hidden="true">
     <canvas class="gs-hero__wave" data-gs-wave></canvas>
     <div class="gs-hero__grid" data-gs-grid></div>
@@ -22,17 +23,19 @@ const lines = headline.split('\n');
     <div class="gs-hero__vignette"></div>
   </div>
 
-  <!-- Penrose mark — floats behind copy at its own parallax depth -->
-  <div class="gs-hero__mark-wrap" data-gs-mark aria-hidden="true">
-    <Logo variant="mark" ariaHidden={true} class="gs-hero__mark" />
+  <div class="gs-hero__brand" aria-hidden="true">
+    <Logo variant="mark" ariaHidden={true} class="gs-hero__brand-mark" />
+    <div class="gs-hero__brand-copy">
+      <span>GoldShore Labs</span>
+      <strong>Where strategy operates</strong>
+    </div>
   </div>
 
-  <!-- Copy -->
   <div class="gs-hero__copy" data-gs-copy>
-
     <div class="gs-hero__eyebrow" role="status">
+      <span class="gs-hero__eyebrow-line" aria-hidden="true"></span>
       <span class="gs-hero__dot" aria-hidden="true"></span>
-      {eyebrow}
+      <span>{eyebrow}</span>
     </div>
 
     <h1 class="gs-hero__headline">
@@ -49,16 +52,45 @@ const lines = headline.split('\n');
       <a class="gs-btn gs-btn--primary" href={ctaPrimary.href}>
         {ctaPrimary.label}
         <svg class="gs-btn__arrow" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-          <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5"
-                stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
       </a>
       <a class="gs-btn gs-btn--ghost" href={ctaSecondary.href}>
         {ctaSecondary.label}
       </a>
     </div>
-
   </div>
+
+  <aside class="gs-hero__panel" aria-label={panelTitle}>
+    <div class="gs-hero__panel-shell">
+      <div class="gs-hero__panel-header">
+        <span class="gs-hero__panel-kicker">{panelTitle}</span>
+        <span class="gs-hero__panel-live">Live</span>
+      </div>
+
+      <div class="gs-hero__panel-signals">
+        {panelSignals.map((signal) => (
+          <article class="gs-hero__signal">
+            <span>{signal.label}</span>
+            <strong>{signal.value}</strong>
+          </article>
+        ))}
+      </div>
+
+      <div class="gs-hero__panel-metrics">
+        {panelItems.map((item) => (
+          <article class="gs-hero__metric">
+            <div class="gs-hero__metric-head">
+              <span>{item.label}</span>
+              <small>{item.context}</small>
+            </div>
+            <strong>{item.value}</strong>
+            <p>{item.detail}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  </aside>
 
   <script>
     import { mountHero } from './mountHero';
@@ -68,31 +100,40 @@ const lines = headline.split('\n');
       __gsHeroBound?: boolean;
     };
 
-    const cleanup = () => { ns.__gsHeroCleanup?.(); ns.__gsHeroCleanup = null; };
-    const boot    = () => { cleanup(); ns.__gsHeroCleanup = mountHero(document); };
+    const cleanup = () => {
+      ns.__gsHeroCleanup?.();
+      ns.__gsHeroCleanup = null;
+    };
+
+    const boot = () => {
+      cleanup();
+      ns.__gsHeroCleanup = mountHero(document);
+    };
 
     if (!ns.__gsHeroBound) {
       ns.__gsHeroBound = true;
       document.addEventListener('astro:page-load', boot);
       document.addEventListener('astro:before-swap', cleanup);
     }
+
     boot();
   </script>
 </section>
 
 <style>
-  /* shell */
   .gs-hero {
     position: relative;
     min-height: 100svh;
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
     align-items: center;
-    justify-content: center;
+    justify-items: start;
+    gap: clamp(2rem, 4vw, 4rem);
     overflow: hidden;
-    background: #070b14;
+    background: #050507;
+    padding: clamp(5.5rem, 8vw, 7rem) clamp(1rem, 4vw, 2.5rem) clamp(4rem, 7vw, 5rem);
   }
 
-  /* background stack */
   .gs-hero__bg,
   .gs-hero__wave,
   .gs-hero__grid,
@@ -112,209 +153,363 @@ const lines = headline.split('\n');
 
   .gs-hero__grid {
     background:
-      linear-gradient(rgba(148,163,184,0.07) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(148,163,184,0.07) 1px, transparent 1px);
+      linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
     background-size: 72px 72px;
-    mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 20%, transparent 80%);
-    opacity: 0.55;
-    will-change: transform;
+    mask-image: radial-gradient(ellipse 70% 50% at 50% 36%, black 10%, transparent 82%);
+    opacity: 0.45;
   }
 
   .gs-hero__glow {
     background:
-      radial-gradient(ellipse 55% 45% at 50% 42%, rgba(90,162,255,0.13) 0%, transparent 70%),
-      radial-gradient(ellipse 30% 30% at 50% 42%, rgba(90,162,255,0.07) 0%, transparent 60%);
+      radial-gradient(circle at 72% 46%, rgba(89, 168, 255, 0.14), transparent 22%),
+      radial-gradient(circle at 24% 18%, rgba(217, 106, 50, 0.18), transparent 18%),
+      radial-gradient(circle at 52% 34%, rgba(255, 255, 255, 0.06), transparent 46%);
   }
 
   .gs-hero__vignette {
     background:
-      linear-gradient(to bottom,
-        rgba(7,11,20,0.55) 0%, transparent 28%,
-        transparent 72%, rgba(7,11,20,0.88) 100%),
-      linear-gradient(to right,
-        rgba(7,11,20,0.38) 0%, transparent 18%,
-        transparent 82%, rgba(7,11,20,0.38) 100%);
+      linear-gradient(to bottom, rgba(5, 5, 7, 0.18) 0%, transparent 18%, transparent 78%, rgba(5, 5, 7, 0.9) 100%),
+      linear-gradient(to right, rgba(5, 5, 7, 0.18) 0%, transparent 16%, transparent 84%, rgba(5, 5, 7, 0.18) 100%);
   }
 
-  /* Penrose mark */
-  .gs-hero__mark-wrap {
+  .gs-hero__brand {
     position: absolute;
-    inset: 0;
-    display: flex;
+    inset: 1rem auto auto 1rem;
+    z-index: 3;
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
-    z-index: 1;
-    pointer-events: none;
-    will-change: transform;
+    gap: 0.7rem;
+    padding: 0.55rem 0.8rem;
+    border: 1px solid rgba(255, 120, 54, 0.12);
+    border-radius: 18px;
+    background: rgba(8, 8, 10, 0.7);
+    backdrop-filter: blur(12px);
   }
 
-  .gs-hero__mark {
-    width: clamp(220px, 28vw, 380px);
+  .gs-hero__brand-mark {
+    width: 2rem;
     height: auto;
-    opacity: 0.18;
-    filter: blur(0.5px) drop-shadow(0 0 48px rgba(90,162,255,0.32));
-    transition: opacity 600ms ease, filter 600ms ease;
+    color: var(--gs-primary);
   }
 
-  .gs-hero:hover .gs-hero__mark {
-    opacity: 0.26;
-    filter: blur(0px) drop-shadow(0 0 72px rgba(90,162,255,0.50));
+  .gs-hero__brand-copy {
+    display: grid;
+    gap: 0.1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
   }
 
-  /* copy */
+  .gs-hero__brand-copy span {
+    color: rgba(233, 238, 244, 0.82);
+    font-size: 0.68rem;
+  }
+
+  .gs-hero__brand-copy strong {
+    font-size: 0.8rem;
+    color: #eef2f6;
+  }
+
   .gs-hero__copy {
     position: relative;
     z-index: 3;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    width: min(680px, calc(100% - 48px));
-    will-change: transform;
+    width: min(720px, 100%);
+    grid-column: 1;
+    align-self: center;
+    padding-right: clamp(0rem, 2vw, 1rem);
+    margin-left: clamp(0rem, 4vw, 2rem);
   }
 
-  /* eyebrow */
   .gs-hero__eyebrow {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
-    padding: 9px 18px;
-    border-radius: 999px;
-    border: 1px solid rgba(90,162,255,0.28);
-    background: rgba(7,11,20,0.48);
-    backdrop-filter: blur(12px);
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.16em;
+    gap: 0.65rem;
+    margin-bottom: 1.3rem;
+    color: rgba(217, 106, 50, 0.94);
     text-transform: uppercase;
-    color: rgba(90,162,255,0.92);
-    margin-bottom: 28px;
+    letter-spacing: 0.28em;
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .gs-hero__eyebrow-line {
+    width: 2.75rem;
+    height: 1px;
+    background: rgba(217, 106, 50, 0.8);
   }
 
   .gs-hero__dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: #5aa2ff;
-    box-shadow: 0 0 10px 2px rgba(90,162,255,0.7);
-    animation: dot-pulse 2s ease-in-out infinite;
-    flex-shrink: 0;
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 999px;
+    background: var(--gs-primary);
+    box-shadow: 0 0 12px rgba(89, 168, 255, 0.5);
   }
 
-  @keyframes dot-pulse {
-    0%, 100% { opacity: 1;   box-shadow: 0 0 10px 2px rgba(90,162,255,0.7); }
-    50%       { opacity: 0.6; box-shadow: 0 0 18px 4px rgba(90,162,255,0.35); }
-  }
-
-  /* headline */
   .gs-hero__headline {
-    display: flex;
-    flex-direction: column;
-    font-family: var(--gs-font-display, Georgia, serif);
-    font-size: clamp(44px, 6vw, 80px);
-    font-weight: 600;
-    line-height: 1.06;
-    color: rgba(226,232,240,0.97);
-    text-shadow: 0 8px 40px rgba(0,0,0,0.5);
-    margin: 0 0 24px;
-    gap: 4px;
+    display: grid;
+    gap: 0.14em;
+    margin: 0;
+    color: #eef2f6;
+    text-transform: uppercase;
+    letter-spacing: -0.06em;
+    font-family: var(--gs-font-display);
+    font-size: clamp(3.8rem, 8vw, 7.4rem);
+    line-height: 0.92;
+    text-wrap: balance;
+    text-shadow: 0 10px 42px rgba(0, 0, 0, 0.45);
   }
 
   .gs-hero__headline-line {
     display: block;
     opacity: 0;
     transform: translateY(16px);
-    animation: gs-fade-up 680ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    animation: gs-fade-up 700ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
 
-  @keyframes gs-fade-up {
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  /* sub */
   .gs-hero__sub {
-    max-width: 52ch;
-    color: rgba(148,163,184,0.82);
-    font-size: clamp(15px, 1.5vw, 17px);
-    line-height: 1.65;
-    margin: 0 0 38px;
+    max-width: 42rem;
+    margin: 1.6rem 0 0;
+    color: rgba(156, 165, 180, 0.9);
+    font-size: clamp(1.02rem, 1vw + 0.5rem, 1.15rem);
+    line-height: 1.75;
   }
 
-  /* actions */
   .gs-hero__actions {
     display: flex;
-    gap: 14px;
+    gap: 0.9rem;
     flex-wrap: wrap;
-    justify-content: center;
+    margin-top: 1.75rem;
   }
 
   .gs-btn {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    height: 46px;
-    padding: 0 22px;
-    border-radius: 12px;
-    font-size: 14px;
+    gap: 0.55rem;
+    min-height: 46px;
+    padding: 0.85rem 1.35rem;
+    border-radius: 999px;
+    font-size: 0.92rem;
     font-weight: 600;
     text-decoration: none;
-    transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background 180ms ease;
   }
 
   .gs-btn--primary {
-    background: linear-gradient(135deg, rgba(90,162,255,0.28), rgba(59,130,246,0.16));
-    border: 1px solid rgba(90,162,255,0.42);
-    color: rgba(226,232,240,0.96);
-    box-shadow:
-      0 0 24px rgba(90,162,255,0.18),
-      inset 0 1px 0 rgba(255,255,255,0.08);
-    backdrop-filter: blur(12px);
+    background: linear-gradient(135deg, rgba(217, 106, 50, 0.95), rgba(176, 74, 28, 0.95));
+    border: 1px solid rgba(255, 142, 84, 0.28);
+    color: #fff7f0;
+    box-shadow: 0 18px 42px rgba(217, 106, 50, 0.2);
   }
 
-  .gs-btn--primary:hover {
+  .gs-btn--primary:hover,
+  .gs-btn--primary:focus-visible,
+  .gs-btn--ghost:hover,
+  .gs-btn--ghost:focus-visible {
     transform: translateY(-2px);
-    box-shadow:
-      0 8px 32px rgba(90,162,255,0.30),
-      inset 0 1px 0 rgba(255,255,255,0.10);
-    border-color: rgba(90,162,255,0.65);
   }
 
   .gs-btn--ghost {
-    background: rgba(7,11,20,0.38);
-    border: 1px solid rgba(148,163,184,0.18);
-    color: rgba(148,163,184,0.80);
-    backdrop-filter: blur(12px);
-  }
-
-  .gs-btn--ghost:hover {
-    transform: translateY(-2px);
-    border-color: rgba(148,163,184,0.36);
-    color: rgba(226,232,240,0.90);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+    color: rgba(233, 238, 244, 0.88);
   }
 
   .gs-btn__arrow {
     width: 16px;
     height: 16px;
-    transition: transform 200ms ease;
-    flex-shrink: 0;
+    transition: transform 180ms ease;
   }
 
-  .gs-btn--primary:hover .gs-btn__arrow { transform: translateX(3px); }
+  .gs-btn--primary:hover .gs-btn__arrow {
+    transform: translateX(3px);
+  }
 
-  /* reduced motion */
+  .gs-hero__panel {
+    position: relative;
+    z-index: 3;
+    grid-column: 2;
+    justify-self: end;
+    align-self: center;
+    width: min(360px, 100%);
+    margin-left: auto;
+    margin-right: clamp(0rem, 2vw, 1rem);
+  }
+
+  .gs-hero__panel-shell {
+    display: grid;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: 22px;
+    border: 1px solid rgba(255, 120, 54, 0.12);
+    background: rgba(8, 9, 12, 0.75);
+    box-shadow: var(--gs-shadow);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+
+  .gs-hero__panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .gs-hero__panel-kicker,
+  .gs-hero__panel-live,
+  .gs-hero__signal span,
+  .gs-hero__metric span,
+  .gs-hero__metric small {
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+  }
+
+  .gs-hero__panel-kicker {
+    color: rgba(233, 238, 244, 0.64);
+    font-size: 0.72rem;
+  }
+
+  .gs-hero__panel-live {
+    color: #5ddb9a;
+    font-size: 0.68rem;
+  }
+
+  .gs-hero__panel-signals {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .gs-hero__signal,
+  .gs-hero__metric {
+    padding: 0.9rem 0.95rem;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .gs-hero__signal {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .gs-hero__signal span,
+  .gs-hero__metric span {
+    color: rgba(156, 165, 180, 0.78);
+    font-size: 0.68rem;
+  }
+
+  .gs-hero__signal strong,
+  .gs-hero__metric strong {
+    color: #f2f5f8;
+    font-size: 0.95rem;
+  }
+
+  .gs-hero__panel-metrics {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .gs-hero__metric-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.45rem;
+  }
+
+  .gs-hero__metric-head small {
+    color: rgba(156, 165, 180, 0.7);
+    font-size: 0.64rem;
+  }
+
+  .gs-hero__metric p {
+    margin: 0.5rem 0 0;
+    color: rgba(156, 165, 180, 0.82);
+    font-size: 0.88rem;
+    line-height: 1.55;
+  }
+
+  @keyframes gs-fade-up {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
-    .gs-hero__headline-line { animation: none; opacity: 1; transform: none; }
-    .gs-hero__dot           { animation: none; }
+    .gs-hero__headline-line {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+
     .gs-hero__wave,
-    .gs-hero__mark-wrap,
-    .gs-hero__copy          { will-change: auto; }
+    .gs-hero__brand {
+      will-change: auto;
+    }
+
+    .gs-btn,
+    .gs-btn__arrow {
+      transition: none;
+    }
   }
 
-  /* mobile */
-  @media (max-width: 640px) {
-    .gs-hero__mark {
-      width: clamp(160px, 55vw, 240px);
-      opacity: 0.12;
+  @media (max-width: 1080px) {
+    .gs-hero {
+      justify-items: start;
+    }
+
+    .gs-hero__panel {
+      width: min(100%, 520px);
+      margin: 2rem 0 0 clamp(0rem, 4vw, 2rem);
+      justify-self: start;
+    }
+  }
+
+  @media (max-width: 760px) {
+    .gs-hero {
+      min-height: auto;
+      grid-template-columns: 1fr;
+      justify-items: start;
+      padding-top: 5.75rem;
+    }
+
+    .gs-hero__brand {
+      inset: 0.75rem auto auto 0.75rem;
+    }
+
+    .gs-hero__copy {
+      grid-column: 1;
+      margin-left: 0;
+      width: 100%;
+    }
+
+    .gs-hero__headline {
+      font-size: clamp(3rem, 12vw, 4.5rem);
+    }
+
+    .gs-hero__actions,
+    .gs-btn {
+      width: 100%;
+    }
+
+    .gs-hero__panel {
+      grid-column: 1;
+      width: 100%;
+      margin-left: 0;
+      margin-top: 1.5rem;
+      justify-self: start;
+    }
+
+    .gs-hero__signal,
+    .gs-hero__metric-head {
+      flex-direction: column;
+      align-items: flex-start;
     }
   }
 </style>
+
+

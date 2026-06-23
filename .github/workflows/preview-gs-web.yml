@@ -1,6 +1,5 @@
 name: GS web staging (The production theme)
-# apps/gs-web is the public Pages surface. Keep preview automation separate from
-# gs-admin so future cleanup preserves the public/internal boundary.
+# apps/gs-web is the public Pages surface for the unified frontend. Keep preview automation aligned with the two-app monorepo.
 
 permissions:
   contents: read

@@ -1,6 +1,5 @@
 ---
 import RiskRadar from '../components/RiskRadar.astro';
-import Logo from '../components/brand/Logo.astro';
 import ParallaxHero from '../components/hero/ParallaxHero.astro';
 import WebLayout from '../layouts/WebLayout.astro';
 
@@ -72,43 +71,16 @@ const proofPoints = [
 >
   <main class="home-page">
     <ParallaxHero
-      eyebrow="Institutional-grade Operational AI"
+      eyebrow="Institutional-grade operational AI"
       headline={"Clarity, Control, and\nTrust for Live AI Systems."}
       sub="GoldShore builds resilient decision systems, risk tooling, and operator infrastructure for teams that need explainable performance under pressure."
       ctaPrimary={{ label: 'Request Briefing', href: '/contact' }}
       ctaSecondary={{ label: 'View Operating Model', href: '/about' }}
+      panelTitle="Live operating surface"
+      panelSignals={signals}
+      panelItems={trustMetrics}
     />
-
-    <section class="signal-strip gs-shell-section" aria-label="Signal strip">
-      {signals.map((signal) => (
-        <div class="signal-tile">
-          <span>{signal.label}</span>
-          <strong>{signal.value}</strong>
-        </div>
-      ))}
-    </section>
-
-    <section class="metrics-shell gs-shell-section" aria-label="Trust metrics">
-      <div class="metrics-grid" data-metrics-grid>
-        {trustMetrics.map((metric) => (
-          <article class="signal-tile signal-tile--loading" aria-live="polite">
-            <div class="signal-tile__header">
-              <span>{metric.label}</span>
-              <small>{metric.context}</small>
-            </div>
-            <strong>{metric.value}</strong>
-            <p>{metric.detail}</p>
-            {metric.href && (
-              <a href={metric.href} class="signal-link">
-                {metric.hrefLabel} →
-              </a>
-            )}
-          </article>
-        ))}
-      </div>
-    </section>
-
-    <section
+<section
       class="section-block gs-shell-section"
       aria-labelledby="capabilities-title"
     >
@@ -740,3 +712,6 @@ const proofPoints = [
 
   </style>
 </WebLayout>
+
+
+

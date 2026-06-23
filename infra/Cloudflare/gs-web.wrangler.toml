@@ -5,6 +5,7 @@ name = "gs-web" # Base name for Pages project
 
 # This file is primarily for configuring bindings for Cloudflare Pages Functions.
 # The actual deployment will be handled by the GitHub Action connecting to the Pages project.
+# Staging is the visual source of truth for the production theme and shell.
 
 [vars]
 # Shared environment variables can go here.
@@ -12,7 +13,7 @@ name = "gs-web" # Base name for Pages project
 # - `GS_CONFIG` is intentionally *not* bound to gs-web today.
 # - Current gs-web runtime consumers read mutable config indirectly via
 #   `PUBLIC_API`/content fetches or admin-generated content, not from the
-#   shared gs-control/gs-admin KV namespace.
+#   shared gs-control KV namespace.
 # - If a future Pages Function needs live runtime config, add a concrete
 #   read-only consumer in `apps/gs-web` first, then declare a `GS_CONFIG`
 #   binding in the target environment blocks below.

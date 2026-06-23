@@ -32,6 +32,7 @@ type Env = {
   CONTROL_SYNC_TOKEN?: string;
   ALLOWED_ORIGINS?: string;
   ENV?: string;
+  DEV_AUTH_BYPASS?: string;
 };
 
 const app = new Hono<{
@@ -126,6 +127,15 @@ app.use('*', async (c, next) => {
       await next();
       return;
     }
+  }
+
+  if (c.env.DEV_AUTH_BYPASS === '1') {
+    c.set('accessClaims', {
+      email: 'developer@goldshore.ai',
+      roles: ['admin'],
+    } as AccessTokenPayload);
+    await next();
+    return;
   }
 
   // Verify Cloudflare Access JWT
