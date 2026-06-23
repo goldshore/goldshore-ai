@@ -232,8 +232,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/utils
       '@hono/zod-validator':
-        specifier: ^0.7.0
-        version: 0.7.6(hono@4.12.25)(zod@4.4.3)
+        specifier: ^0.8.0
+        version: 0.8.0(hono@4.12.25)(zod@4.4.3)
       hono:
         specifier: ^4.12.25
         version: 4.12.25
@@ -1021,10 +1021,10 @@ packages:
       hono: '>=3.9.0'
       zod: ^3.19.1
 
-  '@hono/zod-validator@0.7.6':
-    resolution: {integrity: sha512-Io1B6d011Gj1KknV4rXYz4le5+5EubcWEU/speUjuw9XMMIaP3n78yXLhjd2A3PXaXaUwEAluOiAyLqhBEJgsw==}
+  '@hono/zod-validator@0.8.0':
+    resolution: {integrity: sha512-5uS4S1/LKtZQYvD4BtpPUFkOv8d1wNxHHrChm26buMiEYc1FrHWvDUaKVBwkiVtvSExHSpLGDvcnpI2Copyj9w==}
     peerDependencies:
-      hono: '>=3.9.0'
+      hono: '>=4.10.0'
       zod: ^3.25.0 || ^4.0.0
 
   '@humanfs/core@0.19.2':
@@ -5181,7 +5181,7 @@ snapshots:
       hono: 4.12.25
       zod: 3.25.76
 
-  '@hono/zod-validator@0.7.6(hono@4.12.25)(zod@4.4.3)':
+  '@hono/zod-validator@0.8.0(hono@4.12.25)(zod@4.4.3)':
     dependencies:
       hono: 4.12.25
       zod: 4.4.3
