@@ -92,3 +92,6 @@ reports/*.txt
 
 # Claude local settings (contains secrets)
 .claude/settings.local.json
+.codex-remote-attachments/
+.codex/
+.mcp.json

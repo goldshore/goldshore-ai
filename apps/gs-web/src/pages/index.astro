@@ -64,6 +64,21 @@ const proofPoints = [
     body: 'Every workflow is designed to be demonstrable in real use: logs, thresholds, review modes, and fallback paths.',
   },
 ];
+
+const mcpHighlights = [
+  {
+    title: 'Private by design',
+    body: 'The live MCP host stays behind Cloudflare Access and never becomes an open prompt surface.',
+  },
+  {
+    title: 'Approved identities',
+    body: 'Only authorized humans and a dedicated agent/service path can reach the private tools.',
+  },
+  {
+    title: 'Public explanation',
+    body: 'GoldShore.ai can describe the service openly while keeping execution locked down.',
+  },
+];
 ---
 
 <WebLayout
@@ -149,6 +164,44 @@ const proofPoints = [
         </p>
       </div>
       <RiskRadar />
+    </section>
+
+    <section
+      class="section-block gs-shell-section mcp-section"
+      aria-labelledby="mcp-title"
+    >
+      <div class="section-copy">
+        <p class="gs-eyebrow">GoldShore MCP</p>
+        <h2 id="mcp-title">A public explanation, with private execution behind Access.</h2>
+        <p class="section-intro">
+          GoldShore.ai can explain the MCP offering in public while <code>mcp.goldshore.ai</code>
+          stays locked to approved humans and approved agents only.
+        </p>
+      </div>
+
+      <div class="mcp-grid">
+        <article class="mcp-card mcp-card--hero">
+          <div class="mcp-card__brand">
+            <Logo class="gs-logo gs-logo--lockup" title="Gold Shore" variant="lockup" />
+            <div>
+              <span class="mcp-card__label">Private Access</span>
+              <strong>Cloudflare Access enforced</strong>
+            </div>
+          </div>
+          <p>
+            The MCP host is reserved for controlled prompts, tool calls, and internal changes.
+            Public visitors can learn about it here, but they cannot use it without authorization.
+          </p>
+          <a href="/developer/mcp" class="signal-link">Explore the access model →</a>
+        </article>
+
+        {mcpHighlights.map((item) => (
+          <article class="mcp-card">
+            <h3>{item.title}</h3>
+            <p>{item.body}</p>
+          </article>
+        ))}
+      </div>
     </section>
 
     <section
@@ -627,6 +680,12 @@ const proofPoints = [
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
+    .mcp-grid {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
     .proof-card--metrics {
       display: grid;
       gap: 1rem;
@@ -639,6 +698,51 @@ const proofPoints = [
     .team-card--founder {
       border-color: rgba(90, 162, 255, 0.2);
       background: rgba(90, 162, 255, 0.08);
+    }
+
+    .mcp-card {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      padding: 1.4rem;
+      border-radius: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(10, 18, 36, 0.72);
+      box-shadow: var(--gs-shadow);
+    }
+
+    .mcp-card--hero {
+      grid-row: span 2;
+      background:
+        radial-gradient(circle at top left, rgba(66, 153, 225, 0.18), transparent 36%),
+        rgba(10, 18, 36, 0.8);
+    }
+
+    .mcp-card__brand {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .mcp-card__brand .gs-brand-logo {
+      width: 92px;
+      height: auto;
+      flex: 0 0 auto;
+    }
+
+    .mcp-card__label {
+      display: block;
+      margin-bottom: 0.15rem;
+      color: rgba(233, 238, 252, 0.62);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-size: 0.76rem;
+    }
+
+    .mcp-card p {
+      margin: 0;
+      color: var(--gs-text-dim);
+      line-height: 1.75;
     }
 
     .contact-cta {
@@ -674,6 +778,7 @@ const proofPoints = [
       .metrics-grid,
       .capability-grid,
       .proof-grid,
+      .mcp-grid,
       .team-row {
         grid-template-columns: 1fr;
       }

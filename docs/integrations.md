@@ -126,3 +126,52 @@ This hub documents external integrations used by GoldShore services and the admi
 | Scopes | `jules:read`, `jules:write`, `automation:run` |
 | Rate limits | Internal gateway limits (align with automation workload SLOs). |
 | Data classification | Confidential (automation runs, internal workflows, and task metadata). |
+
+### Custom MCP Server (`mcp.goldshore.ai`)
+
+| Field | Details |
+| --- | --- |
+| Base URL | `https://mcp.goldshore.ai/mcp` |
+| Transport | Streamable HTTP |
+| Auth method | Bearer token from environment or managed config |
+| Data classification | Confidential until the exposed tool set is finalized |
+
+Use this entry when connecting GoldShore's custom MCP surface to Codex or Claude Code.
+Keep the token out of source control and prefer environment-variable expansion or managed
+configuration for any secret value.
+
+#### Codex
+
+Codex reads MCP server settings from `~/.codex/config.toml` or a project-scoped
+`.codex/config.toml`.
+
+```toml
+[mcp_servers."mcp.goldshore.ai"]
+url = "https://mcp.goldshore.ai/mcp"
+bearer_token_env_var = "MCP_GOLDSHORE_TOKEN"
+```
+
+See the official [Codex MCP docs](https://developers.openai.com/codex/mcp) for the full
+configuration reference.
+
+#### Claude Code
+
+Claude Code reads project MCP servers from `.mcp.json` at the repository root and supports
+environment-variable expansion in that file.
+
+```json
+{
+  "mcpServers": {
+    "mcp.goldshore.ai": {
+      "type": "http",
+      "url": "https://mcp.goldshore.ai/mcp",
+      "headers": {
+        "Authorization": "Bearer ${MCP_GOLDSHORE_TOKEN}"
+      }
+    }
+  }
+}
+```
+
+See the official [Claude Code MCP docs](https://code.claude.com/docs/en/mcp) for the full
+configuration reference.

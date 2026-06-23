@@ -44,6 +44,17 @@
 
 ---
 
+### 2b. MCP Access Surface
+
+- Host: `mcp.goldshore.ai`
+- Purpose: private MCP endpoint for approved humans and approved agents
+- Access: Cloudflare Access required before any private tool loads
+- Notes:
+  - Keep anonymous prompts and changes out of the surface.
+  - Use a dedicated service identity path for agent automation.
+
+---
+
 ## Workers
 
 ### 3. API Worker
