@@ -1,4 +1,17 @@
 import { defineCollection, z } from 'astro:content';
+<<<<<<< HEAD
+
+export const collections = {
+  docs: defineCollection({
+    type: 'content',
+    schema: z.object({
+      title: z.string(),
+      description: z.string().optional(),
+      order: z.number().optional(),
+    }),
+  }),
+};
+=======
 import { glob } from 'astro/loaders';
 
 const docs = defineCollection({
@@ -12,3 +25,4 @@ const docs = defineCollection({
 });
 
 export const collections = { docs };
+>>>>>>> origin/main
