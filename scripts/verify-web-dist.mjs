@@ -5,6 +5,9 @@ import path from 'node:path';
 const distDir = path.resolve('dist');
 const astroDir = path.join(distDir, '_astro');
 const indexPath = path.join(distDir, 'index.html');
+const webAppRoot = path.resolve('.');
+const webLayoutPath = path.join(webAppRoot, 'src', 'layouts', 'WebLayout.astro');
+const publicDir = path.join(webAppRoot, 'public');
 
 const errors = [];
 
@@ -41,6 +44,36 @@ if (existsSync(indexPath)) {
 
   if (!indexHtml.includes('<script')) {
     errors.push('index.html does not include any <script tags.');
+  }
+}
+
+if (!existsSync(webLayoutPath)) {
+  errors.push(`Missing layout file: ${webLayoutPath}`);
+} else {
+  const layoutSource = readFileSync(webLayoutPath, 'utf8');
+  const iconLinkPattern = /<link\s+[^>]*rel=["']icon["'][^>]*>/gi;
+  const hrefPattern = /\shref=["']([^"']+)["']/i;
+  const declaredIconHrefs = [...layoutSource.matchAll(iconLinkPattern)]
+    .map((tagMatch) => {
+      const hrefMatch = tagMatch[0].match(hrefPattern);
+      return hrefMatch?.[1] ?? null;
+    })
+    .filter((href) => typeof href === 'string');
+
+  if (declaredIconHrefs.length === 0) {
+    errors.push(`No favicon <link rel="icon"> tags found in ${webLayoutPath}`);
+  }
+
+  for (const href of declaredIconHrefs) {
+    if (!href.startsWith('/')) {
+      errors.push(`Favicon path must be root-relative: "${href}"`);
+      continue;
+    }
+
+    const publicAssetPath = path.join(publicDir, href.slice(1));
+    if (!existsSync(publicAssetPath)) {
+      errors.push(`Missing favicon asset for "${href}" at ${publicAssetPath}`);
+    }
   }
 }
 

@@ -1,0 +1,18 @@
+name = "gs-www-redirect"
+main = "src/index.ts"
+compatibility_date = "2026-04-04"
+workers_dev = false
+
+# Redirects www.goldshore.ai → goldshore.ai only.
+# www.goldshore.org is handled by the goldshore-org Worker (redirects → goldshore.ai).
+# rmarston.com and armsway.com are managed by their own workers.
+
+[env.prod]
+routes = [
+  { pattern = "www.goldshore.ai", custom_domain = true }
+]
+
+[env.production]
+routes = [
+  { pattern = "www.goldshore.ai", custom_domain = true }
+]

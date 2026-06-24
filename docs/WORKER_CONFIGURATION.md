@@ -2,6 +2,11 @@
 
 This document details the configuration for all Cloudflare Workers and Pages projects in the GoldShore monorepo.
 
+## Queue Source of Truth
+
+- Canonical queue matrix: `docs/ops/queue-contract-matrix.md`.
+- CI/static guard: `pnpm validate:queues` (script: `scripts/validate-queue-contracts.mjs`) fails when any env-scoped producer queue has no consumer in the same environment.
+
 ## 1. gs-mail (`apps/gs-mail`)
 
 The email routing and processing worker.
@@ -10,7 +15,8 @@ The email routing and processing worker.
 - **Package Name:** `gs-mail`
 - **Wrangler:** `apps/gs-mail/wrangler.toml`
 - **Deployment:** CI workflow (`.github/workflows/deploy-gs-mail.yml`) on `push` to `main`.
-- **Bindings:** `GS_CONFIG` KV plus production email vars in `env.prod` / `env.production`.
+- **Bindings:** `GS_CONFIG` KV plus production email vars in `env.prod`.
+- **Queues:** Consumes `gs-platform-checkout-events-{dev|preview|prod}` and `gs-platform-contact-events-{dev|preview|prod}` to process gs-platform checkout/contact events.
 - **Compatibility Date:** `2024-11-01`
 - **Main Entry:** `src/index.ts`
 - **Purpose:** Handles email routing logic, including sender blocking, optional recipient allowlists, and fail-closed forwarding via `MAIL_FORWARD_TO`.
@@ -40,7 +46,9 @@ The API gateway and router.
 - **Deployment:** Preview CI workflow (`.github/workflows/preview-gs-gateway.yml`) on `pull_request`; production CI workflow (`.github/workflows/deploy-gs-gateway.yml`) on `push` to `main`.
 - **Bindings:**
   - `KV Namespaces`: `GATEWAY_KV`.
-  - `Queues`: Produces to `goldshore-jobs`.
+  - `Queues`: Produces `CHECKOUT_EVENTS_QUEUE` and `CONTACT_EVENTS_QUEUE` with env-specific queue names:
+    - `gs-platform-checkout-events-dev|preview|prod`
+    - `gs-platform-contact-events-dev|preview|prod`
   - `Services`: `API` (points to `gs-api`) and `AGENT` (points to `gs-agent`).
   - `AI`: Cloudflare Workers AI binding.
   - `Vars`: `ENV`, `API_ORIGIN`, `CLOUDFLARE_ACCESS_AUDIENCE`, `CLOUDFLARE_TEAM_DOMAIN`.

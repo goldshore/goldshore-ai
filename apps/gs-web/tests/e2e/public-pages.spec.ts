@@ -142,6 +142,18 @@ test('contact page preselects strategy-call inquiry from query string', async ({
   assertHealthyPage(monitors);
 });
 
+
+
+test('contact page preselects strategy call inquiry from querystring', async ({ page }) => {
+  const monitors = attachPageMonitors(page);
+
+  await page.goto('/contact?inquiry=strategy-call', { waitUntil: 'networkidle' });
+
+  await expect(page.getByLabel('Inquiry type')).toHaveValue('strategy-call');
+
+  assertHealthyPage(monitors);
+});
+
 test('super bowl boxes page renders board and CTAs', async ({ page }) => {
   const monitors = attachPageMonitors(page);
 

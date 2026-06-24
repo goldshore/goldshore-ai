@@ -1,49 +1,308 @@
-<section class="hero">
-  <h1>AI-powered business infrastructure for modern operators.</h1>
-  <p>APIs, dashboards, automation, and intelligence for finance, operations, and decision systems.</p>
+---
+import { GSButton, Panel } from '@goldshore/ui';
+import SignalField from './hero/SignalField.astro';
+import LogoGL from './logo/LogoGL.astro';
+---
 
-  <div class="hero-cta">
-    <a class="primary" href="/developer">Get Started</a>
-    <a class="secondary" href="https://admin.goldshore.ai">Admin Login</a>
+<section class="signal-hero" aria-label="Gold Shore motion system">
+  <SignalField />
+
+  <div class="signal-hero__grid">
+    <div class="signal-hero__content">
+      <span class="signal-hero__eyebrow signal-update">System operational</span>
+      <h1>Infrastructure for High-Trust AI</h1>
+      <p class="signal-hero__lede">
+        Resilient decision systems, risk tooling, and operator infrastructure designed to stage structure,
+        activation, and confirmation without adding noise.
+      </p>
+
+      <div class="signal-hero__actions">
+        <GSButton href="/contact" class="signal-button">Open Workstream</GSButton>
+        <GSButton href="/developer" variant="secondary" class="signal-button signal-button--secondary">View Model</GSButton>
+      </div>
+
+      <div class="signal-hero__panels">
+        <Panel class="signal-panel signal-panel--primary">
+          <span>Structure</span>
+          <strong>Policy-bound routing</strong>
+          <p>Execution lanes stay deterministic while operators retain full audit visibility.</p>
+        </Panel>
+        <Panel class="signal-panel">
+          <span>Activation</span>
+          <strong>Live signal orchestration</strong>
+          <p>Telemetry, scoring, and event flows surface only when the system state changes.</p>
+        </Panel>
+        <Panel class="signal-panel">
+          <span>Confirmation</span>
+          <strong>Review-ready outputs</strong>
+          <p>Each path closes with traceable outcomes, controls, and model evidence.</p>
+        </Panel>
+      </div>
+    </div>
+
+    <div class="signal-hero__visual">
+      <div class="signal-hero__lock-card">
+        <LogoGL />
+      </div>
+
+      <div class="signal-hero__telemetry">
+        <Panel class="signal-panel signal-panel--telemetry signal-update">
+          <span>Signal status</span>
+          <strong>Confirmation edge active</strong>
+          <p>Edge path pulse synced to field cadence. Risk envelope stable. Operators in control.</p>
+        </Panel>
+        <Panel class="signal-panel signal-panel--metrics">
+          <div>
+            <span>Latency</span>
+            <strong>24ms</strong>
+          </div>
+          <div>
+            <span>Uptime</span>
+            <strong>99.98%</strong>
+          </div>
+          <div>
+            <span>Watchlist</span>
+            <strong>Active</strong>
+          </div>
+        </Panel>
+      </div>
+    </div>
   </div>
 </section>
 
 <style>
-  .hero {
-    padding: 6rem 2rem 5rem;
-    text-align: center;
+  .signal-hero {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    border: 1px solid rgba(95, 168, 255, 0.16);
+    border-radius: 1.5rem;
+    min-height: min(52rem, calc(100vh - var(--gs-header-height) - 2rem));
+    background:
+      radial-gradient(circle at 15% 20%, rgba(30, 58, 138, 0.34), transparent 34%),
+      radial-gradient(circle at 78% 24%, rgba(95, 168, 255, 0.18), transparent 28%),
+      linear-gradient(180deg, rgba(10, 15, 28, 0.96), rgba(2, 6, 23, 0.98));
+    box-shadow:
+      inset 0 0 120px rgba(3, 8, 24, 0.7),
+      0 40px 90px rgba(2, 8, 23, 0.45);
   }
-  h1 {
-    font-size: 2.4rem;
-    margin: 0 0 1rem;
-    background: linear-gradient(90deg,#22d3ee,#a855f7);
-    -webkit-background-clip: text;
-    color: transparent;
+
+  .signal-hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.08), transparent 38%);
+    opacity: 0.9;
+    pointer-events: none;
   }
-  p {
-    color: #94a3b8;
-    max-width: 580px;
-    margin: 0 auto 1.75rem;
-    font-size: 1.1rem;
+
+  .signal-hero__grid {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.95fr);
+    gap: clamp(2rem, 5vw, 4rem);
+    padding: clamp(2rem, 5vw, 4rem);
+    align-items: center;
+    min-height: inherit;
   }
-  .hero-cta {
+
+  .signal-hero__content {
+    display: grid;
+    gap: 1.5rem;
+    align-content: center;
+  }
+
+  .signal-hero__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    justify-self: start;
+    gap: 0.55rem;
+    padding: 0.5rem 0.8rem;
+    border-radius: 999px;
+    border: 1px solid rgba(95, 168, 255, 0.2);
+    background: rgba(10, 15, 28, 0.72);
+    color: #a9cfff;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .signal-hero__eyebrow::before {
+    content: '';
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 18px rgba(16, 185, 129, 0.55);
+  }
+
+  .signal-hero h1 {
+    margin: 0;
+    max-width: 12ch;
+    font-size: clamp(3rem, 5vw, 5.3rem);
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+    color: #f8fbff;
+    text-shadow: 0 16px 48px rgba(2, 8, 23, 0.62);
+  }
+
+  .signal-hero__lede {
+    margin: 0;
+    max-width: 42rem;
+    font-size: clamp(1rem, 0.92rem + 0.45vw, 1.2rem);
+    line-height: 1.7;
+    color: rgba(229, 231, 235, 0.82);
+  }
+
+  .signal-hero__actions {
     display: flex;
-    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+  }
+
+  .signal-button {
+    min-width: 11rem;
+  }
+
+  .signal-hero__panels {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 1rem;
   }
-  .primary, .secondary {
-    padding: 0.7rem 1.6rem;
-    border-radius: 0.6rem;
-    text-decoration: none;
+
+  .signal-panel {
+    position: relative;
+    display: grid;
+    gap: 0.55rem;
+    min-height: 100%;
+    background: linear-gradient(180deg, rgba(10, 15, 28, 0.9), rgba(6, 12, 24, 0.75));
+    border-color: rgba(95, 168, 255, 0.14);
+    backdrop-filter: blur(18px);
+  }
+
+  .signal-panel span {
+    color: rgba(169, 207, 255, 0.78);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .signal-panel strong {
+    color: #f8fbff;
+    font-size: 1.1rem;
+    line-height: 1.35;
+  }
+
+  .signal-panel p {
+    margin: 0;
+    color: rgba(229, 231, 235, 0.72);
+    line-height: 1.6;
     font-size: 0.95rem;
   }
-  .primary {
-    background: linear-gradient(90deg,#22c55e,#22d3ee);
-    color: #020617;
-    font-weight: 600;
+
+  .signal-panel--primary {
+    box-shadow: inset 0 0 32px rgba(95, 168, 255, 0.08), 0 24px 60px rgba(2, 8, 23, 0.28);
   }
-  .secondary {
-    border: 1px solid rgba(148,163,184,0.4);
-    color: #e2e8f0;
+
+  .signal-hero__visual {
+    display: grid;
+    gap: 1.1rem;
+    align-items: center;
+  }
+
+  .signal-hero__lock-card {
+    position: relative;
+    min-height: 30rem;
+    padding: clamp(1rem, 3vw, 2rem);
+    border-radius: 1.4rem;
+    border: 1px solid rgba(95, 168, 255, 0.14);
+    background:
+      radial-gradient(circle at 50% 48%, rgba(95, 168, 255, 0.08), transparent 45%),
+      linear-gradient(180deg, rgba(9, 14, 25, 0.82), rgba(4, 9, 20, 0.78));
+    backdrop-filter: blur(16px);
+  }
+
+  .signal-hero__lock-card::after {
+    content: '';
+    position: absolute;
+    inset: 1rem;
+    border-radius: 1rem;
+    border: 1px solid rgba(95, 168, 255, 0.1);
+    pointer-events: none;
+  }
+
+  .signal-hero__telemetry {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 1rem;
+  }
+
+  .signal-panel--telemetry {
+    align-content: start;
+  }
+
+  .signal-panel--metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .signal-panel--metrics > div {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .signal-panel--metrics strong {
+    font-size: clamp(1.2rem, 1rem + 0.6vw, 1.65rem);
+  }
+
+  @media (max-width: 1100px) {
+    .signal-hero__grid {
+      grid-template-columns: 1fr;
+    }
+
+    .signal-hero h1 {
+      max-width: 14ch;
+    }
+
+    .signal-hero__visual {
+      order: -1;
+    }
+  }
+
+  @media (max-width: 860px) {
+    .signal-hero {
+      min-height: auto;
+    }
+
+    .signal-hero__panels,
+    .signal-hero__telemetry {
+      grid-template-columns: 1fr;
+    }
+
+    .signal-hero__lock-card {
+      min-height: 24rem;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .signal-hero__grid {
+      padding: 1.5rem;
+    }
+
+    .signal-hero h1 {
+      font-size: clamp(2.6rem, 11vw, 3.6rem);
+    }
+
+    .signal-hero__actions {
+      flex-direction: column;
+    }
+
+    .signal-button {
+      width: 100%;
+    }
   }
 </style>

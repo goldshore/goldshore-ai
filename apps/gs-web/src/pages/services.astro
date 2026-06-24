@@ -7,54 +7,98 @@ export const prerender = true;
 
 const services = [
   {
-    name: 'Operations Control',
-    detail: 'Observability dashboards, incident automation, and policy-driven safeguards.',
-    cta: '/contact'
-  },
-  {
-    name: 'AI Execution',
-    detail: 'Signal ingestion, strategy deployment, and guardrailed automation for trading.',
-    cta: '/contact'
-  },
-  {
-    name: 'Edge Intelligence',
-    detail: 'Low-latency inference and routing tuned for reliability across regions.',
-    cta: '/contact'
-  },
-  {
-    name: 'Client Intake',
-    detail: 'Capture and qualify inbound opportunities with automation-ready workflows.',
-    bullets: [
-      'Lead capture form',
-      'CRM integration (HubSpot/Salesforce)',
-      'Billing integration (Stripe/PayPal)',
-      'Opportunity ranking pipeline surfaced in admin dashboards with KPIs'
+    name: 'Foundations Sprint',
+    overview: 'Establish a stable technical baseline for teams modernizing fast-moving systems.',
+    scope: [
+      'Discovery workshop across architecture, workflows, and service dependencies',
+      'Priority matrix for reliability, security, and delivery bottlenecks'
     ],
-    cta: '/contact'
+    deliverables: [
+      'System architecture snapshot with risk annotations',
+      '90-day implementation roadmap with milestone sequencing',
+      'Executive-ready summary for technical and non-technical stakeholders'
+    ],
+    timeline: '2 to 3 weeks',
+    bestFit: 'Early-stage or scaling teams that need a practical modernization plan before investing in larger builds.',
+    cta: '/contact?intent=foundations-sprint'
+  },
+  {
+    name: 'Automation Launch',
+    overview: 'Design and deploy operational automations that reduce manual work without sacrificing control.',
+    scope: [
+      'Automation candidate selection and process mapping',
+      'Workflow orchestration design with role-based approvals'
+    ],
+    deliverables: [
+      'Production-ready workflow automations with audit trails',
+      'Alerting and incident response playbooks',
+      'Team handoff documentation and enablement session'
+    ],
+    timeline: '4 to 6 weeks',
+    bestFit: 'Operations, RevOps, or product teams buried in repetitive execution tasks and escalation overhead.',
+    cta: '/contact?intent=automation-launch'
+  },
+  {
+    name: 'AI Ops Accelerator',
+    overview: 'Implement guardrailed AI workflows that connect your data, decision logic, and action systems.',
+    scope: [
+      'Data and signal ingestion architecture for model-assisted workflows',
+      'Control policies for safe execution, fallback handling, and monitoring'
+    ],
+    deliverables: [
+      'Integrated AI workflow with governed action paths',
+      'Model and policy observability dashboard',
+      'Validation report with measurable performance outcomes'
+    ],
+    timeline: '6 to 8 weeks',
+    bestFit: 'Teams ready to move from AI prototypes to accountable, production-grade operational systems.',
+    cta: '/contact?intent=ai-ops-accelerator'
+  },
+  {
+    name: 'Embedded Delivery Partner',
+    overview: 'Provide sustained strategic and implementation support for mission-critical initiatives.',
+    scope: [
+      'Fractional leadership across architecture, operations, and automation priorities',
+      'Cross-functional execution planning with weekly implementation cadences'
+    ],
+    deliverables: [
+      'Rolling sprint plan and delivery governance rhythm',
+      'Decision logs, KPI tracking, and stakeholder reporting',
+      'Continuous optimization backlog tied to business outcomes'
+    ],
+    timeline: 'Monthly retainer (minimum 3 months)',
+    bestFit: 'Growth-stage organizations that need a hands-on partner to accelerate delivery across multiple streams.',
+    cta: '/contact?intent=embedded-delivery-partner'
   }
 ];
 ---
-<BaseLayout title="Services | GoldShore" description="Service catalog for GoldShore AI">
+<BaseLayout
+  title="Services | GoldShore"
+  description="Operational AI services for infrastructure, observability, and controlled execution."
+  canonicalPath="/services"
+  ogTitle="GoldShore Services | Reduce Risk, Increase AI Delivery Confidence"
+  ogDescription="Explore service offerings built for resilient AI operations, clearer ownership, and measurable production outcomes."
+>
   <FlowSection variant="hero">
     <div>
       <h1>Services</h1>
       <p>Crafted delivery engagements that combine platform engineering, AI execution, and operational rigor.</p>
-      <GSButton href="/contact">Request a scoping call</GSButton>
+      <GSButton href="/contact" data-analytics-id="services-hero-cta">Request a scoping call</GSButton>
     </div>
     <div class="gs-card">
       <h3 class="section-title"><span>☍</span>Engagement highlights</h3>
       <ul>
-        <li>Architecture assessments with action plans</li>
-        <li>Deployment of shared observability foundations</li>
-        <li>Security reviews with access and automation policy updates</li>
+        <li>Defined scope with practical rollout plans</li>
+        <li>Concrete deliverables mapped to measurable outcomes</li>
+        <li>Timeline bands designed for fast execution and clear checkpoints</li>
       </ul>
     </div>
   </FlowSection>
 
   <FlowSection>
-    <div class="gs-grid columns-3">
+    <div class="gs-grid columns-2 service-grid">
       {services.map((service) => (
-        <article class="gs-card">
+        <article class="gs-card service-card">
           <h3>{service.name}</h3>
           <p>{service.detail}</p>
           {service.bullets ? (
@@ -64,7 +108,14 @@ const services = [
               ))}
             </ul>
           ) : null}
-          <GSButton href={service.cta} variant="secondary" class="gs-button--small">Talk to us</GSButton>
+          <GSButton
+            href={service.cta}
+            variant="secondary"
+            class="gs-button--small"
+            data-analytics-id={`services-card-cta-${service.name.toLowerCase().replaceAll(' ', '-')}`}
+          >
+            Talk to us
+          </GSButton>
         </article>
       ))}
     </div>
@@ -75,7 +126,9 @@ const services = [
       <div>
         <h2>Snapshot</h2>
         <p class="gs-text-lg">Focused delivery for teams that need reliable systems and clear momentum.</p>
-        <GSButton href="/contact" variant="secondary">Plan the engagement</GSButton>
+        <GSButton href="/contact" variant="secondary" data-analytics-id="services-plan-cta">
+          Plan the engagement
+        </GSButton>
       </div>
       <div class="gs-card">
         <h3 class="section-title"><span>◆</span>Snapshot</h3>
@@ -89,4 +142,32 @@ const services = [
       </div>
     </div>
   </FlowSection>
+
+  <script>
+    import { trackEvent } from '../scripts/analytics';
+
+    const root = document.documentElement;
+    if (root.dataset.gsServicesAnalyticsBound !== 'true') {
+      root.dataset.gsServicesAnalyticsBound = 'true';
+      document.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+
+        const cta = target.closest('[data-analytics-id]');
+        if (!(cta instanceof HTMLElement)) return;
+
+        const ctaId = cta.dataset.analyticsId;
+        if (!ctaId || !ctaId.startsWith('services-')) return;
+
+        trackEvent(
+          'services_cta_click',
+          {
+            cta_id: ctaId,
+            page_path: window.location.pathname,
+          },
+          { debounceKey: `services_cta_click:${ctaId}`, debounceMs: 1200 },
+        );
+      });
+    }
+  </script>
 </BaseLayout>

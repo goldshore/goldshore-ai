@@ -19,4 +19,12 @@ export const prerender = true;
       <GSButton href="/">Back to home</GSButton>
     </div>
   </section>
+
+  <script>
+    import { trackEventOnce } from '../scripts/analytics';
+
+    trackEventOnce('thank_you_page_view', 'thank_you_page_view', {
+      page_path: window.location.pathname,
+    });
+  </script>
 </BaseLayout>

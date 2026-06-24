@@ -2,6 +2,7 @@
 # wrangler.toml for the gs-admin Astro Pages app (for Pages Functions; formerly goldshore-admin)
 
 name = "gs-admin" # Base name for Pages project
+compatibility_date = "2026-04-18"
 
 # This file is primarily for configuring bindings for Cloudflare Pages Functions.
 # The actual deployment will be handled by the GitHub Action connecting to the Pages project.

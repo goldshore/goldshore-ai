@@ -1,0 +1,159 @@
+# goldshore-org Router Worker Configuration
+# ============================================
+#
+# PURPOSE
+#   Routes traffic to goldshore-org Pages project
+#   Handles CORS policy for .org domain
+#   Proxies requests to goldshore-org.pages.dev
+#
+# IMPORTANT: Route Ownership Policy
+#   goldshore.ai/* → gs-web (Astro Pages) — GOLDSHORE OWNS THIS
+#   goldshore.org/* → goldshore-org (Astro Pages + Router) — ORG OWNS THIS
+#
+#   The original patch added "goldshore.ai/*" routes to this worker.
+#   This is WRONG because it conflicts with gs-web Pages deployment.
+#
+#   CORRECTED: This file includes CORS allowlist for .ai domains ONLY,
+#   without claiming the .ai routes themselves.
+#
+# DEPLOYMENT
+#   wrangler deploy --env production
+#
+# VERSION: 2026-04-24 (corrected by Copilot, reconciled with route conflict audit)
+
+name = "goldshore-org"
+main = "src/router.ts"
+compatibility_date = "2026-04-18"
+compatibility_flags = ["nodejs_compat"]
+
+workers_dev = false
+
+# ============================================
+# PRODUCTION ENVIRONMENT
+# ============================================
+
+[env.production]
+name = "goldshore-org-prod"
+
+# Routes: .org domain ONLY
+# goldshore.ai/* is handled by gs-web Pages, NOT by this worker
+routes = [
+  { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "www.goldshore.org/*", zone_name = "goldshore.org" }
+]
+
+# Environment variables for production
+[env.production.vars]
+ENV = "production"
+
+# CORS Policy (CORRECTED from original patch)
+# ============================================
+# Original patch added:
+#   "goldshore.ai/*" to routes → WRONG (conflicts with gs-web)
+#   goldshore.ai to GPT_ALLOWED_ORIGINS → CORRECT (CORS allowlist)
+#
+# This CORRECTED file:
+#   ✅ Keeps CORS allowlist for goldshore.ai
+#   ❌ Does NOT claim goldshore.ai routes
+#
+# Use this format if you have a GPT plugin or OAuth endpoint on .org:
+
+GPT_ALLOWED_ORIGINS = "https://goldshore.ai,https://www.goldshore.ai"
+
+# KV bindings (optional, for config/cache)
+[[env.production.kv_namespaces]]
+binding = "CONFIG_KV"
+id = "goldshore-org-config"
+preview_id = "goldshore-org-config-preview"
+
+# Service bindings (optional, for cross-worker calls)
+# Example: call gs-api from goldshore-org router
+# [[env.production.services]]
+# binding = "API"
+# service = "gs-api"
+# environment = "prod"
+
+# ============================================
+# PREVIEW ENVIRONMENT
+# ============================================
+
+[env.preview]
+name = "goldshore-org-preview"
+routes = [
+  { pattern = "preview.goldshore.org/*", zone_name = "goldshore.org" }
+]
+
+[env.preview.vars]
+ENV = "preview"
+GPT_ALLOWED_ORIGINS = "https://preview.goldshore.ai"
+
+[[env.preview.kv_namespaces]]
+binding = "CONFIG_KV"
+id = "goldshore-org-config-preview"
+
+# ============================================
+# DEVELOPMENT ENVIRONMENT
+# ============================================
+
+[env.dev]
+name = "goldshore-org-dev"
+workers_dev = true
+
+[env.dev.vars]
+ENV = "development"
+GPT_ALLOWED_ORIGINS = "http://localhost:3000,http://localhost:8787"
+
+[[env.dev.kv_namespaces]]
+binding = "CONFIG_KV"
+id = "goldshore-org-config-dev"
+
+# ============================================
+# NOTES ON THE CORRECTION
+# ============================================
+#
+# Original Patch Issue
+# ====================
+# The previous patch (from Claude) added these lines to [env.production]:
+#
+#   routes = [
+#     "goldshore.ai/*",
+#     "www.goldshore.ai/*"
+#   ]
+#
+# This causes a ROUTE CONFLICT:
+#   - gs-web (Astro Pages) wants to own goldshore.ai/*
+#   - goldshore-org (this router) now also claims goldshore.ai/*
+#   - Only ONE can win; both can't own the same route
+#
+# Solution: Option 2 (recommended by routing audit)
+# ================================================
+# gs-web owns goldshore.ai/* (public website, highest priority)
+# goldshore-org owns goldshore.org/* (org pages, branding)
+#
+# Cross-domain API calls:
+#   - gs-web at goldshore.ai can call goldshore-org at goldshore.org
+#   - This is handled via CORS, not routes
+#   - CORS allowlist: GPT_ALLOWED_ORIGINS = "https://goldshore.ai"
+#
+# Why the CORS Entry Stayed
+# ==========================
+# The original patch's CORS change was CORRECT:
+#
+#   GPT_ALLOWED_ORIGINS = "https://goldshore.ai,https://www.goldshore.ai"
+#
+# This is needed if:
+#   1. You have a GPT plugin endpoint on goldshore.org
+#   2. You want goldshore.ai (gs-web) to make cross-origin calls to .org
+#
+# The route lines were wrong; the CORS line was right.
+# This file keeps the CORS fix, removes the route conflict.
+#
+# Deployment Order
+# ================
+# 1. Deploy gs-web Pages → goldshore.ai
+# 2. Deploy goldshore-org Pages → goldshore-org
+# 3. Deploy goldshore-org router worker (this file) → handles .org traffic
+# 4. Verify: curl -I https://goldshore.ai (should be gs-web)
+# 5. Verify: curl -I https://goldshore.org (should be goldshore-org Pages)
+#
+# ============================================

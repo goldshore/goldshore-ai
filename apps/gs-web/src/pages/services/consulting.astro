@@ -1,0 +1,161 @@
+---
+import WebLayout from '../../layouts/WebLayout.astro';
+
+export const prerender = true;
+
+const features = [
+  {
+    title: 'Fractional CTO / AI Lead',
+    description: 'Senior technical leadership on a fractional basis — architecture direction, team enablement, and delivery oversight without a full-time hire.',
+  },
+  {
+    title: 'AI Strategy Advisory',
+    description: 'Ongoing advisory for executives and leadership teams navigating AI adoption, vendor selection, and operational transformation.',
+  },
+  {
+    title: 'Technical Due Diligence',
+    description: 'Independent assessment of AI systems, architecture decisions, and delivery risk for investors, boards, and acquirers.',
+  },
+  {
+    title: 'Program Review and Recovery',
+    description: 'Diagnose stalled or at-risk programs and define a recovery path with clear scope, accountability, and realistic timelines.',
+  },
+  {
+    title: 'Team and Process Enablement',
+    description: 'Upskill internal teams on AI operations, delivery practices, and systems thinking through structured working sessions and embedded collaboration.',
+  },
+  {
+    title: 'Decision Support',
+    description: 'On-demand advisory for critical architecture, vendor, or build vs. buy decisions — with structured analysis and a clear recommendation.',
+  },
+];
+---
+
+<WebLayout
+  title="Consulting | GoldShore"
+  description="Fractional leadership and advisory for AI-forward organizations."
+  canonicalPath="/services/consulting"
+>
+  <section class="page-shell gs-shell-section feature-page">
+    <p class="gs-eyebrow">Services &rsaquo; Consulting</p>
+    <h1>Consulting</h1>
+    <p class="page-intro">
+      Fractional leadership and strategic advisory for AI-forward organizations. GoldShore provides
+      the senior perspective and operational experience needed to navigate complex AI decisions —
+      without the overhead of a full-time executive hire.
+    </p>
+
+    <div class="feature-grid">
+      {features.map((f) => (
+        <article class="feature-card">
+          <h2>{f.title}</h2>
+          <p>{f.description}</p>
+        </article>
+      ))}
+    </div>
+
+    <aside class="page-cta">
+      <p class="gs-eyebrow">Next step</p>
+      <h2>Bring senior AI leadership to your organization.</h2>
+      <p>
+        GoldShore consulting engagements are scoped to your specific decisions, timelines, and organizational
+        context — structured for impact from the first session.
+      </p>
+      <a href="/contact" class="cta-btn">Contact GoldShore</a>
+    </aside>
+  </section>
+
+  <style>
+    .feature-page {
+      padding: var(--gs-space-9) 0 calc(var(--gs-space-10) + var(--gs-space-1));
+    }
+
+    .feature-page h1 {
+      max-width: 16ch;
+      margin: 0.75rem 0 1rem;
+      font-size: clamp(2.3rem, 5.6vw, 4.2rem);
+      line-height: 1;
+      letter-spacing: -0.035em;
+    }
+
+    .page-intro {
+      max-width: 64ch;
+      color: var(--gs-text-dim);
+      line-height: 1.7;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .feature-card {
+      padding: 1.3rem;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(10, 18, 36, 0.72);
+      box-shadow: var(--gs-shadow);
+    }
+
+    .feature-card h2 {
+      margin: 0 0 0.6rem;
+      font-size: 1.1rem;
+    }
+
+    .feature-card p {
+      margin: 0;
+      color: var(--gs-text-dim);
+      line-height: 1.65;
+      font-size: 0.95rem;
+    }
+
+    .page-cta {
+      margin-top: 1.4rem;
+      padding: 1.35rem;
+      border-radius: 22px;
+      border: 1px solid rgba(131, 197, 255, 0.28);
+      background: linear-gradient(145deg, rgba(12, 28, 56, 0.85), rgba(8, 17, 33, 0.95));
+      box-shadow: var(--gs-shadow);
+    }
+
+    .page-cta h2 {
+      margin: 0.45rem 0 0.7rem;
+      font-size: clamp(1.2rem, 2.2vw, 1.55rem);
+    }
+
+    .page-cta p {
+      margin: 0;
+      max-width: 66ch;
+      color: var(--gs-text-dim);
+      line-height: 1.65;
+    }
+
+    .cta-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 0.95rem;
+      padding: 0.7rem 1.05rem;
+      border-radius: 999px;
+      background: rgba(0, 193, 255, 0.16);
+      border: 1px solid rgba(145, 222, 255, 0.45);
+      color: var(--gs-text);
+      font-weight: 600;
+      text-decoration: none;
+      transition: transform 120ms ease, background 120ms ease;
+    }
+
+    .cta-btn:hover {
+      transform: translateY(-1px);
+      background: rgba(0, 193, 255, 0.24);
+    }
+
+    @media (max-width: 900px) {
+      .feature-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</WebLayout>

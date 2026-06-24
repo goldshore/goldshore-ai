@@ -1,0 +1,157 @@
+name: Manage Cloudflare Tokens
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        type: choice
+        options:
+          - list
+          - create
+          - delete
+      token_name:
+        description: 'Token name (for create/delete)'
+        required: false
+        type: string
+      token_permissions:
+        description: 'Comma-separated permissions for create (e.g. "workers_scripts:edit,d1:edit")'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  manage-tokens:
+    name: Manage CF Tokens (${{ inputs.action }})
+    runs-on: ubuntu-latest
+    steps:
+      - name: List tokens
+        if: inputs.action == 'list'
+        env:
+          CF_USER_TOKEN: ${{ secrets.CF_USER_TOKEN }}
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.request
+
+          TOKEN = os.environ["CF_USER_TOKEN"]
+
+          def cf_get(path):
+              req = urllib.request.Request(
+                  f"https://api.cloudflare.com/client/v4/{path}",
+                  headers={"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"},
+              )
+              with urllib.request.urlopen(req) as r:
+                  data = json.loads(r.read())
+                  if not data["success"]:
+                      raise SystemExit(f"CF API error: {data}")
+                  return data["result"]
+
+          tokens = cf_get("user/tokens")
+          print(f"{'Name':<40} {'Status':<10} {'Last Used'}")
+          print("-" * 70)
+          for t in tokens:
+              last = t.get("modified_on", "never")[:10]
+              print(f"{t['name']:<40} {t['status']:<10} {last}")
+          PY
+
+      - name: Create token
+        if: inputs.action == 'create'
+        env:
+          CF_USER_TOKEN: ${{ secrets.CF_USER_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TOKEN_NAME: ${{ inputs.token_name }}
+          TOKEN_PERMISSIONS: ${{ inputs.token_permissions }}
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.request
+
+          TOKEN = os.environ["CF_USER_TOKEN"]
+          ACCOUNT = os.environ["CLOUDFLARE_ACCOUNT_ID"]
+          NAME = os.environ["TOKEN_NAME"]
+          PERMS_RAW = os.environ.get("TOKEN_PERMISSIONS", "workers_scripts:edit,d1:edit,kv_storage:edit,pages:edit,workers_routes:edit,account_settings:read")
+
+          PERM_MAP = {
+              "workers_scripts:edit": {"id": "e086da7e2179491d91ee5f35b3ca210a", "effect": "allow"},
+              "d1:edit":              {"id": "2efd5506f9c8494dacb1fa10a3e7d5b6", "effect": "allow"},
+              "kv_storage:edit":      {"id": "f7f0eda5697f475c90846e879bab8666", "effect": "allow"},
+              "pages:edit":           {"id": "3030687196b94b638145a3953da2b699", "effect": "allow"},
+              "workers_routes:edit":  {"id": "9af8e4e7548b4d6a985399dc62d20d6a", "effect": "allow"},
+              "account_settings:read":{"id": "0f093e63e3424b1c8e1f7d11d72c1e39", "effect": "allow"},
+              "r2_storage:edit":      {"id": "6a770521628a4a50b5e026ceebb55c1c", "effect": "allow"},
+              "queues:edit":          {"id": "fde1bf37f0cd48b8897b5bdc9e7d5e14", "effect": "allow"},
+          }
+
+          perms = []
+          for p in PERMS_RAW.split(","):
+              p = p.strip()
+              if p in PERM_MAP:
+                  perms.append({
+                      "id": PERM_MAP[p]["id"],
+                      "effect": PERM_MAP[p]["effect"],
+                  })
+              else:
+                  print(f"WARNING: unknown permission '{p}', skipping")
+
+          body = json.dumps({
+              "name": NAME,
+              "policies": [{
+                  "effect": "allow",
+                  "resources": {f"com.cloudflare.api.account.{ACCOUNT}": "*"},
+                  "permission_groups": perms,
+              }],
+          }).encode()
+
+          req = urllib.request.Request(
+              "https://api.cloudflare.com/client/v4/user/tokens",
+              data=body,
+              headers={"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"},
+              method="POST",
+          )
+          with urllib.request.urlopen(req) as r:
+              data = json.loads(r.read())
+              if not data["success"]:
+                  raise SystemExit(f"CF API error: {data}")
+              result = data["result"]
+              print(f"✅ Token created: {result['name']}")
+              print(f"   ID:    {result['id']}")
+              print(f"   Value: {result['value']}")
+              print()
+              print("⚠️  Copy the token value now — it will not be shown again.")
+          PY
+
+      - name: Delete token
+        if: inputs.action == 'delete'
+        env:
+          CF_USER_TOKEN: ${{ secrets.CF_USER_TOKEN }}
+          TOKEN_NAME: ${{ inputs.token_name }}
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.request
+
+          TOKEN = os.environ["CF_USER_TOKEN"]
+          NAME = os.environ["TOKEN_NAME"]
+
+          def cf(method, path, body=None):
+              req = urllib.request.Request(
+                  f"https://api.cloudflare.com/client/v4/{path}",
+                  data=json.dumps(body).encode() if body else None,
+                  headers={"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"},
+                  method=method,
+              )
+              with urllib.request.urlopen(req) as r:
+                  data = json.loads(r.read())
+                  if not data["success"]:
+                      raise SystemExit(f"CF API error: {data}")
+                  return data["result"]
+
+          tokens = cf("GET", "user/tokens")
+          match = [t for t in tokens if t["name"] == NAME]
+          if not match:
+              raise SystemExit(f"No token found with name '{NAME}'")
+          for t in match:
+              cf("DELETE", f"user/tokens/{t['id']}")
+              print(f"🗑️  Deleted token: {t['name']} ({t['id']})")
+          PY
