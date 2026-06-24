@@ -7,10 +7,15 @@
   "exports": {
     ".": "./index.ts"
   },
+  "scripts": {
+    "build": "echo 'ui package: no build step required (source exports)'",
+    "dev": "echo 'ui package: no dev step required'"
+  },
   "peerDependencies": {
-    "astro": "^6.1.1"
+    "astro": "^6.4.6"
   },
   "devDependencies": {
-    "astro": "^6.1.1"
+    "astro": "^6.4.6"
   }
 }
+

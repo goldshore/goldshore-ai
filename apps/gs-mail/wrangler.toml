@@ -1,0 +1,68 @@
+name = "gs-mail"
+main = "src/index.ts"
+compatibility_date = "2026-04-18"
+compatibility_flags = ["nodejs_compat"]
+
+workers_dev = false
+
+# Secrets — set once via wrangler, not stored here:
+#   wrangler secret put MAIL_FORWARD_TO --env prod
+#   wrangler secret put MAIL_BLOCKED_SENDERS --env prod   (comma-separated, optional)
+
+# ── Dev environment ───────────────────────────────────────────────────────────
+[[env.dev.kv_namespaces]]
+binding = "GS_CONFIG"
+id = "dddc8b83775c41e58208bf8de87b7052"   # GS_CONFIG_PREVIEW
+
+[[env.dev.queues.consumers]]
+queue = "gs-platform-checkout-events-dev"
+
+[[env.dev.queues.consumers]]
+queue = "gs-platform-contact-events-dev"
+
+# ── Production environment ────────────────────────────────────────────────────
+[env.prod]
+routes = [
+  { pattern = "mail.goldshore.ai/*", zone_name = "goldshore.ai" }
+]
+
+[env.prod.vars]
+ENV = "production"
+MAIL_SERVICE = "true"
+MAIL_ALLOWED_RECIPIENTS = "ops@goldshore.ai,inbox@goldshore.ai"
+CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
+
+# MAIL_FORWARD_TO — set as a secret:
+#   wrangler secret put MAIL_FORWARD_TO --env prod
+# Set to: marstonr6@gmail.com  (or ops@goldshore.ai once MX is confirmed)
+
+[[env.prod.kv_namespaces]]
+binding = "GS_CONFIG"
+id = "68f52b467dc0413991b2195ef9081cae"   # GS_CONFIG (production)
+
+[[env.prod.queues.consumers]]
+queue = "gs-platform-checkout-events-prod"
+
+[[env.prod.queues.consumers]]
+queue = "gs-platform-contact-events-prod"
+
+# ── Preview environment ───────────────────────────────────────────────────────
+[env.preview]
+routes = [
+  { pattern = "mail-preview.goldshore.ai/*", zone_name = "goldshore.ai" }
+]
+
+[env.preview.vars]
+ENV = "preview"
+CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
+MAIL_FORWARD_TO = "ops+preview@goldshore.ai"
+
+[[env.preview.kv_namespaces]]
+binding = "GS_CONFIG"
+id = "dddc8b83775c41e58208bf8de87b7052"   # GS_CONFIG_PREVIEW
+
+[[env.preview.queues.consumers]]
+queue = "gs-platform-checkout-events-preview"
+
+[[env.preview.queues.consumers]]
+queue = "gs-platform-contact-events-preview"

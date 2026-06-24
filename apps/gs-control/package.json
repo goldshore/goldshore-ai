@@ -1,0 +1,24 @@
+{
+  "name": "@goldshore/gs-control",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev src/index.ts",
+    "deploy": "wrangler deploy --env prod",
+    "build": "wrangler deploy --env prod --dry-run --outdir=dist || true"
+  },
+  "dependencies": {
+    "@goldshore/auth": "workspace:*",
+    "@goldshore/utils": "workspace:*",
+    "@hono/zod-validator": "^0.8.0",
+    "hono": "^4.12.25",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260621.1",
+    "tsx": "^4.7.1",
+    "typescript": "^5.4.0",
+    "wrangler": "^4.83.0"
+  }
+}

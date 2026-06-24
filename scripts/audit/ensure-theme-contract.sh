@@ -3,12 +3,12 @@ set -euo pipefail
 
 echo "Checking for forbidden deep imports..."
 
-if rg -n '@goldshore/theme/styles' apps packages; then
+if grep -RIn --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=build --exclude-dir=.turbo '@goldshore/theme/styles' apps packages; then
   echo "❌ Deep theme import detected."
   exit 1
 fi
 
-if rg -n '@goldshore/theme/.+\.css' apps packages; then
+if grep -RIn --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=build --exclude-dir=.turbo -E '@goldshore/theme/.+\.css' apps packages; then
   echo "❌ Direct CSS deep import detected."
   exit 1
 fi

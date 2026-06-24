@@ -1,35 +1,40 @@
 ---
+import '@goldshore/theme/styles/tokens.css';
+import '@goldshore/theme/styles/base.css';
+import '@goldshore/theme/styles/components.css';
+import '@goldshore/theme/styles/layout.css';
 import Logo from '../components/brand/Logo.astro';
-import '../styles/global.css';
+import { HTML_CSP_META_FALLBACK } from '../security/policy';
 import { WEB_META_CSP } from '../utils/csp';
 
 const navLinks = [
   { href: '/', label: 'Home' },
   { href: '/about', label: 'About' },
   { href: '/team', label: 'Team' },
+  { href: '/contact?inquiry=strategy-call', label: 'Book Strategy Call' },
   { href: '/contact', label: 'Contact' },
   { href: '/apps/risk-radar', label: 'Risk Radar' },
   { href: '/developer', label: 'Developer Hub' },
 ];
-
 const footerLinks = [
-  { href: '/about', label: 'About' },
-  { href: '/team', label: 'Team' },
-  { href: '/contact', label: 'Contact' },
-  { href: '/apps/risk-radar', label: 'Risk Radar' },
-  { href: '/developer', label: 'Developer Hub' },
+  { href: '/legal/privacy', label: 'Privacy' },
+  { href: '/legal/terms', label: 'Terms' },
 ];
+const mobileNavId = 'mobile-navigation';
+
+const CANONICAL_ORIGIN = 'https://goldshore.org';
 
 const {
   title = 'GoldShore',
   description = 'GoldShore AI',
   currentPath = Astro.url.pathname,
+  canonicalPath = Astro.url.pathname,
+  ogTitle = title,
+  ogDescription = description,
 } = Astro.props;
 
-const logoAssetPath = '/logo.svg';
-const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url);
-const socialImage = new URL(logoAssetPath, Astro.site ?? Astro.url);
-const mobileNavId = 'mobile-navigation';
+const canonicalUrl = new URL(canonicalPath, CANONICAL_ORIGIN).toString();
+const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
 ---
 
 <html lang="en">
@@ -39,25 +44,27 @@ const mobileNavId = 'mobile-navigation';
     <meta http-equiv="Content-Security-Policy" content={WEB_META_CSP} />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#0b0f18" />
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content={title} />
-    <meta property="og:description" content={description} />
-    <meta property="og:url" content={canonicalUrl} />
-    <meta property="og:image" content={socialImage} />
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:title" content={title} />
-    <meta property="twitter:description" content={description} />
-    <meta property="twitter:image" content={socialImage} />
     <link rel="canonical" href={canonicalUrl} />
-    <link rel="icon" href="/favicon.svg" sizes="any" type="image/svg+xml" />
-    <link rel="shortcut icon" href="/favicon.svg" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:title" content={ogTitle} />
+    <meta property="og:description" content={ogDescription} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content={canonicalUrl} />
+    <meta name="twitter:title" content={ogTitle} />
+    <meta name="twitter:description" content={ogDescription} />
+    <!-- Response headers from middleware/platform config are authoritative. Keep this meta CSP only as a fallback when headers are unavailable. -->
+    {shouldRenderCspMeta && <meta http-equiv="Content-Security-Policy" content={HTML_CSP_META_FALLBACK} />}
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.png" type="image/png" sizes="32x32" />
+    <!-- Preconnect to external origins to speed up resource loading -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
+    <link rel="manifest" href="/site.webmanifest"/>
   </head>
   <body>
     <a href="#content" class="skip-link">Skip to content</a>
@@ -76,7 +83,7 @@ const mobileNavId = 'mobile-navigation';
                 </a>
               ))}
             </div>
-            <a href="/contact" class="header-cta">Request Briefing</a>
+            <a href="/contact" class="header-cta">Get a Briefing</a>
           </nav>
 
           <button
@@ -114,7 +121,7 @@ const mobileNavId = 'mobile-navigation';
             </div>
 
             <div class="menu-panel__actions">
-              <a href="/contact" class="header-cta header-cta--mobile">Request Briefing</a>
+              <a href="/contact" class="header-cta header-cta--mobile">Get a Briefing</a>
               <a href="/developer" class="menu-secondary-link">Open Developer Hub</a>
             </div>
           </div>
@@ -250,7 +257,7 @@ const mobileNavId = 'mobile-navigation';
         padding-inline: clamp(1rem, 3vw, 2rem);
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
-        background: rgba(8, 12, 22, 0.78);
+        background: rgba(5, 5, 7, 0.82);
         border-bottom: 1px solid rgba(255, 255, 255, 0.06);
       }
 
@@ -343,7 +350,7 @@ const mobileNavId = 'mobile-navigation';
       .desktop-nav__links a:hover,
       .desktop-nav__links a[aria-current='page'] {
         color: var(--gs-text);
-        background: rgba(90, 162, 255, 0.09);
+        background: rgba(217, 106, 50, 0.09);
       }
 
       .header-cta {
@@ -353,8 +360,8 @@ const mobileNavId = 'mobile-navigation';
         padding: 0.82rem 1.2rem;
         border-radius: 999px;
         text-decoration: none;
-        background: linear-gradient(135deg, rgba(90, 162, 255, 0.28), rgba(90, 162, 255, 0.16));
-        border: 1px solid rgba(90, 162, 255, 0.34);
+        background: linear-gradient(135deg, rgba(217, 106, 50, 0.42), rgba(217, 106, 50, 0.22));
+        border: 1px solid rgba(217, 106, 50, 0.5);
         color: var(--gs-text);
         font-weight: 700;
         white-space: nowrap;
@@ -364,7 +371,7 @@ const mobileNavId = 'mobile-navigation';
       .header-cta:hover,
       .header-cta:focus-visible {
         transform: translateY(-1px);
-        background: linear-gradient(135deg, rgba(90, 162, 255, 0.34), rgba(90, 162, 255, 0.2));
+        background: linear-gradient(135deg, rgba(217, 106, 50, 0.52), rgba(217, 106, 50, 0.30));
       }
 
       .menu-button,
@@ -381,7 +388,7 @@ const mobileNavId = 'mobile-navigation';
         gap: 4px;
         border-radius: 999px;
         border: 1px solid var(--gs-border);
-        background: rgba(90, 162, 255, 0.08);
+        background: rgba(217, 106, 50, 0.08);
         cursor: pointer;
       }
 
@@ -472,7 +479,7 @@ const mobileNavId = 'mobile-navigation';
       .menu-panel__links a[aria-current='page'] {
         color: var(--gs-text);
         border-color: var(--gs-border);
-        background: rgba(90, 162, 255, 0.08);
+        background: rgba(217, 106, 50, 0.08);
       }
 
       .menu-panel__actions {

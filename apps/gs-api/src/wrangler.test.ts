@@ -34,8 +34,8 @@ describe('wrangler environment bindings', () => {
       const block = getEnvBlock(envName);
       assert.match(block, new RegExp(`\\[\\[env\\.${envName}\\.kv_namespaces\\]\\][\\s\\S]*?binding = "KV"`));
       assert.match(block, new RegExp(`\\[\\[env\\.${envName}\\.kv_namespaces\\]\\][\\s\\S]*?binding = "CONTROL_LOGS"`));
-      assert.match(block, new RegExp(`\\[\\[env\\.${envName}\\.r2_buckets\\]\\][\\s\\S]*?binding = "ASSETS"`));
-      assert.match(block, new RegExp(`\\[\\[env\\.${envName}\\.d1_databases\\]\\][\\s\\S]*?binding = "DB"`));
+      assert.match(block, new RegExp(`\\[\\[env\\.${envName}\\.r2_buckets\\]\\][\\s\\S]*?binding = "GS_ASSETS"`));
+      assert.match(block, new RegExp(`\\[\\[env\\.${envName}\\.d1_databases\\]\\][\\s\\S]*?binding = "PLATFORM_DB"`));
       assert.match(block, new RegExp(`\\[env\\.${envName}\\.ai\\][\\s\\S]*?binding = "AI"`));
     }
   });

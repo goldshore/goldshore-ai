@@ -10,11 +10,12 @@
 
 ### 1. Web (Public)
 
-- Project: `astro-gs-web`
-- Repo: `astro-goldshore`
+- Project: `gs-web`
+- Repo: `goldshore-ai`
 - Root: `apps/gs-web`
 - Custom Domains:
   - `goldshore.ai`
+  - `www.goldshore.ai`
   - `preview.goldshore.ai`
 
 **Environment Variables:**
@@ -26,8 +27,8 @@
 
 ### 2. Admin (Cockpit)
 
-- Project: `astro-gs-admin`
-- Repo: `astro-goldshore`
+- Project: `gs-admin`
+- Repo: `goldshore-ai`
 - Root: `apps/gs-admin`
 - Custom Domains:
   - `admin.goldshore.ai`
@@ -59,7 +60,7 @@
 
 ### 3. API Worker
 
-- Service Name: `astro-gs-api`
+- Service Name: `gs-api`
 - Code: `apps/gs-api`
 - Routes:
   - `api.goldshore.ai/*`
@@ -68,14 +69,14 @@
 **Bindings:**
 
 - KV:
-  - Binding: `API_KV`
-  - Namespace: `goldshore-api-kv` _(historical resource name; canonical service prefix is `gs-api`)_
+  - Binding: `KV`
+  - Namespace: `gs_api_kv_001` _(canonical; historical alias: `goldshore-api-kv`)_
 - D1:
   - Binding: `DB`
-  - Database: `goldshore-api-db` _(historical resource name; canonical service prefix is `gs-api`)_
+  - Database: `goldshore` / `gs_db_001` _(historical alias: `goldshore-api-db`)_
 - R2:
   - Binding: `ASSETS`
-  - Bucket: `goldshore-api-assets` _(historical resource name; canonical service prefix is `gs-api`)_
+  - Bucket: `gs-assets` _(historical alias: `goldshore-api-assets`)_
 - AI:
   - Binding: `AI`
   - Gateway: `goldshore-ai-gateway`
@@ -84,18 +85,23 @@
 
 ### 4. Gateway Worker
 
-- Service Name: `astro-gs-gateway`
+- Service Name: `gs-gateway`
 - Code: `apps/gs-gateway`
 - Routes:
   - `gw.goldshore.ai/*`
+  - `agent.goldshore.ai/*`
   - `gw-preview.goldshore.ai/*`
 
 **Bindings:**
 
 - Service:
   - Binding: `API`
-  - Service: `astro-gs-api`
+  - Service: `gs-api`
   - Environment: `production`
+- Service:
+  - Binding: `AGENT`
+  - Service: `gs-agent`
+  - Environment: `prod`
 - KV:
   - Binding: `GATEWAY_KV`
   - Namespace: `goldshore-gw-kv`
@@ -107,14 +113,52 @@
 
 ### 5. Control Worker
 
-- Service Name: `goldshore-control-worker`
+- Service Name: `gs-control`
 - Code: `apps/gs-control`
 - Routes:
-  - `ops.goldshore.ai/*` (optional, or workers.dev only)
+  - `ops.goldshore.ai/*`
 
 **Bindings:**
 
 - Env Vars:
   - `CLOUDFLARE_API_TOKEN` (secret)
   - `CLOUDFLARE_ACCOUNT_ID` (secret)
-  - `ENVIRONMENT=production`
+  - `CONTROL_SERVICE=true`
+
+---
+
+### 6. Banproof-Me Security Worker
+
+- Service Name: `banproof-me`
+- Config: `apps/banproof-me/wrangler.toml`
+- External domain: `banproof.me`
+- Bound as `SECURITY` in `gs-gateway`
+
+**Bindings (9 platform bindings):**
+
+- KV:
+  - Binding: `BANPROOF_KV` — real-time ban cache
+  - Binding: `GOLDSHORE_KV` — shared platform config / feature flags
+- D1:
+  - Binding: `BAN_DB` — `gs_platform_db` (ban records, user reputation)
+  - Binding: `AUDIT_DB` — `gs_audit_db` (compliance audit log)
+  - Binding: `SIGNALS_DB` — `gs_signals_db` (trading signal association)
+- R2:
+  - Binding: `ASSETS` — `gs-assets` (shared media/assets)
+  - Binding: `TELEMETRY` — `gs-telemetry-storage` (compliance telemetry)
+- Service:
+  - Binding: `API_SERVICE` — `gs-api` / `prod` (reputation lookups)
+- Queue (producer):
+  - Binding: `BAN_EVENTS` — `ban-events` queue
+
+---
+
+### 7. Gateway Worker — Phase 2 Joinery Bindings
+
+Additional bindings added to `gs-gateway` (`apps/gs-gateway/wrangler.toml`) for Phase 2:
+
+- Service:
+  - Binding: `SECURITY` — `banproof-me` (ban / security checks)
+  - Binding: `SIGNALS` — `gs-signals-prod` (trading signals worker)
+- Queue (producer):
+  - Binding: `MAIL_QUEUE` — `gs-mail-jobs` queue

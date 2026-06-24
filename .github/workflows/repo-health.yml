@@ -12,13 +12,14 @@ jobs:
   repo-health:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320
-        with:
-          version: 9
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+
+      - uses: pnpm/action-setup@v6
 
       - uses: actions/setup-node@v6
         with:
@@ -36,7 +37,11 @@ jobs:
 
       - name: Logo duplication check
         run: |
-          if [ "$(rg --files -g '*logo*.svg' apps packages public | wc -l)" -gt 25 ]; then
+          if [ "$(find apps packages public -type f -name '*logo*.svg' \
+            -not -path '*/node_modules/*' \
+            -not -path '*/.pnpm/*' \
+            -not -path '*/dist/*' \
+            -not -path '*/build/*' | wc -l)" -gt 25 ]; then
             echo "Too many logo assets found"
             exit 1
           fi

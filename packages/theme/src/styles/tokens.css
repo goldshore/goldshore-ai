@@ -1,21 +1,151 @@
 :root {
-  --gs-bg-primary: #020408;
+  /* Typography */
+  --gs-font-body: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --gs-font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --gs-font-heading: var(--gs-font-display);
+  --gs-line-height: 1.6;
+  --gs-line-height-heading: 1.2;
+  --gs-font-size-body: 1rem;
+  --gs-font-size-h1: clamp(2rem, 3.6vw, 3.6rem);
+  --gs-font-size-h2: clamp(1.5rem, 2.5vw, 2.25rem);
+  --gs-font-size-h3: 1.5rem;
+  --gs-font-size-h4: 1.25rem;
+  --gs-font-size-h5: 1rem;
+  --gs-font-size-h6: 0.875rem;
+
+  /* Spacing scale */
+  --gs-space-0: 0px;
+  --gs-space-1: 4px;
+  --gs-space-2: 8px;
+  --gs-space-3: 12px;
+  --gs-space-4: 16px;
+  --gs-space-5: 20px;
+  --gs-space-6: 24px;
+  --gs-space-7: 32px;
+  --gs-space-8: 40px;
+  --gs-space-9: 48px;
+  --gs-space-10: 64px;
+
+  /* Border radius */
+  --gs-radius-xs: 6px;
+  --gs-radius-sm: 10px;
+  --gs-radius-md: 14px;
+  --gs-radius-lg: 18px;
+  --gs-radius-pill: 999px;
+
+  /* Color palette — copper-on-black */
+  --gs-color-primary: #d96a32;
+  --gs-color-text: #e4ecfa;    /* General body text (slightly off-white for readability) */
+  --gs-color-bg: #050507;
+  --gs-color-surface: #0c1221;
+  --gs-color-surface-strong: #0f172a;
+  --gs-color-muted-surface: #111a2f;
+  --gs-color-border: rgba(255, 120, 54, 0.14);
+  --gs-color-border-strong: #2d3c52;
+  --gs-color-subtle: #9fb2d4;
+  --gs-color-faint: #7a8cae;
+  --gs-accent: var(--gs-copper);
+  --gs-accent-strong: var(--gs-copper-glow);
+  --gs-accent-soft: var(--gs-copper-soft);
+  --gs-accent-contrast: #031122;
+  --gs-success: #22c55e;
+  --gs-warning: #fbbf24;
+  --gs-danger: #ef4444;
+  --gs-info: #38bdf8;
+  --gs-accent-blue: #5882ff;
+  --gs-accent-cyan: #22d3ee;
+
+  /* Shadows */
+  --gs-shadow-soft: 0 10px 40px rgba(0, 0, 0, 0.28);
+  --gs-shadow-hard: 0 0 0 1px rgba(255, 255, 255, 0.02), 0 16px 50px rgba(5, 9, 20, 0.5);
+
+  /* Transition */
+  --gs-transition: 220ms cubic-bezier(0.22, 0.61, 0.36, 1);
+
+  /* Effect tokens */
+  --gs-effect-signal-blue-08: color-mix(in srgb, var(--gs-accent-blue) 8%, transparent);
+  --gs-effect-signal-blue-12: color-mix(in srgb, var(--gs-accent-blue) 12%, transparent);
+  --gs-effect-signal-blue-18: color-mix(in srgb, var(--gs-accent-blue) 18%, transparent);
+  --gs-effect-signal-blue-24: color-mix(in srgb, var(--gs-accent-blue) 24%, transparent);
+  --gs-effect-signal-blue-32: color-mix(in srgb, var(--gs-accent-blue) 32%, transparent);
+  --gs-effect-signal-blue-45: color-mix(in srgb, var(--gs-accent-blue) 45%, transparent);
+  --gs-effect-star-core: color-mix(in srgb, white 92%, var(--gs-accent-blue) 8%);
+  --gs-effect-star-glow: var(--gs-effect-signal-blue-24);
+  --gs-effect-sweep-core: var(--gs-effect-signal-blue-32);
+  --gs-effect-sweep-edge: var(--gs-effect-signal-blue-08);
+
+  /* Text */
+  --gs-text-primary: #fff;
+  --gs-text-secondary: rgba(255, 255, 255, 0.7);
+
+  /* Header */
+  --gs-header-bg-glass: rgba(5, 5, 7, 0.82);
+  --gs-header-bg-scrolled: rgba(0, 0, 0, 0.95);
+  --gs-header-border-subtle: rgba(255, 255, 255, 0.05);
+  --gs-header-border-accent: rgba(217, 106, 50, 0.15);
+  --gs-header-shadow-scrolled: 0 10px 40px -10px rgba(0, 0, 0, 0.8);
+
+  /* Logo */
+  --gs-logo-glow-soft: rgba(217, 106, 50, 0.3);
+  --gs-logo-glow-strong: rgba(217, 106, 50, 0.6);
+
+  /* Nav */
+  --gs-nav-indicator-bg: var(--gs-copper);
+  --gs-nav-indicator-shadow: 0 0 8px var(--gs-copper);
+
+  /* Mobile menu */
+  --gs-mobile-menu-bg: #000;
+  --gs-mobile-menu-border: rgba(255, 255, 255, 0.1);
+
+  /* Background system */
+  --gs-bg-primary: #050507;
   --gs-bg-secondary: #0a0c12;
   --gs-bg-surface: #0e121a;
+  --gs-bg: #050507;
+  --gs-surface: rgba(14, 16, 20, 0.84);
+  --gs-surface-strong: rgba(20, 23, 29, 0.94);
 
-  --gs-accent-blue: #3b82f6;
+  /* Accent palette */
   --gs-accent-gold: #eab308;
 
-  --gs-text-primary: #f1f5f9;
-  --gs-text-muted: #94a3b8;
+  /* Text system */
+  --gs-text: #f1f4f8;
+  --gs-text-dim: #9ca5b4;
+  --gs-text-muted: #9ca5b4;
 
-  --gs-border-subtle: rgba(255, 255, 255, 0.08);
+  /* Border system */
+  --gs-border: rgba(255, 120, 54, 0.14);
+  --gs-border-subtle: rgba(255, 255, 255, 0.06);
 
+  /* Radius overrides */
   --gs-radius-lg: 20px;
   --gs-radius-md: 12px;
 
+  /* Layout */
   --gs-section-spacing: 6rem;
   --gs-content-width: 1100px;
+  --gs-max-width: 1200px;
+
+  /* Copper palette */
+  --gs-copper: #d96a32;
+  --gs-copper-soft: rgba(217, 106, 50, 0.14);
+  --gs-copper-glow: rgba(217, 106, 50, 0.28);
+  --gs-copper-strong: rgba(217, 106, 50, 0.42);
+
+  /* Blue signal palette */
+  --gs-blue: #59a8ff;
+  --gs-blue-soft: rgba(89, 168, 255, 0.12);
+  --gs-blue-glow: rgba(89, 168, 255, 0.24);
+
+  /* Semantic */
+  --gs-success: #5ddb9a;
+  --gs-warning: #f0b35b;
+  --gs-danger: #f56b6b;
+
+  /* Primary alias (copper) */
+  --gs-primary: var(--gs-copper);
+  --gs-primary-soft: var(--gs-copper-soft);
+  --gs-primary-glow: var(--gs-copper-glow);
 
   /* Compatibility aliases */
   --gs-color-bg: var(--gs-bg-primary);
@@ -23,8 +153,8 @@
   --gs-color-muted-surface: var(--gs-bg-surface);
   --gs-color-text: var(--gs-text-primary);
   --gs-color-subtle: var(--gs-text-muted);
-  --gs-color-border: var(--gs-border-subtle);
-  --gs-accent: var(--gs-accent-blue);
+  --gs-color-border: var(--gs-border);
+  --gs-accent: var(--gs-primary);
   --gs-accent-strong: var(--gs-accent-gold);
 
   /* Hero and marketing effect tokens */

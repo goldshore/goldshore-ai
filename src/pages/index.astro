@@ -31,7 +31,13 @@ const proofPoints = [
 <!doctype html>
 <html lang="en">
   <head>
-    <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+    <BaseHead
+      title={SITE_TITLE}
+      description={SITE_DESCRIPTION}
+      canonical={new URL('/', Astro.site)}
+      ogTitle="Operational AI Infrastructure for Mission-Critical Teams | GoldShore.ai"
+      ogDescription="Build resilient AI operations with observability, risk controls, and operator-ready workflows. Talk to GoldShore.ai to harden your production stack."
+    />
   </head>
   <body>
     <Header />

@@ -4,20 +4,31 @@
 
 :root {
   --font-sans:
-    Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica,
+    'Space Grotesk', 'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica,
     Arial, 'Apple Color Emoji', 'Segoe UI Emoji';
-  --gs-bg: #0b0f18;
-  --gs-surface: rgba(10, 18, 36, 0.85);
-  --gs-surface-strong: rgba(7, 14, 30, 0.96);
-  --gs-border: rgba(90, 162, 255, 0.18);
-  --gs-primary: #5aa2ff;
-  --gs-primary-soft: rgba(90, 162, 255, 0.12);
-  --gs-text: #e9eefc;
-  --gs-text-dim: rgba(233, 238, 252, 0.6);
-  --gs-radius: 14px;
-  --gs-radius-lg: 24px;
-  --gs-shadow: 0 24px 80px rgba(0, 0, 0, 0.34);
+  --gs-bg: #050507;
+  --gs-surface: rgba(14, 16, 20, 0.84);
+  --gs-surface-strong: rgba(20, 23, 29, 0.94);
+  --gs-border: rgba(255, 120, 54, 0.14);
+  --gs-border-subtle: rgba(255, 255, 255, 0.06);
+  --gs-primary: #d96a32;
+  --gs-primary-soft: rgba(217, 106, 50, 0.14);
+  --gs-primary-glow: rgba(217, 106, 50, 0.28);
+  --gs-copper: #d96a32;
+  --gs-copper-soft: rgba(217, 106, 50, 0.14);
+  --gs-copper-glow: rgba(217, 106, 50, 0.28);
+  --gs-copper-strong: rgba(217, 106, 50, 0.42);
+  --gs-text: #f1f4f8;
+  --gs-text-dim: #9ca5b4;
+  --gs-success: #5ddb9a;
+  --gs-warning: #f0b35b;
+  --gs-danger: #f56b6b;
+  --gs-radius: 16px;
+  --gs-radius-lg: 32px;
+  --gs-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
   --gs-max-width: 1200px;
+  --gs-font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --gs-font-body: 'Inter', system-ui, sans-serif;
 }
 
 html {
@@ -29,13 +40,17 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    radial-gradient(circle at top, rgba(90, 162, 255, 0.12), transparent 26%),
-    linear-gradient(180deg, #0b0f18 0%, #0a1020 42%, #09111d 100%);
-  color: var(--gs-text);
-  font-family: var(--font-sans);
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(217, 106, 50, 0.18) 0%, transparent 70%),
+    var(--gs-bg);
+  color: var(--gs-text, #f1f4f8);
+  font-family: var(--gs-font-body, 'Inter', system-ui, sans-serif);
   text-rendering: geometricPrecision;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--gs-font-display, 'Space Grotesk', 'Inter', system-ui, sans-serif);
 }
 
 body.menu-open {
@@ -65,6 +80,9 @@ textarea {
 }
 
 ::selection {
-  background: rgba(90, 162, 255, 0.28);
+  background: rgba(217, 106, 50, 0.28);
   color: var(--gs-text);
 }
+
+/* GSL Brand Theme — copper + responsive */
+@import './gs-brand-theme.css';
