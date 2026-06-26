@@ -61,30 +61,26 @@ body {
     linear-gradient(90deg, rgba(26,58,122,0.08) 1px, transparent 1px) !important;
 }
 
-/* ── LOGO — swap SVG for PNG Penrose triangle ── */
-/* Hide the existing SVG mark and show PNG instead */
-.gs-logo.gs-logo--lockup,
-.gs-brand-logo,
-[class*="gs-brand-logo"] {
-  /* The SVG logo will be replaced by the PNG via a wrapper img approach */
-  display: none !important;
+/* ── LOGO — Penrose triangle SVG via Logo.astro ── */
+.gs-brand-logo {
+  display: block;
 }
 
-/* Show PNG logo in its place */
-.gs-logo-png-wrapper {
-  display: flex !important;
-  align-items: center;
+.gs-brand-logo--lockup {
+  width: clamp(200px, 22vw, 300px);
+  height: auto;
 }
 
-.gs-logo-png-wrapper img {
-  height: 44px;
-  width: auto;
-  object-fit: contain;
+@media (max-width: 960px) {
+  .gs-brand-logo--lockup {
+    width: clamp(170px, 42vw, 240px);
+  }
 }
 
-/* Mobile logo size */
-@media (max-width: 768px) {
-  .gs-logo-png-wrapper img { height: 36px; }
+@media (max-width: 640px) {
+  .gs-brand-logo--lockup {
+    width: clamp(150px, 52vw, 210px);
+  }
 }
 
 /* ── NAVIGATION ── */
