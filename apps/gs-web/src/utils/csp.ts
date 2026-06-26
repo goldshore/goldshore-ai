@@ -52,3 +52,4 @@ export function buildContentSecurityPolicy(
 export const WEB_META_CSP = buildContentSecurityPolicy(WEB_META_DIRECTIVES);
 export const WEB_HEADERS_CSP = buildContentSecurityPolicy(WEB_HEADER_DIRECTIVES);
 export const WEB_CONTENT_SECURITY_POLICY = WEB_HEADERS_CSP;
+

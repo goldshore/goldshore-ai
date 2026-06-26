@@ -85,8 +85,30 @@ h1, h2, h3, h4, h5, h6 {
 .gs-grid,
 [class*="grid"] {
   background-image:
-    linear-gradient(rgba(217,106,50,0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(217,106,50,0.06) 1px, transparent 1px) !important;
+    linear-gradient(rgba(26,58,122,0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(26,58,122,0.08) 1px, transparent 1px) !important;
+}
+
+/* ── LOGO — Penrose triangle SVG via Logo.astro ── */
+.gs-brand-logo {
+  display: block;
+}
+
+.gs-brand-logo--lockup {
+  width: clamp(200px, 22vw, 300px);
+  height: auto;
+}
+
+@media (max-width: 960px) {
+  .gs-brand-logo--lockup {
+    width: clamp(170px, 42vw, 240px);
+  }
+}
+
+@media (max-width: 640px) {
+  .gs-brand-logo--lockup {
+    width: clamp(150px, 52vw, 210px);
+  }
 }
 
 /* ── NAVIGATION ── */
