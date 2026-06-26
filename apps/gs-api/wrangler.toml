@@ -7,7 +7,9 @@ workers_dev = false
 
 [env.prod]
 routes = [
-  { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" }
+  { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "gw.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" }
 ]
 
 [env.prod.vars]
@@ -52,7 +54,9 @@ binding = "AI"
 
 [env.production]
 routes = [
-  { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" }
+  { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "gw.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" }
 ]
 
 [env.production.vars]
