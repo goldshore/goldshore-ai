@@ -1,0 +1,52 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(pnpm install *)",
+      "Bash(pnpm --filter *)",
+      "Bash(pnpm --dir *)",
+      "Bash(pnpm run *)",
+      "Bash(pnpm build *)",
+      "Bash(pnpm lint *)",
+      "Bash(pnpm test *)",
+      "Bash(git push *)",
+      "Bash(git commit *)",
+      "Bash(git add *)",
+      "Bash(git checkout *)",
+      "Bash(git fetch *)",
+      "Bash(git pull *)",
+      "Bash(git branch *)",
+      "Bash(git merge *)",
+      "Bash(git stash *)",
+      "Bash(npx wrangler *)",
+      "Bash(wrangler *)",
+      "Bash(turbo run *)",
+      "Bash(tsx *)",
+      "Bash(node *)",
+      "mcp__github__push_files",
+      "mcp__github__create_or_update_file",
+      "mcp__github__create_pull_request",
+      "mcp__github__pull_request_read",
+      "mcp__github__list_pull_requests",
+      "mcp__github__get_file_contents",
+      "mcp__github__list_branches",
+      "mcp__github__list_commits",
+      "mcp__Cloudflare_Developer_Platform__d1_database_query",
+      "mcp__Cloudflare_Developer_Platform__d1_databases_list",
+      "mcp__Cloudflare_Developer_Platform__workers_list",
+      "mcp__Cloudflare_Developer_Platform__workers_get_worker",
+      "mcp__Cloudflare_Developer_Platform__kv_namespaces_list"
+    ]
+  }
+}

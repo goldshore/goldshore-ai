@@ -4,8 +4,9 @@ import {
   ServiceStatusSchema,
 } from '@goldshore/schema';
 import { requirePermission } from '../auth';
+import { Env, Variables } from '../types';
 
-const internal = new Hono<{ Bindings: any }>();
+const internal = new Hono<{ Bindings: Env; Variables: Variables }>();
 
 const DNS_SYNC_RUN_INDEX_KEY = 'dns_sync_runs_index';
 

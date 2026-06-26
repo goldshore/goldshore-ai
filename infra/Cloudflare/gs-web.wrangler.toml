@@ -1,36 +1,29 @@
-# Worker Builds token for this service must be the gs-control build token.
-# wrangler.toml for the gs-web Astro Pages app (for Pages Functions; formerly goldshore-web)
+# wrangler.toml for the gs-web Astro Pages app.
+# This file configures Cloudflare Pages Functions bindings and custom-domain intent.
+# App-local config lives at apps/gs-web/wrangler.toml; keep route ownership aligned.
 
-name = "gs-web" # Base name for Pages project
-
-# This file is primarily for configuring bindings for Cloudflare Pages Functions.
-# The actual deployment will be handled by the GitHub Action connecting to the Pages project.
+name = "gs-web"
+compatibility_date = "2026-04-18"
+pages_build_output_dir = "./dist"
 
 [vars]
-# Shared environment variables can go here.
 # Runtime configuration note:
-# - `GS_CONFIG` is intentionally *not* bound to gs-web today.
+# - `GS_CONFIG` is intentionally not bound to gs-web today.
 # - Current gs-web runtime consumers read mutable config indirectly via
 #   `PUBLIC_API`/content fetches or admin-generated content, not from the
 #   shared gs-control/gs-admin KV namespace.
-# - If a future Pages Function needs live runtime config, add a concrete
-#   read-only consumer in `apps/gs-web` first, then declare a `GS_CONFIG`
-#   binding in the target environment blocks below.
 
 [env.dev]
-# Dev bindings for Pages Functions
-# [[d1_databases]]
-# binding = "D1_DATABASE"
-# database_name = "goldshore_cms_dev"
-# database_id = "..."
-#
-# [[kv_namespaces]]
-# binding = "KV_SITE"
-# id = "..."
-# preview_id = "..."
+# Dev bindings for Pages Functions.
 
 [env.preview]
-# Preview bindings for Pages Functions
+# Preview bindings for Pages Functions.
 
 [env.prod]
-# Production bindings for Pages Functions
+# goldshore.org is owned by goldshore-org Worker (redirects → goldshore.ai)
+routes = [
+  { pattern = "goldshore.ai", custom_domain = true },
+  { pattern = "www.goldshore.ai", custom_domain = true },
+  { pattern = "goldshore.org", custom_domain = true },
+  { pattern = "www.goldshore.org", custom_domain = true }
+]

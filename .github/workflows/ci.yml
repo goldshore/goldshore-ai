@@ -12,18 +12,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
 
       - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: "pnpm"
-
-      - name: Enable corepack
-        run: corepack enable
-
-      - name: Set pnpm version
-        run: corepack prepare pnpm@9.0.0 --activate
 
       - name: Install
         run: pnpm install --frozen-lockfile
@@ -32,8 +28,19 @@ jobs:
         run: pnpm run repo:health
         continue-on-error: false
 
+      - name: Enforce banproof production bindings
+        if: ${{ vars.ENABLE_BANPROOF_BINDINGS_CHECK == 'true' }}
+        run: pnpm check:banproof-bindings
+
       - name: Build all
-        run: pnpm -r build
+        run: pnpm -r --sequential build
+
+      - name: gs-web release quality gate
+        working-directory: apps/gs-web
+        env:
+          # CI baseline; raise once core vitals are addressed (images, JS bundles)
+          LH_MIN_PERFORMANCE: "0.60"
+        run: pnpm check:release
+
       - name: Verify internal links (Developer Hub, Risk Radar, Workflows)
         run: node scripts/check-internal-links.mjs
-

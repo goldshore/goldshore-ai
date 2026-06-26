@@ -16,17 +16,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Guard pnpm lockfile
         run: |
           set -euo pipefail
           git fetch origin main
 
-          if git diff --name-only origin/main...HEAD | grep -q '^pnpm-lock.yaml$'; then
-            echo "❌ Detected changes to pnpm-lock.yaml in this pull request."
-            echo "Lockfile updates must go through the designated lockfile update branch/process."
-            exit 1
+          # Allow adding pnpm-lock.yaml when main doesn't have one (restoration after deletion).
+          # Only block modifications to an existing lockfile.
+          if git show origin/main:pnpm-lock.yaml > /dev/null 2>&1; then
+            if git diff --name-only origin/main...HEAD | grep -q '^pnpm-lock.yaml$'; then
+              echo "❌ Detected changes to pnpm-lock.yaml in this pull request."
+              echo "Lockfile updates must go through the designated lockfile update branch/process."
+              exit 1
+            fi
+          else
+            echo "ℹ️  pnpm-lock.yaml does not exist on origin/main — allowing addition."
           fi
 
-          echo "✅ No pnpm-lock.yaml changes detected."
+          echo "✅ Lockfile policy check passed."

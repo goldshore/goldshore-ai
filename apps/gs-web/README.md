@@ -14,10 +14,14 @@ Public marketing site, documentation hub, and customer-facing Astro app for Gold
 ## Cloudflare configuration
 
 - Pages project name: `gs-web` (production), `gs-web-staging` (staging)
+- Staging is the visual source of truth for the production theme and shell.
 - Pages bindings config: `infra/cloudflare/goldshore-web.wrangler.toml`
 - Preview runtime bindings commonly set by CI:
   - `PUBLIC_API=https://api-preview.goldshore.ai`
   - `PUBLIC_GATEWAY=https://gw-preview.goldshore.ai`
+- Production runtime bindings commonly set by CI:
+  - `PUBLIC_API=https://api.goldshore.ai`
+  - `PUBLIC_GATEWAY=https://gw.goldshore.ai`
 - Build diagnostics exposed on `/status`:
   - `PUBLIC_BUILD_TIMESTAMP`
   - `PUBLIC_COMMIT_HASH`

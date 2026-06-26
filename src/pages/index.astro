@@ -5,12 +5,39 @@ import Footer from '../components/Footer.astro';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 import siteConfig from '../data/site-config.json';
 import { offerings } from '../data/site-content';
+
+const signalStrip = [
+  { label: 'Deployment posture', value: 'Auditable by design' },
+  { label: 'Runtime focus', value: 'AI systems in production' },
+  { label: 'Control model', value: 'Operator in the loop' },
+];
+
+const proofPoints = [
+  {
+    title: 'Decision systems with traceable outcomes',
+    body: 'We design operating flows that keep models, people, and incident controls aligned under real load.',
+  },
+  {
+    title: 'Observability built for action',
+    body: 'Signals, thresholds, and escalation paths are structured for fast interpretation rather than dashboard sprawl.',
+  },
+  {
+    title: 'Resilience patterns that survive handoffs',
+    body: 'Recovery logic, ownership boundaries, and deployment checks are encoded so teams can move without guesswork.',
+  },
+];
 ---
 
 <!doctype html>
 <html lang="en">
   <head>
-    <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+    <BaseHead
+      title={SITE_TITLE}
+      description={SITE_DESCRIPTION}
+      canonical={new URL('/', Astro.site)}
+      ogTitle="Operational AI Infrastructure for Mission-Critical Teams | GoldShore.ai"
+      ogDescription="Build resilient AI operations with observability, risk controls, and operator-ready workflows. Talk to GoldShore.ai to harden your production stack."
+    />
   </head>
   <body>
     <Header />
@@ -39,17 +66,17 @@ import { offerings } from '../data/site-content';
           </svg>
         </div>
         <div class="hero-content">
-          <p class="eyebrow">
-            Operational systems, engineered for reliability.
-          </p>
-          <h1>GoldShore.ai</h1>
+          <p class="eyebrow">Institutional-grade operational AI</p>
+          <h1>Clarity, control, and trust for live AI systems.</h1>
           <p>
-            Operational AI infrastructure and observability for mission-critical
-            deployments.
+            GoldShore.ai delivers resilient infrastructure, observability, and
+            operator-grade workflows for teams deploying AI where reliability is
+            not optional.
           </p>
           <p class="small">
-            We help technical teams design resilient AI-enabled operations with
-            clear instrumentation, ownership models, and deployment controls.
+            The updated site experience centers the Penrose triangle mark across
+            the hero, navigation, footer, and favicon set so the brand reads
+            consistently from tab icon to full-page layout.
           </p>
           <div class="hero-actions">
             <a class="button button-primary" href="/contact"
@@ -70,8 +97,27 @@ import { offerings } from '../data/site-content';
         </a>
       </section>
 
+      <section class="signal-strip" aria-label="Operating signals">
+        {
+          signalStrip.map((signal) => (
+            <article class="signal-tile">
+              <span>{signal.label}</span>
+              <strong>{signal.value}</strong>
+            </article>
+          ))
+        }
+      </section>
+
       <section id="offerings">
-        <h2>Core offerings</h2>
+        <div class="section-heading">
+          <p class="section-kicker">Core offerings</p>
+          <h2>Operational systems shaped for high-trust environments.</h2>
+          <p class="section-intro">
+            We combine applied intelligence, observability engineering, and
+            resilience architecture into delivery patterns that hold up in live
+            production settings.
+          </p>
+        </div>
         <div class="grid">
           {
             offerings.map((offering) => (
@@ -79,6 +125,30 @@ import { offerings } from '../data/site-content';
                 <h3>{offering.title}</h3>
                 <p>{offering.summary}</p>
                 <p class="metric">{offering.metric}</p>
+              </article>
+            ))
+          }
+        </div>
+      </section>
+
+      <section class="proof-section" aria-labelledby="proof-title">
+        <div class="section-heading">
+          <p class="section-kicker">Why GoldShore</p>
+          <h2 id="proof-title">
+            The Penrose mark now matches a sharper site shell.
+          </h2>
+          <p class="section-intro">
+            The homepage layout has been tightened around clearer hierarchy,
+            stronger contrast, and branded visual anchors that better reflect
+            the company’s systems-first identity.
+          </p>
+        </div>
+        <div class="grid">
+          {
+            proofPoints.map((point) => (
+              <article class="card proof-card">
+                <h3>{point.title}</h3>
+                <p>{point.body}</p>
               </article>
             ))
           }
@@ -280,12 +350,14 @@ import { offerings } from '../data/site-content';
   .hero {
     position: relative;
     min-height: calc(100vh - 6rem);
-    border-radius: 1rem;
+    border: 1px solid rgba(120, 157, 204, 0.18);
+    border-radius: 1.5rem;
     overflow: hidden;
     isolation: isolate;
     display: grid;
     place-items: center;
     margin-top: 0.5rem;
+    box-shadow: 0 28px 72px rgba(0, 0, 0, 0.28);
     transition:
       opacity 180ms linear,
       transform 180ms linear;
@@ -364,6 +436,57 @@ import { offerings } from '../data/site-content';
     margin: 0.75rem 0;
   }
 
+  .signal-strip {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .signal-tile {
+    border: 1px solid rgba(120, 157, 204, 0.18);
+    border-radius: 1rem;
+    padding: 1rem 1.15rem;
+    background: rgba(10, 18, 34, 0.72);
+    backdrop-filter: blur(10px);
+  }
+
+  .signal-tile span {
+    display: block;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: rgba(171, 194, 223, 0.78);
+    margin-bottom: 0.45rem;
+  }
+
+  .signal-tile strong {
+    color: #f6fbff;
+    font-size: 1.05rem;
+  }
+
+  .section-heading {
+    margin-bottom: 1.2rem;
+    max-width: 46rem;
+  }
+
+  .section-kicker {
+    margin: 0 0 0.45rem;
+    text-transform: uppercase;
+    letter-spacing: 0.13em;
+    color: rgba(120, 184, 255, 0.88);
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+
+  .section-intro {
+    color: rgba(197, 212, 232, 0.82);
+    max-width: 42rem;
+  }
+
+  .proof-card {
+    min-height: 100%;
+  }
+
   .eyebrow {
     text-transform: uppercase;
     letter-spacing: 0.12em;
@@ -417,6 +540,10 @@ import { offerings } from '../data/site-content';
   @media (max-width: 720px) {
     .hero {
       min-height: 82vh;
+    }
+
+    .signal-strip {
+      grid-template-columns: 1fr;
     }
 
     .hero-mark-wrap {

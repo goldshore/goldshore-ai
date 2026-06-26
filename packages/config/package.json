@@ -10,7 +10,7 @@
     "./parallax": "./src/components/parallax.ts"
   },
   "dependencies": {
-    "@goldshore/theme": "workspace:*",
-    "@goldshore/ui": "workspace:*"
+    "@goldshore/theme": "workspace:^",
+    "@goldshore/ui": "workspace:^"
   }
 }

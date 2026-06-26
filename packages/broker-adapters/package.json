@@ -17,8 +17,8 @@
     "test": "tsx --test src/**/*.test.ts"
   },
   "dependencies": {
-    "@goldshore/core-schema": "workspace:*",
-    "@goldshore/integrations": "workspace:*"
+    "@goldshore/core-schema": "workspace:^",
+    "@goldshore/integrations": "workspace:^"
   },
   "scripts": {
     "test": "tsx --test src/*.test.ts"

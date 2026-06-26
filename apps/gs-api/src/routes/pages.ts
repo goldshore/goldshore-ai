@@ -38,8 +38,8 @@ const pages = new Hono<{ Bindings: Env; Variables: Variables }>();
 pages.get('/', requirePermission('content:read'), async (c) => {
   const status = c.req.query('status');
   const query = status
-    ? c.env.DB.prepare('SELECT * FROM pages WHERE status = ? ORDER BY updated_at DESC').bind(status)
-    : c.env.DB.prepare('SELECT * FROM pages ORDER BY updated_at DESC');
+    ? c.env.PLATFORM_DB.prepare('SELECT * FROM pages WHERE status = ? ORDER BY updated_at DESC').bind(status)
+    : c.env.PLATFORM_DB.prepare('SELECT * FROM pages ORDER BY updated_at DESC');
   const result = await query.all<PageRow>();
   return c.json({
     pages: result.results.map(normalizePage)
@@ -48,7 +48,7 @@ pages.get('/', requirePermission('content:read'), async (c) => {
 
 pages.get('/slug/:slug', requirePermission('content:read'), async (c) => {
   const slug = c.req.param('slug');
-  const page = await c.env.DB.prepare('SELECT * FROM pages WHERE slug = ? LIMIT 1')
+  const page = await c.env.PLATFORM_DB.prepare('SELECT * FROM pages WHERE slug = ? LIMIT 1')
     .bind(slug)
     .first<PageRow>();
 
@@ -65,7 +65,7 @@ pages.get('/:id', requirePermission('content:read'), async (c) => {
     return c.json({ error: 'Invalid page id' }, 400);
   }
 
-  const page = await c.env.DB.prepare('SELECT * FROM pages WHERE id = ? LIMIT 1')
+  const page = await c.env.PLATFORM_DB.prepare('SELECT * FROM pages WHERE id = ? LIMIT 1')
     .bind(id)
     .first<PageRow>();
 
@@ -88,7 +88,7 @@ pages.post('/', requirePermission('content:write'), async (c) => {
   const status = allowedStatuses.has(payload.status ?? '') ? payload.status! : 'draft';
   const sanitizedBody = sanitizeHtml(payload.body, SANITIZE_OPTIONS);
 
-  const page = await c.env.DB.prepare(
+  const page = await c.env.PLATFORM_DB.prepare(
     'INSERT INTO pages (slug, title, body, status) VALUES (?, ?, ?, ?) RETURNING *'
   )
     .bind(payload.slug, payload.title, sanitizedBody, status)
@@ -114,7 +114,7 @@ pages.put('/:id', requirePermission('content:write'), async (c) => {
   const status = allowedStatuses.has(payload.status ?? '') ? payload.status! : 'draft';
   const sanitizedBody = sanitizeHtml(payload.body, SANITIZE_OPTIONS);
 
-  const page = await c.env.DB.prepare(
+  const page = await c.env.PLATFORM_DB.prepare(
     'UPDATE pages SET slug = ?, title = ?, body = ?, status = ?, updated_at = datetime(\'now\') WHERE id = ? RETURNING *'
   )
     .bind(payload.slug, payload.title, sanitizedBody, status, id)
@@ -135,7 +135,7 @@ pages.patch('/:id/status', requirePermission('content:publish'), async (c) => {
     return c.json({ error: 'Invalid status value' }, 400);
   }
 
-  const page = await c.env.DB.prepare(
+  const page = await c.env.PLATFORM_DB.prepare(
     'UPDATE pages SET status = ?, updated_at = datetime(\'now\') WHERE id = ? RETURNING *'
   )
     .bind(status, id)
@@ -150,7 +150,7 @@ pages.delete('/:id', requirePermission('content:write'), async (c) => {
     return c.json({ error: 'Invalid page id' }, 400);
   }
 
-  const result = await c.env.DB.prepare('DELETE FROM pages WHERE id = ?').bind(id).run();
+  const result = await c.env.PLATFORM_DB.prepare('DELETE FROM pages WHERE id = ?').bind(id).run();
 
   if (!result.meta.changes) {
     return c.json({ error: 'Page not found' }, 404);
