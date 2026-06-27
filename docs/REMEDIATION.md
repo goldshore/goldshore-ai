@@ -33,7 +33,7 @@
 #   - gs-gateway Workers (x2)
 #   - gs-api Workers (x2)
 #   - goldshore-core Workers (x2)
-#   - gs-agent Workers (x2 — keep one if you want agent protected)
+#   - gs-agent Workers (x2 — delete stale direct Access apps; agent.goldshore.ai is gateway-owned)
 #   - banproof-me Workers (x2 — public site, shouldn't be CF Access protected)
 #   - goldshore-monorepo Pages (x1 — separate account, not needed here)
 #
@@ -55,9 +55,11 @@
 # NOTE: gs-gateway Pages project is pointing at gs-admin.pages.dev — WRONG NAME
 #       gs-gateway is the ACTUAL gateway worker. Route gw.goldshore.ai to gs-gateway.
 
-## agent.goldshore.ai → gs-agent Worker
-# Dashboard: Workers & Pages → gs-agent → Settings → Domains & Routes → Add Custom Domain
-#   Domain: agent.goldshore.ai
+## agent.goldshore.ai → gs-gateway Worker → gs-agent service binding
+# Ownership decision: agent.goldshore.ai/* is a public Worker route on gs-gateway.
+# Keep the route in apps/gs-gateway/wrangler.toml and keep apps/gs-agent/wrangler.toml route-free.
+# Do NOT add a direct custom domain or Worker route for agent.goldshore.ai on gs-agent.
+# gs-gateway forwards agent.goldshore.ai traffic to gs-agent through the AGENT service binding.
 
 # ══════════════════════════════════════════════════════════════
 # PRIORITY 4 — EMAIL ROUTING FIXES

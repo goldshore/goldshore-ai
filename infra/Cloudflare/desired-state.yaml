@@ -96,6 +96,7 @@ cloudflare:
       - name: "GoldShore-Admin-ZT"
         domains:
           - "admin.goldshore.ai"
+          - "admin.goldshore.org"
           - "admin-preview.goldshore.ai"
         action: "allow"
         rules:

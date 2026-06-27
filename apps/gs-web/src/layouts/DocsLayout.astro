@@ -4,7 +4,7 @@ import DocsSidebar from '../components/DocsSidebar.astro';
 import DocsSearch from '../components/DocsSearch.astro';
 
 const { title, page, canonicalPath, ogTitle, ogDescription } = Astro.props;
-const currentSlug = page ? (page.id ?? page.slug) : undefined;
+const currentSlug = page ? page.slug : undefined;
 ---
 
 <WebLayout
