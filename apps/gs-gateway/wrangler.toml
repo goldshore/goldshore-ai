@@ -34,6 +34,10 @@ routes = [
 
 [env.prod.vars]
 ENV = "production"
+# Cloudflare Access application: Goldshore Gateway
+# Protected-route AUD tag shared by gw.goldshore.ai, api.goldshore.ai, and agent.goldshore.ai.
+# Keep those hostnames in one Access application while this Worker uses a single audience binding.
+CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 
 # ── KV Namespaces ───────────────────────────────────────────────────

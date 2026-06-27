@@ -1,6 +1,7 @@
 ---
 import Logo from '../components/brand/Logo.astro';
 import ParallaxHero from '../components/hero/ParallaxHero.astro';
+import RiskRadar from '../components/RiskRadar.astro';
 import WebLayout from '../layouts/WebLayout.astro';
 
 export const prerender = true;
@@ -51,6 +52,21 @@ const capabilities = [
     body: 'Controls are demonstrated in live use with logs, thresholds, review modes, and fallback paths.',
   },
 ];
+
+const proofPoints = [
+  {
+    title: 'Human-in-the-loop by default',
+    body: 'Every high-stakes model decision routes through a configured review step before action is taken.',
+  },
+  {
+    title: 'Full observability stack',
+    body: 'Events, thresholds, and evidence logs are captured at runtime and retained for regulatory review.',
+  },
+  {
+    title: 'Controlled deployment posture',
+    body: 'Staged rollouts, feature flags, and rollback paths are wired into the deployment pipeline from day one.',
+  },
+];
 ---
 
 <WebLayout
@@ -65,7 +81,7 @@ const capabilities = [
       eyebrow="AI risk operations for financial services"
       headline={"Control AI Decisions.\nPass Every Review."}
       sub="GoldShore gives risk and compliance leaders a single operating layer to monitor model behavior, escalate exceptions, and prove governance in every audit."
-      ctaPrimary={{ label: 'Book a risk review', href: '/contact' }}
+      ctaPrimary={{ label: 'Get a Briefing', href: '/contact' }}
       ctaSecondary={{ label: 'See services', href: '/services' }}
       ctaPrimaryEventName="hero_primary_contact_click"
       ctaSecondaryEventName="hero_secondary_services_click"
@@ -361,7 +377,7 @@ const capabilities = [
     .hero::after {
       content: '';
       background:
-        radial-gradient(circle at 25% 20%, rgba(90, 162, 255, 0.18), transparent 28%),
+        radial-gradient(circle at 25% 20%, rgba(217, 106, 50, 0.18), transparent 28%),
         linear-gradient(180deg, rgba(7, 11, 20, 0.18), rgba(7, 11, 20, 0.84));
       pointer-events: none;
       z-index: 0;
@@ -403,9 +419,9 @@ const capabilities = [
       align-items: center;
       gap: 0.5rem;
       padding: 0.5rem 0.85rem;
-      border: 1px solid rgba(90, 162, 255, 0.22);
+      border: 1px solid rgba(217, 106, 50, 0.22);
       border-radius: 999px;
-      background: rgba(90, 162, 255, 0.1);
+      background: rgba(217, 106, 50, 0.10);
       color: #dcedff;
       text-transform: uppercase;
       letter-spacing: 0.16em;
@@ -517,8 +533,8 @@ const capabilities = [
       padding: 0.95rem 1rem;
       margin-bottom: 1rem;
       border-radius: 18px;
-      border: 1px solid var(--gs-border);
-      background: var(--gs-primary-soft);
+      border: 1px solid rgba(217, 106, 50, 0.18);
+      background: rgba(217, 106, 50, 0.08);
     }
 
     .status-banner strong {
@@ -680,8 +696,8 @@ const capabilities = [
     }
 
     .team-card--founder {
-      border-color: rgba(90, 162, 255, 0.2);
-      background: rgba(90, 162, 255, 0.08);
+      border-color: rgba(217, 106, 50, 0.2);
+      background: rgba(217, 106, 50, 0.08);
     }
 
     .contact-cta {

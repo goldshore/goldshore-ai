@@ -74,7 +74,21 @@ alter table public.api_keys enable row level security;
 alter table public.integrations enable row level security;
 alter table public.webhooks enable row level security;
 
-create policy api_clients_access
+create policy api_clients_access_read
+on public.api_clients
+for select
+using (
+  public.is_goldshore_admin()
+  or exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid()
+      and p.organization_id = api_clients.organization_id
+      and p.role in ('owner', 'editor', 'viewer')
+  )
+);
+
+
+create policy api_clients_access_write
 on public.api_clients
 for all
 using (
@@ -83,7 +97,7 @@ using (
     select 1 from public.profiles p
     where p.id = auth.uid()
       and p.organization_id = api_clients.organization_id
-      and p.role in ('owner', 'editor', 'viewer')
+      and p.role in ('owner', 'editor')
   )
 )
 with check (
@@ -96,7 +110,23 @@ with check (
   )
 );
 
-create policy api_keys_access
+create policy api_keys_access_read
+on public.api_keys
+for select
+using (
+  public.is_goldshore_admin()
+  or exists (
+    select 1
+    from public.api_clients ac
+    join public.profiles p on p.organization_id = ac.organization_id
+    where ac.id = api_keys.api_client_id
+      and p.id = auth.uid()
+      and p.role in ('owner', 'editor', 'viewer')
+  )
+);
+
+
+create policy api_keys_access_write
 on public.api_keys
 for all
 using (
@@ -107,7 +137,7 @@ using (
     join public.profiles p on p.organization_id = ac.organization_id
     where ac.id = api_keys.api_client_id
       and p.id = auth.uid()
-      and p.role in ('owner', 'editor', 'viewer')
+      and p.role in ('owner', 'editor')
   )
 )
 with check (
@@ -122,7 +152,21 @@ with check (
   )
 );
 
-create policy integrations_access
+create policy integrations_access_read
+on public.integrations
+for select
+using (
+  public.is_goldshore_admin()
+  or exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid()
+      and p.organization_id = integrations.organization_id
+      and p.role in ('owner', 'editor', 'viewer')
+  )
+);
+
+
+create policy integrations_access_write
 on public.integrations
 for all
 using (
@@ -131,7 +175,7 @@ using (
     select 1 from public.profiles p
     where p.id = auth.uid()
       and p.organization_id = integrations.organization_id
-      and p.role in ('owner', 'editor', 'viewer')
+      and p.role in ('owner', 'editor')
   )
 )
 with check (
@@ -144,7 +188,21 @@ with check (
   )
 );
 
-create policy webhooks_access
+create policy webhooks_access_read
+on public.webhooks
+for select
+using (
+  public.is_goldshore_admin()
+  or exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid()
+      and p.organization_id = webhooks.organization_id
+      and p.role in ('owner', 'editor', 'viewer')
+  )
+);
+
+
+create policy webhooks_access_write
 on public.webhooks
 for all
 using (
@@ -153,7 +211,7 @@ using (
     select 1 from public.profiles p
     where p.id = auth.uid()
       and p.organization_id = webhooks.organization_id
-      and p.role in ('owner', 'editor', 'viewer')
+      and p.role in ('owner', 'editor')
   )
 )
 with check (

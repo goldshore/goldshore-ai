@@ -28,20 +28,20 @@
     "@goldshore/utils": "workspace:^",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
-    "@supabase/supabase-js": "^2.104.0",
+    "@supabase/supabase-js": "^2.108.2",
     "astro": "^6.4.6",
     "framer-motion": "^12.38.0",
     "fuse.js": "^7.1.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.6",
-    "three": "^0.183.2",
+    "three": "^0.184.0",
     "vanilla-tilt": "^1.8.1"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.8",
-    "@astrojs/cloudflare": "^13.1.10",
+    "@astrojs/cloudflare": "^13.7.0",
     "@playwright/test": "^1.59.1",
-    "tailwindcss": "^4.3.0",
+    "tailwindcss": "^4.3.1",
     "typescript": "^5.4.2"
   }
 }
