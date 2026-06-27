@@ -4,56 +4,84 @@
    Import at END of global.css:  @import './gs-brand-theme.css';
 
    Purpose:
-   - Replace blue accent (#5aa2ff / #22d3ee) with GSL navy + gold
-   - Swap SVG logo for PNG Penrose triangle
+   - Copper-on-black design system (#d96a32 on #050507)
+   - Space Grotesk display, Inter body
    - Fix all responsive breakpoints
-   - Fix favicon reference
    ================================================================ */
 
-/* ── GSL BRAND TOKENS ── */
+/* ── COPPER BRAND TOKENS ── */
 :root {
-  /* Gold Shore Labs navy — from the Penrose triangle logo */
-  --gsl-navy:         #1a3a7a;
-  --gsl-navy-dark:    #0f2347;
-  --gsl-navy-mid:     #1e4490;
-  --gsl-navy-light:   #2a5298;
-  --gsl-navy-pale:    rgba(26, 58, 122, 0.12);
-  --gsl-navy-glow:    rgba(26, 58, 122, 0.06);
+  /* Copper palette */
+  --gs-copper:           #d96a32;
+  --gs-copper-soft:      rgba(217, 106, 50, 0.14);
+  --gs-copper-glow:      rgba(217, 106, 50, 0.28);
+  --gs-copper-strong:    rgba(217, 106, 50, 0.42);
 
-  /* Gold accent — authority, premium */
-  --gsl-gold:         #c9a84c;
-  --gsl-gold-light:   #d4b86a;
-  --gsl-gold-pale:    rgba(201, 168, 76, 0.12);
+  /* Blue signal palette */
+  --gs-blue:             #59a8ff;
+  --gs-blue-soft:        rgba(89, 168, 255, 0.12);
+  --gs-blue-glow:        rgba(89, 168, 255, 0.24);
 
-  /* Override theme accent colors to GSL navy */
-  --gs-primary:            var(--gsl-navy);
-  --gs-primary-soft:       var(--gsl-navy-pale);
-  --gs-color-primary:      var(--gsl-navy);
-  --gs-accent:             var(--gsl-navy);
-  --gs-accent-strong:      var(--gsl-navy-mid);
-  --gs-accent-soft:        var(--gsl-navy-pale);
-  --gs-accent-cyan:        var(--gsl-navy);  /* override cyan alias */
-  --gs-accent-blue:        var(--gsl-navy);
-  --gs-color-primary:      var(--gsl-navy);
+  /* Backgrounds */
+  --gs-bg:               #050507;
+  --gs-surface:          rgba(14, 16, 20, 0.84);
+  --gs-surface-strong:   rgba(20, 23, 29, 0.94);
+
+  /* Borders */
+  --gs-border:           rgba(255, 120, 54, 0.14);
+  --gs-border-subtle:    rgba(255, 255, 255, 0.06);
+
+  /* Text */
+  --gs-text:             #f1f4f8;
+  --gs-text-dim:         #9ca5b4;
+  --gs-text-muted:       #9ca5b4;
+
+  /* Semantic */
+  --gs-success:          #5ddb9a;
+  --gs-warning:          #f0b35b;
+  --gs-danger:           #f56b6b;
+
+  /* Primary alias — copper */
+  --gs-primary:          var(--gs-copper);
+  --gs-primary-soft:     var(--gs-copper-soft);
+  --gs-primary-glow:     var(--gs-copper-glow);
+  --gs-color-primary:    var(--gs-copper);
+  --gs-accent:           var(--gs-copper);
+  --gs-accent-strong:    var(--gs-copper-strong);
+  --gs-accent-soft:      var(--gs-copper-soft);
+
+  /* Typography */
+  --gs-font-display:     'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --gs-font-body:        'Inter', system-ui, sans-serif;
+  --gs-font-heading:     var(--gs-font-display);
 
   /* Header tokens */
-  --gs-header-border-accent: rgba(26, 58, 122, 0.2);
-  --gs-nav-indicator-bg:     var(--gsl-gold);
-  --gs-nav-indicator-shadow: 0 0 8px var(--gsl-gold);
-  --gs-logo-glow-soft:       rgba(26, 58, 122, 0.3);
-  --gs-logo-glow-strong:     rgba(26, 58, 122, 0.6);
+  --gs-header-border-accent: rgba(217, 106, 50, 0.2);
+  --gs-nav-indicator-bg:     var(--gs-copper);
+  --gs-nav-indicator-shadow: 0 0 8px var(--gs-copper-glow);
+  --gs-logo-glow-soft:       rgba(217, 106, 50, 0.3);
+  --gs-logo-glow-strong:     rgba(217, 106, 50, 0.6);
+
+  /* Layout */
+  --gs-max-width:        1200px;
 }
 
 /* ── BACKGROUND & BODY ── */
-html { background: #060810; }
+html { background: #050507; }
 
 body {
   background:
-    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(26,58,122,0.08) 0%, transparent 60%),
-    linear-gradient(180deg, #060810 0%, #080c18 50%, #070b16 100%);
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(217,106,50,0.06) 0%, transparent 60%),
+    linear-gradient(180deg, #050507 0%, #070809 50%, #060708 100%);
+  font-family: var(--gs-font-body);
+  color: var(--gs-text);
 }
 
-/* Replace cyan grid/vignette with navy */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--gs-font-display);
+}
+
+/* Copper grid lines */
 .gs-grid,
 [class*="grid"] {
   background-image:
@@ -85,9 +113,9 @@ body {
 
 /* ── NAVIGATION ── */
 .gs-header {
-  background: rgba(6,8,16,0.88) !important;
+  background: rgba(5, 5, 7, 0.82) !important;
   backdrop-filter: blur(20px) !important;
-  border-bottom: 1px solid rgba(26,58,122,0.2) !important;
+  border-bottom: 1px solid rgba(217, 106, 50, 0.14) !important;
 }
 
 /* Nav links */
@@ -95,7 +123,7 @@ body {
 .header a,
 [class*="nav-link"],
 [class*="gs-nav"] a {
-  color: rgba(232,237,248,0.6) !important;
+  color: rgba(241,244,248,0.6) !important;
   font-size: 0.82rem !important;
   letter-spacing: 0.04em !important;
   transition: color 200ms !important;
@@ -104,142 +132,100 @@ body {
 .gs-header nav a:hover,
 [class*="gs-nav"] a:hover,
 [class*="gs-nav"] a[aria-current] {
-  color: var(--gsl-gold) !important;
+  color: var(--gs-copper) !important;
+  background: rgba(217, 106, 50, 0.09) !important;
 }
 
 /* CTA button in nav */
 .header-cta,
 [class*="gs-btn-primary"],
 a.gs-btn-primary {
-  background: var(--gsl-navy) !important;
-  border-color: var(--gsl-navy) !important;
-  color: white !important;
+  background: linear-gradient(135deg, rgba(217,106,50,0.42), rgba(217,106,50,0.22)) !important;
+  border-color: rgba(217,106,50,0.5) !important;
+  color: #f1f4f8 !important;
   transition: background 200ms, border-color 200ms !important;
 }
 
 .header-cta:hover,
 [class*="gs-btn-primary"]:hover {
-  background: var(--gsl-navy-mid) !important;
-  border-color: var(--gsl-navy-mid) !important;
+  background: linear-gradient(135deg, rgba(217,106,50,0.58), rgba(217,106,50,0.36)) !important;
+  border-color: rgba(217,106,50,0.7) !important;
 }
 
 /* Secondary button */
 [class*="gs-btn-secondary"],
 a.gs-btn-secondary {
-  border-color: rgba(26,58,122,0.4) !important;
-  color: rgba(232,237,248,0.8) !important;
+  border-color: rgba(217,106,50,0.2) !important;
+  color: rgba(241,244,248,0.8) !important;
 }
 
 [class*="gs-btn-secondary"]:hover {
-  border-color: var(--gsl-navy) !important;
-  background: var(--gsl-navy-pale) !important;
+  border-color: rgba(217,106,50,0.4) !important;
+  background: rgba(217,106,50,0.08) !important;
 }
 
 /* ── EYEBROW & ACCENT TEXT ── */
 [class*="gs-eyebrow"],
 [class*="eyebrow"],
 .gs-eyebrow {
-  color: var(--gsl-gold) !important;
+  color: var(--gs-copper) !important;
 }
 
-/* Gold underlines on headings accent */
-h1 strong, h2 strong { color: var(--gsl-gold); }
+h1 strong, h2 strong { color: var(--gs-copper); }
 
 /* ── HERO ── */
 .gs-vignette {
   background:
-    radial-gradient(circle at 25% 30%, rgba(26,58,122,0.15), transparent 55%),
-    radial-gradient(circle at 70% 40%, rgba(10,30,80,0.10), transparent 60%),
-    linear-gradient(120deg, rgba(2,6,23,0.92), rgba(2,6,23,0.70)) !important;
-}
-
-/* Hero reactive logo area — replace with PNG */
-.hero-logo-wrapper .gs-logo-reactive,
-.gs-logo-reactive {
-  display: none !important;
-}
-
-.hero-logo-wrapper::before {
-  content: '';
-  display: block;
-  width: clamp(80px, 10vw, 130px);
-  height: clamp(80px, 10vw, 130px);
-  background-image: url('/assets/gsl-logo.png');
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
+    radial-gradient(circle at 25% 30%, rgba(217,106,50,0.10), transparent 55%),
+    radial-gradient(circle at 70% 40%, rgba(217,106,50,0.06), transparent 60%),
+    linear-gradient(120deg, rgba(5,5,7,0.92), rgba(5,5,7,0.70)) !important;
 }
 
 /* ── CARDS & SURFACES ── */
 [class*="gs-feature-card"],
 [class*="gs-panel"],
 [class*="gs-card"] {
-  border-color: rgba(26,58,122,0.15) !important;
+  border-color: rgba(217,106,50,0.14) !important;
   transition: border-color 200ms, box-shadow 200ms !important;
 }
 
 [class*="gs-feature-card"]:hover,
 [class*="gs-panel"]:hover {
-  border-color: rgba(26,58,122,0.35) !important;
-  box-shadow: 0 0 0 1px rgba(26,58,122,0.15) !important;
+  border-color: rgba(217,106,50,0.30) !important;
+  box-shadow: 0 0 0 1px rgba(217,106,50,0.10) !important;
 }
 
 /* ── INLINE LINKS ── */
 [class*="gs-inline-link"],
 .gs-inline-link {
-  color: var(--gsl-navy-light) !important;
+  color: var(--gs-copper) !important;
 }
 
-[class*="gs-inline-link"]:hover { color: var(--gsl-gold) !important; }
+[class*="gs-inline-link"]:hover { color: #e88a52 !important; }
 
 /* ── METRICS / STATS ── */
 [class*="gs-metric"],
 [class*="metric-value"],
 [class*="stat-value"] {
-  color: var(--gsl-gold) !important;
+  color: var(--gs-copper) !important;
 }
 
 /* ── FOOTER ── */
 footer {
-  border-top-color: rgba(26,58,122,0.15) !important;
-}
-
-/* Powered by / GSL mark in footer */
-.gsl-footer-mark {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  text-decoration: none;
-  opacity: 0.6;
-  transition: opacity 200ms;
-}
-
-.gsl-footer-mark:hover { opacity: 1; }
-
-.gsl-footer-logo {
-  height: 24px;
-  width: auto;
-}
-
-.gsl-footer-text {
-  font-family: 'DM Mono', monospace;
-  font-size: 0.6rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(232,237,248,0.4);
+  border-top-color: rgba(217,106,50,0.14) !important;
 }
 
 /* ── SELECTION ── */
 ::selection {
-  background: rgba(26,58,122,0.25) !important;
-  color: #e8edf8 !important;
+  background: rgba(217,106,50,0.20) !important;
+  color: #f1f4f8 !important;
 }
 
 /* ── SCROLLBAR ── */
 ::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: #060810; }
-::-webkit-scrollbar-thumb { background: rgba(26,58,122,0.4); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: var(--gsl-navy); }
+::-webkit-scrollbar-track { background: #050507; }
+::-webkit-scrollbar-thumb { background: rgba(217,106,50,0.4); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gs-copper); }
 
 /* ================================================================
    RESPONSIVE — Full mobile/tablet/desktop coverage
@@ -377,7 +363,7 @@ footer {
 [class*="menu-panel"],
 [class*="mobile-menu"],
 #primary-navigation {
-  background: #060810 !important;
+  background: #050507 !important;
   border-left: none !important;
   border-right: none !important;
 }
@@ -385,21 +371,21 @@ footer {
 [class*="menu-panel"] a,
 [class*="mobile-menu"] a,
 #primary-navigation a {
-  color: rgba(232,237,248,0.7) !important;
-  border-bottom: 1px solid rgba(26,58,122,0.12) !important;
+  color: rgba(241,244,248,0.7) !important;
+  border-bottom: 1px solid rgba(217,106,50,0.10) !important;
   padding: 1rem 0 !important;
   font-size: 1rem !important;
 }
 
 [class*="menu-panel"] a:hover,
-#primary-navigation a:hover { color: var(--gsl-gold) !important; }
+#primary-navigation a:hover { color: var(--gs-copper) !important; }
 
 /* ── FOCUS STATES — accessibility ── */
 a:focus-visible,
 button:focus-visible,
 input:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid var(--gsl-navy-light) !important;
+  outline: 2px solid rgba(217,106,50,0.7) !important;
   outline-offset: 2px !important;
 }
 
