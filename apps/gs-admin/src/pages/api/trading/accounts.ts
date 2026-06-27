@@ -13,7 +13,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
     });
   }
 
-  const res = await proxyToTrading(env, '/trading/accounts');
+  const res = await proxyToTrading(env, request, '/api/trading/accounts');
   const data = await res.json().catch(() => null);
   return new Response(JSON.stringify(data), {
     status: res.status,

@@ -72,7 +72,21 @@ alter table public.forms enable row level security;
 alter table public.form_submissions enable row level security;
 alter table public.leads enable row level security;
 
-create policy assets_access
+create policy assets_access_read
+on public.assets
+for select
+using (
+  public.is_goldshore_admin()
+  or exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid()
+      and p.organization_id = assets.organization_id
+      and p.role in ('owner', 'editor', 'viewer')
+  )
+);
+
+
+create policy assets_access_write
 on public.assets
 for all
 using (
@@ -81,7 +95,7 @@ using (
     select 1 from public.profiles p
     where p.id = auth.uid()
       and p.organization_id = assets.organization_id
-      and p.role in ('owner', 'editor', 'viewer')
+      and p.role in ('owner', 'editor')
   )
 )
 with check (
@@ -94,7 +108,23 @@ with check (
   )
 );
 
-create policy forms_access
+create policy forms_access_read
+on public.forms
+for select
+using (
+  public.is_goldshore_admin()
+  or exists (
+    select 1
+    from public.sites s
+    join public.profiles p on p.organization_id = s.organization_id
+    where s.id = forms.site_id
+      and p.id = auth.uid()
+      and p.role in ('owner', 'editor', 'viewer')
+  )
+);
+
+
+create policy forms_access_write
 on public.forms
 for all
 using (
@@ -105,7 +135,7 @@ using (
     join public.profiles p on p.organization_id = s.organization_id
     where s.id = forms.site_id
       and p.id = auth.uid()
-      and p.role in ('owner', 'editor', 'viewer')
+      and p.role in ('owner', 'editor')
   )
 )
 with check (
@@ -148,7 +178,21 @@ using (
   )
 );
 
-create policy leads_access
+create policy leads_access_read
+on public.leads
+for select
+using (
+  public.is_goldshore_admin()
+  or exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid()
+      and p.organization_id = leads.organization_id
+      and p.role in ('owner', 'editor', 'viewer')
+  )
+);
+
+
+create policy leads_access_write
 on public.leads
 for all
 using (
@@ -157,7 +201,7 @@ using (
     select 1 from public.profiles p
     where p.id = auth.uid()
       and p.organization_id = leads.organization_id
-      and p.role in ('owner', 'editor', 'viewer')
+      and p.role in ('owner', 'editor')
   )
 )
 with check (
