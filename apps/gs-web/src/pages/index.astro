@@ -67,6 +67,21 @@ const proofPoints = [
     body: 'Staged rollouts, feature flags, and rollback paths are wired into the deployment pipeline from day one.',
   },
 ];
+
+const mcpHighlights = [
+  {
+    title: 'Private by design',
+    body: 'The live MCP host stays behind Cloudflare Access and never becomes an open prompt surface.',
+  },
+  {
+    title: 'Approved identities',
+    body: 'Only authorized humans and a dedicated agent/service path can reach the private tools.',
+  },
+  {
+    title: 'Public explanation',
+    body: 'GoldShore.ai can describe the service openly while keeping execution locked down.',
+  },
+];
 ---
 
 <WebLayout
@@ -81,7 +96,7 @@ const proofPoints = [
       eyebrow="AI risk operations for financial services"
       headline={"Control AI Decisions.\nPass Every Review."}
       sub="GoldShore gives risk and compliance leaders a single operating layer to monitor model behavior, escalate exceptions, and prove governance in every audit."
-      ctaPrimary={{ label: 'Book a risk review', href: '/contact' }}
+      ctaPrimary={{ label: 'Get a Briefing', href: '/contact' }}
       ctaSecondary={{ label: 'See services', href: '/services' }}
       ctaPrimaryEventName="hero_primary_contact_click"
       ctaSecondaryEventName="hero_secondary_services_click"
@@ -155,6 +170,44 @@ const proofPoints = [
         </p>
       </div>
       <RiskRadar />
+    </section>
+
+    <section
+      class="section-block gs-shell-section mcp-section"
+      aria-labelledby="mcp-title"
+    >
+      <div class="section-copy">
+        <p class="gs-eyebrow">GoldShore MCP</p>
+        <h2 id="mcp-title">A public explanation, with private execution behind Access.</h2>
+        <p class="section-intro">
+          GoldShore.ai can explain the MCP offering in public while <code>mcp.goldshore.ai</code>
+          stays locked to approved humans and approved agents only.
+        </p>
+      </div>
+
+      <div class="mcp-grid">
+        <article class="mcp-card mcp-card--hero">
+          <div class="mcp-card__brand">
+            <Logo class="gs-logo gs-logo--lockup" title="Gold Shore" variant="lockup" />
+            <div>
+              <span class="mcp-card__label">Private Access</span>
+              <strong>Cloudflare Access enforced</strong>
+            </div>
+          </div>
+          <p>
+            The MCP host is reserved for controlled prompts, tool calls, and internal changes.
+            Public visitors can learn about it here, but they cannot use it without authorization.
+          </p>
+          <a href="/developer/mcp" class="signal-link">Explore the access model →</a>
+        </article>
+
+        {mcpHighlights.map((item) => (
+          <article class="mcp-card">
+            <h3>{item.title}</h3>
+            <p>{item.body}</p>
+          </article>
+        ))}
+      </div>
     </section>
 
     <section
@@ -377,7 +430,7 @@ const proofPoints = [
     .hero::after {
       content: '';
       background:
-        radial-gradient(circle at 25% 20%, rgba(90, 162, 255, 0.18), transparent 28%),
+        radial-gradient(circle at 25% 20%, rgba(217, 106, 50, 0.18), transparent 28%),
         linear-gradient(180deg, rgba(7, 11, 20, 0.18), rgba(7, 11, 20, 0.84));
       pointer-events: none;
       z-index: 0;
@@ -419,9 +472,9 @@ const proofPoints = [
       align-items: center;
       gap: 0.5rem;
       padding: 0.5rem 0.85rem;
-      border: 1px solid rgba(90, 162, 255, 0.22);
+      border: 1px solid rgba(217, 106, 50, 0.22);
       border-radius: 999px;
-      background: rgba(90, 162, 255, 0.1);
+      background: rgba(217, 106, 50, 0.10);
       color: #dcedff;
       text-transform: uppercase;
       letter-spacing: 0.16em;
@@ -533,8 +586,8 @@ const proofPoints = [
       padding: 0.95rem 1rem;
       margin-bottom: 1rem;
       border-radius: 18px;
-      border: 1px solid var(--gs-border);
-      background: var(--gs-primary-soft);
+      border: 1px solid rgba(217, 106, 50, 0.18);
+      background: rgba(217, 106, 50, 0.08);
     }
 
     .status-banner strong {
@@ -686,6 +739,12 @@ const proofPoints = [
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
+    .mcp-grid {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
     .proof-card--metrics {
       display: grid;
       gap: 1rem;
@@ -696,8 +755,53 @@ const proofPoints = [
     }
 
     .team-card--founder {
-      border-color: rgba(90, 162, 255, 0.2);
-      background: rgba(90, 162, 255, 0.08);
+      border-color: rgba(217, 106, 50, 0.2);
+      background: rgba(217, 106, 50, 0.08);
+    }
+
+    .mcp-card {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      padding: 1.4rem;
+      border-radius: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(10, 18, 36, 0.72);
+      box-shadow: var(--gs-shadow);
+    }
+
+    .mcp-card--hero {
+      grid-row: span 2;
+      background:
+        radial-gradient(circle at top left, rgba(66, 153, 225, 0.18), transparent 36%),
+        rgba(10, 18, 36, 0.8);
+    }
+
+    .mcp-card__brand {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .mcp-card__brand .gs-brand-logo {
+      width: 92px;
+      height: auto;
+      flex: 0 0 auto;
+    }
+
+    .mcp-card__label {
+      display: block;
+      margin-bottom: 0.15rem;
+      color: rgba(233, 238, 252, 0.62);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-size: 0.76rem;
+    }
+
+    .mcp-card p {
+      margin: 0;
+      color: var(--gs-text-dim);
+      line-height: 1.75;
     }
 
     .contact-cta {
@@ -733,6 +837,7 @@ const proofPoints = [
       .metrics-grid,
       .capability-grid,
       .proof-grid,
+      .mcp-grid,
       .team-row {
         grid-template-columns: 1fr;
       }
