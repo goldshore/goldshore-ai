@@ -26,9 +26,9 @@ import { assertSecuritySecrets } from './securitySecrets';
 type Env = {
   KV: KVNamespace;
   CONTROL_LOGS?: KVNamespace;
-  CONTENT_DB: D1Database;
+  PLATFORM_DB: D1Database;
   TELEMETRY_DB?: D1Database;
-  ASSETS: R2Bucket;
+  GS_ASSETS: R2Bucket;
   AUTH_SESSION?: DurableObjectNamespace;
   AI: Ai;
   OPENAI_API_KEY?: string;
@@ -52,8 +52,8 @@ const app = new Hono<{
   Variables: { accessClaims: AccessTokenPayload | null };
 }>();
 
-const requiredBindings = ['CONTENT_DB', 'ASSETS', 'AI'] as const;
-const expectedD1Binding = 'CONTENT_DB' as const;
+const requiredBindings = ['PLATFORM_DB', 'GS_ASSETS', 'AI'] as const;
+const expectedD1Binding = 'PLATFORM_DB' as const;
 const requiredSecrets = [
   'JWT_SECRET',
   'STRIPE_API_KEY',
@@ -191,43 +191,10 @@ const PUBLIC_VERSION_CORS_ORIGINS = new Set([
 
 app.get('/version', (c) => {
   const origin = c.req.header('Origin');
-  const data = withContractHeaders(
-    {
-      service: 'gs-api',
-      version: c.env.API_VERSION ?? c.env.GIT_SHA ?? 'unknown',
-      deploySha: c.env.DEPLOY_SHA ?? c.env.GIT_SHA ?? null,
-    },
-    getRuntimeVersion(c.env),
-  );
   if (origin && PUBLIC_VERSION_CORS_ORIGINS.has(origin)) {
     c.header('Access-Control-Allow-Origin', origin);
     c.header('Vary', 'Origin');
   }
-
-  return {
-    ...response,
-    headers: {
-      ...(response.headers ?? {}),
-      'Access-Control-Allow-Origin': origin,
-      Vary: 'Origin',
-    },
-  };
-}
-
-app.get('/version', (c) =>
-  c.json(
-    withPublicVersionCors(
-      c.req.header('Origin'),
-      withContractHeaders(
-        {
-          service: 'gs-api',
-          version: c.env.API_VERSION ?? c.env.GIT_SHA ?? 'unknown',
-          deploySha: c.env.DEPLOY_SHA ?? c.env.GIT_SHA ?? null,
-        },
-        getRuntimeVersion(c.env)
-      )
-    )
-  )
   return c.json(
     withContractHeaders(
       {
@@ -238,7 +205,6 @@ app.get('/version', (c) =>
       getRuntimeVersion(c.env),
     ),
   );
-  return c.json(data);
 });
 
 app.get('/version.json', (c) =>

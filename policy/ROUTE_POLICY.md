@@ -10,7 +10,7 @@
 
 | Zone | Owner | Pages Project | Worker Routes | Access Policy |
 |---|---|---|---|---|
-| `goldshore.ai` | GoldShore Labs | gs-web | api.*, gw.*, ops.*, agent.* | Public for web; CF Access for admin |
+| `goldshore.ai` | GoldShore Labs | gs-web | api.*, gw.*, ops.*, agent.* | Public for web; CF Access for protected gateway/admin routes |
 | `goldshore.org` | GoldShore Labs | (external Pages) | goldshore-org router | Public |
 | `banproof.me` | GoldShore Labs (BanProof) | — | banproof-me | Public |
 
@@ -47,6 +47,7 @@ admin-preview.goldshore.ai
 ```
 api.goldshore.ai/*
 ├── gs-api worker
+├── Direct route owner; not proxied through gs-gateway
 ├── Public endpoint
 └── Methods: GET, POST, PUT, DELETE (documented)
 
@@ -60,9 +61,10 @@ gw.goldshore.ai/*
 └── Methods: GET, POST (as per gateway rules)
 
 agent.goldshore.ai/*
-├── Routed through gs-platform gateway
-├── gs-agent worker receives traffic
-└── Methods: POST (agent-specific protocol)
+├── Route owner: gs-gateway (code: apps/gs-gateway)
+├── Forwarding target: gs-agent via the AGENT service binding
+├── gs-agent has no direct public Worker route or custom domain
+└── Anonymous response contract: GET /health → 200, GET /status → 200, protected agent paths such as /templates → 401
 
 ops.goldshore.ai/*
 ├── gs-control worker
@@ -72,6 +74,15 @@ ops.goldshore.ai/*
 ```
 
 ### Zone: `goldshore.org`
+
+#### Pages (Custom Domains)
+```
+admin.goldshore.org
+├── gs-admin Pages project
+├── Owner: gs-admin
+├── Hosting: Cloudflare Pages
+└── Cloudflare Access application/policy: GoldShore Admin / GoldShore-Admin-ZT
+```
 
 #### Workers (Routes)
 ```
@@ -144,23 +155,25 @@ This script runs in CI before deploy — if it fails, the deployment blocks.
 
 ## Gateway Forwarding Rules
 
-### gs-platform (Gateway Worker)
+### gs-platform / gs-gateway (Gateway Worker)
 
-The gateway routes inbound requests to downstream services:
+The gateway owns `gw.goldshore.ai/*` and `agent.goldshore.ai/*`. It does **not** own `api.goldshore.ai/*`; direct API traffic is served by `gs-api`. For gateway-hosted requests, it routes inbound requests to downstream services:
 
 ```
 Request: POST /query?agent=true
 To: gw.goldshore.ai/query?agent=true
 
 Gateway decision:
-  if (url.searchParams.has('agent')) {
+  if (url.hostname === 'agent.goldshore.ai') {
+    route to gs-agent service binding
+  } else if (url.searchParams.has('agent')) {
     route to gs-agent service binding
   } else {
     route to gs-api service binding
   }
 ```
 
-**Important:** The gateway **must not** rewrite the Host header. Downstream services (gs-api, gs-agent) receive requests with `Host: gw.goldshore.ai` — they should be aware of this and trust the X-Forwarded-Host header if present.
+**Important:** The gateway **must not** rewrite the Host header. Downstream services (gs-api, gs-agent) receive the original public host (for example, `Host: agent.goldshore.ai` for the agent vanity route, or `Host: gw.goldshore.ai` for gateway routes) and should trust `X-Forwarded-Host` only when explicitly set by trusted infrastructure.
 
 ---
 
@@ -222,12 +235,16 @@ When accessed via:
 | Route | Zone | Audience | Policy |
 |---|---|---|---|
 | `admin.goldshore.ai` | goldshore.ai | gs-admin | Email: @goldshore.ai, @marzton.dev |
+| `admin.goldshore.org` | goldshore.org | gs-admin | Same GoldShore Admin application/policy (`GoldShore-Admin-ZT`) as admin.goldshore.ai |
 | `admin-preview.goldshore.ai` | goldshore.ai | gs-admin-preview | Same as admin |
+| `admin.goldshore.ai` | goldshore.ai | gs-admin | Identity-based allow: Email domains `@goldshore.ai`, `@marzton.dev`; Specific email: `marstonr6@gmail.com` |
+| `admin-preview.goldshore.ai` | goldshore.ai | gs-admin-preview | Identity-based allow: Email domains `@goldshore.ai`, `@marzton.dev`; Specific email: `marstonr6@gmail.com` |
 | `ops.goldshore.ai` | goldshore.ai | gs-control | Email: @goldshore.ai (ops team only) |
+| `agent.goldshore.ai/*` | goldshore.ai | Goldshore Gateway shared AUD | Bypass `/health` and `/status`; protect all other agent paths |
 
 ### Public Routes
 
-All other routes are public (no Cloudflare Access policy).
+Public routes include `goldshore.ai`, `www.goldshore.ai`, and anonymous health probes explicitly bypassed in Cloudflare Access. For `agent.goldshore.ai`, only `GET /health` and `GET /status` are anonymous/public; protected agent paths, such as `/templates`, are expected to return `401` without a valid CF Access JWT.
 
 ---
 
@@ -258,7 +275,7 @@ curl -X GET https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/workers/s
 ```json
 [
   {"name": "gs-api", "routes": [{"pattern": "api.goldshore.ai/*"}, {"pattern": "api-preview.goldshore.ai/*"}]},
-  {"name": "gs-platform", "routes": [{"pattern": "gw.goldshore.ai/*"}, {"pattern": "agent.goldshore.ai/*"}]},
+  {"name": "gs-gateway", "routes": [{"pattern": "gw.goldshore.ai/*"}, {"pattern": "agent.goldshore.ai/*"}]},
   {"name": "gs-control", "routes": [{"pattern": "ops.goldshore.ai/*"}]},
   {"name": "goldshore-org", "routes": [{"pattern": "goldshore.org/*"}, {"pattern": "www.goldshore.org/*"}]},
   {"name": "banproof-me", "routes": [{"pattern": "banproof.me/*"}, {"pattern": "www.banproof.me/*"}]}

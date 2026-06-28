@@ -10,3 +10,14 @@ describe('wrangler d1 bindings', () => {
     assert.match(wranglerToml, /\[\[env\.prod\.d1_databases\]\][\s\S]*?binding = "PLATFORM_DB"/);
   });
 });
+
+
+describe('wrangler Cloudflare Access audience configuration', () => {
+  it('documents and binds the prod Access AUD tag for protected gateway routes', () => {
+    const prodVars = wranglerToml.match(/\[env\.prod\.vars\]([\s\S]*?)(?:\n\[|$)/)?.[1] ?? '';
+
+    assert.match(prodVars, /CLOUDFLARE_ACCESS_AUDIENCE\s*=\s*"[a-f0-9]{64}"/);
+    assert.match(prodVars, /Protected-route AUD tag shared by gw\.goldshore\.ai, api\.goldshore\.ai, and agent\.goldshore\.ai\./);
+    assert.match(prodVars, /Keep those hostnames in one Access application/);
+  });
+});

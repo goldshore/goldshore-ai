@@ -3,19 +3,19 @@
  * One-shot script: configure preview.goldshore.ai DNS + Cloudflare Pages custom domain.
  *
  * Required env vars:
- *   CLOUDFLARE_BUILD_API_TOKEN
+ *   CLOUDFLARE_API_TOKEN
  *   CLOUDFLARE_ACCOUNT_ID
  * Optional env vars:
  *   CLOUDFLARE_ZONE_ID (auto-resolved from zone name if omitted)
  */
 
 const API = "https://api.cloudflare.com/client/v4";
-const TOKEN = process.env.CLOUDFLARE_BUILD_API_TOKEN;
+const TOKEN = process.env.CLOUDFLARE_API_TOKEN;
 const ACCOUNT = process.env.CLOUDFLARE_ACCOUNT_ID;
 let ZONE = process.env.CLOUDFLARE_ZONE_ID;
 
 if (!TOKEN || !ACCOUNT) {
-  console.error("Missing required env vars: CLOUDFLARE_BUILD_API_TOKEN and CLOUDFLARE_ACCOUNT_ID. (CLOUDFLARE_ZONE_ID is optional; it will be auto-resolved if omitted.)");
+  console.error("Missing required env vars: CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID. (CLOUDFLARE_ZONE_ID is optional; it will be auto-resolved if omitted.)");
   process.exit(1);
 }
 

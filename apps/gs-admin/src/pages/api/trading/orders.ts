@@ -14,8 +14,8 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
   }
 
   const broker = url.searchParams.get('broker');
-  const path = broker ? `/trading/orders?broker=${broker}` : '/trading/orders';
-  const res = await proxyToTrading(env, path);
+  const path = broker ? `/api/trading/orders?broker=${broker}` : '/api/trading/orders';
+  const res = await proxyToTrading(env, request, path);
   const data = await res.json().catch(() => null);
   return new Response(JSON.stringify(data), {
     status: res.status,
@@ -25,7 +25,7 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
 
 export const POST: APIRoute = async ({ request, locals }) => {
   const env = getServerEnv(locals as Record<string, unknown>);
-  const access = await requireAdminAccess(request, env);
+  const access = await requireAdminAccess(request, env, { requiredPermission: 'system:write' });
   if (!access.ok) {
     return new Response(JSON.stringify({ error: access.error }), {
       status: access.status,
@@ -43,7 +43,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     });
   }
 
-  const res = await proxyToTrading(env, '/trading/orders', {
+  const res = await proxyToTrading(env, request, '/api/trading/orders', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body,
