@@ -10,6 +10,8 @@
 
 | Zone | Owner | Pages Project | Worker Routes | Access Policy |
 |---|---|---|---|---|
+| `goldshore.ai` | GoldShore Labs | gs-web | api.*, gw.*, ops.*, agent.* | Public for web; CF Access for admin |
+| `goldshore.org` | GoldShore Labs | gs-admin for admin subdomain; (external Pages) for public org content | goldshore-org router | Public for apex/www; CF Access for admin |
 | `goldshore.ai` | GoldShore Labs | gs-web | api.*, gw.*, ops.*, agent.* | Public for web; CF Access for protected gateway/admin routes |
 | `goldshore.org` | GoldShore Labs | (external Pages) | goldshore-org router | Public |
 | `banproof.me` | GoldShore Labs (BanProof) | — | banproof-me | Public |
