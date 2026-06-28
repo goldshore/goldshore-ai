@@ -6,6 +6,7 @@ compatibility_flags = ["nodejs_compat"]
 workers_dev = false
 
 [env.prod]
+# agent.goldshore.ai/* is owned by gs-gateway; keep gs-agent route-free.
 routes = []
 
 [env.prod.vars]
@@ -26,6 +27,7 @@ binding = "SECRETS"
 store_id = "b9824d3280c54573a24137c7e7143b33"
 
 [env.preview]
+# agent-preview.goldshore.ai/* is owned by gs-gateway; keep gs-agent route-free.
 routes = []
 
 [env.preview.vars]
