@@ -146,19 +146,53 @@ function initModal() {
 function getModalTemplate(variant: string): string {
   if (variant === 'admin') {
     return `
-      <div class="gs-modal-head">
-        <div class="gs-kicker gs-signal">Secure Access</div>
-        <h2 class="gs-modal-title gs-display" id="${MODAL_TITLE_ID}">Admin Login</h2>
-        <p class="gs-muted" id="${MODAL_DESCRIPTION_ID}">Restricted. Authentication required.</p>
+      <div class="gs-access-brand">
+        <div class="gs-access-mark" aria-hidden="true">
+          <svg viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+            <g fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M80 16 L128 106 L32 106 Z" />
+              <path d="M80 38 L108 96 L52 96 Z" opacity="0.6" />
+              <path d="M80 58 L94 86 L66 86 Z" opacity="0.35" />
+            </g>
+          </svg>
+        </div>
+        <div>
+          <div class="gs-kicker gs-signal">Secure Access</div>
+          <h2 class="gs-modal-title gs-display" id="${MODAL_TITLE_ID}">GoldShore Access</h2>
+          <p class="gs-muted" id="${MODAL_DESCRIPTION_ID}">
+            Private MCP, admin, and operator surfaces for approved identities only.
+          </p>
+        </div>
       </div>
-      <form class="gs-form" action="https://admin.goldshore.ai/login" method="POST">
-        <label class="gs-label">Email</label>
-        <input class="gs-input" name="email" type="email" autocomplete="email" required />
-        <label class="gs-label">Password</label>
-        <input class="gs-input" name="password" type="password" autocomplete="current-password" required />
-        <button class="gs-button gs-button-solid gs-edge-scan" type="submit">Login</button>
-      </form>
-      <div class="gs-micro gs-muted">If you are not authorized, this will fail silently.</div>
+      <div class="gs-access-meta" aria-label="Access controls">
+        <span class="gs-access-pill">Cloudflare Access</span>
+        <span class="gs-access-pill">Approved humans</span>
+        <span class="gs-access-pill">Approved agents</span>
+      </div>
+      <div class="gs-access-body">
+        <div class="gs-access-copy">
+          <h3>Protected surface</h3>
+          <p>
+            This entry point is for the private GoldShore operator stack. Access is
+            intentionally narrow so only authorized users and service identities can continue.
+          </p>
+          <ul>
+            <li>Cloudflare Access remains the edge gate.</li>
+            <li>Approved agents use a separate service identity path.</li>
+            <li>Anonymous prompts and changes are rejected before private tools load.</li>
+          </ul>
+        </div>
+        <form class="gs-form gs-access-form" action="https://admin.goldshore.ai/login" method="POST">
+          <label class="gs-label">Email</label>
+          <input class="gs-input" name="email" type="email" autocomplete="email" required />
+          <label class="gs-label">Password</label>
+          <input class="gs-input" name="password" type="password" autocomplete="current-password" required />
+          <button class="gs-button gs-button-solid gs-edge-scan" type="submit">Continue</button>
+        </form>
+      </div>
+      <div class="gs-micro gs-muted">
+        If you are not authorized, access is denied before the private tool surface loads.
+      </div>
     `;
   }
 

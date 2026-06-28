@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev src/index.ts",
+    "dev": "tsx src/dev.ts",
+    "dev:wrangler": "wrangler dev src/index.ts --ip 0.0.0.0",
     "deploy": "wrangler deploy --env prod",
     "build": "wrangler deploy --env prod --dry-run --outdir=dist",
     "test": "tsx --test src/routes/*.test.ts",
