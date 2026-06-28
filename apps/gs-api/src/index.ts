@@ -112,16 +112,6 @@ const readInboxLogs = async (kv: KVNamespace): Promise<EmailLog[]> => {
 };
 
 
-const DEFAULT_ALLOWED_ORIGINS = [
-  'https://goldshore.ai',
-  'https://www.goldshore.ai',
-  'https://admin.goldshore.ai',
-  'https://ops.goldshore.ai',
-  'https://gw.goldshore.ai',
-  'https://agent.goldshore.ai',
-  'https://admin-preview.goldshore.ai',
-  'https://preview.goldshore.ai',
-];
 const requiredBindings = ['PLATFORM_DB', 'GS_ASSETS', 'AI'] as const;
 const expectedD1Binding = 'PLATFORM_DB' as const;
 const requiredSecrets = [
@@ -431,5 +421,3 @@ export class AuthSession {
     );
   }
 }
-
-export default app;

@@ -10,7 +10,7 @@ compatibility_flags = ["nodejs_compat"]
 
 pages_build_output_dir = "dist"
 
-# ── Production bindings ────────────────────────────────────────────────────────
+# ── Production bindings ──────────────────────────────────────────────────────────────
 
 [[kv_namespaces]]
 binding = "KV"
@@ -34,11 +34,10 @@ database_id = "1ae71d76-188f-481b-91d9-db2d39013f68"
 binding = "GS_ASSETS"
 bucket_name = "gs-assets"
 
-# gs-trading service binding — zero-hop access to trading worker
+# gs-trading-prod service binding — zero-hop access to trading worker
 [[services]]
 binding = "TRADING_SERVICE"
-service = "gs-trading"
-environment = "prod"
+service = "gs-trading-prod"
 
 # gs-control service binding — CF API proxy (workers, DNS, pages, KV)
 [[services]]
@@ -56,7 +55,7 @@ ENV = "production"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 CLOUDFLARE_ACCESS_AUDIENCE = "8b6e1890f664c52ad265a240948a1f3315a757e19b4a0fa180ffe952b81a0daf"
 
-# ── Preview bindings ──────────────────────────────────────────────────
+# ── Preview bindings ──────────────────────────────────────────────────────────────
 
 [env.preview]
 pages_build_output_dir = "dist"
@@ -85,8 +84,7 @@ bucket_name = "gs-assets-preview"
 
 [[env.preview.services]]
 binding = "TRADING_SERVICE"
-service = "gs-trading"
-environment = "prod"
+service = "gs-trading-prod"
 
 [[env.preview.services]]
 binding = "GS_CONTROL"
@@ -102,5 +100,5 @@ ENV = "preview"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 CLOUDFLARE_ACCESS_AUDIENCE = "8b6e1890f664c52ad265a240948a1f3315a757e19b4a0fa180ffe952b81a0daf"
 
-# ── Secret bindings (set via CLI or dashboard, never committed) ──────────────
+# ── Secret bindings (set via CLI or dashboard, never committed) ────────────────────
 # wrangler pages secret put ADMIN_API_KEY --project-name gs-admin
