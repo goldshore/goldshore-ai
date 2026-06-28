@@ -4,6 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Gold Shore Labs — AI infrastructure, data intelligence, human-in-the-loop systems." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://goldshore.ai/" />
+  <meta property="og:title" content="Gold Shore Labs | AI Infrastructure at the Edge" />
+  <meta property="og:description" content="Gold Shore Labs — AI infrastructure, data intelligence, human-in-the-loop systems." />
   <title>Gold Shore Labs</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -1129,8 +1133,6 @@
   checkStatus();
 
   // ── Admin link — update with correct admin URL from gateway ──
-  // These href values are hardcoded but can be overridden by the worker
-  // via CF-injected env vars or a /api/config endpoint
   const ADMIN_URL = 'https://admin.goldshore.ai';
   const GW_URL = 'https://gw.goldshore.ai';
   const API_URL = 'https://api.goldshore.ai';
