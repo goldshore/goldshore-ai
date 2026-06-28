@@ -65,27 +65,44 @@ type FormConfig = {
   updatedAt: string;
 };
 
-type ApiResponseBody = {
-  success: boolean;
-  code: string;
-  message: string;
-  submissionId?: string;
-  redirectTo?: string;
+type ApiSuccessPayload = {
+  ok: true;
+  submissionId: string;
+  redirectTo: string;
+  mail: {
+    notification: 'sent' | 'failed' | 'skipped';
+    autoResponder: 'sent' | 'failed' | 'skipped';
+  };
 };
 
-const jsonResponse = (status: number, body: ApiResponseBody) =>
-  new Response(JSON.stringify(body), {
+type ApiErrorPayload = {
+  ok: false;
+  error: {
+    code: string;
+    message: string;
+    details?: Record<string, unknown>;
+  };
+};
+
+const jsonResponse = (payload: ApiSuccessPayload | ApiErrorPayload, status = 200) =>
+  new Response(JSON.stringify(payload), {
     status,
     headers: {
       'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'no-store',
     },
   });
 
-const requestExpectsJson = (request: Request) => {
-  const accept = request.headers.get('accept') ?? '';
-  const requestedWith = request.headers.get('x-requested-with') ?? '';
-  return accept.includes('application/json') || requestedWith === 'XMLHttpRequest';
-};
+const buildError = (
+  status: number,
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+) => jsonResponse({ ok: false, error: { code, message, details } }, status);
+
+const shouldReturnJson = (request: Request) =>
+  request.headers.get('x-gs-request-mode') === 'spa' ||
+  request.headers.get('accept')?.includes('application/json');
 
 const storeInKv = async (
   kv: KVNamespace,
@@ -333,45 +350,6 @@ const safeRedirect = (redirectTo: string | null, origin: string) => {
   return new URL(trimmed, origin);
 };
 
-type ApiSuccessPayload = {
-  ok: true;
-  submissionId: string;
-  redirectTo: string;
-  mail: {
-    notification: 'sent' | 'failed' | 'skipped';
-    autoResponder: 'sent' | 'failed' | 'skipped';
-  };
-};
-
-type ApiErrorPayload = {
-  ok: false;
-  error: {
-    code: string;
-    message: string;
-    details?: Record<string, unknown>;
-  };
-};
-
-const jsonResponse = (payload: ApiSuccessPayload | ApiErrorPayload, status = 200) =>
-  new Response(JSON.stringify(payload), {
-    status,
-    headers: {
-      'content-type': 'application/json; charset=utf-8',
-      'cache-control': 'no-store',
-    },
-  });
-
-const buildError = (
-  status: number,
-  code: string,
-  message: string,
-  details?: Record<string, unknown>,
-) => jsonResponse({ ok: false, error: { code, message, details } }, status);
-
-const shouldReturnJson = (request: Request) =>
-  request.headers.get('x-gs-request-mode') === 'spa' ||
-  request.headers.get('accept')?.includes('application/json');
-
 const parseNotificationRecipients = (
   configRecipients: FormRecipient[],
   fallbackRecipients: string | undefined,
@@ -482,7 +460,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     dedupeKey: extractString(formData.get('dedupeKey')),
   };
 
-  const env = locals.runtime?.env as Env | undefined;
+  const normalizedSubmission = normalizeContactSubmission(submission);
 
   if (isSpam) {
     console.info('contact_submission_spam_blocked', {
@@ -548,11 +526,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
         fields: missingFields.map((field) => field.name)
       });
     }
-    console.info('contact_submission_validation_failed', {
-      submissionId: submission.id,
-      formType,
-      missingFields: missingFields.map((field) => field.name),
-    });
     return buildError(400, 'missing_required_fields', 'Missing required fields.', {
       fields: missingFields.map((field) => field.name),
     });
@@ -592,7 +565,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
   );
 
   if (!storedSuccessfully) {
-    console.error('Contact submission storage failed.', storageResults);
     console.error('contact_submission_persistence_failed', {
       submissionId: submission.id,
       formType,
@@ -693,9 +665,4 @@ export const POST: APIRoute = async ({ request, locals }) => {
   return Response.redirect(redirectUrl, 303);
 };
 
-export const GET: APIRoute = async () =>
-  jsonResponse(405, {
-    success: false,
-    code: 'METHOD_NOT_ALLOWED',
-    message: 'Method not allowed.',
-  });
+export const GET: APIRoute = async () => buildError(405, 'METHOD_NOT_ALLOWED', 'Method not allowed.');

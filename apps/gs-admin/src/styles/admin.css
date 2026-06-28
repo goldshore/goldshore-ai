@@ -196,3 +196,19 @@
   .gs-admin-page     { padding: 20px 16px; }
   .gs-metric-grid    { grid-template-columns: 1fr 1fr; }
 }
+
+/* ── Sidebar trading nav group ── */
+.gs-nav-group-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(156, 163, 175, 0.5);
+  font-family: var(--font-family-mono, monospace);
+  padding: 1rem var(--gs-space-4, 1rem) 0.25rem;
+  margin-top: 0.5rem;
+}
+
+.gs-nav-block--sub {
+  padding-left: calc(var(--gs-space-4, 1rem) + 0.75rem);
+  font-size: 0.82rem;
+}

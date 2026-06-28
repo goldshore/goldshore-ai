@@ -5,7 +5,7 @@
 # PRIORITY 1 — CF ACCESS SECURITY FIX (CRITICAL)
 # ══════════════════════════════════════════════════════════════
 # PROBLEM: "Require Login" policy = non_identity + everyone = NO REAL AUTH
-# Anyone who hits admin.goldshore.ai and any other CF Access app gets in.
+# Anyone who hits admin.goldshore.ai, admin-preview.goldshore.ai, and any other CF Access app gets in.
 #
 # FIX — Zero Trust → Access → Policies → "Require Login" → Edit:
 #   Change from:
@@ -15,13 +15,15 @@
 #     Rule type: identity (not non_identity)
 #     Include: Emails ending in: @goldshore.ai
 #     Include: Specific email: marstonr6@gmail.com
+#     Apply the same identity-based allowlist to admin.goldshore.ai and admin-preview.goldshore.ai
 #     Auth method: Google GoldShore Workspace OR GitHub
 #
-# Also: Create a REUSABLE policy to replace the 8 legacy non-reusable ones:
-#   Name: "GoldShore Team Access"
-#   Include: Email domain = goldshore.ai
-#   Include: Specific emails: marstonr6@gmail.com
-#   Require: Identity provider = Google GoldShore Workspace
+# Also: Create reusable policies to replace the 8 legacy non-reusable ones,
+# using docs/domains-and-auth.md as the only per-app IdP source of truth.
+# Do not copy separate IdP lists into this remediation runbook. For personal
+# Gmail access without Workspace membership, the canonical matrix requires
+# either email OTP for marstonr6@gmail.com or a GitHub identity whose verified
+# email is marstonr6@gmail.com.
 
 # ══════════════════════════════════════════════════════════════
 # PRIORITY 2 — DELETE STALE CF ACCESS APPLICATIONS
@@ -31,7 +33,7 @@
 #   - gs-gateway Workers (x2)
 #   - gs-api Workers (x2)
 #   - goldshore-core Workers (x2)
-#   - gs-agent Workers (x2 — keep one if you want agent protected)
+#   - gs-agent Workers (x2 — delete stale direct Access apps; agent.goldshore.ai is gateway-owned)
 #   - banproof-me Workers (x2 — public site, shouldn't be CF Access protected)
 #   - goldshore-monorepo Pages (x1 — separate account, not needed here)
 #
@@ -53,9 +55,11 @@
 # NOTE: gs-gateway Pages project is pointing at gs-admin.pages.dev — WRONG NAME
 #       gs-gateway is the ACTUAL gateway worker. Route gw.goldshore.ai to gs-gateway.
 
-## agent.goldshore.ai → gs-agent Worker
-# Dashboard: Workers & Pages → gs-agent → Settings → Domains & Routes → Add Custom Domain
-#   Domain: agent.goldshore.ai
+## agent.goldshore.ai → gs-gateway Worker → gs-agent service binding
+# Ownership decision: agent.goldshore.ai/* is a public Worker route on gs-gateway.
+# Keep the route in apps/gs-gateway/wrangler.toml and keep apps/gs-agent/wrangler.toml route-free.
+# Do NOT add a direct custom domain or Worker route for agent.goldshore.ai on gs-agent.
+# gs-gateway forwards agent.goldshore.ai traffic to gs-agent through the AGENT service binding.
 
 # ══════════════════════════════════════════════════════════════
 # PRIORITY 4 — EMAIL ROUTING FIXES
@@ -149,7 +153,7 @@
 # goldshore.org     → goldshore-org Pages (goldshore/goldshore.github.io) — LIVE ✓
 # api.goldshore.ai  → gs-api Worker — NEEDS custom domain added
 # gw.goldshore.ai   → gs-gateway Worker — NEEDS custom domain added
-# admin.goldshore.ai → goldshore-admin Pages (CF Access) — LIVE, fix policy
+# admin.goldshore.ai and admin-preview.goldshore.ai → goldshore-admin Pages (CF Access) — LIVE, fix identity-based allow policy
 # agent.goldshore.ai → gs-agent Worker — NEEDS custom domain added
 # mail.goldshore.ai  → gs-mail Worker — LIVE ✓
 # banproof.me       → banproof-me Worker — fix build first

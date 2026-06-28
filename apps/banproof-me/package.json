@@ -4,12 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev src/index.ts --bundle",
-    "deploy": "wrangler deploy --env prod --bundle",
-    "build": "wrangler deploy --env prod --dry-run --outdir=dist --bundle"
+    "dev": "wrangler dev src/index.ts --bundle --config wrangler.toml",
+    "deploy": "wrangler deploy --env prod --bundle --config wrangler.toml",
+    "build": "wrangler deploy --env prod --dry-run --outdir=dist --bundle --config wrangler.toml"
   },
   "dependencies": {
-    "hono": "^4.10.2"
+    "hono": "^4.12.25"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260421.1",

@@ -21,10 +21,12 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Verify INFRASTRUCTURE.md exists
-        run: test -f infra/INFRASTRUCTURE.md || (echo "FAIL: infra/INFRASTRUCTURE.md is missing" && exit 1)
+        run: |
+          test -f infra/INFRASTRUCTURE.md || (echo "FAIL: infra/INFRASTRUCTURE.md is missing" && exit 1)
 
       - name: Verify branch-protection.json exists
-        run: test -f infra/branch-protection.json || (echo "FAIL: infra/branch-protection.json is missing" && exit 1)
+        run: |
+          test -f infra/branch-protection.json || (echo "FAIL: infra/branch-protection.json is missing" && exit 1)
 
       - name: Verify all wrangler configs reference canonical worker names
         run: |
@@ -152,20 +154,20 @@ jobs:
       - name: Verify Cloudflare credentials
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_BUILD_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
         run: |
           test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "Missing: CLOUDFLARE_ACCOUNT_ID" && exit 1)
-          test -n "$CLOUDFLARE_BUILD_API_TOKEN" || (echo "Missing: CLOUDFLARE_BUILD_API_TOKEN" && exit 1)
+          test -n "$CLOUDFLARE_API_TOKEN" || (echo "Missing: CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN" && exit 1)
 
       - name: Audit live Cloudflare state against manifest
         env:
-          CLOUDFLARE_BUILD_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           python3 - <<'PY'
           import json, os, urllib.request, urllib.error
 
-          TOKEN = os.environ["CLOUDFLARE_BUILD_API_TOKEN"]
+          TOKEN = os.environ["CLOUDFLARE_API_TOKEN"]
           ACCOUNT = os.environ["CLOUDFLARE_ACCOUNT_ID"]
 
           def cf_get(path):
@@ -192,20 +194,21 @@ jobs:
           with open("infra/INFRASTRUCTURE.md") as f:
               manifest = f.read()
 
-          # Extract worker names only from the Workers section
+          # Extract worker names from canonical Workers section (fail if found outside this)
           import re
-          workers_section = re.search(r"(?ms)^## Workers\s*$\n(.*?)(?=^## |\Z)", manifest)
+          workers_section = re.search(r"(?ms)^## Workers \(canonical[^\n]*\n(.*?)(?=^## |\Z)", manifest)
           if not workers_section:
-              raise SystemExit("Could not find '## Workers' section in infra/INFRASTRUCTURE.md")
+              raise SystemExit("Could not find '## Workers (canonical' section in infra/INFRASTRUCTURE.md")
           canonical = sorted(set(re.findall(r"\| `([a-z0-9_-]+)` \|", workers_section.group(1))))
 
-          print(f"Live workers:     {live_names}")
+          print(f"Live workers:      {live_names}")
           print(f"Canonical workers: {canonical}")
 
           unknown = set(live_names) - set(canonical)
           if unknown:
-              print(f"WARNING: Unrecognized workers in account: {unknown}")
-              print("These workers are NOT in infra/INFRASTRUCTURE.md — audit required.")
+              print(f"ERROR: Unrecognized workers in account: {unknown}")
+              print("These workers are NOT in the canonical set — complete Gate 1 in infra/INFRASTRUCTURE.md")
+              print("to delete or promote each worker before this audit will pass.")
               raise SystemExit("Failing audit: unrecognized workers must not exist in the account.")
 
           print("Cloudflare live state audit complete.")
