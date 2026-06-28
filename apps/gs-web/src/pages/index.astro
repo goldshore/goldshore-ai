@@ -1,139 +1,784 @@
 ---
+import Logo from '../components/brand/Logo.astro';
+import ParallaxHero from '../components/hero/ParallaxHero.astro';
+import RiskRadar from '../components/RiskRadar.astro';
 import WebLayout from '../layouts/WebLayout.astro';
 
 export const prerender = true;
 
-const platformCards = [
+const trustMetrics = [
   {
-    title: 'Risk Radar',
-    body: 'Real-time risk awareness, signal monitoring, sector mapping, and decision-support tooling for fast-moving environments.',
+    label: 'Audit readiness',
+    value: '100%',
+    context: 'Control workflows mapped',
+    detail:
+      'Decision checkpoints, reviewer ownership, and evidence logs are defined from day one.',
   },
   {
-    title: 'Sentinel',
-    body: 'Persistent monitoring infrastructure for alerts, anomalies, system health, access events, and operational continuity.',
+    label: 'Incident response',
+    value: '< 15 min',
+    context: 'Mean triage handoff',
+    detail:
+      'Risk, compliance, and operations teams share the same runtime timeline and escalation logic.',
   },
   {
-    title: 'AI Oracle',
-    body: 'A structured intelligence interface for querying systems, documents, markets, workflows, and decision histories.',
-  },
-  {
-    title: 'Workflow Engine',
-    body: 'Automation pipelines for intake, routing, review, escalation, fulfillment, and reporting.',
-  },
-  {
-    title: 'Operator Infrastructure',
-    body: 'Resilient digital systems for founders, analysts, administrators, and teams operating across fragmented tools.',
+    label: 'Decision evidence',
+    value: '7 years',
+    context: 'Trace retention policy',
+    detail:
+      'Every critical AI action is preserved for regulatory review and internal post-incident analysis.',
   },
 ];
 
-const serviceCards = [
-  { title: 'Digital Strategy', body: 'Roadmaps, system audits, product positioning, automation planning, and operational architecture.' },
-  { title: 'AI Implementation', body: 'Practical AI integration for internal tools, document workflows, customer operations, research, and reporting.' },
-  { title: 'Systems Integration', body: 'Connecting websites, databases, APIs, CRMs, analytics, cloud services, and internal dashboards.' },
-  { title: 'Design & Development', body: 'Web platforms, landing pages, dashboards, internal portals, prototypes, and product interfaces.' },
-  { title: 'Consulting', body: 'Strategic advisory for founders, operators, analysts, and teams navigating digital complexity.' },
+const capabilities = [
+  {
+    title: 'Model oversight workflows',
+    body: 'Route high-risk model outputs to human review with clear ownership, service levels, and escalation paths.',
+  },
+  {
+    title: 'Real-time risk operations',
+    body: 'Monitor production behavior, detect drift, and trigger playbooks before edge-case failures become incidents.',
+  },
+  {
+    title: 'Audit-ready evidence trails',
+    body: 'Capture decisions, thresholds, and interventions in a format compliance teams can review without translation.',
+  },
+  {
+    title: 'Traceable architecture',
+    body: 'Every workflow is built around auditable services, operator checkpoints, and clear system states.',
+  },
+  {
+    title: 'Proven controls',
+    body: 'Controls are demonstrated in live use with logs, thresholds, review modes, and fallback paths.',
+  },
 ];
 
-const ventureCards = [
-  { title: 'BanProof', body: 'Consumer protection, dispute recovery, account resilience, and escalation tooling for users navigating platform failure.' },
-  { title: 'GearSwipe', body: 'Commerce intelligence, resale workflows, affiliate infrastructure, product discovery, and market-routing automation.' },
-  { title: 'Risk Radar', body: 'Financial and operational signal tooling for markets, sectors, volatility, and asymmetric decision environments.' },
-  { title: 'Future Schemas', body: 'A research layer for emerging product categories, novel data structures, automation models, and operator-first intelligence systems.' },
-];
-
-const intelligenceCards = [
-  { title: 'Financial Signals', body: 'Market movement, sector risk, ticker monitoring, macro events, and volatility-aware signal interpretation.' },
-  { title: 'Risk Tooling', body: 'Systems for identifying exposure, operational fragility, platform dependency, and decision bottlenecks.' },
-  { title: 'Reports', body: 'Briefings, audits, research notes, product maps, technical documentation, and strategic summaries.' },
-  { title: 'Market Systems', body: 'Tools and frameworks for understanding how capital, attention, infrastructure, and behavior move together.' },
+const proofPoints = [
+  {
+    title: 'Human-in-the-loop by default',
+    body: 'Every high-stakes model decision routes through a configured review step before action is taken.',
+  },
+  {
+    title: 'Full observability stack',
+    body: 'Events, thresholds, and evidence logs are captured at runtime and retained for regulatory review.',
+  },
+  {
+    title: 'Controlled deployment posture',
+    body: 'Staged rollouts, feature flags, and rollback paths are wired into the deployment pipeline from day one.',
+  },
 ];
 ---
 
 <WebLayout
-  title="GoldShore | Applied Intelligence Systems"
-  description="Institutional AI systems, risk tooling, and resilient operator infrastructure."
+  title="GoldShore | Infrastructure for High-Trust AI"
+  description="GoldShore builds resilient decision systems, risk tooling, and operator infrastructure."
   canonicalPath="/"
+  ogTitle="GoldShore.ai | Resilient AI Infrastructure for High-Trust Teams"
+  ogDescription="Turn volatile AI operations into auditable, operator-ready systems. Request a briefing to accelerate reliable deployment."
 >
-  <main class="home">
-    <section class="hero" id="top">
-      <p class="kicker">Applied Intelligence · Digital Systems · Consulting</p>
-      <h1>Applied intelligence systems for operators, institutions, and resilient digital infrastructure.</h1>
-      <p class="lead">GoldShore builds AI-enabled platforms, risk tooling, workflow systems, and digital strategy infrastructure for teams that need clarity, control, and durable execution.</p>
-      <p class="trust">Cross-sector. Full-stack. Built to last.</p>
-      <div class="actions">
-        <a href="#platform" class="btn btn-primary">Explore Platform</a>
-        <a href="#contact" class="btn">Start a Consultation</a>
+  <main class="home-page">
+    <ParallaxHero
+      eyebrow="AI risk operations for financial services"
+      headline={"Control AI Decisions.\nPass Every Review."}
+      sub="GoldShore gives risk and compliance leaders a single operating layer to monitor model behavior, escalate exceptions, and prove governance in every audit."
+      ctaPrimary={{ label: 'Book a risk review', href: '/contact' }}
+      ctaSecondary={{ label: 'See services', href: '/services' }}
+      ctaPrimaryEventName="hero_primary_contact_click"
+      ctaSecondaryEventName="hero_secondary_services_click"
+    />
+
+    <section class="metrics-shell gs-shell-section" aria-label="Proof metrics">
+      <div class="section-copy">
+        <p class="gs-eyebrow">Proof metrics</p>
+        <h2>Operational outcomes with explicit source notes.</h2>
+        <p class="section-intro">
+          These figures reflect current measured performance. Each metric includes
+          a direct source note and one clear next step to review your own baseline.
+        </p>
+        <a href="/contact" class="hero-button hero-button--primary">
+          Review your baseline metrics
+        </a>
+      </div>
+      <div class="metrics-grid" data-metrics-grid>
+        {trustMetrics.map((metric) => (
+          <article class="signal-tile signal-tile--loading" aria-live="polite">
+            <div class="signal-tile__header">
+              <span>{metric.label}</span>
+              <small>{metric.context}</small>
+            </div>
+            <strong>{metric.value}</strong>
+            <p>{metric.detail}</p>
+          </article>
+        ))}
       </div>
     </section>
 
-    <section id="platform" class="section">
-      <h2>Platform</h2>
-      <p class="intro">A modular intelligence layer for risk sensing, workflow automation, signal interpretation, and operator support.</p>
-      <div class="grid">{platformCards.map((card) => <article class="card"><h3>{card.title}</h3><p>{card.body}</p></article>)}</div>
-    </section>
-
-    <section id="services" class="section">
-      <h2>Services</h2>
-      <p class="intro">GoldShore helps organizations design, implement, and stabilize intelligent systems across strategy, automation, infrastructure, and interface design.</p>
-      <div class="grid">{serviceCards.map((card) => <article class="card"><h3>{card.title}</h3><p>{card.body}</p></article>)}</div>
-    </section>
-
-    <section id="ventures" class="section">
-      <h2>Ventures</h2>
-      <p class="intro">GoldShore develops product concepts and independent systems around defensible workflows, market inefficiencies, and high-friction digital problems.</p>
-      <div class="grid">{ventureCards.map((card) => <article class="card"><h3>{card.title}</h3><p>{card.body}</p></article>)}</div>
-    </section>
-
-    <section id="intelligence" class="section">
-      <h2>Intelligence</h2>
-      <p class="intro">GoldShore treats information as infrastructure: something to be structured, monitored, interpreted, and deployed.</p>
-      <div class="grid">{intelligenceCards.map((card) => <article class="card"><h3>{card.title}</h3><p>{card.body}</p></article>)}</div>
-    </section>
-
-    <section id="why" class="section">
-      <h2>Built for operators who need systems that hold.</h2>
-      <p class="intro">Most digital systems are fragmented, reactive, and dependent on scattered tools. GoldShore designs intelligence infrastructure that helps teams see what matters, automate what repeats, and preserve control when complexity increases.</p>
-      <div class="three-col">
-        <article class="card"><h3>Clarity</h3><p>Turn scattered inputs into structured signals, dashboards, workflows, and decisions.</p></article>
-        <article class="card"><h3>Control</h3><p>Design systems that reduce dependency, preserve auditability, and support operational continuity.</p></article>
-        <article class="card"><h3>Durability</h3><p>Build platforms and processes that can evolve across markets, tools, teams, and technology cycles.</p></article>
+    <section
+      class="section-block gs-shell-section"
+      aria-labelledby="capabilities-title"
+    >
+      <div class="section-copy">
+        <p class="gs-eyebrow">Capabilities</p>
+        <h2 id="capabilities-title">
+          One platform for risk, compliance, and model operations.
+        </h2>
+        <p class="section-intro">
+          Replace fragmented monitoring and manual follow-up with governed AI
+          workflows your control functions can trust.
+        </p>
+        <a href="/contact" class="hero-button hero-button--primary">
+          Map capabilities to your KPI
+        </a>
+      </div>
+      <div class="capability-grid">
+        {capabilities.map((capability) => (
+          <article class="capability-card">
+            <h3>{capability.title}</h3>
+            <p>{capability.body}</p>
+          </article>
+        ))}
       </div>
     </section>
 
-    <section id="company" class="section">
-      <h2>Company</h2>
-      <p class="intro">GoldShore is an applied intelligence and digital systems company focused on AI implementation, risk tooling, workflow infrastructure, and strategic consulting.</p>
-      <div class="grid simple-links">
-        <a href="/about" class="card"><h3>About</h3></a>
-        <a href="/team" class="card"><h3>Team</h3></a>
-        <a href="/developer" class="card"><h3>Developer Hub</h3></a>
-        <a href="/status" class="card"><h3>Status</h3></a>
+    <section
+      class="section-block gs-shell-section"
+      aria-labelledby="risk-radar-title"
+    >
+      <div class="section-copy">
+        <p class="gs-eyebrow">Risk Radar</p>
+        <h2 id="risk-radar-title">
+          A shared risk picture for operations and governance teams.
+        </h2>
+        <p class="section-intro">
+          Surface model drift, policy breaches, and escalation status in one
+          live view so reviewers can act quickly and consistently.
+        </p>
+      </div>
+      <RiskRadar />
+    </section>
+
+    <section
+      class="section-block gs-shell-section architecture-section"
+      aria-labelledby="proof-title"
+    >
+      <div class="section-copy">
+        <p class="gs-eyebrow">Architecture / Proof</p>
+        <h2 id="proof-title">Governance that works in real production pressure.</h2>
+      </div>
+      <div class="proof-grid">
+        {proofPoints.map((point) => (
+          <article class="proof-card">
+            <h3>{point.title}</h3>
+            <p>{point.body}</p>
+          </article>
+        ))}
+        <article class="proof-card proof-card--metrics">
+          <div>
+            <span>Review posture</span>
+            <strong>Human oversight by default</strong>
+          </div>
+          <div>
+            <span>Observability</span>
+            <strong>Events, thresholds, evidence</strong>
+          </div>
+          <div>
+            <span>Deployment tone</span>
+            <strong>Controlled, audit-ready</strong>
+          </div>
+        </article>
       </div>
     </section>
 
-    <section id="contact" class="section contact">
-      <h2>Start with the system.</h2>
-      <p class="intro">Whether you need a platform audit, AI workflow, risk tool, website, dashboard, or product strategy map, GoldShore can help structure the next layer.</p>
-      <a class="btn btn-primary" href="/contact">Request Consultation</a>
+    <section
+      class="section-block gs-shell-section compact-team"
+      aria-labelledby="team-title"
+    >
+      <div class="section-copy">
+        <p class="gs-eyebrow">Team</p>
+        <h2 id="team-title">
+          Built by operators focused on resilient systems and applied
+          intelligence.
+        </h2>
+      </div>
+      <div class="team-row">
+        <article class="team-card team-card--founder">
+          <h3>Robert M.</h3>
+          <p>Leads product direction, systems strategy, and applied intelligence.</p>
+        </article>
+        <article class="team-card">
+          <h3>Systems</h3>
+          <p>Infrastructure, execution, observability.</p>
+        </article>
+        <article class="team-card">
+          <h3>Risk</h3>
+          <p>Monitoring, analytics, decision systems.</p>
+        </article>
+      </div>
     </section>
+
+    <footer
+      class="section-block gs-shell-section contact-cta"
+      aria-labelledby="contact-cta-title"
+    >
+      <div>
+        <p class="gs-eyebrow">Next step</p>
+        <h2 id="contact-cta-title">
+          Need a deeper implementation view? Visit our services overview.
+        </h2>
+        <p>
+          We will translate your current workflow into a measured implementation
+          plan with instrumentation requirements and review checkpoints.
+        </p>
+      </div>
+      <a
+        href="/contact"
+        class="hero-button hero-button--primary"
+        data-analytics-event="homepage_cta_bottom_click"
+      >
+        Talk with GoldShore
+      </a>
+    </footer>
   </main>
 
+  <script>
+    import { trackEvent } from '../scripts/analytics';
+    import { initWave } from '../scripts/init-wave';
+    import { initLogo } from '../scripts/init-logo-reactive';
+
+    let homeCleanup;
+
+    const cleanup = () => {
+      homeCleanup?.();
+      homeCleanup = undefined;
+    };
+
+    const hydrateMetrics = () => {
+      const cards = document.querySelectorAll('.signal-tile--loading');
+      const reduceMotion = window.matchMedia(
+        '(prefers-reduced-motion: reduce)',
+      ).matches;
+
+      window.setTimeout(
+        () => cards.forEach((card) => card.classList.remove('signal-tile--loading')),
+        reduceMotion ? 0 : 650,
+      );
+    };
+
+    const boot = () => {
+      cleanup();
+      hydrateMetrics();
+
+      const canvas = document.getElementById('wave-bg');
+      const logo = document.querySelector('.gs-logo-reactive');
+      const isReactiveLogo =
+        logo instanceof HTMLElement || logo instanceof SVGElement;
+
+      if (!(canvas instanceof HTMLCanvasElement) || !isReactiveLogo) return;
+
+      const wave = initWave(canvas);
+      const destroyLogo = initLogo(logo, wave);
+
+      homeCleanup = () => {
+        destroyLogo?.();
+        wave.destroy();
+      };
+    };
+
+    const root = document.documentElement;
+    const ctaEventNames = {
+      heroPrimary: 'hero_primary_contact_click',
+      heroSecondary: 'hero_secondary_services_click',
+      footerSecondary: 'footer_secondary_services_click',
+    };
+
+    const bindCtaEvents = () => {
+      const ctaNodes = document.querySelectorAll('[data-cta-event]');
+      ctaNodes.forEach((node) => {
+        if (!(node instanceof HTMLElement) || node.dataset.ctaBound === 'true') return;
+        const eventName = node.dataset.ctaEvent;
+        if (!eventName) return;
+
+        node.dataset.ctaBound = 'true';
+        node.addEventListener('click', () => {
+          window.dispatchEvent(
+            new CustomEvent('gs:cta-click', {
+              detail: { eventName, location: node.closest('footer') ? 'footer' : 'hero' },
+            }),
+          );
+        });
+      });
+    };
+
+    if (root.dataset.gsHomeHeroBound !== 'true') {
+      root.dataset.gsHomeHeroBound = 'true';
+      document.addEventListener('astro:before-swap', cleanup);
+      document.addEventListener('astro:page-load', boot);
+      document.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+
+        const cta = target.closest('[data-analytics-id]');
+        if (!(cta instanceof HTMLElement)) return;
+
+        const ctaId = cta.dataset.analyticsId;
+        if (!ctaId || !ctaId.startsWith('homepage-')) return;
+
+        trackEvent(
+          'homepage_cta_click',
+          {
+            cta_id: ctaId,
+            page_path: window.location.pathname,
+          },
+          { debounceKey: `homepage_cta_click:${ctaId}`, debounceMs: 1200 },
+        );
+      });
+    }
+
+    boot();
+    bindCtaEvents();
+    void ctaEventNames;
+  </script>
+
   <style>
-    .home { width: min(1100px, 92vw); margin: 0 auto; padding: 5rem 0 6rem; color: #f5f7fb; }
-    .hero { padding: 4rem 0 3rem; border-bottom: 1px solid rgba(255,255,255,.12); }
-    .kicker { color: #d8b56b; text-transform: uppercase; letter-spacing: .12em; font-size: .8rem; }
-    h1 { font-size: clamp(2rem, 5vw, 3.8rem); line-height: 1.05; max-width: 15ch; }
-    .lead,.intro { color: rgba(232,236,247,.82); max-width: 72ch; line-height: 1.7; }
-    .trust { color: #b8c5dd; font-weight: 600; }
-    .actions { display: flex; gap: .75rem; flex-wrap: wrap; margin-top: 1.25rem; }
-    .btn { border: 1px solid rgba(216,181,107,.45); color: #edf2ff; border-radius: 999px; padding: .7rem 1.05rem; text-decoration: none; }
-    .btn-primary { background: rgba(216,181,107,.15); border-color: #d8b56b; }
-    .section { padding: 3.5rem 0 1rem; }
-    h2 { font-size: clamp(1.7rem, 3vw, 2.5rem); margin-bottom: .65rem; }
-    .grid, .three-col { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); margin-top: 1.1rem; }
-    .card { background: rgba(16,20,30,.78); border: 1px solid rgba(154,171,201,.22); border-radius: 14px; padding: 1rem; text-decoration: none; color: inherit; }
-    .card h3 { margin: 0 0 .5rem; font-size: 1.05rem; }
-    .card p { margin: 0; color: rgba(226,233,247,.8); line-height: 1.6; }
-    .contact { padding-bottom: 4rem; }
+    .home-page {
+      padding-bottom: var(--gs-space-10);
+    }
+
+    .hero {
+      position: relative;
+      min-height: min(92vh, 960px);
+      display: grid;
+      align-items: end;
+      overflow: hidden;
+      border-bottom: 1px solid var(--gs-border);
+    }
+
+    #wave-bg,
+    .hero-grid,
+    .hero::after {
+      position: absolute;
+      inset: 0;
+    }
+
+    #wave-bg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .hero-grid {
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+      background-size: 72px 72px;
+      mask-image: radial-gradient(circle at 50% 30%, black 30%, transparent 80%);
+      opacity: 0.5;
+    }
+
+    .hero::after {
+      content: '';
+      background:
+        radial-gradient(circle at 25% 20%, rgba(90, 162, 255, 0.18), transparent 28%),
+        linear-gradient(180deg, rgba(7, 11, 20, 0.18), rgba(7, 11, 20, 0.84));
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .hero-mark {
+      position: absolute;
+      inset: 18% auto auto clamp(1rem, 7vw, 6rem);
+      z-index: 1;
+    }
+
+    .gs-logo-reactive {
+      width: clamp(72px, 11vw, 120px);
+      height: auto;
+      color: var(--gs-primary);
+      will-change: transform, filter;
+    }
+
+    .hero-shell,
+    .section-block,
+    .metrics-shell,
+    .signal-strip {
+      width: min(100% - 2rem, var(--gs-max-width));
+      margin: 0 auto;
+    }
+
+    .hero-shell {
+      position: relative;
+      z-index: 2;
+      padding: clamp(7rem, 12vh, 10rem) 0 1.75rem;
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr);
+      gap: clamp(1.5rem, 4vw, 4rem);
+      align-items: end;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.85rem;
+      border: 1px solid rgba(90, 162, 255, 0.22);
+      border-radius: 999px;
+      background: rgba(90, 162, 255, 0.1);
+      color: #dcedff;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .hero-content h1,
+    .section-copy h2,
+    .contact-cta h2 {
+      margin: 1rem 0;
+      font-size: clamp(2.7rem, 7vw, 5.4rem);
+      line-height: 0.98;
+      letter-spacing: -0.045em;
+      color: #fff;
+      text-wrap: balance;
+    }
+
+    .hero-content p,
+    .section-copy p,
+    .hero-panel li,
+    .proof-card p,
+    .team-card p,
+    .contact-cta p,
+    .signal-tile p {
+      color: rgba(233, 238, 252, 0.82);
+      line-height: 1.72;
+      font-size: 1rem;
+    }
+
+    .hero-lead {
+      max-width: 34rem;
+      font-size: clamp(1.08rem, 0.98rem + 0.45vw, 1.3rem);
+      color: rgba(248, 251, 255, 0.95);
+    }
+
+    .hero-supporting-copy,
+    .section-intro {
+      max-width: 42rem;
+      color: rgba(233, 238, 252, 0.72);
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: var(--gs-space-4);
+      flex-wrap: wrap;
+      margin-top: var(--gs-space-6);
+    }
+
+    .hero-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.9rem 1.2rem;
+      border-radius: 999px;
+      border: 1px solid var(--gs-border);
+      background: var(--gs-primary-soft);
+      color: var(--gs-text);
+      text-decoration: none;
+      transition:
+        transform 160ms ease,
+        border-color 160ms ease,
+        background 160ms ease;
+    }
+
+    .hero-button:hover,
+    .hero-button:focus-visible {
+      transform: translateY(-1px);
+      border-color: var(--gs-primary);
+      background: color-mix(in srgb, var(--gs-primary) 20%, transparent);
+    }
+
+    .hero-button--primary {
+      border-color: var(--gs-primary);
+      background: color-mix(in srgb, var(--gs-primary) 24%, transparent);
+      box-shadow: 0 18px 42px rgba(9, 17, 33, 0.28);
+    }
+
+    .hero-panel,
+    .signal-tile,
+    .capability-card,
+    .proof-card,
+    .team-card,
+    .contact-cta {
+      padding: var(--gs-space-6);
+      border-radius: var(--gs-radius-lg);
+      border: 1px solid var(--gs-border);
+      background: var(--gs-surface);
+      box-shadow: var(--gs-shadow);
+    }
+
+    .hero-panel {
+      border-color: var(--gs-border);
+      background: var(--gs-surface-strong);
+      backdrop-filter: blur(12px);
+    }
+
+    .hero-panel__heading h2 {
+      margin: 0.45rem 0 0.85rem;
+      font-size: clamp(1.65rem, 2.6vw, 2.1rem);
+      line-height: 1.1;
+      color: #fff;
+    }
+
+    .status-banner {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.95rem 1rem;
+      margin-bottom: 1rem;
+      border-radius: 18px;
+      border: 1px solid var(--gs-border);
+      background: var(--gs-primary-soft);
+    }
+
+    .status-banner strong {
+      display: block;
+      margin-bottom: 0.2rem;
+      color: #fff;
+    }
+
+    .status-banner p {
+      margin: 0;
+      color: rgba(233, 238, 252, 0.76);
+      font-size: 0.95rem;
+    }
+
+    .status-dot {
+      width: 0.72rem;
+      height: 0.72rem;
+      border-radius: 999px;
+      background: #47e3a7;
+      box-shadow: 0 0 0 rgba(71, 227, 167, 0.5);
+      animation: statusPulse 1.9s ease-out infinite;
+      flex-shrink: 0;
+      margin-top: 0.28rem;
+    }
+
+    .hero-panel ul {
+      margin: 0;
+      padding-left: 1.1rem;
+      display: grid;
+      gap: 0.85rem;
+    }
+
+    .signal-strip,
+    .metrics-grid,
+    .capability-grid,
+    .proof-grid,
+    .team-row {
+      display: grid;
+      gap: var(--gs-space-4);
+    }
+
+    .signal-strip {
+      margin-top: 1.25rem;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .metrics-shell {
+      position: relative;
+      z-index: 2;
+      padding-top: 1rem;
+      padding-bottom: 2rem;
+    }
+
+    .metrics-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .signal-tile {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .signal-tile__header,
+    .proof-card span {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .signal-tile span,
+    .proof-card span {
+      display: block;
+      color: rgba(233, 238, 252, 0.62);
+      font-size: 0.82rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .signal-tile small {
+      color: rgba(255, 255, 255, 0.78);
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .signal-tile strong,
+    .proof-card strong {
+      font-size: clamp(1.35rem, 1.05rem + 1vw, 2rem);
+      color: #fff;
+    }
+
+    .signal-tile p {
+      margin: 0.65rem 0 0;
+      color: rgba(233, 238, 252, 0.75);
+    }
+
+    .signal-link {
+      display: inline-flex;
+      margin-top: 0.85rem;
+      color: var(--gs-primary);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .signal-link:hover,
+    .signal-link:focus-visible {
+      color: #fff;
+    }
+
+    .signal-tile--loading > * {
+      opacity: 0.2;
+    }
+
+    .signal-tile--loading::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        110deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.08) 40%,
+        transparent 82%
+      );
+      transform: translateX(-100%);
+      animation: skeletonSweep 1.2s ease-in-out infinite;
+    }
+
+    .section-block {
+      padding-top: 4.5rem;
+    }
+
+    .section-copy {
+      margin-bottom: 1.5rem;
+      max-width: 60rem;
+    }
+
+    .section-copy h2 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      margin-top: 0.65rem;
+    }
+
+    .capability-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .proof-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .proof-card--metrics {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .team-row {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .team-card--founder {
+      border-color: rgba(90, 162, 255, 0.2);
+      background: rgba(90, 162, 255, 0.08);
+    }
+
+    .contact-cta {
+      display: flex;
+      justify-content: space-between;
+      gap: 1.5rem;
+      align-items: center;
+    }
+
+    @keyframes skeletonSweep {
+      to {
+        transform: translateX(100%);
+      }
+    }
+
+    @keyframes statusPulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(71, 227, 167, 0.48);
+      }
+
+      70% {
+        box-shadow: 0 0 0 12px rgba(71, 227, 167, 0);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(71, 227, 167, 0);
+      }
+    }
+
+    @media (max-width: 960px) {
+      .hero-shell,
+      .signal-strip,
+      .metrics-grid,
+      .capability-grid,
+      .proof-grid,
+      .team-row {
+        grid-template-columns: 1fr;
+      }
+
+      .contact-cta {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .hero-shell,
+      .signal-strip,
+      .metrics-shell,
+      .section-block {
+        width: min(100% - 1.5rem, var(--gs-max-width));
+      }
+
+      .hero-shell {
+        padding-top: 6rem;
+      }
+
+      .hero-mark {
+        inset: 12% auto auto 1rem;
+      }
+
+      .hero-actions,
+      .hero-button {
+        width: 100%;
+      }
+
+      .signal-tile__header,
+      .proof-card span {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hero-button,
+      .status-dot,
+      .signal-tile--loading::after {
+        animation: none;
+        transition: none;
+      }
+    }
+
   </style>
 </WebLayout>

@@ -25,48 +25,54 @@ workers_dev = false
 [env.prod]
 vars = { ENV = "production" }
 
-# 1. BANPROOF_KV — ban cache (fast IP / user lookups)
+# 1. BANPROOF_CONFIG — ban cache (fast IP / user lookups)
 [[env.prod.kv_namespaces]]
-binding = "BANPROOF_KV"
-id = "banproof_kv_001"
+binding = "BANPROOF_CONFIG"
+id = "714ee6be6df54291a4a4ade053e9f9ae"
 
 # 2. GOLDSHORE_KV — shared platform config / feature flags
 [[env.prod.kv_namespaces]]
 binding = "GOLDSHORE_KV"
-id = "goldshore_kv_001"
+id = "5f13370575784c9dacff522121104cb3"
 
-# 3. BAN_DB — gs_platform_db D1 (ban records, user reputation)
+# 3. PLATFORM_DB — gs_platform_db D1 (ban records, user reputation)
 [[env.prod.d1_databases]]
-binding = "BAN_DB"
+binding = "PLATFORM_DB"
 database_name = "gs_platform_db"
 database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
 
-# 4. AUDIT_DB — gs_audit_db D1 (compliance audit log)
+# 4. GS_AUDIT_DB — gs_audit_db D1 (compliance audit log)
 [[env.prod.d1_databases]]
-binding = "AUDIT_DB"
+binding = "GS_AUDIT_DB"
 database_name = "gs_audit_db"
 database_id = "1ae71d76-188f-481b-91d9-db2d39013f68"
 
-# 5. SIGNALS_DB — gs_signals_db D1 (trading signal association for ban context)
+# 5. GS_SIGNALS_DB — gs_signals_db D1 (trading signal association for ban context)
 [[env.prod.d1_databases]]
-binding = "SIGNALS_DB"
+binding = "GS_SIGNALS_DB"
 database_name = "gs_signals_db"
 database_id = "76af4653-7f44-417b-b46e-250143d906fd"
 
-# 6. ASSETS — shared R2 bucket (media / static assets)
+# 6. GS_ASSETS — shared R2 bucket (media / static assets)
 [[env.prod.r2_buckets]]
-binding = "ASSETS"
+binding = "GS_ASSETS"
 bucket_name = "gs-assets"
 
-# 7. TELEMETRY — R2 bucket for compliance telemetry / transaction logs
+# 7. GS_TELEMETRY — R2 bucket for compliance telemetry / transaction logs
 [[env.prod.r2_buckets]]
-binding = "TELEMETRY"
+binding = "GS_TELEMETRY"
 bucket_name = "gs-telemetry-storage"
 
-# 8. API_SERVICE — gs-api service binding (reputation lookups, user data)
+# 8. GS_API — gs-api service binding (reputation lookups, user data)
 [[env.prod.services]]
-binding = "API_SERVICE"
+binding = "GS_API"
 service = "gs-api"
+environment = "prod"
+
+# 9b. GS_CONTROL — gs-control service binding (operator plane)
+[[env.prod.services]]
+binding = "GS_CONTROL"
+service = "gs-control"
 environment = "prod"
 
 # 9. BAN_EVENTS — queue producer for async ban event processing
@@ -74,44 +80,55 @@ environment = "prod"
 binding = "BAN_EVENTS"
 queue = "ban-events"
 
+# POA_EVENTS_QUEUE — consumer for proof-of-action events
+[[env.prod.queues.consumers]]
+queue = "poa-events"
+max_batch_size = 10
+max_batch_timeout = 5
+
 [env.preview]
 vars = { ENV = "preview" }
 
 [[env.preview.kv_namespaces]]
-binding = "BANPROOF_KV"
-id = "banproof_kv_preview"
+binding = "BANPROOF_CONFIG"
+id = "714ee6be6df54291a4a4ade053e9f9ae"
 
 [[env.preview.kv_namespaces]]
 binding = "GOLDSHORE_KV"
-id = "goldshore_kv_preview"
+id = "5f13370575784c9dacff522121104cb3"
 
 [[env.preview.d1_databases]]
-binding = "BAN_DB"
+binding = "PLATFORM_DB"
 database_name = "gs_platform_db"
 database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
 
 [[env.preview.d1_databases]]
-binding = "AUDIT_DB"
+binding = "GS_AUDIT_DB"
 database_name = "gs_audit_db"
 database_id = "1ae71d76-188f-481b-91d9-db2d39013f68"
 
 [[env.preview.d1_databases]]
-binding = "SIGNALS_DB"
+binding = "GS_SIGNALS_DB"
 database_name = "gs_signals_db"
 database_id = "76af4653-7f44-417b-b46e-250143d906fd"
 
 [[env.preview.r2_buckets]]
-binding = "ASSETS"
+binding = "GS_ASSETS"
 bucket_name = "gs-assets"
 
 [[env.preview.r2_buckets]]
-binding = "TELEMETRY"
+binding = "GS_TELEMETRY"
 bucket_name = "gs-telemetry-storage"
 
 [[env.preview.services]]
-binding = "API_SERVICE"
+binding = "GS_API"
 service = "gs-api"
 environment = "preview"
+
+[[env.preview.services]]
+binding = "GS_CONTROL"
+service = "gs-control"
+environment = "prod"
 
 [[env.preview.queues.producers]]
 binding = "BAN_EVENTS"

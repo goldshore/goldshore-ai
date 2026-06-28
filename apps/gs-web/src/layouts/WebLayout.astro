@@ -8,12 +8,13 @@ import { HTML_CSP_META_FALLBACK } from '../security/policy';
 import { WEB_META_CSP } from '../utils/csp';
 
 const navLinks = [
-  { href: '/#platform', pathname: '/', label: 'Platform' },
-  { href: '/#services', pathname: '/', label: 'Services' },
-  { href: '/#ventures', pathname: '/', label: 'Ventures' },
-  { href: '/#intelligence', pathname: '/', label: 'Intelligence' },
-  { href: '/#company', pathname: '/', label: 'Company' },
-  { href: '/#contact', pathname: '/', label: 'Contact' },
+  { href: '/', label: 'Home' },
+  { href: '/about', label: 'About' },
+  { href: '/team', label: 'Team' },
+  { href: '/contact?inquiry=strategy-call', label: 'Book Strategy Call' },
+  { href: '/contact', label: 'Contact' },
+  { href: '/apps/risk-radar', label: 'Risk Radar' },
+  { href: '/developer', label: 'Developer Hub' },
 ];
 const footerLinks = [
   { href: '/legal/privacy', label: 'Privacy' },
@@ -82,7 +83,7 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
                 </a>
               ))}
             </div>
-            <a href="/contact" class="header-cta">Request Consultation</a>
+            <a href="/contact" class="header-cta">Request Briefing</a>
           </nav>
 
           <button
@@ -120,8 +121,8 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
             </div>
 
             <div class="menu-panel__actions">
-              <a href="/contact" class="header-cta header-cta--mobile">Request Consultation</a>
-              <a href="/services" class="menu-secondary-link">View Platform Services</a>
+              <a href="/contact" class="header-cta header-cta--mobile">Request Briefing</a>
+              <a href="/developer" class="menu-secondary-link">Open Developer Hub</a>
             </div>
           </div>
         </nav>

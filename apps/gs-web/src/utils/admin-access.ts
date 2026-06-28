@@ -59,7 +59,9 @@ const permissionForMethod = (
   writePermission: AdminPermission,
 ) => {
   const normalizedMethod = method.toUpperCase();
-  return normalizedMethod === 'GET' || normalizedMethod === 'HEAD' ? readPermission : writePermission;
+  return normalizedMethod === 'GET' || normalizedMethod === 'HEAD' || normalizedMethod === 'OPTIONS'
+    ? readPermission
+    : writePermission;
 };
 
 export const getAdminRouteRule = (
