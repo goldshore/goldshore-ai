@@ -57,11 +57,11 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
     {shouldRenderCspMeta && <meta http-equiv="Content-Security-Policy" content={HTML_CSP_META_FALLBACK} />}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon.png" type="image/png" sizes="32x32" />
-    <!-- Bolt: Preconnect to external origins to speed up resource loading -->
+    <!-- Preconnect to external origins to speed up resource loading -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
     <link rel="manifest" href="/site.webmanifest"/>
@@ -257,7 +257,7 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
         padding-inline: clamp(1rem, 3vw, 2rem);
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
-        background: rgba(8, 12, 22, 0.78);
+        background: rgba(5, 5, 7, 0.82);
         border-bottom: 1px solid rgba(255, 255, 255, 0.06);
       }
 
@@ -350,7 +350,7 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
       .desktop-nav__links a:hover,
       .desktop-nav__links a[aria-current='page'] {
         color: var(--gs-text);
-        background: rgba(90, 162, 255, 0.09);
+        background: rgba(217, 106, 50, 0.09);
       }
 
       .header-cta {
@@ -360,8 +360,8 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
         padding: 0.82rem 1.2rem;
         border-radius: 999px;
         text-decoration: none;
-        background: linear-gradient(135deg, rgba(90, 162, 255, 0.28), rgba(90, 162, 255, 0.16));
-        border: 1px solid rgba(90, 162, 255, 0.34);
+        background: linear-gradient(135deg, rgba(217, 106, 50, 0.42), rgba(217, 106, 50, 0.22));
+        border: 1px solid rgba(217, 106, 50, 0.5);
         color: var(--gs-text);
         font-weight: 700;
         white-space: nowrap;
@@ -371,7 +371,7 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
       .header-cta:hover,
       .header-cta:focus-visible {
         transform: translateY(-1px);
-        background: linear-gradient(135deg, rgba(90, 162, 255, 0.34), rgba(90, 162, 255, 0.2));
+        background: linear-gradient(135deg, rgba(217, 106, 50, 0.52), rgba(217, 106, 50, 0.30));
       }
 
       .menu-button,
@@ -388,7 +388,7 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
         gap: 4px;
         border-radius: 999px;
         border: 1px solid var(--gs-border);
-        background: rgba(90, 162, 255, 0.08);
+        background: rgba(217, 106, 50, 0.08);
         cursor: pointer;
       }
 
@@ -479,7 +479,7 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
       .menu-panel__links a[aria-current='page'] {
         color: var(--gs-text);
         border-color: var(--gs-border);
-        background: rgba(90, 162, 255, 0.08);
+        background: rgba(217, 106, 50, 0.08);
       }
 
       .menu-panel__actions {

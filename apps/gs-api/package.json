@@ -20,10 +20,10 @@
     "hono": "^4.12.25",
     "openai": "^6.34.0",
     "safe-stable-stringify": "^2.5.0",
-    "sanitize-html": "^2.17.4"
+    "sanitize-html": "^2.17.5"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260511.1",
+    "@cloudflare/workers-types": "^4.20260621.1",
     "tsx": "^4.7.1",
     "typescript": "^5.4.0",
     "wrangler": "^4.83.0"
