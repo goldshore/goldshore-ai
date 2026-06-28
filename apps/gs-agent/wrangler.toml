@@ -5,11 +5,6 @@ compatibility_flags = ["nodejs_compat"]
 
 workers_dev = false
 
-[[queues.consumers]]
-queue = "goldshore-jobs"
-max_batch_size = 10
-max_batch_timeout = 5
-
 [env.prod]
 routes = []
 
@@ -22,9 +17,25 @@ queue = "goldshore-jobs"
 max_batch_size = 10
 max_batch_timeout = 5
 
+[[env.prod.kv_namespaces]]
+binding = "AGENT_KV"
+id = "25a1eeba1de14e06af18c45b1b2c9743"
+
+[[env.prod.secrets_store.bindings]]
+binding = "SECRETS"
+store_id = "b9824d3280c54573a24137c7e7143b33"
+
 [env.preview]
 routes = []
 
 [env.preview.vars]
 ENV = "preview"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
+
+[[env.preview.kv_namespaces]]
+binding = "AGENT_KV"
+id = "25a1eeba1de14e06af18c45b1b2c9743"
+
+[[env.preview.secrets_store.bindings]]
+binding = "SECRETS"
+store_id = "b9824d3280c54573a24137c7e7143b33"
