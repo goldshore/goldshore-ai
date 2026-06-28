@@ -1,14 +1,11 @@
-name: Deploy gs-web
+name: Deploy gs-www-redirect
 
 on:
   push:
     branches: [main]
     paths:
-      - 'apps/gs-web/**'
-      - 'packages/**'
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'
-      - '.github/workflows/deploy-gs-web.yml'
+      - 'apps/gs-www-redirect/**'
+      - '.github/workflows/deploy-gs-www-redirect.yml'
   workflow_dispatch:
 
 jobs:
@@ -26,8 +23,7 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @goldshore/gs-web build
-      - run: pnpm --filter @goldshore/gs-web exec wrangler deploy --env production
+      - run: pnpm --filter @goldshore/gs-www-redirect exec wrangler deploy --env production
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_GS_CONTROL }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
