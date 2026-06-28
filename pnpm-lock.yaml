@@ -4804,7 +4804,7 @@ snapshots:
 
   '@astrojs/tailwind@6.0.2(astro@6.4.6(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0))(tailwindcss@4.3.1)':
     dependencies:
-      astro: 6.4.6(@types/node@25.9.2)(rollup@4.62.0)(tsx@4.22.4)(yaml@2.9.0)
+      astro: 6.4.6(@types/node@25.9.2)(rollup@4.62.2)(tsx@4.22.4)(yaml@2.9.0)
       autoprefixer: 10.5.0(postcss@8.5.15)
       postcss: 8.5.15
       postcss-load-config: 4.0.2(postcss@8.5.15)
@@ -8698,7 +8698,7 @@ snapshots:
 
   tailwindcss@4.3.1: {}
 
-  three-mesh-bvh@0.8.3(three@0.183.2):
+  three-mesh-bvh@0.8.3(three@0.184.0):
     dependencies:
       three: 0.184.0
 
