@@ -12,6 +12,8 @@ workers_dev = false
 [env.prod]
 routes = [
   { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "gw.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "api.goldshore.org/*", zone_name = "goldshore.org" }
 ]
 
@@ -39,6 +41,11 @@ binding = "TELEMETRY"
 bucket_name = "gs-telemetry-storage"
 
 # ── D1 ──────────────────────────────────────────────────────────────────────────────────
+[[env.prod.d1_databases]]
+binding = "DB"
+database_name = "goldshore"
+database_id = "gs_db_001"
+
 [[env.prod.d1_databases]]
 binding = "PLATFORM_DB"
 database_name = "gs_platform_db"
@@ -117,6 +124,23 @@ script_name = "gs-signals-prod"
 [[env.prod.secrets_store.bindings]]
 binding = "SECRETS"
 store_id = "b9824d3280c54573a24137c7e7143b33"
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Production (named 'production') environment
+# ══════════════════════════════════════════════════════════════════════════════
+
+[env.production]
+routes = [
+  { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "gw.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" }
+]
+
+[env.production.vars]
+ENV = "production"
+CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
+CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
+CONTROL_SYNC_TOKEN = "__PROD_CONTROL_SYNC_TOKEN__"
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Preview environment
