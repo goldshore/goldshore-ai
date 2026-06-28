@@ -21,7 +21,7 @@ on:
 
 env:
   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -46,17 +46,18 @@ jobs:
           - gs-mail
           - gs-agent
           - gs-trading
-          - banproof-me
-          - gs-www-redirect
+          - gs-web
+          - gs-admin
+          - goldshore-ai
           - goldshore-org
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 9.15.4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
@@ -102,27 +103,18 @@ jobs:
             gs-control
             gs-mail
             gs-agent
-            gs-trading
-            banproof-me
-            gs-www-redirect
             goldshore-org
             gs-platform
-            armsway-com
             gs-core-worker
             gs-signals-prod
-            banproof-email-router
             goldshore-ai
-            gs-todo
-            rmarston-com
-            banproof
             gs-web-staging
-            partners-in-pools
           )
 
           echo "=== Fetching workers from Cloudflare account ==="
           RESPONSE=$(curl -sf \
             "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts" \
-            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H "Authorization: Bearer ${CF_TOKEN}" \
             -H "Content-Type: application/json")
 
           # Extract worker names (requires jq, available on ubuntu-latest)
@@ -168,7 +160,7 @@ jobs:
             echo "Deleting: $orphan"
             DEL_RESPONSE=$(curl -sf -X DELETE \
               "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/${orphan}" \
-              -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+              -H "Authorization: Bearer ${CF_TOKEN}" \
               -H "Content-Type: application/json")
             echo "$DEL_RESPONSE" | jq '{success: .success, errors: .errors}'
           done
@@ -203,7 +195,7 @@ jobs:
 
           RESPONSE=$(curl -sf -X PUT \
             "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/${WORKER_NAME}/tail" \
-            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H "Authorization: Bearer ${CF_TOKEN}" \
             -H "Content-Type: application/json" \
             -d '{"enabled":true}')
 
