@@ -1,19 +1,5 @@
 {
   "name": "@goldshore/gs-mail",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "dev": "wrangler dev src/index.ts --bundle --config wrangler.toml",
-    "deploy": "wrangler deploy --env prod --bundle --config wrangler.toml",
-    "build": "wrangler deploy --env prod --dry-run --outdir=dist --bundle --config wrangler.toml"
-  },
-  "dependencies": {
-    "hono": "^4.12.25"
-  },
-  "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260621.1",
-    "typescript": "^5.4.0",
-    "wrangler": "^4.83.0"
-  }
+  "version": "0.0.0",
+  "private": true
 }
