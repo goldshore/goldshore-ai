@@ -1,0 +1,12 @@
+name = "gs-mail"
+main = "src/index.ts"
+compatibility_date = "2026-04-18"
+compatibility_flags = ["nodejs_compat"]
+
+workers_dev = false
+
+# Email routing is configured in Cloudflare dashboard under Email Routing.
+# This worker processes inbound email events forwarded by Cloudflare.
+
+[env.prod.vars]
+ENV = "production"

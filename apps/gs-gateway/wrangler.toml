@@ -1,0 +1,12 @@
+# Contract placeholder — gateway is deployed from the goldshore-gateway repo
+# (as worker name gs-platform). This file satisfies the monorepo workspace
+# contract and EXPECTED_HOST_OWNERS checks in scripts/validate-worker-names.ts.
+name = "gs-gateway"
+compatibility_date = "2025-03-07"
+
+workers_dev = false
+
+routes = [
+  { pattern = "gw.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" }
+]
