@@ -17,7 +17,7 @@
 
 ---
 
-## Workers (canonical set — 25 active)
+## Workers (canonical set — 31 active)
 
 | Worker name | Purpose | Domains served | Fail policy |
 |---|---|---|---|
@@ -26,12 +26,15 @@
 | `gs-api-preview` | Preview environment for gs-api | — | Fail closed |
 | `gs-admin` | Admin dashboard worker | admin.goldshore.ai | Fail closed |
 | `gs-gateway` | Legacy gateway (to be superseded by gs-platform) | gw.goldshore.ai, agent.goldshore.ai | Fail closed |
+| `gs-gateway-prod` | Production-env deployment of gs-gateway (`wrangler --env prod`) | gw.goldshore.ai, agent.goldshore.ai | Fail closed |
 | `gs-agent` | AI agent worker | — | Fail closed |
+| `gs-agent-prod` | Production-env deployment of gs-agent (`wrangler --env prod`) | — | Fail closed |
 | `gs-control` | Build control service | — | Fail closed |
 | `goldshore-org` | goldshore.org site | goldshore.org | Fail open (public) |
 | `banproof-me` | Proof-of-Agency security layer, contact forms, PoA workflow | banproof.me | Fail closed |
 | `banproof-email-router` | Email routing for banproof | — | Fail closed |
 | `gs-core-worker` | Gearswipe/StellarAIO ATC trigger, signals consumer | — | Fail closed |
+| `gs-core-worker-prod` | Production-env deployment of gs-core-worker (`wrangler --env prod`) | — | Fail closed |
 | `gs-signals-prod` | Polygon sentiment analysis, signal generation | — | Fail closed |
 | `gs-mail` | Transactional mail dispatch | — | Fail closed |
 | `gs-web` | goldshore.ai frontend static assets | goldshore.ai | Fail open (public) |
@@ -40,12 +43,15 @@
 | `goldshore-ai` | (Audit pending — may be stub) | — | TBD |
 | `gs-todo` | (Audit pending — may be internal tool) | — | TBD |
 | `gs-trading` | Schwab + Robinhood brokerage integration, trading API, risk engine | — | Fail closed |
+| `gs-trading-prod` | Production-env deployment of gs-trading (`wrangler --env prod`) | trading.goldshore.ai | Fail closed |
 | `armsway-com` | armsway.com site worker | armsway.com | Fail open (public) |
+| `armsway-com-prod` | Production-env deployment of armsway-com (`wrangler --env prod`) | armsway.com | Fail open (public) |
 | `gs-www-redirect` | www → apex redirect worker | www.goldshore.ai | Fail open |
+| `gs-www-redirect-prod` | Production-env deployment of gs-www-redirect (`wrangler --env prod`) | www.goldshore.ai | Fail open |
 | `banproof` | BanProof legacy worker | — | Fail closed |
 | `partners-in-pools` | Matteo's pool business client site (partnersinpools.com) | partnersinpools.com | Fail open (public) |
 | `gs-mcp` | MCP server — Model Context Protocol endpoint for AI agent tooling | — | Fail closed |
-| `gs-web-app` | Web application worker (goldshore-ai web app variant) | — | Fail closed |
+| `gs-web-app` | Web application worker (goldshore-ai web app variant) | goldshore.ai | Fail closed |
 
 **Workers NOT on this list must not exist. Any live worker absent from this table will fail the CI audit. See Gate 1 below.**
 
@@ -94,7 +100,7 @@
 
 | Domain | Worker / Pages | Tier | Notes |
 |---|---|---|---|
-| `goldshore.ai` | `gs-web` (Pages) | 1 (public) | Canonical hostname |
+| `goldshore.ai` | `gs-web-app` | 1 (public) | Canonical hostname |
 | `www.goldshore.ai` | `gs-www-redirect` | 1 (public) | 308 → goldshore.ai |
 | `dashboard.goldshore.ai` | `gs-gateway` | 1 (public) | 308 → admin.goldshore.ai |
 | `gw.goldshore.ai` | `gs-gateway` | 2 (auth) | Fail closed |
@@ -174,6 +180,12 @@ Two workers in your account have unknown origin. You must decide to keep or dele
 | 1c | Same for `gs-todo` — keep or delete. | [CF Dashboard](https://dash.cloudflare.com/f77de112d2019e5456a3198a8bb50bd2/workers-and-pages) | ⬜ TODO |
 | 1d | `gs-mcp` — MCP server for AI agent tooling. Added to canonical table. | — | ✅ DONE |
 | 1e | `gs-web-app` — web application worker variant. Added to canonical table. | — | ✅ DONE |
+| 1f | `gs-agent-prod` — prod-env deployment of gs-agent. Added to canonical table. | — | ✅ DONE |
+| 1g | `gs-core-worker-prod` — prod-env deployment of gs-core-worker. Added to canonical table. | — | ✅ DONE |
+| 1h | `gs-gateway-prod` — prod-env deployment of gs-gateway. Added to canonical table. | — | ✅ DONE |
+| 1i | `gs-trading-prod` — prod-env deployment of gs-trading. Added to canonical table. | — | ✅ DONE |
+| 1j | `gs-www-redirect-prod` — prod-env deployment of gs-www-redirect. Added to canonical table. | — | ✅ DONE |
+| 1k | `armsway-com-prod` — prod-env deployment of armsway-com. Added to canonical table. | — | ✅ DONE |
 
 ---
 
