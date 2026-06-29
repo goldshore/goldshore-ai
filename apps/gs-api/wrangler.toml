@@ -86,7 +86,7 @@ environment = "prod"
 
 [[env.prod.services]]
 binding = "GS_WEB"
-service = "gs-web"
+service = "gs-web-app"
 environment = "prod"
 
 [[env.prod.services]]
@@ -139,14 +139,11 @@ CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 CONTROL_SYNC_TOKEN = "__PROD_CONTROL_SYNC_TOKEN__"
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Preview environment
+# Preview environment — deploys to workers.dev (no zone route needed)
 # ══════════════════════════════════════════════════════════════════════════════
 
 [env.preview]
-
-[[env.preview.routes]]
-pattern = "api-preview.goldshore.ai/*"
-zone_name = "goldshore.ai"
+workers_dev = true
 
 [env.preview.vars]
 ENV = "preview"
@@ -200,7 +197,7 @@ service = "gs-mail"
 
 [[env.preview.services]]
 binding = "GS_WEB"
-service = "gs-web"
+service = "gs-web-app"
 
 [[env.preview.services]]
 binding = "API_SERVICE"
