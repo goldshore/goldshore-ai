@@ -21,7 +21,7 @@ on:
 
 env:
   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-  CF_TOKEN: ${{ secrets.CF_TOKEN }}
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -114,7 +114,7 @@ jobs:
           echo "=== Fetching workers from Cloudflare account ==="
           RESPONSE=$(curl -sf \
             "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts" \
-            -H "Authorization: Bearer ${CF_TOKEN}" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
             -H "Content-Type: application/json")
 
           # Extract worker names (requires jq, available on ubuntu-latest)
@@ -160,7 +160,7 @@ jobs:
             echo "Deleting: $orphan"
             DEL_RESPONSE=$(curl -sf -X DELETE \
               "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/${orphan}" \
-              -H "Authorization: Bearer ${CF_TOKEN}" \
+              -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
               -H "Content-Type: application/json")
             echo "$DEL_RESPONSE" | jq '{success: .success, errors: .errors}'
           done
@@ -195,7 +195,7 @@ jobs:
 
           RESPONSE=$(curl -sf -X PUT \
             "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/${WORKER_NAME}/tail" \
-            -H "Authorization: Bearer ${CF_TOKEN}" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
             -H "Content-Type: application/json" \
             -d '{"enabled":true}')
 

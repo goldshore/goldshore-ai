@@ -23,6 +23,10 @@ compatibility_flags = ["nodejs_compat"]
 workers_dev = false
 
 [env.prod]
+routes = [
+  { pattern = "banproof.me", custom_domain = true },
+  { pattern = "www.banproof.me", custom_domain = true }
+]
 vars = { ENV = "production" }
 
 # 1. BANPROOF_CONFIG — ban cache (fast IP / user lookups)
