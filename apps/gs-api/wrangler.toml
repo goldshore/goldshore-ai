@@ -152,6 +152,10 @@ ENV = "preview"
 binding = "KV"
 id = "d4d20cee39094b999dea3f7e5f4c533a"
 
+[[env.preview.kv_namespaces]]
+binding = "CONTROL_LOGS"
+id = "09e43cb8bd4749fdaaed0dc9d4ff2284"
+
 [[env.preview.r2_buckets]]
 binding = "GS_ASSETS"
 bucket_name = "gs-assets-preview"
@@ -215,9 +219,11 @@ queue = "gs-events"
 binding = "MAIL_JOBS_QUEUE"
 queue = "gs-mail-jobs"
 
-[[env.preview.secrets_store.bindings]]
-binding = "SECRETS"
-store_id = "b9824d3280c54573a24137c7e7143b33"
+# Temporarily disabled: Wrangler 4.105.0 warns this preview env field is unexpected.
+# Re-enable only after confirming current Wrangler config schema supports env.preview.secrets_store.
+# [[env.preview.secrets_store.bindings]]
+# binding = "SECRETS"
+# store_id = "b9824d3280c54573a24137c7e7143b33"
 
 # ── Durable Object migrations ─────────────────────────────────────────────────────
 [[migrations]]
