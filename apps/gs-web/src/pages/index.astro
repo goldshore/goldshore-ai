@@ -37,28 +37,73 @@ const marquee = ['Risk Intelligence','Financial Signal Analysis','Workflow Autom
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist+Mono:wght@300;400;500&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet" />
 </head>
-<body class="gs-home">
+<body class="gs-home">\n<div class="cursor-orb" aria-hidden="true"></div>
 <header class="topbar">
   <a class="brand" href="/"><span class="coords">40°42′45″N<br />74°00′21″W</span><span class="mark">GS·LAB·v2.84</span><span><strong>Gold Shore Labs</strong><em>GoldShore</em></span></a>
   <nav><a href="#platform">Platform</a><a href="#risk-radar">Risk Radar</a><a href="#services">Services</a><a href="#developer">Developer</a><a href="#about">About</a><a href="https://admin.goldshore.ai">Log in</a><a class="nav-cta" href="#engage">Request Briefing</a></nav>
 </header>
 <main>
-<section class="hero" id="platform"><div class="hero-copy"><p class="kicker">Gold Shore Labs · Est. 2022 · New York</p><h1>Where<br /><em>Strategy</em><br />Operates.</h1><p class="lead">Applied intelligence for institutions that need clarity under pressure. We build the software, run the strategy, and deploy the AI — cross-sector, full-stack, end to end.</p><div class="actions"><a class="btn primary" href="#engage">Request Briefing</a><a class="btn" href="#services">View Platform</a><a class="text-link" href="#developer">Developer Hub →</a></div><div class="metrics">{metrics.map(([label,value,sub]) => <div><span>{label}</span><strong>{value}</strong><em>{sub}</em></div>)}</div></div><aside class="hero-panel"><p class="panel-title">Applied Intelligence · Digital Systems · Consulting</p><div class="status-list">{platform.map(([name,state]) => <div><span>{name}</span><b class={state.toLowerCase()}>{state}</b></div>)}</div><div class="panel-columns"><div><h3>Services</h3>{services.map((s) => <p>{s}</p>)}</div><div><h3>Sectors</h3>{sectors.map((s) => <p>{s}</p>)}</div></div><p class="operational"><span></span>Operational</p></aside></section>
-<section class="surface"><div class="section-head"><p>Cross-Sector Deployment Surface</p><h2>5 active sectors</h2></div><div class="sector-grid">{sectorCards.map(([name,desc]) => <article><h3>{name}</h3><p>{desc}</p></article>)}</div></section>
-<section class="telemetry"><div class="section-head"><p>Platform Telemetry — Live</p><h2><span></span>Live</h2></div><div class="telemetry-grid">{telemetry.map(([label,value,sub]) => <article><span>{label}</span><strong>{value}</strong><em>{sub}</em></article>)}</div></section>
+<section class="hero" id="platform"><div class="hero-copy"><p class="kicker">Gold Shore Labs · Est. 2022 · New York</p><h1>Where<br /><em>Strategy</em><br />Operates.</h1><p class="lead">Applied intelligence for institutions that need clarity under pressure. We build the software, run the strategy, and deploy the AI — cross-sector, full-stack, end to end.</p><div class="actions"><a class="btn primary magnetic" href="#engage">Request Briefing</a><a class="btn magnetic" href="#services">View Platform</a><a class="text-link" href="/developer">Developer Hub →</a></div><div class="metrics">{metrics.map(([label,value,sub]) => <div><span>{label}</span><strong>{value}</strong><em>{sub}</em></div>)}</div></div><aside class="hero-panel"><p class="panel-title">Applied Intelligence · Digital Systems · Consulting</p><div class="status-list">{platform.map(([name,state]) => <div><span>{name}</span><b class={state.toLowerCase()}>{state}</b></div>)}</div><div class="panel-columns"><div><h3>Services</h3>{services.map((s) => <p>{s}</p>)}</div><div><h3>Sectors</h3>{sectors.map((s) => <p>{s}</p>)}</div></div><p class="operational"><span></span>Operational</p></aside></section>
+<section class="surface" data-reveal><div class="section-head"><p>Cross-Sector Deployment Surface</p><h2>5 active sectors</h2></div><div class="sector-grid">{sectorCards.map(([name,desc]) => <article><h3>{name}</h3><p>{desc}</p></article>)}</div></section>
+<section class="telemetry" data-reveal><div class="section-head"><p>Platform Telemetry — Live</p><h2><span></span>Live</h2></div><div class="telemetry-grid">{telemetry.map(([label,value,sub]) => <article><span>{label}</span><strong>{value}</strong><em>{sub}</em></article>)}</div></section>
 <div class="marquee"><div>{[...marquee,...marquee].map((item) => <span>{item}</span>)}</div></div>
-<section class="capabilities" id="services"><div class="section-head large"><p>01 — Capabilities</p><h2>Cross-<br />Sector.<br />Full-Stack.</h2><span>We operate at the intersection of digital consulting, product engineering, and applied AI — building systems that hold under pressure across every sector we touch.</span></div><div class="cap-list">{capabilities.map(([title,body,tags],i) => <article><div class="cap-index">{String(i + 1).padStart(2,'0')}</div><div><h3>{title}<span>↗</span></h3><p>{body}</p><div class="tags">{tags.map((tag) => <b>{tag}</b>)}</div></div></article>)}</div></section>
-<section class="underhood" id="developer"><div class="section-head large"><p>02 — Under the Hood</p><h2>Systems that<br /><em>Explain</em><br />Themselves.</h2></div><div class="code-stack"><pre><span>packages/auth/verify.ts</span><code>{`// Access verification path
+<section class="capabilities" data-reveal id="services"><div class="section-head large"><p>01 — Capabilities</p><h2>Cross-<br />Sector.<br />Full-Stack.</h2><span>We operate at the intersection of digital consulting, product engineering, and applied AI — building systems that hold under pressure across every sector we touch.</span></div><div class="cap-list">{capabilities.map(([title,body,tags],i) => <article><div class="cap-index">{String(i + 1).padStart(2,'0')}</div><div><h3>{title}<span>↗</span></h3><p>{body}</p><div class="tags">{tags.map((tag) => <b>{tag}</b>)}</div></div></article>)}</div></section>
+<section class="underhood" data-reveal id="developer"><div class="section-head large"><p>02 — Under the Hood</p><h2>Systems that<br /><em>Explain</em><br />Themselves.</h2></div><div class="code-stack"><pre><span>packages/auth/verify.ts</span><code>{`// Access verification path
 export async function verifyAccess(req, env) {
   const identity = await validateRequest(req, env);
   if (!identity.authorized) return { authorized: false };
   return { authorized: true, email: identity.email };
 }`}</code></pre><aside class="stack-card"><h3>Production Stack — goldshore.ai</h3>{stackRows.map(([name,desc,date,state]) => <div class="stack-row"><div><strong>{name}</strong><p>{desc}</p></div><time>{date}</time><b>{state}</b></div>)}<div class="infra"><h4>Infrastructure Resources</h4><p><b>R2 Buckets</b> gs-assets · gs-telemetry · user-uploads</p><p><b>D1 Databases</b> gs_platform_db · gs_audit_db</p><p><b>Stack</b> Hono · pnpm · wrangler</p></div></aside></div></section>
-<section class="risk" id="risk-radar"><div class="risk-copy"><p class="kicker">03 — Risk Radar</p><h2>Always<br />Sweeping.<br />Never Silent.</h2><p>Continuous surveillance across monitored positions and portfolios. Anomalies surface in real time — classified by severity, routed to the right operator, with a full audit trace from detection to resolution.</p></div><div class="risk-board"><div class="risk-metrics"><span>Sweep Interval<b>2.4s</b></span><span>Active Anomalies<b>5 Live</b></span><span>Decision Mode<b>Human+AI</b></span><span>Review Posture<b>High Trust</b></span></div>{anomalies.map(([name,sev,time]) => <div class="anomaly"><strong>{name}</strong><b>{sev}</b><time>{time}</time></div>)}</div></section>
-<section class="signals"><div class="section-head"><p>04 — Financial Signals</p><h2>Signal,<br />Not Noise.</h2><a href="/risk-radar">Full Signal Feed →</a></div><div class="ticker-grid">{tickers.map(([sym,name,price,change]) => <article><span>{sym}</span><em>{name}</em><strong>{price}</strong><b class={change.startsWith('−') ? 'down' : 'up'}>{change}</b></article>)}</div><div class="chart-card"><div><h3>SPY</h3><p>SPDR S&P 500 ETF · NYSE Arca · 4h</p></div><strong>$521.84 <span>▲ +6.37 (+1.24%)</span></strong><div class="chart-line"></div><div class="chart-stats"><span>RSI 14<b>58.4</b></span><span>MACD<b>+2.1</b></span><span>Vol 10d<b>12.3%</b></span><span>Beta<b>1.00</b></span><span>Sentiment<b>Bullish</b></span><span>Signal<b>Watch</b></span></div></div></section>
+<section class="risk" data-reveal id="risk-radar"><div class="risk-copy"><p class="kicker">03 — Risk Radar</p><h2>Always<br />Sweeping.<br />Never Silent.</h2><p>Continuous surveillance across monitored positions and portfolios. Anomalies surface in real time — classified by severity, routed to the right operator, with a full audit trace from detection to resolution.</p></div><div class="risk-board"><div class="risk-metrics"><span>Sweep Interval<b>2.4s</b></span><span>Active Anomalies<b>5 Live</b></span><span>Decision Mode<b>Human+AI</b></span><span>Review Posture<b>High Trust</b></span></div>{anomalies.map(([name,sev,time]) => <div class="anomaly"><strong>{name}</strong><b>{sev}</b><time>{time}</time></div>)}</div></section>
+<section class="signals" data-reveal id="signals"><div class="section-head"><p>04 — Financial Signals</p><h2>Signal,<br />Not Noise.</h2><a href="/apps/risk-radar">Full Signal Feed →</a></div><div class="ticker-grid">{tickers.map(([sym,name,price,change]) => <article><span>{sym}</span><em>{name}</em><strong>{price}</strong><b class={change.startsWith('−') ? 'down' : 'up'}>{change}</b></article>)}</div><div class="chart-card"><div><h3>SPY</h3><p>SPDR S&P 500 ETF · NYSE Arca · 4h</p></div><strong>$521.84 <span>▲ +6.37 (+1.24%)</span></strong><div class="chart-line"></div><div class="chart-stats"><span>RSI 14<b>58.4</b></span><span>MACD<b>+2.1</b></span><span>Vol 10d<b>12.3%</b></span><span>Beta<b>1.00</b></span><span>Sentiment<b>Bullish</b></span><span>Signal<b>Watch</b></span></div></div></section>
 <section class="principles" id="about">{principles.map(([num,title,body]) => <article><span>{num}</span><h3>{title}</h3><p>{body}</p></article>)}</section>
-<section class="engage" id="engage"><div><p class="kicker">05 — Engage</p><h2>Ready to<br />Operationalize.</h2><p>Whether you need a strategic briefing, a technical audit, a delivered product, or an embedded AI system — the conversation starts here.</p><div class="actions"><a class="btn primary" href="mailto:hello@goldshore.ai">Request Briefing →</a><a class="btn" href="#developer">Developer Hub →</a></div></div><form class="quick-form" method="POST" action="/api/contact"><h3>Quick Inquiry</h3><label>Name<input name="name" placeholder="Your name" /></label><label>Organisation<input name="company" placeholder="Firm or company" /></label><label>Work Email<input name="email" type="email" placeholder="you@firm.com" /></label><label>Interest<select name="inquiry"><option>Select area of interest</option><option>Digital Strategy</option><option>AI Implementation</option><option>Systems Integration</option><option>Risk Radar</option></select></label><button type="submit">Submit Request →</button></form></section>
+<section class="engage" data-reveal id="engage"><div><p class="kicker">05 — Engage</p><h2>Ready to<br />Operationalize.</h2><p>Whether you need a strategic briefing, a technical audit, a delivered product, or an embedded AI system — the conversation starts here.</p><div class="actions"><a class="btn primary magnetic" href="mailto:hello@goldshore.ai?subject=Gold%20Shore%20Briefing%20Request">Request Briefing →</a><a class="btn magnetic" href="/developer">Developer Hub →</a></div></div><form class="quick-form" method="POST" action="/api/contact"><h3>Quick Inquiry</h3><label>Name<input name="name" placeholder="Your name" /></label><label>Organisation<input name="company" placeholder="Firm or company" /></label><label>Work Email<input name="email" type="email" placeholder="you@firm.com" /></label><label>Interest<select name="inquiry"><option>Select area of interest</option><option>Digital Strategy</option><option>AI Implementation</option><option>Systems Integration</option><option>Risk Radar</option></select></label><button type="submit">Submit Request →</button></form></section>
 </main>
 <footer class="site-footer"><div><h2>GoldShore</h2><p>Applied Intelligence · Digital Systems · Consulting</p><p>Institutional AI systems, risk tooling, and resilient operator infrastructure. Cross-sector. Full-stack. Built to last.</p></div><div><h3>Platform</h3><p>Risk Radar</p><p>Financial Signals</p><p>Workflow Engine</p><p>Sentinel</p><p>AI Oracle</p></div><div><h3>Services</h3>{services.map((s) => <p>{s}</p>)}</div><div><h3>Company</h3><p>About</p><p>Team</p><p>Developer Hub</p><p>Status</p><p>Contact</p></div><small>© 2026 Gold Shore Labs. All rights reserved. 40°42′N · 074°00′W · goldshore.ai · Privacy · Security · Terms</small></footer>
+
+<script is:inline>
+const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+document.documentElement.classList.add('js-ready');
+
+if (!reduced) {
+  const orb = document.querySelector('.cursor-orb');
+  window.addEventListener('pointermove', e => {
+    orb?.style.setProperty('--x', `${e.clientX}px`);
+    orb?.style.setProperty('--y', `${e.clientY}px`);
+  }, { passive: true });
+
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-visible');
+        io.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+
+  document.querySelectorAll('[data-reveal], .sector-grid article, .cap-list article, .telemetry-grid article')
+    .forEach(el => io.observe(el));
+
+  document.querySelectorAll('.magnetic').forEach(el => {
+    el.addEventListener('pointermove', e => {
+      const r = el.getBoundingClientRect();
+      el.style.setProperty('--mx', `${(e.clientX - r.left - r.width / 2) * .12}px`);
+      el.style.setProperty('--my', `${(e.clientY - r.top - r.height / 2) * .12}px`);
+    });
+    el.addEventListener('pointerleave', () => {
+      el.style.setProperty('--mx', '0px');
+      el.style.setProperty('--my', '0px');
+    });
+  });
+}
+
+document.querySelectorAll('.ticker-grid article, .anomaly, .metrics div').forEach(el => {
+  el.addEventListener('click', () => {
+    el.classList.remove('is-pinged');
+    void el.offsetWidth;
+    el.classList.add('is-pinged');
+  });
+});
+</script>
 </body>
 </html>
