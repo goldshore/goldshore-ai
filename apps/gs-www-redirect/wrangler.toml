@@ -8,11 +8,13 @@ workers_dev = false
 # rmarston.com and armsway.com are managed by their own workers.
 
 [env.prod]
+name = "gs-www-redirect-prod"
 routes = [
   { pattern = "www.goldshore.ai", custom_domain = true }
 ]
 
 [env.production]
+name = "gs-www-redirect-prod"
 routes = [
   { pattern = "www.goldshore.ai", custom_domain = true }
 ]
