@@ -16,7 +16,8 @@ binding = "SITE_ASSETS"
 
 [env.prod]
 routes = [
-  { pattern = "goldshore.ai", custom_domain = true }
+  { pattern = "goldshore.ai", custom_domain = true },
+  { pattern = "goldshore.org", custom_domain = true, override_existing_origin = true }
 ]
 
 [[env.prod.kv_namespaces]]
