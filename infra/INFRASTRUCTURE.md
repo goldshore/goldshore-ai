@@ -17,15 +17,15 @@
 
 ---
 
-## Workers (canonical set — 31 active)
+## Workers (canonical set — 32 active)
 
 | Worker name | Purpose | Domains served | Fail policy |
 |---|---|---|---|
-| `gs-platform` | Main gateway — auth, CORS, routing hub | goldshore.ai, armsway.com | Fail closed on auth routes |
+| `gs-platform` | Platform hub — internal service-binding traffic only (routes removed from prod) | — | Fail closed on auth routes |
 | `gs-api` | API layer | api.goldshore.ai | Fail closed |
 | `gs-api-preview` | Preview environment for gs-api | — | Fail closed |
 | `gs-admin` | Admin dashboard worker | admin.goldshore.ai | Fail closed |
-| `gs-gateway` | Legacy gateway (to be superseded by gs-platform) | gw.goldshore.ai, agent.goldshore.ai | Fail closed |
+| `gs-gateway` | Legacy gateway placeholder (deployed from goldshore-gateway repo) | gw.goldshore.ai, agent.goldshore.ai | Fail closed |
 | `gs-gateway-prod` | Production-env deployment of gs-gateway (`wrangler --env prod`) | gw.goldshore.ai, agent.goldshore.ai | Fail closed |
 | `gs-agent` | AI agent worker | — | Fail closed |
 | `gs-agent-prod` | Production-env deployment of gs-agent (`wrangler --env prod`) | — | Fail closed |
@@ -37,7 +37,8 @@
 | `gs-core-worker-prod` | Production-env deployment of gs-core-worker (`wrangler --env prod`) | — | Fail closed |
 | `gs-signals-prod` | Polygon sentiment analysis, signal generation | — | Fail closed |
 | `gs-mail` | Transactional mail dispatch | — | Fail closed |
-| `gs-web` | goldshore.ai frontend static assets | goldshore.ai | Fail open (public) |
+| `gs-web` | goldshore.ai frontend static assets (superseded by gs-web-app) | — | Fail open (public) |
+| `gs-web-preview` | Preview environment for gs-web (`wrangler --env preview`) | preview.goldshore.ai | Fail open |
 | `gs-web-staging` | Staging variant of gs-web | staging.goldshore.ai | Fail open |
 | `rmarston-com` | rmarston.com personal site | rmarston.com | Fail open (public) |
 | `goldshore-ai` | (Audit pending — may be stub) | — | TBD |
@@ -45,13 +46,13 @@
 | `gs-trading` | Schwab + Robinhood brokerage integration, trading API, risk engine | — | Fail closed |
 | `gs-trading-prod` | Production-env deployment of gs-trading (`wrangler --env prod`) | trading.goldshore.ai | Fail closed |
 | `armsway-com` | armsway.com site worker | armsway.com | Fail open (public) |
-| `armsway-com-prod` | Production-env deployment of armsway-com (`wrangler --env prod`) | armsway.com | Fail open (public) |
+| `armsway-com-prod` | Production-env deployment of armsway-com (`wrangler --env prod`) | armsway.com, www.armsway.com | Fail open (public) |
 | `gs-www-redirect` | www → apex redirect worker | www.goldshore.ai | Fail open |
 | `gs-www-redirect-prod` | Production-env deployment of gs-www-redirect (`wrangler --env prod`) | www.goldshore.ai | Fail open |
 | `banproof` | BanProof legacy worker | — | Fail closed |
 | `partners-in-pools` | Matteo's pool business client site (partnersinpools.com) | partnersinpools.com | Fail open (public) |
 | `gs-mcp` | MCP server — Model Context Protocol endpoint for AI agent tooling | — | Fail closed |
-| `gs-web-app` | Web application worker (goldshore-ai web app variant) | goldshore.ai | Fail closed |
+| `gs-web-app` | Main web application worker for goldshore.ai | goldshore.ai | Fail open (public) |
 
 **Workers NOT on this list must not exist. Any live worker absent from this table will fail the CI audit. See Gate 1 below.**
 
@@ -101,12 +102,13 @@
 | Domain | Worker / Pages | Tier | Notes |
 |---|---|---|---|
 | `goldshore.ai` | `gs-web-app` | 1 (public) | Canonical hostname |
-| `www.goldshore.ai` | `gs-www-redirect` | 1 (public) | 308 → goldshore.ai |
-| `dashboard.goldshore.ai` | `gs-gateway` | 1 (public) | 308 → admin.goldshore.ai |
-| `gw.goldshore.ai` | `gs-gateway` | 2 (auth) | Fail closed |
+| `www.goldshore.ai` | `gs-www-redirect-prod` | 1 (public) | 308 → goldshore.ai |
+| `preview.goldshore.ai` | `gs-web-preview` | 1 (public) | Preview environment |
+| `dashboard.goldshore.ai` | `gs-gateway-prod` | 1 (public) | 308 → admin.goldshore.ai |
+| `gw.goldshore.ai` | `gs-gateway-prod` | 2 (auth) | Fail closed |
 | `api.goldshore.ai` | `gs-api` | 2 (auth) | Direct API route; fail closed; /health /version /status public |
-| `agent.goldshore.ai` | `gs-gateway` → `gs-agent` | 2 (auth) | Fail closed |
-| `trading.goldshore.ai` | `gs-trading` | 3 (admin) | Fail closed |
+| `agent.goldshore.ai` | `gs-gateway-prod` → `gs-agent-prod` | 2 (auth) | Fail closed |
+| `trading.goldshore.ai` | `gs-trading-prod` | 3 (admin) | Fail closed |
 | `ops.goldshore.ai` | `gs-control` | 3 (admin) | Fail closed |
 | `admin.goldshore.ai` | `gs-admin` (Pages) | 3 (admin) | Fail closed |
 | `admin.goldshore.org` | `gs-admin` (Pages) | 3 (admin) | Same app as admin.goldshore.ai |
@@ -116,7 +118,8 @@
 | `banproof.me` | `banproof-me` | 1 | Fail closed |
 | `rmarston.com` | `rmarston-com` | 1 (public) | Fail open |
 | `www.rmarston.com` | `gs-www-redirect` | 1 (public) | 308 → rmarston.com (via Worker) |
-| `armsway.com` | `gs-platform` | 1 (public) | Fail open |
+| `armsway.com` | `armsway-com-prod` | 1 (public) | Fail open |
+| `www.armsway.com` | `armsway-com-prod` | 1 (public) | Fail open |
 | `partnersinpools.com` | `partners-in-pools` | 1 (public) | Matteo's pool business |
 
 ---
@@ -186,6 +189,7 @@ Two workers in your account have unknown origin. You must decide to keep or dele
 | 1i | `gs-trading-prod` — prod-env deployment of gs-trading. Added to canonical table. | — | ✅ DONE |
 | 1j | `gs-www-redirect-prod` — prod-env deployment of gs-www-redirect. Added to canonical table. | — | ✅ DONE |
 | 1k | `armsway-com-prod` — prod-env deployment of armsway-com. Added to canonical table. | — | ✅ DONE |
+| 1l | `gs-web-preview` — preview-env deployment of gs-web (`wrangler --env preview`). Added to canonical table; serves preview.goldshore.ai. | — | ✅ DONE |
 
 ---
 
