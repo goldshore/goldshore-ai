@@ -1,889 +1,1148 @@
----
-import Logo from '../components/brand/Logo.astro';
-import ParallaxHero from '../components/hero/ParallaxHero.astro';
-import RiskRadar from '../components/RiskRadar.astro';
-import WebLayout from '../layouts/WebLayout.astro';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Gold Shore Labs — AI infrastructure, data intelligence, human-in-the-loop systems." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://goldshore.ai/" />
+  <meta property="og:title" content="Gold Shore Labs | AI Infrastructure at the Edge" />
+  <meta property="og:description" content="Gold Shore Labs — AI infrastructure, data intelligence, human-in-the-loop systems." />
+  <title>Gold Shore Labs</title>
 
-export const prerender = true;
-
-const trustMetrics = [
-  {
-    label: 'Audit readiness',
-    value: '100%',
-    context: 'Control workflows mapped',
-    detail:
-      'Decision checkpoints, reviewer ownership, and evidence logs are defined from day one.',
-  },
-  {
-    label: 'Incident response',
-    value: '< 15 min',
-    context: 'Mean triage handoff',
-    detail:
-      'Risk, compliance, and operations teams share the same runtime timeline and escalation logic.',
-  },
-  {
-    label: 'Decision evidence',
-    value: '7 years',
-    context: 'Trace retention policy',
-    detail:
-      'Every critical AI action is preserved for regulatory review and internal post-incident analysis.',
-  },
-];
-
-const capabilities = [
-  {
-    title: 'Model oversight workflows',
-    body: 'Route high-risk model outputs to human review with clear ownership, service levels, and escalation paths.',
-  },
-  {
-    title: 'Real-time risk operations',
-    body: 'Monitor production behavior, detect drift, and trigger playbooks before edge-case failures become incidents.',
-  },
-  {
-    title: 'Audit-ready evidence trails',
-    body: 'Capture decisions, thresholds, and interventions in a format compliance teams can review without translation.',
-  },
-  {
-    title: 'Traceable architecture',
-    body: 'Every workflow is built around auditable services, operator checkpoints, and clear system states.',
-  },
-  {
-    title: 'Proven controls',
-    body: 'Controls are demonstrated in live use with logs, thresholds, review modes, and fallback paths.',
-  },
-];
-
-const proofPoints = [
-  {
-    title: 'Human-in-the-loop by default',
-    body: 'Every high-stakes model decision routes through a configured review step before action is taken.',
-  },
-  {
-    title: 'Full observability stack',
-    body: 'Events, thresholds, and evidence logs are captured at runtime and retained for regulatory review.',
-  },
-  {
-    title: 'Controlled deployment posture',
-    body: 'Staged rollouts, feature flags, and rollback paths are wired into the deployment pipeline from day one.',
-  },
-];
-
-const mcpHighlights = [
-  {
-    title: 'Private by design',
-    body: 'The live MCP host stays behind Cloudflare Access and never becomes an open prompt surface.',
-  },
-  {
-    title: 'Approved identities',
-    body: 'Only authorized humans and a dedicated agent/service path can reach the private tools.',
-  },
-  {
-    title: 'Public explanation',
-    body: 'GoldShore.ai can describe the service openly while keeping execution locked down.',
-  },
-];
----
-
-<WebLayout
-  title="GoldShore | Infrastructure for High-Trust AI"
-  description="GoldShore builds resilient decision systems, risk tooling, and operator infrastructure."
-  canonicalPath="/"
-  ogTitle="GoldShore.ai | Resilient AI Infrastructure for High-Trust Teams"
-  ogDescription="Turn volatile AI operations into auditable, operator-ready systems. Request a briefing to accelerate reliable deployment."
->
-  <main class="home-page">
-    <ParallaxHero
-      eyebrow="AI risk operations for financial services"
-      headline={"Control AI Decisions.\nPass Every Review."}
-      sub="GoldShore gives risk and compliance leaders a single operating layer to monitor model behavior, escalate exceptions, and prove governance in every audit."
-      ctaPrimary={{ label: 'Get a Briefing', href: '/contact' }}
-      ctaSecondary={{ label: 'See services', href: '/services' }}
-      ctaPrimaryEventName="hero_primary_contact_click"
-      ctaSecondaryEventName="hero_secondary_services_click"
-    />
-
-    <section class="metrics-shell gs-shell-section" aria-label="Proof metrics">
-      <div class="section-copy">
-        <p class="gs-eyebrow">Proof metrics</p>
-        <h2>Operational outcomes with explicit source notes.</h2>
-        <p class="section-intro">
-          These figures reflect current measured performance. Each metric includes
-          a direct source note and one clear next step to review your own baseline.
-        </p>
-        <a href="/contact" class="hero-button hero-button--primary">
-          Review your baseline metrics
-        </a>
-      </div>
-      <div class="metrics-grid" data-metrics-grid>
-        {trustMetrics.map((metric) => (
-          <article class="signal-tile signal-tile--loading" aria-live="polite">
-            <div class="signal-tile__header">
-              <span>{metric.label}</span>
-              <small>{metric.context}</small>
-            </div>
-            <strong>{metric.value}</strong>
-            <p>{metric.detail}</p>
-          </article>
-        ))}
-      </div>
-    </section>
-
-    <section
-      class="section-block gs-shell-section"
-      aria-labelledby="capabilities-title"
-    >
-      <div class="section-copy">
-        <p class="gs-eyebrow">Capabilities</p>
-        <h2 id="capabilities-title">
-          One platform for risk, compliance, and model operations.
-        </h2>
-        <p class="section-intro">
-          Replace fragmented monitoring and manual follow-up with governed AI
-          workflows your control functions can trust.
-        </p>
-        <a href="/contact" class="hero-button hero-button--primary">
-          Map capabilities to your KPI
-        </a>
-      </div>
-      <div class="capability-grid">
-        {capabilities.map((capability) => (
-          <article class="capability-card">
-            <h3>{capability.title}</h3>
-            <p>{capability.body}</p>
-          </article>
-        ))}
-      </div>
-    </section>
-
-    <section
-      class="section-block gs-shell-section"
-      aria-labelledby="risk-radar-title"
-    >
-      <div class="section-copy">
-        <p class="gs-eyebrow">Risk Radar</p>
-        <h2 id="risk-radar-title">
-          A shared risk picture for operations and governance teams.
-        </h2>
-        <p class="section-intro">
-          Surface model drift, policy breaches, and escalation status in one
-          live view so reviewers can act quickly and consistently.
-        </p>
-      </div>
-      <RiskRadar />
-    </section>
-
-    <section
-      class="section-block gs-shell-section mcp-section"
-      aria-labelledby="mcp-title"
-    >
-      <div class="section-copy">
-        <p class="gs-eyebrow">GoldShore MCP</p>
-        <h2 id="mcp-title">A public explanation, with private execution behind Access.</h2>
-        <p class="section-intro">
-          GoldShore.ai can explain the MCP offering in public while <code>mcp.goldshore.ai</code>
-          stays locked to approved humans and approved agents only.
-        </p>
-      </div>
-
-      <div class="mcp-grid">
-        <article class="mcp-card mcp-card--hero">
-          <div class="mcp-card__brand">
-            <Logo class="gs-logo gs-logo--lockup" title="Gold Shore" variant="lockup" />
-            <div>
-              <span class="mcp-card__label">Private Access</span>
-              <strong>Cloudflare Access enforced</strong>
-            </div>
-          </div>
-          <p>
-            The MCP host is reserved for controlled prompts, tool calls, and internal changes.
-            Public visitors can learn about it here, but they cannot use it without authorization.
-          </p>
-          <a href="/developer/mcp" class="signal-link">Explore the access model →</a>
-        </article>
-
-        {mcpHighlights.map((item) => (
-          <article class="mcp-card">
-            <h3>{item.title}</h3>
-            <p>{item.body}</p>
-          </article>
-        ))}
-      </div>
-    </section>
-
-    <section
-      class="section-block gs-shell-section architecture-section"
-      aria-labelledby="proof-title"
-    >
-      <div class="section-copy">
-        <p class="gs-eyebrow">Architecture / Proof</p>
-        <h2 id="proof-title">Governance that works in real production pressure.</h2>
-      </div>
-      <div class="proof-grid">
-        {proofPoints.map((point) => (
-          <article class="proof-card">
-            <h3>{point.title}</h3>
-            <p>{point.body}</p>
-          </article>
-        ))}
-        <article class="proof-card proof-card--metrics">
-          <div>
-            <span>Review posture</span>
-            <strong>Human oversight by default</strong>
-          </div>
-          <div>
-            <span>Observability</span>
-            <strong>Events, thresholds, evidence</strong>
-          </div>
-          <div>
-            <span>Deployment tone</span>
-            <strong>Controlled, audit-ready</strong>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <section
-      class="section-block gs-shell-section compact-team"
-      aria-labelledby="team-title"
-    >
-      <div class="section-copy">
-        <p class="gs-eyebrow">Team</p>
-        <h2 id="team-title">
-          Built by operators focused on resilient systems and applied
-          intelligence.
-        </h2>
-      </div>
-      <div class="team-row">
-        <article class="team-card team-card--founder">
-          <h3>Robert M.</h3>
-          <p>Leads product direction, systems strategy, and applied intelligence.</p>
-        </article>
-        <article class="team-card">
-          <h3>Systems</h3>
-          <p>Infrastructure, execution, observability.</p>
-        </article>
-        <article class="team-card">
-          <h3>Risk</h3>
-          <p>Monitoring, analytics, decision systems.</p>
-        </article>
-      </div>
-    </section>
-
-    <footer
-      class="section-block gs-shell-section contact-cta"
-      aria-labelledby="contact-cta-title"
-    >
-      <div>
-        <p class="gs-eyebrow">Next step</p>
-        <h2 id="contact-cta-title">
-          Need a deeper implementation view? Visit our services overview.
-        </h2>
-        <p>
-          We will translate your current workflow into a measured implementation
-          plan with instrumentation requirements and review checkpoints.
-        </p>
-      </div>
-      <a
-        href="/contact"
-        class="hero-button hero-button--primary"
-        data-analytics-event="homepage_cta_bottom_click"
-      >
-        Talk with GoldShore
-      </a>
-    </footer>
-  </main>
-
-  <script>
-    import { trackEvent } from '../scripts/analytics';
-    import { initWave } from '../scripts/init-wave';
-    import { initLogo } from '../scripts/init-logo-reactive';
-
-    let homeCleanup;
-
-    const cleanup = () => {
-      homeCleanup?.();
-      homeCleanup = undefined;
-    };
-
-    const hydrateMetrics = () => {
-      const cards = document.querySelectorAll('.signal-tile--loading');
-      const reduceMotion = window.matchMedia(
-        '(prefers-reduced-motion: reduce)',
-      ).matches;
-
-      window.setTimeout(
-        () => cards.forEach((card) => card.classList.remove('signal-tile--loading')),
-        reduceMotion ? 0 : 650,
-      );
-    };
-
-    const boot = () => {
-      cleanup();
-      hydrateMetrics();
-
-      const canvas = document.getElementById('wave-bg');
-      const logo = document.querySelector('.gs-logo-reactive');
-      const isReactiveLogo =
-        logo instanceof HTMLElement || logo instanceof SVGElement;
-
-      if (!(canvas instanceof HTMLCanvasElement) || !isReactiveLogo) return;
-
-      const wave = initWave(canvas);
-      const destroyLogo = initLogo(logo, wave);
-
-      homeCleanup = () => {
-        destroyLogo?.();
-        wave.destroy();
-      };
-    };
-
-    const root = document.documentElement;
-    const ctaEventNames = {
-      heroPrimary: 'hero_primary_contact_click',
-      heroSecondary: 'hero_secondary_services_click',
-      footerSecondary: 'footer_secondary_services_click',
-    };
-
-    const bindCtaEvents = () => {
-      const ctaNodes = document.querySelectorAll('[data-cta-event]');
-      ctaNodes.forEach((node) => {
-        if (!(node instanceof HTMLElement) || node.dataset.ctaBound === 'true') return;
-        const eventName = node.dataset.ctaEvent;
-        if (!eventName) return;
-
-        node.dataset.ctaBound = 'true';
-        node.addEventListener('click', () => {
-          window.dispatchEvent(
-            new CustomEvent('gs:cta-click', {
-              detail: { eventName, location: node.closest('footer') ? 'footer' : 'hero' },
-            }),
-          );
-        });
-      });
-    };
-
-    if (root.dataset.gsHomeHeroBound !== 'true') {
-      root.dataset.gsHomeHeroBound = 'true';
-      document.addEventListener('astro:before-swap', cleanup);
-      document.addEventListener('astro:page-load', boot);
-      document.addEventListener('click', (event) => {
-        const target = event.target;
-        if (!(target instanceof Element)) return;
-
-        const cta = target.closest('[data-analytics-id]');
-        if (!(cta instanceof HTMLElement)) return;
-
-        const ctaId = cta.dataset.analyticsId;
-        if (!ctaId || !ctaId.startsWith('homepage-')) return;
-
-        trackEvent(
-          'homepage_cta_click',
-          {
-            cta_id: ctaId,
-            page_path: window.location.pathname,
-          },
-          { debounceKey: `homepage_cta_click:${ctaId}`, debounceMs: 1200 },
-        );
-      });
-    }
-
-    boot();
-    bindCtaEvents();
-    void ctaEventNames;
-  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist+Mono:wght@300;400;500&family=Geist:wght@300;400;500&display=swap" rel="stylesheet" />
 
   <style>
-    .home-page {
-      padding-bottom: var(--gs-space-10);
+    /* ── TOKENS ── */
+    :root {
+      --gold:       #c9a84c;
+      --gold-soft:  rgba(201,168,76,0.14);
+      --gold-glow:  rgba(201,168,76,0.06);
+      --void:       #060810;
+      --surface:    #0c1120;
+      --surface2:   #111827;
+      --border:     rgba(201,168,76,0.15);
+      --border-dim: rgba(255,255,255,0.05);
+      --text:       #e8edf8;
+      --muted:      rgba(232,237,248,0.5);
+      --faint:      rgba(232,237,248,0.25);
+      --serif:      'Instrument Serif', Georgia, serif;
+      --mono:       'Geist Mono', 'Courier New', monospace;
+      --sans:       'Geist', system-ui, sans-serif;
+      --ease:       cubic-bezier(0.22,0.61,0.36,1);
+      --gw-url:     var(--GW_URL, 'https://gw.goldshore.ai');
+      --api-url:    var(--API_URL, 'https://api.goldshore.ai');
+      --admin-url:  var(--ADMIN_URL, 'https://admin.goldshore.ai');
     }
 
-    .hero {
-      position: relative;
-      min-height: min(92vh, 960px);
-      display: grid;
-      align-items: end;
-      overflow: hidden;
-      border-bottom: 1px solid var(--gs-border);
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--sans);
+      background: var(--void);
+      color: var(--text);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
     }
 
-    #wave-bg,
-    .hero-grid,
-    .hero::after {
-      position: absolute;
-      inset: 0;
-    }
-
-    #wave-bg {
-      width: 100%;
-      height: 100%;
-    }
-
-    .hero-grid {
-      background:
-        linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
-      background-size: 72px 72px;
-      mask-image: radial-gradient(circle at 50% 30%, black 30%, transparent 80%);
-      opacity: 0.5;
-    }
-
-    .hero::after {
+    /* Ambient grid */
+    body::before {
       content: '';
-      background:
-        radial-gradient(circle at 25% 20%, rgba(217, 106, 50, 0.18), transparent 28%),
-        linear-gradient(180deg, rgba(7, 11, 20, 0.18), rgba(7, 11, 20, 0.84));
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(201,168,76,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(201,168,76,0.025) 1px, transparent 1px);
+      background-size: 60px 60px;
       pointer-events: none;
       z-index: 0;
     }
 
-    .hero-mark {
+    /* Radial vignette */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(201,168,76,0.06) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.25rem 3rem;
+      background: rgba(6,8,16,0.8);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border-dim);
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+    }
+
+    .nav-mark {
+      width: 28px; height: 28px;
+      border: 1px solid var(--gold);
+      transform: rotate(45deg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .nav-mark::after {
+      content: '';
+      width: 8px; height: 8px;
+      background: var(--gold);
+      transform: rotate(0deg);
+    }
+
+    .nav-name {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 2.5rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 220ms var(--ease);
+    }
+
+    .nav-links a:hover { color: var(--gold); }
+
+    .nav-cta {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gold) !important;
+      border: 1px solid var(--gold);
+      padding: 0.5rem 1.1rem;
+      transition: background 220ms var(--ease) !important;
+    }
+
+    .nav-cta:hover { background: var(--gold-soft) !important; }
+
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0.5rem;
+    }
+
+    .hamburger span {
+      display: block;
+      width: 22px;
+      height: 1px;
+      background: var(--gold);
+      transition: all 220ms var(--ease);
+    }
+
+    .mobile-menu {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--void);
+      z-index: 199;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2.5rem;
+    }
+
+    .mobile-menu.open { display: flex; }
+
+    .mobile-menu a {
+      font-family: var(--mono);
+      font-size: 1rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-decoration: none;
+    }
+
+    .mobile-menu a:hover { color: var(--gold); }
+
+    .mobile-close {
       position: absolute;
-      inset: 18% auto auto clamp(1rem, 7vw, 6rem);
+      top: 1.5rem; right: 2rem;
+      background: none; border: none;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative;
       z-index: 1;
-    }
-
-    .gs-logo-reactive {
-      width: clamp(72px, 11vw, 120px);
-      height: auto;
-      color: var(--gs-primary);
-      will-change: transform, filter;
-    }
-
-    .hero-shell,
-    .section-block,
-    .metrics-shell,
-    .signal-strip {
-      width: min(100% - 2rem, var(--gs-max-width));
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 8rem 3rem 5rem;
+      max-width: 1300px;
       margin: 0 auto;
     }
 
-    .hero-shell {
-      position: relative;
-      z-index: 2;
-      padding: clamp(7rem, 12vh, 10rem) 0 1.75rem;
+    .hero-inner {
       display: grid;
-      grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr);
-      gap: clamp(1.5rem, 4vw, 4rem);
-      align-items: end;
-    }
-
-    .eyebrow {
-      display: inline-flex;
+      grid-template-columns: 1fr 420px;
+      gap: 5rem;
       align-items: center;
-      gap: 0.5rem;
-      padding: 0.5rem 0.85rem;
-      border: 1px solid rgba(217, 106, 50, 0.22);
-      border-radius: 999px;
-      background: rgba(217, 106, 50, 0.10);
-      color: #dcedff;
+      width: 100%;
+    }
+
+    .hero-eyebrow {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.18em;
       text-transform: uppercase;
-      letter-spacing: 0.16em;
-      font-size: 0.75rem;
-      font-weight: 700;
+      color: var(--gold);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 2rem;
     }
 
-    .hero-content h1,
-    .section-copy h2,
-    .contact-cta h2 {
-      margin: 1rem 0;
-      font-size: clamp(2.7rem, 7vw, 5.4rem);
-      line-height: 0.98;
-      letter-spacing: -0.045em;
-      color: #fff;
-      text-wrap: balance;
+    .hero-eyebrow::before {
+      content: '';
+      display: block;
+      width: 32px;
+      height: 1px;
+      background: var(--gold);
     }
 
-    .hero-content p,
-    .section-copy p,
-    .hero-panel li,
-    .proof-card p,
-    .team-card p,
-    .contact-cta p,
-    .signal-tile p {
-      color: rgba(233, 238, 252, 0.82);
-      line-height: 1.72;
-      font-size: 1rem;
+    .hero-title {
+      font-family: var(--serif);
+      font-size: clamp(3.2rem, 6vw, 6rem);
+      line-height: 1.0;
+      color: var(--text);
+      margin-bottom: 2rem;
+      letter-spacing: -0.02em;
     }
 
-    .hero-lead {
-      max-width: 34rem;
-      font-size: clamp(1.08rem, 0.98rem + 0.45vw, 1.3rem);
-      color: rgba(248, 251, 255, 0.95);
+    .hero-title em {
+      font-style: italic;
+      color: var(--gold);
     }
 
-    .hero-supporting-copy,
-    .section-intro {
-      max-width: 42rem;
-      color: rgba(233, 238, 252, 0.72);
+    .hero-sub {
+      font-size: 1.05rem;
+      font-weight: 300;
+      color: var(--muted);
+      line-height: 1.8;
+      max-width: 44ch;
+      margin-bottom: 3rem;
     }
 
     .hero-actions {
       display: flex;
-      gap: var(--gs-space-4);
+      gap: 1rem;
       flex-wrap: wrap;
-      margin-top: var(--gs-space-6);
     }
 
-    .hero-button {
+    .btn-primary {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--void);
+      background: var(--gold);
+      border: 1px solid var(--gold);
+      padding: 0.85rem 2rem;
+      text-decoration: none;
+      transition: all 220ms var(--ease);
       display: inline-flex;
       align-items: center;
-      justify-content: center;
-      padding: 0.9rem 1.2rem;
-      border-radius: 999px;
-      border: 1px solid var(--gs-border);
-      background: var(--gs-primary-soft);
-      color: var(--gs-text);
+      gap: 0.5rem;
+    }
+
+    .btn-primary:hover { background: transparent; color: var(--gold); }
+
+    .btn-outline {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gold);
+      background: transparent;
+      border: 1px solid var(--border);
+      padding: 0.85rem 2rem;
       text-decoration: none;
-      transition:
-        transform 160ms ease,
-        border-color 160ms ease,
-        background 160ms ease;
+      transition: all 220ms var(--ease);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
     }
 
-    .hero-button:hover,
-    .hero-button:focus-visible {
-      transform: translateY(-1px);
-      border-color: var(--gs-primary);
-      background: color-mix(in srgb, var(--gs-primary) 20%, transparent);
-    }
+    .btn-outline:hover { border-color: var(--gold); background: var(--gold-soft); }
 
-    .hero-button--primary {
-      border-color: var(--gs-primary);
-      background: color-mix(in srgb, var(--gs-primary) 24%, transparent);
-      box-shadow: 0 18px 42px rgba(9, 17, 33, 0.28);
-    }
-
-    .hero-panel,
-    .signal-tile,
-    .capability-card,
-    .proof-card,
-    .team-card,
-    .contact-cta {
-      padding: var(--gs-space-6);
-      border-radius: var(--gs-radius-lg);
-      border: 1px solid var(--gs-border);
-      background: var(--gs-surface);
-      box-shadow: var(--gs-shadow);
-    }
-
+    /* Hero panel */
     .hero-panel {
-      border-color: var(--gs-border);
-      background: var(--gs-surface-strong);
-      backdrop-filter: blur(12px);
-    }
-
-    .hero-panel__heading h2 {
-      margin: 0.45rem 0 0.85rem;
-      font-size: clamp(1.65rem, 2.6vw, 2.1rem);
-      line-height: 1.1;
-      color: #fff;
-    }
-
-    .status-banner {
-      display: flex;
-      align-items: flex-start;
-      gap: 0.75rem;
-      padding: 0.95rem 1rem;
-      margin-bottom: 1rem;
-      border-radius: 18px;
-      border: 1px solid rgba(217, 106, 50, 0.18);
-      background: rgba(217, 106, 50, 0.08);
-    }
-
-    .status-banner strong {
-      display: block;
-      margin-bottom: 0.2rem;
-      color: #fff;
-    }
-
-    .status-banner p {
-      margin: 0;
-      color: rgba(233, 238, 252, 0.76);
-      font-size: 0.95rem;
-    }
-
-    .status-dot {
-      width: 0.72rem;
-      height: 0.72rem;
-      border-radius: 999px;
-      background: #47e3a7;
-      box-shadow: 0 0 0 rgba(71, 227, 167, 0.5);
-      animation: statusPulse 1.9s ease-out infinite;
-      flex-shrink: 0;
-      margin-top: 0.28rem;
-    }
-
-    .hero-panel ul {
-      margin: 0;
-      padding-left: 1.1rem;
-      display: grid;
-      gap: 0.85rem;
-    }
-
-    .signal-strip,
-    .metrics-grid,
-    .capability-grid,
-    .proof-grid,
-    .team-row {
-      display: grid;
-      gap: var(--gs-space-4);
-    }
-
-    .signal-strip {
-      margin-top: 1.25rem;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-
-    .metrics-shell {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 2rem;
       position: relative;
-      z-index: 2;
-      padding-top: 1rem;
-      padding-bottom: 2rem;
     }
 
-    .metrics-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+    .hero-panel::before {
+      content: '';
+      position: absolute;
+      top: -1px; left: 0;
+      width: 60%;
+      height: 2px;
+      background: linear-gradient(90deg, var(--gold), transparent);
     }
 
-    .signal-tile {
+    .panel-label {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 1.5rem;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border-dim);
+    }
+
+    .status-row:last-child { border-bottom: none; }
+
+    .status-name {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+
+    .status-badge {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.6rem;
+    }
+
+    .badge-live { color: #4ade80; border: 1px solid rgba(74,222,128,0.3); }
+    .badge-active { color: var(--gold); border: 1px solid var(--border); }
+    .badge-building { color: var(--muted); border: 1px solid var(--border-dim); }
+
+    .dot-live {
+      display: inline-block;
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: #4ade80;
+      margin-right: 0.4rem;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    /* ── SECTIONS ── */
+    section {
+      position: relative;
+      z-index: 1;
+      padding: 7rem 3rem;
+      max-width: 1300px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gold);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .section-label::before {
+      content: '';
+      display: block;
+      width: 24px;
+      height: 1px;
+      background: var(--gold);
+    }
+
+    .section-title {
+      font-family: var(--serif);
+      font-size: clamp(2rem, 3.5vw, 3.2rem);
+      line-height: 1.1;
+      color: var(--text);
+      margin-bottom: 1.25rem;
+    }
+
+    .section-sub {
+      font-size: 1rem;
+      font-weight: 300;
+      color: var(--muted);
+      line-height: 1.75;
+      max-width: 52ch;
+      margin-bottom: 3.5rem;
+    }
+
+    /* ── DIVIDER ── */
+    .divider {
+      position: relative;
+      z-index: 1;
+      border: none;
+      border-top: 1px solid var(--border-dim);
+      margin: 0 3rem;
+    }
+
+    /* ── CAPABILITIES ── */
+    .cap-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2px;
+    }
+
+    .cap-card {
+      background: var(--surface);
+      border: 1px solid var(--border-dim);
+      padding: 2.5rem 2rem;
+      transition: border-color 220ms var(--ease), background 220ms var(--ease);
       position: relative;
       overflow: hidden;
     }
 
-    .signal-tile__header,
-    .proof-card span {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.75rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .signal-tile span,
-    .proof-card span {
-      display: block;
-      color: rgba(233, 238, 252, 0.62);
-      font-size: 0.82rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-    }
-
-    .signal-tile small {
-      color: rgba(255, 255, 255, 0.78);
-      font-size: 0.75rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .signal-tile strong,
-    .proof-card strong {
-      font-size: clamp(1.35rem, 1.05rem + 1vw, 2rem);
-      color: #fff;
-    }
-
-    .signal-tile p {
-      margin: 0.65rem 0 0;
-      color: rgba(233, 238, 252, 0.75);
-    }
-
-    .signal-link {
-      display: inline-flex;
-      margin-top: 0.85rem;
-      color: var(--gs-primary);
-      text-decoration: none;
-      font-weight: 700;
-    }
-
-    .signal-link:hover,
-    .signal-link:focus-visible {
-      color: #fff;
-    }
-
-    .signal-tile--loading > * {
-      opacity: 0.2;
-    }
-
-    .signal-tile--loading::after {
+    .cap-card::before {
       content: '';
       position: absolute;
-      inset: 0;
-      background: linear-gradient(
-        110deg,
-        transparent 0%,
-        rgba(255, 255, 255, 0.08) 40%,
-        transparent 82%
-      );
-      transform: translateX(-100%);
-      animation: skeletonSweep 1.2s ease-in-out infinite;
+      top: 0; left: 0;
+      width: 0;
+      height: 2px;
+      background: var(--gold);
+      transition: width 350ms var(--ease);
     }
 
-    .section-block {
-      padding-top: 4.5rem;
+    .cap-card:hover { border-color: var(--border); background: var(--surface2); }
+    .cap-card:hover::before { width: 100%; }
+
+    .cap-num {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.14em;
+      color: var(--gold);
+      margin-bottom: 1.25rem;
     }
 
-    .section-copy {
-      margin-bottom: 1.5rem;
-      max-width: 60rem;
+    .cap-title {
+      font-family: var(--serif);
+      font-size: 1.4rem;
+      color: var(--text);
+      margin-bottom: 0.75rem;
+      line-height: 1.2;
     }
 
-    .section-copy h2 {
-      font-size: clamp(2rem, 5vw, 3.5rem);
-      margin-top: 0.65rem;
+    .cap-desc {
+      font-size: 0.88rem;
+      font-weight: 300;
+      color: var(--muted);
+      line-height: 1.7;
     }
 
-    .capability-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
+    /* ── PRODUCTS ── */
+    #products { background: none; }
 
-    .proof-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
-    .mcp-grid {
-      display: grid;
-      gap: 1rem;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
-    .proof-card--metrics {
-      display: grid;
-      gap: 1rem;
-    }
-
-    .team-row {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
-    .team-card--founder {
-      border-color: rgba(217, 106, 50, 0.2);
-      background: rgba(217, 106, 50, 0.08);
-    }
-
-    .mcp-card {
+    .product-list {
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
-      padding: 1.4rem;
-      border-radius: 22px;
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      background: rgba(10, 18, 36, 0.72);
-      box-shadow: var(--gs-shadow);
+      gap: 2px;
     }
 
-    .mcp-card--hero {
-      grid-row: span 2;
-      background:
-        radial-gradient(circle at top left, rgba(66, 153, 225, 0.18), transparent 36%),
-        rgba(10, 18, 36, 0.8);
-    }
-
-    .mcp-card__brand {
-      display: flex;
+    .product-row {
+      display: grid;
+      grid-template-columns: 280px 1fr auto;
       align-items: center;
-      gap: 1rem;
+      gap: 3rem;
+      padding: 2rem 2.5rem;
+      background: var(--surface);
+      border: 1px solid var(--border-dim);
+      transition: border-color 220ms var(--ease);
+      text-decoration: none;
+      color: inherit;
     }
 
-    .mcp-card__brand .gs-brand-logo {
-      width: 92px;
-      height: auto;
-      flex: 0 0 auto;
-    }
+    .product-row:hover { border-color: var(--border); }
 
-    .mcp-card__label {
-      display: block;
-      margin-bottom: 0.15rem;
-      color: rgba(233, 238, 252, 0.62);
+    .product-tag {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
-      letter-spacing: 0.1em;
-      font-size: 0.76rem;
+      color: var(--gold);
+      margin-bottom: 0.4rem;
     }
 
-    .mcp-card p {
+    .product-name {
+      font-family: var(--serif);
+      font-size: 1.5rem;
+      color: var(--text);
+    }
+
+    .product-desc {
+      font-size: 0.9rem;
+      font-weight: 300;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .product-arrow {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      color: var(--gold);
+      opacity: 0;
+      transition: opacity 220ms var(--ease), transform 220ms var(--ease);
+    }
+
+    .product-row:hover .product-arrow { opacity: 1; transform: translateX(4px); }
+
+    /* ── CONTACT ── */
+    #contact-section {
+      background: var(--surface);
+      border-top: 1px solid var(--border-dim);
+      border-bottom: 1px solid var(--border-dim);
+      max-width: none;
       margin: 0;
-      color: var(--gs-text-dim);
-      line-height: 1.75;
+      padding: 7rem 3rem;
     }
 
-    .contact-cta {
+    #contact-section .inner {
+      max-width: 1300px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 560px;
+      gap: 6rem;
+      align-items: start;
+    }
+
+    /* Contact form — wired to Cloudflare bindings via /api/contact */
+    .contact-form {
       display: flex;
-      justify-content: space-between;
-      gap: 1.5rem;
+      flex-direction: column;
+      gap: 1.1rem;
+    }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .field label {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--faint);
+    }
+
+    .field input,
+    .field textarea,
+    .field select {
+      background: var(--void);
+      border: 1px solid var(--border-dim);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 0.9rem;
+      padding: 0.8rem 1rem;
+      outline: none;
+      transition: border-color 220ms var(--ease);
+      border-radius: 2px;
+      -webkit-appearance: none;
+      width: 100%;
+    }
+
+    .field input:focus,
+    .field textarea:focus,
+    .field select:focus { border-color: var(--gold); }
+
+    .field textarea { min-height: 120px; resize: vertical; }
+    .field select option { background: var(--surface2); }
+
+    /* Honeypot */
+    .hp-field { display: none !important; visibility: hidden !important; }
+
+    .form-submit-row {
+      display: flex;
       align-items: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
     }
 
-    @keyframes skeletonSweep {
-      to {
-        transform: translateX(100%);
-      }
+    .btn-submit {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--void);
+      background: var(--gold);
+      border: 1px solid var(--gold);
+      padding: 0.9rem 2.5rem;
+      cursor: pointer;
+      transition: all 220ms var(--ease);
     }
 
-    @keyframes statusPulse {
-      0% {
-        box-shadow: 0 0 0 0 rgba(71, 227, 167, 0.48);
-      }
+    .btn-submit:hover { background: transparent; color: var(--gold); }
+    .btn-submit:disabled { opacity: 0.4; cursor: not-allowed; }
 
-      70% {
-        box-shadow: 0 0 0 12px rgba(71, 227, 167, 0);
-      }
-
-      100% {
-        box-shadow: 0 0 0 0 rgba(71, 227, 167, 0);
-      }
+    .form-notice {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.06em;
+      min-height: 1.2em;
     }
 
-    @media (max-width: 960px) {
-      .hero-shell,
-      .signal-strip,
-      .metrics-grid,
-      .capability-grid,
-      .proof-grid,
-      .mcp-grid,
-      .team-row {
-        grid-template-columns: 1fr;
-      }
-
-      .contact-cta {
-        flex-direction: column;
-        align-items: flex-start;
-      }
+    .contact-meta {
+      padding-top: 0.5rem;
     }
 
-    @media (max-width: 720px) {
-      .hero-shell,
-      .signal-strip,
-      .metrics-shell,
-      .section-block {
-        width: min(100% - 1.5rem, var(--gs-max-width));
-      }
-
-      .hero-shell {
-        padding-top: 6rem;
-      }
-
-      .hero-mark {
-        inset: 12% auto auto 1rem;
-      }
-
-      .hero-actions,
-      .hero-button {
-        width: 100%;
-      }
-
-      .signal-tile__header,
-      .proof-card span {
-        flex-direction: column;
-        align-items: flex-start;
-      }
+    .contact-intro {
+      font-size: 1rem;
+      font-weight: 300;
+      color: var(--muted);
+      line-height: 1.8;
+      max-width: 38ch;
+      margin-bottom: 3rem;
     }
 
-    @media (prefers-reduced-motion: reduce) {
-      .hero-button,
-      .status-dot,
-      .signal-tile--loading::after {
-        animation: none;
-        transition: none;
-      }
+    .contact-links {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
     }
 
+    .contact-link-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--border-dim);
+    }
+
+    .contact-link-label {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--faint);
+    }
+
+    .contact-link-value {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--gold);
+      text-decoration: none;
+      transition: opacity 220ms;
+    }
+
+    .contact-link-value:hover { opacity: 0.7; }
+
+    /* ── FOOTER ── */
+    footer {
+      position: relative;
+      z-index: 1;
+      border-top: 1px solid var(--border-dim);
+      padding: 2rem 3rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .footer-copy {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--faint);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .footer-links a {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--faint);
+      text-decoration: none;
+      transition: color 220ms var(--ease);
+    }
+
+    .footer-links a:hover { color: var(--gold); }
+
+    /* ── SYSTEM STATUS BAR ── */
+    .status-bar {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      z-index: 100;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 0.6rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-family: var(--mono);
+      font-size: 0.58rem;
+      letter-spacing: 0.1em;
+      color: var(--faint);
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1024px) {
+      .hero-inner { grid-template-columns: 1fr; gap: 3rem; }
+      .hero-panel { max-width: 480px; }
+      .cap-grid { grid-template-columns: 1fr 1fr; }
+      #contact-section .inner { grid-template-columns: 1fr; gap: 3rem; }
+      #contact-section .inner > :first-child { order: 2; }
+      #contact-section .inner > :last-child { order: 1; }
+    }
+
+    @media (max-width: 768px) {
+      nav { padding: 1rem 1.5rem; }
+      .nav-links { display: none; }
+      .hamburger { display: flex; }
+      section { padding: 4rem 1.5rem; }
+      .hero { padding: 7rem 1.5rem 4rem; }
+      .cap-grid { grid-template-columns: 1fr; }
+      .product-row { grid-template-columns: 1fr; gap: 0.75rem; }
+      .product-arrow { display: none; }
+      .form-row { grid-template-columns: 1fr; }
+      footer { flex-direction: column; gap: 1.5rem; text-align: center; }
+      .divider { margin: 0 1.5rem; }
+      .status-bar { display: none; }
+      #contact-section { padding: 4rem 1.5rem; }
+    }
+
+    @media (min-width: 769px) and (max-width: 1024px) {
+      .hero { padding: 8rem 2rem 5rem; }
+      section { padding: 5rem 2rem; }
+      #contact-section { padding: 5rem 2rem; }
+    }
   </style>
-</WebLayout>
+</head>
+
+<body>
+
+<!-- NAV -->
+<nav id="main-nav">
+  <a href="/" class="nav-logo">
+    <div class="nav-mark"></div>
+    <span class="nav-name">Gold Shore Labs</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#capabilities">Platform</a></li>
+    <li><a href="#products">Products</a></li>
+    <li><a href="#contact-section">Contact</a></li>
+    <li><a href="https://goldshore.org">Org</a></li>
+    <li><a href="https://admin.goldshore.ai" class="nav-cta" id="admin-link">Dashboard</a></li>
+  </ul>
+  <button class="hamburger" id="hamburger" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mobile-menu">
+  <button class="mobile-close" id="mobile-close">Close ✕</button>
+  <a href="#capabilities" onclick="closeMobile()">Platform</a>
+  <a href="#products" onclick="closeMobile()">Products</a>
+  <a href="#contact-section" onclick="closeMobile()">Contact</a>
+  <a href="https://goldshore.org">Org</a>
+  <a href="https://admin.goldshore.ai">Dashboard</a>
+</div>
+
+<!-- HERO -->
+<div class="hero" aria-label="Introduction">
+  <div class="hero-inner">
+    <div>
+      <p class="hero-eyebrow">AI Infrastructure · Gold Shore Labs</p>
+      <h1 class="hero-title">
+        Intelligence<br>
+        at the<br>
+        <em>edge.</em>
+      </h1>
+      <p class="hero-sub">
+        We build the infrastructure layer between raw AI capability and production systems — gateway, audit, sentiment, and human-in-the-loop tooling.
+      </p>
+      <div class="hero-actions">
+        <a href="#capabilities" class="btn-primary">Explore platform →</a>
+        <a href="#contact-section" class="btn-outline">Get in touch</a>
+      </div>
+    </div>
+
+    <div class="hero-panel">
+      <p class="panel-label">System status</p>
+      <div class="status-row">
+        <span class="status-name">goldshore-gateway</span>
+        <span class="status-badge badge-live"><span class="dot-live"></span>Live</span>
+      </div>
+      <div class="status-row">
+        <span class="status-name">api.goldshore.ai</span>
+        <span class="status-badge badge-live"><span class="dot-live"></span>Live</span>
+      </div>
+      <div class="status-row">
+        <span class="status-name">admin.goldshore.ai</span>
+        <span class="status-badge badge-active">Active</span>
+      </div>
+      <div class="status-row">
+        <span class="status-name">goldshore-agent</span>
+        <span class="status-badge badge-active">Active</span>
+      </div>
+      <div class="status-row">
+        <span class="status-name">Banproof / PoA</span>
+        <span class="status-badge badge-active">Active</span>
+      </div>
+      <div class="status-row">
+        <span class="status-name">Armsway</span>
+        <span class="status-badge badge-building">Private</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider" />
+
+<!-- CAPABILITIES -->
+<section id="capabilities">
+  <p class="section-label">Platform capabilities</p>
+  <h2 class="section-title">Built for<br>production AI.</h2>
+  <p class="section-sub">Every layer of the stack, designed to stay auditable, composable, and operator-controlled as it scales.</p>
+
+  <div class="cap-grid">
+    <div class="cap-card">
+      <p class="cap-num">01</p>
+      <h3 class="cap-title">AI Gateway &amp; Routing</h3>
+      <p class="cap-desc">Unified request routing across Gemini, GPT, and Workers AI. CORS, auth, rate limiting, and correlation IDs at the edge via Cloudflare Workers.</p>
+    </div>
+    <div class="cap-card">
+      <p class="cap-num">02</p>
+      <h3 class="cap-title">Proof of Agency</h3>
+      <p class="cap-desc">Auditable provenance for AI decisions. Every action chain recorded — who authorized it, what model ran it, what the output was. DePIN infrastructure layer.</p>
+    </div>
+    <div class="cap-card">
+      <p class="cap-num">03</p>
+      <h3 class="cap-title">Sentiment Intelligence</h3>
+      <p class="cap-desc">Multi-source signal routing across sports, government data, open-source databases, and professional networks. Structured for downstream consumption.</p>
+    </div>
+    <div class="cap-card">
+      <p class="cap-num">04</p>
+      <h3 class="cap-title">Human-in-the-Loop</h3>
+      <p class="cap-desc">Operator-assist review queues, approval gates, and escalation paths. Keeps humans in control of consequential AI decisions without adding friction to routine flows.</p>
+    </div>
+    <div class="cap-card">
+      <p class="cap-num">05</p>
+      <h3 class="cap-title">Content Processing</h3>
+      <p class="cap-desc">Durable Cloudflare Workflows for media ingestion, AI analysis, and sentiment scoring. Retryable, auditable, and connected to shared D1 and R2 storage.</p>
+    </div>
+    <div class="cap-card">
+      <p class="cap-num">06</p>
+      <h3 class="cap-title">Edge Security</h3>
+      <p class="cap-desc">Cloudflare Access JWT validation, RBAC role enforcement, secure headers, CORS controls, and audit logging — standard across all surfaces.</p>
+    </div>
+  </div>
+</section>
+
+<hr class="divider" />
+
+<!-- PRODUCTS -->
+<section id="products">
+  <p class="section-label">Products</p>
+  <h2 class="section-title">Active ventures.</h2>
+  <p class="section-sub">Each product is independently deployed and operates on shared Gold Shore Labs infrastructure.</p>
+
+  <div class="product-list">
+    <a href="https://goldshore.org" class="product-row">
+      <div>
+        <p class="product-tag">Platform · Data intelligence</p>
+        <p class="product-name">goldshore.org</p>
+      </div>
+      <p class="product-desc">Primary platform — sentiment data routing, analytics, and operator tooling. The operational center of the Gold Shore Labs ecosystem.</p>
+      <span class="product-arrow">→</span>
+    </a>
+    <a href="https://banproof.me" class="product-row">
+      <div>
+        <p class="product-tag">AI Gateway · Proof of Agency</p>
+        <p class="product-name">Banproof</p>
+      </div>
+      <p class="product-desc">AI transparency layer. Proof of Agency protocols with verifiable decision chains and DePIN audit infrastructure.</p>
+      <span class="product-arrow">→</span>
+    </a>
+    <a href="https://armsway.com" class="product-row">
+      <div>
+        <p class="product-tag">Patented product · Client</p>
+        <p class="product-name">Armsway</p>
+      </div>
+      <p class="product-desc">Selective access. Patented technology — inquire directly for details.</p>
+      <span class="product-arrow">→</span>
+    </a>
+    <a href="https://admin.goldshore.ai" class="product-row" id="admin-product-link">
+      <div>
+        <p class="product-tag">Internal · Protected</p>
+        <p class="product-name">Admin Dashboard</p>
+      </div>
+      <p class="product-desc">Operator control plane — worker status, route management, lead submissions, and system configuration. Cloudflare Access protected.</p>
+      <span class="product-arrow">→</span>
+    </a>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<div id="contact-section">
+  <div class="inner">
+    <div class="contact-meta">
+      <p class="section-label">Contact</p>
+      <h2 class="section-title">Work with<br>Gold Shore Labs.</h2>
+      <p class="contact-intro">
+        We take on a small number of engagements. If what you're building sits at the edge of AI capability and production systems, we want to hear about it.
+      </p>
+      <div class="contact-links">
+        <div class="contact-link-row">
+          <span class="contact-link-label">General</span>
+          <a href="mailto:hello@goldshore.ai" class="contact-link-value">hello@goldshore.ai</a>
+        </div>
+        <div class="contact-link-row">
+          <span class="contact-link-label">Gateway</span>
+          <a href="https://gw.goldshore.ai" class="contact-link-value" id="gw-link">gw.goldshore.ai</a>
+        </div>
+        <div class="contact-link-row">
+          <span class="contact-link-label">API</span>
+          <a href="https://api.goldshore.ai" class="contact-link-value" id="api-link">api.goldshore.ai</a>
+        </div>
+        <div class="contact-link-row">
+          <span class="contact-link-label">Admin</span>
+          <a href="https://admin.goldshore.ai" class="contact-link-value" id="admin-contact-link">admin.goldshore.ai</a>
+        </div>
+      </div>
+    </div>
+
+    <!--
+      Contact form — Cloudflare bindings:
+        POST /api/contact
+        Bindings used (set in wrangler.jsonc):
+          DB  = PLATFORM_DB (D1: 9703574e-adb7-481e-8d98-96f8ce5f8a90) — stores lead_submissions
+          KV  = GS_CONFIG (KV: 5f13370575784c9dacff522121104cb3) — stores contact TTL cache
+          MAILCHANNELS_SENDER_EMAIL (secret) — from address
+          MAILCHANNELS_API_URL (var) — https://api.mailchannels.net/tx/v1/send
+          CONTACT_NOTIFICATION_EMAILS (secret) — notification recipients
+    -->
+    <form
+      class="contact-form"
+      id="contactForm"
+      method="POST"
+      action="/api/contact"
+      novalidate
+    >
+      <!-- Honeypot — bots fill this, humans don't see it -->
+      <div class="hp-field" aria-hidden="true">
+        <input type="text" name="companyWebsite" tabindex="-1" autocomplete="off" />
+      </div>
+      <!-- Timing — submission too fast = spam -->
+      <input type="hidden" name="formStartedAt" id="formStartedAt" />
+      <input type="hidden" name="formType" value="contact" />
+      <input type="hidden" name="dedupeKey" id="dedupeKey" />
+
+      <div class="form-row">
+        <div class="field">
+          <label for="gs-name">Name *</label>
+          <input type="text" id="gs-name" name="name" required minlength="2" maxlength="120" autocomplete="name" />
+        </div>
+        <div class="field">
+          <label for="gs-email">Email *</label>
+          <input type="email" id="gs-email" name="email" required autocomplete="email" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label for="gs-company">Organization</label>
+          <input type="text" id="gs-company" name="company" autocomplete="organization" />
+        </div>
+        <div class="field">
+          <label for="gs-inquiry">Inquiry type *</label>
+          <select id="gs-inquiry" name="inquiry" required>
+            <option value="" disabled selected>Select</option>
+            <option value="strategy-call">Strategy call</option>
+            <option value="project-scope">Project scope</option>
+            <option value="general">General</option>
+            <option value="support">Support</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label for="gs-message">Message * <span style="color:var(--faint)">(20–4000 chars)</span></label>
+        <textarea id="gs-message" name="message" required minlength="20" maxlength="4000"></textarea>
+      </div>
+      <div class="form-submit-row">
+        <button type="submit" class="btn-submit" id="submitBtn">Send →</button>
+        <p class="form-notice" id="formNotice" aria-live="polite" role="status"></p>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <p class="footer-copy">&copy; 2025 Gold Shore Labs · All rights reserved</p>
+  <ul class="footer-links">
+    <li><a href="https://goldshore.org">Org</a></li>
+    <li><a href="https://banproof.me">Banproof</a></li>
+    <li><a href="https://armsway.com">Armsway</a></li>
+    <li><a href="https://rmarston.com">rmarston.com</a></li>
+    <li><a href="https://github.com/marzton">GitHub</a></li>
+  </ul>
+</footer>
+
+<!-- STATUS BAR -->
+<div class="status-bar" id="systemStatus">
+  <span class="dot-live"></span>
+  <span id="statusText">Checking systems…</span>
+</div>
+
+<script>
+  // ── Mobile menu ──
+  const hamburger = document.getElementById('hamburger');
+  const mobileMenu = document.getElementById('mobile-menu');
+  const mobileClose = document.getElementById('mobile-close');
+  hamburger.addEventListener('click', () => mobileMenu.classList.add('open'));
+  mobileClose.addEventListener('click', closeMobile);
+  function closeMobile() { mobileMenu.classList.remove('open'); }
+
+  // ── Smooth scroll nav offset ──
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      const t = document.querySelector(a.getAttribute('href'));
+      if (!t) return;
+      e.preventDefault();
+      window.scrollTo({ top: t.getBoundingClientRect().top + scrollY - 80, behavior: 'smooth' });
+      closeMobile();
+    });
+  });
+
+  // ── Contact form ──
+  const form = document.getElementById('contactForm');
+  const notice = document.getElementById('formNotice');
+  const submitBtn = document.getElementById('submitBtn');
+
+  // Set timing and dedupe fields
+  document.getElementById('formStartedAt').value = Date.now();
+  document.getElementById('dedupeKey').value = crypto.randomUUID().replace(/-/g,'') + crypto.randomUUID().replace(/-/g,'');
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending…';
+    notice.textContent = '';
+    notice.style.color = '';
+
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'x-gs-request-mode': 'spa',
+          'accept': 'application/json',
+        },
+        body: new FormData(form),
+      });
+
+      const data = await res.json();
+
+      if (data.ok) {
+        notice.textContent = 'Received. We\'ll be in touch.';
+        notice.style.color = '#4ade80';
+        form.reset();
+        document.getElementById('formStartedAt').value = Date.now();
+        document.getElementById('dedupeKey').value = crypto.randomUUID().replace(/-/g,'') + crypto.randomUUID().replace(/-/g,'');
+      } else {
+        const msg = data.error?.message || 'Something went wrong.';
+        notice.textContent = msg;
+        notice.style.color = '#f87171';
+      }
+    } catch {
+      notice.textContent = 'Network error. Try emailing hello@goldshore.ai';
+      notice.style.color = '#f87171';
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Send →';
+    }
+  });
+
+  // ── System status check via gateway health endpoint ──
+  async function checkStatus() {
+    try {
+      const res = await fetch('https://gw.goldshore.ai/health', { signal: AbortSignal.timeout(4000) });
+      const data = await res.json();
+      const el = document.getElementById('statusText');
+      if (data.status === 'ok') {
+        el.textContent = 'All systems operational';
+      } else {
+        el.textContent = 'Degraded — check status';
+      }
+    } catch {
+      document.getElementById('statusText').textContent = 'Gateway unreachable';
+    }
+  }
+  checkStatus();
+
+  // ── Admin link — update with correct admin URL from gateway ──
+  const ADMIN_URL = 'https://admin.goldshore.ai';
+  const GW_URL = 'https://gw.goldshore.ai';
+  const API_URL = 'https://api.goldshore.ai';
+
+  document.getElementById('admin-link').href = ADMIN_URL;
+  document.getElementById('admin-product-link').href = ADMIN_URL;
+  document.getElementById('admin-contact-link').href = ADMIN_URL;
+  document.getElementById('gw-link').href = GW_URL;
+  document.getElementById('api-link').href = API_URL;
+</script>
+
+</body>
+</html>
