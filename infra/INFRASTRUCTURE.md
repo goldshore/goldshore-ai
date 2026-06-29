@@ -17,7 +17,7 @@
 
 ---
 
-## Workers (canonical set — 21 active)
+## Workers (canonical set — 25 active)
 
 | Worker name | Purpose | Domains served | Fail policy |
 |---|---|---|---|
@@ -25,7 +25,7 @@
 | `gs-api` | API layer | api.goldshore.ai | Fail closed |
 | `gs-api-preview` | Preview environment for gs-api | — | Fail closed |
 | `gs-admin` | Admin dashboard worker | admin.goldshore.ai | Fail closed |
-| `gs-gateway` | Legacy gateway (to be superseded by gs-platform) | — | Fail closed |
+| `gs-gateway` | Legacy gateway (to be superseded by gs-platform) | gw.goldshore.ai, agent.goldshore.ai | Fail closed |
 | `gs-agent` | AI agent worker | — | Fail closed |
 | `gs-control` | Build control service | — | Fail closed |
 | `goldshore-org` | goldshore.org site | goldshore.org | Fail open (public) |
@@ -44,6 +44,8 @@
 | `gs-www-redirect` | www → apex redirect worker | www.goldshore.ai | Fail open |
 | `banproof` | BanProof legacy worker | — | Fail closed |
 | `partners-in-pools` | Matteo's pool business client site (partnersinpools.com) | partnersinpools.com | Fail open (public) |
+| `gs-mcp` | MCP server — Model Context Protocol endpoint for AI agent tooling | — | Fail closed |
+| `gs-web-app` | Web application worker (goldshore-ai web app variant) | — | Fail closed |
 
 **Workers NOT on this list must not exist. Any live worker absent from this table will fail the CI audit. See Gate 1 below.**
 
@@ -170,6 +172,8 @@ Two workers in your account have unknown origin. You must decide to keep or dele
 | 1a | `partners-in-pools` — Matteo's pool business client site. Added to canonical table. | — | ✅ DONE |
 | 1b | Same for `goldshore-ai` worker — determine if it is a stub/duplicate or actively used. Delete or document. | [CF Dashboard](https://dash.cloudflare.com/f77de112d2019e5456a3198a8bb50bd2/workers-and-pages) | ⬜ TODO |
 | 1c | Same for `gs-todo` — keep or delete. | [CF Dashboard](https://dash.cloudflare.com/f77de112d2019e5456a3198a8bb50bd2/workers-and-pages) | ⬜ TODO |
+| 1d | `gs-mcp` — MCP server for AI agent tooling. Added to canonical table. | — | ✅ DONE |
+| 1e | `gs-web-app` — web application worker variant. Added to canonical table. | — | ✅ DONE |
 
 ---
 
