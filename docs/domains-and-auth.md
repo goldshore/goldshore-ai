@@ -9,6 +9,7 @@ This document captures the Cloudflare Access applications and policies that prot
 | Access application      | Policy name           | Domain coverage                                                                                                                                             | Notes                                                                                                                                                                                     |
 | ----------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | GoldShore Admin         | GoldShore-Admin-ZT    | `admin.goldshore.ai`, `admin.goldshore.org`, `admin-preview.goldshore.ai`, `*-preview.goldshore.ai` (admin preview branches), `{branch}.goldshore-pages.dev` (admin preview pages) | Admin cockpit is protected by Access with an email allowlist + identity provider requirement. Preview domains should be attached to the same application to match production enforcement. |
+| GoldShore MCP           | GoldShore-MCP-ZT      | `mcp.goldshore.ai`                                                                                                                                                                  | Private MCP surface. Allow only approved human identities and a dedicated service identity path for approved agents.                                                                      |
 | GoldShore Web (Preview) | GoldShore-Web-Preview | `preview.goldshore.ai`, `*-preview.goldshore.ai` (web preview branches), `{branch}.goldshore-pages.dev` (web preview pages)                                 | Web production (`goldshore.ai`, `www.goldshore.ai`) is public, but preview domains must be gated behind Access.                                                                           |
 
 ## Identity providers and session policy alignment
@@ -110,7 +111,7 @@ Non-interactive checks against Access-protected admin and preview hosts must use
 
 - GitHub Actions and local automation should provide `CF_ACCESS_CLIENT_ID` and `CF_ACCESS_CLIENT_SECRET`.
 - `.github/workflows/maintenance-gs-sync.yml` passes those secrets into `scripts/jules-sync.sh` for authenticated sync checks.
-- `infra/Cloudflare/tests.ts` automatically attaches the service-token headers for `admin.goldshore.ai`, `admin.goldshore.org`, `admin-preview.goldshore.ai`, `*-preview.goldshore.ai`, and `*.goldshore-pages.dev` smoke checks when those environment variables are present.
+- `infra/Cloudflare/tests.ts` automatically attaches the service-token headers for `admin.goldshore.ai`, `admin.goldshore.org`, `mcp.goldshore.ai`, `admin-preview.goldshore.ai`, `*-preview.goldshore.ai`, and `*.goldshore-pages.dev` smoke checks when those environment variables are present.
 - Keep the Pages runtime URLs aligned with the `.ai` migration by setting explicit `public_url` values for `gs-web` and `gs-admin` in `infra/Cloudflare/config.yaml`.
 
 ### Mail handler configuration
@@ -139,6 +140,6 @@ When adding preview callback URLs in GitHub App settings, ensure the same hostna
 
 ### Cloudflare Access OIDC callback (GitHub IdP)
 
-- `https://goldshore.cloudflareaccess.com/cdn-cgi/access/sso/oidc/1eae8b45326b57d6fd150609e9d155d724013960fd0b994de2d56f07d3f0ce5f`
+- `https://goldshore.cloudflareaccess.com/cdn-cgi/access/callback`
 
-Use this exact callback URL in the GitHub OAuth app configuration used by Cloudflare Access. If this endpoint changes, update both the GitHub OAuth app and Cloudflare Access IdP configuration together to avoid login failures.
+Use this exact callback URL in the GitHub OAuth app configuration used by Cloudflare Access. The GitHub OAuth app homepage should be `https://goldshore.cloudflareaccess.com`; Cloudflare Access stores the GitHub OAuth client ID and client secret in the Zero Trust identity provider configuration. If this endpoint changes, update both the GitHub OAuth app and Cloudflare Access IdP configuration together to avoid login failures.

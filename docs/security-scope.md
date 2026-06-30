@@ -18,6 +18,7 @@ Private routes are restricted to staff or authenticated users and must be protec
 - Admin interfaces (all `/admin/*` sections)
 - Internal dashboards (staff-only or authenticated user portals)
 - Operational tooling (logs, workflow controls, user management)
+- Private MCP surfaces such as `mcp.goldshore.ai`
 
 ## Enforcement
 
