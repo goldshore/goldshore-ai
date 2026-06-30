@@ -48,13 +48,16 @@ const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Aut
     <span class="mark">GS·LAB·v2.84</span>
     <span><strong>Gold Shore Labs</strong><em>GoldShore</em></span>
   </a>
-  <nav>
-    <a href="#platform">Platform</a>
-    <a href="#risk-radar">Risk Radar</a>
-    <a href="#services">Services</a>
-    <a href="#developer">Developer</a>
-    <a href="#about">About</a>
-    <a href="https://dashboard.goldshore.ai">Log in</a>
+  <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+  <nav id="main-nav">
+    <a href="/platform/">Platform</a>
+    <a href="/risk-radar/">Risk Radar</a>
+    <a href="/services/">Services</a>
+    <a href="/developer/">Developer</a>
+    <a href="/about/">About</a>
+    <button id="open-access-modal" class="nav-login">Access →</button>
     <a class="nav-cta" href="#engage">Request Briefing</a>
   </nav>
 </header>
@@ -284,23 +287,32 @@ export async function verifyAccess(req, env) {
       <a class="btn magnetic" href="/developer">Developer Hub →</a>
     </div>
   </div>
-  <form class="quick-form" method="POST" action="/api/contact">
+  <form class="quick-form" id="quick-form" method="POST" action="/api/contact">
     <h3>Quick Inquiry</h3>
+    <input type="hidden" name="formType" value="homepage-inquiry" />
+    <input type="hidden" name="redirectTo" value="/thank-you" />
+    <input type="hidden" name="formStartedAt" id="qs-form-started" value="" />
+    <input type="hidden" name="dedupeKey" id="qs-dedupe-key" value="" />
+    <div class="gs-honeypot"><input name="companyWebsite" tabindex="-1" autocomplete="off" /></div>
     <div class="form-row">
-      <label>Name<input name="name" placeholder="Your name" /></label>
+      <label>Name<input name="name" required placeholder="Your name" /></label>
       <label>Organisation<input name="company" placeholder="Firm or company" /></label>
     </div>
-    <label>Work Email<input name="email" type="email" placeholder="you@firm.com" /></label>
+    <label>Work Email<input name="email" type="email" required placeholder="you@firm.com" /></label>
     <label>Interest
-      <select name="inquiry">
-        <option>Select area of interest</option>
-        <option>Digital Strategy</option>
-        <option>AI Implementation</option>
-        <option>Systems Integration</option>
-        <option>Risk Radar</option>
+      <select name="inquiry" required>
+        <option value="">Select area of interest</option>
+        <option value="general">General Enquiry</option>
+        <option value="strategy-call">Strategy Call</option>
+        <option value="project-scope">Project Scope</option>
+        <option value="support">Support</option>
       </select>
     </label>
-    <button type="submit" class="btn-form">Submit Request →</button>
+    <label>Message
+      <textarea name="message" id="qs-message" required rows="4" placeholder="Tell us about your inquiry (20+ characters)…"></textarea>
+    </label>
+    <div id="qs-form-status" class="form-status" aria-live="polite"></div>
+    <button type="submit" class="btn-form" id="qs-submit">Submit Request →</button>
   </form>
 </section>
 
@@ -314,18 +326,67 @@ export async function verifyAccess(req, env) {
   </div>
   <div>
     <h3>Platform</h3>
-    <p>Risk Radar</p><p>Financial Signals</p><p>Workflow Engine</p><p>Sentinel</p><p>AI Oracle</p>
+    <p><a href="/risk-radar/">Risk Radar</a></p>
+    <p><a href="/platform/financial-signals">Financial Signals</a></p>
+    <p><a href="/platform/workflow-engine">Workflow Engine</a></p>
+    <p><a href="/platform/sentinel">Sentinel</a></p>
+    <p><a href="/platform/ai-oracle">AI Oracle</a></p>
   </div>
   <div>
     <h3>Services</h3>
-    {services.map((s) => <p>{s}</p>)}
+    <p><a href="/services/digital-strategy">Digital Strategy</a></p>
+    <p><a href="/services/ai-implementation">AI Implementation</a></p>
+    <p><a href="/services/systems-integration">Systems Integration</a></p>
+    <p><a href="/services/design-dev">Design &amp; Development</a></p>
+    <p><a href="/services/consulting">Enterprise Consulting</a></p>
   </div>
   <div>
     <h3>Company</h3>
-    <p>About</p><p>Team</p><p>Developer Hub</p><p>Status</p><p>Contact</p>
+    <p><a href="/about/">About</a></p>
+    <p><a href="/team/">Team</a></p>
+    <p><a href="/developer/">Developer Hub</a></p>
+    <p><a href="/status/">Status</a></p>
+    <p><a href="/contact/">Contact</a></p>
   </div>
-  <small>© 2026 Gold Shore Labs. All rights reserved. 40°42′N · 074°00′W · goldshore.ai · Privacy · Security · Terms</small>
+  <small>© 2026 Gold Shore Labs. All rights reserved. 40°42′N · 074°00′W · goldshore.ai · <a href="/legal/privacy">Privacy</a> · <a href="/legal/">Security</a> · <a href="/legal/terms">Terms</a></small>
 </footer>
+
+<!-- ── Access Modal ──────────────────────────────────────────────────────── -->
+<dialog id="access-modal" class="access-modal">
+  <div class="modal-inner">
+    <button class="modal-close" aria-label="Close">✕</button>
+    <h2>Access Goldshore</h2>
+    <p class="modal-lead">Select a destination to continue.</p>
+    <div class="modal-grid">
+      <a href="/app/dashboard" class="modal-card">
+        <span class="modal-icon">⬡</span>
+        <strong>Dashboard</strong>
+        <span>Portfolio &amp; signals</span>
+      </a>
+      <a href="https://admin.goldshore.org" class="modal-card" rel="noopener noreferrer" target="_blank">
+        <span class="modal-icon">◈</span>
+        <strong>Admin</strong>
+        <span>Organisation management</span>
+      </a>
+      <a href="https://goldshore.org/dash" class="modal-card" rel="noopener noreferrer" target="_blank">
+        <span class="modal-icon">◇</span>
+        <strong>Trading</strong>
+        <span>Active positions</span>
+      </a>
+      <a href="/developer/mcp" class="modal-card">
+        <span class="modal-icon">⬢</span>
+        <strong>MCP</strong>
+        <span>Model Context Protocol</span>
+      </a>
+      <a href="https://api.goldshore.ai" class="modal-card" rel="noopener noreferrer" target="_blank">
+        <span class="modal-icon">◉</span>
+        <strong>API</strong>
+        <span>Developer access</span>
+      </a>
+    </div>
+    <p class="modal-contact">Need access? <a href="/contact/">Contact us →</a></p>
+  </div>
+</dialog>
 
 <script is:inline>
 /* ── Starfield ────────────────────────────────────────────────────────────── */
@@ -395,6 +456,66 @@ document.querySelectorAll('.ticker-item, .anomaly, .metrics div').forEach(el => 
     void el.offsetWidth;
     el.classList.add('is-pinged');
   });
+});
+
+/* ── Hamburger nav toggle ─────────────────────────────────────────────────── */
+const navToggle = document.getElementById('nav-toggle');
+const mainNav   = document.getElementById('main-nav');
+navToggle?.addEventListener('click', () => {
+  const open = mainNav.classList.toggle('nav-open');
+  navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+});
+
+/* ── Access modal ─────────────────────────────────────────────────────────── */
+const accessModal = document.getElementById('access-modal');
+document.getElementById('open-access-modal')?.addEventListener('click', () => accessModal?.showModal());
+document.querySelector('.modal-close')?.addEventListener('click', () => accessModal?.close());
+accessModal?.addEventListener('click', e => { if (e.target === accessModal) accessModal.close(); });
+
+/* ── Quick engage form ────────────────────────────────────────────────────── */
+const qsForm    = document.getElementById('quick-form');
+const qsStarted = document.getElementById('qs-form-started');
+const qsStatus  = document.getElementById('qs-form-status');
+const qsSubmit  = document.getElementById('qs-submit');
+
+if (qsStarted) qsStarted.value = Date.now().toString();
+
+qsForm?.addEventListener('submit', async e => {
+  e.preventDefault();
+  const fd  = new FormData(qsForm);
+  const msg = (fd.get('message') || '').toString().trim();
+  if (msg.length < 20) {
+    qsStatus.textContent = 'Message must be at least 20 characters.';
+    qsStatus.className = 'form-status';
+    return;
+  }
+  qsStatus.textContent = '';
+  qsSubmit.disabled = true;
+  qsSubmit.textContent = 'Sending…';
+  try {
+    const raw = `${fd.get('formType')}|${fd.get('name')}|${fd.get('email')}|${fd.get('inquiry')}|${msg}`;
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
+    document.getElementById('qs-dedupe-key').value = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+    const res  = await fetch('/api/contact', {
+      method: 'POST',
+      headers: { 'x-gs-request-mode': 'spa', 'Accept': 'application/json' },
+      body: new FormData(qsForm),
+    });
+    if (res.ok) {
+      window.location.href = '/thank-you';
+    } else {
+      const data = await res.json().catch(() => ({}));
+      qsStatus.textContent = data.error || 'Something went wrong. Please try again.';
+      qsStatus.className = 'form-status';
+      qsSubmit.disabled = false;
+      qsSubmit.textContent = 'Submit Request →';
+    }
+  } catch {
+    qsStatus.textContent = 'Network error. Please try again.';
+    qsStatus.className = 'form-status';
+    qsSubmit.disabled = false;
+    qsSubmit.textContent = 'Submit Request →';
+  }
 });
 </script>
 
