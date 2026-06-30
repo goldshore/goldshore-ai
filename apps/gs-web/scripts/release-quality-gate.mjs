@@ -201,7 +201,13 @@ const createStaticServer = (documents) => {
       return;
     }
     // Serve static assets (CSS, JS bundles, fonts, images) from dist directory
-    const filePath = path.join(DIST_DIR, pathname.replace(/^\//, ''));
+    const filePath = path.resolve(DIST_DIR, pathname.replace(/^\//, ''));
+    // Guard against path traversal: resolved path must stay inside DIST_DIR
+    if (!filePath.startsWith(DIST_DIR + path.sep) && filePath !== DIST_DIR) {
+      res.statusCode = 404;
+      res.end('Not found');
+      return;
+    }
     try {
       const content = await readFile(filePath);
       const mime = MIME[path.extname(filePath)] || 'application/octet-stream';
