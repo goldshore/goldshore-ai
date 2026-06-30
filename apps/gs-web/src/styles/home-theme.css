@@ -63,8 +63,6 @@ main { display: grid; gap: 1px; position: relative; z-index: 1; }
   background: rgba(6,6,10,0.88);
   border-bottom: 1px solid var(--b1);
   backdrop-filter: blur(20px);
-  position: relative;
-  z-index: 50;
 }
 
 .brand {
@@ -1198,6 +1196,7 @@ code {
 
 @media (max-width: 768px) {
   .hero { padding-top: 4rem; }
+  .topbar { flex-direction: column; align-items: flex-start; }
   .metrics        { grid-template-columns: repeat(2,1fr); }
   .sector-grid    { grid-template-columns: 1fr 1fr; }
   .telemetry-grid { grid-template-columns: 1fr; }
@@ -1214,5 +1213,9 @@ code {
     animation: none !important;
     transition: none !important;
     scroll-behavior: auto !important;
+  }
+  h1 .solid, h1 .outlined, h1 .accent {
+    opacity: 1;
+    transform: none;
   }
 }
