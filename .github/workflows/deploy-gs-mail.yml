@@ -1,11 +1,11 @@
-name: Deploy gs-www-redirect
+name: Deploy gs-mail
 
 on:
   push:
     branches: [main]
     paths:
-      - 'apps/gs-www-redirect/**'
-      - '.github/workflows/deploy-gs-www-redirect.yml'
+      - 'apps/gs-mail/**'
+      - '.github/workflows/deploy-gs-mail.yml'
   workflow_dispatch:
 
 jobs:
@@ -23,7 +23,7 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @goldshore/gs-www-redirect exec wrangler deploy --env production
+      - run: pnpm --filter @goldshore/gs-mail deploy
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_GS_CONTROL }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
