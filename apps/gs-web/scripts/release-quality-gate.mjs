@@ -191,7 +191,13 @@ const MIME = {
 const createStaticServer = (documents) => {
   const byPath = new Map(documents.map((doc) => [doc.relativePath, doc.html]));
   return createServer(async (req, res) => {
-    const pathname = (req.url || '/').split('?')[0];
+    const rawPathname = (req.url || '/').split('?')[0];
+    let pathname;
+    try {
+      pathname = decodeURIComponent(rawPathname);
+    } catch {
+      pathname = rawPathname;
+    }
     const key = pathname === '/' ? 'index.html' : `${pathname.replace(/^\//, '').replace(/\/$/, '')}/index.html`;
     const html = byPath.get(key);
     if (html) {
@@ -201,9 +207,11 @@ const createStaticServer = (documents) => {
       return;
     }
     // Serve static assets (CSS, JS bundles, fonts, images) from dist directory
-    const filePath = path.resolve(DIST_DIR, pathname.replace(/^\//, ''));
-    // Guard against path traversal: resolved path must stay inside DIST_DIR
-    if (!filePath.startsWith(DIST_DIR + path.sep) && filePath !== DIST_DIR) {
+    const distRoot = path.resolve(DIST_DIR);
+    const filePath = path.resolve(distRoot, pathname.replace(/^\/+/, ''));
+    // Guard against path traversal: resolved path must stay inside distRoot
+    const rel = path.relative(distRoot, filePath);
+    if (rel.startsWith('..') || path.isAbsolute(rel)) {
       res.statusCode = 404;
       res.end('Not found');
       return;
