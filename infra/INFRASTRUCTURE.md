@@ -4,6 +4,7 @@
 > Cloudflare resources without a corresponding change to this file passing CI.**
 >
 > Last certified: 2026-04-29 | Certified by: Rob Marston (@marzton)
+> Repo alignment pass: 2026-06-30 | `goldshore.org` apex ownership moved to `gs-web-app`; `www.goldshore.org` ownership moved to `gs-www-redirect-prod`.
 
 ---
 
@@ -30,7 +31,7 @@
 | `gs-agent` | AI agent worker | — | Fail closed |
 | `gs-agent-prod` | Production-env deployment of gs-agent (`wrangler --env prod`) | — | Fail closed |
 | `gs-control` | Build control service | — | Fail closed |
-| `goldshore-org` | goldshore.org site | goldshore.org | Fail open (public) |
+| `goldshore-org` | Legacy goldshore.org redirect worker, superseded by `gs-web-app` + `gs-www-redirect-prod` for current public `.org` routing | — | Fail open (public) |
 | `banproof-me` | Proof-of-Agency security layer, contact forms, PoA workflow | banproof.me | Fail closed |
 | `banproof-email-router` | Email routing for banproof | — | Fail closed |
 | `gs-core-worker` | Gearswipe/StellarAIO ATC trigger, signals consumer | — | Fail closed |
@@ -47,12 +48,12 @@
 | `gs-trading-prod` | Production-env deployment of gs-trading (`wrangler --env prod`) | trading.goldshore.ai | Fail closed |
 | `armsway-com` | armsway.com site worker | armsway.com | Fail open (public) |
 | `armsway-com-prod` | Production-env deployment of armsway-com (`wrangler --env prod`) | armsway.com, www.armsway.com | Fail open (public) |
-| `gs-www-redirect` | www → apex redirect worker | www.goldshore.ai | Fail open |
-| `gs-www-redirect-prod` | Production-env deployment of gs-www-redirect (`wrangler --env prod`) | www.goldshore.ai | Fail open |
+| `gs-www-redirect` | www → apex redirect worker | www.goldshore.ai, www.goldshore.org | Fail open |
+| `gs-www-redirect-prod` | Production-env deployment of gs-www-redirect (`wrangler --env production`) | www.goldshore.ai, www.goldshore.org | Fail open |
 | `banproof` | BanProof legacy worker | — | Fail closed |
 | `partners-in-pools` | Matteo's pool business client site (partnersinpools.com) | partnersinpools.com | Fail open (public) |
 | `gs-mcp` | MCP server — Model Context Protocol endpoint for AI agent tooling | — | Fail closed |
-| `gs-web-app` | Main web application worker for goldshore.ai | goldshore.ai | Fail open (public) |
+| `gs-web-app` | Main web application worker for goldshore.ai and goldshore.org apex | goldshore.ai, goldshore.org | Fail open (public) |
 
 **Workers NOT on this list must not exist. Any live worker absent from this table will fail the CI audit. See Gate 1 below.**
 
@@ -78,7 +79,7 @@
 | `KV_CACHE` | KV_CACHE | `895b3586e1ce46c5b33f7a2fdbdad314` | General cache |
 | `KV_SESSIONS` | KV_SESSIONS | `d0b889d0ba314b42892f5b959356ceda` | Session storage |
 | `GOLDSHORE_API_KV` | GOLDSHORE-API | `9cc2209906a94851b704be57543987a9` | API layer |
-| `GOLDSHORE_ORG_KV` | GOLDSHORE-ORG | `a59a5e2f446348629f59fb21ea69d795` | goldshore-org worker |
+| `GOLDSHORE_ORG_KV` | GOLDSHORE-ORG | `a59a5e2f446348629f59fb21ea69d795` | Legacy goldshore-org worker |
 | `RMARSTON_KV` | RMARSTON-COM | `a854b3393b5c412bb945742ecb3eda1b` | rmarston-com worker |
 | `GOLDSHORE_ADMIN_KV` | GOLDSHORE-ADMIN | `d02c0c7951a244a7987e23d8af16b7b2` | Admin dashboard |
 | `SIGNALS_CACHE` | gs-signals-cache | `f8cc5b1dd1ec49d7a3f7bf9acc5f2b1d` | Signals worker cache |
@@ -112,8 +113,8 @@
 | `ops.goldshore.ai` | `gs-control` | 3 (admin) | Fail closed |
 | `admin.goldshore.ai` | `gs-admin` (Pages) | 3 (admin) | Fail closed |
 | `admin.goldshore.org` | `gs-admin` (Pages) | 3 (admin) | Same app as admin.goldshore.ai |
-| `goldshore.org` | `goldshore-org` | 1 (public) | 308 → goldshore.ai |
-| `www.goldshore.org` | `goldshore-org` | 1 (public) | 308 → goldshore.ai |
+| `goldshore.org` | `gs-web-app` | 1 (public) | Public `.org` apex serves the main Astro web app |
+| `www.goldshore.org` | `gs-www-redirect-prod` | 1 (public) | 308 → goldshore.ai |
 | `mail.goldshore.ai` | `gs-mail` | — | CF mail routing |
 | `banproof.me` | `banproof-me` | 1 | Fail closed |
 | `rmarston.com` | `rmarston-com` | 1 (public) | Fail open |
@@ -193,15 +194,17 @@ Two workers in your account have unknown origin. You must decide to keep or dele
 
 ---
 
-### GATE 2 — Deploy goldshore-org redirect (BLOCKS: goldshore.org routing)
+### GATE 2 — Align `.org` apex and `www` ownership (BLOCKS: goldshore.org routing)
 
-Merge PR #12 in `marzton/goldshore-org` so `goldshore.org` and `www.goldshore.org` 301-redirect to `goldshore.ai`.
+`apps/gs-web/wrangler.toml` owns `goldshore.org/*` through `gs-web-app`. `apps/gs-www-redirect/wrangler.toml` owns `www.goldshore.org/*` through `gs-www-redirect-prod`. The old `goldshore-org` redirect path is superseded unless live Cloudflare still shows an explicit dashboard route that needs removal.
 
 | # | Action | Where | Status |
 |---|--------|--------|--------|
-| 2a | Merge `marzton/goldshore-org` PR #12 | [goldshore-org/pull/12](https://github.com/marzton/goldshore-org/pull/12) | ⬜ TODO |
-| 2b | Run `wrangler deploy --env prod` in `goldshore-org` repo (or confirm CI deploys it) | Terminal / CF Dashboard | ⬜ TODO |
-| 2c | Verify: `curl -I https://goldshore.org` → `301` to `https://goldshore.ai` | Browser or curl | ⬜ TODO |
+| 2a | Deploy `gs-web-app` with `wrangler deploy --env prod` so `goldshore.org/*` is attached to the main web app. | GitHub Actions / CF Dashboard | ⬜ TODO |
+| 2b | Deploy `gs-www-redirect-prod` with `wrangler deploy --env production` so `www.goldshore.org/*` and `www.goldshore.ai/*` are attached to the redirect Worker. | GitHub Actions / CF Dashboard | ⬜ TODO |
+| 2c | Verify: `curl -I https://goldshore.org` → public web app response, not a legacy redirect worker. | Browser or curl | ⬜ TODO |
+| 2d | Verify: `curl -I https://www.goldshore.org` → `308` to `https://goldshore.ai`. | Browser or curl | ⬜ TODO |
+| 2e | If Cloudflare still lists a `goldshore-org` route for `goldshore.org` or `www.goldshore.org`, remove it after the two Workers above are confirmed. | CF Dashboard | ⬜ TODO |
 
 ---
 
@@ -212,7 +215,7 @@ Merge PR #5117. `dashboard.goldshore.ai` uses Worker Custom Domain (auto-provisi
 | # | Action | Where | Status |
 |---|--------|--------|--------|
 | 3a | Merge `marzton/goldshore-ai` PR #5117 | [goldshore-ai/pull/5117](https://github.com/marzton/goldshore-ai/pull/5117) | ⬜ TODO |
-| 3b | Confirm `wrangler deploy --env prod` for `gs-gateway` and `gs-www-redirect` run (CI or manual). Custom domains will auto-create DNS. | CF Dashboard | ⬜ TODO |
+| 3b | Confirm `wrangler deploy --env prod` for `gs-gateway` and `wrangler deploy --env production` for `gs-www-redirect` run (CI or manual). Custom domains will auto-create DNS where configured. | CF Dashboard | ⬜ TODO |
 | 3c | Verify: `curl -I https://www.goldshore.ai` → `308` to `https://goldshore.ai` (handled by gs-www-redirect) | Browser or curl | ⬜ TODO |
 | 3d | Verify: `curl -I https://dashboard.goldshore.ai` → `308` to `https://admin.goldshore.ai` | Browser or curl | ⬜ TODO |
 
@@ -264,14 +267,15 @@ All gates above must be ✅ before trading dashboard Phase 1 begins.
 | # | Check | Expected result | Status |
 |---|-------|-----------------|--------|
 | 7a | `https://goldshore.ai` | Public homepage loads | ⬜ TODO |
-| 7b | `https://goldshore.org` | 308 → goldshore.ai | ⬜ TODO |
+| 7b | `https://goldshore.org` | Public homepage loads from `gs-web-app` | ⬜ TODO |
 | 7c | `https://www.goldshore.ai` | 308 → goldshore.ai | ⬜ TODO |
-| 7d | `https://admin.goldshore.ai` | CF Access login wall | ⬜ TODO |
-| 7e | `https://admin.goldshore.org` | CF Access login wall | ⬜ TODO |
-| 7f | `https://trading.goldshore.ai` | CF Access login wall | ⬜ TODO |
-| 7g | `https://gw.goldshore.ai/status` | JSON binding health response (status.goldshore.ai reserved for gs-status Pages — not yet built) | ⬜ TODO |
-| 7h | Contact form → email delivered to marstonr6@gmail.com | End-to-end mail test | ⬜ TODO |
-| 7i | Update `Last certified` date at top of this file and commit | This file | ⬜ TODO |
+| 7d | `https://www.goldshore.org` | 308 → goldshore.ai | ⬜ TODO |
+| 7e | `https://admin.goldshore.ai` | CF Access login wall | ⬜ TODO |
+| 7f | `https://admin.goldshore.org` | CF Access login wall | ⬜ TODO |
+| 7g | `https://trading.goldshore.ai` | CF Access login wall | ⬜ TODO |
+| 7h | `https://gw.goldshore.ai/status` | JSON binding health response (status.goldshore.ai reserved for gs-status Pages — not yet built) | ⬜ TODO |
+| 7i | Contact form → email delivered to marstonr6@gmail.com | End-to-end mail test | ⬜ TODO |
+| 7j | Update `Last certified` date at top of this file and commit after live verification is complete. | This file | ⬜ TODO |
 
 ---
 
