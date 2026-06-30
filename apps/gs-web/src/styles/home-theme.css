@@ -141,6 +141,51 @@ main { display: grid; gap: 1px; position: relative; z-index: 1; }
   border: 1px solid var(--ox-border);
 }
 
+.nav-login {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--t2);
+  padding: 0.65rem 0.8rem;
+  border-radius: 999px;
+  transition: color 0.2s, background 0.2s;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.nav-login:hover {
+  color: var(--ox);
+  background: var(--ox-dim);
+}
+
+.nav-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 2.5rem;
+  height: 2.5rem;
+  background: none;
+  border: 1px solid var(--b1);
+  cursor: pointer;
+  padding: 0.5rem;
+  flex-shrink: 0;
+}
+
+.nav-toggle span {
+  display: block;
+  width: 100%;
+  height: 1px;
+  background: var(--t2);
+  transition: transform 0.25s, opacity 0.25s;
+}
+
+.nav-toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+.nav-toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+.nav-toggle[aria-expanded="true"] span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
 /* ── Hero ─────────────────────────────────────────────────────────────────── */
 .hero {
   min-height: calc(100vh - 72px);
@@ -1074,7 +1119,8 @@ code {
 }
 
 .quick-form input,
-.quick-form select {
+.quick-form select,
+.quick-form textarea {
   width: 100%;
   background: var(--iron);
   border: 1px solid var(--b1);
@@ -1087,8 +1133,33 @@ code {
   appearance: none;
 }
 
+.quick-form textarea {
+  resize: vertical;
+  min-height: 7rem;
+  line-height: 1.6;
+}
+
 .quick-form input:focus,
-.quick-form select:focus { border-color: var(--ox-border); }
+.quick-form select:focus,
+.quick-form textarea:focus { border-color: var(--ox-border); }
+
+.form-status {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  color: var(--red);
+  min-height: 1.2rem;
+}
+
+.form-status.success { color: var(--green); }
+
+.gs-honeypot {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
 
 .btn-form {
   background: var(--ox);
@@ -1196,7 +1267,20 @@ code {
 
 @media (max-width: 768px) {
   .hero { padding-top: 4rem; }
-  .topbar { flex-direction: column; align-items: flex-start; }
+  .topbar { flex-wrap: wrap; align-items: center; gap: 0.75rem; }
+  .nav-toggle { display: flex; margin-left: auto; }
+  .topbar nav {
+    display: none;
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    border-top: 1px solid var(--b1);
+    padding-top: 0.5rem;
+  }
+  .topbar nav.nav-open { display: flex; }
+  .topbar nav a,
+  .nav-login { padding: 0.85rem 0.5rem; width: 100%; border-radius: 0; }
   .metrics        { grid-template-columns: repeat(2,1fr); }
   .sector-grid    { grid-template-columns: 1fr 1fr; }
   .telemetry-grid { grid-template-columns: 1fr; }
@@ -1206,7 +1290,124 @@ code {
   .form-row       { grid-template-columns: 1fr; }
   .panel-columns  { grid-template-columns: 1fr; }
   .risk-metrics   { grid-template-columns: 1fr; }
+  .modal-grid     { grid-template-columns: 1fr; }
 }
+
+/* ── Access Modal ─────────────────────────────────────────────────────────── */
+.access-modal {
+  padding: 0;
+  border: 1px solid var(--ox-border);
+  background: var(--iron);
+  color: var(--t1);
+  width: min(480px, 92vw);
+  border-radius: 2px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.access-modal::backdrop {
+  background: rgba(6,6,10,0.85);
+  backdrop-filter: blur(6px);
+}
+
+.modal-inner {
+  padding: 2rem;
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  background: none;
+  border: 1px solid var(--b1);
+  color: var(--t3);
+  width: 2rem;
+  height: 2rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.modal-close:hover { border-color: var(--ox-border); color: var(--ox); }
+
+.modal-inner h2 {
+  font-size: 1.6rem;
+  margin: 0 0 0.35rem;
+  padding-right: 2.5rem;
+}
+
+.modal-lead {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--t3);
+  margin: 0 0 1.75rem;
+}
+
+.modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.modal-card {
+  display: block;
+  background: var(--plate);
+  border: 1px solid var(--b1);
+  padding: 1.25rem;
+  text-decoration: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.modal-card:hover {
+  border-color: var(--ox-border);
+  background: var(--graphite);
+}
+
+.modal-icon {
+  display: block;
+  font-size: 1.4rem;
+  color: var(--ox);
+  margin-bottom: 0.6rem;
+  line-height: 1;
+}
+
+.modal-card strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--t1);
+  margin-bottom: 0.25rem;
+}
+
+.modal-card span {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--t3);
+}
+
+.modal-contact {
+  font-size: 0.82rem;
+  color: var(--t3);
+  text-align: center;
+  margin: 0;
+  border-top: 1px solid var(--b1);
+  padding-top: 1.25rem;
+}
+
+.modal-contact a { color: var(--ox); text-decoration: none; }
+.modal-contact a:hover { color: var(--ox-bright); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
