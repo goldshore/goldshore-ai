@@ -22,7 +22,7 @@ jobs:
         with:
           run_install: false
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: 'pnpm'
@@ -45,6 +45,13 @@ jobs:
           grep -Eq '^\[env\.preview\]' apps/gs-api/wrangler.toml
           grep -Eq '^\s*\[\[env\.preview\.services\]\]' apps/gs-api/wrangler.toml
           grep -Eq '^\s*\[\[env\.preview\.queues\.(producers|consumers)\]\]' apps/gs-api/wrangler.toml
+
+      - name: Verify Cloudflare auth
+        working-directory: apps/gs-api
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: pnpm exec wrangler whoami
 
       - name: Deploy GS API worker preview to Cloudflare
         working-directory: apps/gs-api
