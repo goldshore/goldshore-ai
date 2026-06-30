@@ -27,6 +27,30 @@
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 
+.skip-nav {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  z-index: 999;
+}
+.skip-nav:focus {
+  position: fixed;
+  left: 1rem;
+  top: 1rem;
+  width: auto;
+  height: auto;
+  padding: 0.5rem 1rem;
+  background: var(--ox);
+  color: var(--t1);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  border-radius: 2px;
+  text-decoration: none;
+}
+
 body.gs-home {
   margin: 0;
   background: var(--void);
@@ -401,7 +425,8 @@ h1 .accent::after {
   padding-top: 1rem;
 }
 
-.panel-columns h3 {
+.panel-columns h3,
+.panel-col-heading {
   font-family: var(--font-mono);
   font-size: 0.62rem;
   letter-spacing: 0.09em;

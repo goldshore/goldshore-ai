@@ -40,6 +40,7 @@ const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Aut
 </head>
 <body class="gs-home">
 
+<a class="skip-nav" href="#main-content">Skip to main content</a>
 <canvas id="starfield" aria-hidden="true"></canvas>
 
 <header class="topbar">
@@ -62,7 +63,7 @@ const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Aut
   </nav>
 </header>
 
-<main>
+<main id="main-content">
 
 <!-- ── Hero ──────────────────────────────────────────────────────────────── -->
 <section class="hero" id="platform">
@@ -93,8 +94,8 @@ const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Aut
       ))}
     </div>
     <div class="panel-columns">
-      <div><h3>Services</h3>{services.map((s) => <p>{s}</p>)}</div>
-      <div><h3>Sectors</h3>{sectors.map((s) => <p>{s}</p>)}</div>
+      <div><p class="panel-col-heading">Services</p>{services.map((s) => <p>{s}</p>)}</div>
+      <div><p class="panel-col-heading">Sectors</p>{sectors.map((s) => <p>{s}</p>)}</div>
     </div>
     <p class="operational"><span></span>Operational</p>
   </aside>
