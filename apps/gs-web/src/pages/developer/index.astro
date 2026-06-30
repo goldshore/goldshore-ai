@@ -1,6 +1,8 @@
 ---
 import MarketingLayout from '../../layouts/MarketingLayout.astro';
 
+export const prerender = true;
+
 const cards = [
   {
     title: 'Documentation',
@@ -65,7 +67,7 @@ const cards = [
           <h2>{card.title}</h2>
           <p>{card.body}</p>
           <a href={card.href} class="developer-card__link">
-            {card.cta} →
+            {card.cta} &rarr;
           </a>
         </article>
       ))}
