@@ -352,13 +352,13 @@ export async function verifyAccess(req, env) {
 </footer>
 
 <!-- ── Access Modal ──────────────────────────────────────────────────────── -->
-<dialog id="access-modal" class="access-modal">
+<dialog id="access-modal" class="access-modal" aria-labelledby="access-modal-title">
   <div class="modal-inner">
     <button class="modal-close" aria-label="Close">✕</button>
-    <h2>Access Goldshore</h2>
+    <h2 id="access-modal-title">Access Goldshore</h2>
     <p class="modal-lead">Select a destination to continue.</p>
     <div class="modal-grid">
-      <a href="/app/dashboard" class="modal-card">
+      <a href="https://dashboard.goldshore.ai" class="modal-card" rel="noopener noreferrer" target="_blank">
         <span class="modal-icon">⬡</span>
         <strong>Dashboard</strong>
         <span>Portfolio &amp; signals</span>

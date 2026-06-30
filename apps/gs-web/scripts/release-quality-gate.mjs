@@ -179,20 +179,40 @@ const checkFormLabels = (documents) => {
   }
 };
 
+const MIME = {
+  '.js': 'application/javascript', '.mjs': 'application/javascript',
+  '.css': 'text/css', '.json': 'application/json',
+  '.svg': 'image/svg+xml', '.png': 'image/png',
+  '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp',
+  '.woff': 'font/woff', '.woff2': 'font/woff2', '.ico': 'image/x-icon',
+  '.txt': 'text/plain', '.xml': 'application/xml',
+};
+
 const createStaticServer = (documents) => {
   const byPath = new Map(documents.map((doc) => [doc.relativePath, doc.html]));
-  return createServer((req, res) => {
+  return createServer(async (req, res) => {
     const pathname = (req.url || '/').split('?')[0];
     const key = pathname === '/' ? 'index.html' : `${pathname.replace(/^\//, '').replace(/\/$/, '')}/index.html`;
     const html = byPath.get(key);
-    if (!html) {
-      res.statusCode = 404;
-      res.end('Not found');
+    if (html) {
+      res.statusCode = 200;
+      res.setHeader('content-type', 'text/html; charset=utf-8');
+      res.end(html);
       return;
     }
-    res.statusCode = 200;
-    res.setHeader('content-type', 'text/html; charset=utf-8');
-    res.end(html);
+    // Serve static assets (CSS, JS bundles, fonts, images) from dist directory
+    const filePath = path.join(DIST_DIR, pathname.replace(/^\//, ''));
+    try {
+      const content = await readFile(filePath);
+      const mime = MIME[path.extname(filePath)] || 'application/octet-stream';
+      res.statusCode = 200;
+      res.setHeader('content-type', mime);
+      res.setHeader('cache-control', 'no-store');
+      res.end(content);
+    } catch {
+      res.statusCode = 404;
+      res.end('Not found');
+    }
   });
 };
 
