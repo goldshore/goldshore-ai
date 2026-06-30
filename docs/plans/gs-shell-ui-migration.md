@@ -184,6 +184,12 @@ Responsibilities:
 - text-forward `Gold Shore Labs` / `GoldShore` brand lockup
 - primary navigation matching the homepage labels
 - Access layer slot or component
+- shared font loading
+- GS LAB body class
+- coordinates header
+- brand mark
+- primary navigation
+- Access modal slot or component
 - Request Briefing CTA
 - shared footer
 - slot for page content
@@ -194,8 +200,10 @@ Responsibilities:
 Responsibilities:
 
 - shared CSS variables from `home-theme.css`
-- white/gold header and navigation styling
+- white/orange header and navigation styling
 - homepage-equivalent brand text treatment
+- shared CSS variables
+- header and navigation
 - buttons and links
 - footer
 - modal shell
@@ -211,6 +219,7 @@ Responsibilities:
 
 - mobile nav open and close
 - Access layer open and close
+- Access modal open and close
 - Escape key behavior
 - click-outside behavior
 - reveal-on-scroll behavior
@@ -249,6 +258,7 @@ Acceptance criteria:
 - Hero still reads `Where Strategy Operates.`
 - Header still shows coordinates, `GS·LAB·v2.84`, `Gold Shore Labs`, and `GoldShore`.
 - Access layer opens or routes correctly.
+- Access modal opens.
 - Request Briefing CTA works.
 - Homepage-specific styling remains available.
 
@@ -291,3 +301,106 @@ Acceptance criteria:
 - CTAs and links route consistently.
 - Mobile navigation and modal behavior work.
 - The old `WebLayout` header no longer appears on migrated public pages unless intentionally retained for a non-public/internal surface.
+
+## Phase 6 — Normalize link map
+
+Create a shared navigation config:
+
+```text
+apps/gs-web/src/config/navigation.ts
+```
+
+Suggested groups:
+
+- public pages
+- platform pages
+- services
+- developer resources
+- operational surfaces
+- legal/footer links
+
+Acceptance criteria:
+
+- Header and footer use one source of truth.
+- Homepage and subpages use the same nav labels and destinations.
+- Operational links are deliberate and documented.
+
+## Phase 7 — Add CI collision guard
+
+Add a script that fails the build when a public static file conflicts with an Astro route.
+
+Suggested file:
+
+```text
+apps/gs-web/scripts/check-public-route-collisions.js
+```
+
+Acceptance criteria:
+
+- CI fails before deploy if a public file would override an Astro route.
+- Error message lists conflicting files.
+- Archived static files are ignored.
+
+## Phase 8 — Security and interaction review
+
+Review:
+
+```text
+apps/gs-web/src/security/policy.ts
+apps/gs-web/src/utils/csp.ts
+apps/gs-web/src/middleware.ts
+apps/gs-web/public/_headers
+```
+
+Goals:
+
+- Keep browser policy strict.
+- Prefer external first-party JavaScript for shared shell behavior.
+- Do not expose secrets in client code.
+- Permit only required first-party connections.
+
+Acceptance criteria:
+
+- Shared modals and scripts work on Astro-rendered pages.
+- Static routes do not require broad inline-script allowances.
+- Sensitive calls remain server-side.
+
+## Verification checklist
+
+After each migration PR:
+
+```bash
+# Build and deploy
+gh workflow run deploy-gs-web.yml --ref main
+WEB=$(gh run list --workflow "Deploy gs-web" --branch main --limit 1 --json databaseId -q '.[0].databaseId')
+gh run watch "$WEB"
+
+# Check build warnings
+gh run view "$WEB" --log | grep -Ei 'Skipping src/pages|public folder|error|warn' | tail -120
+
+# Check expected homepage markers
+curl -sL "https://goldshore.ai/?v=$(date +%s)" \
+  | grep -Ei 'Applied Intelligence|Where|Strategy|Request Briefing' \
+  | head -40
+```
+
+## Rollout order
+
+1. Repository README map PR.
+2. This planning PR.
+3. Public route collision guard PR.
+4. Shared shell PR.
+5. Homepage shell refactor PR.
+6. Risk Radar migration PR.
+7. Platform page migration PR.
+8. Service page migration PR.
+9. Link-map and security cleanup PR.
+
+## Final success state
+
+- All public pages use one Gold Shore shell.
+- Homepage visual identity carries into subpages.
+- Modals, nav, CTAs, and interactions work consistently.
+- Static public files no longer override Astro pages.
+- Operational links are centralized and intentional.
+- Browser policy remains secure while allowing required first-party UI behavior.
