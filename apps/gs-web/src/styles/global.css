@@ -1,6 +1,7 @@
 @import '@goldshore/theme/styles/components.css';
 @import '@goldshore/theme/styles/layout.css';
 @import './gs-effects.css';
+@import './gs-brand-theme.css';
 
 :root {
   --font-sans:
@@ -84,6 +85,3 @@ textarea {
   background: rgba(217, 106, 50, 0.28);
   color: var(--gs-text);
 }
-
-/* GSL Brand Theme — copper + responsive */
-@import './gs-brand-theme.css';

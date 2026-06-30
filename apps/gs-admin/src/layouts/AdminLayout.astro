@@ -1,0 +1,54 @@
+---
+import Sidebar from '../components/Sidebar.astro';
+import '../styles/admin.css';
+
+interface Props {
+  title: string;
+  requiredPermission?: string;
+}
+
+const { title } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{title}</title>
+    <link rel="icon" href="/favicon.ico" />
+  </head>
+  <body class="gs-admin-body">
+    <div class="gs-admin-shell">
+      <Sidebar />
+      <main class="gs-admin-main">
+        <slot />
+      </main>
+    </div>
+  </body>
+</html>
+
+<style>
+  :root {
+    color-scheme: dark;
+  }
+
+  body.gs-admin-body {
+    margin: 0;
+    background: #050b14;
+    color: rgba(226, 232, 240, 0.92);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    min-height: 100dvh;
+  }
+
+  .gs-admin-shell {
+    display: flex;
+    min-height: 100dvh;
+  }
+
+  .gs-admin-main {
+    flex: 1;
+    overflow-x: hidden;
+    padding: 0;
+  }
+</style>
