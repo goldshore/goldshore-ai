@@ -1,20 +1,24 @@
 ---
 import DocsLayout from '../../../layouts/DocsLayout.astro';
 import MDXCodeBlock from '../../../components/MDXCodeBlock.astro';
-import { getCollection } from 'astro:content';
+import { getCollection, render } from 'astro:content';
+
+function getDocSlug(id: string) {
+  return id.replace(/\.(md|mdx)$/, '');
+}
 
 export const prerender = true;
 
 export async function getStaticPaths() {
   const pages = await getCollection('docs');
   return pages.map((p) => ({
-    params: { slug: p.slug },
+    params: { slug: getDocSlug(p.id) },
     props: { page: p }
   }));
 }
 
 const { page } = Astro.props;
-const { Content } = await page.render();
+const { Content } = await render(page);
 ---
 
 <DocsLayout title={`${page.data.title} – GoldShore Docs`} page={page}>

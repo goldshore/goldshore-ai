@@ -30,6 +30,12 @@ const trustMetrics = [
   },
 ];
 
+
+type ProofPoint = {
+  title: string;
+  body: string;
+};
+
 const capabilities = [
   {
     title: 'Model oversight workflows',
@@ -53,7 +59,7 @@ const capabilities = [
   },
 ];
 
-const proofPoints = [
+const proofPoints: ProofPoint[] = [
   {
     title: 'Human-in-the-loop by default',
     body: 'Every high-stakes model decision routes through a configured review step before action is taken.',

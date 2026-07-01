@@ -13,7 +13,17 @@ export type Env = {
   API_VERSION?: string;
   DEPLOY_SHA?: string;
   GIT_SHA?: string;
+<<<<<<< ours
   DEV_AUTH_BYPASS?: string;
+=======
+  CONTROL_ADMIN_ROLES?: string;
+  MAIL_FORWARD_TO?: string;
+  FORWARD_TO?: string;
+  MAIL_BLOCKED_SENDERS?: string;
+  MAIL_ALLOWED_RECIPIENTS?: string;
+  AGENT?: Fetcher;
+  API_ORIGIN?: string;
+>>>>>>> theirs
 };
 
 export type Variables = {

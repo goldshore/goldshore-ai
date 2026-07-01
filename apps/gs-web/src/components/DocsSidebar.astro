@@ -8,6 +8,10 @@ const pages = await getCollection('docs');
 // Sort by optional "order" key
 pages.sort((a, b) => (a.data.order ?? 999) - (b.data.order ?? 999));
 
+function getDocSlug(id: string) {
+  return id.replace(/\.(md|mdx)$/, '');
+}
+
 function getHref(slug: string) {
   return slug === 'index' ? '/developer/docs' : `/developer/docs/${slug}`;
 }
@@ -23,9 +27,9 @@ function getHref(slug: string) {
     {pages.map((page) => (
       <li>
         <a
-          href={getHref(page.slug)}
-          class={currentSlug === page.slug ? 'active' : ''}
-          aria-current={currentSlug === page.slug ? 'page' : undefined}
+          href={getHref(getDocSlug(page.id))}
+          class={currentSlug === getDocSlug(page.id) ? 'active' : ''}
+          aria-current={currentSlug === getDocSlug(page.id) ? 'page' : undefined}
         >
           {page.data.title}
         </a>

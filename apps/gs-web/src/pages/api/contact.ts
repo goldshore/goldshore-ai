@@ -84,7 +84,7 @@ type ApiErrorPayload = {
   };
 };
 
-const jsonResponse = (payload: ApiSuccessPayload | ApiErrorPayload, status = 200) =>
+const contactJsonResponse = (payload: ApiSuccessPayload | ApiErrorPayload, status = 200) =>
   new Response(JSON.stringify(payload), {
     status,
     headers: {
@@ -98,7 +98,7 @@ const buildError = (
   code: string,
   message: string,
   details?: Record<string, unknown>,
-) => jsonResponse({ ok: false, error: { code, message, details } }, status);
+) => contactJsonResponse({ ok: false, error: { code, message, details } }, status);
 
 const shouldReturnJson = (request: Request) =>
   request.headers.get('x-gs-request-mode') === 'spa' ||
@@ -473,7 +473,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     }
     const redirectUrl = safeRedirect(redirectTo, new URL(request.url).origin);
     if (respondJson) {
-      return jsonResponse({
+      return contactJsonResponse({
         ok: true,
         submissionId: submission.id,
         redirectTo: redirectUrl.pathname,
@@ -659,7 +659,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   };
 
   if (respondJson) {
-    return jsonResponse(successPayload);
+    return contactJsonResponse(successPayload);
   }
 
   return Response.redirect(redirectUrl, 303);
