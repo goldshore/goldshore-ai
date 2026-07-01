@@ -109,7 +109,7 @@
   border:1px solid rgba(56,189,248,.25);
   background: rgba(2,6,23,.35);
   padding:10px 14px;
-  border-radius:999px;
+  border-radius: 2px;
   text-transform:uppercase;
 }
 .gs-pill .dot{ width:8px; height:8px; border-radius:50%;
