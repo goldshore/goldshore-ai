@@ -40,13 +40,12 @@ const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Aut
 </head>
 <body class="gs-home">
 
+<a class="skip-nav" href="#main-content">Skip to main content</a>
 <canvas id="starfield" aria-hidden="true"></canvas>
 
 <header class="topbar">
-  <a class="brand" href="/">
-    <span class="coords">40°42′45″N<br />74°00′21″W</span>
-    <span class="mark">GS·LAB·v2.84</span>
-    <span><strong>Gold Shore Labs</strong><em>GoldShore</em></span>
+  <a class="brand" href="/" aria-label="GoldShore home">
+    <span class="brand-wordmark">GOLDSHORE</span>
   </a>
   <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
     <span></span><span></span><span></span>
@@ -62,7 +61,7 @@ const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Aut
   </nav>
 </header>
 
-<main>
+<main id="main-content">
 
 <!-- ── Hero ──────────────────────────────────────────────────────────────── -->
 <section class="hero" id="platform">
@@ -93,8 +92,8 @@ const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Aut
       ))}
     </div>
     <div class="panel-columns">
-      <div><h3>Services</h3>{services.map((s) => <p>{s}</p>)}</div>
-      <div><h3>Sectors</h3>{sectors.map((s) => <p>{s}</p>)}</div>
+      <div><p class="panel-col-heading">Services</p>{services.map((s) => <p>{s}</p>)}</div>
+      <div><p class="panel-col-heading">Sectors</p>{sectors.map((s) => <p>{s}</p>)}</div>
     </div>
     <p class="operational"><span></span>Operational</p>
   </aside>
@@ -358,22 +357,22 @@ export async function verifyAccess(req, env) {
     <h2 id="access-modal-title">Access Goldshore</h2>
     <p class="modal-lead">Select a destination to continue.</p>
     <div class="modal-grid">
-      <a href="https://dashboard.goldshore.ai" class="modal-card" rel="noopener noreferrer" target="_blank">
+      <a href="https://trading.goldshore.ai" class="modal-card" rel="noopener noreferrer" target="_blank">
         <span class="modal-icon">⬡</span>
         <strong>Dashboard</strong>
         <span>Portfolio &amp; signals</span>
       </a>
-      <a href="https://admin.goldshore.org" class="modal-card" rel="noopener noreferrer" target="_blank">
+      <a href="https://admin.goldshore.ai" class="modal-card" rel="noopener noreferrer" target="_blank">
         <span class="modal-icon">◈</span>
         <strong>Admin</strong>
         <span>Organisation management</span>
       </a>
-      <a href="https://goldshore.org/dash" class="modal-card" rel="noopener noreferrer" target="_blank">
+      <a href="https://trading.goldshore.ai" class="modal-card" rel="noopener noreferrer" target="_blank">
         <span class="modal-icon">◇</span>
         <strong>Trading</strong>
         <span>Active positions</span>
       </a>
-      <a href="/developer/mcp" class="modal-card">
+      <a href="https://mcp.goldshore.ai" class="modal-card" rel="noopener noreferrer" target="_blank">
         <span class="modal-icon">⬢</span>
         <strong>MCP</strong>
         <span>Model Context Protocol</span>

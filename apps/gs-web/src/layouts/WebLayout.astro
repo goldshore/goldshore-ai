@@ -1,37 +1,8 @@
 ---
-import '../styles/global.css';
-import Logo from '../components/brand/Logo.astro';
-import { HTML_CSP_META_FALLBACK } from '../security/policy';
-import { WEB_META_CSP } from '../utils/csp';
+import GoldShoreShell from './GoldShoreShell.astro';
+import '../styles/goldshore-shell.css';
 
-const navLinks = [
-  { href: '/', label: 'Home' },
-  { href: '/about', label: 'About' },
-  { href: '/team', label: 'Team' },
-  { href: '/contact?inquiry=strategy-call', label: 'Book Strategy Call' },
-  { href: '/contact', label: 'Contact' },
-  { href: '/risk-radar', label: 'Risk Radar' },
-  { href: '/developer', label: 'Developer Hub' },
-];
-const footerLinks = [
-  { href: '/legal/privacy', label: 'Privacy' },
-  { href: '/legal/terms', label: 'Terms' },
-];
-const mobileNavId = 'mobile-navigation';
-
-const CANONICAL_ORIGIN = 'https://goldshore.org';
-
-const {
-  title = 'GoldShore',
-  description = 'GoldShore AI',
-  currentPath = Astro.url.pathname,
-  canonicalPath = Astro.url.pathname,
-  ogTitle = title,
-  ogDescription = description,
-} = Astro.props;
-
-const canonicalUrl = new URL(canonicalPath, CANONICAL_ORIGIN).toString();
-const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
+const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.props;
 ---
 
 <html lang="en">
@@ -58,7 +29,7 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap"
       rel="stylesheet"
     />
     <link rel="manifest" href="/site.webmanifest"/>
@@ -68,8 +39,10 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
     <div class="gs-page-shell">
       <header class="header" data-menu-open="false">
         <div class="header__inner">
-          <a href="/" class="gs-logo-link" aria-label="Gold Shore home">
-            <Logo class="gs-logo gs-logo--lockup" title="Gold Shore" variant="lockup" />
+          <a href="/" class="header-brand" aria-label="Gold Shore home">
+            <span class="header-brand__coords">40°42′45″N<br />74°00′21″W</span>
+            <span class="header-brand__mark">GS·LAB·v2.84</span>
+            <span class="header-brand__lockup"><strong>Gold Shore Labs</strong><em>GoldShore</em></span>
           </a>
 
           <nav class="desktop-nav" aria-label="Primary navigation">
@@ -100,12 +73,9 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
         <nav id={mobileNavId} class="menu-panel" aria-label="Mobile navigation">
           <div class="menu-panel__inner">
             <div class="menu-panel__header">
-              <a href="/" class="gs-logo-link gs-logo-link--mobile" aria-label="GoldShore home">
-                <Logo class="gs-logo" title="GoldShore" />
-                <div class="brand-lockup">
-                  <strong>GoldShore</strong>
-                  <span>Institutional AI systems</span>
-                </div>
+              <a href="/" class="header-brand header-brand--mobile" aria-label="GoldShore home">
+                <span class="header-brand__mark">GS·LAB</span>
+                <span class="header-brand__lockup"><strong>Gold Shore Labs</strong><em>Institutional AI systems</em></span>
               </a>
               <button class="menu-close" type="button" aria-label="Close navigation">×</button>
             </div>
@@ -260,65 +230,81 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
         position: sticky;
         top: 0;
         z-index: 1100;
-        padding-inline: clamp(1rem, 3vw, 2rem);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-        background: rgba(5, 5, 7, 0.82);
+        padding: 1rem clamp(1rem, 3vw, 3rem);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        background: rgba(6, 6, 10, 0.88);
         border-bottom: 1px solid rgba(255, 255, 255, 0.06);
       }
 
       .header__inner {
-        width: min(100%, var(--gs-max-width));
-        min-height: 5rem;
+        width: min(100%, 1440px);
         margin: 0 auto;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 1rem;
+        gap: 2rem;
       }
 
-      .gs-logo-link {
-        display: inline-flex;
+      .header-brand {
+        display: flex;
         align-items: center;
-        gap: 0.8rem;
+        gap: 1rem;
+        color: var(--gs-text);
         text-decoration: none;
+        min-width: 0;
       }
 
-      .gs-logo {
-        width: clamp(24px, 3vw, 36px);
-        height: auto;
-        color: var(--gs-primary);
-        flex-shrink: 0;
-      }
-
-      .gs-logo--lockup {
-        width: clamp(220px, 24vw, 320px);
-      }
-
-      .gs-logo--footer {
-        width: 28px;
-      }
-
-      .brand-lockup {
-        display: grid;
-        gap: 0.1rem;
-      }
-
-      .brand-lockup strong {
-        font-size: 0.98rem;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-      }
-
-      .brand-lockup span {
+      .header-brand__coords {
         color: var(--gs-text-dim);
-        font-size: 0.77rem;
-        letter-spacing: 0.06em;
+        font-family: 'DM Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.52rem;
+        letter-spacing: 0.09em;
+        line-height: 1.35;
         text-transform: uppercase;
       }
 
-      .brand-lockup--footer span {
-        max-width: 28ch;
+      .header-brand__mark {
+        flex-shrink: 0;
+        padding: 0.48rem 0.64rem;
+        border: 1px solid rgba(217, 106, 50, 0.28);
+        color: var(--gs-primary);
+        font-family: 'DM Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.62rem;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+      }
+
+      .header-brand__lockup {
+        display: block;
+        min-width: 0;
+      }
+
+      .header-brand__lockup strong {
+        display: block;
+        color: var(--gs-text);
+        font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+        font-size: 0.9rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        line-height: 1.2;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+
+      .header-brand__lockup em {
+        display: block;
+        color: var(--gs-text-dim);
+        font-family: 'DM Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.65rem;
+        font-style: normal;
+        letter-spacing: 0.09em;
+        line-height: 1.35;
+        text-transform: uppercase;
+      }
+
+      .header-brand--mobile {
+        flex: 1;
       }
 
       .desktop-nav {
@@ -607,10 +593,6 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
         .menu-button {
           display: inline-grid;
         }
-
-        .gs-logo--lockup {
-          width: clamp(190px, 44vw, 260px);
-        }
       }
 
       @media (max-width: 720px) {
@@ -618,8 +600,16 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
           padding-inline: 0.8rem;
         }
 
-        .brand-lockup span {
-          font-size: 0.72rem;
+        .header-brand__coords {
+          display: none;
+        }
+
+        .header-brand__lockup strong {
+          font-size: 0.78rem;
+        }
+
+        .header-brand__lockup em {
+          font-size: 0.58rem;
         }
 
         .menu-panel__header {
@@ -633,3 +623,12 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
     </style>
   </body>
 </html>
+<GoldShoreShell
+  title={title}
+  description={description}
+  canonicalPath={canonicalPath}
+  ogTitle={ogTitle}
+  ogDescription={ogDescription}
+>
+  <slot />
+</GoldShoreShell>

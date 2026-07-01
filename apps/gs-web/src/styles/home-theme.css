@@ -27,6 +27,30 @@
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 
+.skip-nav {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  z-index: 999;
+}
+.skip-nav:focus {
+  position: fixed;
+  left: 1rem;
+  top: 1rem;
+  width: auto;
+  height: auto;
+  padding: 0.5rem 1rem;
+  background: var(--ox);
+  color: var(--t1);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  border-radius: 2px;
+  text-decoration: none;
+}
+
 body.gs-home {
   margin: 0;
   background: var(--void);
@@ -68,47 +92,16 @@ main { display: grid; gap: 1px; position: relative; z-index: 1; }
 .brand {
   display: flex;
   align-items: center;
-  gap: 1rem;
   text-decoration: none;
 }
 
-.coords {
-  font-family: var(--font-mono);
-  font-size: 0.52rem;
-  color: var(--t3);
-  line-height: 1.35;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-}
-
-.mark {
-  font-family: var(--font-mono);
-  padding: 0.48rem 0.64rem;
-  border: 1px solid var(--ox-border);
-  color: var(--ox);
-  font-size: 0.62rem;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-}
-
-.brand strong {
-  display: block;
+.brand-wordmark {
   font-family: var(--font-display);
-  font-size: 0.9rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--t1);
-}
-
-.brand em {
-  display: block;
-  font-family: var(--font-mono);
-  color: var(--t3);
-  font-style: normal;
-  font-size: 0.65rem;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
 }
 
 .topbar nav {
@@ -127,7 +120,7 @@ main { display: grid; gap: 1px; position: relative; z-index: 1; }
   text-decoration: none;
   color: var(--t2);
   padding: 0.65rem 0.8rem;
-  border-radius: 999px;
+  border-radius: 2px;
   transition: color 0.2s, background 0.2s;
 }
 
@@ -139,6 +132,10 @@ main { display: grid; gap: 1px; position: relative; z-index: 1; }
 
 .nav-cta {
   border: 1px solid var(--ox-border);
+  border-radius: 2px;
+  background: var(--ox);
+  color: var(--void) !important;
+  padding: 0.65rem 0.8rem;
 }
 
 .nav-login {
@@ -148,10 +145,10 @@ main { display: grid; gap: 1px; position: relative; z-index: 1; }
   text-transform: uppercase;
   color: var(--t2);
   padding: 0.65rem 0.8rem;
-  border-radius: 999px;
+  border-radius: 2px;
   transition: color 0.2s, background 0.2s;
   background: none;
-  border: none;
+  border: 1px solid var(--ox-border);
   cursor: pointer;
 }
 
@@ -290,6 +287,7 @@ h1 .accent::after {
 .btn {
   display: inline-block;
   border: 1px solid var(--ox-border);
+  border-radius: 2px;
   padding: 0.9rem 1.4rem;
   color: var(--ox);
   background: transparent;
@@ -401,7 +399,8 @@ h1 .accent::after {
   padding-top: 1rem;
 }
 
-.panel-columns h3 {
+.panel-columns h3,
+.panel-col-heading {
   font-family: var(--font-mono);
   font-size: 0.62rem;
   letter-spacing: 0.09em;
@@ -688,7 +687,7 @@ h2 {
 /* ── Under the Hood ───────────────────────────────────────────────────────── */
 .underhood {
   display: grid;
-  grid-template-columns: 0.48fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 3rem;
   align-items: start;
 }
@@ -800,7 +799,7 @@ code {
 /* ── Risk Radar ───────────────────────────────────────────────────────────── */
 .risk {
   display: grid;
-  grid-template-columns: 0.48fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 3rem;
   align-items: start;
 }
@@ -1078,7 +1077,7 @@ code {
 /* ── Engage / Contact ─────────────────────────────────────────────────────── */
 .engage {
   display: grid;
-  grid-template-columns: 0.48fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 3rem;
   align-items: start;
 }
@@ -1124,6 +1123,7 @@ code {
   width: 100%;
   background: var(--iron);
   border: 1px solid var(--b1);
+  border-radius: 2px;
   color: var(--t1);
   padding: 0.85rem;
   font-family: var(--font-body);
@@ -1164,6 +1164,7 @@ code {
 .btn-form {
   background: var(--ox);
   border: 1px solid var(--ox);
+  border-radius: 2px;
   color: var(--void);
   width: 100%;
   padding: 1rem;
@@ -1280,7 +1281,7 @@ code {
   }
   .topbar nav.nav-open { display: flex; }
   .topbar nav a,
-  .nav-login { padding: 0.85rem 0.5rem; width: 100%; border-radius: 0; }
+  .nav-login { padding: 0.85rem 0.5rem; width: 100%; border-radius: 2px; }
   .metrics        { grid-template-columns: repeat(2,1fr); }
   .sector-grid    { grid-template-columns: 1fr 1fr; }
   .telemetry-grid { grid-template-columns: 1fr; }
