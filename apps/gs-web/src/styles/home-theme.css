@@ -682,7 +682,7 @@ h2 {
 /* ── Under the Hood ───────────────────────────────────────────────────────── */
 .underhood {
   display: grid;
-  grid-template-columns: 0.48fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 3rem;
   align-items: start;
 }
@@ -794,7 +794,7 @@ code {
 /* ── Risk Radar ───────────────────────────────────────────────────────────── */
 .risk {
   display: grid;
-  grid-template-columns: 0.48fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 3rem;
   align-items: start;
 }
@@ -1072,7 +1072,7 @@ code {
 /* ── Engage / Contact ─────────────────────────────────────────────────────── */
 .engage {
   display: grid;
-  grid-template-columns: 0.48fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 3rem;
   align-items: start;
 }
