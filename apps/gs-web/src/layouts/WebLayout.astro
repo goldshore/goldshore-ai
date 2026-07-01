@@ -1,37 +1,8 @@
 ---
-import '../styles/global.css';
-import Logo from '../components/brand/Logo.astro';
-import { HTML_CSP_META_FALLBACK } from '../security/policy';
-import { WEB_META_CSP } from '../utils/csp';
+import GoldShoreShell from './GoldShoreShell.astro';
+import '../styles/goldshore-shell.css';
 
-const navLinks = [
-  { href: '/', label: 'Home' },
-  { href: '/about', label: 'About' },
-  { href: '/team', label: 'Team' },
-  { href: '/contact?inquiry=strategy-call', label: 'Book Strategy Call' },
-  { href: '/contact', label: 'Contact' },
-  { href: '/risk-radar', label: 'Risk Radar' },
-  { href: '/developer', label: 'Developer Hub' },
-];
-const footerLinks = [
-  { href: '/legal/privacy', label: 'Privacy' },
-  { href: '/legal/terms', label: 'Terms' },
-];
-const mobileNavId = 'mobile-navigation';
-
-const CANONICAL_ORIGIN = 'https://goldshore.org';
-
-const {
-  title = 'GoldShore',
-  description = 'GoldShore AI',
-  currentPath = Astro.url.pathname,
-  canonicalPath = Astro.url.pathname,
-  ogTitle = title,
-  ogDescription = description,
-} = Astro.props;
-
-const canonicalUrl = new URL(canonicalPath, CANONICAL_ORIGIN).toString();
-const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
+const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.props;
 ---
 
 <html lang="en">
@@ -652,3 +623,12 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
     </style>
   </body>
 </html>
+<GoldShoreShell
+  title={title}
+  description={description}
+  canonicalPath={canonicalPath}
+  ogTitle={ogTitle}
+  ogDescription={ogDescription}
+>
+  <slot />
+</GoldShoreShell>
