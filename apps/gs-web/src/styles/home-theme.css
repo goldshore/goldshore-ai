@@ -120,7 +120,7 @@ main { display: grid; gap: 1px; position: relative; z-index: 1; }
   text-decoration: none;
   color: var(--t2);
   padding: 0.65rem 0.8rem;
-  border-radius: 999px;
+  border-radius: 2px;
   transition: color 0.2s, background 0.2s;
 }
 
@@ -132,6 +132,10 @@ main { display: grid; gap: 1px; position: relative; z-index: 1; }
 
 .nav-cta {
   border: 1px solid var(--ox-border);
+  border-radius: 2px;
+  background: var(--ox);
+  color: var(--void) !important;
+  padding: 0.65rem 0.8rem;
 }
 
 .nav-login {
@@ -141,10 +145,10 @@ main { display: grid; gap: 1px; position: relative; z-index: 1; }
   text-transform: uppercase;
   color: var(--t2);
   padding: 0.65rem 0.8rem;
-  border-radius: 999px;
+  border-radius: 2px;
   transition: color 0.2s, background 0.2s;
   background: none;
-  border: none;
+  border: 1px solid var(--ox-border);
   cursor: pointer;
 }
 
@@ -283,6 +287,7 @@ h1 .accent::after {
 .btn {
   display: inline-block;
   border: 1px solid var(--ox-border);
+  border-radius: 2px;
   padding: 0.9rem 1.4rem;
   color: var(--ox);
   background: transparent;
@@ -1118,6 +1123,7 @@ code {
   width: 100%;
   background: var(--iron);
   border: 1px solid var(--b1);
+  border-radius: 2px;
   color: var(--t1);
   padding: 0.85rem;
   font-family: var(--font-body);
@@ -1158,6 +1164,7 @@ code {
 .btn-form {
   background: var(--ox);
   border: 1px solid var(--ox);
+  border-radius: 2px;
   color: var(--void);
   width: 100%;
   padding: 1rem;
@@ -1274,7 +1281,7 @@ code {
   }
   .topbar nav.nav-open { display: flex; }
   .topbar nav a,
-  .nav-login { padding: 0.85rem 0.5rem; width: 100%; border-radius: 0; }
+  .nav-login { padding: 0.85rem 0.5rem; width: 100%; border-radius: 2px; }
   .metrics        { grid-template-columns: repeat(2,1fr); }
   .sector-grid    { grid-template-columns: 1fr 1fr; }
   .telemetry-grid { grid-template-columns: 1fr; }
