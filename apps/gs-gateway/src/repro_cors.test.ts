@@ -10,7 +10,7 @@ test('CORS Vulnerability Check', async (t) => {
       'Origin': 'https://evil.com',
       'Access-Control-Request-Method': 'GET'
     }
-  }, { ENV: 'production' } as any);
+  }, { ENV: 'production', CLOUDFLARE_ACCESS_AUDIENCE: 'test-audience' } as any);
 
   assert.strictEqual(resEvil.headers.get('Access-Control-Allow-Origin'), null, 'Should block unauthorized origin');
 
@@ -21,7 +21,7 @@ test('CORS Vulnerability Check', async (t) => {
       'Origin': 'https://goldshore.ai',
       'Access-Control-Request-Method': 'GET'
     }
-  }, { ENV: 'production' } as any);
+  }, { ENV: 'production', CLOUDFLARE_ACCESS_AUDIENCE: 'test-audience' } as any);
 
   assert.strictEqual(resGood.headers.get('Access-Control-Allow-Origin'), 'https://goldshore.ai', 'Should allow authorized origin');
 
@@ -43,7 +43,7 @@ test('CORS Vulnerability Check', async (t) => {
       'Origin': 'http://localhost:3000',
       'Access-Control-Request-Method': 'GET'
     }
-  }, { ENV: 'production' } as any);
+  }, { ENV: 'production', CLOUDFLARE_ACCESS_AUDIENCE: 'test-audience' } as any);
 
   assert.strictEqual(resLocalProd.headers.get('Access-Control-Allow-Origin'), null, 'Should block localhost in prod');
 });
@@ -59,6 +59,10 @@ test('routes agent hostname traffic to the gs-agent service binding', async () =
     method: 'GET',
   }, {
     ENV: 'production',
+    CLOUDFLARE_ACCESS_AUDIENCE: 'test-audience',
+    SECURITY_CHECK: {
+      fetch: async () => new Response(null, { status: 204 }),
+    },
     AGENT: {
       fetch: agentFetch,
     }
@@ -68,4 +72,22 @@ test('routes agent hostname traffic to the gs-agent service binding', async () =
   assert.deepStrictEqual(await response.json(), { service: 'gs-agent' });
   assert.strictEqual(agentFetch.mock.callCount(), 1);
   assert.ok(response.headers.get('X-Correlation-Id'));
+});
+
+test('routes canonical API hostname traffic to gs-api without changing the path', async () => {
+  const apiFetch = mock.fn(async (request: Request) =>
+    new Response(JSON.stringify({ path: new URL(request.url).pathname }), {
+      headers: { 'content-type': 'application/json' }
+    })
+  );
+
+  const response = await app.request('https://api.goldshore.ai/health', {}, {
+    ENV: 'production',
+    CLOUDFLARE_ACCESS_AUDIENCE: 'test-audience',
+    API_SERVICE: { fetch: apiFetch }
+  } as any);
+
+  assert.strictEqual(response.status, 200);
+  assert.deepStrictEqual(await response.json(), { path: '/health' });
+  assert.strictEqual(apiFetch.mock.callCount(), 1);
 });

@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
 import { STATUS_PAGE_HTML } from "./templates/status";
@@ -38,6 +38,7 @@ interface GatewayEnv {
 
 const TRACE_HEADER = "X-Correlation-Id";
 const AGENT_HOSTNAME = "agent.goldshore.ai";
+const API_HOSTNAME = "api.goldshore.ai";
 const SECURITY_TIMEOUT_MS = 250;
 const SIGNALS_TIMEOUT_MS = 1200;
 const NON_CRITICAL_SIGNAL_PATHS = ["/signals", "/telemetry", "/events"] as const;
@@ -71,13 +72,16 @@ function isNonCriticalSignalsPath(pathname: string): boolean {
   );
 }
 
-function isAgentHostnameRequest(request: Request): boolean {
+function hasHostname(request: Request, hostname: string): boolean {
   try {
-    return new URL(request.url).hostname === AGENT_HOSTNAME;
+    return new URL(request.url).hostname === hostname;
   } catch {
     return false;
   }
 }
+
+const isAgentHostnameRequest = (request: Request) => hasHostname(request, AGENT_HOSTNAME);
+const isApiHostnameRequest = (request: Request) => hasHostname(request, API_HOSTNAME);
 
 const app = new Hono<{ Bindings: GatewayEnv }>();
 
@@ -152,13 +156,13 @@ app.use("*", async (c, next) => {
   if (!c.env.SECURITY_CHECK) {
     const policy = isSignalsPath ? "fail-open" : "fail-closed";
     console.warn(
-      JSON.stringify({ event: "security_check_skipped", policy, reason: "missing_binding", path: pathname }),
+      JSON.stringify({ event: "security_check_missing", policy, reason: "missing_binding", path: pathname }),
     );
     if (isSignalsPath) {
       return next();
     }
     return c.json(
-      { error: "Service Unavailable", message: "Security check unavailable", policy },
+      { error: "SECURITY_CHECK_ERROR", message: "security check service unavailable", policy },
       503,
     );
   }
@@ -197,6 +201,16 @@ app.use("*", async (c, next) => {
 // Enforces X-Data-Classification, X-Secrets-Access-Policy, and X-Audit-Trace-Id
 // on /integrations/* and /market-streams/* paths.
 app.use("*", integrationControls);
+
+// ── Canonical API hostname routing ─────────────────────────
+// api.goldshore.ai is owned by this gateway, so every path on that host must
+// be forwarded to gs-api rather than falling through to gateway-local routes.
+app.use("*", async (c, next) => {
+  if (!isApiHostnameRequest(c.req.raw)) {
+    return next();
+  }
+  return proxyApiRequest(c, false);
+});
 
 // ── Agent hostname routing ─────────────────────────────────
 // Requests arriving on agent.goldshore.ai are proxied to the AGENT service binding.
@@ -258,27 +272,37 @@ const inferApiOrigin = (requestUrl: string): string | undefined => {
   return url.origin;
 };
 
-// Forward /api/* to the API_SERVICE binding; fall back to API_ORIGIN if unbound.
-app.all("/api/*", async (c) => {
+async function proxyApiRequest(
+  c: Context<{ Bindings: GatewayEnv }>,
+  stripApiPrefix: boolean,
+): Promise<Response> {
   const correlationId = getCorrelationId(c.req.raw);
-  const apiOrigin = c.env.API_ORIGIN ?? inferApiOrigin(c.req.url);
+  const sourceUrl = new URL(c.req.url);
+  if (stripApiPrefix) {
+    sourceUrl.pathname = sourceUrl.pathname.replace(/^\/api(?=\/|$)/, "") || "/";
+  }
+
   try {
     if (c.env.API_SERVICE) {
-      const response = await c.env.API_SERVICE.fetch(c.req.raw);
+      const upstreamRequest = new Request(sourceUrl, c.req.raw);
+      upstreamRequest.headers.set(TRACE_HEADER, correlationId);
+      const response = await c.env.API_SERVICE.fetch(upstreamRequest);
       return withCorrelationId(response, correlationId);
     }
-    if (apiOrigin) {
-      const url = new URL(c.req.url);
-      const targetUrl = new URL(url.pathname + url.search, apiOrigin);
+
+    const apiOrigin = c.env.API_ORIGIN ?? inferApiOrigin(c.req.url);
+    if (apiOrigin && new URL(apiOrigin).hostname !== sourceUrl.hostname) {
+      const targetUrl = new URL(sourceUrl.pathname + sourceUrl.search, apiOrigin);
       const upstreamRequest = new Request(targetUrl, c.req.raw);
       upstreamRequest.headers.set(TRACE_HEADER, correlationId);
       const response = await fetch(upstreamRequest);
       return withCorrelationId(response, correlationId);
     }
+
     console.error(`[gateway] upstream API not configured; trace=${correlationId}`);
     return c.json(
       { error: "Upstream API not configured", traceId: correlationId },
-      500,
+      503,
       { [TRACE_HEADER]: correlationId },
     );
   } catch (error) {
@@ -289,7 +313,11 @@ app.all("/api/*", async (c) => {
       { [TRACE_HEADER]: correlationId },
     );
   }
-});
+}
+
+// Keep the legacy /api prefix working, but remove it before gs-api dispatch.
+app.all("/api", (c) => proxyApiRequest(c, true));
+app.all("/api/*", (c) => proxyApiRequest(c, true));
 
 app.all("*", (c) => c.json({ error: "Not found" }, 404));
 

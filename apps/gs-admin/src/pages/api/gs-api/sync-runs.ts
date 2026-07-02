@@ -15,7 +15,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
   }
 
   const response = await fetch(`${getGsApiBaseUrl(env)}/internal/sync-runs/summary`, {
-    headers: buildGsApiHeaders(request),
+    headers: buildGsApiHeaders(env),
   });
 
   const payload = await response.json().catch(() => ({ success: false, runs: [] }));
