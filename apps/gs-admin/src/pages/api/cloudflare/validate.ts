@@ -30,7 +30,7 @@ export const GET: APIRoute = async ({ locals }) => {
     return new Response(
       JSON.stringify({
         error: 'Validation failed',
-        message: String(error),
+        message: 'An unexpected error occurred while validating bindings.',
       }),
       {
         status: 500,
