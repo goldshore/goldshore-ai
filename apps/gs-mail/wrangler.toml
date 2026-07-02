@@ -22,6 +22,10 @@ MAIL_SERVICE = "true"
 MAIL_ALLOWED_RECIPIENTS = "ops@goldshore.ai,inbox@goldshore.ai"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 
+[[env.prod.kv_namespaces]]
+binding = "GS_CONFIG"
+id = "gs_config_001"
+
 [[env.prod.queues.consumers]]
 queue = "gs-platform-checkout-events-prod"
 
@@ -37,6 +41,10 @@ routes = [
 ENV = "preview"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 MAIL_FORWARD_TO = "ops+preview@goldshore.ai"
+
+[[env.preview.kv_namespaces]]
+binding = "GS_CONFIG"
+id = "gs_config_preview"
 
 [[env.preview.queues.consumers]]
 queue = "gs-platform-checkout-events-preview"
