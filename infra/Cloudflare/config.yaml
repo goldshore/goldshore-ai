@@ -1,5 +1,5 @@
-account_id_env: CF_ACCOUNT_ID
-zone_id_env: CF_ZONE_ID
+account_id_env: CLOUDFLARE_ACCOUNT_ID
+zone_id_env: CLOUDFLARE_ZONE_ID
 
 projects:
   pages:
@@ -67,7 +67,7 @@ tests:
       expect_status: 200
       timeout_ms: 5000
     - url: 'https://goldshore.org/'
-      expect_status: 200  # fetch follows 308 redirect; assert final goldshore.ai response
+      expect_status: 200 # fetch follows 308 redirect; assert final goldshore.ai response
       timeout_ms: 5000
     - url: 'https://api.goldshore.ai/health'
       expect_status: 200

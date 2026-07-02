@@ -1,5 +1,5 @@
 // infra/cf/client.ts
-import type FormData from "form-data";
+import type FormData from 'form-data';
 
 export type CF = {
   pages: {
@@ -16,19 +16,36 @@ export type CF = {
   };
   dns: {
     list(): Promise<any[]>;
-  }
+  };
 };
 
-const API = "https://api.cloudflare.com/client/v4";
-const tok = process.env.CF_API_TOKEN!;
-const acc = process.env.CF_ACCOUNT_ID!;
-const zone = process.env.CF_ZONE_ID!;
+const API = 'https://api.cloudflare.com/client/v4';
+function requiredEnv(canonicalName: string, aliasName: string): string {
+  const value = process.env[canonicalName] ?? process.env[aliasName];
+  if (!value) {
+    throw new Error(
+      `Missing ${canonicalName} (or local/runtime alias ${aliasName})`,
+    );
+  }
+  return value;
+}
+
+// CF_API_TOKEN is retained as a local/runtime alias for the canonical
+// GitHub secret CLOUDFLARE_BUILD_API_TOKEN. CI should set both names.
+const tok = requiredEnv('CLOUDFLARE_BUILD_API_TOKEN', 'CF_API_TOKEN');
+const acc = requiredEnv('CLOUDFLARE_ACCOUNT_ID', 'CF_ACCOUNT_ID');
+const zone = requiredEnv('CLOUDFLARE_ZONE_ID', 'CF_ZONE_ID');
 
 function isStream(body: any): boolean {
   return body && typeof body.pipe === 'function';
 }
 
-async function cfFetch<T>(path: string, init: RequestInit = {}, tries = 5, wait = 250): Promise<T> {
+async function cfFetch<T>(
+  path: string,
+  init: RequestInit = {},
+  tries = 5,
+  wait = 250,
+): Promise<T> {
   // If the body is a stream (e.g. FormData), we cannot retry because the stream might be consumed.
   // Unless we buffer it, but FormData can be large.
   // For now, disable retry if body is present and not a string/buffer (simple check).
@@ -39,14 +56,14 @@ async function cfFetch<T>(path: string, init: RequestInit = {}, tries = 5, wait 
   const res = await fetch(`${API}${path}`, {
     ...init,
     headers: {
-      "Authorization": `Bearer ${tok}`,
+      Authorization: `Bearer ${tok}`,
       ...(init.headers || {}),
-    }
+    },
   });
 
   if (res.status === 429 && canRetry) {
-    const retry = Number(res.headers.get("Retry-After")) * 1000 || wait;
-    await new Promise(r => setTimeout(r, retry));
+    const retry = Number(res.headers.get('Retry-After')) * 1000 || wait;
+    await new Promise((r) => setTimeout(r, retry));
     return cfFetch<T>(path, init, tries - 1, wait * 2);
   }
   if (!res.ok) throw new Error(`CF ${path} ${res.status}: ${await res.text()}`);
@@ -56,27 +73,47 @@ async function cfFetch<T>(path: string, init: RequestInit = {}, tries = 5, wait 
 
 export const cf: CF = {
   pages: {
-    deployments: (project) => cfFetch(`/accounts/${acc}/pages/projects/${project}/deployments?per_page=20`),
-    triggerBuild: (project) => cfFetch(`/accounts/${acc}/pages/projects/${project}/deployments`, { method: "POST" }),
-    getDeployment: (project, id) => cfFetch(`/accounts/${acc}/pages/projects/${project}/deployments/${id}`),
-    cancelDeployment: (project, id) => cfFetch(`/accounts/${acc}/pages/projects/${project}/deployments/${id}`, { method: "DELETE" }),
+    deployments: (project) =>
+      cfFetch(
+        `/accounts/${acc}/pages/projects/${project}/deployments?per_page=20`,
+      ),
+    triggerBuild: (project) =>
+      cfFetch(`/accounts/${acc}/pages/projects/${project}/deployments`, {
+        method: 'POST',
+      }),
+    getDeployment: (project, id) =>
+      cfFetch(`/accounts/${acc}/pages/projects/${project}/deployments/${id}`),
+    cancelDeployment: (project, id) =>
+      cfFetch(`/accounts/${acc}/pages/projects/${project}/deployments/${id}`, {
+        method: 'DELETE',
+      }),
   },
   workers: {
-    listBindings: (script) => cfFetch(`/accounts/${acc}/workers/scripts/${script}/bindings`),
+    listBindings: (script) =>
+      cfFetch(`/accounts/${acc}/workers/scripts/${script}/bindings`),
     deploy: (script, formData) => {
-       // FormData from 'form-data' package needs getHeaders() mixed in.
-       // The type in 'deploy' signature says FormData, assuming it's the node 'form-data' package because we are in a node script.
-       const headers = (formData as any).getHeaders ? (formData as any).getHeaders() : {};
-       return cfFetch(`/accounts/${acc}/workers/scripts/${script}`, {
-         method: "PUT",
-         body: formData as any,
-         headers
-       });
+      // FormData from 'form-data' package needs getHeaders() mixed in.
+      // The type in 'deploy' signature says FormData, assuming it's the node 'form-data' package because we are in a node script.
+      const headers = (formData as any).getHeaders
+        ? (formData as any).getHeaders()
+        : {};
+      return cfFetch(`/accounts/${acc}/workers/scripts/${script}`, {
+        method: 'PUT',
+        body: formData as any,
+        headers,
+      });
     },
-    versions: (script) => cfFetch(`/accounts/${acc}/workers/scripts/${script}/versions?per_page=20`),
-    rollback: (script, versionId) => cfFetch(`/accounts/${acc}/workers/scripts/${script}/versions/${versionId}/rollback`, { method: "POST" }),
+    versions: (script) =>
+      cfFetch(
+        `/accounts/${acc}/workers/scripts/${script}/versions?per_page=20`,
+      ),
+    rollback: (script, versionId) =>
+      cfFetch(
+        `/accounts/${acc}/workers/scripts/${script}/versions/${versionId}/rollback`,
+        { method: 'POST' },
+      ),
   },
   dns: {
-    list: () => cfFetch(`/zones/${zone}/dns_records?per_page=200`)
-  }
+    list: () => cfFetch(`/zones/${zone}/dns_records?per_page=200`),
+  },
 };

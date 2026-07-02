@@ -5,21 +5,21 @@ on:
     branches:
       - main
     paths:
-      - "apps/**"
-      - "packages/**"
-      - "infra/Cloudflare/**"
-      - "scripts/**"
-      - "package.json"
-      - "pnpm-lock.yaml"
-      - "pnpm-workspace.yaml"
-      - "turbo.json"
-      - ".github/workflows/deploy-platform.yml"
+      - 'apps/**'
+      - 'packages/**'
+      - 'infra/Cloudflare/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'turbo.json'
+      - '.github/workflows/deploy-platform.yml'
   workflow_dispatch:
     inputs:
       target:
         description: "App/service to deploy (or 'all')"
         required: true
-        default: "all"
+        default: 'all'
         type: choice
         options:
           - all
@@ -36,9 +36,9 @@ on:
           - gs-core-worker
           - armsway-com
       environment:
-        description: "Cloudflare environment"
+        description: 'Cloudflare environment'
         required: true
-        default: "prod"
+        default: 'prod'
         type: choice
         options:
           - prod
@@ -50,7 +50,13 @@ concurrency:
 
 env:
   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN || secrets.CLOUDFLARE_API_TOKEN || secrets.CF_WORKERS_BUILDS }}
+  CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+  CLOUDFLARE_BUILD_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+  CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+  CF_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+  # CF_API_TOKEN is a local/runtime alias for CLOUDFLARE_BUILD_API_TOKEN.
+  CF_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
 
 # ── Shared setup ──────────────────────────────────────────────────────────────
 # Each job repeats the three setup steps (checkout / pnpm / node) because
@@ -58,7 +64,6 @@ env:
 # repeated setup is cheaper than serialising through a setup job.
 
 jobs:
-
   # ── gs-web (Worker + Assets) ─────────────────────────────────────────────────
   deploy-web:
     name: Deploy gs-web (Worker)
@@ -133,29 +138,29 @@ jobs:
     permissions:
       contents: read
     strategy:
-      fail-fast: false   # one broken worker does not cancel the others
+      fail-fast: false # one broken worker does not cancel the others
       matrix:
         include:
           - app: gs-gateway
-            filter: "@goldshore/gs-gateway"
+            filter: '@goldshore/gs-gateway'
           - app: gs-api
-            filter: "@goldshore/gs-api"
+            filter: '@goldshore/gs-api'
           - app: gs-agent
-            filter: "@goldshore/gs-agent"
+            filter: '@goldshore/gs-agent'
           - app: gs-control
-            filter: "@goldshore/gs-control"
+            filter: '@goldshore/gs-control'
           - app: gs-trading
-            filter: "@goldshore/gs-trading"
+            filter: '@goldshore/gs-trading'
           - app: gs-mail
-            filter: "@goldshore/gs-mail"
+            filter: '@goldshore/gs-mail'
           - app: banproof-me
-            filter: "@goldshore/banproof-me"
+            filter: '@goldshore/banproof-me'
           - app: gs-www-redirect
-            filter: "@goldshore/gs-www-redirect"
+            filter: '@goldshore/gs-www-redirect'
           - app: gs-core-worker
-            filter: "@goldshore/gs-core-worker"
+            filter: '@goldshore/gs-core-worker'
           - app: armsway-com
-            filter: "@goldshore/armsway-com"
+            filter: '@goldshore/armsway-com'
     steps:
       - name: Skip if not targeted
         if: github.event_name == 'workflow_dispatch' && inputs.target != 'all' && inputs.target != matrix.app

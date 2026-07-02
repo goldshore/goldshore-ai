@@ -155,6 +155,9 @@ async function main() {
 function redactSensitive(err: unknown): string {
   // List of sensitive env values to redact if present
   const SENSITIVE = [
+    process.env.CLOUDFLARE_BUILD_API_TOKEN,
+    process.env.CLOUDFLARE_ACCOUNT_ID,
+    process.env.CLOUDFLARE_ZONE_ID,
     process.env.CF_API_TOKEN,
     process.env.CF_ACCOUNT_ID,
     process.env.CF_ZONE_ID,
