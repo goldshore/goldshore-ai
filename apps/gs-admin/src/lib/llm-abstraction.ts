@@ -201,15 +201,45 @@ export class LLMClient {
 
 export const getLLMConfig = (): LLMConfig => {
   const provider = (process.env.LLM_PROVIDER || 'claude') as LLMProvider;
+  const apiKey = getProviderApiKey(provider);
+  const baseUrl = getProviderBaseUrl(provider);
 
   return {
     provider,
-    apiKey: process.env.LLM_API_KEY || '',
-    baseUrl: process.env.LLM_BASE_URL,
+    apiKey,
+    baseUrl,
     model: process.env.LLM_MODEL || getDefaultModel(provider),
     temperature: parseFloat(process.env.LLM_TEMPERATURE || '0.7'),
     maxTokens: parseInt(process.env.LLM_MAX_TOKENS || '2048', 10),
   };
+};
+
+const getProviderApiKey = (provider: LLMProvider): string => {
+  // Check provider-specific env var first, fall back to generic LLM_API_KEY
+  switch (provider) {
+    case 'claude':
+      return process.env.ANTHROPIC_API_KEY || process.env.LLM_API_KEY || '';
+    case 'openai':
+      return process.env.OPENAI_API_KEY || process.env.LLM_API_KEY || '';
+    case 'openclaw':
+      return process.env.OPENCLAW_API_KEY || process.env.LLM_API_KEY || '';
+    case 'local':
+      return process.env.LOCAL_LLM_API_KEY || process.env.LLM_API_KEY || '';
+    default:
+      return process.env.LLM_API_KEY || '';
+  }
+};
+
+const getProviderBaseUrl = (provider: LLMProvider): string | undefined => {
+  // Self-hosted deployments need base URL
+  switch (provider) {
+    case 'openclaw':
+      return process.env.OPENCLAW_BASE_URL || process.env.LLM_BASE_URL;
+    case 'local':
+      return process.env.LOCAL_LLM_BASE_URL || process.env.LLM_BASE_URL;
+    default:
+      return process.env.LLM_BASE_URL;
+  }
 };
 
 const getDefaultModel = (provider: LLMProvider): string => {
