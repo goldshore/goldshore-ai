@@ -8,8 +8,8 @@ const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.prop
   title={title}
   description={description}
   canonicalPath={canonicalPath}
-  ogTitle={ogTitle}
-  ogDescription={ogDescription}
+  ogTitle={ogTitle ?? title}
+  ogDescription={ogDescription ?? description}
 >
   <slot />
 </GoldShoreShell>
