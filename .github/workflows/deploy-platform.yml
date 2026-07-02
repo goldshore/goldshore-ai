@@ -183,3 +183,53 @@ jobs:
         run: |
           ENV=${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'prod' }}
           pnpm exec wrangler deploy --env $ENV
+      - name: Health check ${{ matrix.app }}
+        if: github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == matrix.app
+        run: |
+          # Wait for worker to be available
+          sleep 3
+          # Check worker health endpoint based on app
+          case "${{ matrix.app }}" in
+            banproof-me)
+              HEALTH_URL="https://banproof.me/health"
+              ;;
+            gs-web)
+              HEALTH_URL="https://goldshore.ai/health"
+              ;;
+            gs-api)
+              HEALTH_URL="https://api.goldshore.ai/health"
+              ;;
+            gs-gateway)
+              HEALTH_URL="https://gw.goldshore.ai/health"
+              ;;
+            gs-control)
+              HEALTH_URL="https://ops.goldshore.ai/health"
+              ;;
+            gs-mail)
+              HEALTH_URL="https://mail.goldshore.ai/health"
+              ;;
+            armsway-com)
+              HEALTH_URL="https://armsway.com/health"
+              ;;
+            *)
+              echo "Skipping health check for ${{ matrix.app }}"
+              exit 0
+              ;;
+          esac
+
+          # Retry health check up to 5 times
+          for i in {1..5}; do
+            echo "Health check attempt $i..."
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$HEALTH_URL" || echo "000")
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✓ ${{ matrix.app }} is healthy (HTTP $HTTP_CODE)"
+              exit 0
+            fi
+            if [ $i -lt 5 ]; then
+              echo "  Got HTTP $HTTP_CODE, retrying in 2s..."
+              sleep 2
+            fi
+          done
+
+          echo "✗ ${{ matrix.app }} health check failed (last HTTP $HTTP_CODE)"
+          exit 1

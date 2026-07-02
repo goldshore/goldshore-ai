@@ -46,7 +46,8 @@
       "mcp__Cloudflare_Developer_Platform__d1_databases_list",
       "mcp__Cloudflare_Developer_Platform__workers_list",
       "mcp__Cloudflare_Developer_Platform__workers_get_worker",
-      "mcp__Cloudflare_Developer_Platform__kv_namespaces_list"
+      "mcp__Cloudflare_Developer_Platform__kv_namespaces_list",
+      "mcp__goldshore-mcp-portal__*"
     ]
   }
 }
