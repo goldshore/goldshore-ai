@@ -89,7 +89,8 @@ jobs:
             TOKEN=$(echo "$RESPONSE" | jq -r '.token // empty' 2>/dev/null || echo "")
 
             if [[ -n "$TOKEN" ]]; then
-              echo "::add-mask::$TOKEN"
+              # Do not mask values promoted to reusable-workflow outputs: GitHub
+              # suppresses masked job outputs as unsafe for downstream jobs.
               echo "api_key=$TOKEN" >> "$GITHUB_OUTPUT"
               echo "base_url=$GATEWAY_BASE" >> "$GITHUB_OUTPUT"
               echo "Issued gateway-scoped token (OIDC exchange succeeded)"
@@ -105,7 +106,8 @@ jobs:
             echo "::error::Neither CF_AI_GATEWAY_ID+OIDC nor ANTHROPIC_API_KEY is configured."
             exit 1
           fi
-          echo "::add-mask::$ANTHROPIC_API_KEY_FALLBACK"
+          # Do not mask values promoted to reusable-workflow outputs: GitHub
+          # suppresses masked job outputs as unsafe for downstream jobs.
           echo "api_key=$ANTHROPIC_API_KEY_FALLBACK" >> "$GITHUB_OUTPUT"
           echo "base_url=https://api.anthropic.com" >> "$GITHUB_OUTPUT"
           echo "Using fallback direct key (base_url=api.anthropic.com)"
