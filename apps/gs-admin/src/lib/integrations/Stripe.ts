@@ -78,7 +78,8 @@ export class StripeIntegration extends BaseIntegration {
   async getCharges(startDate: number, endDate: number, limit: number = 100): Promise<StripeCharge[]> {
     try {
       const params = new URLSearchParams({
-        created: JSON.stringify({ gte: startDate, lte: endDate }),
+        'created[gte]': startDate.toString(),
+        'created[lte]': endDate.toString(),
         limit: limit.toString(),
       });
 
@@ -102,7 +103,8 @@ export class StripeIntegration extends BaseIntegration {
   async getRefunds(startDate: number, endDate: number): Promise<Record<string, unknown>[]> {
     try {
       const params = new URLSearchParams({
-        created: JSON.stringify({ gte: startDate, lte: endDate }),
+        'created[gte]': startDate.toString(),
+        'created[lte]': endDate.toString(),
         limit: '100',
       });
 

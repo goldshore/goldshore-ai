@@ -25,6 +25,15 @@ export interface IntegrationDefinition {
   requiredFields: string[];
 }
 
+export interface IntegrationStatus {
+  name: string;
+  type: IntegrationType;
+  status: string;
+  provider?: string;
+  lastSync?: string;
+  error?: string;
+}
+
 export const INTEGRATION_DEFINITIONS: Record<IntegrationType, IntegrationDefinition> = {
   facebook_pixel: {
     id: 'facebook_pixel',
@@ -163,6 +172,27 @@ export class IntegrationRegistry {
   }
 
   /**
+   * Get redacted statuses (no secrets) for API responses
+   */
+  async getRedactedStatuses(): Promise<Record<string, IntegrationStatus>> {
+    const statuses = await this.getStatuses();
+    const redacted: Record<string, IntegrationStatus> = {};
+
+    for (const [name, config] of Object.entries(statuses)) {
+      redacted[name] = {
+        name,
+        type: config.type as IntegrationType,
+        status: config.status || 'unknown',
+        provider: config.provider,
+        lastSync: config.lastSync,
+        error: config.error,
+      };
+    }
+
+    return redacted;
+  }
+
+  /**
    * Sync all integrations
    */
   async syncAll(): Promise<Record<string, Record<string, unknown>>> {
@@ -170,7 +200,21 @@ export class IntegrationRegistry {
 
     for (const [name, integration] of this.integrations) {
       try {
-        results[name] = await integration.sync();
+        const syncResult = await integration.sync();
+        results[name] = syncResult;
+
+        // Persist sync results to config metadata
+        const config = await integration.getStatus();
+        config.metadata = syncResult;
+
+        // Store updated config in KV if available
+        if (this.kv && typeof (this.kv as any).put === 'function') {
+          await (this.kv as any).put(
+            `integration:${name}`,
+            JSON.stringify(config),
+            { expirationTtl: 365 * 24 * 60 * 60 }
+          );
+        }
       } catch (error) {
         results[name] = { error: String(error) };
       }
@@ -225,16 +269,16 @@ export class IntegrationRegistry {
    * Get integration metrics for dashboard
    */
   async getDashboardMetrics(): Promise<Record<string, unknown>> {
-    const statuses = await this.getStatuses();
-    const connected = Object.values(statuses).filter((s) => s.status === 'connected').length;
-    const errors = Object.values(statuses).filter((s) => s.status === 'error').length;
+    const redacted = await this.getRedactedStatuses();
+    const connected = Object.values(redacted).filter((s) => s.status === 'connected').length;
+    const errors = Object.values(redacted).filter((s) => s.status === 'error').length;
 
     return {
       totalIntegrations: this.integrations.size,
       connected,
       disconnected: this.integrations.size - connected - errors,
       errors,
-      integrations: statuses,
+      integrations: redacted,
     };
   }
 }

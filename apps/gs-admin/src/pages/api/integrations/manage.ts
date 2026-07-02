@@ -35,7 +35,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
     }
 
     if (action === 'status') {
-      const statuses = await registry.getStatuses();
+      const statuses = await registry.getRedactedStatuses();
       return new Response(JSON.stringify({ success: true, data: statuses }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
