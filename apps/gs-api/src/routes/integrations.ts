@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { getIntegrationRegistry, INTEGRATION_DEFINITIONS } from "../lib/integrations/IntegrationRegistry";
+import { getIntegrationRegistry, INTEGRATION_DEFINITIONS } from "../lib/IntegrationRegistry";
 import { Env, Variables } from "../types";
 
 const integrations = new Hono<{
