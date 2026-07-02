@@ -17,3 +17,14 @@ routes = [
   { pattern = "gw.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" }
 ]
+
+[[env.prod.d1_databases]]
+binding = "PLATFORM_DB"
+database_name = "gs_platform_db"
+database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
+
+[env.prod.vars]
+# Protected-route AUD tag shared by gw.goldshore.ai, api.goldshore.ai, and agent.goldshore.ai.
+# Keep those hostnames in one Access application so the same verified Access JWT can traverse the platform.
+CLOUDFLARE_ACCESS_AUDIENCE = "8b6e1890f664c52ad265a240948a1f3315a757e19b4a0fa180ffe952b81a0daf"
+CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
