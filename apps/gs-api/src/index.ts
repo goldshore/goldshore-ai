@@ -50,6 +50,7 @@ type Env = {
   MAIL_ALLOWED_RECIPIENTS?: string;
   AGENT?: Fetcher;
   API_ORIGIN?: string;
+  ADMIN_URL?: string;
   ENV?: string;
   DEV_AUTH_BYPASS?: string;
   API_VERSION?: string;
