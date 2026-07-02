@@ -63,6 +63,7 @@ const authMiddleware = defineMiddleware(async (context, next) => {
   const env = (context.locals.runtime?.env ?? {}) as AdminEnv;
   const claims = await verifyAccessWithClaims(context.request, env);
   let session = buildAdminSession(claims);
+  let isDevAuthenticated = false;
 
   if (!claims && import.meta.env.DEV && env.ADMIN_DEV_ROLE) {
     const role = env.ADMIN_DEV_ROLE.toLowerCase();
@@ -71,8 +72,16 @@ const authMiddleware = defineMiddleware(async (context, next) => {
         roles: [role as (typeof ADMIN_ROLES)[number]],
         permissions: getAdminPermissions([role as (typeof ADMIN_ROLES)[number]])
       };
+      isDevAuthenticated = true;
     }
   }
+  if (!isAssetRoute && !claims && !isDevAuthenticated) {
+    return new Response('Unauthorized', {
+      status: 401,
+      headers: { 'content-type': 'text/plain; charset=utf-8' }
+    });
+  }
+
   const actor =
     claims?.email ||
     context.request.headers.get("CF-Access-Authenticated-User-Email") ||
@@ -82,7 +91,7 @@ const authMiddleware = defineMiddleware(async (context, next) => {
   context.locals.adminSession = {
     ...session,
     actor,
-    isAuthenticated: Boolean(claims)
+    isAuthenticated: Boolean(claims) || isDevAuthenticated
   };
 
   return next();

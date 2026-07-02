@@ -10,6 +10,7 @@ export type HttpClientConfig = HttpRetryConfig & {
   authTokenManager?: { getToken: () => Promise<string> };
   logger?: HttpLogger;
   fetchFn?: typeof fetch;
+  credentials?: RequestCredentials;
 };
 
 export type HttpRequestOptions = RequestInit & {
@@ -47,7 +48,11 @@ export const createHttpClient = (config: HttpClientConfig) => {
     const attemptRequest = async (attempt: number): Promise<Response> => {
       logger.info('[http] request', { method: options.method ?? 'GET', url, attempt });
       try {
-        const response = await fetchFn(url, { ...options, headers });
+        const response = await fetchFn(url, {
+          credentials: config.credentials,
+          ...options,
+          headers
+        });
         logger.info('[http] response', { status: response.status, url, attempt });
         if (attempt < retries && shouldRetryResponse(response)) {
           await sleep(retryDelayMs * (attempt + 1));

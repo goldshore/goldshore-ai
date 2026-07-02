@@ -115,6 +115,8 @@ app.use(
       const allowed = [
         "https://goldshore.ai",
         "https://www.goldshore.ai",
+        "https://goldshore.org",
+        "https://www.goldshore.org",
         "https://admin.goldshore.ai",
         "https://gw.goldshore.ai",
         "https://api.goldshore.ai",

@@ -122,7 +122,8 @@ import InboxTable from '../../components/InboxTable.astro';
         const adminService = createAdminService({
             apiBaseUrl: opsBase,
             auditEndpoint,
-            actor: 'admin-system'
+            actor: 'admin-system',
+            credentials: 'include'
         });
 
         const setOutput = (elementId, data) => {
