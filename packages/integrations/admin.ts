@@ -16,6 +16,7 @@ export type AdminServiceConfig = {
   logger?: Pick<Console, 'info' | 'warn' | 'error'>;
   httpClient?: HttpClient;
   auditLogger?: AuditLogger;
+  credentials?: RequestCredentials;
 };
 
 export const createAdminService = (config: AdminServiceConfig) => {
@@ -27,7 +28,8 @@ export const createAdminService = (config: AdminServiceConfig) => {
     createHttpClient({
       baseUrl: config.apiBaseUrl,
       authTokenManager,
-      logger
+      logger,
+      credentials: config.credentials
     });
 
   const auditLogger =

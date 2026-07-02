@@ -119,3 +119,26 @@ describe('createAdminService', () => {
     assert.ok(getCall.arguments[0].includes(`appId=${appId}`));
   });
 });
+
+test('uses configured credentials for cross-origin admin requests', async () => {
+  const fetchCalls: Array<{ input: RequestInfo | URL; init?: RequestInit }> = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    fetchCalls.push({ input, init });
+    return new Response(JSON.stringify({ ok: true }), { status: 200 });
+  }) as typeof fetch;
+
+  try {
+    const service = createAdminService({
+      apiBaseUrl: 'https://ops.example.com',
+      credentials: 'include',
+      auditLogger: { logAdminAction: async () => undefined },
+      logger: { info: () => undefined, warn: () => undefined, error: () => undefined },
+    });
+    await service.getWorkersStatus();
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  assert.strictEqual(fetchCalls[0]?.init?.credentials, 'include');
+});
