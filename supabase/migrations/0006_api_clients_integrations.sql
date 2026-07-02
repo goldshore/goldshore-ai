@@ -22,7 +22,9 @@ create table if not exists public.api_keys (
 );
 
 -- Prevent hashed API key material from being readable by client roles.
-revoke select (key_hash) on public.api_keys from anon, authenticated;
+revoke select on public.api_keys from anon, authenticated;
+grant select (id, api_client_id, key_prefix, revoked_at, expires_at, created_at)
+on public.api_keys to anon, authenticated;
 
 create table if not exists public.integrations (
   id uuid primary key default gen_random_uuid(),
@@ -47,7 +49,9 @@ create table if not exists public.webhooks (
 );
 
 -- Prevent webhook secret material from being readable by client roles.
-revoke select (secret_hash) on public.webhooks from anon, authenticated;
+revoke select on public.webhooks from anon, authenticated;
+grant select (id, organization_id, direction, endpoint, active, created_at, updated_at)
+on public.webhooks to anon, authenticated;
 
 create index if not exists idx_api_clients_org on public.api_clients(organization_id);
 create index if not exists idx_api_keys_client on public.api_keys(api_client_id);
@@ -74,20 +78,33 @@ alter table public.api_keys enable row level security;
 alter table public.integrations enable row level security;
 alter table public.webhooks enable row level security;
 
-create policy api_clients_access
+create policy api_clients_access_read
+on public.api_clients
+for select
+using (
+  private.is_goldshore_admin()
+  or exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid()
+      and p.organization_id = api_clients.organization_id
+      and p.role in ('owner', 'editor', 'viewer')
+  )
+);
+
+create policy api_clients_access_write
 on public.api_clients
 for all
 using (
-  public.is_goldshore_admin()
+  private.is_goldshore_admin()
   or exists (
     select 1 from public.profiles p
     where p.id = auth.uid()
       and p.organization_id = api_clients.organization_id
-      and p.role in ('owner', 'editor', 'viewer')
+      and p.role in ('owner', 'editor')
   )
 )
 with check (
-  public.is_goldshore_admin()
+  private.is_goldshore_admin()
   or exists (
     select 1 from public.profiles p
     where p.id = auth.uid()
@@ -96,22 +113,37 @@ with check (
   )
 );
 
-create policy api_keys_access
+create policy api_keys_access_read
+on public.api_keys
+for select
+using (
+  private.is_goldshore_admin()
+  or exists (
+    select 1
+    from public.api_clients ac
+    join public.profiles p on p.organization_id = ac.organization_id
+    where ac.id = api_keys.api_client_id
+      and p.id = auth.uid()
+      and p.role in ('owner', 'editor', 'viewer')
+  )
+);
+
+create policy api_keys_access_write
 on public.api_keys
 for all
 using (
-  public.is_goldshore_admin()
+  private.is_goldshore_admin()
   or exists (
     select 1
     from public.api_clients ac
     join public.profiles p on p.organization_id = ac.organization_id
     where ac.id = api_keys.api_client_id
       and p.id = auth.uid()
-      and p.role in ('owner', 'editor', 'viewer')
+      and p.role in ('owner', 'editor')
   )
 )
 with check (
-  public.is_goldshore_admin()
+  private.is_goldshore_admin()
   or exists (
     select 1
     from public.api_clients ac
@@ -122,20 +154,33 @@ with check (
   )
 );
 
-create policy integrations_access
+create policy integrations_access_read
+on public.integrations
+for select
+using (
+  private.is_goldshore_admin()
+  or exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid()
+      and p.organization_id = integrations.organization_id
+      and p.role in ('owner', 'editor', 'viewer')
+  )
+);
+
+create policy integrations_access_write
 on public.integrations
 for all
 using (
-  public.is_goldshore_admin()
+  private.is_goldshore_admin()
   or exists (
     select 1 from public.profiles p
     where p.id = auth.uid()
       and p.organization_id = integrations.organization_id
-      and p.role in ('owner', 'editor', 'viewer')
+      and p.role in ('owner', 'editor')
   )
 )
 with check (
-  public.is_goldshore_admin()
+  private.is_goldshore_admin()
   or exists (
     select 1 from public.profiles p
     where p.id = auth.uid()
@@ -144,20 +189,33 @@ with check (
   )
 );
 
-create policy webhooks_access
+create policy webhooks_access_read
 on public.webhooks
-for all
+for select
 using (
-  public.is_goldshore_admin()
+  private.is_goldshore_admin()
   or exists (
     select 1 from public.profiles p
     where p.id = auth.uid()
       and p.organization_id = webhooks.organization_id
       and p.role in ('owner', 'editor', 'viewer')
   )
+);
+
+create policy webhooks_access_write
+on public.webhooks
+for all
+using (
+  private.is_goldshore_admin()
+  or exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid()
+      and p.organization_id = webhooks.organization_id
+      and p.role in ('owner', 'editor')
+  )
 )
 with check (
-  public.is_goldshore_admin()
+  private.is_goldshore_admin()
   or exists (
     select 1 from public.profiles p
     where p.id = auth.uid()

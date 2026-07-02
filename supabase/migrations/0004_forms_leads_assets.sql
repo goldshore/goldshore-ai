@@ -72,20 +72,52 @@ alter table public.forms enable row level security;
 alter table public.form_submissions enable row level security;
 alter table public.leads enable row level security;
 
-create policy assets_access
+create or replace function private.is_active_form(target_form_id uuid, target_site_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1
+    from public.forms f
+    where f.id = target_form_id
+      and f.site_id = target_site_id
+      and f.status = 'active'
+  );
+$$;
+
+revoke all on function private.is_active_form(uuid, uuid) from public;
+grant execute on function private.is_active_form(uuid, uuid) to anon, authenticated;
+
+create policy assets_access_read
 on public.assets
-for all
+for select
 using (
-  public.is_goldshore_admin()
+  private.is_goldshore_admin()
   or exists (
     select 1 from public.profiles p
     where p.id = auth.uid()
       and p.organization_id = assets.organization_id
       and p.role in ('owner', 'editor', 'viewer')
   )
+);
+
+create policy assets_access_write
+on public.assets
+for all
+using (
+  private.is_goldshore_admin()
+  or exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid()
+      and p.organization_id = assets.organization_id
+      and p.role in ('owner', 'editor')
+  )
 )
 with check (
-  public.is_goldshore_admin()
+  private.is_goldshore_admin()
   or exists (
     select 1 from public.profiles p
     where p.id = auth.uid()
@@ -94,11 +126,11 @@ with check (
   )
 );
 
-create policy forms_access
+create policy forms_access_read
 on public.forms
-for all
+for select
 using (
-  public.is_goldshore_admin()
+  private.is_goldshore_admin()
   or exists (
     select 1
     from public.sites s
@@ -107,9 +139,24 @@ using (
       and p.id = auth.uid()
       and p.role in ('owner', 'editor', 'viewer')
   )
+);
+
+create policy forms_access_write
+on public.forms
+for all
+using (
+  private.is_goldshore_admin()
+  or exists (
+    select 1
+    from public.sites s
+    join public.profiles p on p.organization_id = s.organization_id
+    where s.id = forms.site_id
+      and p.id = auth.uid()
+      and p.role in ('owner', 'editor')
+  )
 )
 with check (
-  public.is_goldshore_admin()
+  private.is_goldshore_admin()
   or exists (
     select 1
     from public.sites s
@@ -124,20 +171,14 @@ create policy form_submissions_insert
 on public.form_submissions
 for insert
 with check (
-  exists (
-    select 1
-    from public.forms f
-    where f.id = form_submissions.form_id
-      and f.site_id = form_submissions.site_id
-      and f.status = 'active'
-  )
+  private.is_active_form(form_submissions.form_id, form_submissions.site_id)
 );
 
 create policy form_submissions_org_read
 on public.form_submissions
 for select
 using (
-  public.is_goldshore_admin()
+  private.is_goldshore_admin()
   or exists (
     select 1
     from public.sites s
@@ -148,20 +189,33 @@ using (
   )
 );
 
-create policy leads_access
+create policy leads_access_read
 on public.leads
-for all
+for select
 using (
-  public.is_goldshore_admin()
+  private.is_goldshore_admin()
   or exists (
     select 1 from public.profiles p
     where p.id = auth.uid()
       and p.organization_id = leads.organization_id
       and p.role in ('owner', 'editor', 'viewer')
   )
+);
+
+create policy leads_access_write
+on public.leads
+for all
+using (
+  private.is_goldshore_admin()
+  or exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid()
+      and p.organization_id = leads.organization_id
+      and p.role in ('owner', 'editor')
+  )
 )
 with check (
-  public.is_goldshore_admin()
+  private.is_goldshore_admin()
   or exists (
     select 1 from public.profiles p
     where p.id = auth.uid()

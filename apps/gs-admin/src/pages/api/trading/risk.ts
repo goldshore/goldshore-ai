@@ -13,7 +13,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
     });
   }
 
-  const res = await proxyToTrading(env, '/trading/risk');
+  const res = await proxyToTrading(env, '/api/trading/risk', request);
   const data = await res.json().catch(() => null);
   return new Response(JSON.stringify(data), {
     status: res.status,
@@ -23,7 +23,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
 
 export const POST: APIRoute = async ({ request, locals }) => {
   const env = getServerEnv(locals as Record<string, unknown>);
-  const access = await requireAdminAccess(request, env);
+  const access = await requireAdminAccess(request, env, { requiredRole: 'admin' });
   if (!access.ok) {
     return new Response(JSON.stringify({ error: access.error }), {
       status: access.status,
@@ -41,7 +41,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     });
   }
 
-  const res = await proxyToTrading(env, '/trading/risk/check', {
+  const res = await proxyToTrading(env, '/api/trading/risk/check', request, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body,

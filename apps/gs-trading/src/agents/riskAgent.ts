@@ -28,7 +28,9 @@ export function checkOrderRisk(
 
   // Separate existing long and short quantities to handle both directions correctly.
   // existingLong > 0: currently long; existingShort < 0: currently short.
-  const existingPos = positions.find(p => p.symbol === order.symbol);
+  const existingPos = order.broker
+    ? positions.find(p => p.symbol === order.symbol && p.broker === order.broker)
+    : undefined;
   const existingQty = existingPos?.quantity ?? 0;
   const existingLong = Math.max(0, existingQty);
   const existingShort = Math.min(0, existingQty); // negative or 0

@@ -1,22 +1,22 @@
 import { Hono } from 'hono';
 import { SchwabClient } from '../brokers/schwab';
-import { RobinhoodClient } from '../brokers/robinhood';
+import { hasRobinhoodToken, RobinhoodClient } from '../brokers/robinhood';
 import { checkOrderRisk, getPortfolioRiskMetrics } from '../agents/riskAgent';
 import type { TradingEnv, BrokerName } from '../types';
 
 export const tradingRoutes = new Hono<{ Bindings: TradingEnv }>();
 
-const isDemoMode = (env: TradingEnv) => !env.SCHWAB_CLIENT_ID && !env.ROBINHOOD_TOKEN;
+const isDemoMode = async (env: TradingEnv) => !env.SCHWAB_CLIENT_ID && !(await hasRobinhoodToken(env));
 
 tradingRoutes.get('/accounts', async (c) => {
-  if (isDemoMode(c.env)) return c.json({ accounts: getMockAccounts(), demo: true });
+  if (await isDemoMode(c.env)) return c.json({ accounts: getMockAccounts(), demo: true });
   const results: any[] = [];
   const errors: any[] = [];
   if (c.env.SCHWAB_CLIENT_ID) {
     try { results.push(await new SchwabClient(c.env).getAccount()); }
     catch (e: any) { errors.push({ broker: 'schwab', error: e.message }); }
   }
-  if (c.env.ROBINHOOD_TOKEN) {
+  if (await hasRobinhoodToken(c.env)) {
     try { results.push(await new RobinhoodClient(c.env).getAccount()); }
     catch (e: any) { errors.push({ broker: 'robinhood', error: e.message }); }
   }
@@ -24,7 +24,7 @@ tradingRoutes.get('/accounts', async (c) => {
 });
 
 tradingRoutes.get('/positions', async (c) => {
-  if (isDemoMode(c.env)) return c.json({ positions: getMockPositions(), demo: true });
+  if (await isDemoMode(c.env)) return c.json({ positions: getMockPositions(), demo: true });
   const broker = c.req.query('broker') as BrokerName | undefined;
   const positions: any[] = [];
   const errors: any[] = [];
@@ -35,7 +35,7 @@ tradingRoutes.get('/positions', async (c) => {
     }
   }
   if (!broker || broker === 'robinhood') {
-    if (c.env.ROBINHOOD_TOKEN) {
+    if (await hasRobinhoodToken(c.env)) {
       try { positions.push(...await new RobinhoodClient(c.env).getPositions()); }
       catch (e: any) { errors.push({ broker: 'robinhood', error: e.message }); }
     }
@@ -44,7 +44,7 @@ tradingRoutes.get('/positions', async (c) => {
 });
 
 tradingRoutes.get('/orders', async (c) => {
-  if (isDemoMode(c.env)) return c.json({ orders: getMockOrders(), demo: true });
+  if (await isDemoMode(c.env)) return c.json({ orders: getMockOrders(), demo: true });
   const broker = c.req.query('broker') as BrokerName | undefined;
   const orders: any[] = [];
   const errors: any[] = [];
@@ -55,7 +55,7 @@ tradingRoutes.get('/orders', async (c) => {
     }
   }
   if (!broker || broker === 'robinhood') {
-    if (c.env.ROBINHOOD_TOKEN) {
+    if (await hasRobinhoodToken(c.env)) {
       try { orders.push(...await new RobinhoodClient(c.env).getOrders()); }
       catch (e: any) { errors.push({ broker: 'robinhood', error: e.message }); }
     }
@@ -67,13 +67,13 @@ tradingRoutes.get('/quotes', async (c) => {
   const symbolsRaw = c.req.query('symbols') ?? 'SPY,QQQ,AAPL,TSLA,NVDA';
   const symbols = symbolsRaw.split(',').map(s => s.trim()).filter(Boolean);
   const broker = c.req.query('broker') as BrokerName | undefined;
-  if (isDemoMode(c.env)) return c.json({ quotes: getMockQuotes(symbols), demo: true });
+  if (await isDemoMode(c.env)) return c.json({ quotes: getMockQuotes(symbols), demo: true });
   // Propagate errors — never silently substitute mock data in live mode
   if ((!broker || broker === 'schwab') && c.env.SCHWAB_CLIENT_ID) {
     const quotes = await new SchwabClient(c.env).getQuotes(symbols);
     return c.json({ quotes });
   }
-  if ((!broker || broker === 'robinhood') && c.env.ROBINHOOD_TOKEN) {
+  if ((!broker || broker === 'robinhood') && await hasRobinhoodToken(c.env)) {
     const quotes = await new RobinhoodClient(c.env).getQuotes(symbols);
     return c.json({ quotes });
   }
@@ -95,11 +95,11 @@ tradingRoutes.post('/orders', async (c) => {
   if (quantity <= 0 || !Number.isFinite(quantity)) return c.json({ error: 'quantity must be a positive number' }, 400);
 
   // Validate broker is actually configured
-  if (!isDemoMode(c.env)) {
+  if (!(await isDemoMode(c.env))) {
     if (broker === 'schwab' && !c.env.SCHWAB_CLIENT_ID) {
       return c.json({ error: 'Schwab is not configured on this deployment' }, 503);
     }
-    if (broker === 'robinhood' && !c.env.ROBINHOOD_TOKEN) {
+    if (broker === 'robinhood' && !(await hasRobinhoodToken(c.env))) {
       return c.json({ error: 'Robinhood is not configured on this deployment' }, 503);
     }
   }
@@ -118,7 +118,7 @@ tradingRoutes.post('/orders', async (c) => {
   const positions: any[] = [];
   let estimatedPrice = orderType === 'LIMIT' ? Number(limitPrice) : 0;
 
-  if (!isDemoMode(c.env)) {
+  if (!(await isDemoMode(c.env))) {
     try {
       const needsQuote = orderType === 'MARKET';
       // Always collect all brokers so risk check sees the full portfolio
@@ -143,7 +143,7 @@ tradingRoutes.post('/orders', async (c) => {
         })());
       }
 
-      if (c.env.ROBINHOOD_TOKEN) {
+      if (await hasRobinhoodToken(c.env)) {
         tasks.push((async () => {
           const client = new RobinhoodClient(c.env);
           const [acct, pos, quoteArr] = await Promise.all([
@@ -184,7 +184,7 @@ tradingRoutes.post('/orders', async (c) => {
     return c.json({ error: 'Order blocked by risk manager', violations: riskCheck.violations, warnings: riskCheck.warnings }, 422);
   }
 
-  if (isDemoMode(c.env)) {
+  if (await isDemoMode(c.env)) {
     return c.json({ success: true, orderId: `demo-${Date.now()}`, broker, warnings: riskCheck.warnings, demo: true });
   }
 
@@ -215,7 +215,7 @@ tradingRoutes.delete('/orders/:id', async (c) => {
 });
 
 tradingRoutes.get('/risk', async (c) => {
-  if (isDemoMode(c.env)) return c.json({ metrics: getMockRiskMetrics(), demo: true });
+  if (await isDemoMode(c.env)) return c.json({ metrics: getMockRiskMetrics(), demo: true });
   // Collect data from each broker independently so one outage does not zero out the other
   const accounts: any[] = [];
   const positions: any[] = [];
@@ -227,7 +227,7 @@ tradingRoutes.get('/risk', async (c) => {
       accounts.push(acct); positions.push(...pos);
     } catch (e: any) { errors.push({ broker: 'schwab', error: e.message }); }
   }
-  if (c.env.ROBINHOOD_TOKEN) {
+  if (await hasRobinhoodToken(c.env)) {
     try {
       const r = new RobinhoodClient(c.env);
       const [acct, pos] = await Promise.all([r.getAccount(), r.getPositions()]);
@@ -261,8 +261,8 @@ tradingRoutes.get('/auth/status', async (c) => {
   } else {
     status.schwab = { configured: false };
   }
-  status.robinhood = { configured: !!c.env.ROBINHOOD_TOKEN };
-  status.demoMode = isDemoMode(c.env);
+  status.robinhood = { configured: await hasRobinhoodToken(c.env) };
+  status.demoMode = await isDemoMode(c.env);
   return c.json(status);
 });
 

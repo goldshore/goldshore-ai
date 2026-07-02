@@ -2,6 +2,14 @@ import type { TradingEnv, Position, Order, Quote, AccountSummary } from '../type
 
 const RH_BASE = 'https://api.robinhood.com';
 
+export async function getRobinhoodToken(env: TradingEnv): Promise<string | null> {
+  return env.ROBINHOOD_TOKEN ?? await env.TRADING_KV.get('robinhood:token');
+}
+
+export async function hasRobinhoodToken(env: TradingEnv): Promise<boolean> {
+  return Boolean(await getRobinhoodToken(env));
+}
+
 export class RobinhoodClient {
   private _token: string | null = null;
 
@@ -10,7 +18,7 @@ export class RobinhoodClient {
   // Resolves token from env var first, then KV fallback (set via POST /oauth/robinhood/token)
   private async getToken(): Promise<string> {
     if (this._token) return this._token;
-    const token = this.env.ROBINHOOD_TOKEN ?? await this.env.TRADING_KV.get('robinhood:token');
+    const token = await getRobinhoodToken(this.env);
     if (!token) throw new Error('Robinhood token not configured — set ROBINHOOD_TOKEN or POST /oauth/robinhood/token');
     this._token = token;
     return token;

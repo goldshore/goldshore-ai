@@ -73,20 +73,33 @@ alter table public.pipelines enable row level security;
 alter table public.pipeline_runs enable row level security;
 alter table public.pipeline_steps enable row level security;
 
-create policy deployments_access
+create policy deployments_access_read
+on public.deployments
+for select
+using (
+  private.is_goldshore_admin()
+  or exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid()
+      and p.organization_id = deployments.organization_id
+      and p.role in ('owner', 'editor', 'viewer')
+  )
+);
+
+create policy deployments_access_write
 on public.deployments
 for all
 using (
-  public.is_goldshore_admin()
+  private.is_goldshore_admin()
   or exists (
     select 1 from public.profiles p
     where p.id = auth.uid()
       and p.organization_id = deployments.organization_id
-      and p.role in ('owner', 'editor', 'viewer')
+      and p.role in ('owner', 'editor')
   )
 )
 with check (
-  public.is_goldshore_admin()
+  private.is_goldshore_admin()
   or exists (
     select 1 from public.profiles p
     where p.id = auth.uid()
@@ -95,22 +108,37 @@ with check (
   )
 );
 
-create policy deployment_checks_access
+create policy deployment_checks_access_read
+on public.deployment_checks
+for select
+using (
+  private.is_goldshore_admin()
+  or exists (
+    select 1
+    from public.deployments d
+    join public.profiles p on p.organization_id = d.organization_id
+    where d.id = deployment_checks.deployment_id
+      and p.id = auth.uid()
+      and p.role in ('owner', 'editor', 'viewer')
+  )
+);
+
+create policy deployment_checks_access_write
 on public.deployment_checks
 for all
 using (
-  public.is_goldshore_admin()
+  private.is_goldshore_admin()
   or exists (
     select 1
     from public.deployments d
     join public.profiles p on p.organization_id = d.organization_id
     where d.id = deployment_checks.deployment_id
       and p.id = auth.uid()
-      and p.role in ('owner', 'editor', 'viewer')
+      and p.role in ('owner', 'editor')
   )
 )
 with check (
-  public.is_goldshore_admin()
+  private.is_goldshore_admin()
   or exists (
     select 1
     from public.deployments d
@@ -121,20 +149,33 @@ with check (
   )
 );
 
-create policy pipelines_access
+create policy pipelines_access_read
+on public.pipelines
+for select
+using (
+  private.is_goldshore_admin()
+  or exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid()
+      and p.organization_id = pipelines.organization_id
+      and p.role in ('owner', 'editor', 'viewer')
+  )
+);
+
+create policy pipelines_access_write
 on public.pipelines
 for all
 using (
-  public.is_goldshore_admin()
+  private.is_goldshore_admin()
   or exists (
     select 1 from public.profiles p
     where p.id = auth.uid()
       and p.organization_id = pipelines.organization_id
-      and p.role in ('owner', 'editor', 'viewer')
+      and p.role in ('owner', 'editor')
   )
 )
 with check (
-  public.is_goldshore_admin()
+  private.is_goldshore_admin()
   or exists (
     select 1 from public.profiles p
     where p.id = auth.uid()
@@ -143,22 +184,37 @@ with check (
   )
 );
 
-create policy pipeline_runs_access
+create policy pipeline_runs_access_read
+on public.pipeline_runs
+for select
+using (
+  private.is_goldshore_admin()
+  or exists (
+    select 1
+    from public.pipelines pl
+    join public.profiles p on p.organization_id = pl.organization_id
+    where pl.id = pipeline_runs.pipeline_id
+      and p.id = auth.uid()
+      and p.role in ('owner', 'editor', 'viewer')
+  )
+);
+
+create policy pipeline_runs_access_write
 on public.pipeline_runs
 for all
 using (
-  public.is_goldshore_admin()
+  private.is_goldshore_admin()
   or exists (
     select 1
     from public.pipelines pl
     join public.profiles p on p.organization_id = pl.organization_id
     where pl.id = pipeline_runs.pipeline_id
       and p.id = auth.uid()
-      and p.role in ('owner', 'editor', 'viewer')
+      and p.role in ('owner', 'editor')
   )
 )
 with check (
-  public.is_goldshore_admin()
+  private.is_goldshore_admin()
   or exists (
     select 1
     from public.pipelines pl
@@ -169,11 +225,11 @@ with check (
   )
 );
 
-create policy pipeline_steps_access
+create policy pipeline_steps_access_read
 on public.pipeline_steps
-for all
+for select
 using (
-  public.is_goldshore_admin()
+  private.is_goldshore_admin()
   or exists (
     select 1
     from public.pipeline_runs pr
@@ -183,9 +239,25 @@ using (
       and p.id = auth.uid()
       and p.role in ('owner', 'editor', 'viewer')
   )
+);
+
+create policy pipeline_steps_access_write
+on public.pipeline_steps
+for all
+using (
+  private.is_goldshore_admin()
+  or exists (
+    select 1
+    from public.pipeline_runs pr
+    join public.pipelines pl on pl.id = pr.pipeline_id
+    join public.profiles p on p.organization_id = pl.organization_id
+    where pr.id = pipeline_steps.pipeline_run_id
+      and p.id = auth.uid()
+      and p.role in ('owner', 'editor')
+  )
 )
 with check (
-  public.is_goldshore_admin()
+  private.is_goldshore_admin()
   or exists (
     select 1
     from public.pipeline_runs pr

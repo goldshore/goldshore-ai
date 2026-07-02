@@ -18,7 +18,7 @@ create policy audit_logs_access
 on public.audit_logs
 for select
 using (
-  public.is_goldshore_admin()
+  private.is_goldshore_admin()
   or exists (
     select 1 from public.profiles p
     where p.id = auth.uid()
@@ -30,7 +30,7 @@ using (
 create policy audit_logs_admin_insert
 on public.audit_logs
 for insert
-with check (public.is_goldshore_admin());
+with check (private.is_goldshore_admin());
 
 create or replace view public.public_domain_health
 with (security_barrier = true)

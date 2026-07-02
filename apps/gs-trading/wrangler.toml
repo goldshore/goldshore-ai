@@ -6,13 +6,9 @@ compatibility_flags = ["nodejs_compat"]
 # KV namespace — stores agent state, OAuth tokens, trading signals, and feature flags
 [[kv_namespaces]]
 binding = "TRADING_KV"
-id = "your-production-kv-namespace-id"
-preview_id = "your-preview-kv-namespace-id"
+id = "9b3314c3b7af40a284a8c9b6e2990709"
+preview_id = "2c14b79b76e6453ab57c6dde6116a11d"
 
-[vars]
-ENV = "development"
-
-# ———— Production environment ————————————————————————————————————————————————————————————————————
 [vars]
 ENV = "development"
 
@@ -26,25 +22,16 @@ routes = [
 # kv_namespaces is NOT inherited by named environments in Wrangler — must be re-declared.
 [[env.prod.kv_namespaces]]
 binding = "TRADING_KV"
-id = "your-production-kv-namespace-id"
+id = "9b3314c3b7af40a284a8c9b6e2990709"
 
 [env.prod.vars]
 ENV = "production"
 # OAuth redirect URI — must match exactly what is registered in your Schwab app
 SCHWAB_REDIRECT_URI = "https://trading.goldshore.ai/oauth/schwab/callback"
 
-# ———— Secrets (set via: wrangler secret put <NAME> --env prod) ————————————————————————————
-#
-[[env.prod.kv_namespaces]]
-binding = "TRADING_KV"
-id = "9b3314c3b7af40a284a8c9b6e2990709"
-
-[env.prod.vars]
-ENV = "production"
-SCHWAB_REDIRECT_URI = "https://trading.goldshore.ai/oauth/schwab/callback"
-
 # ---- Preview environment -----------------------------------------------------
 [env.preview]
+name = "gs-trading-preview"
 routes = []
 
 [[env.preview.kv_namespaces]]
@@ -69,7 +56,7 @@ SCHWAB_REDIRECT_URI = "https://preview.goldshore.ai/oauth/schwab/callback"
 #   ROBINHOOD_TOKEN             — Bearer token (also writable via POST /oauth/robinhood/token)
 #   ROBINHOOD_ACCOUNT_ID        — Robinhood account number
 #
-# ———— OAuth setup quick-start ————————————————————————————————————————————————————————————————
+# ---- OAuth setup quick-start -------------------------------------------------
 # 1. Deploy:   wrangler deploy --env prod
 # 2. Secrets:  wrangler secret put SCHWAB_CLIENT_ID --env prod  (etc.)
 # 3. Register  https://trading.goldshore.ai/oauth/schwab/callback  in your Schwab app.

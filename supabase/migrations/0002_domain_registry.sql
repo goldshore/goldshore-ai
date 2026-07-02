@@ -46,14 +46,14 @@ alter table public.dns_records enable row level security;
 create policy domains_admin_all
 on public.domains
 for all
-using (public.is_goldshore_admin())
-with check (public.is_goldshore_admin());
+using (private.is_goldshore_admin())
+with check (private.is_goldshore_admin());
 
 create policy domains_org_read
 on public.domains
 for select
 using (
-  public.is_goldshore_admin()
+  private.is_goldshore_admin()
   or exists (
     select 1 from public.profiles p
     where p.id = auth.uid()
@@ -65,7 +65,7 @@ create policy domains_org_write
 on public.domains
 for all
 using (
-  public.is_goldshore_admin()
+  private.is_goldshore_admin()
   or exists (
     select 1 from public.profiles p
     where p.id = auth.uid()
@@ -74,7 +74,7 @@ using (
   )
 )
 with check (
-  public.is_goldshore_admin()
+  private.is_goldshore_admin()
   or exists (
     select 1 from public.profiles p
     where p.id = auth.uid()
@@ -86,14 +86,14 @@ with check (
 create policy dns_records_admin_all
 on public.dns_records
 for all
-using (public.is_goldshore_admin())
-with check (public.is_goldshore_admin());
+using (private.is_goldshore_admin())
+with check (private.is_goldshore_admin());
 
-create policy dns_records_org_access
+create policy dns_records_org_access_read
 on public.dns_records
-for all
+for select
 using (
-  public.is_goldshore_admin()
+  private.is_goldshore_admin()
   or exists (
     select 1
     from public.domains d
@@ -102,9 +102,24 @@ using (
       and d.id = dns_records.domain_id
       and p.role in ('owner', 'editor', 'viewer')
   )
+);
+
+create policy dns_records_org_access_write
+on public.dns_records
+for all
+using (
+  private.is_goldshore_admin()
+  or exists (
+    select 1
+    from public.domains d
+    join public.profiles p on p.organization_id = d.organization_id
+    where p.id = auth.uid()
+      and d.id = dns_records.domain_id
+      and p.role in ('owner', 'editor')
+  )
 )
 with check (
-  public.is_goldshore_admin()
+  private.is_goldshore_admin()
   or exists (
     select 1
     from public.domains d

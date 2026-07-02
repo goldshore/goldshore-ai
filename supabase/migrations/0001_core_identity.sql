@@ -42,30 +42,63 @@ for each row execute function public.set_updated_at();
 alter table public.organizations enable row level security;
 alter table public.profiles enable row level security;
 
-create or replace function public.is_goldshore_admin()
+create schema if not exists private;
+revoke all on schema private from public;
+grant usage on schema private to anon, authenticated;
+
+create or replace function private.is_goldshore_admin()
 returns boolean
 language sql
 stable
+security definer
+set search_path = ''
 as $$
   select exists (
     select 1
     from public.profiles p
-    where p.id = auth.uid()
+    where p.id = (select auth.uid())
       and p.role = 'admin'
   );
 $$;
 
+revoke all on function private.is_goldshore_admin() from public;
+grant execute on function private.is_goldshore_admin() to anon, authenticated;
+
+create or replace function private.can_update_own_profile(
+  target_id uuid,
+  target_organization_id uuid,
+  target_role text
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select target_id = (select auth.uid())
+    and exists (
+      select 1
+      from public.profiles p
+      where p.id = target_id
+        and p.organization_id is not distinct from target_organization_id
+        and p.role = target_role
+    );
+$$;
+
+revoke all on function private.can_update_own_profile(uuid, uuid, text) from public;
+grant execute on function private.can_update_own_profile(uuid, uuid, text) to authenticated;
+
 create policy organizations_admin_all
 on public.organizations
 for all
-using (public.is_goldshore_admin())
-with check (public.is_goldshore_admin());
+using (private.is_goldshore_admin())
+with check (private.is_goldshore_admin());
 
 create policy organizations_member_read
 on public.organizations
 for select
 using (
-  public.is_goldshore_admin()
+  private.is_goldshore_admin()
   or exists (
     select 1
     from public.profiles p
@@ -77,8 +110,8 @@ using (
 create policy profiles_admin_all
 on public.profiles
 for all
-using (public.is_goldshore_admin())
-with check (public.is_goldshore_admin());
+using (private.is_goldshore_admin())
+with check (private.is_goldshore_admin());
 
 create policy profiles_self_read
 on public.profiles
@@ -89,4 +122,4 @@ create policy profiles_self_update
 on public.profiles
 for update
 using (id = auth.uid())
-with check (id = auth.uid());
+with check (private.can_update_own_profile(id, organization_id, role));

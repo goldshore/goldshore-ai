@@ -3,6 +3,7 @@ import { cors } from 'hono/cors';
 import { secureHeaders } from 'hono/secure-headers';
 import { verifyAccessWithClaims } from '@goldshore/auth';
 import { tradingRoutes } from './routes/trading';
+import { hasRobinhoodToken } from './brokers/robinhood';
 import { agentRoutes } from './routes/agents';
 import { oauthRoutes } from './routes/oauth';
 import { getDashboardHTML } from './routes/dashboard';
@@ -60,7 +61,7 @@ app.use('*', async (c, next) => {
 // mcp-trading feature flag guard — blocks trading + agent routes when disabled.
 // Defaults to enabled in demo/dev mode so local development works without KV.
 app.use('/api/trading/*', async (c, next) => {
-  const isDev = !c.env.SCHWAB_CLIENT_ID && !c.env.ROBINHOOD_TOKEN;
+  const isDev = !c.env.SCHWAB_CLIENT_ID && !(await hasRobinhoodToken(c.env));
   const defaultOn = isDev || c.env.ENV !== 'production';
   const enabled = await isEnabled(c.env, FLAGS.MCP_TRADING, defaultOn);
   if (!enabled) return c.json({ error: 'mcp-trading feature is currently disabled', flag: FLAGS.MCP_TRADING }, 503);
@@ -68,7 +69,7 @@ app.use('/api/trading/*', async (c, next) => {
 });
 
 app.use('/api/agents/*', async (c, next) => {
-  const isDev = !c.env.SCHWAB_CLIENT_ID && !c.env.ROBINHOOD_TOKEN;
+  const isDev = !c.env.SCHWAB_CLIENT_ID && !(await hasRobinhoodToken(c.env));
   const defaultOn = isDev || c.env.ENV !== 'production';
   const enabled = await isEnabled(c.env, FLAGS.MCP_TRADING, defaultOn);
   if (!enabled) return c.json({ error: 'mcp-trading feature is currently disabled', flag: FLAGS.MCP_TRADING }, 503);
@@ -81,7 +82,7 @@ app.get('/health', (c) => c.json({ status: 'ok', service: 'gs-trading', version:
 // Feature flag inspection (read is public) and management (write requires Access).
 // Uses the same production default as the trading/agent guards so status is consistent.
 app.get('/api/flags', async (c) => {
-  const isDev = !c.env.SCHWAB_CLIENT_ID && !c.env.ROBINHOOD_TOKEN;
+  const isDev = !c.env.SCHWAB_CLIENT_ID && !(await hasRobinhoodToken(c.env));
   const defaultOn = isDev || c.env.ENV !== 'production';
   const enabled = await isEnabled(c.env, FLAGS.MCP_TRADING, defaultOn);
   return c.json({ flags: { [FLAGS.MCP_TRADING]: enabled } });

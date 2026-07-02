@@ -14,8 +14,8 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
   }
 
   const broker = url.searchParams.get('broker');
-  const path = broker ? `/trading/positions?broker=${broker}` : '/trading/positions';
-  const res = await proxyToTrading(env, path);
+  const path = broker ? `/api/trading/positions?broker=${broker}` : '/api/trading/positions';
+  const res = await proxyToTrading(env, path, request);
   const data = await res.json().catch(() => null);
   return new Response(JSON.stringify(data), {
     status: res.status,

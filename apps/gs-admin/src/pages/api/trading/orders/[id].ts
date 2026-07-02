@@ -5,7 +5,7 @@ import { proxyToTrading } from '../../../../lib/trading-api';
 
 export const DELETE: APIRoute = async ({ request, locals, params, url }) => {
   const env = getServerEnv(locals as Record<string, unknown>);
-  const access = await requireAdminAccess(request, env);
+  const access = await requireAdminAccess(request, env, { requiredRole: 'admin' });
   if (!access.ok) {
     return new Response(JSON.stringify({ error: access.error }), {
       status: access.status,
@@ -15,7 +15,7 @@ export const DELETE: APIRoute = async ({ request, locals, params, url }) => {
 
   const { id } = params;
   const broker = url.searchParams.get('broker') ?? '';
-  const res = await proxyToTrading(env, `/trading/orders/${id}?broker=${broker}`, {
+  const res = await proxyToTrading(env, `/api/trading/orders/${id}?broker=${broker}`, request, {
     method: 'DELETE',
   });
   const data = await res.json().catch(() => null);
