@@ -22,6 +22,7 @@ import sites from './routes/sites';
 import forms from './routes/forms';
 import deployments from './routes/deployments';
 import gearswipe from './routes/gearswipe';
+import crawler from './routes/crawler';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
 
@@ -315,6 +316,7 @@ app.route('/user', user);
 app.route('/system', system);
 app.route('/templates', templates);
 app.route('/admin', admin);
+app.route('/admin/crawler', crawler);
 app.route('/media', media);
 app.route('/pages', pages);
 app.route('/internal', internal);
