@@ -3,14 +3,15 @@ compatibility_date = "2026-04-18"
 compatibility_flags = ["nodejs_compat"]
 
 workers_dev = false
+main = "./src/worker.ts"
 
 # Serve the Astro build as a Worker with Assets.
-# main is omitted here — wrangler auto-discovers dist/_worker.js via the [assets]
-# binding. Specifying main = "dist/worker.js" causes @cloudflare/vite-plugin to
-# throw during astro build because dist/ doesn't exist pre-build.
+# The Cloudflare adapter builds the configured Worker entrypoint and emits
+# static assets into dist. Keeping both `main` and an assets binding avoids
+# Wrangler treating the project as an assets-only Worker.
 [assets]
 directory = "./dist"
-binding = "SITE_ASSETS"
+binding = "ASSETS"
 
 # ── Production ────────────────────────────────────────────────────────────────
 
