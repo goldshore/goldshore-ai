@@ -12,10 +12,10 @@ export const GET: APIRoute = async ({ locals }) => {
     const runtime = locals['runtime'] as Record<string, unknown> | undefined;
     const env = runtime?.env as Record<string, unknown> | undefined;
 
-    // Validate all bindings
+    // Validate all bindings with correct names from wrangler.toml
     const kvBinding = await validateKVBinding(env?.['KV']);
-    const d1Binding = await validateD1Binding(env?.['CONTENT_DB']);
-    const r2Binding = await validateR2Binding(env?.['ASSETS']);
+    const d1Binding = await validateD1Binding(env?.['PLATFORM_DB']);
+    const r2Binding = await validateR2Binding(env?.['GS_ASSETS']);
     const serviceBinding = await validateServiceBinding();
 
     const bindings = [kvBinding, d1Binding, r2Binding, serviceBinding];

@@ -227,10 +227,27 @@ const title = 'Integrations Hub';
         alert('Edit form for: ' + name);
       };
 
-      window.deleteIntegration = (name) => {
+      window.deleteIntegration = async (name) => {
         if (confirm('Delete integration: ' + name + '?')) {
-          alert('Integration deleted');
-          loadIntegrations();
+          try {
+            const response = await fetch('/api/integrations/manage', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'delete',
+                config: { name },
+              }),
+            });
+
+            if (response.ok) {
+              alert('Integration deleted successfully');
+              loadIntegrations();
+            } else {
+              alert('Failed to delete integration');
+            }
+          } catch (error) {
+            alert('Error deleting integration: ' + error);
+          }
         }
       };
 

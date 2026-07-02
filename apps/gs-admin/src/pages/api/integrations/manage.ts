@@ -103,6 +103,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
         await (kv as any).delete(`integration:${config.name}`);
       }
 
+      // Remove from registry cache
+      const registry = getIntegrationRegistry(kv);
+      const integration = registry.get(config.name);
+      if (integration) {
+        registry.getAll().delete(config.name);
+      }
+
       return new Response(
         JSON.stringify({ success: true, message: 'Integration deleted' }),
         { status: 200, headers: { 'Content-Type': 'application/json' } }
