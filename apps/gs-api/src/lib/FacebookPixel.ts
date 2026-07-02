@@ -42,7 +42,7 @@ export class FacebookPixelIntegration extends BaseIntegration {
   async authenticate(): Promise<boolean> {
     try {
       const response = await fetch(
-        `https://graph.instagram.com/v18.0/${this.pixelId}?access_token=${this.accessToken}`
+        `https://graph.facebook.com/v18.0/${this.pixelId}?access_token=${this.accessToken}`
       );
       this.config.status = response.ok ? 'connected' : 'disconnected';
       return response.ok;
@@ -60,7 +60,7 @@ export class FacebookPixelIntegration extends BaseIntegration {
   async trackEvent(event: PixelEvent, testCode?: string): Promise<boolean> {
     try {
       const response = await fetch(
-        `https://graph.instagram.com/v18.0/${this.pixelId}/events?access_token=${this.accessToken}`,
+        `https://graph.facebook.com/v18.0/${this.pixelId}/events?access_token=${this.accessToken}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -93,7 +93,7 @@ export class FacebookPixelIntegration extends BaseIntegration {
   async getInsights(startDate: string, endDate: string) {
     try {
       const response = await fetch(
-        `https://graph.instagram.com/v18.0/${this.pixelId}/insights?` +
+        `https://graph.facebook.com/v18.0/${this.pixelId}/insights?` +
         `fields=event_name,event_count,event_value&` +
         `date_start=${startDate}&date_end=${endDate}&` +
         `access_token=${this.accessToken}`

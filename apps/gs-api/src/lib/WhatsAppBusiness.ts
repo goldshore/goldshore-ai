@@ -41,7 +41,7 @@ export class WhatsAppBusinessIntegration extends BaseIntegration {
   async authenticate(): Promise<boolean> {
     try {
       const response = await fetch(
-        `https://graph.whatsapp.com/v18.0/${this.phoneNumberId}?access_token=${this.accessToken}`
+        `https://graph.facebook.com/v18.0/${this.phoneNumberId}?access_token=${this.accessToken}`
       );
       this.config.status = response.ok ? 'connected' : 'disconnected';
       return response.ok;
@@ -58,7 +58,7 @@ export class WhatsAppBusinessIntegration extends BaseIntegration {
   async sendMessage(message: WhatsAppMessage): Promise<string | null> {
     try {
       const response = await fetch(
-        `https://graph.whatsapp.com/v18.0/${this.phoneNumberId}/messages?access_token=${this.accessToken}`,
+        `https://graph.facebook.com/v18.0/${this.phoneNumberId}/messages?access_token=${this.accessToken}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -115,7 +115,7 @@ export class WhatsAppBusinessIntegration extends BaseIntegration {
   async getMessageTemplates() {
     try {
       const response = await fetch(
-        `https://graph.whatsapp.com/v18.0/${this.businessAccountId}/message_templates?access_token=${this.accessToken}`
+        `https://graph.facebook.com/v18.0/${this.businessAccountId}/message_templates?access_token=${this.accessToken}`
       );
 
       if (!response.ok) throw new Error('Failed to fetch templates');

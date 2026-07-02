@@ -103,40 +103,44 @@ const title = 'Stripe Integration';
 
           if (loadingEl) loadingEl.style.display = 'none';
 
-          if (data.success && data.data?.integrations?.stripe) {
-            const stripe = data.data.integrations.stripe;
-            const metrics = stripe.metadata?.metrics || {};
+          if (data.success && data.data?.integrations) {
+            const stripeIntegration = Object.values(data.data.integrations).find((int) => int.type === 'stripe');
 
-            if (totalRevenueEl) totalRevenueEl.textContent = `$${metrics.totalRevenue?.toFixed(2) || 0}`;
-            if (successfulChargesEl) successfulChargesEl.textContent = metrics.successfulCharges || 0;
-            if (failedChargesEl) failedChargesEl.textContent = metrics.failedCharges || 0;
-            if (avgOrderValueEl) avgOrderValueEl.textContent = `$${metrics.averageOrderValue?.toFixed(2) || 0}`;
-            if (refundedAmountEl) refundedAmountEl.textContent = `$${metrics.refundedAmount?.toFixed(2) || 0}`;
-            if (customerCountEl) customerCountEl.textContent = metrics.customerCount || 0;
+            if (stripeIntegration) {
+              const stripe = stripeIntegration;
+              const metrics = stripe.metadata?.metrics || {};
 
-            if (listEl) {
-              const charges = stripe.metadata?.charges || [];
-              if (charges.length > 0) {
-                const tbody = document.getElementById('charges-tbody');
-                if (tbody) {
-                  tbody.innerHTML = charges.slice(0, 10).map((charge) => `
-                    <tr class="border-b border-gs-border hover:bg-gs-surface">
-                      <td class="py-3 px-4">${new Date(charge.created * 1000).toLocaleDateString()}</td>
-                      <td class="py-3 px-4">$${(charge.amount / 100).toFixed(2)}</td>
-                      <td class="py-3 px-4">
-                        <span class="inline-block px-2 py-1 rounded text-xs ${
-                          charge.status === 'succeeded'
-                            ? 'bg-gs-success/20 gs-text-success'
-                            : 'bg-gs-warning/20 gs-text-warning'
-                        }">
-                          ${charge.status}
-                        </span>
-                      </td>
-                      <td class="py-3 px-4 gs-text-subtle">${charge.customer || 'N/A'}</td>
-                      <td class="py-3 px-4">${charge.description || '-'}</td>
-                    </tr>
-                  `).join('');
-                  if (listEl) listEl.style.display = 'block';
+              if (totalRevenueEl) totalRevenueEl.textContent = `$${metrics.totalRevenue?.toFixed(2) || 0}`;
+              if (successfulChargesEl) successfulChargesEl.textContent = metrics.successfulCharges || 0;
+              if (failedChargesEl) failedChargesEl.textContent = metrics.failedCharges || 0;
+              if (avgOrderValueEl) avgOrderValueEl.textContent = `$${metrics.averageOrderValue?.toFixed(2) || 0}`;
+              if (refundedAmountEl) refundedAmountEl.textContent = `$${metrics.refundedAmount?.toFixed(2) || 0}`;
+              if (customerCountEl) customerCountEl.textContent = metrics.customerCount || 0;
+
+              if (listEl) {
+                const charges = stripe.metadata?.charges || [];
+                if (charges.length > 0) {
+                  const tbody = document.getElementById('charges-tbody');
+                  if (tbody) {
+                    tbody.innerHTML = charges.slice(0, 10).map((charge) => `
+                      <tr class="border-b border-gs-border hover:bg-gs-surface">
+                        <td class="py-3 px-4">${new Date(charge.created * 1000).toLocaleDateString()}</td>
+                        <td class="py-3 px-4">$${(charge.amount / 100).toFixed(2)}</td>
+                        <td class="py-3 px-4">
+                          <span class="inline-block px-2 py-1 rounded text-xs ${
+                            charge.status === 'succeeded'
+                              ? 'bg-gs-success/20 gs-text-success'
+                              : 'bg-gs-warning/20 gs-text-warning'
+                          }">
+                            ${charge.status}
+                          </span>
+                        </td>
+                        <td class="py-3 px-4 gs-text-subtle">${charge.customer || 'N/A'}</td>
+                        <td class="py-3 px-4">${charge.description || '-'}</td>
+                      </tr>
+                    `).join('');
+                    if (listEl) listEl.style.display = 'block';
+                  }
                 }
               }
             }
