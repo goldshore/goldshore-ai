@@ -14,6 +14,7 @@ declare global {
           CLOUDFLARE_ACCESS_AUDIENCE?: string;
           CLOUDFLARE_TEAM_DOMAIN?: string;
           ADMIN_DEV_ROLE?: string;
+          GS_API_SERVICE_TOKEN?: string;
           [key: string]: string | undefined;
         };
       };
@@ -52,6 +53,9 @@ interface ImportMetaEnv {
    * Comma-separated roles allowed to access gs-api proxy/config endpoints.
    */
   readonly ADMIN_GS_API_ROLES?: string;
+
+  /** Shared secret used only for server-to-server gs-admin → gs-api calls. */
+  readonly GS_API_SERVICE_TOKEN?: string;
 
   /**
    * Cloudflare Access verification settings.
