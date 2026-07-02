@@ -30,7 +30,6 @@ export const GET: APIRoute = async ({ locals }) => {
     return new Response(
       JSON.stringify({
         error: 'Validation failed',
-        message: String(error),
       }),
       {
         status: 500,

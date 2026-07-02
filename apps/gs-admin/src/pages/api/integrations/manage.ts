@@ -49,7 +49,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
   } catch (error) {
     console.error('Integration management error:', error);
     return new Response(
-      JSON.stringify({ error: String(error) }),
+      JSON.stringify({ error: 'Failed to process request' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
@@ -116,7 +116,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   } catch (error) {
     console.error('Integration creation error:', error);
     return new Response(
-      JSON.stringify({ error: String(error) }),
+      JSON.stringify({ error: 'Failed to process request' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }

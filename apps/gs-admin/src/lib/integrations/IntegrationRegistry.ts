@@ -9,6 +9,9 @@ import { FacebookPixelIntegration } from './FacebookPixel';
 import { WhatsAppBusinessIntegration } from './WhatsAppBusiness';
 import { GoogleAdsIntegration } from './GoogleAds';
 import { GoogleSearchConsoleIntegration } from './GoogleSearchConsole';
+import { StripeIntegration } from './Stripe';
+import { ZapierIntegration } from './Zapier';
+import { CustomIntegration } from './Custom';
 
 export type IntegrationType = 'facebook_pixel' | 'whatsapp' | 'google_ads' | 'google_gsc' | 'stripe' | 'zapier' | 'custom';
 
@@ -114,6 +117,15 @@ export class IntegrationRegistry {
         break;
       case 'google_gsc':
         integration = new GoogleSearchConsoleIntegration(config);
+        break;
+      case 'stripe':
+        integration = new StripeIntegration(config);
+        break;
+      case 'zapier':
+        integration = new ZapierIntegration(config);
+        break;
+      case 'custom':
+        integration = new CustomIntegration(config);
         break;
       default:
         throw new Error(`Unsupported integration type: ${config.type}`);
