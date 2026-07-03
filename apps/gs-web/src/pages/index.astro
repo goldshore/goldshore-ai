@@ -383,42 +383,9 @@ export async function verifyAccess(req, env) {
 </dialog>
 
 <script is:inline>
-/* ── Starfield ────────────────────────────────────────────────────────────── */
-(function () {
-  const canvas = document.getElementById('starfield');
-  if (!canvas || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const ctx = canvas.getContext('2d');
-  let stars = [];
-  function resize() {
-    canvas.width  = window.innerWidth;
-    canvas.height = window.innerHeight;
-  }
-  function init() {
-    stars = Array.from({ length: 160 }, () => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      r: Math.random() * 1.2,
-      a: Math.random() * Math.PI * 2,
-      s: 0.0002 + Math.random() * 0.0003,
-    }));
-  }
-  function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    stars.forEach(s => {
-      s.a += s.s;
-      const alpha = 0.2 + 0.5 * Math.abs(Math.sin(s.a));
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(236,234,228,${alpha})`;
-      ctx.fill();
-    });
-    requestAnimationFrame(draw);
-  }
-  resize(); init(); draw();
-  window.addEventListener('resize', () => { resize(); init(); }, { passive: true });
-})();
+/* ── Critical interactivity (runs immediately after DOM parse) ────────────── */
 
-/* ── Scroll reveal ────────────────────────────────────────────────────────── */
+/* Scroll reveal */
 document.documentElement.classList.add('js-ready');
 const io = new IntersectionObserver(entries => {
   entries.forEach(e => {
@@ -428,31 +395,7 @@ const io = new IntersectionObserver(entries => {
 document.querySelectorAll('[data-reveal], .sector-grid article, .cap-list article, .telemetry-grid article')
   .forEach(el => io.observe(el));
 
-/* ── Magnetic buttons ─────────────────────────────────────────────────────── */
-if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-  document.querySelectorAll('.magnetic').forEach(el => {
-    el.addEventListener('pointermove', e => {
-      const r = el.getBoundingClientRect();
-      el.style.setProperty('--mx', `${(e.clientX - r.left - r.width  / 2) * 0.12}px`);
-      el.style.setProperty('--my', `${(e.clientY - r.top  - r.height / 2) * 0.12}px`);
-    });
-    el.addEventListener('pointerleave', () => {
-      el.style.setProperty('--mx', '0px');
-      el.style.setProperty('--my', '0px');
-    });
-  });
-}
-
-/* ── Ping on click ────────────────────────────────────────────────────────── */
-document.querySelectorAll('.ticker-item, .anomaly, .metrics div').forEach(el => {
-  el.addEventListener('click', () => {
-    el.classList.remove('is-pinged');
-    void el.offsetWidth;
-    el.classList.add('is-pinged');
-  });
-});
-
-/* ── Hamburger nav toggle ─────────────────────────────────────────────────── */
+/* Hamburger nav toggle */
 const navToggle = document.getElementById('nav-toggle');
 const mainNav   = document.getElementById('main-nav');
 navToggle?.addEventListener('click', () => {
@@ -460,7 +403,7 @@ navToggle?.addEventListener('click', () => {
   navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
 });
 
-/* ── Access modal ─────────────────────────────────────────────────────────── */
+/* Access modal */
 const accessModal = document.getElementById('access-modal');
 document.getElementById('open-access-modal')?.addEventListener('click', () => accessModal?.showModal());
 document.querySelector('.modal-close')?.addEventListener('click', () => accessModal?.close());
@@ -527,6 +470,70 @@ qsForm?.addEventListener('submit', async e => {
     qsSubmit.textContent = 'Submit Request →';
   }
 });
+
+/* ── Deferred decorative enhancements (after page load) ──────────────────── */
+window.addEventListener('load', function () {
+
+  /* Starfield canvas animation */
+  (function () {
+    const canvas = document.getElementById('starfield');
+    if (!canvas || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const ctx = canvas.getContext('2d');
+    let stars = [];
+    function resize() {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    function init() {
+      stars = Array.from({ length: 160 }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 1.2,
+        a: Math.random() * Math.PI * 2,
+        s: 0.0002 + Math.random() * 0.0003,
+      }));
+    }
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      stars.forEach(s => {
+        s.a += s.s;
+        const alpha = 0.2 + 0.5 * Math.abs(Math.sin(s.a));
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(236,234,228,${alpha})`;
+        ctx.fill();
+      });
+      requestAnimationFrame(draw);
+    }
+    resize(); init(); draw();
+    window.addEventListener('resize', () => { resize(); init(); }, { passive: true });
+  })();
+
+  /* Magnetic buttons */
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.querySelectorAll('.magnetic').forEach(el => {
+      el.addEventListener('pointermove', e => {
+        const r = el.getBoundingClientRect();
+        el.style.setProperty('--mx', `${(e.clientX - r.left - r.width  / 2) * 0.12}px`);
+        el.style.setProperty('--my', `${(e.clientY - r.top  - r.height / 2) * 0.12}px`);
+      });
+      el.addEventListener('pointerleave', () => {
+        el.style.setProperty('--mx', '0px');
+        el.style.setProperty('--my', '0px');
+      });
+    });
+  }
+
+  /* Ping on click */
+  document.querySelectorAll('.ticker-item, .anomaly, .metrics div').forEach(el => {
+    el.addEventListener('click', () => {
+      el.classList.remove('is-pinged');
+      void el.offsetWidth;
+      el.classList.add('is-pinged');
+    });
+  });
+
+}, { once: true, passive: true });
 </script>
 
 </body>
