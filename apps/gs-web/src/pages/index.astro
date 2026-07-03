@@ -357,15 +357,15 @@ export async function verifyAccess(req, env) {
     <h2 id="access-modal-title">Access Goldshore</h2>
     <p class="modal-lead">Select a destination to continue.</p>
     <div class="modal-grid">
-      <a href="https://admin.goldshore.ai" class="modal-card" rel="noopener noreferrer" target="_blank">
+      <a href="https://admin.goldshore.ai" class="modal-card" rel="noopener noreferrer" target="_blank" data-admin-access-link>
         <span class="modal-icon">⬡</span>
         <strong>Admin</strong>
         <span>Operator dashboard</span>
       </a>
-      <a href="https://admin.goldshore.org" class="modal-card" rel="noopener noreferrer" target="_blank">
+      <a href="https://admin.goldshore.org" class="modal-card" rel="noopener noreferrer" target="_blank" data-admin-alternate-link>
         <span class="modal-icon">◈</span>
-        <strong>Admin .org</strong>
-        <span>Protected organisation alias</span>
+        <strong data-admin-alternate-title>Admin .org</strong>
+        <span data-admin-alternate-copy>Protected organisation alias</span>
       </a>
       <a href="/developer/mcp" class="modal-card">
         <span class="modal-icon">⬢</span>
@@ -465,6 +465,22 @@ const accessModal = document.getElementById('access-modal');
 document.getElementById('open-access-modal')?.addEventListener('click', () => accessModal?.showModal());
 document.querySelector('.modal-close')?.addEventListener('click', () => accessModal?.close());
 accessModal?.addEventListener('click', e => { if (e.target === accessModal) accessModal.close(); });
+
+/* ── Host-aware admin links ───────────────────────────────────────────────── */
+const adminHost = window.location.hostname.endsWith('goldshore.org') ? 'admin.goldshore.org' : 'admin.goldshore.ai';
+const alternateAdminHost = adminHost === 'admin.goldshore.org' ? 'admin.goldshore.ai' : 'admin.goldshore.org';
+document.querySelectorAll('[data-admin-access-link]').forEach(link => {
+  link.setAttribute('href', `https://${adminHost}`);
+});
+document.querySelectorAll('[data-admin-alternate-link]').forEach(link => {
+  link.setAttribute('href', `https://${alternateAdminHost}`);
+});
+document.querySelectorAll('[data-admin-alternate-title]').forEach(el => {
+  el.textContent = alternateAdminHost === 'admin.goldshore.org' ? 'Admin .org' : 'Admin .ai';
+});
+document.querySelectorAll('[data-admin-alternate-copy]').forEach(el => {
+  el.textContent = alternateAdminHost === 'admin.goldshore.org' ? 'Protected organisation alias' : 'Protected AI alias';
+});
 
 /* ── Quick engage form ────────────────────────────────────────────────────── */
 const qsForm    = document.getElementById('quick-form');

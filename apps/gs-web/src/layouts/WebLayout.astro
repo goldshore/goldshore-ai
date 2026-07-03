@@ -71,7 +71,7 @@ const footerLinks = [
                 </a>
               ))}
             </div>
-            <a href="https://admin.goldshore.ai" class="header-login">Log in</a>
+            <a href="https://admin.goldshore.ai" class="header-login" data-admin-access-link>Log in</a>
             <a href="/contact" class="header-cta">Get a Briefing</a>
           </nav>
 
@@ -108,7 +108,7 @@ const footerLinks = [
 
             <div class="menu-panel__actions">
               <a href="/contact" class="header-cta header-cta--mobile">Get a Briefing</a>
-              <a href="https://admin.goldshore.ai" class="menu-secondary-link">Log in</a>
+              <a href="https://admin.goldshore.ai" class="menu-secondary-link" data-admin-access-link>Log in</a>
               <a href="/developer" class="menu-secondary-link">Open Developer Hub</a>
             </div>
           </div>
@@ -215,7 +215,17 @@ const footerLinks = [
         });
       };
 
+      const bindAdminAccessLinks = () => {
+        const adminHost = window.location.hostname.endsWith('goldshore.org')
+          ? 'admin.goldshore.org'
+          : 'admin.goldshore.ai';
+        document.querySelectorAll('[data-admin-access-link]').forEach((link) => {
+          link.setAttribute('href', `https://${adminHost}`);
+        });
+      };
+
       bindMenu();
+      bindAdminAccessLinks();
     </script>
 
     <style is:global>
