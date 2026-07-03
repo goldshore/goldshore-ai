@@ -32,6 +32,28 @@ export type Env = {
   DEPLOY_SHA?: string;
   GIT_SHA?: string;
   CONTROL_ADMIN_ROLES?: string;
+  GOOGLE_OAUTH_CLIENT_ID?: string;
+  GOOGLE_OAUTH_CLIENT_SECRET?: string;
+  GOOGLE_OAUTH_REDIRECT_URI?: string;
+  GOOGLE_ADS_DEVELOPER_TOKEN?: string;
+  GOOGLE_ADS_LOGIN_CUSTOMER_ID?: string;
+  GOOGLE_ANALYTICS_PROPERTY_ID?: string;
+  META_APP_ID?: string;
+  META_APP_SECRET?: string;
+  META_BUSINESS_ID?: string;
+  META_AD_ACCOUNT_ID?: string;
+  META_PIXEL_ID?: string;
+  INSTAGRAM_BUSINESS_ACCOUNT_ID?: string;
+  X_CLIENT_ID?: string;
+  X_CLIENT_SECRET?: string;
+  X_AD_ACCOUNT_ID?: string;
+  GOLDCLAW_SANDBOX_API_URL?: string;
+  GOLDCLAW_SANDBOX_API_TOKEN?: string;
+  GOLDCLAW_SANDBOX_PROVIDER?: string;
+  OAUTH_TOKEN_ENCRYPTION_KEY?: string;
+  CLOUDFLARE_API_TOKEN?: string;
+  CLOUDFLARE_ACCOUNT_ID?: string;
+  CLOUDFLARE_ZONE_ID?: string;
 };
 
 export type Variables = {
