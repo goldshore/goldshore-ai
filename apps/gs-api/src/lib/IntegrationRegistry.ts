@@ -73,7 +73,7 @@ export const INTEGRATION_DEFINITIONS: Record<IntegrationType, IntegrationDefinit
     type: 'stripe',
     description: 'Process payments and manage transactions',
     docUrl: 'https://stripe.com/docs/api',
-    requiredFields: ['apiKey', 'secretKey'],
+    requiredFields: ['apiKey', 'apiSecret'],
   },
   zapier: {
     id: 'zapier',
@@ -179,7 +179,7 @@ export class IntegrationRegistry {
     const redacted: Record<string, IntegrationStatus> = {};
 
     for (const [name, config] of Object.entries(statuses)) {
-      redacted[name] = {
+      const redactedEntry: IntegrationStatus = {
         name,
         type: config.type as IntegrationType,
         status: config.status || 'unknown',
@@ -187,6 +187,12 @@ export class IntegrationRegistry {
         lastSync: config.lastSync,
         error: config.error,
       };
+
+      if (config.metadata) {
+        redactedEntry.metadata = config.metadata;
+      }
+
+      redacted[name] = redactedEntry;
     }
 
     return redacted;
