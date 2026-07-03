@@ -82,6 +82,8 @@ jobs:
 
       - name: List tokens
         if: inputs.action == 'list'
+        env:
+          CF_USER_TOKEN: ${{ inputs.cf_user_token != '' && inputs.cf_user_token || secrets.CF_USER_TOKEN }}
         run: |
           python3 - <<'PY'
           import json, os, urllib.request, urllib.error
@@ -90,34 +92,34 @@ jobs:
           email = os.environ.get("CF_AUTH_EMAIL", "").strip()
           key   = os.environ.get("CF_AUTH_KEY",   "").strip()
 
-          if email and key:
-              headers = {"X-Auth-Email": email, "X-Auth-Key": key, "Content-Type": "application/json"}
-          else:
-              headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+          def cf_get(path):
+              req = urllib.request.Request(
+                  f"https://api.cloudflare.com/client/v4/{path}",
+                  headers={"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"},
+              )
+              try:
+                  with urllib.request.urlopen(req) as r:
+                      data = json.loads(r.read())
+                      if not data["success"]:
+                          raise SystemExit(f"CF API error: {data}")
+                      return data["result"]
+              except urllib.error.HTTPError as e:
+                  body = e.read().decode()
+                  raise SystemExit(f"CF API HTTP {e.code} on {path}:\n{body}")
 
-          req = urllib.request.Request(
-              "https://api.cloudflare.com/client/v4/user/tokens",
-              headers=headers,
-          )
-          try:
-              with urllib.request.urlopen(req) as r:
-                  data = json.loads(r.read())
-                  if not data["success"]:
-                      raise SystemExit(f"CF API error: {data}")
-                  tokens = data["result"]
-                  print(f"{'Name':<40} {'Status':<10} {'Last Used'}")
-                  print("-" * 70)
-                  for t in tokens:
-                      last = t.get("modified_on", "never")[:10]
-                      print(f"{t['name']:<40} {t['status']:<10} {last}")
-          except urllib.error.HTTPError as e:
-              body = e.read().decode()
-              raise SystemExit(f"CF API HTTP {e.code} on user/tokens:\n{body}")
+          tokens = cf_get("user/tokens")
+          print(f"{'Name':<40} {'Status':<10} {'Last Used'}")
+          print("-" * 70)
+          for t in tokens:
+              last = t.get("modified_on", "never")[:10]
+              print(f"{t['name']:<40} {t['status']:<10} {last}")
           PY
 
       - name: Create token
         if: inputs.action == 'create'
         env:
+          CF_USER_TOKEN: ${{ inputs.cf_user_token != '' && inputs.cf_user_token || secrets.CF_USER_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           TOKEN_NAME: ${{ inputs.token_name }}
           TOKEN_PERMISSIONS: ${{ inputs.token_permissions }}
         run: |
@@ -179,11 +181,11 @@ jobs:
                   if not data["success"]:
                       raise SystemExit(f"CF API error: {data}")
                   result = data["result"]
-                  print(f"Token created : {result['name']}")
-                  print(f"ID            : {result['id']}")
-                  print(f"Value         : {result['value']}")
+                  print(f"✅ Token created: {result['name']}")
+                  print(f"   ID:    {result['id']}")
+                  print(f"   Value: {result['value']}")
                   print()
-                  print("Copy the token value now — it will not be shown again.")
+                  print("⚠️  Copy the token value now — it will not be shown again.")
           except urllib.error.HTTPError as e:
               body = e.read().decode()
               raise SystemExit(f"CF API HTTP {e.code} on user/tokens:\n{body}")
@@ -192,6 +194,7 @@ jobs:
       - name: Delete token
         if: inputs.action == 'delete'
         env:
+          CF_USER_TOKEN: ${{ inputs.cf_user_token != '' && inputs.cf_user_token || secrets.CF_USER_TOKEN }}
           TOKEN_NAME: ${{ inputs.token_name }}
         run: |
           python3 - <<'PY'
@@ -230,5 +233,5 @@ jobs:
               raise SystemExit(f"No token found with name '{NAME}'")
           for t in match:
               cf("DELETE", f"user/tokens/{t['id']}")
-              print(f"Deleted: {t['name']} ({t['id']}")
+              print(f"\U0001f5d1️  Deleted token: {t['name']} ({t['id']})")
           PY
