@@ -645,8 +645,8 @@ const footerLinks = [
   title={title}
   description={description}
   canonicalPath={canonicalPath}
-  ogTitle={ogTitle}
-  ogDescription={ogDescription}
+  ogTitle={ogTitle ?? title}
+  ogDescription={ogDescription ?? description}
 >
   <slot />
 </GoldShoreShell>
