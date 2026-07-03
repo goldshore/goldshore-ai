@@ -8,6 +8,7 @@ export type Env = {
   GS_ASSETS: R2Bucket;
   AUTH_SESSION?: DurableObjectNamespace;
   AI: Ai;
+  SECRETS: SecretsStore;
   OPENAI_API_KEY?: string;
   GEMINI_API_KEY?: string;
   JWT_SECRET?: string;
@@ -31,6 +32,28 @@ export type Env = {
   DEPLOY_SHA?: string;
   GIT_SHA?: string;
   CONTROL_ADMIN_ROLES?: string;
+  GOOGLE_OAUTH_CLIENT_ID?: string;
+  GOOGLE_OAUTH_CLIENT_SECRET?: string;
+  GOOGLE_OAUTH_REDIRECT_URI?: string;
+  GOOGLE_ADS_DEVELOPER_TOKEN?: string;
+  GOOGLE_ADS_LOGIN_CUSTOMER_ID?: string;
+  GOOGLE_ANALYTICS_PROPERTY_ID?: string;
+  META_APP_ID?: string;
+  META_APP_SECRET?: string;
+  META_BUSINESS_ID?: string;
+  META_AD_ACCOUNT_ID?: string;
+  META_PIXEL_ID?: string;
+  INSTAGRAM_BUSINESS_ACCOUNT_ID?: string;
+  X_CLIENT_ID?: string;
+  X_CLIENT_SECRET?: string;
+  X_AD_ACCOUNT_ID?: string;
+  GOLDCLAW_SANDBOX_API_URL?: string;
+  GOLDCLAW_SANDBOX_API_TOKEN?: string;
+  GOLDCLAW_SANDBOX_PROVIDER?: string;
+  OAUTH_TOKEN_ENCRYPTION_KEY?: string;
+  CLOUDFLARE_API_TOKEN?: string;
+  CLOUDFLARE_ACCOUNT_ID?: string;
+  CLOUDFLARE_ZONE_ID?: string;
 };
 
 export type Variables = {
@@ -43,4 +66,32 @@ export type AuditEvent = {
   status: "success" | "denied" | "error";
   metadata?: Record<string, unknown>;
   timestamp: string;
+};
+
+export type KeyType = 'apiKey' | 'apiSecret' | 'webhook_secret' | 'oauth_token';
+
+export type IntegrationSecret = {
+  id: string;
+  integration_id: string;
+  key_type: KeyType;
+  key_prefix: string;
+  key_hash: string;
+  created_at: string;
+  rotated_at?: string;
+  expires_at?: string;
+  created_by: string;
+  rotation_count: number;
+  metadata?: Record<string, unknown>;
+};
+
+export type IntegrationSecretRequest = {
+  integration_id: string;
+  key_type: KeyType;
+  value: string;
+  metadata?: Record<string, unknown>;
+  expires_at?: string;
+};
+
+export type IntegrationSecretResponse = Omit<IntegrationSecret, 'encrypted_value'> & {
+  key_prefix: string;
 };

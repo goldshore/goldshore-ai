@@ -1,13 +1,11 @@
 ---
 export const prerender = false;
 
-import AdminLayout from '../../layouts/AdminLayout.astro';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { GSButton } from '@goldshore/ui';
-
-const title = 'B2B Web Crawler';
 ---
 
-<AdminLayout title="Web Crawler | GoldShore Admin">
+<BaseLayout title="Web Crawler | GoldShore Admin" description="Admin crawler queue for lead discovery">
   <div class="max-w-7xl mx-auto p-8 space-y-8">
     <div class="flex items-center justify-between">
       <div>
@@ -133,7 +131,7 @@ const title = 'B2B Web Crawler';
         if (emptyEl) emptyEl.style.display = 'none';
 
         try {
-          const response = await fetch('/api/crawler/jobs');
+          const response = await fetch('/api/admin/crawler/jobs');
           const data = await response.json();
 
           if (loadingEl) loadingEl.style.display = 'none';
@@ -215,7 +213,7 @@ const title = 'B2B Web Crawler';
         if (messageEl) messageEl.textContent = 'Starting crawl...';
 
         try {
-          const response = await fetch('/api/crawler/jobs', {
+          const response = await fetch('/api/admin/crawler/jobs', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ domain }),
@@ -248,4 +246,4 @@ const title = 'B2B Web Crawler';
       setInterval(loadJobs, 30000); // Refresh every 30 seconds
     });
   </script>
-</AdminLayout>
+</BaseLayout>
