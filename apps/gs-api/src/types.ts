@@ -8,6 +8,7 @@ export type Env = {
   GS_ASSETS: R2Bucket;
   AUTH_SESSION?: DurableObjectNamespace;
   AI: Ai;
+  SECRETS: SecretsStore;
   OPENAI_API_KEY?: string;
   GEMINI_API_KEY?: string;
   JWT_SECRET?: string;
@@ -65,4 +66,32 @@ export type AuditEvent = {
   status: "success" | "denied" | "error";
   metadata?: Record<string, unknown>;
   timestamp: string;
+};
+
+export type KeyType = 'apiKey' | 'apiSecret' | 'webhook_secret' | 'oauth_token';
+
+export type IntegrationSecret = {
+  id: string;
+  integration_id: string;
+  key_type: KeyType;
+  key_prefix: string;
+  key_hash: string;
+  created_at: string;
+  rotated_at?: string;
+  expires_at?: string;
+  created_by: string;
+  rotation_count: number;
+  metadata?: Record<string, unknown>;
+};
+
+export type IntegrationSecretRequest = {
+  integration_id: string;
+  key_type: KeyType;
+  value: string;
+  metadata?: Record<string, unknown>;
+  expires_at?: string;
+};
+
+export type IntegrationSecretResponse = Omit<IntegrationSecret, 'encrypted_value'> & {
+  key_prefix: string;
 };

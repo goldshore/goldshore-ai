@@ -3,6 +3,9 @@ import { getIntegrationRegistry, INTEGRATION_DEFINITIONS } from "../lib/Integrat
 import { Env, Variables } from "../types";
 import { requirePermission, getActor } from "../auth";
 import { buildAdminSession, hasAdminPermission } from "@goldshore/auth";
+import integrationKeys from "./integration-keys";
+import whatsappCommands from "./whatsapp-commands";
+import oauth from "./oauth";
 
 const integrations = new Hono<{
   Bindings: Env;
@@ -123,5 +126,14 @@ integrations.post("/", requirePermission("system:write"), async (c) => {
     return c.json({ error: "Failed to process request" }, 500);
   }
 });
+
+// Mount secret management routes at /integrations/keys
+integrations.route("/keys", integrationKeys);
+
+// Mount WhatsApp command handler routes at /integrations/whatsapp
+integrations.route("/whatsapp", whatsappCommands);
+
+// Mount OAuth routes at /integrations/oauth
+integrations.route("/oauth", oauth);
 
 export default integrations;

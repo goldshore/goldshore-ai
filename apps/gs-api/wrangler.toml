@@ -224,11 +224,10 @@ queue = "gs-events"
 binding = "MAIL_JOBS_QUEUE"
 queue = "gs-mail-jobs"
 
-# Temporarily disabled: Wrangler 4.105.0 warns this preview env field is unexpected.
-# Re-enable only after confirming current Wrangler config schema supports env.preview.secrets_store.
-# [[env.preview.secrets_store.bindings]]
-# binding = "SECRETS"
-# store_id = "b9824d3280c54573a24137c7e7143b33"
+# ── Secrets Store ───────────────────────────────────────────────────────────────────
+[[env.preview.secrets_store.bindings]]
+binding = "SECRETS"
+store_id = "b9824d3280c54573a24137c7e7143b33"
 
 # ── Durable Object migrations ─────────────────────────────────────────────────────
 [[migrations]]
