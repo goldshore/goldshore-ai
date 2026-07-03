@@ -1,8 +1,28 @@
 ---
 import GoldShoreShell from './GoldShoreShell.astro';
+import Logo from '../components/brand/Logo.astro';
+import { WEB_META_CSP } from '../utils/csp';
 import '../styles/goldshore-shell.css';
 
 const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.props;
+
+const siteUrl = Astro.site || new URL('https://goldshore.ai');
+const canonicalUrl = new URL(canonicalPath || '/', siteUrl).href;
+const currentPath = canonicalPath || '/';
+const mobileNavId = 'mobile-navigation';
+
+const navLinks = [
+  { href: '/', label: 'Home' },
+  { href: '/platform', label: 'Platform' },
+  { href: '/developer', label: 'Developer' },
+];
+
+const footerLinks = [
+  { href: '/', label: 'Home' },
+  { href: '/platform', label: 'Platform' },
+  { href: '/legal/privacy', label: 'Privacy' },
+  { href: '/legal/terms', label: 'Terms' },
+];
 ---
 
 <html lang="en">
@@ -21,8 +41,6 @@ const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.prop
     <meta name="twitter:url" content={canonicalUrl} />
     <meta name="twitter:title" content={ogTitle} />
     <meta name="twitter:description" content={ogDescription} />
-    <!-- Response headers from middleware/platform config are authoritative. Keep this meta CSP only as a fallback when headers are unavailable. -->
-    {shouldRenderCspMeta && <meta http-equiv="Content-Security-Policy" content={HTML_CSP_META_FALLBACK} />}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon.png" type="image/png" sizes="32x32" />
     <!-- Preconnect to external origins to speed up resource loading -->
