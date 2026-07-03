@@ -19,6 +19,10 @@ on:
         description: 'Comma-separated permissions for create (e.g. "workers_scripts:edit,d1:edit")'
         required: false
         type: string
+      cf_user_token:
+        description: 'CF user API token (overrides CF_USER_TOKEN secret if supplied)'
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -31,10 +35,10 @@ jobs:
       - name: List tokens
         if: inputs.action == 'list'
         env:
-          CF_USER_TOKEN: ${{ secrets.CF_USER_TOKEN }}
+          CF_USER_TOKEN: ${{ inputs.cf_user_token != '' && inputs.cf_user_token || secrets.CF_USER_TOKEN }}
         run: |
           python3 - <<'PY'
-          import json, os, urllib.request
+          import json, os, urllib.request, urllib.error
 
           TOKEN = os.environ["CF_USER_TOKEN"]
 
@@ -43,11 +47,15 @@ jobs:
                   f"https://api.cloudflare.com/client/v4/{path}",
                   headers={"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"},
               )
-              with urllib.request.urlopen(req) as r:
-                  data = json.loads(r.read())
-                  if not data["success"]:
-                      raise SystemExit(f"CF API error: {data}")
-                  return data["result"]
+              try:
+                  with urllib.request.urlopen(req) as r:
+                      data = json.loads(r.read())
+                      if not data["success"]:
+                          raise SystemExit(f"CF API error: {data}")
+                      return data["result"]
+              except urllib.error.HTTPError as e:
+                  body = e.read().decode()
+                  raise SystemExit(f"CF API HTTP {e.code} on {path}:\n{body}")
 
           tokens = cf_get("user/tokens")
           print(f"{'Name':<40} {'Status':<10} {'Last Used'}")
@@ -60,13 +68,13 @@ jobs:
       - name: Create token
         if: inputs.action == 'create'
         env:
-          CF_USER_TOKEN: ${{ secrets.CF_USER_TOKEN }}
+          CF_USER_TOKEN: ${{ inputs.cf_user_token != '' && inputs.cf_user_token || secrets.CF_USER_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           TOKEN_NAME: ${{ inputs.token_name }}
           TOKEN_PERMISSIONS: ${{ inputs.token_permissions }}
         run: |
           python3 - <<'PY'
-          import json, os, urllib.request
+          import json, os, urllib.request, urllib.error
 
           TOKEN = os.environ["CF_USER_TOKEN"]
           ACCOUNT = os.environ["CLOUDFLARE_ACCOUNT_ID"]
@@ -110,26 +118,30 @@ jobs:
               headers={"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"},
               method="POST",
           )
-          with urllib.request.urlopen(req) as r:
-              data = json.loads(r.read())
-              if not data["success"]:
-                  raise SystemExit(f"CF API error: {data}")
-              result = data["result"]
-              print(f"✅ Token created: {result['name']}")
-              print(f"   ID:    {result['id']}")
-              print(f"   Value: {result['value']}")
-              print()
-              print("⚠️  Copy the token value now — it will not be shown again.")
+          try:
+              with urllib.request.urlopen(req) as r:
+                  data = json.loads(r.read())
+                  if not data["success"]:
+                      raise SystemExit(f"CF API error: {data}")
+                  result = data["result"]
+                  print(f"✅ Token created: {result['name']}")
+                  print(f"   ID:    {result['id']}")
+                  print(f"   Value: {result['value']}")
+                  print()
+                  print("⚠️  Copy the token value now — it will not be shown again.")
+          except urllib.error.HTTPError as e:
+              body = e.read().decode()
+              raise SystemExit(f"CF API HTTP {e.code} on user/tokens:\n{body}")
           PY
 
       - name: Delete token
         if: inputs.action == 'delete'
         env:
-          CF_USER_TOKEN: ${{ secrets.CF_USER_TOKEN }}
+          CF_USER_TOKEN: ${{ inputs.cf_user_token != '' && inputs.cf_user_token || secrets.CF_USER_TOKEN }}
           TOKEN_NAME: ${{ inputs.token_name }}
         run: |
           python3 - <<'PY'
-          import json, os, urllib.request
+          import json, os, urllib.request, urllib.error
 
           TOKEN = os.environ["CF_USER_TOKEN"]
           NAME = os.environ["TOKEN_NAME"]
@@ -141,11 +153,15 @@ jobs:
                   headers={"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"},
                   method=method,
               )
-              with urllib.request.urlopen(req) as r:
-                  data = json.loads(r.read())
-                  if not data["success"]:
-                      raise SystemExit(f"CF API error: {data}")
-                  return data["result"]
+              try:
+                  with urllib.request.urlopen(req) as r:
+                      data = json.loads(r.read())
+                      if not data["success"]:
+                          raise SystemExit(f"CF API error: {data}")
+                      return data["result"]
+              except urllib.error.HTTPError as e:
+                  body = e.read().decode()
+                  raise SystemExit(f"CF API HTTP {e.code} on {path}:\n{body}")
 
           tokens = cf("GET", "user/tokens")
           match = [t for t in tokens if t["name"] == NAME]
@@ -153,5 +169,5 @@ jobs:
               raise SystemExit(f"No token found with name '{NAME}'")
           for t in match:
               cf("DELETE", f"user/tokens/{t['id']}")
-              print(f"🗑️  Deleted token: {t['name']} ({t['id']})")
+              print(f"\U0001f5d1️  Deleted token: {t['name']} ({t['id']})")
           PY
