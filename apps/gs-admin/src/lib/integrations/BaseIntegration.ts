@@ -5,11 +5,13 @@
 
 export interface IntegrationConfig {
   name: string;
+  type?: string;
   provider: string;
   apiKey: string;
   apiSecret?: string;
   baseUrl?: string;
   webhookSecret?: string;
+  metadata?: Record<string, unknown>;
   enabled: boolean;
   lastSync?: string;
   status: 'connected' | 'disconnected' | 'error';
