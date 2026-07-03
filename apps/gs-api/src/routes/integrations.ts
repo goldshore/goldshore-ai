@@ -4,6 +4,7 @@ import { Env, Variables } from "../types";
 import { requirePermission, getActor } from "../auth";
 import { buildAdminSession, hasAdminPermission } from "@goldshore/auth";
 import integrationKeys from "./integration-keys";
+import whatsappCommands from "./whatsapp-commands";
 
 const integrations = new Hono<{
   Bindings: Env;
@@ -127,5 +128,8 @@ integrations.post("/", requirePermission("system:write"), async (c) => {
 
 // Mount secret management routes at /integrations/keys
 integrations.route("/keys", integrationKeys);
+
+// Mount WhatsApp command handler routes at /integrations/whatsapp
+integrations.route("/whatsapp", whatsappCommands);
 
 export default integrations;
