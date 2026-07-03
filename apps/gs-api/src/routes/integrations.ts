@@ -1,6 +1,8 @@
 import { Hono } from "hono";
 import { getIntegrationRegistry, INTEGRATION_DEFINITIONS } from "../lib/IntegrationRegistry";
 import { Env, Variables } from "../types";
+import { requirePermission, getActor } from "../auth";
+import { buildAdminSession, hasAdminPermission } from "@goldshore/auth";
 
 const integrations = new Hono<{
   Bindings: Env;
@@ -32,6 +34,10 @@ integrations.get("/", async (c) => {
       }
 
       case "sync": {
+        const session = buildAdminSession(c.get("accessClaims"));
+        if (!hasAdminPermission(session.permissions, "system:write")) {
+          return c.json({ error: "Forbidden" }, 403);
+        }
         const results = await registry.syncAll();
         return c.json({ success: true, data: results });
       }
@@ -50,8 +56,8 @@ integrations.get("/", async (c) => {
   }
 });
 
-// POST /integrations - Create or delete integrations
-integrations.post("/", async (c) => {
+// POST /integrations - Create or delete integrations (requires system:write permission)
+integrations.post("/", requirePermission("system:write"), async (c) => {
   const kv = c.env.KV;
 
   if (!kv) {
