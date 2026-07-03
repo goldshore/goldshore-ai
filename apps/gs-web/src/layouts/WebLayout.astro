@@ -6,7 +6,8 @@ import '../styles/goldshore-shell.css';
 
 const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.props;
 
-const canonicalUrl = new URL(canonicalPath || '/', Astro.site).href;
+const siteUrl = Astro.site || new URL('https://goldshore.ai');
+const canonicalUrl = new URL(canonicalPath || '/', siteUrl).href;
 const currentPath = canonicalPath || '/';
 const mobileNavId = 'mobile-navigation';
 
