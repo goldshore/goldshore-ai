@@ -70,9 +70,29 @@ const title = 'Integration API Keys';
         </table>
       </div>
 
-      <!-- Empty State -->
+        <!-- Empty State -->
       <div id="empty-state" class="py-8 text-center gs-empty-state" style="display: none;">
         <p>No integrations configured yet. Add your first API key to get started.</p>
+      </div>
+    </div>
+
+    <!-- Pending Commands Section (Phase 3) -->
+    <div class="gs-card space-y-6">
+      <div class="flex items-center justify-between">
+        <h2 class="text-2xl font-semibold">Pending Commands</h2>
+        <GSButton variant="secondary" id="refresh-commands">Refresh</GSButton>
+      </div>
+
+      <!-- No Pending Commands -->
+      <div id="no-commands-state" class="py-8 text-center gs-empty-state">
+        <p>No pending command approvals at this time.</p>
+      </div>
+
+      <!-- Pending Commands List -->
+      <div id="commands-list" class="overflow-x-auto space-y-3" style="display: none;">
+        <div id="commands-tbody" class="space-y-3">
+          <!-- Populated by JavaScript -->
+        </div>
       </div>
     </div>
 
@@ -272,6 +292,73 @@ const title = 'Integration API Keys';
     const formatDate = (isoDate) => {
       if (!isoDate) return 'Never';
       return new Date(isoDate).toLocaleDateString() + ' ' + new Date(isoDate).toLocaleTimeString();
+    };
+
+    // Utility: Get action description
+    const getActionDescription = (action) => {
+      const descriptions = {
+        'setup_integration': 'Setup Integration',
+        'rotate_integration_key': 'Rotate Key',
+        'test_integration': 'Test Integration',
+        'list_integration_status': 'Get Status',
+        'list_expired_keys': 'List Expired Keys',
+      };
+      return descriptions[action] || action;
+    };
+
+    // Load pending commands
+    const loadPendingCommands = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/whatsapp/pending`);
+        const data = await res.json();
+
+        const commandsList = document.getElementById('commands-list');
+        const noCommands = document.getElementById('no-commands-state');
+        const tbody = document.getElementById('commands-tbody');
+
+        if (!data.data || data.data.commands.length === 0) {
+          noCommands.style.display = 'block';
+          commandsList.style.display = 'none';
+          return;
+        }
+
+        noCommands.style.display = 'none';
+        commandsList.style.display = 'block';
+
+        tbody.innerHTML = data.data.commands.map((cmd) => `
+          <div class="bg-gs-surface p-4 rounded border border-gs-border space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="space-y-1">
+                <p class="font-semibold text-sm">${getActionDescription(cmd.action)}</p>
+                <p class="text-xs gs-text-subtle">Requested by ${cmd.actor} • ${formatDate(cmd.created_at)}</p>
+              </div>
+              <span class="inline-block px-2 py-1 rounded text-xs font-medium bg-gs-warning/20 gs-text-warning">
+                ${cmd.approval_method === 'whatsapp_reaction' ? '📱 Awaiting WhatsApp reaction' : '⏳ Pending approval'}
+              </span>
+            </div>
+            <div class="bg-gs-bg p-2 rounded text-xs font-mono gs-text-subtle">
+              <p>Command: ${cmd.action}</p>
+              ${Object.entries(cmd.params || {}).map(([k, v]) => `<p>${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}</p>`).join('')}
+            </div>
+            <div class="flex gap-2 justify-end">
+              <button
+                class="px-3 py-1 rounded text-xs bg-gs-error/20 hover:bg-gs-error/30 gs-text-error"
+                onclick="rejectCommand('${cmd.id}', '${cmd.action}')"
+              >
+                Reject
+              </button>
+              <button
+                class="px-3 py-1 rounded text-xs bg-gs-success/20 hover:bg-gs-success/30 gs-text-success"
+                onclick="approveCommand('${cmd.id}', '${cmd.action}')"
+              >
+                Approve
+              </button>
+            </div>
+          </div>
+        `).join('');
+      } catch (error) {
+        console.error('Error loading pending commands:', error);
+      }
     };
 
     // Utility: Get status badge class
@@ -476,8 +563,59 @@ const title = 'Integration API Keys';
       }
     });
 
+    // Approve command
+    const approveCommand = async (commandId, action) => {
+      if (!confirm(`Approve: ${getActionDescription(action)}?`)) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/whatsapp/queue/${commandId}/approve`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          alert('Command approved');
+          loadPendingCommands();
+        } else {
+          alert('Error approving command: ' + (data.error || 'Unknown error'));
+        }
+      } catch (error) {
+        console.error('Error approving command:', error);
+        alert('Error approving command');
+      }
+    };
+
+    // Reject command
+    const rejectCommand = async (commandId, action) => {
+      const reason = prompt(`Reject: ${getActionDescription(action)}?\n\nOptional reason:`);
+      if (reason === null) return; // User cancelled
+
+      try {
+        const res = await fetch(`${API_BASE}/whatsapp/queue/${commandId}/reject`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason: reason || 'Rejected by admin' }),
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          alert('Command rejected');
+          loadPendingCommands();
+        } else {
+          alert('Error rejecting command: ' + (data.error || 'Unknown error'));
+        }
+      } catch (error) {
+        console.error('Error rejecting command:', error);
+        alert('Error rejecting command');
+      }
+    };
+
     // Refresh
     document.getElementById('refresh-keys')?.addEventListener('click', loadIntegrations);
+    document.getElementById('refresh-commands')?.addEventListener('click', loadPendingCommands);
 
     // Close modals
     document.getElementById('modal-close')?.addEventListener('click', () => {
@@ -486,5 +624,9 @@ const title = 'Integration API Keys';
 
     // Initial load
     loadIntegrations();
+    loadPendingCommands();
+
+    // Refresh commands every 30 seconds (for nanny mode WhatsApp reactions)
+    setInterval(loadPendingCommands, 30000);
   </script>
 </AdminLayout>
