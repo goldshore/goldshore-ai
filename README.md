@@ -1,5 +1,7 @@
 # Gold Shore AI — Repository Operations Map
 
+[![Verify workflow mirrors](https://github.com/marzton/goldshore/actions/workflows/workflow-mirror-check.yml/badge.svg)](https://github.com/marzton/goldshore/actions/workflows/workflow-mirror-check.yml)
+
 ```text
              /\
             /__\        GOLD SHORE LABS
