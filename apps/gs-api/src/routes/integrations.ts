@@ -3,6 +3,7 @@ import { getIntegrationRegistry, INTEGRATION_DEFINITIONS } from "../lib/Integrat
 import { Env, Variables } from "../types";
 import { requirePermission, getActor } from "../auth";
 import { buildAdminSession, hasAdminPermission } from "@goldshore/auth";
+import integrationKeys from "./integration-keys";
 
 const integrations = new Hono<{
   Bindings: Env;
@@ -123,5 +124,8 @@ integrations.post("/", requirePermission("system:write"), async (c) => {
     return c.json({ error: "Failed to process request" }, 500);
   }
 });
+
+// Mount secret management routes at /integrations/keys
+integrations.route("/keys", integrationKeys);
 
 export default integrations;
