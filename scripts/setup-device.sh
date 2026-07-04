@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 # setup-device.sh — bootstrap any dev device for goldshore-ai
 # Works on: macOS, Linux, WSL, Termux (Android), iSH (iOS)
-# Usage: bash scripts/setup-device.sh [device-label]
+# Usage: bash scripts/setup-device.sh [device-label] [feature-branch]
 # Example: bash scripts/setup-device.sh goldshore-hp
+# Example: bash scripts/setup-device.sh goldshore-hp my-feature-branch
 set -euo pipefail
 
 DEVICE_LABEL="${1:-goldshore-$(hostname)}"
+FEATURE_BRANCH="${2:-}"
 GH_USER="marzton"
 REPOS=(
   "goldshore-ai"
@@ -61,11 +63,14 @@ for REPO in "${REPOS[@]}"; do
     echo "Cloning $REPO..."
     git clone "git@github.com:$GH_USER/$REPO.git"
   fi
-  # Switch to feature branch if it exists
-  BRANCH="claude/risk-radar-fra-epo-2wk5mk"
-  if git -C "$REPO" ls-remote --exit-code --heads origin "$BRANCH" &>/dev/null; then
-    git -C "$REPO" fetch origin "$BRANCH"
-    git -C "$REPO" checkout "$BRANCH" 2>/dev/null || true
+  # Optionally switch to a feature branch if caller requested one
+  if [ -n "$FEATURE_BRANCH" ]; then
+    if git -C "$REPO" ls-remote --exit-code --heads origin "$FEATURE_BRANCH" &>/dev/null; then
+      git -C "$REPO" fetch origin "$FEATURE_BRANCH"
+      git -C "$REPO" checkout "$FEATURE_BRANCH" 2>/dev/null || true
+    else
+      echo "  Branch '$FEATURE_BRANCH' not found in $REPO, staying on main"
+    fi
   fi
 done
 

@@ -4,10 +4,12 @@ on:
   workflow_run:
     workflows:
       - "CI"
-      - "Build & Deploy"
-      - "Lighthouse CI"
+      - "Required Merge Checks"
+      - "Repo Health"
+      - "Deploy gs-web"
+      - "Deploy gs-api"
+      - "Deploy Cloudflare apps"
       - "Manage Cloudflare Tokens"
-      - "Verify Cloudflare"
     types: [completed]
   schedule:
     # Weekly reminder: every Monday 9am UTC

@@ -2,10 +2,7 @@
   "folders": [
     { "name": "goldshore-ai (root)", "path": "." },
     { "name": "gs-web", "path": "apps/gs-web" },
-    { "name": "gs-admin", "path": "apps/gs-admin" },
     { "name": "gs-api", "path": "apps/gs-api" },
-    { "name": "gs-mcp", "path": "apps/gs-mcp" },
-    { "name": "gs-gateway (stub)", "path": "apps/gs-gateway" },
     { "name": "packages/ui", "path": "packages/ui" },
     { "name": "packages/auth", "path": "packages/auth" },
     { "name": "packages/config", "path": "packages/config" }
@@ -58,13 +55,6 @@
         "label": "dev: gs-web",
         "type": "shell",
         "command": "pnpm --filter gs-web dev",
-        "group": "build",
-        "presentation": { "panel": "dedicated" }
-      },
-      {
-        "label": "dev: gs-admin",
-        "type": "shell",
-        "command": "pnpm --filter gs-admin dev",
         "group": "build",
         "presentation": { "panel": "dedicated" }
       },
