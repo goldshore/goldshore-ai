@@ -162,7 +162,7 @@ pnpm turbo run build --filter=gs-web
 |----------|------|--------|
 | 1 | `goldshore-ops` | Archive — KV template stub, never built |
 | 2 | `goldshore-web` | Already deprecated — remove from CI |
-| 3 | `goldshore-core` | Migrate `banproof-me` → `apps/gs-security`; archive rest |
+| 3 | `goldshore-core` | Route `banproof-me` security logic into `apps/gs-api` (AGENTS.md forbids new Workers under `apps/`); archive standalone |
 | 4 | `goldshore-api` | Confirm `goldshore/apps/goldshore-api` at parity → archive standalone |
 | 5 | `goldshore-admin` | Confirm `apps/gs-admin` at parity → archive standalone |
 | 6 | `goldshore-gateway` | Replace stub with real gateway code → archive standalone |
