@@ -53,31 +53,34 @@ All Google APIs share one OAuth 2.0 credential set from the same GCP project.
 
 | Item | Status | Link |
 |------|--------|------|
-| Developer token | ❌ | [ads.google.com → Tools → API Center](https://ads.google.com/aw/apicenter) |
+| Developer token | ⚠️ Rotate (was shared in chat) | [ads.google.com → Tools → API Center](https://ads.google.com/aw/apicenter) |
 | API enabled in GCP | ❌ | [Enable Google Ads API](https://console.cloud.google.com/apis/library/googleads.googleapis.com) |
 | OAuth consent screen | ❌ | [console.cloud.google.com → OAuth consent screen](https://console.cloud.google.com/apis/credentials/consent) |
 
 **Setup steps:**
-1. Enable API: [console.cloud.google.com/apis/library/googleads.googleapis.com](https://console.cloud.google.com/apis/library/googleads.googleapis.com)
-2. Get developer token: sign into [ads.google.com](https://ads.google.com) → Tools → API Center → copy **Developer token**
-3. Store as `GOOGLE_ADS_DEVELOPER_TOKEN` in GitHub Secrets and Cloudflare Worker secrets
-4. OAuth flow uses `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` from step 2 above
+1. Rotate developer token at [ads.google.com/aw/apicenter](https://ads.google.com/aw/apicenter) (previous token was shared in plaintext)
+2. Enable API: [console.cloud.google.com/apis/library/googleads.googleapis.com](https://console.cloud.google.com/apis/library/googleads.googleapis.com)
+3. Store new token as `GOOGLE_ADS_DEVELOPER_TOKEN` in GitHub Secrets and Cloudflare Worker secrets
+4. OAuth flow uses `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET`
 
 ---
 
-## 4. Google AdSense API
+## 4. Google AdSense
 
 | Item | Status | Link |
 |------|--------|------|
-| AdSense account linked | ⏳ | [adsense.google.com](https://adsense.google.com) |
-| API enabled in GCP | ❌ | [Enable AdSense Management API](https://console.cloud.google.com/apis/library/adsense.googleapis.com) |
-| Publisher ID (`pub-XXXXXXX`) | ❌ | [adsense.google.com → Account → Account information](https://adsense.google.com/adsense/u/0/pub-/myads/overview) |
+| Publisher ID | ✅ `ca-pub-5105781580031290` | [adsense.google.com](https://adsense.google.com) |
+| AdSense meta tag in `<head>` | ✅ Added to all layouts | `GoldShoreShell.astro`, `WebLayout.astro` |
+| AdSense Management API enabled | ❌ | [Enable AdSense API](https://console.cloud.google.com/apis/library/adsense.googleapis.com) |
 
-**Setup steps:**
+**AdSense meta tag (already deployed):**
+```html
+<meta name="google-adsense-account" content="ca-pub-5105781580031290">
+```
+
+**To enable programmatic API access:**
 1. Enable: [console.cloud.google.com/apis/library/adsense.googleapis.com](https://console.cloud.google.com/apis/library/adsense.googleapis.com)
-2. Note your Publisher ID from AdSense dashboard → Account → Account information
-3. Store as `GOOGLE_ADSENSE_PUBLISHER_ID`
-4. Uses same OAuth credentials as above
+2. Uses same OAuth credentials as above
 
 ---
 
@@ -90,13 +93,6 @@ All Google APIs share one OAuth 2.0 credential set from the same GCP project.
 | Measurement ID (`G-XXXXXXX`) | ❌ | GA4 → Admin → Data Streams → Web stream details |
 | Property ID (numeric) | ❌ | GA4 → Admin → Property Settings |
 
-**Setup steps:**
-1. Enable: [console.cloud.google.com/apis/library/analyticsdata.googleapis.com](https://console.cloud.google.com/apis/library/analyticsdata.googleapis.com)
-2. Create GA4 property at [analytics.google.com](https://analytics.google.com) for `goldshore.ai`
-3. Add data stream → Web → `https://goldshore.ai`
-4. Store `GOOGLE_ANALYTICS_PROPERTY_ID` and `GOOGLE_ANALYTICS_MEASUREMENT_ID`
-5. Add the Measurement ID to `apps/gs-web` (Astro config or `<head>`)
-
 ---
 
 ## 6. Google My Business (Business Profile API)
@@ -105,14 +101,6 @@ All Google APIs share one OAuth 2.0 credential set from the same GCP project.
 |------|--------|------|
 | Business Profile verified | ⏳ | [business.google.com](https://business.google.com) |
 | API enabled | ❌ | [Enable Business Profile API](https://console.cloud.google.com/apis/library/mybusinessaccountmanagement.googleapis.com) |
-| Location ID | ❌ | Business Profile dashboard → Business info |
-
-**Setup steps:**
-1. Enable APIs:
-   - [mybusinessaccountmanagement](https://console.cloud.google.com/apis/library/mybusinessaccountmanagement.googleapis.com)
-   - [mybusinessbusinessinformation](https://console.cloud.google.com/apis/library/mybusinessbusinessinformation.googleapis.com)
-2. Uses same OAuth credentials
-3. Requires verification of business — check [business.google.com](https://business.google.com) status
 
 ---
 
@@ -122,34 +110,32 @@ All Google APIs share one OAuth 2.0 credential set from the same GCP project.
 |------|--------|------|
 | Goldshore dev space created | ❌ | [chat.google.com](https://chat.google.com) |
 | CI webhook URL | ❌ | Space → Apps & integrations → Webhooks → Add Webhook |
-| Chat API enabled (for bot) | ❌ | [Enable Chat API](https://console.cloud.google.com/apis/library/chat.googleapis.com) |
 
-**Webhook setup steps (quickest — no bot needed):**
-1. Open [chat.google.com](https://chat.google.com) → create a Space named `goldshore-ci`
-2. Click space name → **Apps & integrations** → **Webhooks** → **Add webhook**
-3. Name it `GitHub CI`, copy the webhook URL
-4. Add to GitHub Secrets as `GOOGLE_CHAT_WEBHOOK` in **both** `goldshore-ai` and `goldshore-gateway` repos
+**Webhook setup steps:**
+1. Open [chat.google.com](https://chat.google.com) → create Space `goldshore-ci`
+2. Space name → **Apps & integrations** → **Webhooks** → **Add webhook** → name it `GitHub CI`
+3. Copy webhook URL → add to GitHub Secrets as `GOOGLE_CHAT_WEBHOOK` in both `goldshore-ai` and `goldshore-gateway`
 
 ---
 
-## 8. GitHub
+## 8. GitHub SSH Keys
 
-| Item | Status | Link |
-|------|--------|------|
-| SSH key: Termux | ✅ | [github.com/settings/keys](https://github.com/settings/keys) |
-| SSH key: HP Laptop | ❌ | Same — run `scripts/setup-device.sh goldshore-hp` |
-| SSH key: iPad Pro | ❌ | Same — see CLAUDE.md iPad section |
-| `GITHUB_TOKEN` | ✅ auto | Injected by Actions automatically |
+| Device | Status | Link |
+|--------|--------|------|
+| Android (Termux) | ✅ `goldshore-termux` | [github.com/settings/keys](https://github.com/settings/keys) |
+| HP Laptop | ❌ | Run `bash scripts/setup-device.sh goldshore-hp` then add key |
+| iPad Pro | ❌ | See CLAUDE.md iPad section, then add key |
 
 ---
 
 ## Quick action priority
 
 ```
-[ ] 1. Renew CLOUDFLARE_API_TOKEN in goldshore-gateway  → unblocks PR #213 CI
-[ ] 2. Renew CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN       → unblocks goldshore-ai deploys  
-[ ] 3. Create Google Chat webhook                       → enables CI failure notifications
-[ ] 4. Enable Google Ads + AdSense APIs in GCP          → monetization
-[ ] 5. Add HP laptop SSH key to GitHub                  → local dev on laptop
-[ ] 6. Add iPad Pro SSH key to GitHub                   → local dev on iPad
+[⚠️] 1. ROTATE Google Ads developer token (was shared in plaintext)  → ads.google.com/aw/apicenter
+[⚠️] 2. Renew CLOUDFLARE_API_TOKEN in goldshore-gateway              → unblocks PR #213 CI
+[⚠️] 3. Renew CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN                  → unblocks goldshore-ai deploys
+[ ] 4. Create Google Chat webhook + add GOOGLE_CHAT_WEBHOOK secret  → enables CI failure alerts
+[ ] 5. Enable Google Ads + AdSense APIs in GCP                      → monetization
+[ ] 6. Add HP laptop SSH key to GitHub                              → local dev on laptop
+[ ] 7. Add iPad Pro SSH key to GitHub                               → local dev on iPad
 ```
