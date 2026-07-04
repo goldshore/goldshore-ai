@@ -19,6 +19,8 @@ on:
         required: false
         default: "Manual notification triggered"
 
+permissions: {}
+
 jobs:
   notify-failure:
     name: Notify on CI failure
@@ -46,7 +48,7 @@ jobs:
               --arg branch "$BRANCH" \
               --arg repo "$REPO" \
               --arg url "$RUN_URL" \
-              '{text: ("*CI FAILED* on `" + $repo + "`\nWorkflow: " + $workflow + "\nBranch: `" + $branch + "`\n<" + $url + "|View run>")}')"
+              '{text: ("*CI FAILED* on `" + $repo + "`\nWorkflow: " + $workflow + "\nBranch: `" + $branch + "`\n<" + $url + "|View run>")}')"  
 
   weekly-api-key-reminder:
     name: Weekly API key reminder
