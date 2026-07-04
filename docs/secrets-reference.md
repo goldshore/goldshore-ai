@@ -34,5 +34,5 @@ Add or update these secrets at the links below. Never commit values to git.
 
 - `CLOUDFLARE_API_TOKEN` in goldshore-gateway is currently expired — renewing it unblocks PR #213 CI checks (`verify-cloudflare`, `verify-account-resources`).
 - `GOOGLE_ADS_DEVELOPER_TOKEN` — rotate the previous token before adding (prior value was shared in chat).
-- GCP service account token (`AQ.Ab8RN6...`) — revoke at https://console.cloud.google.com/iam-admin/serviceaccounts → `github-storage-access` → Manage Keys before creating a new one.
+- GCP service account key (`github-storage-access`) — revoke the old key at https://console.cloud.google.com/iam-admin/serviceaccounts → `github-storage-access` → Manage Keys before creating a new one.
 - `GOOGLE_CHAT_WEBHOOK` must exist in both repos before the Monday 9am UTC reminder fires.

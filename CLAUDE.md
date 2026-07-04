@@ -55,15 +55,17 @@ pnpm 9 + Turborepo. All apps in `apps/*`, shared code in `packages/*`.
 
 ### Apps
 
+**Per AGENTS.md:** this repo is a two-app monorepo. New frontend work → `apps/gs-web`; new backend work → `apps/gs-api`. All other apps are legacy stubs retained for workspace validation only — do not route new tasks there.
+
 | App | Worker name | Routes | Status |
 |-----|-------------|--------|--------|
 | `apps/gs-web` | `gs-web` | `goldshore.ai/*` | ✅ Astro + Cloudflare Workers |
 | `apps/gs-api` | `gs-api` | `api.goldshore.ai/*` | ✅ Active |
-| `apps/gs-admin` | `gs-admin` | `admin.goldshore.ai/*` | ✅ Full KV/D1/R2/service bindings |
-| `apps/gs-mcp` | `gs-mcp` | `mcp.goldshore.ai/*` | ✅ Model Context Protocol server |
+| `apps/gs-admin` | `gs-admin` | `admin.goldshore.ai/*` | ⚠️ Legacy — do not route new work here |
+| `apps/gs-mcp` | `gs-mcp` | `mcp.goldshore.ai/*` | ⚠️ Legacy — do not route new work here |
 | `apps/gs-gateway` | `gs-platform` | `gw/gateway/ops/agent/api.goldshore.ai/*` | ⚠️ STUB — real code in `marzton/goldshore-gateway` |
-| `apps/gs-cron` | `gs-cron` | (scheduled) | ✅ Active |
-| `apps/gs-signals` | `gs-signals` | internal | ✅ Active |
+| `apps/gs-cron` | `gs-cron` | (scheduled) | ⚠️ Legacy — do not route new work here |
+| `apps/gs-signals` | `gs-signals` | internal | ⚠️ Legacy — do not route new work here |
 
 The gateway stub at `apps/gs-gateway/wrangler.toml` is intentional — it satisfies workspace validation without owning deployment.
 
@@ -157,7 +159,7 @@ pnpm turbo run build --filter=gs-web
 ## Repo migration plan
 
 | Priority | Repo | Action |
-|----------|------|---------|
+|----------|------|--------|
 | 1 | `goldshore-ops` | Archive — KV template stub, never built |
 | 2 | `goldshore-web` | Already deprecated — remove from CI |
 | 3 | `goldshore-core` | Migrate `banproof-me` → `apps/gs-security`; archive rest |

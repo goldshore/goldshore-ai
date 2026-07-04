@@ -55,8 +55,8 @@ git config --global pull.rebase false
 cd "$HOME"
 for REPO in "${REPOS[@]}"; do
   if [ -d "$REPO" ]; then
-    echo "$REPO already cloned, pulling latest..."
-    git -C "$REPO" pull origin main 2>/dev/null || true
+    echo "$REPO already cloned, fetching latest..."
+    git -C "$REPO" fetch origin main 2>/dev/null || true
   else
     echo "Cloning $REPO..."
     git clone "git@github.com:$GH_USER/$REPO.git"
