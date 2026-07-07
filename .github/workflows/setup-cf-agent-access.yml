@@ -46,7 +46,7 @@ jobs:
           if [ "$STATUS" = "403" ] || [ "$STATUS" = "401" ]; then
             echo "::error::CLOUDFLARE_API_TOKEN lacks Zero Trust / Access permissions."
             echo "::error::Edit the token at https://dash.cloudflare.com/profile/api-tokens"
-            echo "::error::and add: Access: Service Tokens (Edit) + Access: Apps and Policies (Edit)"
+            echo "::error::Add: Access: Service Tokens (Edit) + Access: Apps and Policies (Edit)"
             exit 1
           fi
           echo "CF token Access scope: OK (HTTP $STATUS)"
@@ -120,10 +120,16 @@ jobs:
           OWNER_INCLUDE=$(jq -nc \
             '[{"email":{"email":"marstonr6@gmail.com"}}]')
 
+          # extra_domains: JSON array of additional hostnames to attach to the same app.
+          # Passing an empty array [] means only the primary domain is used.
           make_app() {
-            local name="$1" domain="$2"
-            jq -nc --arg n "$name" --arg d "$domain" \
+            local name="$1" domain="$2" extra_domains="${3:-[]}"
+            jq -nc \
+              --arg n "$name" \
+              --arg d "$domain" \
+              --argjson ed "$extra_domains" \
               '{name:$n,type:"self_hosted",domain:$d,
+                self_hosted_domains:([$d] + $ed),
                 session_duration:"24h",
                 http_only_cookie_attribute:true,
                 auto_redirect_to_identity:false}' | \
@@ -149,8 +155,9 @@ jobs:
 
           create_full_access_app() {
             # Human owner (email OTP) + agents (service token)
-            local name="$1" domain="$2"
-            AID=$(make_app "$name" "$domain")
+            # Optional $3: JSON array of extra hostnames for self_hosted_domains
+            local name="$1" domain="$2" extra_domains="${3:-[]}"
+            AID=$(make_app "$name" "$domain" "$extra_domains")
             [ -z "$AID" ] && { echo "WARNING: failed to create $name"; return; }
             echo "Created app [$name]: $AID"
             add_policy "$AID" "Goldshore agents"  "non_identity" "$SERVICE_INCLUDE"
@@ -159,19 +166,23 @@ jobs:
 
           create_agent_app() {
             # Service token only — no human SSO
-            local name="$1" domain="$2"
-            AID=$(make_app "$name" "$domain")
+            # Optional $3: JSON array of extra hostnames for self_hosted_domains
+            local name="$1" domain="$2" extra_domains="${3:-[]}"
+            AID=$(make_app "$name" "$domain" "$extra_domains")
             [ -z "$AID" ] && { echo "WARNING: failed to create $name"; return; }
             echo "Created app [$name]: $AID"
             add_policy "$AID" "Goldshore agents only" "non_identity" "$SERVICE_INCLUDE"
           }
 
           # Human + agent access (browser clients call these directly)
+          # Dashboard: protect the /app path only (keeps / public)
           create_full_access_app "Dashboard" "goldshore.ai/app"
-          create_full_access_app "Admin"     "admin.goldshore.org"
+          # Admin: canonical hostname is admin.goldshore.ai; .org is an alias
+          create_full_access_app "Admin"     "admin.goldshore.ai" '["admin.goldshore.org"]'
           create_full_access_app "Trading"   "goldshore.org/dash"
           create_full_access_app "Signals"   "signals.goldshore.ai"
-          create_full_access_app "API"       "api.goldshore.ai"
+          # API: scope to /app path so /health, /version, / remain publicly reachable
+          create_full_access_app "API"       "api.goldshore.ai/app"
 
           # Agent / machine-to-machine only
           create_agent_app "MCP"     "mcp.goldshore.ai"
@@ -240,7 +251,7 @@ jobs:
             echo "| CF-Access-Client-Id | \`$CLIENT_ID\` |"
             echo "| GitHub secrets | goldshore-ai, goldshore-gateway, goldclaw |"
             echo "| Worker secrets | gs-agent, gs-agent-prod, gs-mcp, gs-api, gs-gateway-prod |"
-            echo "| Full-access apps | Dashboard, Admin, Trading, Signals, API |"
+            echo "| Full-access apps | Dashboard (/app), Admin (.ai+.org), Trading, Signals, API (/app) |"
             echo "| Agent-only apps | MCP, Agent, Gateway |"
             echo ""
             echo "> CF-Access-Client-Secret is stored in secrets only — never printed here."

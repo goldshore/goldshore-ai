@@ -13,7 +13,8 @@ Add or update these secrets at the links below. Never commit values to git.
 | `CLOUDFLARE_API_TOKEN` | Cloudflare API token (read/write Workers, D1, KV, R2) | https://dash.cloudflare.com/profile/api-tokens |
 | `CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN` | Cloudflare deploy token scoped to goldshore-ai Workers | https://dash.cloudflare.com/profile/api-tokens |
 | `GOOGLE_CHAT_WEBHOOK` | Google Chat space webhook URL for CI notifications | chat.google.com → Space → Apps & integrations → Webhooks |
-| `GOOGLE_CLIENT_ID` | GCP OAuth 2.0 client ID | https://console.cloud.google.com/apis/credentials |
+| `GOOGLE_OAUTH_CLIENT_ID` | GCP OAuth 2.0 client ID — name gs-api reads for OAuth/GoldClaw routes | https://console.cloud.google.com/apis/credentials |
+| `GOOGLE_OAUTH_CLIENT_SECRET` | GCP OAuth 2.0 client secret — name gs-api reads; absent → 503 on OAuth routes | https://console.cloud.google.com/apis/credentials |
 | `GOOGLE_ADS_DEVELOPER_TOKEN` | Google Ads API developer token | https://ads.google.com/aw/apicenter |
 | `GH_PAT` | GitHub PAT with `repo` + `workflow` scopes (branch protection) | https://github.com/settings/tokens |
 
@@ -36,3 +37,4 @@ Add or update these secrets at the links below. Never commit values to git.
 - `GOOGLE_ADS_DEVELOPER_TOKEN` — rotate the previous token before adding (prior value was shared in chat).
 - GCP service account key (`github-storage-access`) — revoke the old key at https://console.cloud.google.com/iam-admin/serviceaccounts → `github-storage-access` → Manage Keys before creating a new one.
 - `GOOGLE_CHAT_WEBHOOK` must exist in both repos before the Monday 9am UTC reminder fires.
+- **OAuth secret names**: gs-api reads `GOOGLE_OAUTH_CLIENT_ID` and `GOOGLE_OAUTH_CLIENT_SECRET`. Setting `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` instead will not work — OAuth routes return 503.
