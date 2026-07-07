@@ -7,6 +7,26 @@ compatibility_date = "2025-03-07"
 
 workers_dev = false
 
+[env.dev]
+routes = []
+
+[env.dev.vars]
+ENV = "dev"
+
+[[env.dev.queues.producers]]
+binding = "CHECKOUT_EVENTS_QUEUE"
+queue = "gs-platform-checkout-events-dev"
+
+[[env.dev.queues.producers]]
+binding = "CONTACT_EVENTS_QUEUE"
+queue = "gs-platform-contact-events-dev"
+
+[env.prod]
+# www.goldshore.ai is owned by gs-www-redirect Worker
+# status.goldshore.ai is reserved for gs-status Pages project (MODULE_B2_RUNTIME_WIRING.md)
+# dashboard.goldshore.ai uses custom_domain to auto-provision DNS
+# agent.goldshore.ai/* is gateway-owned and forwarded to gs-agent through the AGENT service binding.
+# api.goldshore.ai/* is owned by gs-api; do not add it here or Wrangler deploys will conflict.
 routes = [
   { pattern = "gw.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" },

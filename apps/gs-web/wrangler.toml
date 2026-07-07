@@ -45,7 +45,7 @@ MAILCHANNELS_SENDER_NAME = "GoldShore"
 #   wrangler secret put MAILCHANNELS_SENDER_EMAIL --env prod --name gs-web
 #   Value: hello@goldshore.ai
 
-# ── Preview ─────────────────────────────────────────────────────────────────────────────
+# ── Preview ───────────────────────────────────────────────────────────────────
 
 [env.preview]
 routes = [

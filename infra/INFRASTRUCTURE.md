@@ -219,6 +219,7 @@ Two workers in your account have unknown origin. You must decide to keep or dele
 ### GATE 3 — Deploy gs-gateway subdomain routes (BLOCKS: dashboard, status subdomains)
 
 Merge PR #5117. `dashboard.goldshore.ai` and `dash.goldshore.ai` are protected aliases for the trading dashboard and should be covered by the same Cloudflare Access application as `trading.goldshore.ai`. `www.goldshore.ai` is owned by `gs-www-redirect` Worker (308 redirect there). `agent.goldshore.ai/*` is owned by `gs-gateway` and forwards to `gs-agent` through the AGENT service binding; do not attach a direct custom domain to `gs-agent`. `status.goldshore.ai` is reserved for the `gs-status` Pages project (see MODULE_B2_RUNTIME_WIRING.md) — not claimed by gs-gateway.
+Merge PR #5117. `dashboard.goldshore.ai` uses Worker Custom Domain (auto-provisions DNS). `www.goldshore.ai` is owned by `gs-www-redirect` Worker (308 redirect there). `agent.goldshore.ai/*` is owned by `gs-gateway` and forwards to `gs-agent` through the AGENT service binding; do not attach a direct custom domain to `gs-agent`. `status.goldshore.ai` is reserved for the `gs-status` Pages project (see MODULE_B2_RUNTIME_WIRING.md) — not claimed by gs-gateway.
 
 | # | Action | Where | Status |
 |---|--------|--------|--------|
@@ -246,6 +247,8 @@ Configure the identity providers required by the canonical Cloudflare Access IdP
 Create one Access application per protected subdomain group. All require Gate 4 to be complete.
 
 **Important:** Keep Access audience tags aligned with the Worker that validates them. `api.goldshore.ai` is validated by `gs-api` with its API Access AUD, so it must stay on the API Access application unless the downstream Worker secret/config changes at the same time. `gw.goldshore.ai` and `agent.goldshore.ai` share the gateway Access application/AUD. Public probes (`/health`, `/status`) must be excluded via a bypass policy so monitoring scripts do not hit the login wall. Configure allowed login methods or OR policies from the canonical Cloudflare Access IdP matrix in `docs/domains-and-auth.md`; do not encode alternative IdPs as multiple conjunctive Require selectors.
+**Important:** `api.goldshore.ai` is owned directly by the `gs-api` Worker route, while `agent.goldshore.ai` routes through the `gs-gateway` Worker. Configure Cloudflare Access audiences per owning Worker, and exclude public probes (`/health`, `/status`) via bypass policy so monitoring scripts do not hit the login wall.
+**Important:** `api.goldshore.ai` and `agent.goldshore.ai` both route to the same `gs-gateway` Worker, which holds a single `CLOUDFLARE_ACCESS_AUDIENCE` binding. They **must share one Access application** so the same AUD tag validates tokens from either subdomain. Public probes (`/health`, `/status`) must be excluded via a bypass policy so monitoring scripts do not hit the login wall. Set all policy **Require** rules from the canonical Cloudflare Access IdP matrix in `docs/domains-and-auth.md`.
 
 | # | Subdomain(s) | Application name | Policy | Where | Status |
 |---|---|---|---|---|---|
@@ -255,6 +258,8 @@ Create one Access application per protected subdomain group. All require Gate 4 
 | 5d | `gw.goldshore.ai` + `agent.goldshore.ai` | Goldshore Gateway | These hosts share the gateway Access app and gateway AUD tag. Email = marstonr6@gmail.com (allow). Add **bypass policy** for paths `/health`, `/status`, and `/version` (everyone). | CF Access Apps | ⬜ TODO |
 | 5e | `api.goldshore.ai` | Goldshore API | Preserve the API Access app and AUD tag expected by `gs-api` (`d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b`). Email = marstonr6@gmail.com (allow). Add **bypass policy** for paths `/`, `/health`, `/status`, and `/version` (everyone). | CF Access Apps | ⬜ TODO |
 | 5f | Copy the **Audience (AUD) tag** for each app and store it as GitHub Actions secrets (`CLOUDFLARE_ACCESS_AUDIENCE_ADMIN`, `CLOUDFLARE_ACCESS_AUDIENCE_TRADING`, `CLOUDFLARE_ACCESS_AUDIENCE_GATEWAY`, `CLOUDFLARE_ACCESS_AUDIENCE_API`) and as wrangler secrets in each Worker. | CF Access App → Overview tab | ⬜ TODO |
+| 5d | `gw.goldshore.ai` + `agent.goldshore.ai`; `api.goldshore.ai` separately | Goldshore Gateway / Goldshore API | `gw` and `agent` route to `gs-gateway`; `api` routes directly to `gs-api`. Use separate Access audiences if protected. Email = marstonr6@gmail.com (allow). Add **bypass policy** for paths `/health`, `/status`, and `/version` (everyone). | CF Access Apps | ⬜ TODO |
+| 5e | Copy the **Audience (AUD) tag** for each app and store it as a GitHub Actions secret (`CLOUDFLARE_ACCESS_AUDIENCE_ADMIN`, `CLOUDFLARE_ACCESS_AUDIENCE_TRADING`, `CLOUDFLARE_ACCESS_AUDIENCE_GATEWAY`) and as wrangler secrets in each Worker. | CF Access App → Overview tab | ⬜ TODO |
 
 ---
 
