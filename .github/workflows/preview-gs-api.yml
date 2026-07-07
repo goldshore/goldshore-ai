@@ -43,8 +43,10 @@ jobs:
         run: |
           test -f apps/gs-api/wrangler.toml
           grep -Eq '^\[env\.preview\]' apps/gs-api/wrangler.toml
-          grep -Eq '^\s*\[\[env\.preview\.services\]\]' apps/gs-api/wrangler.toml
-          grep -Eq '^\s*\[\[env\.preview\.queues\.(producers|consumers)\]\]' apps/gs-api/wrangler.toml
+          grep -Eq '^\s*\[\[env\.preview\.d1_databases\]\]' apps/gs-api/wrangler.toml
+          grep -Eq '^\s*binding\s*=\s*"CONTENT_DB"' apps/gs-api/wrangler.toml
+          grep -Eq '^\s*\[\[env\.preview\.r2_buckets\]\]' apps/gs-api/wrangler.toml
+          grep -Eq '^\s*\[env\.preview\.ai\]' apps/gs-api/wrangler.toml
 
       - name: Deploy GS API worker preview to Cloudflare
         working-directory: apps/gs-api

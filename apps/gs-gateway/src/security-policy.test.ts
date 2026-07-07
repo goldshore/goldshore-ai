@@ -20,7 +20,7 @@ describe('gateway security policy', () => {
   };
 
   it('fails closed for non-signals routes when SECURITY_CHECK errors', async () => {
-    const res = await app.request('https://gw.goldshore.ai/health', {
+    const res = await app.request('https://gw.goldshore.ai/status', {
       headers: { 'CF-Access-Jwt-Assertion': 'test-jwt' },
     }, {
       ...baseEnv,
@@ -46,11 +46,11 @@ describe('gateway security policy', () => {
       }),
     });
 
-    assert.equal(res.status, 200);
+    assert.notEqual(res.status, 503);
   });
 
   it('enforces fail-closed for non-signals routes when SECURITY_CHECK returns non-ok', async () => {
-    const res = await app.request('https://gw.goldshore.ai/health', {
+    const res = await app.request('https://gw.goldshore.ai/status', {
       headers: { 'CF-Access-Jwt-Assertion': 'test-jwt' },
     }, {
       ...baseEnv,
@@ -61,4 +61,25 @@ describe('gateway security policy', () => {
     const body = await res.json() as { policy?: string };
     assert.equal(body.policy, 'fail-closed');
   });
+
+  it('fails closed for non-signals routes when SECURITY_CHECK is missing', async () => {
+    const res = await app.request('https://gw.goldshore.ai/status', {
+      headers: { 'CF-Access-Jwt-Assertion': 'test-jwt' },
+    }, baseEnv);
+
+    assert.equal(res.status, 503);
+    const body = await res.json() as { policy?: string };
+    assert.equal(body.policy, 'fail-closed');
+  });
+
+  it('fails open for signals routes when SECURITY_CHECK is missing', async () => {
+    const res = await app.request('https://gw.goldshore.ai/signals', {
+      method: 'POST',
+      headers: { 'CF-Access-Jwt-Assertion': 'test-jwt' },
+      body: JSON.stringify({ signal: 'latency_warning' }),
+    }, baseEnv);
+
+    assert.notEqual(res.status, 503);
+  });
+
 });

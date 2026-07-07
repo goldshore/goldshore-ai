@@ -1,6 +1,6 @@
-name: Deploy GS Admin (admin.goldshore.ai)
-# apps/gs-admin is the internal Cloudflare Pages surface. Keep this workflow separate
-# from gs-web so the public/private boundary is preserved.
+name: Deploy GS Web (goldshore.org)
+# apps/gs-web is the public Cloudflare Pages surface. Keep this workflow separate
+# from gs-admin so the public/private boundary is preserved.
 
 permissions:
   contents: read
@@ -10,16 +10,16 @@ on:
     branches:
       - main
     paths:
-      - "apps/gs-admin/**"
-      - "packages/**"
-      - "package.json"
-      - "pnpm-lock.yaml"
-      - ".github/workflows/deploy-gs-admin.yml"
-      - ".github/workflows/deploy-gs-surfaces-report.yml"
+      - 'apps/gs-web/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/deploy-gs-web.yml'
+      - '.github/workflows/deploy-gs-surfaces-report.yml'
   workflow_dispatch:
     inputs:
       deploy_ref:
-        description: Git ref to build and deploy for gs-admin.
+        description: Git ref to build and deploy for gs-web.
         required: false
         type: string
       release_label:
@@ -29,7 +29,7 @@ on:
   workflow_call:
     inputs:
       deploy_ref:
-        description: Git ref to build and deploy for gs-admin.
+        description: Git ref to build and deploy for gs-web.
         required: false
         type: string
       release_label:
@@ -39,16 +39,16 @@ on:
     outputs:
       deployed_sha:
         description: Commit SHA that was built and deployed.
-        value: ${{ jobs.deploy-admin.outputs.deployed_sha }}
+        value: ${{ jobs.deploy-web.outputs.deployed_sha }}
       build_timestamp:
         description: UTC timestamp embedded in the deployed build.
-        value: ${{ jobs.deploy-admin.outputs.build_timestamp }}
+        value: ${{ jobs.deploy-web.outputs.build_timestamp }}
       release_label:
         description: Release label embedded in the deployed build metadata.
-        value: ${{ jobs.deploy-admin.outputs.release_label }}
+        value: ${{ jobs.deploy-web.outputs.release_label }}
 
 jobs:
-  deploy-admin:
+  deploy-web:
     runs-on: ubuntu-latest
     outputs:
       deployed_sha: ${{ steps.metadata.outputs.deployed_sha }}
@@ -78,7 +78,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
           {
-            echo "### gs-admin build metadata"
+            echo "### gs-web build metadata"
             echo "- Commit SHA: \`${deployed_sha}\`"
             echo "- Build timestamp: \`${build_timestamp}\`"
             if [[ -n "$release_label" ]]; then
@@ -109,8 +109,8 @@ jobs:
       - name: Validate canonical worker names
         run: pnpm validate:names
 
-      - name: Build admin app
-        working-directory: apps/gs-admin
+      - name: Build web app
+        working-directory: apps/gs-web
         env:
           PUBLIC_BUILD_TIMESTAMP: ${{ steps.metadata.outputs.build_timestamp }}
           PUBLIC_COMMIT_HASH: ${{ steps.metadata.outputs.deployed_sha }}
@@ -122,7 +122,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: gs-admin
-          directory: apps/gs-admin/dist
-          workingDirectory: apps/gs-admin
+          projectName: gs-web
+          directory: apps/gs-web/dist
+          workingDirectory: apps/gs-web
           branch: main

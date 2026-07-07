@@ -11,6 +11,5 @@ packages:
   - 'apps/gs-core-worker'
   - 'apps/armsway-com'
   - 'apps/banproof-me'
-  - 'apps/gs-www-redirect'
   - 'packages/*'
   - 'infra/*'

@@ -111,6 +111,8 @@ app.use(
       const allowed = [
         "https://goldshore.ai",
         "https://www.goldshore.ai",
+        "https://goldshore.org",
+        "https://www.goldshore.org",
         "https://admin.goldshore.ai",
         "https://gw.goldshore.ai",
         "https://api.goldshore.ai",
@@ -146,14 +148,21 @@ app.use("*", async (c, next) => {
     return next();
   }
 
+  const isSignalsPath = isNonCriticalSignalsPath(pathname);
   if (!c.env.SECURITY_CHECK) {
+    const policy = isSignalsPath ? "fail-open" : "fail-closed";
     console.warn(
-      JSON.stringify({ event: "security_check_skipped", policy: "fail-open", reason: "missing_binding", path: pathname }),
+      JSON.stringify({ event: "security_check_skipped", policy, reason: "missing_binding", path: pathname }),
     );
-    return next();
+    if (isSignalsPath) {
+      return next();
+    }
+    return c.json(
+      { error: "Service Unavailable", message: "Security check unavailable", policy },
+      503,
+    );
   }
 
-  const isSignalsPath = isNonCriticalSignalsPath(pathname);
   try {
     const timeoutMs = isSignalsPath ? SIGNALS_TIMEOUT_MS : SECURITY_TIMEOUT_MS;
     const checkResponse = await withTimeout(
