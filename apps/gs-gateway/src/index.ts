@@ -156,13 +156,13 @@ app.use("*", async (c, next) => {
   if (!c.env.SECURITY_CHECK) {
     const policy = isSignalsPath ? "fail-open" : "fail-closed";
     console.warn(
-      JSON.stringify({ event: "security_check_missing", policy, reason: "missing_binding", path: pathname }),
+      JSON.stringify({ event: "security_check_skipped", policy, reason: "missing_binding", path: pathname }),
     );
     if (isSignalsPath) {
       return next();
     }
     return c.json(
-      { error: "SECURITY_CHECK_ERROR", message: "security check service unavailable", policy },
+      { error: "Service Unavailable", message: "Security check unavailable", policy },
       503,
     );
   }
