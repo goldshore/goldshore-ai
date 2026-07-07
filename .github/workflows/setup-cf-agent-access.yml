@@ -36,22 +36,43 @@ jobs:
     steps:
       # ------------------------------------------------------------------ #
       # 0. Verify CLOUDFLARE_API_TOKEN has Access permissions
+      #    Probes both service_tokens AND access/apps to catch tokens that
+      #    have Service Token scope but lack Apps/Policies edit permission.
+      #    A partial-permission failure here aborts BEFORE any revocation.
       # ------------------------------------------------------------------ #
       - name: Verify CF token has Access scope
         env:
           CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           set -euo pipefail
-          STATUS=$(curl -s -o /dev/null -w '%{http_code}' \
+
+          # Check 1: service_tokens endpoint
+          ST_STATUS=$(curl -s -o /dev/null -w '%{http_code}' \
             "$CF_API/accounts/$CF_ACCOUNT/access/service_tokens" \
             -H "Authorization: Bearer $CF_TOKEN")
-          if [ "$STATUS" = "403" ] || [ "$STATUS" = "401" ]; then
-            echo "::error::CLOUDFLARE_API_TOKEN lacks Zero Trust / Access permissions."
-            echo "::error::Edit the token at https://dash.cloudflare.com/profile/api-tokens"
-            echo "::error::Add: Access: Service Tokens (Edit) + Access: Apps and Policies (Edit)"
+          if [ "$ST_STATUS" = "403" ] || [ "$ST_STATUS" = "401" ]; then
+            echo "::error::CLOUDFLARE_API_TOKEN lacks Access: Service Tokens permission."
+            echo "::error::Edit at https://dash.cloudflare.com/profile/api-tokens"
+            echo "::error::Required: Access: Service Tokens (Edit)"
             exit 1
           fi
-          echo "CF token Access scope: OK (HTTP $STATUS)"
+          echo "CF token Service Tokens scope: OK (HTTP $ST_STATUS)"
+
+          # Check 2: access/apps endpoint (separate permission from service_tokens)
+          APPS_STATUS=$(curl -s -o /dev/null -w '%{http_code}' \
+            "$CF_API/accounts/$CF_ACCOUNT/access/apps" \
+            -H "Authorization: Bearer $CF_TOKEN")
+          if [ "$APPS_STATUS" = "403" ] || [ "$APPS_STATUS" = "401" ]; then
+            echo "::error::CLOUDFLARE_API_TOKEN lacks Access: Apps and Policies permission."
+            echo "::error::Edit at https://dash.cloudflare.com/profile/api-tokens"
+            echo "::error::Required: Access: Apps and Policies (Edit)"
+            echo "::error::Token has service_tokens scope (HTTP $ST_STATUS) but not apps scope (HTTP $APPS_STATUS)"
+            echo "::error::Aborting BEFORE any revocation to avoid stranding Access apps on a revoked token."
+            exit 1
+          fi
+          echo "CF token Access Apps scope: OK (HTTP $APPS_STATUS)"
+
+          echo "All required CF API permissions verified."
 
       # ------------------------------------------------------------------ #
       # 1. Revoke compromised service token
@@ -213,7 +234,7 @@ jobs:
           # aud_workers: space-separated Worker names to receive CLOUDFLARE_ACCESS_AUDIENCE
           #              on first-run new-app creation. Existing apps preserve their AUD.
           upsert_full_access() {
-            local name="$1" domain="$2" extra_domains="${3:-[]" aud_workers="${4:-}"
+            local name="$1" domain="$2" extra_domains="${3:-[]}" aud_workers="${4:-}"
             AID=$(find_app "$name")
             if [ -n "$AID" ]; then
               echo "Found existing app [$name]: $AID — patching domains and refreshing policies"
@@ -313,6 +334,8 @@ jobs:
           upsert_full_access "Goldshore Gateway" "gw.goldshore.ai" \
             '["gateway.goldshore.ai","agent.goldshore.ai"]' \
             "gs-gateway-prod gs-agent gs-agent-prod"
+          # GoldShore-Web-Preview: preview.goldshore.ai (INFRASTRUCTURE.md Gate 5)
+          upsert_full_access "GoldShore-Web-Preview" "preview.goldshore.ai"
 
       # ------------------------------------------------------------------ #
       # 4. Propagate CF_ACCESS_CLIENT_ID / SECRET to all repos
@@ -377,7 +400,7 @@ jobs:
             echo "| GitHub secrets | goldshore-ai, goldshore-gateway, goldclaw |"
             echo "| Worker secrets | gs-agent, gs-agent-prod, gs-mcp, gs-api, gs-api-prod, gs-gateway-prod |"
             echo "| Bypass apps | Trading OAuth, API Probes, Gateway Probes |"
-            echo "| Full-access apps | Dashboard, GoldShore Admin, GoldShore Trading, Goldshore Ops, Signals, Goldshore API, GoldShore MCP, Goldshore Gateway |"
+            echo "| Full-access apps | Dashboard, GoldShore Admin, GoldShore Trading, Goldshore Ops, Signals, Goldshore API, GoldShore MCP, Goldshore Gateway, GoldShore-Web-Preview |"
             echo ""
             echo "> CF-Access-Client-Secret is stored in secrets only — never printed here."
           } >> "$GITHUB_STEP_SUMMARY"
