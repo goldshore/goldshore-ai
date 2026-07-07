@@ -11,19 +11,18 @@ on:
 
 permissions:
   contents: read
-  administration: write
 
 jobs:
   protect-main:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
       - name: Apply branch protection
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           PROTECTED_BRANCH: main
         run: node scripts/configure-branch-protection.mjs

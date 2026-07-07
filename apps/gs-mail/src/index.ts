@@ -1,161 +1,101 @@
-import { Hono } from 'hono';
-import {
-  EmailInboxLogsSchema,
-  EmailLogSchema,
-  type EmailLog,
-} from '@goldshore/schema';
+// Email worker — processes inbound mail forwarded by Cloudflare Email Routing
+// and handles queue events from the checkout/contact pipelines.
+
+const EMAIL_INBOX_LOGS_KEY = 'EMAIL_INBOX_LOGS';
+const MAX_LOG_ENTRIES = 100;
 
 interface Env {
   GS_CONFIG: KVNamespace;
-  ENV?: string;
   MAIL_FORWARD_TO?: string;
-  FORWARD_TO?: string;
-  MAIL_BLOCKED_SENDERS?: string;
-  MAIL_ALLOWED_RECIPIENTS?: string;
+  ENV?: string;
 }
 
-const VERSION = '2026.03.03-mail-inbox-log';
-const app = new Hono<{ Bindings: Env }>();
-const isEmailLike = (value: string) => {
-  const normalized = normalizeEmail(value);
-  const atIndex = normalized.indexOf('@');
-  const lastDotIndex = normalized.lastIndexOf('.');
+interface ContactEventPayload {
+  type: 'contact';
+  name: string;
+  email: string;
+  message: string;
+  timestamp: string;
+}
 
-  return (
-    atIndex > 0 &&
-    lastDotIndex > atIndex + 1 &&
-    lastDotIndex < normalized.length - 1
-  );
-};
-const normalizeEmail = (value: string) => value.trim().toLowerCase();
-const parseEmailList = (value?: string) =>
-  (value ?? '')
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean)
-    .map(normalizeEmail);
+interface CheckoutEventPayload {
+  type: 'checkout';
+  orderId: string;
+  customerEmail: string;
+  amount: number;
+  currency: string;
+  timestamp: string;
+}
 
-const readInboxLogs = async (kv: KVNamespace): Promise<EmailLog[]> => {
-  const rawLogs = await kv.get('EMAIL_INBOX_LOGS', 'text');
-  if (!rawLogs) {
-    return [];
-  }
-
-  try {
-    const parsedLogs = JSON.parse(rawLogs);
-    const parseResult = EmailInboxLogsSchema.safeParse(parsedLogs);
-    if (!parseResult.success) {
-      console.error(
-        '❌ Existing EMAIL_INBOX_LOGS payload failed schema validation:',
-        parseResult.error,
-      );
-      return [];
-    }
-
-    return parseResult.data;
-  } catch (error) {
-    console.error('❌ Failed to parse EMAIL_INBOX_LOGS payload:', error);
-    return [];
-  }
-};
-
-app.get('/', (c) => c.text('GoldShore Mail Worker'));
-
-app.get('/health', (c) =>
-  c.json({
-    status: 'ok',
-    service: 'gs-mail',
-    env: c.env.ENV ?? 'production',
-    version: VERSION,
-  }),
-);
-
-app.get('/system/info', (c) =>
-  c.json({
-    service: 'gs-mail',
-    runtime: 'cloudflare-worker',
-    kv_bound: !!c.env.GS_CONFIG,
-  }),
-);
-
-app.get('/version', (c) => c.json({ version: VERSION }));
+type QueuePayload = ContactEventPayload | CheckoutEventPayload;
 
 export default {
-  fetch: app.fetch,
+  // Handles inbound emails forwarded by Cloudflare Email Routing.
+  async email(message: ForwardableEmailMessage, env: Env): Promise<void> {
+    const from = message.from;
+    const to = message.to;
 
-  async email(
-    message: ForwardableEmailMessage,
-    env: Env,
-    ctx: ExecutionContext,
-  ): Promise<void> {
-    const sender = message.from;
-    const recipient = message.to;
-    const subject = (message.headers.get('subject') || 'No Subject').slice(
-      0,
-      50,
-    );
-
-    const normalizedSender = normalizeEmail(sender);
-    const normalizedRecipient = normalizeEmail(recipient);
-    const blocked = parseEmailList(env.MAIL_BLOCKED_SENDERS);
-    if (blocked.includes(normalizedSender)) {
-      message.setReject(`Sender ${sender} is blocked.`);
+    // Check blocked senders stored in GS_CONFIG KV.
+    const blockedRaw = await env.GS_CONFIG.get('BLOCKED_SENDERS');
+    const blocked = blockedRaw
+      ? blockedRaw.split(',').map((s) => s.trim().toLowerCase())
+      : [];
+    if (blocked.includes(from.toLowerCase())) {
+      message.setReject('Sender blocked.');
       return;
     }
 
-    const allowed = parseEmailList(env.MAIL_ALLOWED_RECIPIENTS);
-    if (allowed.length > 0 && !allowed.includes(normalizedRecipient)) {
-      message.setReject(`Recipient ${recipient} is not allowlisted.`);
-      return;
+    // Log the incoming email — non-fatal if the KV write fails.
+    try {
+      const logEntry = {
+        id: crypto.randomUUID(),
+        from,
+        to,
+        subject: message.headers.get('subject') ?? '(no subject)',
+        timestamp: new Date().toISOString(),
+      };
+      const existing = await env.GS_CONFIG.get(EMAIL_INBOX_LOGS_KEY);
+      const logs: typeof logEntry[] = existing ? (JSON.parse(existing) as typeof logEntry[]) : [];
+      logs.unshift(logEntry);
+      if (logs.length > MAX_LOG_ENTRIES) logs.length = MAX_LOG_ENTRIES;
+      await env.GS_CONFIG.put(EMAIL_INBOX_LOGS_KEY, JSON.stringify(logs));
+    } catch (err) {
+      console.error('Failed to log email:', err);
     }
 
-    const parsedEntry = EmailLogSchema.safeParse({
-      id: crypto.randomUUID(),
-      from: sender,
-      to: recipient,
-      subject,
-      timestamp: new Date().toISOString(),
-    });
-
-    if (!parsedEntry.success) {
-      console.error(
-        '🚨 Schema validation failed for inbound mail:',
-        parsedEntry.error,
-      );
-      return;
-    }
-
-    ctx.waitUntil(
-      (async () => {
-        try {
-          const existingLogs = await readInboxLogs(env.GS_CONFIG);
-          const updatedLogs = [parsedEntry.data, ...existingLogs].slice(0, 100);
-
-          await env.GS_CONFIG.put(
-            'EMAIL_INBOX_LOGS',
-            JSON.stringify(updatedLogs),
-          );
-          console.info(`✅ Logged email: ${sender} -> ${recipient}`);
-        } catch (error) {
-          console.error('❌ KV persistence error:', error);
-        }
-      })(),
-    );
-
-    const forwardTo = (env.MAIL_FORWARD_TO || env.FORWARD_TO)?.trim();
+    // Forward to destination — fail closed if none configured.
+    const forwardTo =
+      env.MAIL_FORWARD_TO ?? (await env.GS_CONFIG.get('MAIL_FORWARD_TO'));
     if (!forwardTo) {
-      console.error('❌ Forwarding rejected: target missing.');
-      message.setReject('Mail forwarding is not configured.');
+      message.setReject('No forward destination configured.');
       return;
     }
+    await message.forward(forwardTo);
+  },
 
-    if (!isEmailLike(forwardTo)) {
-      const errorMsg = 'Forwarding target missing or invalid.';
-      console.warn(`⚠️ ${errorMsg}`);
-      message.setReject(errorMsg);
-      return;
+  // Processes checkout and contact events from the queue pipelines.
+  async queue(batch: MessageBatch<QueuePayload>, _env: Env): Promise<void> {
+    for (const msg of batch.messages) {
+      try {
+        const payload = msg.body;
+        if (payload.type === 'contact') {
+          console.log(
+            `[gs-mail] contact form submission from ${payload.email} at ${payload.timestamp}`,
+          );
+        } else if (payload.type === 'checkout') {
+          console.log(
+            `[gs-mail] checkout order ${payload.orderId} for ${payload.customerEmail}`,
+          );
+        }
+        msg.ack();
+      } catch (err) {
+        console.error('[gs-mail] queue message processing failed:', err);
+        msg.retry();
+      }
     }
+  },
 
-    await message.forward(normalizeEmail(forwardTo));
+  async fetch(_req: Request, _env: Env): Promise<Response> {
+    return new Response('gs-mail', { status: 200 });
   },
 };

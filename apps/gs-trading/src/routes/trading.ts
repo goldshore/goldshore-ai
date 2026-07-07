@@ -91,7 +91,7 @@ tradingRoutes.post('/orders', async (c) => {
   let body: any;
   try { body = await c.req.json(); } catch { return c.json({ error: 'Invalid JSON' }, 400); }
 
-  const { broker, symbol, side, orderType, limitPrice } = body;
+  const { broker, symbol, side, orderType, limitPrice, assetType = 'EQUITY' } = body;
   const quantity = Number(body.quantity);
 
   if (!broker || !symbol || !side || !quantity || !orderType) {
@@ -178,7 +178,7 @@ tradingRoutes.post('/orders', async (c) => {
   }
 
   const riskCheck = checkOrderRisk(
-    { symbol, side, quantity, estimatedValue: estimatedPrice * quantity },
+    { broker, symbol, side, quantity, assetType, estimatedValue: estimatedPrice * quantity },
     accounts, positions,
     { maxPositionSizePct: 0.05, maxDrawdownPct: 0.10, maxDailyLossPct: 0.02, maxConcentrationPct: 0.15, allowedAssetTypes: ['EQUITY', 'ETF'] }
   );

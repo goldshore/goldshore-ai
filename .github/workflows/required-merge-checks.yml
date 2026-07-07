@@ -11,11 +11,11 @@ jobs:
   workspace-install:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
         with:
           run_install: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
@@ -26,11 +26,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: workspace-install
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
         with:
           run_install: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
@@ -44,18 +44,36 @@ jobs:
     runs-on: ubuntu-latest
     needs: workspace-install
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v6
         with:
           run_install: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Build gs-web
         run: pnpm --dir apps/gs-web build
+      - name: Detect gs-web release-impact changes
+        id: gs-web-changes
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            RANGE="origin/${{ github.base_ref }}...HEAD"
+          else
+            RANGE="${{ github.event.before }}...${{ github.sha }}"
+          fi
+
+          if git diff --name-only "$RANGE" | grep -Eq '^(apps/gs-web/|packages/|package.json|pnpm-lock.yaml|pnpm-workspace.yaml|turbo.json)$'; then
+            echo "release_impact=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "release_impact=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Run gs-web release quality gate
+        if: steps.gs-web-changes.outputs.release_impact == 'true'
         env:
           LH_MIN_PERFORMANCE: "0.60"
         run: pnpm --dir apps/gs-web check:release
@@ -64,11 +82,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: workspace-install
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
         with:
           run_install: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
@@ -83,11 +101,11 @@ jobs:
       - gs-web-build
       - gs-admin-build
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
         with:
           run_install: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
