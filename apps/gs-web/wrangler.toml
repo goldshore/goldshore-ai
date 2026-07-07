@@ -1,4 +1,4 @@
-name = "gs-web"
+name = "gs-web-prod"
 compatibility_date = "2026-04-18"
 compatibility_flags = ["nodejs_compat"]
 
@@ -42,10 +42,10 @@ CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
 MAILCHANNELS_SENDER_NAME = "GoldShore"
 
 # Secrets (set via wrangler secret put — never commit):
-#   wrangler secret put MAILCHANNELS_SENDER_EMAIL --env prod --name gs-web
+#   wrangler secret put MAILCHANNELS_SENDER_EMAIL --env prod --name gs-web-prod
 #   Value: hello@goldshore.ai
 
-# ── Preview ────────────────────────────────────────────────────────────────────────────────────────
+# ── Preview ──────────────────────────────────────────────────────────────────────────────────────
 
 [env.preview]
 routes = [
