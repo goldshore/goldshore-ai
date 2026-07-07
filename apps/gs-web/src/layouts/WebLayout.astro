@@ -4,7 +4,9 @@ import Logo from '../components/brand/Logo.astro';
 import { WEB_META_CSP } from '../utils/csp';
 import '../styles/goldshore-shell.css';
 
-const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.props;
+const { title, description, canonicalPath, ogTitle: _ogTitle, ogDescription: _ogDescription } = Astro.props;
+const ogTitle = _ogTitle ?? title;
+const ogDescription = _ogDescription ?? description;
 
 const siteUrl = Astro.site || new URL('https://goldshore.ai');
 const canonicalUrl = new URL(canonicalPath || '/', siteUrl).href;

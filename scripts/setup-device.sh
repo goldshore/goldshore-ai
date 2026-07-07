@@ -22,6 +22,7 @@ echo "=== Goldshore dev setup: $DEVICE_LABEL ==="
 SSH_KEY="$HOME/.ssh/id_ed25519"
 if [ ! -f "$SSH_KEY" ]; then
   echo "Generating SSH key..."
+  mkdir -p "$HOME/.ssh" && chmod 700 "$HOME/.ssh"
   ssh-keygen -t ed25519 -C "$DEVICE_LABEL" -N "" -f "$SSH_KEY"
 else
   echo "SSH key already exists at $SSH_KEY"
