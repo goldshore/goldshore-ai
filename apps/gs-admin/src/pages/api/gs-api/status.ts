@@ -16,7 +16,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
   }
 
   const response = await fetch(`${getGsApiBaseUrl(env)}/system/status`, {
-    headers: buildGsApiHeaders(request)
+    headers: buildGsApiHeaders(env)
   });
 
   const payload = await response.json().catch(() => null);

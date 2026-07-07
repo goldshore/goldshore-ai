@@ -19,7 +19,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
   }
 
   const response = await fetch(`${getGsApiBaseUrl(env as any)}/system/config`, {
-    headers: buildGsApiHeaders(request)
+    headers: buildGsApiHeaders(env)
   });
 
   const payload = await response.json().catch(() => null);
@@ -48,7 +48,7 @@ export const PUT: APIRoute = async ({ request, locals }) => {
 
   const response = await fetch(`${getGsApiBaseUrl(env as any)}/system/config`, {
     method: 'PUT',
-    headers: buildGsApiHeaders(request),
+    headers: buildGsApiHeaders(env),
     body: JSON.stringify(body)
   });
 

@@ -71,5 +71,7 @@ environment = "preview"
 ENV = "preview"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 
+# Set the same server-to-server secret in gs-admin and gs-api:
+# wrangler pages secret put GS_API_SERVICE_TOKEN --project-name gs-admin
 # ── Secret bindings (set via CLI or dashboard, never committed) ────────────────
 # wrangler pages secret put ADMIN_API_KEY --project-name gs-admin

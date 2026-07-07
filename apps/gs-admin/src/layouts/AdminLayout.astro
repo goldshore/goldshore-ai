@@ -22,7 +22,7 @@ const isRoleAllowed = requiredRole ? session.roles.includes(requiredRole) : true
 const isPermissionAllowed = requiredPermission
   ? session.permissions.includes(requiredPermission)
   : true;
-const isAuthorized = isRoleAllowed && isPermissionAllowed;
+const isAuthorized = session.isAuthenticated && isRoleAllowed && isPermissionAllowed;
 ---
 <html lang="en">
   <head>
