@@ -57,6 +57,35 @@ describe('verifyAccess', () => {
         assert.strictEqual(jwtVerifyMock.mock.callCount(), 1);
     });
 
+
+    test('returns null for malformed, expired, wrong-issuer, and wrong-audience tokens rejected by jwtVerify', async () => {
+        const rejectionCases = [
+            'malformed token',
+            'expired token',
+            'wrong issuer',
+            'wrong audience',
+        ];
+
+        for (const reason of rejectionCases) {
+            const req = new Request('http://example.com', {
+                headers: { 'CF-Access-Jwt-Assertion': `token-${reason}` }
+            });
+            const env: Env = { CLOUDFLARE_ACCESS_AUDIENCE: 'expected-audience' };
+
+            jwtVerifyMock.mock.resetCalls();
+            jwtVerifyMock.mock.mockImplementation(async () => {
+                throw new Error(reason);
+            });
+
+            const result = await testVerify(req, env);
+
+            assert.strictEqual(result, null, reason);
+            assert.strictEqual(jwtVerifyMock.mock.callCount(), 1, reason);
+            assert.strictEqual(jwtVerifyMock.mock.calls[0].arguments[2].issuer, 'https://goldshore.cloudflareaccess.com');
+            assert.strictEqual(jwtVerifyMock.mock.calls[0].arguments[2].audience, 'expected-audience');
+        }
+    });
+
     test('returns payload when jwtVerify succeeds (valid token)', async () => {
         const req = new Request('http://example.com', {
             headers: { 'CF-Access-Jwt-Assertion': 'valid-token' }

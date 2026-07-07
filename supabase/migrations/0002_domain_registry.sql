@@ -89,7 +89,23 @@ for all
 using (public.is_goldshore_admin())
 with check (public.is_goldshore_admin());
 
-create policy dns_records_org_access
+create policy dns_records_org_access_read
+on public.dns_records
+for select
+using (
+  public.is_goldshore_admin()
+  or exists (
+    select 1
+    from public.domains d
+    join public.profiles p on p.organization_id = d.organization_id
+    where p.id = auth.uid()
+      and d.id = dns_records.domain_id
+      and p.role in ('owner', 'editor', 'viewer')
+  )
+);
+
+
+create policy dns_records_org_access_write
 on public.dns_records
 for all
 using (
@@ -100,7 +116,7 @@ using (
     join public.profiles p on p.organization_id = d.organization_id
     where p.id = auth.uid()
       and d.id = dns_records.domain_id
-      and p.role in ('owner', 'editor', 'viewer')
+      and p.role in ('owner', 'editor')
   )
 )
 with check (

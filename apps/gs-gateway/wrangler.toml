@@ -1,9 +1,9 @@
-# Worker name matches the repo directory (gs-gateway).
-# The live Cloudflare worker was previously named gs-platform; update that via wrangler rename if needed.
+# Contract placeholder — gateway is deployed from the goldshore-gateway repo
+# (as worker name gs-platform). This file satisfies the monorepo workspace
+# contract and EXPECTED_HOST_OWNERS checks in scripts/validate-worker-names.ts.
 name = "gs-gateway"
 main = "src/index.ts"
-compatibility_date = "2026-04-18"
-compatibility_flags = ["nodejs_compat"]
+compatibility_date = "2025-03-07"
 
 workers_dev = false
 
@@ -33,80 +33,8 @@ routes = [
   { pattern = "dashboard.goldshore.ai", custom_domain = true }
 ]
 
-[env.prod.vars]
-ENV = "production"
-CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-
-# ── KV Namespaces ───────────────────────────────────────────────────
-[[env.prod.kv_namespaces]]
-binding = "AI_CACHE"
-id = "a02882aa2e2248158505d3a0aac8e9e2"
-
-[[env.prod.kv_namespaces]]
-binding = "GS_CONFIG"
-id = "68f52b467dc0413991b2195ef9081cae"
-
-[[env.prod.kv_namespaces]]
-binding = "GATEWAY_KV"
-id = "17840f9b6ac64cb1a51aeff085efe24c"
-
-# ── D1 Databases ──────────────────────────────────────────────────
-[[env.prod.d1_databases]]
-binding = "PLATFORM_DB"
-database_name = "gs_platform_db"
-database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
-
-# ── R2 Buckets ───────────────────────────────────────────────────
-[[env.prod.r2_buckets]]
-binding = "GS_ASSETS"
-bucket_name = "gs-assets"
-
-# ── Service bindings ──────────────────────────────────────────────
-[[env.prod.services]]
-binding = "API_SERVICE"
-service = "gs-api"
-environment = "prod"
-
-[[env.prod.services]]
-binding = "AGENT"
-service = "gs-agent"
-environment = "prod"
-
-[[env.prod.services]]
-binding = "SECURITY_CHECK"
-service = "banproof-me"
-
-[[env.prod.services]]
-binding = "SIGNALS"
-service = "gs-core-worker"
-environment = "prod"
-
-# ── Queue producers ───────────────────────────────────────────────
-[[env.prod.queues.producers]]
-binding = "MAIL_QUEUE"
-queue = "gs-mail-jobs"
-
-[[env.prod.queues.producers]]
-binding = "CHECKOUT_EVENTS_QUEUE"
-queue = "gs-platform-checkout-events-prod"
-
-[[env.prod.queues.producers]]
-binding = "CONTACT_EVENTS_QUEUE"
-queue = "gs-platform-contact-events-prod"
-
-[env.preview]
+[env.prod]
 routes = [
-  { pattern = "gw-preview.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "agent-preview.goldshore.ai/*", zone_name = "goldshore.ai" }
+  { pattern = "gw.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" }
 ]
-
-[env.preview.vars]
-ENV = "preview"
-
-[[env.preview.queues.producers]]
-binding = "CHECKOUT_EVENTS_QUEUE"
-queue = "gs-platform-checkout-events-preview"
-
-[[env.preview.queues.producers]]
-binding = "CONTACT_EVENTS_QUEUE"
-queue = "gs-platform-contact-events-preview"

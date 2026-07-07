@@ -16,7 +16,7 @@ const lastUpdated = new Intl.DateTimeFormat('en-US', {
 }).format(new Date(snapshot.lastUpdated));
 ---
 
-<BaseLayout title="Status | GoldShore" description="System status">
+<BaseLayout title="Status | GoldShore" description="Current system status for GoldShore services and infrastructure.">
   <section class="gs-hero">
     <div>
       <p class={`status-eyebrow status-eyebrow--${summary.overallStatus}`}>
