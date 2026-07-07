@@ -74,6 +74,8 @@ routes = []
 
 [env.preview.vars]
 ENV = "preview"
+CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
+CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 
 [[env.preview.kv_namespaces]]
 binding = "KV"
@@ -90,6 +92,10 @@ database_id = "f77de112-d201-4e54-a785-a4583814a6c3"
 
 [env.preview.ai]
 binding = "AI"
+
+# Set the same server-to-server secret in gs-admin and gs-api:
+# wrangler secret put GS_API_SERVICE_TOKEN --env prod
+# wrangler secret put GS_API_SERVICE_TOKEN --env preview
 
 [[migrations]]
 tag = "v1-auth-session"

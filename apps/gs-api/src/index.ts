@@ -37,6 +37,7 @@ type Env = {
   // Sentinel: Added support for dynamic team domain
   CLOUDFLARE_TEAM_DOMAIN?: string;
   CONTROL_SYNC_TOKEN?: string;
+  GS_API_SERVICE_TOKEN?: string;
   ALLOWED_ORIGINS?: string;
   ENV?: string;
   API_VERSION?: string;
@@ -156,6 +157,20 @@ app.use(
 app.use('*', async (c, next) => {
   if (isPublicPath(c.req.path, c.req.method)) {
     c.set('accessClaims', null);
+    await next();
+    return;
+  }
+
+  const serviceToken = c.req.header('x-goldshore-service-token');
+  if (
+    serviceToken &&
+    c.env.GS_API_SERVICE_TOKEN &&
+    serviceToken === c.env.GS_API_SERVICE_TOKEN
+  ) {
+    c.set('accessClaims', {
+      email: 'gs-admin-service@goldshore.internal',
+      roles: ['admin'],
+    });
     await next();
     return;
   }

@@ -46,7 +46,21 @@ describe('gateway security policy', () => {
       }),
     });
 
-    assert.notEqual(res.status, 503);
+    assert.equal(res.status, 404);
+  });
+
+  it('fails closed for non-signals routes when SECURITY_CHECK is missing', async () => {
+    const res = await app.request('https://gw.goldshore.ai/status', {}, baseEnv);
+
+    assert.equal(res.status, 503);
+    const body = await res.json() as { policy?: string };
+    assert.equal(body.policy, 'fail-closed');
+  });
+
+  it('fails open for signals routes when SECURITY_CHECK is missing', async () => {
+    const res = await app.request('https://gw.goldshore.ai/signals', {}, baseEnv);
+
+    assert.equal(res.status, 404);
   });
 
   it('enforces fail-closed for non-signals routes when SECURITY_CHECK returns non-ok', async () => {

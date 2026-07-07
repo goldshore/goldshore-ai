@@ -59,13 +59,11 @@ binding = "ASSETS"
 bucket_name = "gs-assets"
 
 # ── Service bindings ───────────────────────────────────────
-# Uncomment each binding once the target worker is deployed on CF.
-#
-# [[env.prod.services]]
-# binding = "API_SERVICE"
-# service = "gs-api"
-# environment = "prod"
-#
+[[env.prod.services]]
+binding = "API_SERVICE"
+service = "gs-api"
+environment = "prod"
+
 [[env.prod.services]]
 binding = "AGENT"
 service = "gs-agent"
@@ -102,6 +100,11 @@ routes = [
 
 [env.preview.vars]
 ENV = "preview"
+
+[[env.preview.services]]
+binding = "API_SERVICE"
+service = "gs-api"
+environment = "preview"
 
 [[env.preview.queues.producers]]
 binding = "CHECKOUT_EVENTS_QUEUE"

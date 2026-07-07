@@ -1,24 +1,19 @@
 type GsApiEnv = {
   API_ORIGIN?: string;
+  GS_API_SERVICE_TOKEN?: string;
 };
 
 export function getGsApiBaseUrl(env: GsApiEnv) {
   return env.API_ORIGIN || 'https://api.goldshore.ai';
 }
 
-export function buildGsApiHeaders(request: Request) {
+export function buildGsApiHeaders(env: GsApiEnv) {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
-  const authorization = request.headers.get('Authorization');
-  const accessJwt = request.headers.get('CF-Access-Jwt-Assertion');
 
-  if (authorization) {
-    headers.Authorization = authorization;
-  }
-
-  if (accessJwt) {
-    headers['CF-Access-Jwt-Assertion'] = accessJwt;
+  if (env.GS_API_SERVICE_TOKEN) {
+    headers['X-Goldshore-Service-Token'] = env.GS_API_SERVICE_TOKEN;
   }
 
   return headers;
