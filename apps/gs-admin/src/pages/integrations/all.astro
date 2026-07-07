@@ -1,0 +1,263 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { GSButton } from '@goldshore/ui';
+
+const title = 'Integrations Hub';
+---
+
+<AdminLayout title="Integrations | GoldShore Admin">
+  <div class="max-w-7xl mx-auto p-8 space-y-8">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-4xl gs-heading gs-text-accent">Integrations Hub</h1>
+        <p class="text-lg gs-text-subtle mt-2">Connect and manage all business tools and APIs</p>
+      </div>
+      <div class="flex gap-3">
+        <GSButton variant="secondary" id="sync-all">Sync All</GSButton>
+        <GSButton variant="primary" id="add-integration">Add Integration</GSButton>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-4 gap-6">
+      <div class="gs-card space-y-3">
+        <h2 class="text-sm font-semibold gs-text-subtle">Total Integrations</h2>
+        <p id="total-integrations" class="text-3xl font-bold gs-text-info">0</p>
+        <p class="text-xs gs-text-subtle">Connected services</p>
+      </div>
+      <div class="gs-card space-y-3">
+        <h2 class="text-sm font-semibold gs-text-subtle">Connected</h2>
+        <p id="connected-count" class="text-3xl font-bold gs-text-success">0</p>
+        <p class="text-xs gs-text-subtle">Active connections</p>
+      </div>
+      <div class="gs-card space-y-3">
+        <h2 class="text-sm font-semibold gs-text-subtle">Disconnected</h2>
+        <p id="disconnected-count" class="text-3xl font-bold gs-text-warning">0</p>
+        <p class="text-xs gs-text-subtle">Needs attention</p>
+      </div>
+      <div class="gs-card space-y-3">
+        <h2 class="text-sm font-semibold gs-text-subtle">Errors</h2>
+        <p id="error-count" class="text-3xl font-bold gs-text-danger">0</p>
+        <p class="text-xs gs-text-subtle">Failed connections</p>
+      </div>
+    </div>
+
+    <div class="gs-card space-y-4">
+      <h2 class="text-2xl font-semibold">Connected Integrations</h2>
+      <div id="integrations-loading" class="py-8 text-center">
+        <p class="gs-text-subtle">Loading integrations...</p>
+      </div>
+
+      <div id="integrations-list" class="grid gap-4 md:grid-cols-2" style="display: none;">
+      </div>
+
+      <div id="integrations-empty" class="py-8 text-center gs-empty-state" style="display: none;">
+        <p>No integrations yet. Click "Add Integration" to get started.</p>
+      </div>
+    </div>
+
+    <div class="gs-card space-y-4">
+      <h2 class="text-2xl font-semibold">Available Integrations</h2>
+      <p class="text-sm gs-text-subtle">One-click setup for popular business tools</p>
+
+      <div id="available-integrations" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      </div>
+    </div>
+
+    <div class="gs-card space-y-4">
+      <h2 class="text-2xl font-semibold">LLM Configuration</h2>
+      <div class="space-y-4">
+        <div>
+          <label class="text-sm font-semibold">LLM Provider</label>
+          <select id="llm-provider" class="gs-input mt-2 w-full text-sm py-2 px-3">
+            <option value="claude">Claude (Anthropic)</option>
+            <option value="openai">OpenAI</option>
+            <option value="openclaw">OpenClaw (Self-Hosted)</option>
+            <option value="local">Local LLM</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-sm font-semibold">API Key</label>
+          <input
+            id="llm-api-key"
+            type="password"
+            placeholder="Enter API key"
+            class="gs-input mt-2 w-full text-sm py-2 px-3"
+          />
+        </div>
+        <div id="llm-base-url-container" style="display: none;">
+          <label class="text-sm font-semibold">Base URL (for self-hosted)</label>
+          <input
+            id="llm-base-url"
+            type="text"
+            placeholder="http://localhost:8000"
+            class="gs-input mt-2 w-full text-sm py-2 px-3"
+          />
+        </div>
+        <div class="flex gap-3">
+          <GSButton variant="primary" id="save-llm-config">Save LLM Config</GSButton>
+          <GSButton variant="secondary" id="test-llm">Test Connection</GSButton>
+        </div>
+        <p id="llm-message" class="text-sm gs-text-dim"></p>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const loadIntegrations = async () => {
+        const loadingEl = document.getElementById('integrations-loading');
+        const listEl = document.getElementById('integrations-list');
+        const emptyEl = document.getElementById('integrations-empty');
+
+        const totalEl = document.getElementById('total-integrations');
+        const connectedEl = document.getElementById('connected-count');
+        const disconnectedEl = document.getElementById('disconnected-count');
+        const errorEl = document.getElementById('error-count');
+
+        if (loadingEl) loadingEl.style.display = 'block';
+        if (listEl) listEl.style.display = 'none';
+        if (emptyEl) emptyEl.style.display = 'none';
+
+        try {
+          const response = await fetch('/api/integrations/manage?action=list');
+          const data = await response.json();
+
+          if (loadingEl) loadingEl.style.display = 'none';
+
+          if (data.success && data.data) {
+            const { totalIntegrations, connected, disconnected, errors, integrations } = data.data;
+
+            if (totalEl) totalEl.textContent = totalIntegrations.toString();
+            if (connectedEl) connectedEl.textContent = connected.toString();
+            if (disconnectedEl) disconnectedEl.textContent = disconnected.toString();
+            if (errorEl) errorEl.textContent = errors.toString();
+
+            if (totalIntegrations === 0) {
+              if (emptyEl) emptyEl.style.display = 'block';
+            } else {
+              if (listEl) {
+                listEl.innerHTML = Object.entries(integrations || {})
+                  .map(([name, config]) => {
+                    const statusClass = {
+                      connected: 'gs-status--ok',
+                      disconnected: 'gs-status--warn',
+                      error: 'gs-status--err',
+                    }[config.status] || 'gs-status--info';
+
+                    const lastSync = config.lastSync
+                      ? new Date(config.lastSync).toLocaleTimeString()
+                      : 'Never';
+
+                    return `
+                      <div class="gs-card space-y-3 p-4">
+                        <div class="flex items-center justify-between">
+                          <h3 class="font-semibold">${name}</h3>
+                          <span class="${statusClass} text-xs px-2 py-1 rounded">${config.status}</span>
+                        </div>
+                        <p class="text-sm gs-text-dim">${config.provider}</p>
+                        <p class="text-xs gs-text-subtle">Last sync: ${lastSync}</p>
+                        ${config.error ? `<p class="text-xs gs-text-danger">Error: ${config.error}</p>` : ''}
+                        <div class="flex gap-2 pt-2">
+                          <button class="gs-link text-xs" onclick="editIntegration('${name}')">Edit</button>
+                          <button class="gs-link text-xs text-danger" onclick="deleteIntegration('${name}')">Delete</button>
+                        </div>
+                      </div>
+                    `;
+                  })
+                  .join('');
+                if (listEl) listEl.style.display = 'grid';
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error loading integrations:', error);
+          if (emptyEl) emptyEl.style.display = 'block';
+        }
+      };
+
+      const loadAvailableIntegrations = async () => {
+        try {
+          const response = await fetch('/api/integrations/manage?action=definitions');
+          const data = await response.json();
+
+          if (data.success && data.data) {
+            const container = document.getElementById('available-integrations');
+            if (container) {
+              container.innerHTML = Object.values(data.data)
+                .map((def) => `
+                  <div class="gs-card p-4 space-y-3">
+                    <h3 class="font-semibold">${def.name}</h3>
+                    <p class="text-sm gs-text-dim">${def.description}</p>
+                    <button class="gs-link text-sm" onclick="setupIntegration('${def.id}')">
+                      Setup →
+                    </button>
+                  </div>
+                `)
+                .join('');
+            }
+          }
+        } catch (error) {
+          console.error('Error loading available integrations:', error);
+        }
+      };
+
+      document.getElementById('sync-all')?.addEventListener('click', async () => {
+        try {
+          const response = await fetch('/api/integrations/manage?action=sync');
+          const data = await response.json();
+          if (data.success) {
+            loadIntegrations();
+          }
+        } catch (error) {
+          alert('Sync failed: ' + error);
+        }
+      });
+
+      document.getElementById('llm-provider')?.addEventListener('change', (e) => {
+        const baseUrlContainer = document.getElementById('llm-base-url-container');
+        const provider = (e.target).value;
+        if (baseUrlContainer) {
+          baseUrlContainer.style.display = provider === 'openclaw' || provider === 'local' ? 'block' : 'none';
+        }
+      });
+
+      window.editIntegration = (name) => {
+        alert('Edit form for: ' + name);
+      };
+
+      window.deleteIntegration = async (name) => {
+        if (confirm('Delete integration: ' + name + '?')) {
+          try {
+            const response = await fetch('/api/integrations/manage', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'delete',
+                config: { name },
+              }),
+            });
+
+            if (response.ok) {
+              alert('Integration deleted successfully');
+              loadIntegrations();
+            } else {
+              alert('Failed to delete integration');
+            }
+          } catch (error) {
+            alert('Error deleting integration: ' + error);
+          }
+        }
+      };
+
+      window.setupIntegration = (id) => {
+        alert('Setup flow for: ' + id);
+      };
+
+      loadIntegrations();
+      loadAvailableIntegrations();
+      setInterval(loadIntegrations, 60000); // Refresh every minute
+    });
+  </script>
+</AdminLayout>
