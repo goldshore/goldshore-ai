@@ -26,10 +26,15 @@ jobs:
           echo "══════════════════════════════════════════════════════════"
           echo "  CF ACCESS APPLICATIONS — copy AUD values for wrangler"
           echo "══════════════════════════════════════════════════════════"
-          curl -s "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/access/apps" \
+          BODY=$(curl -s "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/access/apps" \
             -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-            -H "Content-Type: application/json" \
-          | jq -r '.result[] | "  \(.name)\n    AUD: \(.aud)\n    domain: \(.domain)\n"'
+            -H "Content-Type: application/json")
+          if ! echo "$BODY" | jq -e '.result != null' >/dev/null 2>&1; then
+            echo "::error::CF API returned null — token may be expired or lacks Access permissions"
+            echo "$BODY" | jq -r '.errors[]? | "  \(.code): \(.message)"' || true
+            exit 1
+          fi
+          echo "$BODY" | jq -r '.result[] | "  \(.name)\n    AUD: \(.aud)\n    domain: \(.domain)\n"'
 
       - name: Discover Workers
         run: |
@@ -37,9 +42,14 @@ jobs:
           echo "══════════════════════════════════════════════════════════"
           echo "  WORKERS"
           echo "══════════════════════════════════════════════════════════"
-          curl -s "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts" \
-            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-          | jq -r '.result[] | "  \(.id)  (modified: \(.modified_on))"'
+          BODY=$(curl -s "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}")
+          if ! echo "$BODY" | jq -e '.result != null' >/dev/null 2>&1; then
+            echo "::error::CF API returned null — token may be expired or lacks Workers permissions"
+            echo "$BODY" | jq -r '.errors[]? | "  \(.code): \(.message)"' || true
+            exit 1
+          fi
+          echo "$BODY" | jq -r '.result[] | "  \(.id)  (modified: \(.modified_on))"'
 
       - name: Discover KV Namespaces
         run: |
@@ -47,9 +57,14 @@ jobs:
           echo "══════════════════════════════════════════════════════════"
           echo "  KV NAMESPACES"
           echo "══════════════════════════════════════════════════════════"
-          curl -s "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/storage/kv/namespaces?per_page=100" \
-            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-          | jq -r '.result[] | "  \(.title)\n    id: \(.id)\n"'
+          BODY=$(curl -s "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/storage/kv/namespaces?per_page=100" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}")
+          if ! echo "$BODY" | jq -e '.result != null' >/dev/null 2>&1; then
+            echo "::error::CF API returned null — token may be expired or lacks KV permissions"
+            echo "$BODY" | jq -r '.errors[]? | "  \(.code): \(.message)"' || true
+            exit 1
+          fi
+          echo "$BODY" | jq -r '.result[] | "  \(.title)\n    id: \(.id)\n"'
 
       - name: Discover D1 Databases
         run: |
@@ -57,9 +72,14 @@ jobs:
           echo "══════════════════════════════════════════════════════════"
           echo "  D1 DATABASES"
           echo "══════════════════════════════════════════════════════════"
-          curl -s "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/d1/database?per_page=100" \
-            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-          | jq -r '.result[] | "  \(.name)\n    id: \(.uuid)\n"'
+          BODY=$(curl -s "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/d1/database?per_page=100" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}")
+          if ! echo "$BODY" | jq -e '.result != null' >/dev/null 2>&1; then
+            echo "::error::CF API returned null — token may be expired or lacks D1 permissions"
+            echo "$BODY" | jq -r '.errors[]? | "  \(.code): \(.message)"' || true
+            exit 1
+          fi
+          echo "$BODY" | jq -r '.result[] | "  \(.name)\n    id: \(.uuid)\n"'
 
       - name: Discover Pages Projects
         run: |
@@ -67,9 +87,14 @@ jobs:
           echo "══════════════════════════════════════════════════════════"
           echo "  PAGES PROJECTS"
           echo "══════════════════════════════════════════════════════════"
-          curl -s "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects" \
-            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-          | jq -r '.result[] | "  \(.name)\n    subdomain: \(.subdomain)\n    build_command: \(.build_config.build_command // "(not set)")\n    output_dir: \(.build_config.destination_dir // "(not set)")\n"'
+          BODY=$(curl -s "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}")
+          if ! echo "$BODY" | jq -e '.result != null' >/dev/null 2>&1; then
+            echo "::error::CF API returned null — token may be expired or lacks Pages permissions"
+            echo "$BODY" | jq -r '.errors[]? | "  \(.code): \(.message)"' || true
+            exit 1
+          fi
+          echo "$BODY" | jq -r '.result[] | "  \(.name)\n    subdomain: \(.subdomain)\n    build_command: \(.build_config.build_command // "(not set)")\n    output_dir: \(.build_config.destination_dir // "(not set)")\n"'
 
       - name: Summary
         run: |
