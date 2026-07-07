@@ -6,7 +6,7 @@ import { proxyToTrading } from '../../../../lib/trading-api';
 export const DELETE: APIRoute = async ({ request, locals, params, url }) => {
   const env = getServerEnv(locals as Record<string, unknown>);
   const access = await requireAdminAccess(request, env, { requiredPermission: 'system:write' });
-  if (!access.ok) {
+  if (access.ok === false) {
     return new Response(JSON.stringify({ error: access.error }), {
       status: access.status,
       headers: { 'Content-Type': 'application/json' },
