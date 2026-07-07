@@ -10,12 +10,12 @@ on:
       skip_revoke:
         description: 'Skip revoking old token (if already rotated)'
         required: false
-        default: 'false'
+        default: false
         type: boolean
       skip_apps:
         description: 'Skip creating Access Applications (only rotate token + set secrets)'
         required: false
-        default: 'false'
+        default: false
         type: boolean
 
 jobs:
@@ -55,7 +55,7 @@ jobs:
       # 1. Revoke compromised service token
       # ------------------------------------------------------------------ #
       - name: Revoke compromised service token
-        if: inputs.skip_revoke != 'true'
+        if: ${{ !inputs.skip_revoke }}
         env:
           CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
@@ -101,7 +101,6 @@ jobs:
 
           echo "token_uuid=$TOKEN_UUID"     >> "$GITHUB_OUTPUT"
           echo "client_id=$CLIENT_ID"       >> "$GITHUB_OUTPUT"
-          # client_secret is single-line base64 — safe for OUTPUT
           echo "client_secret=$CLIENT_SEC"  >> "$GITHUB_OUTPUT"
           echo "Created service token: $CLIENT_ID (UUID: $TOKEN_UUID)"
 
@@ -109,7 +108,7 @@ jobs:
       # 3. Create CF Access Applications + Policies
       # ------------------------------------------------------------------ #
       - name: Create Access Applications and Policies
-        if: inputs.skip_apps != 'true'
+        if: ${{ !inputs.skip_apps }}
         env:
           CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           TOKEN_UUID: ${{ steps.token.outputs.token_uuid }}
@@ -149,7 +148,7 @@ jobs:
           }
 
           create_full_access_app() {
-            # Human users (owner email) + agents (service token)
+            # Human owner (email OTP) + agents (service token)
             local name="$1" domain="$2"
             AID=$(make_app "$name" "$domain")
             [ -z "$AID" ] && { echo "WARNING: failed to create $name"; return; }
@@ -167,15 +166,15 @@ jobs:
             add_policy "$AID" "Goldshore agents only" "non_identity" "$SERVICE_INCLUDE"
           }
 
-          # Human + agent access
+          # Human + agent access (browser clients call these directly)
           create_full_access_app "Dashboard" "goldshore.ai/app"
           create_full_access_app "Admin"     "admin.goldshore.org"
           create_full_access_app "Trading"   "goldshore.org/dash"
           create_full_access_app "Signals"   "signals.goldshore.ai"
+          create_full_access_app "API"       "api.goldshore.ai"
 
           # Agent / machine-to-machine only
           create_agent_app "MCP"     "mcp.goldshore.ai"
-          create_agent_app "API"     "api.goldshore.ai"
           create_agent_app "Agent"   "agent.goldshore.ai"
           create_agent_app "Gateway" "gateway.goldshore.ai"
 
@@ -199,9 +198,9 @@ jobs:
           done
 
       # ------------------------------------------------------------------ #
-      # 5. Set Worker secrets for the agent Worker itself
+      # 5. Push CF_ACCESS credentials into Worker secrets
       # ------------------------------------------------------------------ #
-      - name: Push CF_ACCESS secrets into gs-agent Worker secrets
+      - name: Push CF_ACCESS secrets into Worker secrets
         env:
           CF_TOKEN:   ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLIENT_ID:  ${{ steps.token.outputs.client_id }}
@@ -237,11 +236,12 @@ jobs:
             echo ""
             echo "| Item | Value |"
             echo "|------|-------|"
-            echo "| Service token | \`$TOKEN_UUID\` |"
+            echo "| Service token UUID | \`$TOKEN_UUID\` |"
             echo "| CF-Access-Client-Id | \`$CLIENT_ID\` |"
             echo "| GitHub secrets | goldshore-ai, goldshore-gateway, goldclaw |"
             echo "| Worker secrets | gs-agent, gs-agent-prod, gs-mcp, gs-api, gs-gateway-prod |"
-            echo "| Access Apps | Dashboard, Admin, Trading, Signals, MCP, API, Agent, Gateway |"
+            echo "| Full-access apps | Dashboard, Admin, Trading, Signals, API |"
+            echo "| Agent-only apps | MCP, Agent, Gateway |"
             echo ""
             echo "> CF-Access-Client-Secret is stored in secrets only — never printed here."
           } >> "$GITHUB_STEP_SUMMARY"
