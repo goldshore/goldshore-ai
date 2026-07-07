@@ -28,7 +28,7 @@ concurrency:
 
 env:
   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN || secrets.CLOUDFLARE_API_TOKEN || secrets.CF_WORKERS_BUILDS }}
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
 
 # Manual canonical deploy dispatcher. Normal pushes are handled by the
 # app-specific deploy workflows; this avoids duplicate deploys and Cloudflare
@@ -118,13 +118,13 @@ jobs:
       - name: Skip if not targeted
         if: github.event_name == 'workflow_dispatch' && inputs.target != 'all' && inputs.target != matrix.app
         run: echo "Skipping ${{ matrix.app }} (target=${{ inputs.target }})" && exit 0
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == matrix.app
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         if: github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == matrix.app
         with:
           version: 9.15.4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         if: github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == matrix.app
         with:
           node-version: 22

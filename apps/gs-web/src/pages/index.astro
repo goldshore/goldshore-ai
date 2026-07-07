@@ -75,6 +75,13 @@ const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Aut
 <header class="topbar">
   <a class="brand" href="/" aria-label="GoldShore home">
     <span class="brand-wordmark">GOLDSHORE</span>
+<canvas id="starfield" aria-hidden="true"></canvas>
+
+<header class="topbar">
+  <a class="brand" href="/">
+    <span class="coords">40°42′45″N<br />74°00′21″W</span>
+    <span class="mark">GS·LAB·v2.84</span>
+    <span><strong>Gold Shore Labs</strong><em>GoldShore</em></span>
   </a>
   <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
     <span></span><span></span><span></span>
@@ -544,42 +551,115 @@ window.addEventListener('load', function () {
           intelligence.
         </h2>
       </div>
-      <div class="team-row">
-        <article class="team-card team-card--founder">
-          <h3>Robert M.</h3>
-          <p>Leads product direction, systems strategy, and applied intelligence.</p>
-        </article>
-        <article class="team-card">
-          <h3>Systems</h3>
-          <p>Infrastructure, execution, observability.</p>
-        </article>
-        <article class="team-card">
-          <h3>Risk</h3>
-          <p>Monitoring, analytics, decision systems.</p>
-        </article>
-      </div>
-    </section>
+    </div>
+  </div>
+</section>
 
-    <footer
-      class="section-block gs-shell-section contact-cta"
-      aria-labelledby="contact-cta-title"
-    >
-      <div>
-        <p class="gs-eyebrow">Next step</p>
-        <h2 id="contact-cta-title">
-          Need a deeper implementation view? Visit our services overview.
-        </h2>
-        <p>
-          We will translate your current workflow into a measured implementation
-          plan with instrumentation requirements and review checkpoints.
-        </p>
+<!-- ── Approach / Principles ──────────────────────────────────────────────── -->
+<section class="approach" id="about" data-reveal>
+  <div class="section-head">
+    <div>
+      <p class="kicker">05 — Approach</p>
+      <h2>How We Work.</h2>
+    </div>
+  </div>
+  <div class="inner">
+    {principles.map(([num,title,body]) => (
+      <div class="approach-item">
+        <div class="approach-num">{num}</div>
+        <h3>{title}</h3>
+        <p>{body}</p>
       </div>
-      <a
-        href="/contact"
-        class="hero-button hero-button--primary"
-        data-analytics-event="homepage_cta_bottom_click"
-      >
-        Talk with GoldShore
+    ))}
+  </div>
+</section>
+
+<!-- ── Engage ─────────────────────────────────────────────────────────────── -->
+<section class="engage" data-reveal id="engage">
+  <div>
+    <p class="kicker">06 — Engage</p>
+    <h2>Ready to<br />Operationalize.</h2>
+    <p>Whether you need a strategic briefing, a technical audit, a delivered product, or an embedded AI system — the conversation starts here.</p>
+    <div class="actions">
+      <a class="btn primary magnetic" href="mailto:hello@goldshore.ai?subject=Gold%20Shore%20Briefing%20Request">Request Briefing →</a>
+      <a class="btn magnetic" href="/developer">Developer Hub →</a>
+    </div>
+  </div>
+  <form class="quick-form" id="quick-form" method="POST" action="/api/contact">
+    <h3>Quick Inquiry</h3>
+    <input type="hidden" name="formType" value="homepage-inquiry" />
+    <input type="hidden" name="redirectTo" value="/thank-you" />
+    <input type="hidden" name="formStartedAt" id="qs-form-started" value="" />
+    <input type="hidden" name="dedupeKey" id="qs-dedupe-key" value="" />
+    <div class="gs-honeypot"><input name="companyWebsite" tabindex="-1" autocomplete="off" /></div>
+    <div class="form-row">
+      <label>Name<input name="name" required placeholder="Your name" /></label>
+      <label>Organisation<input name="company" placeholder="Firm or company" /></label>
+    </div>
+    <label>Work Email<input name="email" type="email" required placeholder="you@firm.com" /></label>
+    <label>Interest
+      <select name="inquiry" required>
+        <option value="">Select area of interest</option>
+        <option value="general">General Enquiry</option>
+        <option value="strategy-call">Strategy Call</option>
+        <option value="project-scope">Project Scope</option>
+        <option value="support">Support</option>
+      </select>
+    </label>
+    <label>Message
+      <textarea name="message" id="qs-message" required rows="4" placeholder="Tell us about your inquiry (20+ characters)…"></textarea>
+    </label>
+    <div id="qs-form-status" class="form-status" aria-live="polite"></div>
+    <button type="submit" class="btn-form" id="qs-submit">Submit Request →</button>
+  </form>
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <div>
+    <h2>GoldShore</h2>
+    <p>Applied Intelligence · Digital Systems · Consulting</p>
+    <p>Institutional AI systems, risk tooling, and resilient operator infrastructure. Cross-sector. Full-stack. Built to last.</p>
+  </div>
+  <div>
+    <h3>Platform</h3>
+    <p><a href="/risk-radar/">Risk Radar</a></p>
+    <p><a href="/platform/financial-signals">Financial Signals</a></p>
+    <p><a href="/platform/workflow-engine">Workflow Engine</a></p>
+    <p><a href="/platform/sentinel">Sentinel</a></p>
+    <p><a href="/platform/ai-oracle">AI Oracle</a></p>
+  </div>
+  <div>
+    <h3>Services</h3>
+    <p><a href="/services/digital-strategy">Digital Strategy</a></p>
+    <p><a href="/services/ai-implementation">AI Implementation</a></p>
+    <p><a href="/services/systems-integration">Systems Integration</a></p>
+    <p><a href="/services/design-dev">Design &amp; Development</a></p>
+    <p><a href="/services/consulting">Enterprise Consulting</a></p>
+  </div>
+  <div>
+    <h3>Company</h3>
+    <p><a href="/about/">About</a></p>
+    <p><a href="/team/">Team</a></p>
+    <p><a href="/developer/">Developer Hub</a></p>
+    <p><a href="/status/">Status</a></p>
+    <p><a href="/contact/">Contact</a></p>
+  </div>
+  <small>© 2026 Gold Shore Labs. All rights reserved. 40°42′N · 074°00′W · goldshore.ai · <a href="/legal/privacy">Privacy</a> · <a href="/legal/">Security</a> · <a href="/legal/terms">Terms</a></small>
+</footer>
+
+<!-- ── Access Modal ──────────────────────────────────────────────────────── -->
+<dialog id="access-modal" class="access-modal" aria-labelledby="access-modal-title">
+  <div class="modal-inner">
+    <button class="modal-close" aria-label="Close">✕</button>
+    <h2 id="access-modal-title">Access Goldshore</h2>
+    <p class="modal-lead">Select a destination to continue.</p>
+    <div class="modal-grid">
+      <a href="https://dashboard.goldshore.ai" class="modal-card" rel="noopener noreferrer" target="_blank">
+        <span class="modal-icon">⬡</span>
+        <strong>Dashboard</strong>
+        <span>Portfolio &amp; signals</span>
       </a>
     </footer>
   </main>
@@ -1022,6 +1102,160 @@ window.addEventListener('load', function () {
   });
 
 }, { once: true, passive: true });
+      <a href="https://admin.goldshore.org" class="modal-card" rel="noopener noreferrer" target="_blank">
+        <span class="modal-icon">◈</span>
+        <strong>Admin</strong>
+        <span>Organisation management</span>
+      </a>
+      <a href="https://goldshore.org/dash" class="modal-card" rel="noopener noreferrer" target="_blank">
+        <span class="modal-icon">◇</span>
+        <strong>Trading</strong>
+        <span>Active positions</span>
+      </a>
+      <a href="/developer/mcp" class="modal-card">
+        <span class="modal-icon">⬢</span>
+        <strong>MCP</strong>
+        <span>Model Context Protocol</span>
+      </a>
+      <a href="https://api.goldshore.ai" class="modal-card" rel="noopener noreferrer" target="_blank">
+        <span class="modal-icon">◉</span>
+        <strong>API</strong>
+        <span>Developer access</span>
+      </a>
+    </div>
+    <p class="modal-contact">Need access? <a href="/contact/">Contact us →</a></p>
+  </div>
+</dialog>
+
+<script is:inline>
+/* ── Starfield ────────────────────────────────────────────────────────────── */
+(function () {
+  const canvas = document.getElementById('starfield');
+  if (!canvas || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const ctx = canvas.getContext('2d');
+  let stars = [];
+  function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  function init() {
+    stars = Array.from({ length: 160 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 1.2,
+      a: Math.random() * Math.PI * 2,
+      s: 0.0002 + Math.random() * 0.0003,
+    }));
+  }
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    stars.forEach(s => {
+      s.a += s.s;
+      const alpha = 0.2 + 0.5 * Math.abs(Math.sin(s.a));
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(236,234,228,${alpha})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  resize(); init(); draw();
+  window.addEventListener('resize', () => { resize(); init(); }, { passive: true });
+})();
+
+/* ── Scroll reveal ────────────────────────────────────────────────────────── */
+document.documentElement.classList.add('js-ready');
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('is-visible'); io.unobserve(e.target); }
+  });
+}, { threshold: 0.1 });
+document.querySelectorAll('[data-reveal], .sector-grid article, .cap-list article, .telemetry-grid article')
+  .forEach(el => io.observe(el));
+
+/* ── Magnetic buttons ─────────────────────────────────────────────────────── */
+if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  document.querySelectorAll('.magnetic').forEach(el => {
+    el.addEventListener('pointermove', e => {
+      const r = el.getBoundingClientRect();
+      el.style.setProperty('--mx', `${(e.clientX - r.left - r.width  / 2) * 0.12}px`);
+      el.style.setProperty('--my', `${(e.clientY - r.top  - r.height / 2) * 0.12}px`);
+    });
+    el.addEventListener('pointerleave', () => {
+      el.style.setProperty('--mx', '0px');
+      el.style.setProperty('--my', '0px');
+    });
+  });
+}
+
+/* ── Ping on click ────────────────────────────────────────────────────────── */
+document.querySelectorAll('.ticker-item, .anomaly, .metrics div').forEach(el => {
+  el.addEventListener('click', () => {
+    el.classList.remove('is-pinged');
+    void el.offsetWidth;
+    el.classList.add('is-pinged');
+  });
+});
+
+/* ── Hamburger nav toggle ─────────────────────────────────────────────────── */
+const navToggle = document.getElementById('nav-toggle');
+const mainNav   = document.getElementById('main-nav');
+navToggle?.addEventListener('click', () => {
+  const open = mainNav.classList.toggle('nav-open');
+  navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+});
+
+/* ── Access modal ─────────────────────────────────────────────────────────── */
+const accessModal = document.getElementById('access-modal');
+document.getElementById('open-access-modal')?.addEventListener('click', () => accessModal?.showModal());
+document.querySelector('.modal-close')?.addEventListener('click', () => accessModal?.close());
+accessModal?.addEventListener('click', e => { if (e.target === accessModal) accessModal.close(); });
+
+/* ── Quick engage form ────────────────────────────────────────────────────── */
+const qsForm    = document.getElementById('quick-form');
+const qsStarted = document.getElementById('qs-form-started');
+const qsStatus  = document.getElementById('qs-form-status');
+const qsSubmit  = document.getElementById('qs-submit');
+
+if (qsStarted) qsStarted.value = Date.now().toString();
+
+qsForm?.addEventListener('submit', async e => {
+  e.preventDefault();
+  const fd  = new FormData(qsForm);
+  const msg = (fd.get('message') || '').toString().trim();
+  if (msg.length < 20) {
+    qsStatus.textContent = 'Message must be at least 20 characters.';
+    qsStatus.className = 'form-status';
+    return;
+  }
+  qsStatus.textContent = '';
+  qsSubmit.disabled = true;
+  qsSubmit.textContent = 'Sending…';
+  try {
+    const raw = `${fd.get('formType')}|${fd.get('name')}|${fd.get('email')}|${fd.get('inquiry')}|${msg}`;
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
+    document.getElementById('qs-dedupe-key').value = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+    const res  = await fetch('/api/contact', {
+      method: 'POST',
+      headers: { 'x-gs-request-mode': 'spa', 'Accept': 'application/json' },
+      body: new FormData(qsForm),
+    });
+    if (res.ok) {
+      window.location.href = '/thank-you';
+    } else {
+      const data = await res.json().catch(() => ({}));
+      qsStatus.textContent = data.error || 'Something went wrong. Please try again.';
+      qsStatus.className = 'form-status';
+      qsSubmit.disabled = false;
+      qsSubmit.textContent = 'Submit Request →';
+    }
+  } catch {
+    qsStatus.textContent = 'Network error. Please try again.';
+    qsStatus.className = 'form-status';
+    qsSubmit.disabled = false;
+    qsSubmit.textContent = 'Submit Request →';
+  }
+});
 </script>
 
 </body>

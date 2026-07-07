@@ -7,6 +7,8 @@ import {
 } from '../data/status';
 import BaseLayout from '../layouts/BaseLayout.astro';
 
+export const prerender = true;
+
 const snapshot = statusSnapshot;
 const summary = getStatusSummary(snapshot.components);
 const lastUpdated = new Intl.DateTimeFormat('en-US', {

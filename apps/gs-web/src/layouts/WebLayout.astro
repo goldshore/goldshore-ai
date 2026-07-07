@@ -5,6 +5,7 @@ import '@goldshore/theme/styles/tokens.css';
 import '@goldshore/theme/styles/base.css';
 import '@goldshore/theme/styles/components.css';
 import '@goldshore/theme/styles/layout.css';
+import '../styles/global.css';
 import Logo from '../components/brand/Logo.astro';
 import { HTML_CSP_META_FALLBACK } from '../security/policy';
 import { WEB_META_CSP } from '../utils/csp';
@@ -29,7 +30,7 @@ const navLinks = [
   { href: '/team', label: 'Team' },
   { href: '/contact?inquiry=strategy-call', label: 'Book Strategy Call' },
   { href: '/contact', label: 'Contact' },
-  { href: '/apps/risk-radar', label: 'Risk Radar' },
+  { href: '/risk-radar', label: 'Risk Radar' },
   { href: '/developer', label: 'Developer Hub' },
 ];
 const footerLinks = [

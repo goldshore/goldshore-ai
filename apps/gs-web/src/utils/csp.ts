@@ -1,9 +1,3 @@
-export function serializeCsp(directives: ContentSecurityPolicyDirectives): string {
-  return Object.entries(directives)
-    .map(([directive, sources]) => `${directive} ${sources.join(' ')}`)
-    .join('; ');
-}
-
 const SELF = "'self'";
 const UNSAFE_INLINE = "'unsafe-inline'";
 const NONE = "'none'";
