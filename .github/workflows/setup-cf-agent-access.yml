@@ -1,8 +1,12 @@
 name: Setup CF Agent Access
 
-# Rotates the CF Access Service Token, creates all Access Applications,
+# Rotates the CF Access Service Token, upserts all Access Applications,
 # and propagates CF_ACCESS_CLIENT_ID / CF_ACCESS_CLIENT_SECRET to all repos.
 # Run manually: Actions → Setup CF Agent Access → Run workflow.
+#
+# skip_revoke: skip revoking the old token (e.g. already rotated)
+# skip_apps:   skip creating brand-new Access apps — existing apps always
+#              have their policies refreshed with the new token UUID
 
 on:
   workflow_dispatch:
@@ -13,7 +17,7 @@ on:
         default: false
         type: boolean
       skip_apps:
-        description: 'Skip creating Access Applications (only rotate token + set secrets)'
+        description: 'Skip creating NEW Access apps (existing apps still get updated policies)'
         required: false
         default: false
         type: boolean
@@ -27,8 +31,6 @@ jobs:
     env:
       CF_ACCOUNT: f77de112d2019e5456a3198a8bb50bd2
       CF_API: https://api.cloudflare.com/client/v4
-      # Client ID of the compromised token shared in plain text.
-      # The revoke step will delete it if still present.
       OLD_CLIENT_ID: 9ca952086adc30cf53634d78d099ce58.access
 
     steps:
@@ -105,13 +107,17 @@ jobs:
           echo "Created service token: $CLIENT_ID (UUID: $TOKEN_UUID)"
 
       # ------------------------------------------------------------------ #
-      # 3. Create CF Access Applications + Policies
+      # 3. Upsert Access Applications + Policies
+      #
+      # Always runs — even when skip_apps=true — so that existing Access apps
+      # get their policies updated with the newly-created token UUID.
+      # skip_apps only suppresses creation of brand-new apps.
       # ------------------------------------------------------------------ #
-      - name: Create Access Applications and Policies
-        if: ${{ !inputs.skip_apps }}
+      - name: Upsert Access Applications and Policies
         env:
           CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           TOKEN_UUID: ${{ steps.token.outputs.token_uuid }}
+          SKIP_NEW_APPS: ${{ inputs.skip_apps }}
         run: |
           set -euo pipefail
 
@@ -120,8 +126,14 @@ jobs:
           OWNER_INCLUDE=$(jq -nc \
             '[{"email":{"email":"marstonr6@gmail.com"}}]')
 
-          # extra_domains: JSON array of additional hostnames to attach to the same app.
-          # Passing an empty array [] means only the primary domain is used.
+          find_app() {
+            local name="$1"
+            curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps" \
+              -H "Authorization: Bearer $CF_TOKEN" | \
+            jq -r --arg n "$name" \
+              '[.result[] | select(.name == $n)] | first | .id // empty'
+          }
+
           make_app() {
             local name="$1" domain="$2" extra_domains="${3:-[]}"
             jq -nc \
@@ -153,41 +165,65 @@ jobs:
               --data @- | jq -r '"  policy \(.result.name // "?") => \(.success)"'
           }
 
-          create_full_access_app() {
-            # Human owner (email OTP) + agents (service token)
-            # Optional $3: JSON array of extra hostnames for self_hosted_domains
-            local name="$1" domain="$2" extra_domains="${3:-[]}"
-            AID=$(make_app "$name" "$domain" "$extra_domains")
-            [ -z "$AID" ] && { echo "WARNING: failed to create $name"; return; }
-            echo "Created app [$name]: $AID"
-            add_policy "$AID" "Goldshore agents"  "non_identity" "$SERVICE_INCLUDE"
-            add_policy "$AID" "Owner access"      "allow"        "$OWNER_INCLUDE"
+          refresh_policies() {
+            local app_id="$1"
+            curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies" \
+              -H "Authorization: Bearer $CF_TOKEN" | \
+            jq -r '.result[].id // empty' | \
+            while read -r pol_id; do
+              [ -z "$pol_id" ] && continue
+              curl -sf -X DELETE \
+                "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies/$pol_id" \
+                -H "Authorization: Bearer $CF_TOKEN" > /dev/null
+              echo "  Deleted old policy: $pol_id"
+            done
           }
 
-          create_agent_app() {
-            # Service token only — no human SSO
-            # Optional $3: JSON array of extra hostnames for self_hosted_domains
+          upsert_full_access() {
             local name="$1" domain="$2" extra_domains="${3:-[]}"
-            AID=$(make_app "$name" "$domain" "$extra_domains")
-            [ -z "$AID" ] && { echo "WARNING: failed to create $name"; return; }
-            echo "Created app [$name]: $AID"
-            add_policy "$AID" "Goldshore agents only" "non_identity" "$SERVICE_INCLUDE"
+            AID=$(find_app "$name")
+            if [ -n "$AID" ]; then
+              echo "Refreshing policies on existing app [$name]: $AID"
+              refresh_policies "$AID"
+              add_policy "$AID" "Goldshore agents" "non_identity" "$SERVICE_INCLUDE"
+              add_policy "$AID" "Owner access"     "allow"        "$OWNER_INCLUDE"
+            elif [ "$SKIP_NEW_APPS" = "true" ]; then
+              echo "INFO: No existing [$name] app and skip_apps=true — skipped."
+            else
+              AID=$(make_app "$name" "$domain" "$extra_domains")
+              [ -z "$AID" ] && { echo "WARNING: failed to create $name"; return; }
+              echo "Created app [$name]: $AID"
+              add_policy "$AID" "Goldshore agents" "non_identity" "$SERVICE_INCLUDE"
+              add_policy "$AID" "Owner access"     "allow"        "$OWNER_INCLUDE"
+            fi
           }
 
-          # Human + agent access (browser clients call these directly)
-          # Dashboard: protect the /app path only (keeps / public)
-          create_full_access_app "Dashboard" "goldshore.ai/app"
-          # Admin: canonical hostname is admin.goldshore.ai; .org is an alias
-          create_full_access_app "Admin"     "admin.goldshore.ai" '["admin.goldshore.org"]'
-          create_full_access_app "Trading"   "goldshore.org/dash"
-          create_full_access_app "Signals"   "signals.goldshore.ai"
-          # API: scope to /app path so /health, /version, / remain publicly reachable
-          create_full_access_app "API"       "api.goldshore.ai/app"
+          upsert_agent_app() {
+            local name="$1" domain="$2" extra_domains="${3:-[]}"
+            AID=$(find_app "$name")
+            if [ -n "$AID" ]; then
+              echo "Refreshing policies on existing app [$name]: $AID"
+              refresh_policies "$AID"
+              add_policy "$AID" "Goldshore agents only" "non_identity" "$SERVICE_INCLUDE"
+            elif [ "$SKIP_NEW_APPS" = "true" ]; then
+              echo "INFO: No existing [$name] app and skip_apps=true — skipped."
+            else
+              AID=$(make_app "$name" "$domain" "$extra_domains")
+              [ -z "$AID" ] && { echo "WARNING: failed to create $name"; return; }
+              echo "Created app [$name]: $AID"
+              add_policy "$AID" "Goldshore agents only" "non_identity" "$SERVICE_INCLUDE"
+            fi
+          }
 
-          # Agent / machine-to-machine only
-          create_agent_app "MCP"     "mcp.goldshore.ai"
-          create_agent_app "Agent"   "agent.goldshore.ai"
-          create_agent_app "Gateway" "gateway.goldshore.ai"
+          upsert_full_access "Dashboard" "goldshore.ai/app"
+          upsert_full_access "Admin"     "admin.goldshore.ai" '["admin.goldshore.org"]'
+          upsert_full_access "Trading"   "goldshore.org/dash"
+          upsert_full_access "Signals"   "signals.goldshore.ai"
+          upsert_full_access "API"       "api.goldshore.ai"
+
+          upsert_agent_app "MCP"     "mcp.goldshore.ai"
+          upsert_agent_app "Agent"   "agent.goldshore.ai"
+          upsert_agent_app "Gateway" "gw.goldshore.ai" '["gateway.goldshore.ai"]'
 
       # ------------------------------------------------------------------ #
       # 4. Propagate secrets to all repos
@@ -251,8 +287,8 @@ jobs:
             echo "| CF-Access-Client-Id | \`$CLIENT_ID\` |"
             echo "| GitHub secrets | goldshore-ai, goldshore-gateway, goldclaw |"
             echo "| Worker secrets | gs-agent, gs-agent-prod, gs-mcp, gs-api, gs-gateway-prod |"
-            echo "| Full-access apps | Dashboard (/app), Admin (.ai+.org), Trading, Signals, API (/app) |"
-            echo "| Agent-only apps | MCP, Agent, Gateway |"
+            echo "| Full-access apps | Dashboard, Admin (.ai+.org), Trading, Signals, API |"
+            echo "| Agent-only apps | MCP, Agent, Gateway (gw.goldshore.ai+alias) |"
             echo ""
             echo "> CF-Access-Client-Secret is stored in secrets only — never printed here."
           } >> "$GITHUB_STEP_SUMMARY"
