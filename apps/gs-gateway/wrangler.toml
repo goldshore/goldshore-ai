@@ -9,7 +9,8 @@ workers_dev = false
 
 routes = [
   { pattern = "gw.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" }
+  { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "dashboard.goldshore.ai", custom_domain = true }
 ]
 
 [env.prod]

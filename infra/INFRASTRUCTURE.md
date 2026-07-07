@@ -111,6 +111,13 @@
 | `api.goldshore.ai` | `gs-api` | 2 (auth) | Direct API route; fail closed; /health /version /status public |
 | `agent.goldshore.ai` | `gs-gateway-prod` → `gs-agent-prod` | 2 (auth) | Fail closed |
 | `trading.goldshore.ai` | `gs-trading-prod` | 3 (admin) | Fail closed |
+| `goldshore.ai` | `gs-web` (Pages) | 1 (public) | Canonical hostname |
+| `www.goldshore.ai` | `gs-www-redirect` | 1 (public) | 308 → goldshore.ai |
+| `dashboard.goldshore.ai` | `gs-gateway` | 1 (public) | 308 → admin.goldshore.ai |
+| `gw.goldshore.ai` | `gs-gateway` | 2 (auth) | Fail closed |
+| `api.goldshore.ai` | `gs-api` | 2 (auth) | Fail closed; /health /version /status public; route must stay on the API Worker while it validates the API Access AUD |
+| `agent.goldshore.ai` | `gs-gateway` → `gs-agent` | 2 (auth) | Fail closed |
+| `trading.goldshore.ai` | `gs-trading` | 3 (admin) | Fail closed |
 | `ops.goldshore.ai` | `gs-control` | 3 (admin) | Fail closed |
 | `admin.goldshore.ai` | `gs-admin` (Pages) | 3 (admin) | Fail closed |
 | `admin.goldshore.org` | `gs-admin` (Pages) | 3 (admin) | Same app as admin.goldshore.ai |
