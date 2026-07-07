@@ -167,18 +167,24 @@ jobs:
               '[.result[] | select(.name == $n)] | first | .id // empty'
           }
 
-          # PATCH existing app domain/self_hosted_domains so stale bindings from
-          # prior runs are corrected (e.g. old Trading domain, old Gateway aliases)
-          patch_app_domains() {
-            local app_id="$1" domain="$2" extra_domains="${3:-[]}"
+          # PUT existing app with full body so stale domain/path bindings from
+          # prior runs are corrected. CF Access uses PUT (not PATCH) for updates;
+          # a PATCH would fail under set -euo pipefail after token revoke.
+          update_app() {
+            local app_id="$1" name="$2" domain="$3" extra_domains="${4:-[]}"
             jq -nc \
+              --arg n "$name" \
               --arg d "$domain" \
               --argjson ed "$extra_domains" \
-              '{domain:$d,self_hosted_domains:([$d] + $ed)}' | \
-            curl -sf -X PATCH "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id" \
+              '{name:$n,type:"self_hosted",domain:$d,
+                self_hosted_domains:([$d] + $ed),
+                session_duration:"24h",
+                http_only_cookie_attribute:true,
+                auto_redirect_to_identity:false}' | \
+            curl -sf -X PUT "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id" \
               -H "Authorization: Bearer $CF_TOKEN" \
               -H "Content-Type: application/json" \
-              --data @- | jq -r '"  patched domains => \(.success)"'
+              --data @- | jq -r '"  updated app => \(.success)"'
           }
 
           # Create a new app and return the full CF response JSON.
@@ -237,8 +243,8 @@ jobs:
             local name="$1" domain="$2" extra_domains="${3:-[]}" aud_workers="${4:-}"
             AID=$(find_app "$name")
             if [ -n "$AID" ]; then
-              echo "Found existing app [$name]: $AID — patching domains and refreshing policies"
-              patch_app_domains "$AID" "$domain" "$extra_domains"
+              echo "Found existing app [$name]: $AID — updating and refreshing policies"
+              update_app "$AID" "$name" "$domain" "$extra_domains"
               refresh_policies "$AID"
               add_policy "$AID" "Goldshore agents" "non_identity" "$SERVICE_INCLUDE"
               add_policy "$AID" "Owner access"     "allow"        "$OWNER_INCLUDE"
@@ -262,8 +268,7 @@ jobs:
           }
 
           # upsert_bypass_app: creates a path-scoped Access app with a bypass-everyone policy.
-          # Used for public paths that must not hit the Access login wall:
-          # Trading OAuth callbacks, API/Gateway public probes.
+          # Used for public paths that must not hit the Access login wall.
           # CF Access resolves the more-specific path-scoped app before the broader allow app.
           upsert_bypass_app() {
             local name="$1" domain="$2" extra_domains="${3:-[]}"
@@ -293,10 +298,16 @@ jobs:
           # than the broader allow apps that cover the same hostnames.
           # ------------------------------------------------------------------
 
-          # Trading: Schwab/Robinhood redirect to these without an Access session
-          upsert_bypass_app "GoldShore Trading - OAuth Bypass" \
-            "trading.goldshore.ai/oauth" \
-            '["dashboard.goldshore.ai/oauth","dash.goldshore.ai/oauth"]'
+          # Trading OAuth: only the broker redirect-target callbacks bypass Access.
+          # /oauth/schwab/authorize and /oauth/robinhood/token remain behind Access
+          # (operator-only broker auth initiation paths per routes/oauth.ts).
+          upsert_bypass_app "GoldShore Trading - Schwab Callback" \
+            "trading.goldshore.ai/oauth/schwab/callback" \
+            '["dashboard.goldshore.ai/oauth/schwab/callback","dash.goldshore.ai/oauth/schwab/callback"]'
+
+          upsert_bypass_app "GoldShore Trading - Robinhood Callback" \
+            "trading.goldshore.ai/oauth/robinhood/callback" \
+            '["dashboard.goldshore.ai/oauth/robinhood/callback","dash.goldshore.ai/oauth/robinhood/callback"]'
 
           # API: /health, /status, /version must be reachable by monitoring
           upsert_bypass_app "Goldshore API - Public Probes" \
@@ -399,7 +410,7 @@ jobs:
             echo "| CF-Access-Client-Id | \`$CLIENT_ID\` |"
             echo "| GitHub secrets | goldshore-ai, goldshore-gateway, goldclaw |"
             echo "| Worker secrets | gs-agent, gs-agent-prod, gs-mcp, gs-api, gs-api-prod, gs-gateway-prod |"
-            echo "| Bypass apps | Trading OAuth, API Probes, Gateway Probes |"
+            echo "| Bypass apps | Schwab Callback, Robinhood Callback, API Probes, Gateway Probes |"
             echo "| Full-access apps | Dashboard, GoldShore Admin, GoldShore Trading, Goldshore Ops, Signals, Goldshore API, GoldShore MCP, Goldshore Gateway, GoldShore-Web-Preview |"
             echo ""
             echo "> CF-Access-Client-Secret is stored in secrets only — never printed here."
