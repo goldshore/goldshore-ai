@@ -309,10 +309,10 @@ jobs:
             "trading.goldshore.ai/oauth/robinhood/callback" \
             '["dashboard.goldshore.ai/oauth/robinhood/callback","dash.goldshore.ai/oauth/robinhood/callback"]'
 
-          # API: /health, /status, /version must be reachable by monitoring
+          # API: /, /health, /status, /version must be reachable by monitoring
           upsert_bypass_app "Goldshore API - Public Probes" \
             "api.goldshore.ai/health" \
-            '["api.goldshore.ai/status","api.goldshore.ai/version"]'
+            '["api.goldshore.ai/status","api.goldshore.ai/version","api.goldshore.ai/"]'
 
           # Gateway: /health, /status, /version must be reachable by monitoring
           upsert_bypass_app "Goldshore Gateway - Public Probes" \

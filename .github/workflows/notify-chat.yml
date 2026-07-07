@@ -65,7 +65,7 @@ jobs:
           HAS_CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
           HAS_DEPLOY_TOKEN: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN != '' }}
           HAS_GCHAT: ${{ secrets.GOOGLE_CHAT_WEBHOOK != '' }}
-          HAS_GOOGLE_CLIENT: ${{ secrets.GOOGLE_CLIENT_ID != '' }}
+          HAS_GOOGLE_OAUTH_CLIENT: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID != '' }}
           HAS_ADS_TOKEN: ${{ secrets.GOOGLE_ADS_DEVELOPER_TOKEN != '' }}
         run: |
           if [ -z "$WEBHOOK" ]; then
@@ -85,7 +85,7 @@ jobs:
           MSG+="  CLOUDFLARE_DEPLOY_TOKEN: $(check $HAS_DEPLOY_TOKEN)\n"
           MSG+="  -> Renew at: https://dash.cloudflare.com/profile/api-tokens\n\n"
           MSG+="*Google APIs*\n"
-          MSG+="  GOOGLE_CLIENT_ID: $(check $HAS_GOOGLE_CLIENT)\n"
+          MSG+="  GOOGLE_OAUTH_CLIENT_ID: $(check $HAS_GOOGLE_OAUTH_CLIENT)\n"
           MSG+="  GOOGLE_ADS_DEVELOPER_TOKEN: $(check $HAS_ADS_TOKEN)\n"
           MSG+="  -> Set up at: https://console.cloud.google.com/apis/credentials\n"
           MSG+="  -> Ads token: https://ads.google.com/aw/apicenter\n\n"
