@@ -12,11 +12,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: "pnpm"
@@ -35,7 +37,24 @@ jobs:
       - name: Build all
         run: pnpm -r --sequential build
 
+      - name: Detect gs-web release-impact changes
+        id: gs-web-changes
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            RANGE="origin/${{ github.base_ref }}...HEAD"
+          else
+            RANGE="${{ github.event.before }}...${{ github.sha }}"
+          fi
+
+          if git diff --name-only "$RANGE" | grep -Eq '^(apps/gs-web/|packages/|package.json|pnpm-lock.yaml|pnpm-workspace.yaml|turbo.json)$'; then
+            echo "release_impact=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "release_impact=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: gs-web release quality gate
+        if: steps.gs-web-changes.outputs.release_impact == 'true'
         working-directory: apps/gs-web
         env:
           # CI baseline; raise once core vitals are addressed (images, JS bundles)
