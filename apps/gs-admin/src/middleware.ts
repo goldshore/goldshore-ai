@@ -1,5 +1,4 @@
 import { onRequest as baseMiddleware } from "@goldshore/config/middleware";
-import { defineMiddleware, sequence } from "astro:middleware";
 import {
   ADMIN_ROLES,
   buildAdminSession,
@@ -16,7 +15,19 @@ type AdminEnv = {
 
 const API_BASE = import.meta.env.PUBLIC_API;
 
-const authMiddleware = defineMiddleware(async (context, next) => {
+type MiddlewareContext = Parameters<typeof baseMiddleware>[0];
+type MiddlewareNext = () => Promise<Response>;
+type Middleware = (context: MiddlewareContext, next: MiddlewareNext) => Promise<Response>;
+
+const runBaseMiddleware: Middleware = async (context, next) => {
+  const response = (await baseMiddleware(
+    context,
+    next as Parameters<typeof baseMiddleware>[1],
+  )) as Response | undefined;
+  return response ?? next();
+};
+
+const authMiddleware: Middleware = async (context, next) => {
   const { pathname } = context.url;
   const isAssetRoute =
     pathname.startsWith('/_astro') ||
@@ -60,7 +71,11 @@ const authMiddleware = defineMiddleware(async (context, next) => {
     // Basic session check logic could go here if needed, but we rely on verifyAccessWithClaims below
   }
 
-  const env = (context.locals.runtime?.env ?? {}) as AdminEnv;
+  const locals = context.locals as typeof context.locals & {
+    runtime?: { env?: Record<string, unknown> };
+    adminSession?: unknown;
+  };
+  const env = (locals.runtime?.env ?? {}) as AdminEnv;
   const claims = await verifyAccessWithClaims(context.request, env);
   let session = buildAdminSession(claims);
 
@@ -79,16 +94,16 @@ const authMiddleware = defineMiddleware(async (context, next) => {
     context.request.headers.get("CF-Access-Authenticated-User-Id") ||
     undefined;
 
-  context.locals.adminSession = {
+  locals.adminSession = {
     ...session,
     actor,
     isAuthenticated: Boolean(claims)
   };
 
   return next();
-});
+};
 
-const securityMiddleware = defineMiddleware(async (context, next) => {
+const securityMiddleware: Middleware = async (_context, next) => {
   const response = await next();
 
   // Sentinel: Add security headers to protect against common attacks
@@ -109,6 +124,23 @@ const securityMiddleware = defineMiddleware(async (context, next) => {
   response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), interest-cohort=()");
 
   return response;
-});
+};
 
-export const onRequest = sequence(baseMiddleware, authMiddleware, securityMiddleware);
+const chain = (middlewares: Middleware[]): Middleware =>
+  async (context, next) => {
+    let index = -1;
+
+    const dispatch = async (position: number): Promise<Response> => {
+      if (position <= index) {
+        throw new Error('Middleware next() called multiple times.');
+      }
+      index = position;
+      const middleware = middlewares[position];
+      if (!middleware) return next();
+      return middleware(context, () => dispatch(position + 1));
+    };
+
+    return dispatch(0);
+  };
+
+export const onRequest = chain([runBaseMiddleware, authMiddleware, securityMiddleware]);
