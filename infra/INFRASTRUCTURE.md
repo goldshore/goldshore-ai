@@ -105,7 +105,8 @@
 | `goldshore.ai` | `gs-web-app` | 1 (public) | Canonical hostname |
 | `www.goldshore.ai` | `gs-www-redirect-prod` | 1 (public) | 308 → goldshore.ai |
 | `preview.goldshore.ai` | `gs-web-preview` | 1 (public) | Preview environment |
-| `dashboard.goldshore.ai` | `gs-gateway-prod` | 1 (public) | 308 → admin.goldshore.ai |
+| `dashboard.goldshore.ai` | `gs-trading-prod` | 3 (admin) | Protected trading dashboard alias |
+| `dash.goldshore.ai` | `gs-trading-prod` | 3 (admin) | Short protected trading dashboard alias |
 | `gw.goldshore.ai` | `gs-gateway-prod` | 2 (auth) | Fail closed |
 | `api.goldshore.ai` | `gs-api` | 2 (auth) | Direct API route; fail closed; /health /version /status public |
 | `agent.goldshore.ai` | `gs-gateway-prod` → `gs-agent-prod` | 2 (auth) | Fail closed |
@@ -210,14 +211,14 @@ Two workers in your account have unknown origin. You must decide to keep or dele
 
 ### GATE 3 — Deploy gs-gateway subdomain routes (BLOCKS: dashboard, status subdomains)
 
-Merge PR #5117. `dashboard.goldshore.ai` uses Worker Custom Domain (auto-provisions DNS). `www.goldshore.ai` is owned by `gs-www-redirect` Worker (308 redirect there). `agent.goldshore.ai/*` is owned by `gs-gateway` and forwards to `gs-agent` through the AGENT service binding; do not attach a direct custom domain to `gs-agent`. `status.goldshore.ai` is reserved for the `gs-status` Pages project (see MODULE_B2_RUNTIME_WIRING.md) — not claimed by gs-gateway.
+Merge PR #5117. `dashboard.goldshore.ai` and `dash.goldshore.ai` are protected aliases for the trading dashboard and should be covered by the same Cloudflare Access application as `trading.goldshore.ai`. `www.goldshore.ai` is owned by `gs-www-redirect` Worker (308 redirect there). `agent.goldshore.ai/*` is owned by `gs-gateway` and forwards to `gs-agent` through the AGENT service binding; do not attach a direct custom domain to `gs-agent`. `status.goldshore.ai` is reserved for the `gs-status` Pages project (see MODULE_B2_RUNTIME_WIRING.md) — not claimed by gs-gateway.
 
 | # | Action | Where | Status |
 |---|--------|--------|--------|
 | 3a | Merge `marzton/goldshore-ai` PR #5117 | [goldshore-ai/pull/5117](https://github.com/marzton/goldshore-ai/pull/5117) | ⬜ TODO |
 | 3b | Confirm `wrangler deploy --env prod` for `gs-gateway` and `wrangler deploy --env production` for `gs-www-redirect` run (CI or manual). Custom domains will auto-create DNS where configured. | CF Dashboard | ⬜ TODO |
 | 3c | Verify: `curl -I https://www.goldshore.ai` → `308` to `https://goldshore.ai` (handled by gs-www-redirect) | Browser or curl | ⬜ TODO |
-| 3d | Verify: `curl -I https://dashboard.goldshore.ai` → `308` to `https://admin.goldshore.ai` | Browser or curl | ⬜ TODO |
+| 3d | Verify: `curl -I https://dashboard.goldshore.ai` reaches the `GoldShore-Trading-ZT` Access wall, or returns 200 when valid CF Access service-token headers are supplied | Browser or curl | ⬜ TODO |
 
 ---
 
@@ -242,7 +243,7 @@ Create one Access application per protected subdomain group. All require Gate 4 
 | # | Subdomain(s) | Application name | Policy | Where | Status |
 |---|---|---|---|---|---|
 | 5a | `admin.goldshore.ai`, `admin-preview.goldshore.ai`, `admin.goldshore.org` | Goldshore Admin | Identity-based allow policy (not `non_identity` / `everyone`): Email domains `@goldshore.ai`, `@marzton.dev`; Specific email = marstonr6@gmail.com (allow) | [CF Access Apps](https://one.dash.cloudflare.com/f77de112d2019e5456a3198a8bb50bd2/access/apps) | ⬜ TODO |
-| 5b | `trading.goldshore.ai` | Goldshore Trading | Email = marstonr6@gmail.com (allow). Add **bypass policy** for `/oauth/schwab/callback` and `/oauth/robinhood/callback` (everyone) — Schwab/Robinhood redirect to these paths without an Access session. | CF Access Apps | ⬜ TODO |
+| 5b | `trading.goldshore.ai`, `dashboard.goldshore.ai`, `dash.goldshore.ai` | Goldshore Trading | Email = marstonr6@gmail.com (allow). Add **bypass policy** for `/oauth/schwab/callback` and `/oauth/robinhood/callback` (everyone) — Schwab/Robinhood redirect to these paths without an Access session. | CF Access Apps | ⬜ TODO |
 | 5c | `ops.goldshore.ai` | Goldshore Ops | Email = marstonr6@gmail.com (allow) | CF Access Apps | ⬜ TODO |
 | 5d | `gw.goldshore.ai` + `agent.goldshore.ai` | Goldshore Gateway | These hosts share the gateway Access app and gateway AUD tag. Email = marstonr6@gmail.com (allow). Add **bypass policy** for paths `/health`, `/status`, and `/version` (everyone). | CF Access Apps | ⬜ TODO |
 | 5e | `api.goldshore.ai` | Goldshore API | Preserve the API Access app and AUD tag expected by `gs-api` (`d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b`). Email = marstonr6@gmail.com (allow). Add **bypass policy** for paths `/`, `/health`, `/status`, and `/version` (everyone). | CF Access Apps | ⬜ TODO |
