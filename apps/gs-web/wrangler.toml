@@ -1,4 +1,4 @@
-name = "gs-web-app"
+name = "gs-web"
 compatibility_date = "2026-04-18"
 compatibility_flags = ["nodejs_compat"]
 
@@ -13,7 +13,7 @@ main = "./src/worker.ts"
 directory = "./dist"
 binding = "ASSETS"
 
-# ── Production ──────────────────────────────────────────────────────────────────────────────
+# ── Production ──────────────────────────────────────────────────────────────────────────────────────
 
 [env.prod]
 routes = [
@@ -45,7 +45,7 @@ MAILCHANNELS_SENDER_NAME = "GoldShore"
 #   wrangler secret put MAILCHANNELS_SENDER_EMAIL --env prod --name gs-web
 #   Value: hello@goldshore.ai
 
-# ── Preview ─────────────────────────────────────────────────────────────────────────────
+# ── Preview ──────────────────────────────────────────────────────────────────────────────────────
 
 [env.preview]
 routes = [
