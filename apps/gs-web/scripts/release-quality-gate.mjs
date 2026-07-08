@@ -206,8 +206,6 @@ const createStaticServer = async (documents) => {
   const byHtmlPath = new Map(documents.map((doc) => [doc.relativePath, doc.html]));
   const byUrlPath = await buildAssetIndex();
 
-const createStaticServer = (documents) => {
-  const byPath = new Map(documents.map((doc) => [doc.relativePath, doc.html]));
   return createServer(async (req, res) => {
     const rawPathname = (req.url || '/').split('?')[0];
     let pathname;
@@ -216,29 +214,27 @@ const createStaticServer = (documents) => {
     } catch {
       pathname = rawPathname;
     }
-    const key = pathname === '/' ? 'index.html' : `${pathname.replace(/^\//, '').replace(/\/$/, '')}/index.html`;
-    const html = byPath.get(key);
+    const htmlKey = pathname === '/'
+      ? 'index.html'
+      : `${pathname.replace(/^\//, '').replace(/\/$/, '')}/index.html`;
+    const html = byHtmlPath.get(htmlKey);
     if (html) {
       res.statusCode = 200;
       res.setHeader('content-type', 'text/html; charset=utf-8');
       res.end(html);
       return;
     }
-    // Serve static assets (CSS, JS bundles, fonts, images) from dist directory
-    const distRoot = path.resolve(DIST_DIR);
-    const filePath = path.resolve(distRoot, pathname.replace(/^\/+/, ''));
-    // Guard against path traversal: resolved path must stay inside distRoot
-    const rel = path.relative(distRoot, filePath);
-    if (rel.startsWith('..') || path.isAbsolute(rel)) {
+    // req.url used only as Map key — absPath comes from trusted walk() scan at startup
+    const absPath = byUrlPath.get(pathname);
+    if (!absPath) {
       res.statusCode = 404;
       res.end('Not found');
       return;
     }
     try {
-      const content = await readFile(filePath);
-      const mime = MIME[path.extname(filePath)] || 'application/octet-stream';
+      const content = await readFile(absPath);
       res.statusCode = 200;
-      res.setHeader('content-type', mime);
+      res.setHeader('content-type', MIME[path.extname(absPath)] || 'application/octet-stream');
       res.setHeader('cache-control', 'no-store');
       res.end(content);
     } catch {

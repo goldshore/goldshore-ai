@@ -54,11 +54,6 @@ on:
 
 permissions:
   id-token: write # required to mint the OIDC JWT
-        description: "Anthropic base URL (routed via CF AI Gateway)"
-        value: ${{ jobs.mint-token.outputs.base_url }}
-
-permissions:
-  id-token: write   # required to mint the OIDC JWT
   contents: read
 
 jobs:
@@ -86,11 +81,6 @@ jobs:
             exit 1
           fi
 
-          # Audience must match the CF AI Gateway OIDC policy
-          JWT=$(curl -fsSL \
-            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=https://gateway.ai.cloudflare.com" \
-            | jq -r '.value')
           echo "::add-mask::$JWT"
           echo "jwt=$JWT" >> "$GITHUB_OUTPUT"
 

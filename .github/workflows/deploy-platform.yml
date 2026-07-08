@@ -87,24 +87,12 @@ jobs:
       - name: Deploy to Cloudflare Pages
         run: pnpm exec wrangler pages deploy apps/gs-admin/dist --project-name=gs-admin --branch=${{ github.ref_name }}
 
-  # ── Workers (matrix) ────────────────────────────────────────────────────────
-  # Canonical worker app paths: apps/gs-api, apps/gs-gateway, apps/gs-agent,
-  # apps/gs-control, apps/gs-mail, apps/banproof-me, apps/gs-trading,
-  # apps/gs-www-redirect, apps/gs-core-worker, apps/armsway-com
-  #
-  # wrangler deploy auto-creates the worker if it doesn't exist and updates it
-  # if it does. Route/custom-domain binding is declared in each wrangler.toml
-  # and applied on every deploy — no manual DNS setup needed for custom_domain=true.
-  #
-  # Workers with route-based patterns (zone_name) require a proxied DNS record
-  # to already exist for the zone. Those records are managed in desired-state.yaml
-  # and applied by infra/Cloudflare/deploy.ts (or manually via CF Dashboard).
+  # ── Canonical Worker ────────────────────────────────────────────────────────
   deploy-workers:
     name: Deploy ${{ matrix.app }}
-    # matrix.app cannot be used in a job-level if; filter per-target inside steps instead
     if: >
       inputs.target == 'all' ||
-      contains(fromJSON('["gs-gateway","gs-api","gs-agent","gs-control","gs-trading","gs-mail","banproof-me","gs-www-redirect","gs-core-worker","armsway-com"]'), inputs.target)
+      inputs.target == 'gs-api'
     runs-on: ubuntu-latest
     permissions:
       contents: read
