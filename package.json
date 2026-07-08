@@ -41,7 +41,7 @@
     "@astrojs/mdx": "^5.0.4",
     "@astrojs/sitemap": "^3.7.2",
     "@astrojs/tailwind": "^6.0.2",
-    "@types/node": "^26.0.0",
+    "@types/node": "^26.1.1",
     "@typescript-eslint/eslint-plugin": "^8.57.2",
     "@typescript-eslint/parser": "^8.62.1",
     "astro": "^6.4.6",
