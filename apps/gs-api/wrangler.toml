@@ -19,6 +19,8 @@ routes = [
 ENV = "production"
 CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
+GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
+GOOGLE_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/goldclaw/oauth/google/callback"
 
 # ── KV ──────────────────────────────────────────────────────────────────────────────────
 [[env.prod.kv_namespaces]]
@@ -39,6 +41,11 @@ binding = "TELEMETRY"
 bucket_name = "gs-telemetry-storage"
 
 # ── D1 ──────────────────────────────────────────────────────────────────────────────────
+[[env.prod.d1_databases]]
+binding = "DB"
+database_name = "goldshore"
+database_id = "gs_db_001"
+
 [[env.prod.d1_databases]]
 binding = "PLATFORM_DB"
 database_name = "gs_platform_db"
@@ -80,8 +87,8 @@ service = "gs-mail"
 environment = "prod"
 
 [[env.prod.services]]
-binding = "GS_WEB"
-service = "gs-web"
+binding = "GS_WEB PROD"
+service = "gs-web-prod"
 environment = "prod"
 
 [[env.prod.services]]
@@ -119,21 +126,53 @@ binding = "SECRETS"
 store_id = "b9824d3280c54573a24137c7e7143b33"
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Preview environment
+# Production (named 'production') environment
+# ══════════════════════════════════════════════════════════════════════════════
+
+[env.production]
+routes = [
+  { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" }
+]
+
+[env.production.vars]
+ENV = "production"
+CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
+CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
+CONTROL_SYNC_TOKEN = "__PROD_CONTROL_SYNC_TOKEN__"
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Preview environment — deploys to workers.dev (no zone route needed)
 # ══════════════════════════════════════════════════════════════════════════════
 
 [env.preview]
+workers_dev = true
 
-[[env.preview.routes]]
-pattern = "api-preview.goldshore.ai/*"
-zone_name = "goldshore.ai"
+[env.production.vars]
+ENV = "production"
+CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
+CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
+CONTROL_SYNC_TOKEN = "__PROD_CONTROL_SYNC_TOKEN__"
+GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
+GOOGLE_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/goldclaw/oauth/google/callback"
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Preview environment — deploys to workers.dev (no zone route needed)
+# ══════════════════════════════════════════════════════════════════════════════
+
+[env.preview]
+workers_dev = true
 
 [env.preview.vars]
 ENV = "preview"
+GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
 
 [[env.preview.kv_namespaces]]
 binding = "KV"
 id = "d4d20cee39094b999dea3f7e5f4c533a"
+
+[[env.preview.kv_namespaces]]
+binding = "CONTROL_LOGS"
+id = "09e43cb8bd4749fdaaed0dc9d4ff2284"
 
 [[env.preview.r2_buckets]]
 binding = "GS_ASSETS"
@@ -180,7 +219,7 @@ service = "gs-mail"
 
 [[env.preview.services]]
 binding = "GS_WEB"
-service = "gs-web"
+service = "gs-web-app"
 
 [[env.preview.services]]
 binding = "API_SERVICE"
@@ -198,9 +237,15 @@ queue = "gs-events"
 binding = "MAIL_JOBS_QUEUE"
 queue = "gs-mail-jobs"
 
+# ── Secrets Store ───────────────────────────────────────────────────────────────────
 [[env.preview.secrets_store.bindings]]
 binding = "SECRETS"
 store_id = "b9824d3280c54573a24137c7e7143b33"
+# Temporarily disabled: Wrangler 4.105.0 warns this preview env field is unexpected.
+# Re-enable only after confirming current Wrangler config schema supports env.preview.secrets_store.
+# [[env.preview.secrets_store.bindings]]
+# binding = "SECRETS"
+# store_id = "b9824d3280c54573a24137c7e7143b33"
 
 # ── Durable Object migrations ─────────────────────────────────────────────────────
 [[migrations]]
