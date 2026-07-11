@@ -295,6 +295,28 @@ jobs:
             fi
           }
 
+
+          assert_full_access_policies() {
+            local app_name="$1" domain="$2"
+            local app_id policies
+            app_id=$(find_app "$app_name" "$domain")
+            if [ -z "$app_id" ]; then
+              echo "::error::Cannot verify Access policies for [$app_name]; app was not found."
+              MISSING_REQUIRED_APPS=1
+              return
+            fi
+            policies=$(curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies" \
+              -H "Authorization: Bearer $CF_TOKEN")
+            echo "$policies" | jq -e '.result[] | select(.decision == "allow" and .name == "Owner access")' > /dev/null || {
+              echo "::error::[$app_name] is missing the Owner access allow policy required for browser Cloudflare Access sessions."
+              MISSING_REQUIRED_APPS=1
+            }
+            echo "$policies" | jq -e '.result[] | select(.decision == "non_identity" and .name == "Goldshore agents")' > /dev/null || {
+              echo "::error::[$app_name] is missing the Goldshore agents service-token policy required for machine access."
+              MISSING_REQUIRED_APPS=1
+            }
+          }
+
           # upsert_bypass_app: creates a path-scoped Access app with a bypass-everyone policy.
           # Used for public paths that must not hit the Access login wall.
           # CF Access resolves the more-specific path-scoped app before the broader allow app.
@@ -448,13 +470,15 @@ jobs:
           upsert_full_access "Signals"           "signals.goldshore.ai" \
             '["signals.goldshore.org","gs-signals-prod.goldshore.workers.dev"]'
           # Goldshore API: uses documented name to match existing AUD in wrangler.toml;
-          # pushes AUD to api workers on first-run creation (Gate 5e). Keep this
-          # host on upsert_full_access (owner/user allow + service-token policy)
-          # because browser-based admin routes call api.goldshore.ai with
-          # credentials: 'include' and need a human Cloudflare Access session.
-          # Service-token-only access is limited to machine-only/path-scoped apps.
+          # pushes AUD to api workers on first-run creation (Gate 5e). This must
+          # remain a full-access app (Owner access + Goldshore agents policies),
+          # not a service-token-only app: browser admin routes such as
+          # /admin/goldclaw call api.goldshore.ai with credentials: 'include'
+          # and gs-api expects Cloudflare Access user claims on protected routes.
+          # Keep service-token-only Access limited to machine-only/path-scoped apps.
           upsert_full_access "Goldshore API"     "api.goldshore.ai" "[]" \
             "gs-api gs-api-prod"
+          assert_full_access_policies "Goldshore API" "api.goldshore.ai"
           # GoldShore MCP: human + agent per docs ("approved human identities and agents")
           upsert_full_access "GoldShore MCP"     "mcp.goldshore.ai" "[]" \
             "gs-mcp"
