@@ -5,6 +5,7 @@
 >
 > Last certified: 2026-04-29 | Certified by: Rob Marston (@marzton)
 > Repo alignment pass: 2026-06-30 | `goldshore.org` apex ownership moved to `gs-web-prod`; `www.goldshore.org` ownership moved to `gs-www-redirect-prod`.
+> Redirect cleanup pass: 2026-07-11 | `gs-www-redirect-prod` is the sole canonical www redirect Worker for `www.goldshore.ai/*` and `www.goldshore.org/*`; the stale alternate production deployment is no longer part of the canonical set.
 
 ---
 
