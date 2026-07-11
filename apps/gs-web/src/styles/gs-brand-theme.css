@@ -404,4 +404,11 @@ textarea:focus-visible {
     min-width: unset !important;
     display: inline !important;
   }
+
+  /* Exception — hamburger toggles: the forced inline-flex above lays the
+     icon's three <span> bars side by side; stack them back into a burger. */
+  [class*="menu-button"], [class*="nav-toggle"], #nav-toggle, #menu-toggle {
+    flex-direction: column !important;
+    justify-content: center !important;
+  }
 }

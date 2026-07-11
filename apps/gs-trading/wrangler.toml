@@ -20,9 +20,9 @@ ENV = "development"
 # ---- Production environment --------------------------------------------------
 [env.prod]
 name = "gs-trading-prod"
-routes = [
-  { pattern = "trading.goldshore.ai/*", zone_name = "goldshore.ai" },
-]
+# Consolidated into gs-api trading routes. Keep this legacy config route-free
+# to prevent hostname ownership collisions during validation and deployment.
+routes = []
 
 # kv_namespaces is NOT inherited by named environments in Wrangler — must be re-declared.
 [[env.prod.kv_namespaces]]

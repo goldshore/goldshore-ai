@@ -4,7 +4,10 @@
   "packageManager": "pnpm@9.15.4",
   "scripts": {
     "dev": "turbo run dev --parallel",
-    "build": "pnpm build:openapi && turbo run build",
+    "build": "pnpm build:pages",
+    "build:all": "pnpm build:openapi && turbo run build",
+    "build:pages": "pnpm build:openapi && pnpm --filter @goldshore/gs-web build && pnpm --dir apps/gs-web verify:dist",
+    "build:workers": "turbo run build --filter=@goldshore/gs-api",
     "build:openapi": "node scripts/build-openapi.mjs",
     "lint": "turbo run lint",
     "test": "turbo run test",
@@ -23,17 +26,16 @@
     "branch:bootstrap": "bash scripts/branch-bootstrap.sh",
     "scaffold:worker": "node scripts/scaffold-worker.mjs",
     "workspaces:list": "pnpm -r list --depth -1",
-    "verify:workspace-filters": "turbo run build --filter=@goldshore/gs-api --dry && turbo run build --filter=@goldshore/gs-control --dry",
-    "verify:web-dist": "node scripts/verify-web-dist.mjs",
+    "verify:workspace-filters": "turbo run build --filter=@goldshore/gs-api --dry && turbo run build --filter=@goldshore/gs-web --dry",
+    "verify:web-dist": "pnpm --dir apps/gs-web verify:dist",
     "memory:check": "node scripts/validate-canonical-structure.mjs",
     "sync:infra": "tsx scripts/sync-gateway.ts",
     "sync:cf": "echo 'Run codex sync script here' && tsx scripts/sync-gateway.ts",
     "repo:clean": "git clean -xfd -e .env -e env.secrets.runtime.json",
-    "repo:install": "pnpm install --frozen-lockfile",
+    "repo:install": "pnpm install --no-frozen-lockfile",
     "repo:health": "node scripts/repo-health.mjs",
     "audit": "pnpm run repo:health",
     "build:api": "turbo run build --filter=@goldshore/gs-api",
-    "build:control": "turbo run build --filter=@goldshore/gs-control",
     "check:banproof-bindings": "node scripts/check-banproof-bindings.mjs",
     "check:wrangler-placeholders": "node scripts/check-wrangler-placeholders.mjs"
   },
@@ -41,9 +43,9 @@
     "@astrojs/mdx": "^5.0.4",
     "@astrojs/sitemap": "^3.7.2",
     "@astrojs/tailwind": "^6.0.2",
-    "@types/node": "^26.0.0",
+    "@types/node": "^26.1.1",
     "@typescript-eslint/eslint-plugin": "^8.57.2",
-    "@typescript-eslint/parser": "^8.61.1",
+    "@typescript-eslint/parser": "^8.62.1",
     "astro": "^6.4.6",
     "eslint": "^10.5.0",
     "eslint-plugin-astro": "^1.6.0",
@@ -56,7 +58,7 @@
     "tsx": "^4.21.0",
     "typescript": "^5.4.2",
     "wrangler": "^4.103.0",
-    "yaml": "^2.8.4",
+    "yaml": "^2.9.0",
     "zod": "^4.3.6"
   },
   "dependencies": {
@@ -75,6 +77,6 @@
     }
   },
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=22.12.0"
   }
 }
