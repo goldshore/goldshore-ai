@@ -144,7 +144,7 @@ importers:
     devDependencies:
       '@astrojs/cloudflare':
         specifier: 13.7.0
-        version: 13.7.0(@types/node@26.1.1)(astro@6.4.8(@types/node@26.1.1)(lightningcss@1.32.0)(rollup@4.62.2)(tsx@4.22.4)(yaml@2.9.0))(lightningcss@1.32.0)(tsx@4.22.4)(workerd@1.20260625.1)(wrangler@4.105.0(@cloudflare/workers-types@4.20260628.1))(yaml@2.9.0)
+        version: 13.7.0(@types/node@26.1.1)(astro@6.4.8(@types/node@26.1.1)(lightningcss@1.32.0)(rollup@4.62.2)(tsx@4.22.4)(yaml@2.9.0))(lightningcss@1.32.0)(tsx@4.22.4)(workerd@1.20260625.1)(wrangler@4.105.0(@cloudflare/workers-types@5.20260708.1))(yaml@2.9.0)
       '@astrojs/tailwind':
         specifier: ^6.0.2
         version: 6.0.2(astro@6.4.8(@types/node@26.1.1)(lightningcss@1.32.0)(rollup@4.62.2)(tsx@4.22.4)(yaml@2.9.0))(tailwindcss@4.3.1)
@@ -265,36 +265,6 @@ importers:
       wrangler:
         specifier: ^4.103.0
         version: 4.105.0(@cloudflare/workers-types@5.20260708.1)
-
-  apps/gs-gateway:
-    dependencies:
-      '@goldshore/auth':
-        specifier: workspace:*
-        version: link:../../packages/auth
-      hono:
-        specifier: ^4.12.25
-        version: 4.12.27
-      zod:
-        specifier: ^4.3.6
-        version: 4.4.3
-    devDependencies:
-      '@cloudflare/workers-types':
-        specifier: ^5.20260708.1
-        version: 5.20260708.1
-      '@types/node':
-        specifier: ^26.1.1
-        version: 26.1.1
-      tsx:
-        specifier: ^4.21.0
-        version: 4.22.4
-      typescript:
-        specifier: ^5.4.2
-        version: 5.9.3
-      wrangler:
-        specifier: ^4.103.0
-        version: 4.105.0(@cloudflare/workers-types@5.20260708.1)
-
-  apps/gs-mail: {}
 
   apps/gs-gateway:
     dependencies:
@@ -4714,15 +4684,15 @@ snapshots:
       - workerd
       - yaml
 
-  '@astrojs/cloudflare@13.7.0(@types/node@26.1.1)(astro@6.4.8(@types/node@26.1.1)(rollup@4.62.2)(tsx@4.22.4)(yaml@2.9.0))(tsx@4.22.4)(workerd@1.20260625.1)(wrangler@4.105.0(@cloudflare/workers-types@5.20260708.1))(yaml@2.9.0)':
+  '@astrojs/cloudflare@13.7.0(@types/node@26.1.1)(astro@6.4.8(@types/node@26.1.1)(lightningcss@1.32.0)(rollup@4.62.2)(tsx@4.22.4)(yaml@2.9.0))(lightningcss@1.32.0)(tsx@4.22.4)(workerd@1.20260625.1)(wrangler@4.105.0(@cloudflare/workers-types@5.20260708.1))(yaml@2.9.0)':
     dependencies:
       '@astrojs/internal-helpers': 0.10.0
       '@astrojs/underscore-redirects': 1.0.3
-      '@cloudflare/vite-plugin': 1.42.3(vite@7.3.6(@types/node@26.1.1)(tsx@4.22.4)(yaml@2.9.0))(workerd@1.20260625.1)(wrangler@4.105.0(@cloudflare/workers-types@5.20260708.1))
-      astro: 6.4.8(@types/node@26.1.1)(rollup@4.62.2)(tsx@4.22.4)(yaml@2.9.0)
+      '@cloudflare/vite-plugin': 1.42.3(vite@7.3.6(@types/node@26.1.1)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0))(workerd@1.20260625.1)(wrangler@4.105.0(@cloudflare/workers-types@5.20260708.1))
+      astro: 6.4.8(@types/node@26.1.1)(lightningcss@1.32.0)(rollup@4.62.2)(tsx@4.22.4)(yaml@2.9.0)
       piccolore: 0.1.3
       tinyglobby: 0.2.17
-      vite: 7.3.6(@types/node@26.1.1)(tsx@4.22.4)(yaml@2.9.0)
+      vite: 7.3.6(@types/node@26.1.1)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0)
       wrangler: 4.105.0(@cloudflare/workers-types@5.20260708.1)
     transitivePeerDependencies:
       - '@types/node'
@@ -5120,12 +5090,12 @@ snapshots:
       - utf-8-validate
       - workerd
 
-  '@cloudflare/vite-plugin@1.42.3(vite@7.3.6(@types/node@26.1.1)(tsx@4.22.4)(yaml@2.9.0))(workerd@1.20260625.1)(wrangler@4.105.0(@cloudflare/workers-types@5.20260708.1))':
+  '@cloudflare/vite-plugin@1.42.3(vite@7.3.6(@types/node@26.1.1)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0))(workerd@1.20260625.1)(wrangler@4.105.0(@cloudflare/workers-types@5.20260708.1))':
     dependencies:
       '@cloudflare/unenv-preset': 2.16.1(unenv@2.0.0-rc.24)(workerd@1.20260625.1)
       miniflare: 4.20260625.0
       unenv: 2.0.0-rc.24
-      vite: 7.3.6(@types/node@26.1.1)(tsx@4.22.4)(yaml@2.9.0)
+      vite: 7.3.6(@types/node@26.1.1)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0)
       wrangler: 4.105.0(@cloudflare/workers-types@5.20260708.1)
       ws: 8.21.0
     transitivePeerDependencies:
@@ -6183,7 +6153,7 @@ snapshots:
 
   '@typescript-eslint/project-service@8.62.0(typescript@5.9.3)':
     dependencies:
-      '@typescript-eslint/tsconfig-utils': 8.62.1(typescript@5.9.3)
+      '@typescript-eslint/tsconfig-utils': 8.62.0(typescript@5.9.3)
       '@typescript-eslint/types': 8.62.1
       debug: 4.4.3
       typescript: 5.9.3
@@ -6210,6 +6180,10 @@ snapshots:
       '@typescript-eslint/visitor-keys': 8.62.1
 
   '@typescript-eslint/tsconfig-utils@8.62.0(typescript@5.9.3)':
+    dependencies:
+      typescript: 5.9.3
+
+  '@typescript-eslint/tsconfig-utils@8.62.1(typescript@5.9.3)':
     dependencies:
       typescript: 5.9.3
 
