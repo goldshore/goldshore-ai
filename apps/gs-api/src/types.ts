@@ -35,6 +35,7 @@ export type Env = {
   MAIL_BLOCKED_SENDERS?: string;
   MAIL_ALLOWED_RECIPIENTS?: string;
   AGENT?: Fetcher;
+  GS_WEB?: Fetcher;
   API_ORIGIN?: string;
   ADMIN_URL?: string;
   ENV?: string;
