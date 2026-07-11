@@ -1,15 +1,29 @@
 import type { APIRoute } from 'astro';
 
+const ACCESS_ASSERTION_HEADER = 'CF-Access-Jwt-Assertion';
+const ACCESS_COOKIE_HEADER = 'Cookie';
+
+export const buildGsApiAccessHeaders = (request: Request): Headers => {
+  const headers = new Headers({ 'Content-Type': 'application/json' });
+  const accessAssertion = request.headers.get(ACCESS_ASSERTION_HEADER);
+  if (accessAssertion) {
+    headers.set(ACCESS_ASSERTION_HEADER, accessAssertion);
+  }
+
+  const accessCookie = request.headers.get(ACCESS_COOKIE_HEADER);
+  if (accessCookie) {
+    headers.set(ACCESS_COOKIE_HEADER, accessCookie);
+  }
+
+  return headers;
+};
+
 export const GET: APIRoute = async ({ url, request }) => {
   try {
     const gsApiUrl = import.meta.env.PUBLIC_GS_API_URL || 'https://api.goldshore.ai';
     const action = url.searchParams.get('action') || 'list';
 
-    const headers: HeadersInit = { 'Content-Type': 'application/json' };
-    const cfJwt = request.headers.get('CF-Access-Jwt-Assertion');
-    if (cfJwt) {
-      headers['CF-Access-Jwt-Assertion'] = cfJwt;
-    }
+    const headers = buildGsApiAccessHeaders(request);
 
     const response = await fetch(`${gsApiUrl}/integrations?action=${encodeURIComponent(action)}`, {
       method: 'GET',
@@ -35,11 +49,7 @@ export const POST: APIRoute = async ({ request }) => {
     const body = await request.json();
     const gsApiUrl = import.meta.env.PUBLIC_GS_API_URL || 'https://api.goldshore.ai';
 
-    const headers: HeadersInit = { 'Content-Type': 'application/json' };
-    const cfJwt = request.headers.get('CF-Access-Jwt-Assertion');
-    if (cfJwt) {
-      headers['CF-Access-Jwt-Assertion'] = cfJwt;
-    }
+    const headers = buildGsApiAccessHeaders(request);
 
     const response = await fetch(`${gsApiUrl}/integrations`, {
       method: 'POST',
