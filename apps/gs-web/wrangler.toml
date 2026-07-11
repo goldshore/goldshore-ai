@@ -1,4 +1,4 @@
-name = "gs-web-app"
+name = "gs-web"
 compatibility_date = "2026-04-18"
 compatibility_flags = ["nodejs_compat"]
 

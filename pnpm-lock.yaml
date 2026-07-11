@@ -309,11 +309,11 @@ importers:
         version: 4.4.3
     devDependencies:
       '@cloudflare/workers-types':
-        specifier: ^4.20260621.1
-        version: 4.20260628.1
+        specifier: ^5.20260708.1
+        version: 5.20260708.1
       '@types/node':
-        specifier: ^26.0.0
-        version: 26.0.1
+        specifier: ^26.1.1
+        version: 26.1.1
       tsx:
         specifier: ^4.21.0
         version: 4.22.4
@@ -322,7 +322,7 @@ importers:
         version: 5.9.3
       wrangler:
         specifier: ^4.103.0
-        version: 4.105.0(@cloudflare/workers-types@4.20260628.1)
+        version: 4.105.0(@cloudflare/workers-types@5.20260708.1)
 
   apps/gs-mail: {}
 

@@ -93,7 +93,7 @@ environment = "prod"
 
 [[env.prod.services]]
 binding = "GS_WEB"
-service = "gs-web-app"
+service = "gs-web"
 environment = "prod"
 
 [[env.prod.services]]
@@ -212,7 +212,7 @@ service = "gs-mail"
 
 [[env.preview.services]]
 binding = "GS_WEB"
-service = "gs-web-app"
+service = "gs-web"
 
 [[env.preview.services]]
 binding = "API_SERVICE"
