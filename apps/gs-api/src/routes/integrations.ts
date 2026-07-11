@@ -38,7 +38,7 @@ integrations.get("/", async (c) => {
 
       case "sync": {
         const session = buildAdminSession(c.get("accessClaims"));
-        if (!hasAdminPermission(session.permissions, "system:integrations:manage")) {
+        if (!hasAdminPermission(session.permissions, "system:write")) {
           return c.json({ error: "Forbidden" }, 403);
         }
         const results = await registry.syncAll();
@@ -59,8 +59,8 @@ integrations.get("/", async (c) => {
   }
 });
 
-// POST /integrations - Create or delete integrations (requires system:integrations:manage permission)
-integrations.post("/", requirePermission("system:integrations:manage"), async (c) => {
+// POST /integrations - Create or delete integrations (requires system:write permission)
+integrations.post("/", requirePermission("system:write"), async (c) => {
   const kv = c.env.KV;
 
   if (!kv) {
