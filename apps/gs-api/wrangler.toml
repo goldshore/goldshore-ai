@@ -233,6 +233,10 @@ queue = "gs-events"
 binding = "MAIL_JOBS_QUEUE"
 queue = "gs-mail-jobs"
 
+[[env.preview.queues.producers]]
+binding = "DEAD_LETTER_QUEUE"
+queue = "gs-mail-dead-letter"
+
 # ── Secrets Store ───────────────────────────────────────────────────────────────────
 [[env.preview.secrets_store.bindings]]
 binding = "SECRETS"
