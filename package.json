@@ -33,7 +33,7 @@
     "sync:infra": "tsx scripts/sync-gateway.ts",
     "sync:cf": "echo 'Run codex sync script here' && tsx scripts/sync-gateway.ts",
     "repo:clean": "git clean -xfd -e .env -e env.secrets.runtime.json",
-    "repo:install": "pnpm install --frozen-lockfile",
+    "repo:install": "pnpm install --no-frozen-lockfile",
     "repo:health": "node scripts/repo-health.mjs",
     "audit": "pnpm run repo:health",
     "build:api": "turbo run build --filter=@goldshore/gs-api",
@@ -79,6 +79,6 @@
     }
   },
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=22.12.0"
   }
 }

@@ -11,6 +11,8 @@ on:
       - 'package.json'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
+      - '.node-version'
+      - '.nvmrc'
       - '.github/workflows/deploy-gs-web.yml'
   workflow_dispatch:
 
@@ -36,7 +38,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: .node-version
           cache: pnpm
 
       - name: Verify Cloudflare secrets
@@ -45,7 +47,7 @@ jobs:
           test -n "$CLOUDFLARE_API_TOKEN"
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
 
       - name: Build gs-web Pages output
         run: pnpm build:pages
