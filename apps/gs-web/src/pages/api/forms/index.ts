@@ -1,16 +1,7 @@
 import type { APIRoute } from 'astro';
-import {
-  buildAdminSession,
-  verifyAccessWithClaims,
-  type AdminPermission,
-  type Env as AccessEnv,
-} from '@goldshore/auth';
-import { parseJson } from '@goldshore/utils';
 
-/**
- * Admin UI form configuration collection endpoint.
- * Requires `forms:read` for GET and `forms:write` for POST.
- */
+const apiBase = (env: Env | undefined) =>
+  (env?.PUBLIC_API || 'https://api.goldshore.ai').replace(/\/$/, '');
 
 const normalizeRow = (row: Record<string, string>) => ({
   id: row.id,
@@ -75,7 +66,7 @@ const requirePermission = async (
 export const GET: APIRoute = async ({ request, locals }) => {
   const env = locals.runtime?.env as Env | undefined;
 
-  if (!env?.DB) {
+  if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
   }
 
@@ -84,7 +75,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
     return auth.response;
   }
 
-  const result = await env.DB.prepare(
+  const result = await env.PLATFORM_DB.prepare(
     `SELECT id, slug, name, status, fields, recipients, integrations, created_at, updated_at
      FROM form_configs
      ORDER BY updated_at DESC`
@@ -98,7 +89,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
 export const POST: APIRoute = async ({ request, locals }) => {
   const env = locals.runtime?.env as Env | undefined;
 
-  if (!env?.DB) {
+  if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
   }
 
@@ -124,7 +115,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return new Response('Missing required fields.', { status: 400 });
   }
 
-  const existing = await env.DB.prepare('SELECT id FROM form_configs WHERE slug = ? LIMIT 1')
+  const existing = await env.PLATFORM_DB.prepare('SELECT id FROM form_configs WHERE slug = ? LIMIT 1')
     .bind(payload.slug)
     .all();
 
@@ -135,7 +126,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const now = new Date().toISOString();
   const id = crypto.randomUUID();
 
-  await env.DB.prepare(
+  await env.PLATFORM_DB.prepare(
     `INSERT INTO form_configs (
       id,
       slug,
