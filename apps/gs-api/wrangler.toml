@@ -87,8 +87,8 @@ service = "gs-mail"
 environment = "prod"
 
 [[env.prod.services]]
-binding = "GS_WEB"
-service = "gs-web-app"
+binding = "GS_WEB PROD"
+service = "gs-web-prod"
 environment = "prod"
 
 [[env.prod.services]]
@@ -133,6 +133,19 @@ store_id = "b9824d3280c54573a24137c7e7143b33"
 routes = [
   { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" }
 ]
+
+[env.production.vars]
+ENV = "production"
+CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
+CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
+CONTROL_SYNC_TOKEN = "__PROD_CONTROL_SYNC_TOKEN__"
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Preview environment — deploys to workers.dev (no zone route needed)
+# ══════════════════════════════════════════════════════════════════════════════
+
+[env.preview]
+workers_dev = true
 
 [env.production.vars]
 ENV = "production"
@@ -228,6 +241,11 @@ queue = "gs-mail-jobs"
 [[env.preview.secrets_store.bindings]]
 binding = "SECRETS"
 store_id = "b9824d3280c54573a24137c7e7143b33"
+# Temporarily disabled: Wrangler 4.105.0 warns this preview env field is unexpected.
+# Re-enable only after confirming current Wrangler config schema supports env.preview.secrets_store.
+# [[env.preview.secrets_store.bindings]]
+# binding = "SECRETS"
+# store_id = "b9824d3280c54573a24137c7e7143b33"
 
 # ── Durable Object migrations ─────────────────────────────────────────────────────
 [[migrations]]

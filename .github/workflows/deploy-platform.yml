@@ -144,6 +144,18 @@ jobs:
             gs-api)
               HEALTH_URL="https://api.goldshore.ai/health"
               ;;
+            gs-gateway)
+              HEALTH_URL="https://gw.goldshore.ai/health"
+              ;;
+            gs-control)
+              HEALTH_URL="https://ops.goldshore.ai/health"
+              ;;
+            gs-mail)
+              HEALTH_URL="https://mail.goldshore.ai/health"
+              ;;
+            armsway-com)
+              HEALTH_URL="https://armsway.com/health"
+              ;;
             *)
               echo "Skipping health check for ${{ matrix.app }}"
               exit 0
