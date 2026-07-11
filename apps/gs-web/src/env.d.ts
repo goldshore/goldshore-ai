@@ -16,9 +16,21 @@ interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
 
+interface D1Result<Row> {
+  results?: Row[];
+}
+
+interface D1PreparedStatement<Row = Record<string, unknown>> {
+  bind(...values: unknown[]): D1PreparedStatement<Row>;
+  all(): Promise<D1Result<Row>>;
+  first<T = Row>(): Promise<T | null>;
+  run(): Promise<unknown>;
+}
+
 // Global Cloudflare Env types
 interface Env {
-  PUBLIC_API?: string;
+  KV: KVNamespace;
+  PLATFORM_DB: D1Database;
   CONTACT_TTL_SECONDS?: string;
   CONTACT_NOTIFICATION_EMAILS?: string;
   MAILCHANNELS_SENDER_EMAIL?: string;

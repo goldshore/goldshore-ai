@@ -33,8 +33,11 @@ type Env = {
   KV: KVNamespace;
   CONTROL_LOGS?: KVNamespace;
   PLATFORM_DB: D1Database;
-  TELEMETRY_DB?: D1Database;
+  AUDIT_DB?: D1Database;
+  SIGNALS_DB?: D1Database;
+  JOBS_DB?: D1Database;
   GS_ASSETS: R2Bucket;
+  TELEMETRY?: R2Bucket;
   AUTH_SESSION?: DurableObjectNamespace;
   AI: Ai;
   OPENAI_API_KEY?: string;
@@ -52,6 +55,7 @@ type Env = {
   MAIL_BLOCKED_SENDERS?: string;
   MAIL_ALLOWED_RECIPIENTS?: string;
   AGENT?: Fetcher;
+  GS_WEB?: Fetcher;
   API_ORIGIN?: string;
   ENV?: string;
   DEV_AUTH_BYPASS?: string;
