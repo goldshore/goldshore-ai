@@ -115,10 +115,15 @@ For Claude/Codex assistance with Google API integration: provide the API name, s
 
 ## Key Cloudflare bindings (gs-api)
 
-- KV: `GS_CONFIG` (`d02c0c7951a244a7987e23d8af16b7b2`), `KV_SESSIONS`
-- D1: `PLATFORM_DB` (`9703574e-adb7-481e-8d98-96f8ce5f8a90`), `GS_AUDIT_DB` (`1ae71d76-188f-481b-91d9-db2d39013f68`)
-- R2: `GS_ASSETS`
-- Services: `gs-trading-prod`, `gs-control`, `gs-api`
+`apps/gs-api/wrangler.toml` is the canonical config for `gs-api` bindings. Cross-check any future binding edits against the registry in [`infra/Cloudflare/BINDINGS_MAP.md`](infra/Cloudflare/BINDINGS_MAP.md) before changing this summary.
+
+- KV: `KV` (`e0b8b807191346c3b0afc25fe716d2cd` in `prod`; `d4d20cee39094b999dea3f7e5f4c533a` in `preview`), `CONTROL_LOGS` (`a52e94cb331c4e3db08f2aa507e6df09` in `prod`; `09e43cb8bd4749fdaaed0dc9d4ff2284` in `preview`). Legacy historical aliases only: `GS_CONFIG`, `KV_SESSIONS`.
+- D1: `DB` (`goldshore` / `gs_db_001`), `PLATFORM_DB` (`9703574e-adb7-481e-8d98-96f8ce5f8a90`), `AUDIT_DB` (`1ae71d76-188f-481b-91d9-db2d39013f68`), `SIGNALS_DB` (`76af4653-7f44-417b-b46e-250143d906fd`), `JOBS_DB` (`750c469c-788d-49e8-9254-77231cffd70f`). Legacy historical alias only: `GS_AUDIT_DB` → `AUDIT_DB`.
+- R2: `GS_ASSETS` (`gs-assets` in `prod`; `gs-assets-preview` in `preview`), `TELEMETRY` (`gs-telemetry-storage`).
+- AI and Durable Objects: `AI`; `AUTH_SESSION` (`AuthSession`).
+- Queues: `JOBS_QUEUE` (`goldshore-jobs`), `EVENTS_QUEUE` (`gs-events`), `MAIL_JOBS_QUEUE` (`gs-mail-jobs`), `DEAD_LETTER_QUEUE` (`gs-mail-dead-letter`).
+- Services and workflows: `AGENT` → `gs-agent`/`prod`, `GS_MAIL` → `gs-mail`/`prod`, `GS_WEB PROD` → `gs-web-prod`/`prod`, `GOLDSHORE_AI` → `goldshore-ai`/`prod`, workflow `GS_SIGNALS` → `signals-evaluator`.
+- Secrets Store: `SECRETS` (`b9824d3280c54573a24137c7e7143b33`).
 
 ---
 
