@@ -23,11 +23,7 @@ export const GET: APIRoute = async ({ url, request }) => {
     const gsApiUrl = import.meta.env.PUBLIC_GS_API_URL || 'https://api.goldshore.ai';
     const action = url.searchParams.get('action') || 'list';
 
-    const headers: HeadersInit = { 'Content-Type': 'application/json' };
-    const cfJwt = request.headers.get('CF-Access-Jwt-Assertion');
-    if (cfJwt) {
-      headers['CF-Access-Jwt-Assertion'] = cfJwt;
-    }
+    const headers = buildGsApiAccessHeaders(request);
 
     const response = await fetch(`${gsApiUrl}/integrations?action=${encodeURIComponent(action)}`, {
       method: 'GET',
