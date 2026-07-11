@@ -5,6 +5,7 @@
 >
 > Last certified: 2026-04-29 | Certified by: Rob Marston (@marzton)
 > Repo alignment pass: 2026-06-30 | `goldshore.org` apex ownership moved to `gs-web-prod`; `www.goldshore.org` ownership moved to `gs-www-redirect-prod`.
+> Redirect cleanup pass: 2026-07-11 | `gs-www-redirect-prod` is the sole canonical www redirect Worker for `www.goldshore.ai/*` and `www.goldshore.org/*`; the stale alternate production deployment is no longer part of the canonical set.
 
 ---
 
@@ -18,7 +19,7 @@
 
 ---
 
-## Workers (canonical set — 34 active)
+## Workers (canonical set — 33 active)
 
 | Worker name | Purpose | Domains served | Fail policy |
 |---|---|---|---|
@@ -42,7 +43,7 @@
 | `gs-web-preview` | Preview environment for gs-web (`wrangler --env preview`) | preview.goldshore.ai | Fail open |
 | `gs-web-staging` | Staging variant of gs-web | staging.goldshore.ai | Fail open |
 | `rmarston-com` | rmarston.com personal site | rmarston.com | Fail open (public) |
-| `goldshore-ai` | (Audit pending — may be stub) | — | TBD |
+| `goldshore-ai` | Removed unused stub Worker; no routes and `workers_dev = false`; `gs-web-prod` owns `goldshore.ai`/`goldshore.org` public traffic and `gs-api` no longer binds to this service. | — | Fail closed (removed) |
 | `gs-todo` | (Audit pending — may be internal tool) | — | TBD |
 | `gs-trading` | Schwab + Robinhood brokerage integration, trading API, risk engine | — | Fail closed |
 | `gs-trading-prod` | Production-env deployment of gs-trading (`wrangler --env prod`) | trading.goldshore.ai | Fail closed |
@@ -50,7 +51,6 @@
 | `armsway-com-prod` | Production-env deployment of armsway-com (`wrangler --env prod`) | armsway.com, www.armsway.com | Fail open (public) |
 | `gs-www-redirect` | www → apex redirect worker | www.goldshore.ai, www.goldshore.org | Fail open |
 | `gs-www-redirect-prod` | Production-env deployment of gs-www-redirect (`wrangler --env production`) | www.goldshore.ai, www.goldshore.org | Fail open |
-| `gs-www-redirect-production` | Stale alternate production deployment of gs-www-redirect created by `wrangler --env production` without a `name` override; duplicate of `gs-www-redirect-prod` — delete from CF dashboard once `gs-www-redirect-prod` is confirmed handling all traffic | — | Fail open |
 | `banproof` | BanProof legacy worker | — | Fail closed |
 | `partners-in-pools` | Matteo's pool business client site (partnersinpools.com) | partnersinpools.com | Fail open (public) |
 | `gs-mcp` | MCP server — Model Context Protocol endpoint for AI agent tooling | — | Fail closed |
@@ -190,7 +190,7 @@ Two workers in your account have unknown origin. You must decide to keep or dele
 | # | Action | Where | Status |
 |---|--------|--------|--------|
 | 1a | `partners-in-pools` — Matteo's pool business client site. Added to canonical table. | — | ✅ DONE |
-| 1b | Same for `goldshore-ai` worker — determine if it is a stub/duplicate or actively used. Delete or document. | [CF Dashboard](https://dash.cloudflare.com/f77de112d2019e5456a3198a8bb50bd2/workers-and-pages) | ⬜ TODO |
+| 1b | `goldshore-ai` worker — audited as an unused stub: repo implementation returned 404, had no routes, and disabled workers.dev. Removed the `gs-api` service binding and deleted `apps/goldshore-ai`; delete any remaining Cloudflare Worker shell from the dashboard if it still exists. | [CF Dashboard](https://dash.cloudflare.com/f77de112d2019e5456a3198a8bb50bd2/workers-and-pages) | ✅ DONE (repo cleanup; CF deletion pending if dashboard still lists it) |
 | 1c | Same for `gs-todo` — keep or delete. | [CF Dashboard](https://dash.cloudflare.com/f77de112d2019e5456a3198a8bb50bd2/workers-and-pages) | ⬜ TODO |
 | 1d | `gs-mcp` — MCP server for AI agent tooling. Added to canonical table. | — | ✅ DONE |
 | 1e | `gs-web-prod` — web application worker variant. Added to canonical table. | — | ✅ DONE |
@@ -202,7 +202,7 @@ Two workers in your account have unknown origin. You must decide to keep or dele
 | 1k | `armsway-com-prod` — prod-env deployment of armsway-com. Added to canonical table. | — | ✅ DONE |
 | 1l | `gs-web-preview` — preview-env deployment of gs-web (`wrangler --env preview`). Added to canonical table; serves preview.goldshore.ai. | — | ✅ DONE |
 | 1m | `goldclaw` — goldclaw auth/monetization integration worker. Added to canonical table. | — | ✅ DONE |
-| 1n | `gs-www-redirect-production` — stale alternate production deployment of gs-www-redirect created by `wrangler --env production` without a `name` override; duplicate of `gs-www-redirect-prod`. Added to canonical table. Delete from CF dashboard once `gs-www-redirect-prod` is confirmed handling all www traffic. | [CF Dashboard](https://dash.cloudflare.com/f77de112d2019e5456a3198a8bb50bd2/workers-and-pages) | ⬜ TODO (delete from CF) |
+| 1n | Remove/disable any stale alternate production deployment after confirming `gs-www-redirect-prod` owns `www.goldshore.ai/*` and `www.goldshore.org/*`. Keep only `gs-www-redirect-prod` in live Cloudflare routing and dashboard references. | CF Dashboard | ⚠️ External confirmation required |
 
 ---
 
