@@ -33,6 +33,7 @@ const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Aut
   <meta property="og:title" content="Gold Shore Labs | Applied Intelligence" />
   <meta property="og:description" content="Applied intelligence for institutions that need clarity under pressure." />
   <title>Gold Shore Labs | Applied Intelligence</title>
+  <meta name="google-adsense-account" content="ca-pub-5105781580031290" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@300;400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
@@ -63,7 +64,7 @@ const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Aut
 
 <main id="main-content">
 
-<!-- ── Hero ──────────────────────────────────────────────────────────────── -->
+<!-- ── Hero ────────────────────────────────────────────────────────────────────────── -->
 <section class="hero" id="platform">
   <div class="hero-copy">
     <p class="kicker">Gold Shore Labs · Est. 2022 · New York</p>
@@ -99,7 +100,7 @@ const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Aut
   </aside>
 </section>
 
-<!-- ── Sector surface ──────────────────────────────────────────────────────── -->
+<!-- ── Sector surface ────────────────────────────────────────────────────────── -->
 <section class="surface" data-reveal>
   <div class="section-head">
     <div>
@@ -114,7 +115,7 @@ const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Aut
   </div>
 </section>
 
-<!-- ── Telemetry ───────────────────────────────────────────────────────────── -->
+<!-- ── Telemetry ─────────────────────────────────────────────────────────────── -->
 <section class="telemetry" data-reveal>
   <div class="section-head">
     <div>
@@ -129,12 +130,12 @@ const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Aut
   </div>
 </section>
 
-<!-- ── Marquee ─────────────────────────────────────────────────────────────── -->
+<!-- ── Marquee ─────────────────────────────────────────────────────────────────── -->
 <div class="marquee">
   <div>{[...marquee,...marquee].map((item) => <span>{item}</span>)}</div>
 </div>
 
-<!-- ── Capabilities ───────────────────────────────────────────────────────── -->
+<!-- ── Capabilities ─────────────────────────────────────────────────────────────────── -->
 <section class="capabilities" data-reveal id="services">
   <div class="section-head large">
     <div>
@@ -157,7 +158,7 @@ const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Aut
   </div>
 </section>
 
-<!-- ── Under the Hood ────────────────────────────────────────────────────── -->
+<!-- ── Under the Hood ────────────────────────────────────────────────────────────────── -->
 <section class="underhood" data-reveal id="developer">
   <div class="section-head">
     <div>
@@ -191,7 +192,7 @@ export async function verifyAccess(req, env) {
   </div>
 </section>
 
-<!-- ── Risk Radar ─────────────────────────────────────────────────────────── -->
+<!-- ── Risk Radar ─────────────────────────────────────────────────────────────────── -->
 <section class="risk" data-reveal id="risk-radar">
   <div class="risk-copy">
     <p class="kicker">03 — Risk Radar</p>
@@ -215,7 +216,7 @@ export async function verifyAccess(req, env) {
   </div>
 </section>
 
-<!-- ── Financial Signals ──────────────────────────────────────────────────── -->
+<!-- ── Financial Signals ──────────────────────────────────────────────────────────────── -->
 <section class="signals" data-reveal id="signals">
   <div class="section-head">
     <div>
@@ -239,7 +240,7 @@ export async function verifyAccess(req, env) {
       <div class="chart-panel-head">
         <div>
           <h3>SPY</h3>
-          <p>SPDR S&P 500 ETF · NYSE Arca · 4h</p>
+          <p>SPDR S&amp;P 500 ETF · NYSE Arca · 4h</p>
         </div>
       </div>
       <p class="chart-big-price">$521.84 <span>▲ +6.37 (+1.24%)</span></p>
@@ -256,7 +257,7 @@ export async function verifyAccess(req, env) {
   </div>
 </section>
 
-<!-- ── Approach / Principles ──────────────────────────────────────────────── -->
+<!-- ── Approach / Principles ──────────────────────────────────────────────────────────────── -->
 <section class="approach" id="about" data-reveal>
   <div class="section-head">
     <div>
@@ -275,7 +276,7 @@ export async function verifyAccess(req, env) {
   </div>
 </section>
 
-<!-- ── Engage ─────────────────────────────────────────────────────────────── -->
+<!-- ── Engage ───────────────────────────────────────────────────────────────────────────── -->
 <section class="engage" data-reveal id="engage">
   <div>
     <p class="kicker">06 — Engage</p>
@@ -350,7 +351,7 @@ export async function verifyAccess(req, env) {
   <small>© 2026 Gold Shore Labs. All rights reserved. 40°42′N · 074°00′W · goldshore.ai · <a href="/legal/privacy">Privacy</a> · <a href="/legal/">Security</a> · <a href="/legal/terms">Terms</a></small>
 </footer>
 
-<!-- ── Access Modal ──────────────────────────────────────────────────────── -->
+<!-- ── Access Modal ────────────────────────────────────────────────────────────────── -->
 <dialog id="access-modal" class="access-modal" aria-labelledby="access-modal-title">
   <div class="modal-inner">
     <button class="modal-close" aria-label="Close">✕</button>
@@ -381,8 +382,9 @@ export async function verifyAccess(req, env) {
     <p class="modal-contact">Need access? <a href="/contact/">Contact us →</a></p>
   </div>
 </dialog>
-
 <script is:inline>
+  
+
 /* ── Critical interactivity (runs immediately after DOM parse) ────────────── */
 
 /* Scroll reveal */
