@@ -12,10 +12,10 @@ export const GET: APIRoute = async ({ locals }) => {
     const runtime = locals['runtime'] as Record<string, unknown> | undefined;
     const env = runtime?.env as Record<string, unknown> | undefined;
 
-    // Validate all bindings
-    const kvBinding = await validateKVBinding(env?.['KV']);
-    const d1Binding = await validateD1Binding(env?.['CONTENT_DB']);
-    const r2Binding = await validateR2Binding(env?.['ASSETS']);
+    // Validate all bindings with correct names from wrangler.toml
+    const kvBinding = await validateKVBinding(env?.['KV'] as Record<string, unknown> | undefined);
+    const d1Binding = await validateD1Binding(env?.['PLATFORM_DB'] as Record<string, unknown> | undefined);
+    const r2Binding = await validateR2Binding(env?.['GS_ASSETS'] as Record<string, unknown> | undefined);
     const serviceBinding = await validateServiceBinding();
 
     const bindings = [kvBinding, d1Binding, r2Binding, serviceBinding];
@@ -30,7 +30,7 @@ export const GET: APIRoute = async ({ locals }) => {
     return new Response(
       JSON.stringify({
         error: 'Validation failed',
-        message: String(error),
+        message: 'An unexpected error occurred while validating bindings.',
       }),
       {
         status: 500,
