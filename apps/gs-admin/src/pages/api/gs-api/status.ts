@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { ServiceStatusSchema } from '@goldshore/schema';
 import { requireAdminAccess } from '../../../lib/access';
-import { getGsApiBaseUrl, buildGsApiHeaders } from '../../../lib/gs-api';
+import { fetchGsApi } from '../../../lib/gs-api';
 import { getServerEnv } from '../../../lib/server-env';
 
 export const GET: APIRoute = async ({ request, locals }) => {
@@ -15,9 +15,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
     });
   }
 
-  const response = await fetch(`${getGsApiBaseUrl(env)}/system/status`, {
-    headers: buildGsApiHeaders(env)
-  });
+  const response = await fetchGsApi(env, '/system/status');
 
   const payload = await response.json().catch(() => null);
   const parsedStatus = ServiceStatusSchema.safeParse(payload);
