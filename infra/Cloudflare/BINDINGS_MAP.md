@@ -71,15 +71,23 @@
 - KV:
   - Binding: `KV`
   - Namespace: `gs_api_kv_001` _(canonical; historical alias: `goldshore-api-kv`)_
+  - Binding: `RISK_RADAR_CACHE`
+  - Namespace: `gs-risk-radar-cache` / `gs-risk-radar-cache-preview` _(Risk Radar response and signal cache; API-only)_
 - D1:
   - Binding: `DB`
   - Database: `goldshore` / `gs_db_001` _(historical alias: `goldshore-api-db`)_
+  - Binding: `RISK_RADAR_DB`
+  - Database: `gs_risk_radar_db` _(Risk Radar canonical structured storage; API-only)_
 - R2:
   - Binding: `ASSETS`
   - Bucket: `gs-assets` _(historical alias: `goldshore-api-assets`)_
+  - Binding: `RISK_RADAR_R2`
+  - Bucket: `gs-risk-radar-raw` / `gs-risk-radar-raw-preview` _(Risk Radar raw source object storage; API-only)_
 - AI:
   - Binding: `AI`
   - Gateway: `goldshore-ai-gateway`
+
+**Risk Radar storage policy:** bind Risk Radar storage only to `gs-api`; `gs-web` must call API endpoints rather than receiving `RISK_RADAR_DB`, `RISK_RADAR_CACHE`, or `RISK_RADAR_R2` directly.
 
 ---
 

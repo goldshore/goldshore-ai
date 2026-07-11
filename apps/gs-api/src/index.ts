@@ -25,6 +25,11 @@ import gearswipe from './routes/gearswipe';
 import crawler from './routes/crawler';
 import integrations from './routes/integrations';
 import goldclaw from './routes/goldclaw';
+import agent from './routes/agent';
+import mail from './routes/mail';
+import control from './routes/control';
+import trading from './routes/trading';
+import core from './routes/core';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
 import { type Env } from './types';
@@ -32,9 +37,12 @@ import { type Env } from './types';
 type Env = {
   KV: KVNamespace;
   CONTROL_LOGS?: KVNamespace;
+  RISK_RADAR_CACHE?: KVNamespace;
   PLATFORM_DB: D1Database;
+  RISK_RADAR_DB?: D1Database;
   TELEMETRY_DB?: D1Database;
   GS_ASSETS: R2Bucket;
+  RISK_RADAR_R2?: R2Bucket;
   AUTH_SESSION?: DurableObjectNamespace;
   AI: Ai;
   OPENAI_API_KEY?: string;
@@ -52,6 +60,7 @@ type Env = {
   MAIL_BLOCKED_SENDERS?: string;
   MAIL_ALLOWED_RECIPIENTS?: string;
   AGENT?: Fetcher;
+  GS_WEB?: Fetcher;
   API_ORIGIN?: string;
   ENV?: string;
   DEV_AUTH_BYPASS?: string;
@@ -190,17 +199,9 @@ app.use('*', async (c, next) => {
   }
 
   const correlationId = getCorrelationId(c.req.raw);
-  if (!c.env.AGENT) {
-    return c.json({ error: 'Downstream agent not configured', traceId: correlationId }, 503, {
-      [TRACE_HEADER]: correlationId,
-    });
-  }
-
-  const downstreamRequest = new Request(c.req.raw, {
-    headers: new Headers(c.req.raw.headers),
-  });
-  downstreamRequest.headers.set(TRACE_HEADER, correlationId);
-  const response = await c.env.AGENT.fetch(downstreamRequest);
+  const agentUrl = new URL(c.req.url);
+  agentUrl.pathname = `/agent${agentUrl.pathname === '/' ? '' : agentUrl.pathname}`;
+  const response = await app.fetch(new Request(agentUrl.toString(), c.req.raw), c.env, c.executionCtx);
   return withCorrelationId(response, correlationId);
 });
 
@@ -325,6 +326,11 @@ app.route('/goldclaw', goldclaw);
 app.route('/media', media);
 app.route('/pages', pages);
 app.route('/internal', internal);
+app.route('/agent', agent);
+app.route('/mail', mail);
+app.route('/admin/control', control);
+app.route('/trading', trading);
+app.route('/core', core);
 
 app.all('/api/*', async (c) => {
   const correlationId = getCorrelationId(c.req.raw);
@@ -359,14 +365,52 @@ v1.route('/forms', forms);
 v1.route('/deployments', deployments);
 v1.route('/gearswipe', gearswipe);
 v1.route('/goldclaw', goldclaw);
+v1.route('/trading', trading);
+v1.route('/agent', agent);
+v1.route('/mail', mail);
+v1.route('/control', control);
+v1.route('/core', core);
 v1.get('/leads', (c) => c.json({ leads: [] }));
 
 app.route('/v1', v1);
 
 export { isAllowedOrigin, isPreviewOrigin, parseAllowedOrigins };
 
+const processQueueMessage = async (message: Message<any>, env: Env): Promise<void> => {
+  const body = message.body;
+  const type = typeof body === 'object' && body && 'type' in body ? String((body as { type?: unknown }).type) : 'unknown';
+  if (type === 'contact' || type === 'checkout') {
+    console.info({ event: 'mail_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
+    message.ack();
+    return;
+  }
+  if (type === 'trading' || type === 'trading-signal' || type === 'order') {
+    console.info({ event: 'trading_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
+    message.ack();
+    return;
+  }
+  if (type === 'signal' || type === 'atc') {
+    console.info({ event: 'core_signal_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
+    message.ack();
+    return;
+  }
+  console.info({ event: 'agent_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
+  message.ack();
+};
+
 export default {
   fetch: app.fetch,
+
+  async queue(batch: MessageBatch<any>, env: Env): Promise<void> {
+    for (const message of batch.messages) {
+      try {
+        await processQueueMessage(message, env);
+      } catch (error) {
+        console.error('gs-api queue message processing failed:', error);
+        message.retry();
+      }
+    }
+  },
 
   async email(message: ForwardableEmailMessage, env: Env, ctx: ExecutionContext): Promise<void> {
     const sender = message.from;
