@@ -106,6 +106,7 @@ cloudflare:
           - "admin.goldshore.ai"
           - "admin.goldshore.org"
           - "admin-preview.goldshore.ai"
+          - "admin.gs-admin.pages.dev"
         action: "allow"
         rules:
           include:
@@ -158,6 +159,7 @@ cloudflare:
         domains:
           - "gw.goldshore.ai"
           - "agent.goldshore.ai"
+          - "gs-agent.goldshore.workers.dev"
         action: "allow"
         paths:
           - "/admin/*"
@@ -186,6 +188,7 @@ cloudflare:
       - name: "Goldshore API"
         domains:
           - "api.goldshore.ai"
+          - "gs-api.goldshore.workers.dev"
         action: "allow"
         audience: "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
         paths:
@@ -215,6 +218,58 @@ cloudflare:
       - name: "GoldShore-Web-Preview"
         domain: "preview.goldshore.ai"
         action: "allow"
+        rules:
+          include:
+            - email_domain: "goldshore.ai"
+            - email: "marstonr6@gmail.com"
+          allowed_identity_providers:
+            - "google_workspace"
+            - "github_goldshore_deploy"
+            - "github"
+            - "email_otp"
+
+      # Previously only defined in setup-cf-agent-access.yml; mirrored here so
+      # this file stays the single declarative source of Access intent.
+      - name: "Signals"
+        domains:
+          - "signals.goldshore.ai"
+          - "signals.goldshore.org"
+          - "gs-signals-prod.goldshore.workers.dev"
+        action: "allow"
+        rules:
+          include:
+            - email_domain: "goldshore.ai"
+            - email: "marstonr6@gmail.com"
+          allowed_identity_providers:
+            - "google_workspace"
+            - "github_goldshore_deploy"
+            - "github"
+            - "email_otp"
+
+      - name: "GoldShore MCP"
+        domains:
+          - "mcp.goldshore.ai"
+        action: "allow"
+        rules:
+          include:
+            - email_domain: "goldshore.ai"
+            - email: "marstonr6@gmail.com"
+          allowed_identity_providers:
+            - "github_goldshore_deploy"
+            - "github"
+            - "email_otp"
+
+      # Browser SSH to the HP laptop (type "ssh" app; gated by the
+      # include_ssh_laptop input of setup-cf-agent-access.yml). Requires a
+      # cloudflared tunnel on the laptop publishing this hostname with an SSH
+      # origin — the Access app alone serves nothing.
+      - name: "Temp HP Laptop SSH"
+        type: "ssh"
+        domains:
+          - "ssh-laptop.goldshore.ai"
+        action: "allow"
+        session_duration: "4h"
+        app_launcher_visible: false
         rules:
           include:
             - email_domain: "goldshore.ai"
