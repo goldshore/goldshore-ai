@@ -155,3 +155,15 @@ If the team approves this ADR, the next step should be:
 1. Draft a merged `gs-gateway` + `gs-agent` Wrangler configuration for both preview and production.
 2. Define the route map that keeps `gw*` and `agent*` hostnames stable.
 3. Produce a staged migration and rollback plan that validates Access, KV, AI, and queue compatibility before cutover.
+
+## 2026-07-11 Legacy Service Binding Consolidation
+
+The legacy `AGENT`/`gs-agent`, `GS_MAIL`/`gs-mail`, `GS_CONTROL`/`gs-control`, `TRADING_SERVICE`/`gs-trading-prod`, and `GS_CORE_PROD`/`gs-core-worker-prod` runtime responsibilities have been migrated into `apps/gs-api`:
+
+- Agent status/templates and `goldshore-jobs` AI job consumption now live in `apps/gs-api/src/routes/agent.ts` and the exported `queue()` handler in `apps/gs-api/src/index.ts`.
+- Mail HTTP status/log routes live in `apps/gs-api/src/routes/mail.ts`; Cloudflare Email Routing continues through the exported `email()` handler in `apps/gs-api/src/index.ts`, and `gs-mail-jobs` is consumed by `gs-api`.
+- Control-plane config sync and admin operations live under protected `apps/gs-api/src/routes/control.ts` routes mounted at `/admin/control` and `/v1/control`.
+- Trading dashboard/API/OAuth/paper/agent routes are mounted through `apps/gs-api/src/routes/trading.ts`, with the former trading implementation copied under `apps/gs-api/src/trading`.
+- Signals/ATC logic from `gs-core-worker-prod` is mounted in `apps/gs-api/src/routes/core.ts`, with signal queue messages handled by the unified `gs-api` queue consumer.
+
+Wrangler service bindings to those legacy workers should not be reintroduced; use direct `gs-api` routes or queue producers targeting queues consumed by `gs-api`.
