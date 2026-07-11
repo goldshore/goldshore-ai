@@ -15,7 +15,8 @@ declare global {
           CLOUDFLARE_TEAM_DOMAIN?: string;
           ADMIN_DEV_ROLE?: string;
           GS_API_SERVICE_TOKEN?: string;
-          [key: string]: string | undefined;
+          API_SERVICE?: Fetcher;
+          [key: string]: string | Fetcher | undefined;
         };
       };
     }
