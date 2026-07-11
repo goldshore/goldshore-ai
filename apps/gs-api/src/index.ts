@@ -22,8 +22,12 @@ import sites from './routes/sites';
 import forms from './routes/forms';
 import deployments from './routes/deployments';
 import gearswipe from './routes/gearswipe';
+import crawler from './routes/crawler';
+import integrations from './routes/integrations';
+import goldclaw from './routes/goldclaw';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
+import { type Env } from './types';
 
 type Env = {
   KV: KVNamespace;
@@ -315,6 +319,9 @@ app.route('/user', user);
 app.route('/system', system);
 app.route('/templates', templates);
 app.route('/admin', admin);
+app.route('/admin/crawler', crawler);
+app.route('/integrations', integrations);
+app.route('/goldclaw', goldclaw);
 app.route('/media', media);
 app.route('/pages', pages);
 app.route('/internal', internal);
@@ -351,6 +358,7 @@ v1.route('/sites', sites);
 v1.route('/forms', forms);
 v1.route('/deployments', deployments);
 v1.route('/gearswipe', gearswipe);
+v1.route('/goldclaw', goldclaw);
 v1.get('/leads', (c) => c.json({ leads: [] }));
 
 app.route('/v1', v1);

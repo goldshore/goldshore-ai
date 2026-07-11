@@ -15,6 +15,35 @@ const capabilities = [
   ['Digital Strategy & Systems Consulting','Architecture planning, vendor evaluation, capability mapping — the upstream work that makes everything downstream coherent. Strategy that ships, not slides.',['Strategy','Architecture','Due Diligence','Roadmapping']],
   ['Design, Development & Product','Full-cycle product and software delivery. Brand identity, design systems, Astro frontends, Cloudflare Workers, React Native — shipped on time, built to last.',['Astro','React Native','CF Workers','Design Systems']],
   ['Resilient Infrastructure & Observability','Production-grade infrastructure with full observability. Cloudflare Access, D1 databases, KV audit trails, R2 storage — secure by default, traceable at every layer.',['Cloudflare','D1','Hono','JWKS Auth']],
+import Logo from '../components/brand/Logo.astro';
+import ParallaxHero from '../components/hero/ParallaxHero.astro';
+import RiskRadar from '../components/RiskRadar.astro';
+import WebLayout from '../layouts/WebLayout.astro';
+
+export const prerender = true;
+
+const trustMetrics = [
+  {
+    label: 'Audit readiness',
+    value: '100%',
+    context: 'Control workflows mapped',
+    detail:
+      'Decision checkpoints, reviewer ownership, and evidence logs are defined from day one.',
+  },
+  {
+    label: 'Incident response',
+    value: '< 15 min',
+    context: 'Mean triage handoff',
+    detail:
+      'Risk, compliance, and operations teams share the same runtime timeline and escalation logic.',
+  },
+  {
+    label: 'Decision evidence',
+    value: '7 years',
+    context: 'Trace retention policy',
+    detail:
+      'Every critical AI action is preserved for regulatory review and internal post-incident analysis.',
+  },
 ];
 const stackRows = [['gs-gateway','Ingress, CORS, auth, integration routing','Mar 29','Live'],['gs-agent','Autonomous processor, queue consumer','Mar 19','Live'],['gs-api','Core API, data access layer','Mar 22','Live'],['gs-mail','Transactional mail service','Mar 29','Live'],['gs-control','Control plane, operator interface','Mar 22','Live']];
 const anomalies = [['ALGO-DRIFT — Position delta exceeds 3σ','High','00:42'],['SENTIMENT — NVDA neg. velocity +18%','Med','01:14'],['LATENCY — GW P99 at 42ms','Low','02:07'],['CORRELATION — BTC/SPX decoupling','Med','03:55']];
@@ -40,6 +69,12 @@ const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Aut
 </head>
 <body class="gs-home">
 
+<a class="skip-nav" href="#main-content">Skip to main content</a>
+<canvas id="starfield" aria-hidden="true"></canvas>
+
+<header class="topbar">
+  <a class="brand" href="/" aria-label="GoldShore home">
+    <span class="brand-wordmark">GOLDSHORE</span>
 <canvas id="starfield" aria-hidden="true"></canvas>
 
 <header class="topbar">
@@ -62,7 +97,7 @@ const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Aut
   </nav>
 </header>
 
-<main>
+<main id="main-content">
 
 <!-- ── Hero ──────────────────────────────────────────────────────────────── -->
 <section class="hero" id="platform">
@@ -93,8 +128,8 @@ const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Aut
       ))}
     </div>
     <div class="panel-columns">
-      <div><h3>Services</h3>{services.map((s) => <p>{s}</p>)}</div>
-      <div><h3>Sectors</h3>{sectors.map((s) => <p>{s}</p>)}</div>
+      <div><p class="panel-col-heading">Services</p>{services.map((s) => <p>{s}</p>)}</div>
+      <div><p class="panel-col-heading">Sectors</p>{sectors.map((s) => <p>{s}</p>)}</div>
     </div>
     <p class="operational"><span></span>Operational</p>
   </aside>
@@ -358,11 +393,715 @@ export async function verifyAccess(req, env) {
     <h2 id="access-modal-title">Access Goldshore</h2>
     <p class="modal-lead">Select a destination to continue.</p>
     <div class="modal-grid">
+      <a href="https://admin.goldshore.ai" class="modal-card" rel="noopener noreferrer" target="_blank" data-admin-access-link>
+        <span class="modal-icon">⬡</span>
+        <strong>Admin</strong>
+        <span>Operator dashboard</span>
+      </a>
+      <a href="https://admin.goldshore.org" class="modal-card" rel="noopener noreferrer" target="_blank" data-admin-alternate-link>
+        <span class="modal-icon">◈</span>
+        <strong data-admin-alternate-title>Admin .org</strong>
+        <span data-admin-alternate-copy>Protected organisation alias</span>
+      </a>
+      <a href="/developer/mcp" class="modal-card">
+        <span class="modal-icon">⬢</span>
+        <strong>MCP</strong>
+        <span>Model Context Protocol</span>
+      </a>
+      <a href="https://api.goldshore.ai" class="modal-card" rel="noopener noreferrer" target="_blank">
+        <span class="modal-icon">◉</span>
+        <strong>API</strong>
+        <span>Developer access</span>
+      </a>
+    </div>
+    <p class="modal-contact">Need access? <a href="/contact/">Contact us →</a></p>
+  </div>
+</dialog>
+
+<script is:inline>
+/* ── Critical interactivity (runs immediately after DOM parse) ────────────── */
+
+/* Scroll reveal */
+document.documentElement.classList.add('js-ready');
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('is-visible'); io.unobserve(e.target); }
+  });
+}, { threshold: 0.1 });
+document.querySelectorAll('[data-reveal], .sector-grid article, .cap-list article, .telemetry-grid article')
+  .forEach(el => io.observe(el));
+
+/* Hamburger nav toggle */
+const navToggle = document.getElementById('nav-toggle');
+const mainNav   = document.getElementById('main-nav');
+navToggle?.addEventListener('click', () => {
+  const open = mainNav.classList.toggle('nav-open');
+  navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+});
+
+/* Access modal */
+const accessModal = document.getElementById('access-modal');
+document.getElementById('open-access-modal')?.addEventListener('click', () => accessModal?.showModal());
+document.querySelector('.modal-close')?.addEventListener('click', () => accessModal?.close());
+accessModal?.addEventListener('click', e => { if (e.target === accessModal) accessModal.close(); });
+
+/* ── Host-aware admin links ───────────────────────────────────────────────── */
+const adminHost = window.location.hostname.endsWith('goldshore.org') ? 'admin.goldshore.org' : 'admin.goldshore.ai';
+const alternateAdminHost = adminHost === 'admin.goldshore.org' ? 'admin.goldshore.ai' : 'admin.goldshore.org';
+document.querySelectorAll('[data-admin-access-link]').forEach(link => {
+  link.setAttribute('href', `https://${adminHost}`);
+});
+document.querySelectorAll('[data-admin-alternate-link]').forEach(link => {
+  link.setAttribute('href', `https://${alternateAdminHost}`);
+});
+document.querySelectorAll('[data-admin-alternate-title]').forEach(el => {
+  el.textContent = alternateAdminHost === 'admin.goldshore.org' ? 'Admin .org' : 'Admin .ai';
+});
+document.querySelectorAll('[data-admin-alternate-copy]').forEach(el => {
+  el.textContent = alternateAdminHost === 'admin.goldshore.org' ? 'Protected organisation alias' : 'Protected AI alias';
+});
+
+/* ── Quick engage form ────────────────────────────────────────────────────── */
+const qsForm    = document.getElementById('quick-form');
+const qsStarted = document.getElementById('qs-form-started');
+const qsStatus  = document.getElementById('qs-form-status');
+const qsSubmit  = document.getElementById('qs-submit');
+
+if (qsStarted) qsStarted.value = Date.now().toString();
+
+qsForm?.addEventListener('submit', async e => {
+  e.preventDefault();
+  const fd  = new FormData(qsForm);
+  const msg = (fd.get('message') || '').toString().trim();
+  if (msg.length < 20) {
+    qsStatus.textContent = 'Message must be at least 20 characters.';
+    qsStatus.className = 'form-status';
+    return;
+  }
+  qsStatus.textContent = '';
+  qsSubmit.disabled = true;
+  qsSubmit.textContent = 'Sending…';
+  try {
+    const raw = `${fd.get('formType')}|${fd.get('name')}|${fd.get('email')}|${fd.get('inquiry')}|${msg}`;
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
+    document.getElementById('qs-dedupe-key').value = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+    const res  = await fetch('/api/contact', {
+      method: 'POST',
+      headers: { 'x-gs-request-mode': 'spa', 'Accept': 'application/json' },
+      body: new FormData(qsForm),
+    });
+    if (res.ok) {
+      window.location.href = '/thank-you';
+    } else {
+      const data = await res.json().catch(() => ({}));
+      qsStatus.textContent = data.error || 'Something went wrong. Please try again.';
+      qsStatus.className = 'form-status';
+      qsSubmit.disabled = false;
+      qsSubmit.textContent = 'Submit Request →';
+    }
+  } catch {
+    qsStatus.textContent = 'Network error. Please try again.';
+    qsStatus.className = 'form-status';
+    qsSubmit.disabled = false;
+    qsSubmit.textContent = 'Submit Request →';
+  }
+});
+
+/* ── Deferred decorative enhancements (after page load) ──────────────────── */
+window.addEventListener('load', function () {
+
+  /* Starfield canvas animation */
+  (function () {
+    const canvas = document.getElementById('starfield');
+    if (!canvas || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const ctx = canvas.getContext('2d');
+    let stars = [];
+    function resize() {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    function init() {
+      stars = Array.from({ length: 160 }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 1.2,
+        a: Math.random() * Math.PI * 2,
+        s: 0.0002 + Math.random() * 0.0003,
+      }));
+    }
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      stars.forEach(s => {
+        s.a += s.s;
+        const alpha = 0.2 + 0.5 * Math.abs(Math.sin(s.a));
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(236,234,228,${alpha})`;
+        ctx.fill();
+      });
+      requestAnimationFrame(draw);
+    <section
+      class="section-block gs-shell-section compact-team"
+      aria-labelledby="team-title"
+    >
+      <div class="section-copy">
+        <p class="gs-eyebrow">Team</p>
+        <h2 id="team-title">
+          Built by operators focused on resilient systems and applied
+          intelligence.
+        </h2>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Approach / Principles ──────────────────────────────────────────────── -->
+<section class="approach" id="about" data-reveal>
+  <div class="section-head">
+    <div>
+      <p class="kicker">05 — Approach</p>
+      <h2>How We Work.</h2>
+    </div>
+  </div>
+  <div class="inner">
+    {principles.map(([num,title,body]) => (
+      <div class="approach-item">
+        <div class="approach-num">{num}</div>
+        <h3>{title}</h3>
+        <p>{body}</p>
+      </div>
+    ))}
+  </div>
+</section>
+
+<!-- ── Engage ─────────────────────────────────────────────────────────────── -->
+<section class="engage" data-reveal id="engage">
+  <div>
+    <p class="kicker">06 — Engage</p>
+    <h2>Ready to<br />Operationalize.</h2>
+    <p>Whether you need a strategic briefing, a technical audit, a delivered product, or an embedded AI system — the conversation starts here.</p>
+    <div class="actions">
+      <a class="btn primary magnetic" href="mailto:hello@goldshore.ai?subject=Gold%20Shore%20Briefing%20Request">Request Briefing →</a>
+      <a class="btn magnetic" href="/developer">Developer Hub →</a>
+    </div>
+  </div>
+  <form class="quick-form" id="quick-form" method="POST" action="/api/contact">
+    <h3>Quick Inquiry</h3>
+    <input type="hidden" name="formType" value="homepage-inquiry" />
+    <input type="hidden" name="redirectTo" value="/thank-you" />
+    <input type="hidden" name="formStartedAt" id="qs-form-started" value="" />
+    <input type="hidden" name="dedupeKey" id="qs-dedupe-key" value="" />
+    <div class="gs-honeypot"><input name="companyWebsite" tabindex="-1" autocomplete="off" /></div>
+    <div class="form-row">
+      <label>Name<input name="name" required placeholder="Your name" /></label>
+      <label>Organisation<input name="company" placeholder="Firm or company" /></label>
+    </div>
+    <label>Work Email<input name="email" type="email" required placeholder="you@firm.com" /></label>
+    <label>Interest
+      <select name="inquiry" required>
+        <option value="">Select area of interest</option>
+        <option value="general">General Enquiry</option>
+        <option value="strategy-call">Strategy Call</option>
+        <option value="project-scope">Project Scope</option>
+        <option value="support">Support</option>
+      </select>
+    </label>
+    <label>Message
+      <textarea name="message" id="qs-message" required rows="4" placeholder="Tell us about your inquiry (20+ characters)…"></textarea>
+    </label>
+    <div id="qs-form-status" class="form-status" aria-live="polite"></div>
+    <button type="submit" class="btn-form" id="qs-submit">Submit Request →</button>
+  </form>
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <div>
+    <h2>GoldShore</h2>
+    <p>Applied Intelligence · Digital Systems · Consulting</p>
+    <p>Institutional AI systems, risk tooling, and resilient operator infrastructure. Cross-sector. Full-stack. Built to last.</p>
+  </div>
+  <div>
+    <h3>Platform</h3>
+    <p><a href="/risk-radar/">Risk Radar</a></p>
+    <p><a href="/platform/financial-signals">Financial Signals</a></p>
+    <p><a href="/platform/workflow-engine">Workflow Engine</a></p>
+    <p><a href="/platform/sentinel">Sentinel</a></p>
+    <p><a href="/platform/ai-oracle">AI Oracle</a></p>
+  </div>
+  <div>
+    <h3>Services</h3>
+    <p><a href="/services/digital-strategy">Digital Strategy</a></p>
+    <p><a href="/services/ai-implementation">AI Implementation</a></p>
+    <p><a href="/services/systems-integration">Systems Integration</a></p>
+    <p><a href="/services/design-dev">Design &amp; Development</a></p>
+    <p><a href="/services/consulting">Enterprise Consulting</a></p>
+  </div>
+  <div>
+    <h3>Company</h3>
+    <p><a href="/about/">About</a></p>
+    <p><a href="/team/">Team</a></p>
+    <p><a href="/developer/">Developer Hub</a></p>
+    <p><a href="/status/">Status</a></p>
+    <p><a href="/contact/">Contact</a></p>
+  </div>
+  <small>© 2026 Gold Shore Labs. All rights reserved. 40°42′N · 074°00′W · goldshore.ai · <a href="/legal/privacy">Privacy</a> · <a href="/legal/">Security</a> · <a href="/legal/terms">Terms</a></small>
+</footer>
+
+<!-- ── Access Modal ──────────────────────────────────────────────────────── -->
+<dialog id="access-modal" class="access-modal" aria-labelledby="access-modal-title">
+  <div class="modal-inner">
+    <button class="modal-close" aria-label="Close">✕</button>
+    <h2 id="access-modal-title">Access Goldshore</h2>
+    <p class="modal-lead">Select a destination to continue.</p>
+    <div class="modal-grid">
       <a href="https://dashboard.goldshore.ai" class="modal-card" rel="noopener noreferrer" target="_blank">
         <span class="modal-icon">⬡</span>
         <strong>Dashboard</strong>
         <span>Portfolio &amp; signals</span>
       </a>
+    </footer>
+  </main>
+
+  <script>
+    import { trackEvent } from '../scripts/analytics';
+    import { initWave } from '../scripts/init-wave';
+    import { initLogo } from '../scripts/init-logo-reactive';
+
+    let homeCleanup;
+
+    const cleanup = () => {
+      homeCleanup?.();
+      homeCleanup = undefined;
+    };
+
+    const hydrateMetrics = () => {
+      const cards = document.querySelectorAll('.signal-tile--loading');
+      const reduceMotion = window.matchMedia(
+        '(prefers-reduced-motion: reduce)',
+      ).matches;
+
+      window.setTimeout(
+        () => cards.forEach((card) => card.classList.remove('signal-tile--loading')),
+        reduceMotion ? 0 : 650,
+      );
+    };
+
+    const boot = () => {
+      cleanup();
+      hydrateMetrics();
+
+      const canvas = document.getElementById('wave-bg');
+      const logo = document.querySelector('.gs-logo-reactive');
+      const isReactiveLogo =
+        logo instanceof HTMLElement || logo instanceof SVGElement;
+
+      if (!(canvas instanceof HTMLCanvasElement) || !isReactiveLogo) return;
+
+      const wave = initWave(canvas);
+      const destroyLogo = initLogo(logo, wave);
+
+      homeCleanup = () => {
+        destroyLogo?.();
+        wave.destroy();
+      };
+    };
+
+    const root = document.documentElement;
+    const ctaEventNames = {
+      heroPrimary: 'hero_primary_contact_click',
+      heroSecondary: 'hero_secondary_services_click',
+      footerSecondary: 'footer_secondary_services_click',
+    };
+
+    const bindCtaEvents = () => {
+      const ctaNodes = document.querySelectorAll('[data-cta-event]');
+      ctaNodes.forEach((node) => {
+        if (!(node instanceof HTMLElement) || node.dataset.ctaBound === 'true') return;
+        const eventName = node.dataset.ctaEvent;
+        if (!eventName) return;
+
+        node.dataset.ctaBound = 'true';
+        node.addEventListener('click', () => {
+          window.dispatchEvent(
+            new CustomEvent('gs:cta-click', {
+              detail: { eventName, location: node.closest('footer') ? 'footer' : 'hero' },
+            }),
+          );
+        });
+      });
+    };
+
+    if (root.dataset.gsHomeHeroBound !== 'true') {
+      root.dataset.gsHomeHeroBound = 'true';
+      document.addEventListener('astro:before-swap', cleanup);
+      document.addEventListener('astro:page-load', boot);
+      document.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+
+        const cta = target.closest('[data-analytics-id]');
+        if (!(cta instanceof HTMLElement)) return;
+
+        const ctaId = cta.dataset.analyticsId;
+        if (!ctaId || !ctaId.startsWith('homepage-')) return;
+
+        trackEvent(
+          'homepage_cta_click',
+          {
+            cta_id: ctaId,
+            page_path: window.location.pathname,
+          },
+          { debounceKey: `homepage_cta_click:${ctaId}`, debounceMs: 1200 },
+        );
+      });
+    }
+
+    boot();
+    bindCtaEvents();
+    void ctaEventNames;
+  </script>
+
+  <style>
+    .home-page {
+      padding-bottom: var(--gs-space-10);
+    }
+
+    .hero {
+      position: relative;
+      min-height: min(92vh, 960px);
+      display: grid;
+      align-items: end;
+      overflow: hidden;
+      border-bottom: 1px solid var(--gs-border);
+    }
+
+    #wave-bg,
+    .hero-grid,
+    .hero::after {
+      position: absolute;
+      inset: 0;
+    }
+
+    #wave-bg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .hero-grid {
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+      background-size: 72px 72px;
+      mask-image: radial-gradient(circle at 50% 30%, black 30%, transparent 80%);
+      opacity: 0.5;
+    }
+
+    .hero::after {
+      content: '';
+      background:
+        radial-gradient(circle at 25% 20%, rgba(90, 162, 255, 0.18), transparent 28%),
+        linear-gradient(180deg, rgba(7, 11, 20, 0.18), rgba(7, 11, 20, 0.84));
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .hero-mark {
+      position: absolute;
+      inset: 18% auto auto clamp(1rem, 7vw, 6rem);
+      z-index: 1;
+    }
+
+    .gs-logo-reactive {
+      width: clamp(72px, 11vw, 120px);
+      height: auto;
+      color: var(--gs-primary);
+      will-change: transform, filter;
+    }
+
+    .hero-shell,
+    .section-block,
+    .metrics-shell,
+    .signal-strip {
+      width: min(100% - 2rem, var(--gs-max-width));
+      margin: 0 auto;
+    }
+
+    .hero-shell {
+      position: relative;
+      z-index: 2;
+      padding: clamp(7rem, 12vh, 10rem) 0 1.75rem;
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr);
+      gap: clamp(1.5rem, 4vw, 4rem);
+      align-items: end;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.85rem;
+      border: 1px solid rgba(90, 162, 255, 0.22);
+      border-radius: 999px;
+      background: rgba(90, 162, 255, 0.1);
+      color: #dcedff;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .hero-content h1,
+    .section-copy h2,
+    .contact-cta h2 {
+      margin: 1rem 0;
+      font-size: clamp(2.7rem, 7vw, 5.4rem);
+      line-height: 0.98;
+      letter-spacing: -0.045em;
+      color: #fff;
+      text-wrap: balance;
+    }
+
+    .hero-content p,
+    .section-copy p,
+    .hero-panel li,
+    .proof-card p,
+    .team-card p,
+    .contact-cta p,
+    .signal-tile p {
+      color: rgba(233, 238, 252, 0.82);
+      line-height: 1.72;
+      font-size: 1rem;
+    }
+
+    .hero-lead {
+      max-width: 34rem;
+      font-size: clamp(1.08rem, 0.98rem + 0.45vw, 1.3rem);
+      color: rgba(248, 251, 255, 0.95);
+    }
+
+    .hero-supporting-copy,
+    .section-intro {
+      max-width: 42rem;
+      color: rgba(233, 238, 252, 0.72);
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: var(--gs-space-4);
+      flex-wrap: wrap;
+      margin-top: var(--gs-space-6);
+    }
+
+    .hero-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.9rem 1.2rem;
+      border-radius: 999px;
+      border: 1px solid var(--gs-border);
+      background: var(--gs-primary-soft);
+      color: var(--gs-text);
+      text-decoration: none;
+      transition:
+        transform 160ms ease,
+        border-color 160ms ease,
+        background 160ms ease;
+    }
+
+    .hero-button:hover,
+    .hero-button:focus-visible {
+      transform: translateY(-1px);
+      border-color: var(--gs-primary);
+      background: color-mix(in srgb, var(--gs-primary) 20%, transparent);
+    }
+
+    .hero-button--primary {
+      border-color: var(--gs-primary);
+      background: color-mix(in srgb, var(--gs-primary) 24%, transparent);
+      box-shadow: 0 18px 42px rgba(9, 17, 33, 0.28);
+    }
+
+    .hero-panel,
+    .signal-tile,
+    .capability-card,
+    .proof-card,
+    .team-card,
+    .contact-cta {
+      padding: var(--gs-space-6);
+      border-radius: var(--gs-radius-lg);
+      border: 1px solid var(--gs-border);
+      background: var(--gs-surface);
+      box-shadow: var(--gs-shadow);
+    }
+
+    .hero-panel {
+      border-color: var(--gs-border);
+      background: var(--gs-surface-strong);
+      backdrop-filter: blur(12px);
+    }
+
+    .hero-panel__heading h2 {
+      margin: 0.45rem 0 0.85rem;
+      font-size: clamp(1.65rem, 2.6vw, 2.1rem);
+      line-height: 1.1;
+      color: #fff;
+    }
+
+    .status-banner {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.95rem 1rem;
+      margin-bottom: 1rem;
+      border-radius: 18px;
+      border: 1px solid var(--gs-border);
+      background: var(--gs-primary-soft);
+    }
+
+    .status-banner strong {
+      display: block;
+      margin-bottom: 0.2rem;
+      color: #fff;
+    }
+
+    .status-banner p {
+      margin: 0;
+      color: rgba(233, 238, 252, 0.76);
+      font-size: 0.95rem;
+    }
+
+    .status-dot {
+      width: 0.72rem;
+      height: 0.72rem;
+      border-radius: 999px;
+      background: #47e3a7;
+      box-shadow: 0 0 0 rgba(71, 227, 167, 0.5);
+      animation: statusPulse 1.9s ease-out infinite;
+      flex-shrink: 0;
+      margin-top: 0.28rem;
+    }
+
+    .hero-panel ul {
+      margin: 0;
+      padding-left: 1.1rem;
+      display: grid;
+      gap: 0.85rem;
+    }
+
+    .signal-strip,
+    .metrics-grid,
+    .capability-grid,
+    .proof-grid,
+    .team-row {
+      display: grid;
+      gap: var(--gs-space-4);
+    }
+
+    .signal-strip {
+      margin-top: 1.25rem;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .metrics-shell {
+      position: relative;
+      z-index: 2;
+      padding-top: 1rem;
+      padding-bottom: 2rem;
+    }
+
+    .metrics-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .signal-tile {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .signal-tile__header,
+    .proof-card span {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .signal-tile span,
+    .proof-card span {
+      display: block;
+      color: rgba(233, 238, 252, 0.62);
+      font-size: 0.82rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .signal-tile small {
+      color: rgba(255, 255, 255, 0.78);
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .signal-tile strong,
+    .proof-card strong {
+      font-size: clamp(1.35rem, 1.05rem + 1vw, 2rem);
+      color: #fff;
+    }
+
+    .signal-tile p {
+      margin: 0.65rem 0 0;
+      color: rgba(233, 238, 252, 0.75);
+    }
+
+    .signal-link {
+      display: inline-flex;
+      margin-top: 0.85rem;
+      color: var(--gs-primary);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .signal-link:hover,
+    .signal-link:focus-visible {
+      color: #fff;
+    }
+
+    .signal-tile--loading > * {
+      opacity: 0.2;
+    }
+    resize(); init(); draw();
+    window.addEventListener('resize', () => { resize(); init(); }, { passive: true });
+  })();
+
+  /* Magnetic buttons */
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.querySelectorAll('.magnetic').forEach(el => {
+      el.addEventListener('pointermove', e => {
+        const r = el.getBoundingClientRect();
+        el.style.setProperty('--mx', `${(e.clientX - r.left - r.width  / 2) * 0.12}px`);
+        el.style.setProperty('--my', `${(e.clientY - r.top  - r.height / 2) * 0.12}px`);
+      });
+      el.addEventListener('pointerleave', () => {
+        el.style.setProperty('--mx', '0px');
+        el.style.setProperty('--my', '0px');
+      });
+    });
+  }
+
+  /* Ping on click */
+  document.querySelectorAll('.ticker-item, .anomaly, .metrics div').forEach(el => {
+    el.addEventListener('click', () => {
+      el.classList.remove('is-pinged');
+      void el.offsetWidth;
+      el.classList.add('is-pinged');
+    });
+  });
+
+}, { once: true, passive: true });
       <a href="https://admin.goldshore.org" class="modal-card" rel="noopener noreferrer" target="_blank">
         <span class="modal-icon">◈</span>
         <strong>Admin</strong>
@@ -521,3 +1260,135 @@ qsForm?.addEventListener('submit', async e => {
 
 </body>
 </html>
+    .signal-tile--loading::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        110deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.08) 40%,
+        transparent 82%
+      );
+      transform: translateX(-100%);
+      animation: skeletonSweep 1.2s ease-in-out infinite;
+    }
+
+    .section-block {
+      padding-top: 4.5rem;
+    }
+
+    .section-copy {
+      margin-bottom: 1.5rem;
+      max-width: 60rem;
+    }
+
+    .section-copy h2 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      margin-top: 0.65rem;
+    }
+
+    .capability-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .proof-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .proof-card--metrics {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .team-row {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .team-card--founder {
+      border-color: rgba(90, 162, 255, 0.2);
+      background: rgba(90, 162, 255, 0.08);
+    }
+
+    .contact-cta {
+      display: flex;
+      justify-content: space-between;
+      gap: 1.5rem;
+      align-items: center;
+    }
+
+    @keyframes skeletonSweep {
+      to {
+        transform: translateX(100%);
+      }
+    }
+
+    @keyframes statusPulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(71, 227, 167, 0.48);
+      }
+
+      70% {
+        box-shadow: 0 0 0 12px rgba(71, 227, 167, 0);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(71, 227, 167, 0);
+      }
+    }
+
+    @media (max-width: 960px) {
+      .hero-shell,
+      .signal-strip,
+      .metrics-grid,
+      .capability-grid,
+      .proof-grid,
+      .team-row {
+        grid-template-columns: 1fr;
+      }
+
+      .contact-cta {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .hero-shell,
+      .signal-strip,
+      .metrics-shell,
+      .section-block {
+        width: min(100% - 1.5rem, var(--gs-max-width));
+      }
+
+      .hero-shell {
+        padding-top: 6rem;
+      }
+
+      .hero-mark {
+        inset: 12% auto auto 1rem;
+      }
+
+      .hero-actions,
+      .hero-button {
+        width: 100%;
+      }
+
+      .signal-tile__header,
+      .proof-card span {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hero-button,
+      .status-dot,
+      .signal-tile--loading::after {
+        animation: none;
+        transition: none;
+      }
+    }
+
+  </style>
+</WebLayout>

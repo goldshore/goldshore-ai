@@ -188,6 +188,24 @@ const MIME = {
   '.txt': 'text/plain', '.xml': 'application/xml',
 };
 
+const buildAssetIndex = async () => {
+  const index = new Map();
+  try {
+    const all = await walk(DIST_DIR);
+    for (const absPath of all) {
+      if (!absPath.endsWith('.html')) {
+        const rel = path.relative(DIST_DIR, absPath).replace(/\\/g, '/');
+        index.set('/' + rel, absPath);
+      }
+    }
+  } catch { /* dist may not contain non-HTML assets */ }
+  return index;
+};
+
+const createStaticServer = async (documents) => {
+  const byHtmlPath = new Map(documents.map((doc) => [doc.relativePath, doc.html]));
+  const byUrlPath = await buildAssetIndex();
+
 const createStaticServer = (documents) => {
   const byPath = new Map(documents.map((doc) => [doc.relativePath, doc.html]));
   return createServer(async (req, res) => {
@@ -302,7 +320,7 @@ const main = async () => {
   checkRoutesAndLinks(documents, expectedRoutes);
   checkFormLabels(documents);
 
-  const server = createStaticServer(documents);
+  const server = await createStaticServer(documents);
   await new Promise((resolve) => server.listen(PORT, HOST, resolve));
 
   const checksRoutes = ['/', '/about', '/contact', '/developer'].filter((route) =>
