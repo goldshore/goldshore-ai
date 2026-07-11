@@ -172,11 +172,11 @@ jobs:
           }
 
           find_app() {
-            local name="$1"
+            local name="$1" domain="${2:-}"
             curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps" \
               -H "Authorization: Bearer $CF_TOKEN" | \
-            jq -r --arg n "$name" \
-              '[.result[] | select(.name == $n)] | first | .id // empty'
+            jq -r --arg n "$name" --arg d "$domain" \
+              '[.result[] | select(.name == $n or ($d != "" and ((.domain == $d) or ((.self_hosted_domains // []) | index($d)))))] | first | .id // empty'
           }
 
           # PUT existing app with full body so stale domain/path bindings from
@@ -253,7 +253,7 @@ jobs:
           #              on first-run new-app creation. Existing apps preserve their AUD.
           upsert_full_access() {
             local name="$1" domain="$2" extra_domains="${3:-[]}" aud_workers="${4:-}"
-            AID=$(find_app "$name")
+            AID=$(find_app "$name" "$domain")
             if [ -n "$AID" ]; then
               echo "Found existing app [$name]: $AID — updating and refreshing policies"
               update_app "$AID" "$name" "$domain" "$extra_domains"
@@ -284,7 +284,7 @@ jobs:
           # CF Access resolves the more-specific path-scoped app before the broader allow app.
           upsert_bypass_app() {
             local name="$1" domain="$2" extra_domains="${3:-[]}"
-            AID=$(find_app "$name")
+            AID=$(find_app "$name" "$domain")
             if [ -n "$AID" ]; then
               echo "Bypass app [$name] already exists: $AID (no change)"
             elif [ "$SKIP_NEW_APPS" = "true" ]; then
