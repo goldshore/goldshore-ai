@@ -3,13 +3,14 @@ import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const ROOT = process.cwd();
-const WORKSPACE_DIRS = ['apps', 'packages', 'infra'];
+const WORKSPACE_PACKAGE_DIRS = ['apps/gs-web', 'apps/gs-api'];
+const WORKSPACE_GLOB_DIRS = ['packages', 'infra'];
 const TARGET_PROTOCOL = 'workspace:^';
 
 async function getPackageJsonPaths() {
-  const paths = [];
+  const paths = WORKSPACE_PACKAGE_DIRS.map((dir) => path.join(ROOT, dir, 'package.json'));
 
-  for (const dir of WORKSPACE_DIRS) {
+  for (const dir of WORKSPACE_GLOB_DIRS) {
     const absDir = path.join(ROOT, dir);
     let entries = [];
     try {

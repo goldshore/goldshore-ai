@@ -3,12 +3,19 @@ import { type AccessTokenPayload } from "@goldshore/auth";
 export type Env = {
   KV: KVNamespace;
   CONTROL_LOGS?: KVNamespace;
+  RISK_RADAR_CACHE?: KVNamespace;
   PLATFORM_DB: D1Database;
+  RISK_RADAR_DB?: D1Database;
   TELEMETRY_DB?: D1Database;
   GS_ASSETS: R2Bucket;
+  RISK_RADAR_R2?: R2Bucket;
   AUTH_SESSION?: DurableObjectNamespace;
   AI: Ai;
   SECRETS: SecretsStore;
+  JOBS_QUEUE?: Queue;
+  EVENTS_QUEUE?: Queue;
+  MAIL_JOBS_QUEUE?: Queue;
+  DEAD_LETTER_QUEUE?: Queue;
   OPENAI_API_KEY?: string;
   GEMINI_API_KEY?: string;
   ANTHROPIC_API_KEY?: string;
@@ -35,6 +42,7 @@ export type Env = {
   MAIL_BLOCKED_SENDERS?: string;
   MAIL_ALLOWED_RECIPIENTS?: string;
   AGENT?: Fetcher;
+  GS_WEB?: Fetcher;
   API_ORIGIN?: string;
   ADMIN_URL?: string;
   ENV?: string;

@@ -8,7 +8,7 @@ on:
       - 'packages/**'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
-      - '.github/workflows/deploy-api.yml'
+      - '.github/workflows/deploy-gs-api.yml'
   workflow_dispatch:
 
 jobs:
