@@ -218,11 +218,12 @@ jobs:
           }
 
           find_app() {
-            local name="$1"
+            local name="$1" aliases="${2:-[]}"
             curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps" \
               -H "Authorization: Bearer $CF_TOKEN" | \
             jq -r --arg n "$name" \
-              '[.result[] | select(.name == $n)] | first | .id // empty'
+              --argjson aliases "$aliases" \
+              '[.result[] | select(.name == $n or (.name as $app_name | $aliases | index($app_name)))] | first | .id // empty'
           }
 
           # PUT existing app with full body so stale domain/path bindings from
@@ -278,6 +279,18 @@ jobs:
               --data @- | jq -r '"  policy \(.result.name // "?") => \(.success)"'
           }
 
+          add_bypass_policy() {
+            local app_id="$1"
+            jq -nc \
+              '{name:"Public bypass",decision:"bypass",
+                include:[{"everyone":{}}],exclude:[],require:[]}' | \
+            curl -sf -X POST \
+              "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies" \
+              -H "Authorization: Bearer $CF_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data @- | jq -r '"  bypass policy => \(.success)"'
+          }
+
           # Delete only non-bypass policies so health-check and OAuth callback
           # bypass rules (on existing apps) are preserved across token rotations.
           refresh_policies() {
@@ -294,12 +307,26 @@ jobs:
             done
           }
 
+          refresh_bypass_policies() {
+            local app_id="$1"
+            curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies" \
+              -H "Authorization: Bearer $CF_TOKEN" | \
+            jq -r '.result[] | .id // empty' | \
+            while read -r pol_id; do
+              [ -z "$pol_id" ] && continue
+              curl -sf -X DELETE \
+                "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies/$pol_id" \
+                -H "Authorization: Bearer $CF_TOKEN" > /dev/null
+              echo "  Deleted old bypass-app policy: $pol_id"
+            done
+          }
+
           # upsert_full_access: human owner (Workspace domain + personal OTP) + agents (service token)
           # aud_workers: space-separated Worker names to receive CLOUDFLARE_ACCESS_AUDIENCE
           #              on first-run new-app creation. Existing apps preserve their AUD.
           upsert_full_access() {
-            local name="$1" domain="$2" extra_domains="${3:-[]}" aud_workers="${4:-}"
-            AID=$(find_app "$name")
+            local name="$1" domain="$2" extra_domains="${3:-[]}" aud_workers="${4:-}" aliases="${5:-[]}"
+            AID=$(find_app "$name" "$aliases")
             if [ -n "$AID" ]; then
               echo "Found existing app [$name]: $AID — updating and refreshing policies"
               update_app "$AID" "$name" "$domain" "$extra_domains"
@@ -329,10 +356,13 @@ jobs:
           # Used for public paths that must not hit the Access login wall.
           # CF Access resolves the more-specific path-scoped app before the broader allow app.
           upsert_bypass_app() {
-            local name="$1" domain="$2" extra_domains="${3:-[]}"
-            AID=$(find_app "$name")
+            local name="$1" domain="$2" extra_domains="${3:-[]}" aliases="${4:-[]}"
+            AID=$(find_app "$name" "$aliases")
             if [ -n "$AID" ]; then
-              echo "Bypass app [$name] already exists: $AID (no change)"
+              echo "Found existing bypass app [$name]: $AID — updating domains and bypass policy"
+              update_app "$AID" "$name" "$domain" "$extra_domains"
+              refresh_bypass_policies "$AID"
+              add_bypass_policy "$AID"
             elif [ "$SKIP_NEW_APPS" = "true" ]; then
               echo "INFO: No bypass app [$name] and skip_apps=true — skipped."
             else
@@ -340,14 +370,7 @@ jobs:
               AID=$(echo "$APP_JSON" | jq -r '.result.id // empty')
               [ -z "$AID" ] && { echo "WARNING: failed to create bypass app $name"; return; }
               echo "Created bypass app [$name]: $AID"
-              jq -nc \
-                '{name:"Public bypass",decision:"bypass",
-                  include:[{"everyone":{}}],exclude:[],require:[]}' | \
-              curl -sf -X POST \
-                "$CF_API/accounts/$CF_ACCOUNT/access/apps/$AID/policies" \
-                -H "Authorization: Bearer $CF_TOKEN" \
-                -H "Content-Type: application/json" \
-                --data @- | jq -r '"  bypass policy => \(.success)"'
+              add_bypass_policy "$AID"
             fi
           }
 
@@ -469,8 +492,9 @@ jobs:
           upsert_full_access "GoldShore Admin"   "admin.goldshore.ai" \
             '["admin.goldshore.org","admin-preview.goldshore.ai","admin.gs-admin.pages.dev"]'
           # GoldShore Trading: canonical + dashboard/dash aliases (Gate 5b)
-          upsert_full_access "GoldShore Trading" "trading.goldshore.ai" \
-            '["dashboard.goldshore.ai","dash.goldshore.ai"]'
+          upsert_full_access "GoldShore-Trading-ZT" "trading.goldshore.ai" \
+            '["dashboard.goldshore.ai","dash.goldshore.ai"]' "" \
+            '["GoldShore Trading","Goldshore Trading","Trading"]'
           # Goldshore Ops: ops.goldshore.ai (Gate 5c)
           upsert_full_access "Goldshore Ops"     "ops.goldshore.ai"
           upsert_full_access "Signals"           "signals.goldshore.ai"
@@ -483,7 +507,8 @@ jobs:
             "gs-api gs-api-prod"
           # GoldShore MCP: human + agent per docs ("approved human identities and agents")
           upsert_full_access "GoldShore MCP"     "mcp.goldshore.ai" "[]" \
-            "gs-mcp"
+            "gs-mcp" \
+            '["MCP"]'
           # Goldshore Gateway: gw + agent share app+AUD (Gate 5d); human + agent access
           upsert_full_access "Goldshore Gateway" "gw.goldshore.ai" \
             '["gateway.goldshore.ai","agent.goldshore.ai","gs-agent.goldshore.workers.dev"]' \
