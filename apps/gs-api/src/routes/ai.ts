@@ -6,10 +6,58 @@ import safeStableStringify from "safe-stable-stringify";
 import { logAuditEvent } from "@goldshore/utils";
 import { requirePermission } from "../auth";
 import { Env, Variables } from '../types';
+import { LLMClient, getLLMConfig, getRedactedLLMConfig, type LLMRequest } from '../lib/llm-abstraction';
 
 const ai = new Hono<{ Bindings: Env; Variables: Variables }>();
 
 ai.get("/", (c) => c.json({ service: "gs-ai", status: "operational" }));
+
+
+ai.get("/llm/config", requirePermission("ai:analyze"), (c) => {
+  return c.json({ success: true, data: getRedactedLLMConfig(c.env) });
+});
+
+ai.post("/llm/complete", requirePermission("ai:analyze"), async (c) => {
+  let body: LLMRequest;
+  try {
+    body = await c.req.json();
+  } catch (error) {
+    return c.json({ error: "Invalid JSON payload" }, 400);
+  }
+
+  if (!Array.isArray(body.messages) || body.messages.length === 0) {
+    return c.json({ error: "At least one LLM message is required" }, 400);
+  }
+
+  try {
+    const client = new LLMClient(getLLMConfig(c.env));
+    const response = await client.complete(body);
+
+    c.executionCtx.waitUntil(
+      logAuditEvent(c.env.KV, {
+        action: "ai.llm.complete",
+        status: "success",
+        metadata: {
+          provider: response.provider,
+          model: response.model,
+          tokensUsed: response.tokensUsed,
+        },
+      })
+    );
+
+    return c.json(response);
+  } catch (error) {
+    console.error("LLM completion error:", error);
+    c.executionCtx.waitUntil(
+      logAuditEvent(c.env.KV, {
+        action: "ai.llm.complete",
+        status: "error",
+        metadata: { message: error instanceof Error ? error.message : "Unknown error" },
+      })
+    );
+    return c.json({ error: "LLM completion failed" }, 502);
+  }
+});
 
 ai.post("/analysis", requirePermission("ai:analyze"), async (c) => {
   // 1. Load System Orchestration Config
