@@ -1,14 +1,15 @@
 ---
-import WebLayout from './WebLayout.astro';
+import GoldShoreShell from './GoldShoreShell.astro';
+import '../styles/goldshore-shell.css';
 
 const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.props;
 ---
-<WebLayout
+<GoldShoreShell
   title={title}
   description={description}
   canonicalPath={canonicalPath}
-  ogTitle={ogTitle}
-  ogDescription={ogDescription}
+  ogTitle={ogTitle ?? title}
+  ogDescription={ogDescription ?? description}
 >
   <slot />
-</WebLayout>
+</GoldShoreShell>

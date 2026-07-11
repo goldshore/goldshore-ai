@@ -12,6 +12,9 @@ Last updated: 2026-05-29
 | `gw.goldshore.ai` | CNAME/A | Proxied | `gs-gateway` | Worker route `gw.goldshore.ai/*` | none | `/health` and `/version` (may be protected) |
 | `gateway.goldshore.ai` | CNAME | Proxied | `gs-gateway` alias | redirect or alias route | ideally to `gw` | same as gw |
 | `admin.goldshore.ai` | CNAME | Proxied | `gs-admin` | Pages custom domain | none | `/version.json` preferred |
+| `trading.goldshore.ai` | CNAME | Proxied | `gs-trading-prod` | Worker route | none | `/health` and Access login wall |
+| `dashboard.goldshore.ai` | CNAME | Proxied | `gs-trading-prod` | Worker route alias | none | Access login wall |
+| `dash.goldshore.ai` | CNAME | Proxied | `gs-trading-prod` | Worker route alias | none | Access login wall |
 | `ops.goldshore.ai` | CNAME/A | Proxied | `gs-control` | Worker route | none | `/health`/`/version` |
 | `agent.goldshore.ai` | CNAME/A | Proxied | `gs-agent`/`gs-gateway` | Worker route | none | `/health`/`/version` |
 | `mail.goldshore.ai` | CNAME/A | Proxied | `gs-mail` | Worker route | none | `/health`/`/version` |

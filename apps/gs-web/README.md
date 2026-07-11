@@ -123,18 +123,16 @@ Preview environments are not public.
 - Cloudflare Access protects preview hostnames.
 - Non-interactive checks against preview environments should use Cloudflare Access service-token headers.
 
-## Contact form and mail delivery
+## Contact form and lead administration
 
-`/api/contact` stores submissions in KV/D1 and can send email through MailChannels from Cloudflare Pages Functions.
+`gs-web` does not hold runtime KV, D1, or R2 data bindings. `/api/contact`, `/api/admin/lead-submissions`, and `/api/forms/*` are thin same-origin compatibility proxies that forward request-time storage operations to `gs-api` under `/v1/forms/*`.
 
-Set these environment variables in the `gs-web` Pages project as needed:
+Set `PUBLIC_API` in the `gs-web` Worker environment to the matching API origin:
 
-- `MAILCHANNELS_SENDER_EMAIL`
-- `MAILCHANNELS_SENDER_NAME`
-- `CONTACT_NOTIFICATION_EMAILS`
-- `MAILCHANNELS_API_URL`
+- Production: `https://api.goldshore.ai`
+- Preview: `https://api-preview.goldshore.ai`
 
-Keep the existing `KV` and `DB` bindings so submissions still persist if mail delivery is degraded.
+Do not add `GS_CONFIG` or other data bindings to `gs-web` unless a specific Pages Function needs a public, request-time, read-only lookup that cannot be served by `gs-api`.
 
 ## Source of truth
 
