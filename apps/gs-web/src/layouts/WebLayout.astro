@@ -1,10 +1,19 @@
 ---
 import GoldShoreShell from './GoldShoreShell.astro';
 import Logo from '../components/brand/Logo.astro';
+import '@goldshore/theme/styles/tokens.css';
+import '@goldshore/theme/styles/base.css';
+import '@goldshore/theme/styles/components.css';
+import '@goldshore/theme/styles/layout.css';
+import '../styles/global.css';
+import Logo from '../components/brand/Logo.astro';
 import { WEB_META_CSP } from '../utils/csp';
+import '../styles/global.css';
 import '../styles/goldshore-shell.css';
 
-const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.props;
+const { title, description, canonicalPath, ogTitle: _ogTitle, ogDescription: _ogDescription } = Astro.props;
+const ogTitle = _ogTitle ?? title;
+const ogDescription = _ogDescription ?? description;
 
 const siteUrl = Astro.site || new URL('https://goldshore.ai');
 const canonicalUrl = new URL(canonicalPath || '/', siteUrl).href;
@@ -51,6 +60,7 @@ const footerLinks = [
       rel="stylesheet"
     />
     <link rel="manifest" href="/site.webmanifest"/>
+    <meta name="google-adsense-account" content="ca-pub-5105781580031290" />
   </head>
   <body>
     <a href="#content" class="skip-link">Skip to content</a>
@@ -71,7 +81,7 @@ const footerLinks = [
                 </a>
               ))}
             </div>
-            <a href="https://dashboard.goldshore.ai" class="header-login">Log in</a>
+            <a href="https://admin.goldshore.ai" class="header-login" data-admin-access-link>Log in</a>
             <a href="/contact" class="header-cta">Get a Briefing</a>
           </nav>
 
@@ -108,7 +118,7 @@ const footerLinks = [
 
             <div class="menu-panel__actions">
               <a href="/contact" class="header-cta header-cta--mobile">Get a Briefing</a>
-              <a href="https://dashboard.goldshore.ai" class="menu-secondary-link">Log in</a>
+              <a href="https://admin.goldshore.ai" class="menu-secondary-link" data-admin-access-link>Log in</a>
               <a href="/developer" class="menu-secondary-link">Open Developer Hub</a>
             </div>
           </div>
@@ -215,7 +225,17 @@ const footerLinks = [
         });
       };
 
+      const bindAdminAccessLinks = () => {
+        const adminHost = window.location.hostname.endsWith('goldshore.org')
+          ? 'admin.goldshore.org'
+          : 'admin.goldshore.ai';
+        document.querySelectorAll('[data-admin-access-link]').forEach((link) => {
+          link.setAttribute('href', `https://${adminHost}`);
+        });
+      };
+
       bindMenu();
+      bindAdminAccessLinks();
     </script>
 
     <style is:global>
@@ -641,12 +661,3 @@ const footerLinks = [
     </style>
   </body>
 </html>
-<GoldShoreShell
-  title={title}
-  description={description}
-  canonicalPath={canonicalPath}
-  ogTitle={ogTitle ?? title}
-  ogDescription={ogDescription ?? description}
->
-  <slot />
-</GoldShoreShell>
