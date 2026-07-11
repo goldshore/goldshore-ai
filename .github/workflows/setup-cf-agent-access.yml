@@ -160,7 +160,9 @@ jobs:
           OWNER_INCLUDE=$(jq -nc \
             '[{"email_domain":{"domain":"goldshore.ai"}},{"email":{"email":"marstonr6@gmail.com"}}]')
 
-          # push_worker_secret is also used here to propagate AUDs on first-run new-app creation
+          MISSING_REQUIRED_APPS=0
+
+          # push_worker_secret is also used here to keep Worker AUD secrets in sync
           push_worker_secret() {
             local worker="$1" key="$2" val="$3"
             curl -sf -X PUT \
@@ -197,6 +199,23 @@ jobs:
               -H "Authorization: Bearer $CF_TOKEN" \
               -H "Content-Type: application/json" \
               --data @- | jq -r '"  updated app => \(.success)"'
+          }
+
+          get_app_aud() {
+            local app_id="$1"
+            curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id" \
+              -H "Authorization: Bearer $CF_TOKEN" | \
+            jq -r '.result.aud // empty'
+          }
+
+          sync_aud_workers() {
+            local aud="$1" aud_workers="${2:-}"
+            if [ -n "$aud_workers" ] && [ -n "$aud" ]; then
+              echo "  Propagating CLOUDFLARE_ACCESS_AUDIENCE to: $aud_workers"
+              for w in $aud_workers; do
+                push_worker_secret "$w" CLOUDFLARE_ACCESS_AUDIENCE "$aud"
+              done
+            fi
           }
 
           # Create a new app and return the full CF response JSON.
@@ -249,19 +268,22 @@ jobs:
           }
 
           # upsert_full_access: human owner (Workspace domain + personal OTP) + agents (service token)
-          # aud_workers: space-separated Worker names to receive CLOUDFLARE_ACCESS_AUDIENCE
-          #              on first-run new-app creation. Existing apps preserve their AUD.
+          # aud_workers: space-separated Worker names to receive CLOUDFLARE_ACCESS_AUDIENCE.
+          # Existing apps keep the same AUD, but we still push it to Workers so a
+          # recreated or repaired app cannot drift from gs-api's configured audience.
           upsert_full_access() {
             local name="$1" domain="$2" extra_domains="${3:-[]}" aud_workers="${4:-}"
             AID=$(find_app "$name" "$domain")
             if [ -n "$AID" ]; then
-              echo "Found existing app [$name]: $AID — updating and refreshing policies"
+              echo "Found existing app [$name]: $AID — updating domains, refreshing policies, and syncing AUD"
               update_app "$AID" "$name" "$domain" "$extra_domains"
               refresh_policies "$AID"
               add_policy "$AID" "Goldshore agents" "non_identity" "$SERVICE_INCLUDE"
               add_policy "$AID" "Owner access"     "allow"        "$OWNER_INCLUDE"
+              sync_aud_workers "$(get_app_aud "$AID")" "$aud_workers"
             elif [ "$SKIP_NEW_APPS" = "true" ]; then
-              echo "INFO: No existing [$name] app and skip_apps=true — skipped."
+              echo "::error::No existing [$name] Access app and skip_apps=true; refusing to propagate a service token that no policy trusts."
+              MISSING_REQUIRED_APPS=1
             else
               APP_JSON=$(make_app_json "$name" "$domain" "$extra_domains")
               AID=$(echo "$APP_JSON" | jq -r '.result.id // empty')
@@ -270,12 +292,7 @@ jobs:
               echo "Created app [$name]: $AID  AUD: ${AUD:-(none)}"
               add_policy "$AID" "Goldshore agents" "non_identity" "$SERVICE_INCLUDE"
               add_policy "$AID" "Owner access"     "allow"        "$OWNER_INCLUDE"
-              if [ -n "$aud_workers" ] && [ -n "$AUD" ]; then
-                echo "  Propagating CLOUDFLARE_ACCESS_AUDIENCE to: $aud_workers"
-                for w in $aud_workers; do
-                  push_worker_secret "$w" CLOUDFLARE_ACCESS_AUDIENCE "$AUD"
-                done
-              fi
+              sync_aud_workers "$AUD" "$aud_workers"
             fi
           }
 
@@ -288,7 +305,8 @@ jobs:
             if [ -n "$AID" ]; then
               echo "Bypass app [$name] already exists: $AID (no change)"
             elif [ "$SKIP_NEW_APPS" = "true" ]; then
-              echo "INFO: No bypass app [$name] and skip_apps=true — skipped."
+              echo "::error::No existing bypass app [$name] and skip_apps=true; refusing to leave public probes/callbacks unconfigured."
+              MISSING_REQUIRED_APPS=1
             else
               APP_JSON=$(make_app_json "$name" "$domain" "$extra_domains")
               AID=$(echo "$APP_JSON" | jq -r '.result.id // empty')
@@ -445,6 +463,9 @@ jobs:
           # GoldShore-Web-Preview: preview.goldshore.ai (INFRASTRUCTURE.md Gate 5)
           upsert_full_access "GoldShore-Web-Preview" "preview.goldshore.ai"
 
+          if [ "$MISSING_REQUIRED_APPS" -ne 0 ]; then
+            echo "::error::One or more required Access apps were missing while skip_apps=true. Policies were not updated for those apps, so new credentials were not propagated."
+            exit 1
           # ------------------------------------------------------------------
           # Gated apps (workflow_dispatch inputs)
           # ------------------------------------------------------------------
@@ -477,6 +498,14 @@ jobs:
           for REPO in \
             marzton/goldshore-ai \
             marzton/goldshore-gateway \
+            marzton/goldshore \
+            marzton/goldshore-ops \
+            marzton/goldshore-org \
+            marzton/goldshore-api \
+            marzton/goldshore-admin \
+            marzton/goldshore-web \
+            marzton/risk-radar \
+            marzton/banproof-me \
             marzton/goldclaw; do
             gh secret set CF_ACCESS_CLIENT_ID     --body "$CLIENT_ID"  --repo "$REPO"
             gh secret set CF_ACCESS_CLIENT_SECRET --body "$CLIENT_SEC" --repo "$REPO"
