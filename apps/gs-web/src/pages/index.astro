@@ -22,7 +22,6 @@ const tickers   = [['SPY','S&P 500 ETF','521.84','+1.24%'],['NVDA','Nvidia Corp'
 const principles = [['01','Sector-Agnostic, Systems-First',"We don't specialize in one vertical — we specialize in the architecture that makes any vertical work. Finance, operations, media, healthcare: the discipline is identical."],['02','AI as Infrastructure, Not Feature','Intelligence embedded at the routing layer, not bolted on at the end. Every workflow treats AI as a first-class component with audit trails to match.'],['03','Consulting That Ships','Strategy without delivery is overhead. We provide the advisory and we build the thing — one team, one contract, full accountability from brief to production.']];
 const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Automation','AI Implementation','Digital Strategy','Systems Integration','Design & Development','Enterprise Consulting','Sentiment Analysis','Applied Intelligence','Resilient Infrastructure','Cross-Sector Deployment'];
 ---
-
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -33,6 +32,7 @@ const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Aut
   <meta property="og:title" content="Gold Shore Labs | Applied Intelligence" />
   <meta property="og:description" content="Applied intelligence for institutions that need clarity under pressure." />
   <title>Gold Shore Labs | Applied Intelligence</title>
+  <meta name="google-adsense-account" content="ca-pub-5105781580031290" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@300;400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
@@ -40,13 +40,12 @@ const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Aut
 </head>
 <body class="gs-home">
 
+<a class="skip-nav" href="#main-content">Skip to main content</a>
 <canvas id="starfield" aria-hidden="true"></canvas>
 
 <header class="topbar">
-  <a class="brand" href="/">
-    <span class="coords">40°42′45″N<br />74°00′21″W</span>
-    <span class="mark">GS·LAB·v2.84</span>
-    <span><strong>Gold Shore Labs</strong><em>GoldShore</em></span>
+  <a class="brand" href="/" aria-label="GoldShore home">
+    <span class="brand-wordmark">GOLDSHORE</span>
   </a>
   <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
     <span></span><span></span><span></span>
@@ -62,9 +61,9 @@ const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Aut
   </nav>
 </header>
 
-<main>
+<main id="main-content">
 
-<!-- ── Hero ──────────────────────────────────────────────────────────────── -->
+<!-- ── Hero ────────────────────────────────────────────────────────────────────────── -->
 <section class="hero" id="platform">
   <div class="hero-copy">
     <p class="kicker">Gold Shore Labs · Est. 2022 · New York</p>
@@ -93,14 +92,14 @@ const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Aut
       ))}
     </div>
     <div class="panel-columns">
-      <div><h3>Services</h3>{services.map((s) => <p>{s}</p>)}</div>
-      <div><h3>Sectors</h3>{sectors.map((s) => <p>{s}</p>)}</div>
+      <div><p class="panel-col-heading">Services</p>{services.map((s) => <p>{s}</p>)}</div>
+      <div><p class="panel-col-heading">Sectors</p>{sectors.map((s) => <p>{s}</p>)}</div>
     </div>
     <p class="operational"><span></span>Operational</p>
   </aside>
 </section>
 
-<!-- ── Sector surface ──────────────────────────────────────────────────────── -->
+<!-- ── Sector surface ────────────────────────────────────────────────────────── -->
 <section class="surface" data-reveal>
   <div class="section-head">
     <div>
@@ -115,7 +114,7 @@ const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Aut
   </div>
 </section>
 
-<!-- ── Telemetry ───────────────────────────────────────────────────────────── -->
+<!-- ── Telemetry ─────────────────────────────────────────────────────────────── -->
 <section class="telemetry" data-reveal>
   <div class="section-head">
     <div>
@@ -130,12 +129,12 @@ const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Aut
   </div>
 </section>
 
-<!-- ── Marquee ─────────────────────────────────────────────────────────────── -->
+<!-- ── Marquee ─────────────────────────────────────────────────────────────────── -->
 <div class="marquee">
   <div>{[...marquee,...marquee].map((item) => <span>{item}</span>)}</div>
 </div>
 
-<!-- ── Capabilities ───────────────────────────────────────────────────────── -->
+<!-- ── Capabilities ─────────────────────────────────────────────────────────────────── -->
 <section class="capabilities" data-reveal id="services">
   <div class="section-head large">
     <div>
@@ -158,7 +157,7 @@ const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Aut
   </div>
 </section>
 
-<!-- ── Under the Hood ────────────────────────────────────────────────────── -->
+<!-- ── Under the Hood ────────────────────────────────────────────────────────────────── -->
 <section class="underhood" data-reveal id="developer">
   <div class="section-head">
     <div>
@@ -192,7 +191,7 @@ export async function verifyAccess(req, env) {
   </div>
 </section>
 
-<!-- ── Risk Radar ─────────────────────────────────────────────────────────── -->
+<!-- ── Risk Radar ─────────────────────────────────────────────────────────────────── -->
 <section class="risk" data-reveal id="risk-radar">
   <div class="risk-copy">
     <p class="kicker">03 — Risk Radar</p>
@@ -216,7 +215,7 @@ export async function verifyAccess(req, env) {
   </div>
 </section>
 
-<!-- ── Financial Signals ──────────────────────────────────────────────────── -->
+<!-- ── Financial Signals ──────────────────────────────────────────────────────────────── -->
 <section class="signals" data-reveal id="signals">
   <div class="section-head">
     <div>
@@ -240,7 +239,7 @@ export async function verifyAccess(req, env) {
       <div class="chart-panel-head">
         <div>
           <h3>SPY</h3>
-          <p>SPDR S&P 500 ETF · NYSE Arca · 4h</p>
+          <p>SPDR S&amp;P 500 ETF · NYSE Arca · 4h</p>
         </div>
       </div>
       <p class="chart-big-price">$521.84 <span>▲ +6.37 (+1.24%)</span></p>
@@ -257,7 +256,7 @@ export async function verifyAccess(req, env) {
   </div>
 </section>
 
-<!-- ── Approach / Principles ──────────────────────────────────────────────── -->
+<!-- ── Approach / Principles ──────────────────────────────────────────────────────────────── -->
 <section class="approach" id="about" data-reveal>
   <div class="section-head">
     <div>
@@ -276,7 +275,7 @@ export async function verifyAccess(req, env) {
   </div>
 </section>
 
-<!-- ── Engage ─────────────────────────────────────────────────────────────── -->
+<!-- ── Engage ───────────────────────────────────────────────────────────────────────────── -->
 <section class="engage" data-reveal id="engage">
   <div>
     <p class="kicker">06 — Engage</p>
@@ -351,27 +350,22 @@ export async function verifyAccess(req, env) {
   <small>© 2026 Gold Shore Labs. All rights reserved. 40°42′N · 074°00′W · goldshore.ai · <a href="/legal/privacy">Privacy</a> · <a href="/legal/">Security</a> · <a href="/legal/terms">Terms</a></small>
 </footer>
 
-<!-- ── Access Modal ──────────────────────────────────────────────────────── -->
+<!-- ── Access Modal ────────────────────────────────────────────────────────────────── -->
 <dialog id="access-modal" class="access-modal" aria-labelledby="access-modal-title">
   <div class="modal-inner">
     <button class="modal-close" aria-label="Close">✕</button>
     <h2 id="access-modal-title">Access Goldshore</h2>
     <p class="modal-lead">Select a destination to continue.</p>
     <div class="modal-grid">
-      <a href="https://dashboard.goldshore.ai" class="modal-card" rel="noopener noreferrer" target="_blank">
+      <a href="https://admin.goldshore.ai" class="modal-card" rel="noopener noreferrer" target="_blank" data-admin-access-link>
         <span class="modal-icon">⬡</span>
-        <strong>Dashboard</strong>
-        <span>Portfolio &amp; signals</span>
-      </a>
-      <a href="https://admin.goldshore.org" class="modal-card" rel="noopener noreferrer" target="_blank">
-        <span class="modal-icon">◈</span>
         <strong>Admin</strong>
-        <span>Organisation management</span>
+        <span>Operator dashboard</span>
       </a>
-      <a href="https://goldshore.org/dash" class="modal-card" rel="noopener noreferrer" target="_blank">
-        <span class="modal-icon">◇</span>
-        <strong>Trading</strong>
-        <span>Active positions</span>
+      <a href="https://admin.goldshore.org" class="modal-card" rel="noopener noreferrer" target="_blank" data-admin-alternate-link>
+        <span class="modal-icon">◈</span>
+        <strong data-admin-alternate-title>Admin .org</strong>
+        <span data-admin-alternate-copy>Protected organisation alias</span>
       </a>
       <a href="/developer/mcp" class="modal-card">
         <span class="modal-icon">⬢</span>
@@ -387,44 +381,10 @@ export async function verifyAccess(req, env) {
     <p class="modal-contact">Need access? <a href="/contact/">Contact us →</a></p>
   </div>
 </dialog>
-
 <script is:inline>
-/* ── Starfield ────────────────────────────────────────────────────────────── */
-(function () {
-  const canvas = document.getElementById('starfield');
-  if (!canvas || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const ctx = canvas.getContext('2d');
-  let stars = [];
-  function resize() {
-    canvas.width  = window.innerWidth;
-    canvas.height = window.innerHeight;
-  }
-  function init() {
-    stars = Array.from({ length: 160 }, () => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      r: Math.random() * 1.2,
-      a: Math.random() * Math.PI * 2,
-      s: 0.0002 + Math.random() * 0.0003,
-    }));
-  }
-  function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    stars.forEach(s => {
-      s.a += s.s;
-      const alpha = 0.2 + 0.5 * Math.abs(Math.sin(s.a));
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(236,234,228,${alpha})`;
-      ctx.fill();
-    });
-    requestAnimationFrame(draw);
-  }
-  resize(); init(); draw();
-  window.addEventListener('resize', () => { resize(); init(); }, { passive: true });
-})();
+/* ── Critical interactivity (runs immediately after DOM parse) ─────────────────────── */
 
-/* ── Scroll reveal ────────────────────────────────────────────────────────── */
+/* Scroll reveal */
 document.documentElement.classList.add('js-ready');
 const io = new IntersectionObserver(entries => {
   entries.forEach(e => {
@@ -434,31 +394,7 @@ const io = new IntersectionObserver(entries => {
 document.querySelectorAll('[data-reveal], .sector-grid article, .cap-list article, .telemetry-grid article')
   .forEach(el => io.observe(el));
 
-/* ── Magnetic buttons ─────────────────────────────────────────────────────── */
-if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-  document.querySelectorAll('.magnetic').forEach(el => {
-    el.addEventListener('pointermove', e => {
-      const r = el.getBoundingClientRect();
-      el.style.setProperty('--mx', `${(e.clientX - r.left - r.width  / 2) * 0.12}px`);
-      el.style.setProperty('--my', `${(e.clientY - r.top  - r.height / 2) * 0.12}px`);
-    });
-    el.addEventListener('pointerleave', () => {
-      el.style.setProperty('--mx', '0px');
-      el.style.setProperty('--my', '0px');
-    });
-  });
-}
-
-/* ── Ping on click ────────────────────────────────────────────────────────── */
-document.querySelectorAll('.ticker-item, .anomaly, .metrics div').forEach(el => {
-  el.addEventListener('click', () => {
-    el.classList.remove('is-pinged');
-    void el.offsetWidth;
-    el.classList.add('is-pinged');
-  });
-});
-
-/* ── Hamburger nav toggle ─────────────────────────────────────────────────── */
+/* Hamburger nav toggle */
 const navToggle = document.getElementById('nav-toggle');
 const mainNav   = document.getElementById('main-nav');
 navToggle?.addEventListener('click', () => {
@@ -466,13 +402,29 @@ navToggle?.addEventListener('click', () => {
   navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
 });
 
-/* ── Access modal ─────────────────────────────────────────────────────────── */
+/* Access modal */
 const accessModal = document.getElementById('access-modal');
 document.getElementById('open-access-modal')?.addEventListener('click', () => accessModal?.showModal());
 document.querySelector('.modal-close')?.addEventListener('click', () => accessModal?.close());
 accessModal?.addEventListener('click', e => { if (e.target === accessModal) accessModal.close(); });
 
-/* ── Quick engage form ────────────────────────────────────────────────────── */
+/* ── Host-aware admin links ────────────────────────────────────────────────────────────────────── */
+const adminHost = window.location.hostname.endsWith('goldshore.org') ? 'admin.goldshore.org' : 'admin.goldshore.ai';
+const alternateAdminHost = adminHost === 'admin.goldshore.org' ? 'admin.goldshore.ai' : 'admin.goldshore.org';
+document.querySelectorAll('[data-admin-access-link]').forEach(link => {
+  link.setAttribute('href', `https://${adminHost}`);
+});
+document.querySelectorAll('[data-admin-alternate-link]').forEach(link => {
+  link.setAttribute('href', `https://${alternateAdminHost}`);
+});
+document.querySelectorAll('[data-admin-alternate-title]').forEach(el => {
+  el.textContent = alternateAdminHost === 'admin.goldshore.org' ? 'Admin .org' : 'Admin .ai';
+});
+document.querySelectorAll('[data-admin-alternate-copy]').forEach(el => {
+  el.textContent = alternateAdminHost === 'admin.goldshore.org' ? 'Protected organisation alias' : 'Protected AI alias';
+});
+
+/* ── Quick engage form ───────────────────────────────────────────────────────────────────────── */
 const qsForm    = document.getElementById('quick-form');
 const qsStarted = document.getElementById('qs-form-started');
 const qsStatus  = document.getElementById('qs-form-status');
@@ -517,6 +469,70 @@ qsForm?.addEventListener('submit', async e => {
     qsSubmit.textContent = 'Submit Request →';
   }
 });
+
+/* ── Deferred decorative enhancements (after page load) ─────────────────────────────────── */
+window.addEventListener('load', function () {
+
+  /* Starfield canvas animation */
+  (function () {
+    const canvas = document.getElementById('starfield');
+    if (!canvas || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const ctx = canvas.getContext('2d');
+    let stars = [];
+    function resize() {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    function init() {
+      stars = Array.from({ length: 160 }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 1.2,
+        a: Math.random() * Math.PI * 2,
+        s: 0.0002 + Math.random() * 0.0003,
+      }));
+    }
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      stars.forEach(s => {
+        s.a += s.s;
+        const alpha = 0.2 + 0.5 * Math.abs(Math.sin(s.a));
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(236,234,228,${alpha})`;
+        ctx.fill();
+      });
+      requestAnimationFrame(draw);
+    }
+    resize(); init(); draw();
+    window.addEventListener('resize', () => { resize(); init(); }, { passive: true });
+  })();
+
+  /* Magnetic buttons */
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.querySelectorAll('.magnetic').forEach(el => {
+      el.addEventListener('pointermove', e => {
+        const r = el.getBoundingClientRect();
+        el.style.setProperty('--mx', `${(e.clientX - r.left - r.width  / 2) * 0.12}px`);
+        el.style.setProperty('--my', `${(e.clientY - r.top  - r.height / 2) * 0.12}px`);
+      });
+      el.addEventListener('pointerleave', () => {
+        el.style.setProperty('--mx', '0px');
+        el.style.setProperty('--my', '0px');
+      });
+    });
+  }
+
+  /* Ping on click */
+  document.querySelectorAll('.ticker-item, .anomaly, .metrics div').forEach(el => {
+    el.addEventListener('click', () => {
+      el.classList.remove('is-pinged');
+      void el.offsetWidth;
+      el.classList.add('is-pinged');
+    });
+  });
+
+}, { once: true, passive: true });
 </script>
 
 </body>
