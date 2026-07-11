@@ -1,101 +1,50 @@
 # Worker Configuration Guide
 
-This document details the configuration for all Cloudflare Workers and Pages projects in the GoldShore monorepo.
+This document describes the Cloudflare configuration for the GoldShore two-app monorepo.
 
-## Queue Source of Truth
+## Source of truth
 
-- Canonical queue matrix: `docs/ops/queue-contract-matrix.md`.
-- CI/static guard: `pnpm validate:queues` (script: `scripts/validate-queue-contracts.mjs`) fails when any env-scoped producer queue has no consumer in the same environment.
+- Canonical binding registry: `infra/Cloudflare/BINDINGS_MAP.md`.
+- Queue matrix: `docs/ops/queue-contract-matrix.md`.
+- Runtime apps: `apps/gs-api` and `apps/gs-web` only.
 
-## 1. gs-mail (`apps/gs-mail`)
+Do not add new app workers or deploy workflows for retired services. All backend, cron, queue, auth, data, and AI logic belongs in `apps/gs-api`; all frontend routes and visual code belongs in `apps/gs-web`.
 
-The email routing and processing worker.
+## `gs-api` (`apps/gs-api`)
 
-- **Directory:** `apps/gs-mail`
-- **Package Name:** `gs-mail`
-- **Wrangler:** `apps/gs-mail/wrangler.toml`
-- **Deployment:** CI workflow (`.github/workflows/deploy-gs-mail.yml`) on `push` to `main`.
-- **Bindings:** `GS_CONFIG` KV plus production email vars in `env.prod`.
-- **Queues:** Consumes `gs-platform-checkout-events-{dev|preview|prod}` and `gs-platform-contact-events-{dev|preview|prod}` to process gs-platform checkout/contact events.
-- **Compatibility Date:** `2024-11-01`
-- **Main Entry:** `src/index.ts`
-- **Purpose:** Handles email routing logic, including sender blocking, optional recipient allowlists, and fail-closed forwarding via `MAIL_FORWARD_TO`.
-
-## 2. gs-agent (`apps/gs-agent`)
-
-The AI agent service.
-
-- **Directory:** `apps/gs-agent`
-- **Package Name:** `@goldshore/agent`
-- **Wrangler:** `infra/Cloudflare/gs-agent.wrangler.toml`
-- **Deployment:** Preview CI workflow (`.github/workflows/preview-gs-agent.yml`) on `pull_request`; production CI workflow (`.github/workflows/deploy-gs-agent.yml`) on `push` to `main`.
-- **Bindings:**
-  - `AI`: Cloudflare Workers AI binding.
-  - `Queues`: Consumes `goldshore-jobs` queue.
-- **Compatibility Date:** `2024-11-01`
-- **Main Entry:** `src/index.ts`
-- **Purpose:** Handles AI inference tasks, job processing from queues, and agent interactions.
-
-## 3. gs-gateway (`apps/gs-gateway`)
-
-The API gateway and router.
-
-- **Directory:** `apps/gs-gateway`
-- **Package Name:** `@goldshore/gateway`
-- **Wrangler:** `apps/gs-gateway/wrangler.toml`
-- **Deployment:** Preview CI workflow (`.github/workflows/preview-gs-gateway.yml`) on `pull_request`; production CI workflow (`.github/workflows/deploy-gs-gateway.yml`) on `push` to `main`.
-- **Bindings:**
-  - `KV Namespaces`: `GATEWAY_KV`.
-  - `Queues`: Produces `CHECKOUT_EVENTS_QUEUE` and `CONTACT_EVENTS_QUEUE` with env-specific queue names:
-    - `gs-platform-checkout-events-dev|preview|prod`
-    - `gs-platform-contact-events-dev|preview|prod`
-  - `Services`: `API` (points to `gs-api`) and `AGENT` (points to `gs-agent`).
-  - `AI`: Cloudflare Workers AI binding.
-  - `Vars`: `ENV`, `API_ORIGIN`, `CLOUDFLARE_ACCESS_AUDIENCE`, `CLOUDFLARE_TEAM_DOMAIN`.
-- **Compatibility Date:** `2024-11-01`
-- **Main Entry:** `src/index.ts`
-- **Purpose:** Primary entry point for API traffic, routing requests to `gs-api` or `gs-agent`, and enforcing gateway middleware.
-
-## 4. gs-control (`apps/gs-control`)
-
-The operational control plane worker.
-
-- **Directory:** `apps/gs-control`
-- **Package Name:** `@goldshore/control`
-- **Wrangler:** `apps/gs-control/wrangler.toml`
-- **Deployment:** Production CI workflow (`.github/workflows/deploy-gs-control.yml`) on `push` to `main`.
-- **Bindings:**
-  - `KV Namespaces`: `CONTROL_LOGS`, `GS_CONFIG`.
-  - `R2 Buckets`: `STATE`.
-  - `Services`: `API`, `GATEWAY`.
-  - `Vars`: `ENV`, `CONTROL_SYNC_TOKEN`, `SYNC_TARGET_SUBDOMAIN`, plus Cloudflare admin secrets.
-- **Compatibility Date:** `2024-11-01`
-- **Main Entry:** `src/index.ts`
-- **Purpose:** Internal tool for managing Cloudflare resources, viewing logs, and performing administrative actions via Hono API.
-
-## 5. gs-api (`apps/gs-api`)
-
-The backend API service.
-
-- **Directory:** `apps/gs-api`
-- **Package Name:** `gs-api`
 - **Wrangler:** `apps/gs-api/wrangler.toml`
-- **Deployment:** Preview CI workflow (`.github/workflows/preview-gs-api.yml`) on `pull_request`; production CI workflow (`.github/workflows/deploy-gs-api.yml`) on `push` to `main`.
-- **Bindings:** KV, D1, R2, AI, and control-log bindings declared in `env.preview`, `env.prod`, and `env.production`.
-- **Purpose:** Core business logic and data access layer.
+- **Production routes:** `api.goldshore.ai/*`, `api.goldshore.org/*`
+- **Preview:** `workers_dev = true`
+- **Canonical bindings:**
+  - KV: `KV`, `CONTROL_LOGS`
+  - D1: `PLATFORM_DB`, `AUDIT_DB`, `SIGNALS_DB`, `JOBS_DB`
+  - R2: `GS_ASSETS`, `TELEMETRY`
+  - AI: `AI`
+  - Durable Object: `AUTH_SESSION`
+  - Queues produced: `JOBS_QUEUE`, `EVENTS_QUEUE`, `MAIL_JOBS_QUEUE`, `DEAD_LETTER_QUEUE`
+  - Secrets Store: `SECRETS`
+- **Retired aliases:** `DB`, `ASSETS`, `TELEMETRY_DB`, `AGENT`, `GS_MAIL`, `GS_WEB`, `API_SERVICE`, and `GOLDSHORE_AI` must not be used as `gs-api` bindings.
 
-## Deprecated
+## `gs-web` (`apps/gs-web`)
 
-- `apps/goldshore-agent`: Removed. Legacy shim for `gs-agent`.
+- **Wrangler:** `apps/gs-web/wrangler.toml`
+- **Production routes:** `goldshore.ai/*`, `goldshore.org/*`
+- **Preview route:** `preview.goldshore.ai`
+- **Canonical bindings:**
+  - Worker Assets: `ASSETS`
+  - KV: `KV`
+  - D1: `PLATFORM_DB`
+  - R2: `GS_ASSETS`
+- **Retired aliases:** `DB` must not be used for the web D1 binding; use `PLATFORM_DB` in Wrangler, TypeScript `Env`, Astro server routes, and docs.
 
-## Legacy service binding migration (2026-07-11)
+## Validation checklist
 
-`gs-api` is the single backend worker for legacy service behavior. Do not add Wrangler service bindings for `AGENT` (`gs-agent`), `GS_MAIL` (`gs-mail`), `GS_CONTROL` (`gs-control`), `TRADING_SERVICE` (`gs-trading-prod`), or `GS_CORE_PROD` (`gs-core-worker-prod`). Runtime behavior is now exposed by these `gs-api` modules:
+When changing a binding, update these files together:
 
-| Legacy service | New `gs-api` home | Runtime behavior |
-| --- | --- | --- |
-| `AGENT` / `gs-agent` | `src/routes/agent.ts`, `src/index.ts` queue handler | Agent status/templates and AI/background job acknowledgements. |
-| `GS_MAIL` / `gs-mail` | `src/routes/mail.ts`, `src/index.ts` email + queue handlers | Inbound mail validation/logging/forwarding and contact/checkout queue processing. |
-| `GS_CONTROL` / `gs-control` | `src/routes/control.ts` | Protected admin/control config sync and operator actions. |
-| `TRADING_SERVICE` / `gs-trading-prod` | `src/routes/trading.ts`, `src/trading/**` | Trading dashboard, broker APIs, OAuth, paper trading, and trading agent routes. |
-| `GS_CORE_PROD` / `gs-core-worker-prod` | `src/routes/core.ts`, `src/index.ts` queue handler | Signals persistence, Discord notification, and StellarAIO ATC trigger behavior. |
+1. `infra/Cloudflare/BINDINGS_MAP.md`
+2. The owning app's `wrangler.toml`
+3. The owning app's TypeScript `Env` interface(s)
+4. Runtime code that reads from `env.<BINDING>`
+5. Tests and operational docs that mention the binding name
+
+Run the app-level checks after each change. At minimum, run TypeScript checks or the relevant app tests plus a static search for retired aliases.
