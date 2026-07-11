@@ -11,6 +11,17 @@ export type Env = {
   SECRETS: SecretsStore;
   OPENAI_API_KEY?: string;
   GEMINI_API_KEY?: string;
+  ANTHROPIC_API_KEY?: string;
+  LLM_API_KEY?: string;
+  LLM_PROVIDER?: string;
+  LLM_MODEL?: string;
+  LLM_TEMPERATURE?: string;
+  LLM_MAX_TOKENS?: string;
+  LLM_BASE_URL?: string;
+  OPENCLAW_API_KEY?: string;
+  OPENCLAW_BASE_URL?: string;
+  LOCAL_LLM_API_KEY?: string;
+  LOCAL_LLM_BASE_URL?: string;
   JWT_SECRET?: string;
   STRIPE_API_KEY?: string;
   SENDGRID_API_KEY?: string;
