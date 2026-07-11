@@ -36,6 +36,41 @@ jobs:
           fi
           echo "$BODY" | jq -r '.result[] | "  \(.name)\n    AUD: \(.aud)\n    domain: \(.domain)\n"'
 
+      # Read-only: maps policy UUIDs (as seen in dashboard exports / raw API
+      # payloads) back to names and decisions. Non-fatal — the deploy token may
+      # lack Access:Read; rerun with CLOUDFLARE_API_TOKEN if this step errors.
+      - name: Discover CF Access Policies (reusable + per-app)
+        run: |
+          echo ""
+          echo "══════════════════════════════════════════════════════════"
+          echo "  CF ACCESS POLICIES — name → id → decision"
+          echo "══════════════════════════════════════════════════════════"
+          echo ""
+          echo "  Reusable (account-level) policies:"
+          BODY=$(curl -s "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/access/policies?per_page=100" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}")
+          if echo "$BODY" | jq -e '.result != null' >/dev/null 2>&1; then
+            echo "$BODY" | jq -r '.result[] | "    \(.name)\n      id: \(.id)  decision: \(.decision)"'
+          else
+            echo "    (unavailable — token likely lacks Access:Read)"
+            echo "$BODY" | jq -r '.errors[]? | "    \(.code): \(.message)"' || true
+          fi
+          echo ""
+          echo "  Per-app policies:"
+          APPS=$(curl -s "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/access/apps" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}")
+          if echo "$APPS" | jq -e '.result != null' >/dev/null 2>&1; then
+            echo "$APPS" | jq -r '.result[] | "\(.id) \(.name)"' | \
+            while read -r APP_ID APP_NAME; do
+              echo "    [$APP_NAME]"
+              curl -s "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/access/apps/${APP_ID}/policies" \
+                -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" | \
+              jq -r '.result[]? | "      \(.name)\n        id: \(.id)  decision: \(.decision)"'
+            done
+          else
+            echo "    (unavailable — token likely lacks Access:Read)"
+          fi
+
       - name: Discover Workers
         run: |
           echo ""

@@ -70,6 +70,8 @@ jobs:
 
       - name: List tokens
         if: inputs.action == 'list'
+        env:
+          CF_USER_TOKEN: ${{ secrets.CF_USER_TOKEN }}
         run: |
           python3 - <<'PY'
           import json, os, urllib.request, urllib.error
@@ -111,6 +113,7 @@ jobs:
       - name: Create token
         if: inputs.action == 'create'
         env:
+          CF_USER_TOKEN: ${{ secrets.CF_USER_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           TOKEN_NAME: ${{ inputs.token_name }}
           TOKEN_PERMISSIONS: ${{ inputs.token_permissions }}
@@ -188,6 +191,7 @@ jobs:
       - name: Delete token
         if: inputs.action == 'delete'
         env:
+          CF_USER_TOKEN: ${{ secrets.CF_USER_TOKEN }}
           TOKEN_NAME: ${{ inputs.token_name }}
         run: |
           python3 - <<'PY'
