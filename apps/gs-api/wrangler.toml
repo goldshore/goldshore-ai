@@ -31,6 +31,10 @@ id = "e0b8b807191346c3b0afc25fe716d2cd"
 binding = "CONTROL_LOGS"
 id = "a52e94cb331c4e3db08f2aa507e6df09"
 
+[[env.prod.kv_namespaces]]
+binding = "RISK_RADAR_CACHE"
+id = "0e67c3fe3d2b3231e7d4dba704e7dcd6"
+
 # ── R2 ──────────────────────────────────────────────────────────────────────────────────────
 [[env.prod.r2_buckets]]
 binding = "GS_ASSETS"
@@ -39,6 +43,10 @@ bucket_name = "gs-assets"
 [[env.prod.r2_buckets]]
 binding = "TELEMETRY"
 bucket_name = "gs-telemetry-storage"
+
+[[env.prod.r2_buckets]]
+binding = "RISK_RADAR_R2"
+bucket_name = "gs-risk-radar-raw"
 
 # ── D1 ──────────────────────────────────────────────────────────────────────────────────────
 [[env.prod.d1_databases]]
@@ -60,6 +68,11 @@ database_id = "1ae71d76-188f-481b-91d9-db2d39013f68"
 binding = "SIGNALS_DB"
 database_name = "gs_signals_db"
 database_id = "76af4653-7f44-417b-b46e-250143d906fd"
+
+[[env.prod.d1_databases]]
+binding = "RISK_RADAR_DB"
+database_name = "gs_risk_radar_db"
+database_id = "aabedb82-60ca-5697-bbd5-9e85675ee7c5"
 
 [[env.prod.d1_databases]]
 binding = "JOBS_DB"
@@ -205,6 +218,10 @@ id = "d4d20cee39094b999dea3f7e5f4c533a"
 binding = "CONTROL_LOGS"
 id = "09e43cb8bd4749fdaaed0dc9d4ff2284"
 
+[[env.preview.kv_namespaces]]
+binding = "RISK_RADAR_CACHE"
+id = "a2315c0e83f27b610c3dfdd30eb0a9ea"
+
 [[env.preview.r2_buckets]]
 binding = "GS_ASSETS"
 bucket_name = "gs-assets-preview"
@@ -212,6 +229,10 @@ bucket_name = "gs-assets-preview"
 [[env.preview.r2_buckets]]
 binding = "TELEMETRY"
 bucket_name = "gs-telemetry-storage"
+
+[[env.preview.r2_buckets]]
+binding = "RISK_RADAR_R2"
+bucket_name = "gs-risk-radar-raw-preview"
 
 [[env.preview.d1_databases]]
 binding = "PLATFORM_DB"
@@ -227,6 +248,11 @@ database_id = "1ae71d76-188f-481b-91d9-db2d39013f68"
 binding = "SIGNALS_DB"
 database_name = "gs_signals_db"
 database_id = "76af4653-7f44-417b-b46e-250143d906fd"
+
+[[env.preview.d1_databases]]
+binding = "RISK_RADAR_DB"
+database_name = "gs_risk_radar_db"
+database_id = "fe25ba0b-7d1e-5362-a03f-065487222a08"
 
 [[env.preview.d1_databases]]
 binding = "JOBS_DB"

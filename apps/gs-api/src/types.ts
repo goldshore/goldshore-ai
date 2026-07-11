@@ -3,9 +3,12 @@ import { type AccessTokenPayload } from "@goldshore/auth";
 export type Env = {
   KV: KVNamespace;
   CONTROL_LOGS?: KVNamespace;
+  RISK_RADAR_CACHE?: KVNamespace;
   PLATFORM_DB: D1Database;
+  RISK_RADAR_DB?: D1Database;
   TELEMETRY_DB?: D1Database;
   GS_ASSETS: R2Bucket;
+  RISK_RADAR_R2?: R2Bucket;
   AUTH_SESSION?: DurableObjectNamespace;
   AI: Ai;
   SECRETS: SecretsStore;
