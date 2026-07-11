@@ -240,7 +240,10 @@ jobs:
           # aud_workers: space-separated Worker names to receive CLOUDFLARE_ACCESS_AUDIENCE
           #              on first-run new-app creation. Existing apps preserve their AUD.
           upsert_full_access() {
-            local name="$1" domain="$2" extra_domains="${3:-[]}" aud_workers="${4:-}"
+            local name="$1"
+            local domain="$2"
+            local extra_domains="${3:-[]}"
+            local aud_workers="${4:-}"
             AID=$(find_app "$name")
             if [ -n "$AID" ]; then
               echo "Found existing app [$name]: $AID — updating and refreshing policies"
@@ -271,7 +274,9 @@ jobs:
           # Used for public paths that must not hit the Access login wall.
           # CF Access resolves the more-specific path-scoped app before the broader allow app.
           upsert_bypass_app() {
-            local name="$1" domain="$2" extra_domains="${3:-[]}"
+            local name="$1"
+            local domain="$2"
+            local extra_domains="${3:-[]}"
             AID=$(find_app "$name")
             if [ -n "$AID" ]; then
               echo "Bypass app [$name] already exists: $AID (no change)"
