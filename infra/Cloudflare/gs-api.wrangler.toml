@@ -62,15 +62,7 @@ binding = "AI"
 name = "AUTH_SESSION"
 class_name = "AuthSession"
 
-[[env.prod.services]]
-binding = "AGENT"
-service = "gs-agent"
-environment = "prod"
 
-[[env.prod.services]]
-binding = "GS_MAIL"
-service = "gs-mail"
-environment = "prod"
 
 [[env.prod.services]]
 binding = "GS_WEB"
@@ -157,13 +149,7 @@ binding = "AI"
 name = "AUTH_SESSION"
 class_name = "AuthSession"
 
-[[env.preview.services]]
-binding = "AGENT"
-service = "gs-agent"
 
-[[env.preview.services]]
-binding = "GS_MAIL"
-service = "gs-mail"
 
 [[env.preview.services]]
 binding = "GS_WEB"

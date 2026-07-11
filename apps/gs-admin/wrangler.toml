@@ -35,15 +35,8 @@ binding = "GS_ASSETS"
 bucket_name = "gs-assets"
 
 # gs-trading-prod service binding — zero-hop access to trading worker
-[[services]]
-binding = "TRADING_SERVICE"
-service = "gs-trading-prod"
 
 # gs-control service binding — CF API proxy (workers, DNS, pages, KV)
-[[services]]
-binding = "GS_CONTROL"
-service = "gs-control"
-environment = "prod"
 
 [[services]]
 binding = "API_SERVICE"
@@ -82,14 +75,7 @@ database_id = "1ae71d76-188f-481b-91d9-db2d39013f68"
 binding = "GS_ASSETS"
 bucket_name = "gs-assets-preview"
 
-[[env.preview.services]]
-binding = "TRADING_SERVICE"
-service = "gs-trading-prod"
 
-[[env.preview.services]]
-binding = "GS_CONTROL"
-service = "gs-control"
-environment = "prod"
 
 [[env.preview.services]]
 binding = "API_SERVICE"

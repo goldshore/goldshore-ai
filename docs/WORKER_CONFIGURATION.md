@@ -87,3 +87,15 @@ The backend API service.
 ## Deprecated
 
 - `apps/goldshore-agent`: Removed. Legacy shim for `gs-agent`.
+
+## Legacy service binding migration (2026-07-11)
+
+`gs-api` is the single backend worker for legacy service behavior. Do not add Wrangler service bindings for `AGENT` (`gs-agent`), `GS_MAIL` (`gs-mail`), `GS_CONTROL` (`gs-control`), `TRADING_SERVICE` (`gs-trading-prod`), or `GS_CORE_PROD` (`gs-core-worker-prod`). Runtime behavior is now exposed by these `gs-api` modules:
+
+| Legacy service | New `gs-api` home | Runtime behavior |
+| --- | --- | --- |
+| `AGENT` / `gs-agent` | `src/routes/agent.ts`, `src/index.ts` queue handler | Agent status/templates and AI/background job acknowledgements. |
+| `GS_MAIL` / `gs-mail` | `src/routes/mail.ts`, `src/index.ts` email + queue handlers | Inbound mail validation/logging/forwarding and contact/checkout queue processing. |
+| `GS_CONTROL` / `gs-control` | `src/routes/control.ts` | Protected admin/control config sync and operator actions. |
+| `TRADING_SERVICE` / `gs-trading-prod` | `src/routes/trading.ts`, `src/trading/**` | Trading dashboard, broker APIs, OAuth, paper trading, and trading agent routes. |
+| `GS_CORE_PROD` / `gs-core-worker-prod` | `src/routes/core.ts`, `src/index.ts` queue handler | Signals persistence, Discord notification, and StellarAIO ATC trigger behavior. |
