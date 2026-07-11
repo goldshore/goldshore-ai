@@ -4,11 +4,18 @@ export type Env = {
   KV: KVNamespace;
   CONTROL_LOGS?: KVNamespace;
   PLATFORM_DB: D1Database;
-  TELEMETRY_DB?: D1Database;
+  AUDIT_DB?: D1Database;
+  SIGNALS_DB?: D1Database;
+  JOBS_DB?: D1Database;
   GS_ASSETS: R2Bucket;
+  TELEMETRY?: R2Bucket;
   AUTH_SESSION?: DurableObjectNamespace;
   AI: Ai;
   SECRETS: SecretsStore;
+  JOBS_QUEUE?: Queue;
+  EVENTS_QUEUE?: Queue;
+  MAIL_JOBS_QUEUE?: Queue;
+  DEAD_LETTER_QUEUE?: Queue;
   OPENAI_API_KEY?: string;
   GEMINI_API_KEY?: string;
   ANTHROPIC_API_KEY?: string;
@@ -35,6 +42,7 @@ export type Env = {
   MAIL_BLOCKED_SENDERS?: string;
   MAIL_ALLOWED_RECIPIENTS?: string;
   AGENT?: Fetcher;
+  GS_WEB?: Fetcher;
   API_ORIGIN?: string;
   ADMIN_URL?: string;
   ENV?: string;
