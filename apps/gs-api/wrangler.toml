@@ -225,7 +225,7 @@ queue = "gs-events"
 binding = "MAIL_JOBS_QUEUE"
 queue = "gs-mail-jobs"
 
-# ── Secrets Store ───────────────────────────────────────────────────────────────────────────────────
+# ── Secrets Store ───────────────────────────────────────────────────────────────────
 [[env.preview.secrets_store.bindings]]
 binding = "SECRETS"
 store_id = "b9824d3280c54573a24137c7e7143b33"

@@ -382,7 +382,7 @@ export async function verifyAccess(req, env) {
   </div>
 </dialog>
 <script is:inline>
-/* ── Critical interactivity (runs immediately after DOM parse) ─────────────────────── */
+/* ── Critical interactivity (runs immediately after DOM parse) ────────────── */
 
 /* Scroll reveal */
 document.documentElement.classList.add('js-ready');
@@ -408,7 +408,7 @@ document.getElementById('open-access-modal')?.addEventListener('click', () => ac
 document.querySelector('.modal-close')?.addEventListener('click', () => accessModal?.close());
 accessModal?.addEventListener('click', e => { if (e.target === accessModal) accessModal.close(); });
 
-/* ── Host-aware admin links ────────────────────────────────────────────────────────────────────── */
+/* ── Host-aware admin links ───────────────────────────────────────────────── */
 const adminHost = window.location.hostname.endsWith('goldshore.org') ? 'admin.goldshore.org' : 'admin.goldshore.ai';
 const alternateAdminHost = adminHost === 'admin.goldshore.org' ? 'admin.goldshore.ai' : 'admin.goldshore.org';
 document.querySelectorAll('[data-admin-access-link]').forEach(link => {
@@ -424,7 +424,7 @@ document.querySelectorAll('[data-admin-alternate-copy]').forEach(el => {
   el.textContent = alternateAdminHost === 'admin.goldshore.org' ? 'Protected organisation alias' : 'Protected AI alias';
 });
 
-/* ── Quick engage form ───────────────────────────────────────────────────────────────────────── */
+/* ── Quick engage form ────────────────────────────────────────────────────── */
 const qsForm    = document.getElementById('quick-form');
 const qsStarted = document.getElementById('qs-form-started');
 const qsStatus  = document.getElementById('qs-form-status');
@@ -470,7 +470,7 @@ qsForm?.addEventListener('submit', async e => {
   }
 });
 
-/* ── Deferred decorative enhancements (after page load) ─────────────────────────────────── */
+/* ── Deferred decorative enhancements (after page load) ──────────────────── */
 window.addEventListener('load', function () {
 
   /* Starfield canvas animation */
