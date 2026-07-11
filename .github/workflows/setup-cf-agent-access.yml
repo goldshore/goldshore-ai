@@ -161,6 +161,7 @@ jobs:
             '[{"email_domain":{"domain":"goldshore.ai"}},{"email":{"email":"marstonr6@gmail.com"}}]')
 
           MISSING_REQUIRED_APPS=0
+          GS_API_ACCESS_AUD="d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
 
           # push_worker_secret is also used here to keep Worker AUD secrets in sync
           push_worker_secret() {
@@ -174,11 +175,15 @@ jobs:
           }
 
           find_app() {
-            local name="$1" domain="${2:-}"
+            local name="$1" domain="${2:-}" expected_aud="${3:-}"
             curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps" \
               -H "Authorization: Bearer $CF_TOKEN" | \
-            jq -r --arg n "$name" --arg d "$domain" \
-              '[.result[] | select(.name == $n or ($d != "" and ((.domain == $d) or ((.self_hosted_domains // []) | index($d)))))] | first | .id // empty'
+            jq -r --arg n "$name" --arg d "$domain" --arg aud "$expected_aud" \
+              '[.result[] | select(
+                .name == $n
+                or ($aud != "" and .aud == $aud)
+                or ($d != "" and ((.domain == $d) or ((.self_hosted_domains // []) | index($d))))
+              )] | first | .id // empty'
           }
 
           # PUT existing app with full body so stale domain/path bindings from
@@ -272,8 +277,8 @@ jobs:
           # Existing apps keep the same AUD, but we still push it to Workers so a
           # recreated or repaired app cannot drift from gs-api's configured audience.
           upsert_full_access() {
-            local name="$1" domain="$2" extra_domains="${3:-[]}" aud_workers="${4:-}"
-            AID=$(find_app "$name" "$domain")
+            local name="$1" domain="$2" extra_domains="${3:-[]}" aud_workers="${4:-}" expected_aud="${5:-}"
+            AID=$(find_app "$name" "$domain" "$expected_aud")
             if [ -n "$AID" ]; then
               echo "Found existing app [$name]: $AID — updating domains, refreshing policies, and syncing AUD"
               update_app "$AID" "$name" "$domain" "$extra_domains"
@@ -448,14 +453,15 @@ jobs:
           # Signals: .ai canonical + .org alias + workers.dev default host
           upsert_full_access "Signals"           "signals.goldshore.ai" \
             '["signals.goldshore.org","gs-signals-prod.goldshore.workers.dev"]'
-          # Goldshore API: uses documented name to match existing AUD in wrangler.toml;
+          # Goldshore API: uses documented name and pinned AUD to match the
+          # existing Access app/AUD in wrangler.toml before rotating tokens;
           # pushes AUD to api workers on first-run creation (Gate 5e). Keep this
           # host on upsert_full_access (owner/user allow + service-token policy)
           # because browser-based admin routes call api.goldshore.ai with
           # credentials: 'include' and need a human Cloudflare Access session.
           # Service-token-only access is limited to machine-only/path-scoped apps.
           upsert_full_access "Goldshore API"     "api.goldshore.ai" "[]" \
-            "gs-api gs-api-prod"
+            "gs-api gs-api-prod" "$GS_API_ACCESS_AUD"
           # GoldShore MCP: human + agent per docs ("approved human identities and agents")
           upsert_full_access "GoldShore MCP"     "mcp.goldshore.ai" "[]" \
             "gs-mcp"
