@@ -335,7 +335,11 @@ jobs:
           upsert_full_access "Goldshore Ops"     "ops.goldshore.ai"
           upsert_full_access "Signals"           "signals.goldshore.ai"
           # Goldshore API: uses documented name to match existing AUD in wrangler.toml;
-          # pushes AUD to api workers on first-run creation (Gate 5e)
+          # pushes AUD to api workers on first-run creation (Gate 5e). Keep this
+          # host on upsert_full_access (owner/user allow + service-token policy)
+          # because browser-based admin routes call api.goldshore.ai with
+          # credentials: 'include' and need a human Cloudflare Access session.
+          # Service-token-only access is limited to machine-only/path-scoped apps.
           upsert_full_access "Goldshore API"     "api.goldshore.ai" "[]" \
             "gs-api gs-api-prod"
           # GoldShore MCP: human + agent per docs ("approved human identities and agents")
