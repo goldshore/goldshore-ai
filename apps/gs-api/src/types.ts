@@ -14,6 +14,11 @@ export type Env = {
   DEPLOY_SHA?: string;
   GIT_SHA?: string;
   CONTROL_ADMIN_ROLES?: string;
+  CLOUDFLARE_API_TOKEN?: string;
+  CLOUDFLARE_ACCOUNT_ID?: string;
+  CLOUDFLARE_ZONE_ID?: string;
+  CLOUDFLARE_ZONE_NAME?: string;
+  CLOUDFLARE_PAGES_PROJECT?: string;
   MAIL_FORWARD_TO?: string;
   FORWARD_TO?: string;
   MAIL_BLOCKED_SENDERS?: string;
