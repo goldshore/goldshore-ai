@@ -47,6 +47,11 @@ database_name = "goldshore"
 database_id = "gs_db_001"
 
 [[env.prod.d1_databases]]
+binding = "DB"
+database_name = "goldshore"
+database_id = "gs_db_001"
+
+[[env.prod.d1_databases]]
 binding = "PLATFORM_DB"
 database_name = "gs_platform_db"
 database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
@@ -225,7 +230,7 @@ queue = "gs-events"
 binding = "MAIL_JOBS_QUEUE"
 queue = "gs-mail-jobs"
 
-# ── Secrets Store ───────────────────────────────────────────────────────────────────────────────────
+# ── Secrets Store ───────────────────────────────────────────────────────────────────
 [[env.preview.secrets_store.bindings]]
 binding = "SECRETS"
 store_id = "b9824d3280c54573a24137c7e7143b33"
