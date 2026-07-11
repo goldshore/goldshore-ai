@@ -125,7 +125,7 @@ jobs:
         run: pnpm --filter ${{ matrix.filter }} build
       - name: Deploy ${{ matrix.app }}
         if: github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == matrix.app
-        working-directory: apps/gs-api
+        working-directory: apps/${{ matrix.app }}
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_GS_CONTROL }}
         run: |
