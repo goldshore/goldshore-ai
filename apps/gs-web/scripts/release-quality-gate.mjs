@@ -224,17 +224,21 @@ const createStaticServer = async (documents) => {
       res.end(html);
       return;
     }
-    // req.url used only as Map key — absPath comes from trusted walk() scan at startup
-    const absPath = byUrlPath.get(pathname);
-    if (!absPath) {
+    // Serve static assets (CSS, JS bundles, fonts, images) from dist directory
+    const distRoot = path.resolve(DIST_DIR);
+    const filePath = path.resolve(distRoot, pathname.replace(/^\/+/, ''));
+    // Guard against path traversal: resolved path must stay inside distRoot
+    const rel = path.relative(distRoot, filePath);
+    if (rel.startsWith('..') || path.isAbsolute(rel)) {
       res.statusCode = 404;
       res.end('Not found');
       return;
     }
     try {
-      const content = await readFile(absPath);
+      const content = await readFile(filePath);
+      const mime = MIME[path.extname(filePath)] || 'application/octet-stream';
       res.statusCode = 200;
-      res.setHeader('content-type', MIME[path.extname(absPath)] || 'application/octet-stream');
+      res.setHeader('content-type', mime);
       res.setHeader('cache-control', 'no-store');
       res.end(content);
     } catch {
