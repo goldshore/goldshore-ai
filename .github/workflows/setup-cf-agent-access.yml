@@ -154,6 +154,8 @@ jobs:
         run: |
           set -euo pipefail
 
+          # Cloudflare Access service-token rules use token_id (the token UUID),
+          # not the generated client ID.
           SERVICE_INCLUDE=$(jq -nc --arg id "$TOKEN_UUID" \
             '[{"service_token":{"token_id":$id}}]')
           # Mirrors desired-state.yaml include block: Workspace domain + personal Gmail
@@ -402,10 +404,10 @@ jobs:
             "trading.goldshore.ai/oauth/robinhood/callback" \
             '["dashboard.goldshore.ai/oauth/robinhood/callback","dash.goldshore.ai/oauth/robinhood/callback"]'
 
-          # API: /health, /status, /version must be reachable by monitoring
+          # API: /, /health, /status, /version must be reachable by monitoring.
           upsert_bypass_app "Goldshore API - Public Probes" \
-            "api.goldshore.ai/health" \
-            '["api.goldshore.ai/status","api.goldshore.ai/version"]'
+            "api.goldshore.ai" \
+            '["api.goldshore.ai/health","api.goldshore.ai/health/*","api.goldshore.ai/status","api.goldshore.ai/version","api.goldshore.ai/version.json"]'
 
           # Gateway: /health, /status, /version must be reachable by monitoring
           upsert_bypass_app "Goldshore Gateway - Public Probes" \
@@ -427,13 +429,13 @@ jobs:
             '["dashboard.goldshore.ai","dash.goldshore.ai"]'
           # Goldshore Ops: ops.goldshore.ai (Gate 5c)
           upsert_full_access "Goldshore Ops"     "ops.goldshore.ai"
-          # Signals: .ai canonical + .org alias + workers.dev default host
-          upsert_full_access "Signals"           "signals.goldshore.ai" \
-            '["signals.goldshore.org","gs-signals-prod.goldshore.workers.dev"]'
-          # Goldshore API: uses documented name to match existing AUD in wrangler.toml;
-          # pushes AUD to api workers on first-run creation (Gate 5e)
-          upsert_full_access "Goldshore API"     "api.goldshore.ai" \
-            '["gs-api.goldshore.workers.dev"]' \
+          upsert_full_access "Signals"           "signals.goldshore.ai"
+          # Goldshore API: protect the real gs-api route prefixes while leaving
+          # root and public probes bypassed for monitoring. Uses documented name
+          # to match existing AUD in wrangler.toml; pushes AUD to api workers on
+          # first-run creation (Gate 5e).
+          upsert_full_access "Goldshore API"     "api.goldshore.ai/admin" \
+            '["api.goldshore.ai/admin/*","api.goldshore.ai/internal","api.goldshore.ai/internal/*","api.goldshore.ai/system","api.goldshore.ai/system/*","api.goldshore.ai/user*","api.goldshore.ai/users","api.goldshore.ai/users/*","api.goldshore.ai/templates","api.goldshore.ai/templates/*","api.goldshore.ai/media","api.goldshore.ai/media/*","api.goldshore.ai/pages","api.goldshore.ai/pages/*","api.goldshore.ai/ai","api.goldshore.ai/ai/*"]' \
             "gs-api gs-api-prod"
           # GoldShore MCP: human + agent per docs ("approved human identities and agents")
           upsert_full_access "GoldShore MCP"     "mcp.goldshore.ai" "[]" \
