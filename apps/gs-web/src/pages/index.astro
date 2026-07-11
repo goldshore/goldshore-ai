@@ -573,7 +573,7 @@ window.addEventListener('load', function () {
   </div>
 </section>
 
-<!-- ── Engage ─────────────────────────────────────────────────────────────── -->
+<!-- ── Engage ───────────────────────────────────────────────────────────────────────────── -->
 <section class="engage" data-reveal id="engage">
   <div>
     <p class="kicker">06 — Engage</p>
@@ -648,7 +648,7 @@ window.addEventListener('load', function () {
   <small>© 2026 Gold Shore Labs. All rights reserved. 40°42′N · 074°00′W · goldshore.ai · <a href="/legal/privacy">Privacy</a> · <a href="/legal/">Security</a> · <a href="/legal/terms">Terms</a></small>
 </footer>
 
-<!-- ── Access Modal ──────────────────────────────────────────────────────── -->
+<!-- ── Access Modal ────────────────────────────────────────────────────────────────── -->
 <dialog id="access-modal" class="access-modal" aria-labelledby="access-modal-title">
   <div class="modal-inner">
     <button class="modal-close" aria-label="Close">✕</button>
@@ -1126,6 +1126,184 @@ window.addEventListener('load', function () {
 
     .signal-tile--loading > * {
       opacity: 0.2;
+    }
+    resize(); init(); draw();
+    window.addEventListener('resize', () => { resize(); init(); }, { passive: true });
+  })();
+
+  /* Magnetic buttons */
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.querySelectorAll('.magnetic').forEach(el => {
+      el.addEventListener('pointermove', e => {
+        const r = el.getBoundingClientRect();
+        el.style.setProperty('--mx', `${(e.clientX - r.left - r.width  / 2) * 0.12}px`);
+        el.style.setProperty('--my', `${(e.clientY - r.top  - r.height / 2) * 0.12}px`);
+      });
+      el.addEventListener('pointerleave', () => {
+        el.style.setProperty('--mx', '0px');
+        el.style.setProperty('--my', '0px');
+      });
+    });
+  }
+
+  /* Ping on click */
+  document.querySelectorAll('.ticker-item, .anomaly, .metrics div').forEach(el => {
+    el.addEventListener('click', () => {
+      el.classList.remove('is-pinged');
+      void el.offsetWidth;
+      el.classList.add('is-pinged');
+    });
+  });
+
+}, { once: true, passive: true });
+      <a href="https://admin.goldshore.org" class="modal-card" rel="noopener noreferrer" target="_blank">
+        <span class="modal-icon">◈</span>
+        <strong>Admin</strong>
+        <span>Operator dashboard</span>
+      </a>
+      <a href="https://goldshore.org/dash" class="modal-card" rel="noopener noreferrer" target="_blank">
+        <span class="modal-icon">◇</span>
+        <strong>Trading</strong>
+        <span>Active positions</span>
+      </a>
+      <a href="/developer/mcp" class="modal-card">
+        <span class="modal-icon">⬢</span>
+        <strong>MCP</strong>
+        <span>Model Context Protocol</span>
+      </a>
+      <a href="https://api.goldshore.ai" class="modal-card" rel="noopener noreferrer" target="_blank">
+        <span class="modal-icon">◉</span>
+        <strong>API</strong>
+        <span>Developer access</span>
+      </a>
+    </div>
+    <p class="modal-contact">Need access? <a href="/contact/">Contact us →</a></p>
+  </div>
+</dialog>
+<script is:inline>
+  
+
+/* ── Critical interactivity (runs immediately after DOM parse) ────────────── */
+
+/* Scroll reveal */
+document.documentElement.classList.add('js-ready');
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('is-visible'); io.unobserve(e.target); }
+  });
+}, { threshold: 0.1 });
+document.querySelectorAll('[data-reveal], .sector-grid article, .cap-list article, .telemetry-grid article')
+  .forEach(el => io.observe(el));
+
+/* Hamburger nav toggle */
+const navToggle = document.getElementById('nav-toggle');
+const mainNav   = document.getElementById('main-nav');
+navToggle?.addEventListener('click', () => {
+  const open = mainNav.classList.toggle('nav-open');
+  navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+});
+
+/* Access modal */
+const accessModal = document.getElementById('access-modal');
+document.getElementById('open-access-modal')?.addEventListener('click', () => accessModal?.showModal());
+document.querySelector('.modal-close')?.addEventListener('click', () => accessModal?.close());
+accessModal?.addEventListener('click', e => { if (e.target === accessModal) accessModal.close(); });
+
+/* ── Host-aware admin links ───────────────────────────────────────────────── */
+const adminHost = window.location.hostname.endsWith('goldshore.org') ? 'admin.goldshore.org' : 'admin.goldshore.ai';
+const alternateAdminHost = adminHost === 'admin.goldshore.org' ? 'admin.goldshore.ai' : 'admin.goldshore.org';
+document.querySelectorAll('[data-admin-access-link]').forEach(link => {
+  link.setAttribute('href', `https://${adminHost}`);
+});
+document.querySelectorAll('[data-admin-alternate-link]').forEach(link => {
+  link.setAttribute('href', `https://${alternateAdminHost}`);
+});
+document.querySelectorAll('[data-admin-alternate-title]').forEach(el => {
+  el.textContent = alternateAdminHost === 'admin.goldshore.org' ? 'Admin .org' : 'Admin .ai';
+});
+document.querySelectorAll('[data-admin-alternate-copy]').forEach(el => {
+  el.textContent = alternateAdminHost === 'admin.goldshore.org' ? 'Protected organisation alias' : 'Protected AI alias';
+});
+
+/* ── Quick engage form ────────────────────────────────────────────────────── */
+const qsForm    = document.getElementById('quick-form');
+const qsStarted = document.getElementById('qs-form-started');
+const qsStatus  = document.getElementById('qs-form-status');
+const qsSubmit  = document.getElementById('qs-submit');
+
+if (qsStarted) qsStarted.value = Date.now().toString();
+
+qsForm?.addEventListener('submit', async e => {
+  e.preventDefault();
+  const fd  = new FormData(qsForm);
+  const msg = (fd.get('message') || '').toString().trim();
+  if (msg.length < 20) {
+    qsStatus.textContent = 'Message must be at least 20 characters.';
+    qsStatus.className = 'form-status';
+    return;
+  }
+  qsStatus.textContent = '';
+  qsSubmit.disabled = true;
+  qsSubmit.textContent = 'Sending…';
+  try {
+    const raw = `${fd.get('formType')}|${fd.get('name')}|${fd.get('email')}|${fd.get('inquiry')}|${msg}`;
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
+    document.getElementById('qs-dedupe-key').value = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+    const res  = await fetch('/api/contact', {
+      method: 'POST',
+      headers: { 'x-gs-request-mode': 'spa', 'Accept': 'application/json' },
+      body: new FormData(qsForm),
+    });
+    if (res.ok) {
+      window.location.href = '/thank-you';
+    } else {
+      const data = await res.json().catch(() => ({}));
+      qsStatus.textContent = data.error || 'Something went wrong. Please try again.';
+      qsStatus.className = 'form-status';
+      qsSubmit.disabled = false;
+      qsSubmit.textContent = 'Submit Request →';
+    }
+  } catch {
+    qsStatus.textContent = 'Network error. Please try again.';
+    qsStatus.className = 'form-status';
+    qsSubmit.disabled = false;
+    qsSubmit.textContent = 'Submit Request →';
+  }
+});
+
+/* ── Deferred decorative enhancements (after page load) ──────────────────── */
+window.addEventListener('load', function () {
+
+  /* Starfield canvas animation */
+  (function () {
+    const canvas = document.getElementById('starfield');
+    if (!canvas || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const ctx = canvas.getContext('2d');
+    let stars = [];
+    function resize() {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    function init() {
+      stars = Array.from({ length: 160 }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 1.2,
+        a: Math.random() * Math.PI * 2,
+        s: 0.0002 + Math.random() * 0.0003,
+      }));
+    }
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      stars.forEach(s => {
+        s.a += s.s;
+        const alpha = 0.2 + 0.5 * Math.abs(Math.sin(s.a));
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(236,234,228,${alpha})`;
+        ctx.fill();
+      });
+      requestAnimationFrame(draw);
     }
     resize(); init(); draw();
     window.addEventListener('resize', () => { resize(); init(); }, { passive: true });
