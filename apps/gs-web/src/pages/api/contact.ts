@@ -468,8 +468,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
       formType,
       ipAddress: submission.ipAddress,
     });
-    if (env?.DB) {
-      await logSubmissionStatus(env.DB, submission.id, formType, 'blocked_spam', 'Spam submission blocked.');
+    if (env?.PLATFORM_DB) {
+      await logSubmissionStatus(env.PLATFORM_DB, submission.id, formType, 'blocked_spam', 'Spam submission blocked.');
     }
     const redirectUrl = safeRedirect(redirectTo, new URL(request.url).origin);
     if (respondJson) {
@@ -492,21 +492,21 @@ export const POST: APIRoute = async ({ request, locals }) => {
       formType,
       reason: 'invalid_email',
     });
-    if (env?.DB) {
-      await logSubmissionStatus(env.DB, submission.id, formType, 'rejected', 'Invalid email address.');
+    if (env?.PLATFORM_DB) {
+      await logSubmissionStatus(env.PLATFORM_DB, submission.id, formType, 'rejected', 'Invalid email address.');
     }
     return buildError(400, 'invalid_email', 'Invalid email address.');
   }
 
-  if (!env?.KV && !env?.DB) {
+  if (!env?.KV && !env?.PLATFORM_DB) {
     return buildError(503, 'storage_unavailable', 'Storage unavailable.');
   }
 
-  const formConfig = env?.DB ? await fetchFormConfig(env.DB, formType) : normalizeFormConfig(null, formType);
+  const formConfig = env?.PLATFORM_DB ? await fetchFormConfig(env.PLATFORM_DB, formType) : normalizeFormConfig(null, formType);
 
   if (formConfig.status !== 'active') {
-    if (env?.DB) {
-      await logSubmissionStatus(env.DB, submission.id, formType, 'blocked', 'Form is not accepting submissions.', {
+    if (env?.PLATFORM_DB) {
+      await logSubmissionStatus(env.PLATFORM_DB, submission.id, formType, 'blocked', 'Form is not accepting submissions.', {
         status: formConfig.status
       });
     }
@@ -521,8 +521,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
       error: 'missing_required_fields',
       fields: missingFields.map((field) => field.name),
     });
-    if (env?.DB) {
-      await logSubmissionStatus(env.DB, submission.id, formType, 'rejected', 'Missing required fields.', {
+    if (env?.PLATFORM_DB) {
+      await logSubmissionStatus(env.PLATFORM_DB, submission.id, formType, 'rejected', 'Missing required fields.', {
         fields: missingFields.map((field) => field.name)
       });
     }
@@ -538,11 +538,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
     formType: normalizedSubmission.formType,
   });
 
-  if (env?.DB) {
-    const isDuplicate = await checkRecentDuplicate(env.DB, normalizedSubmission);
+  if (env?.PLATFORM_DB) {
+    const isDuplicate = await checkRecentDuplicate(env.PLATFORM_DB, normalizedSubmission);
     if (isDuplicate) {
       await logSubmissionStatus(
-        env.DB,
+        env.PLATFORM_DB,
         normalizedSubmission.id,
         formType,
         'duplicate',
@@ -557,7 +557,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const storageTasks: Promise<unknown>[] = [];
   if (env?.KV)
     storageTasks.push(storeInKv(env.KV, normalizedSubmission, autoResponder, ttl));
-  if (env?.DB) storageTasks.push(storeInD1(env.DB, normalizedSubmission, autoResponder));
+  if (env?.PLATFORM_DB) storageTasks.push(storeInD1(env.PLATFORM_DB, normalizedSubmission, autoResponder));
 
   const storageResults = await Promise.allSettled(storageTasks);
   const storedSuccessfully = storageResults.some(
@@ -570,14 +570,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
       formType,
       storageResults,
     });
-    if (env?.DB) {
-      await logSubmissionStatus(env.DB, submission.id, formType, 'storage_failed', 'Storage unavailable.');
+    if (env?.PLATFORM_DB) {
+      await logSubmissionStatus(env.PLATFORM_DB, submission.id, formType, 'storage_failed', 'Storage unavailable.');
     }
     return buildError(503, 'storage_unavailable', 'Storage unavailable.');
   }
 
-  if (env?.DB) {
-    await logSubmissionStatus(env.DB, normalizedSubmission.id, formType, 'stored', 'Submission stored successfully.', {
+  if (env?.PLATFORM_DB) {
+    await logSubmissionStatus(env.PLATFORM_DB, normalizedSubmission.id, formType, 'stored', 'Submission stored successfully.', {
       dedupeKey: normalizedSubmission.dedupeKey,
       recipients: formConfig.recipients,
       integrations: formConfig.integrations
@@ -625,9 +625,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
     notificationResult,
     autoResponderResult,
   });
-  if (env?.DB) {
+  if (env?.PLATFORM_DB) {
     await logSubmissionStatus(
-      env.DB,
+      env.PLATFORM_DB,
       submission.id,
       formType,
       'email_attempted',

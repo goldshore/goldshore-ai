@@ -9,57 +9,77 @@ workers_dev = false
 # Production environment
 # ══════════════════════════════════════════════════════════════════════════════
 
-[env.prod]
+[env.production]
 routes = [
   { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "mail.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "ops.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "trading.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "dashboard.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "dash.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "api.goldshore.org/*", zone_name = "goldshore.org" }
 ]
 
-[env.prod.vars]
+[env.production.vars]
 ENV = "production"
 CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
+CONTROL_SYNC_TOKEN = "__PROD_CONTROL_SYNC_TOKEN__"
 GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
 GOOGLE_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/goldclaw/oauth/google/callback"
 
 # ── KV ──────────────────────────────────────────────────────────────────────────────────────
-[[env.prod.kv_namespaces]]
+[[env.production.kv_namespaces]]
 binding = "KV"
 id = "e0b8b807191346c3b0afc25fe716d2cd"
 
-[[env.prod.kv_namespaces]]
+[[env.production.kv_namespaces]]
 binding = "CONTROL_LOGS"
 id = "a52e94cb331c4e3db08f2aa507e6df09"
 
+[[env.prod.kv_namespaces]]
+binding = "RISK_RADAR_CACHE"
+id = "0e67c3fe3d2b3231e7d4dba704e7dcd6"
+
 # ── R2 ──────────────────────────────────────────────────────────────────────────────────────
-[[env.prod.r2_buckets]]
+[[env.production.r2_buckets]]
 binding = "GS_ASSETS"
 bucket_name = "gs-assets"
 
-[[env.prod.r2_buckets]]
+[[env.production.r2_buckets]]
 binding = "TELEMETRY"
 bucket_name = "gs-telemetry-storage"
 
+[[env.prod.r2_buckets]]
+binding = "RISK_RADAR_R2"
+bucket_name = "gs-risk-radar-raw"
+
 # ── D1 ──────────────────────────────────────────────────────────────────────────────────────
-[[env.prod.d1_databases]]
+[[env.production.d1_databases]]
 binding = "DB"
 database_name = "goldshore"
 database_id = "gs_db_001"
 
-[[env.prod.d1_databases]]
+[[env.production.d1_databases]]
 binding = "PLATFORM_DB"
 database_name = "gs_platform_db"
 database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
 
-[[env.prod.d1_databases]]
+[[env.production.d1_databases]]
 binding = "AUDIT_DB"
 database_name = "gs_audit_db"
 database_id = "1ae71d76-188f-481b-91d9-db2d39013f68"
 
-[[env.prod.d1_databases]]
+[[env.production.d1_databases]]
 binding = "SIGNALS_DB"
 database_name = "gs_signals_db"
 database_id = "76af4653-7f44-417b-b46e-250143d906fd"
+
+[[env.prod.d1_databases]]
+binding = "RISK_RADAR_DB"
+database_name = "gs_risk_radar_db"
+database_id = "aabedb82-60ca-5697-bbd5-9e85675ee7c5"
 
 [[env.prod.d1_databases]]
 binding = "JOBS_DB"
@@ -67,57 +87,66 @@ database_name = "gs_jobs_db"
 database_id = "750c469c-788d-49e8-9254-77231cffd70f"
 
 # ── AI ──────────────────────────────────────────────────────────────────────────────────────
-[env.prod.ai]
+[env.production.ai]
 binding = "AI"
 
 # ── Durable Objects ──────────────────────────────────────────────────────────────────────
-[[env.prod.durable_objects.bindings]]
+[[env.production.durable_objects.bindings]]
 name = "AUTH_SESSION"
 class_name = "AuthSession"
 
 # ── Services ──────────────────────────────────────────────────────────────────────────────────────
-[[env.prod.services]]
+[[env.production.services]]
 binding = "AGENT"
 service = "gs-agent"
 environment = "prod"
 
-[[env.prod.services]]
+[[env.production.services]]
 binding = "GS_MAIL"
 service = "gs-mail"
 environment = "prod"
 
-[[env.prod.services]]
+[[env.production.services]]
 binding = "GS_WEB PROD"
 service = "gs-web-prod"
 environment = "prod"
 
 
 # ── Queues (producers) ───────────────────────────────────────────────────────────
-[[env.prod.queues.producers]]
+[[env.production.queues.producers]]
 binding = "JOBS_QUEUE"
 queue = "goldshore-jobs"
 
-[[env.prod.queues.producers]]
+[[env.production.queues.producers]]
 binding = "EVENTS_QUEUE"
 queue = "gs-events"
 
-[[env.prod.queues.producers]]
+[[env.production.queues.producers]]
 binding = "MAIL_JOBS_QUEUE"
 queue = "gs-mail-jobs"
 
-[[env.prod.queues.producers]]
+[[env.production.queues.producers]]
 binding = "DEAD_LETTER_QUEUE"
 queue = "gs-mail-dead-letter"
 
+[[env.prod.queues.consumers]]
+queue = "goldshore-jobs"
+
+[[env.prod.queues.consumers]]
+queue = "gs-mail-jobs"
+
+[[env.prod.queues.consumers]]
+queue = "gs-events"
+
 # ── Workflows ────────────────────────────────────────────────────────────────────────────────────────
-[[env.prod.workflows]]
+[[env.production.workflows]]
 binding = "GS_SIGNALS"
 name = "signals-evaluator"
 class_name = "SignalsEvaluator"
 script_name = "gs-signals-prod"
 
 # ── Secrets Store ───────────────────────────────────────────────────────────────────────────────────
-[[env.prod.secrets_store.bindings]]
+[[env.production.secrets_store.bindings]]
 binding = "SECRETS"
 store_id = "b9824d3280c54573a24137c7e7143b33"
 
@@ -130,49 +159,6 @@ routes = [
   { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "api.goldshore.org/*", zone_name = "goldshore.org" }
 ]
-
-[env.production.vars]
-ENV = "production"
-CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
-CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-CONTROL_SYNC_TOKEN = "__PROD_CONTROL_SYNC_TOKEN__"
-
-# ══════════════════════════════════════════════════════════════════════════════
-# Preview environment — deploys to workers.dev (no zone route needed)
-# ══════════════════════════════════════════════════════════════════════════════
-
-[env.preview]
-workers_dev = true
-
-[env.production.vars]
-ENV = "production"
-CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
-CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-CONTROL_SYNC_TOKEN = "__PROD_CONTROL_SYNC_TOKEN__"
-GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
-GOOGLE_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/goldclaw/oauth/google/callback"
-
-# ══════════════════════════════════════════════════════════════════════════════
-# Preview environment — deploys to workers.dev (no zone route needed)
-# ══════════════════════════════════════════════════════════════════════════════
-
-[env.preview]
-workers_dev = true
-
-[env.production.vars]
-ENV = "production"
-CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
-CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-CONTROL_SYNC_TOKEN = "__PROD_CONTROL_SYNC_TOKEN__"
-GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
-GOOGLE_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/goldclaw/oauth/google/callback"
-
-# ══════════════════════════════════════════════════════════════════════════════
-# Preview environment — deploys to workers.dev (no zone route needed)
-# ══════════════════════════════════════════════════════════════════════════════
-
-[env.preview]
-workers_dev = true
 
 [env.production.vars]
 ENV = "production"
@@ -193,6 +179,7 @@ workers_dev = true
 ENV = "preview"
 GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
 
+# ── KV ──────────────────────────────────────────────────────────────────────────────────────
 [[env.preview.kv_namespaces]]
 binding = "KV"
 id = "d4d20cee39094b999dea3f7e5f4c533a"
@@ -201,6 +188,7 @@ id = "d4d20cee39094b999dea3f7e5f4c533a"
 binding = "CONTROL_LOGS"
 id = "09e43cb8bd4749fdaaed0dc9d4ff2284"
 
+# ── R2 ──────────────────────────────────────────────────────────────────────────────────────
 [[env.preview.r2_buckets]]
 binding = "GS_ASSETS"
 bucket_name = "gs-assets-preview"
@@ -209,6 +197,7 @@ bucket_name = "gs-assets-preview"
 binding = "TELEMETRY"
 bucket_name = "gs-telemetry-storage"
 
+# ── D1 ──────────────────────────────────────────────────────────────────────────────────────
 [[env.preview.d1_databases]]
 binding = "PLATFORM_DB"
 database_name = "gs_platform_db"
@@ -225,24 +214,29 @@ database_name = "gs_signals_db"
 database_id = "76af4653-7f44-417b-b46e-250143d906fd"
 
 [[env.preview.d1_databases]]
+binding = "RISK_RADAR_DB"
+database_name = "gs_risk_radar_db"
+database_id = "fe25ba0b-7d1e-5362-a03f-065487222a08"
+
+[[env.preview.d1_databases]]
 binding = "JOBS_DB"
 database_name = "gs_jobs_db"
 database_id = "750c469c-788d-49e8-9254-77231cffd70f"
 
+# ── AI ──────────────────────────────────────────────────────────────────────────────────────
 [env.preview.ai]
 binding = "AI"
 
+# ── Durable Objects ──────────────────────────────────────────────────────────────────────
 [[env.preview.durable_objects.bindings]]
 name = "AUTH_SESSION"
 class_name = "AuthSession"
 
+# ── Services ──────────────────────────────────────────────────────────────────────────────────────
 [[env.preview.services]]
 binding = "AGENT"
 service = "gs-agent"
 
-[[env.preview.services]]
-binding = "GS_MAIL"
-service = "gs-mail"
 
 [[env.preview.services]]
 binding = "GS_WEB"
@@ -252,6 +246,7 @@ service = "gs-web"
 binding = "API_SERVICE"
 service = "gs-api"
 
+# ── Queues (producers) ───────────────────────────────────────────────────────────
 [[env.preview.queues.producers]]
 binding = "JOBS_QUEUE"
 queue = "goldshore-jobs"
@@ -264,15 +259,14 @@ queue = "gs-events"
 binding = "MAIL_JOBS_QUEUE"
 queue = "gs-mail-jobs"
 
+[[env.preview.queues.producers]]
+binding = "DEAD_LETTER_QUEUE"
+queue = "gs-mail-dead-letter"
+
 # ── Secrets Store ───────────────────────────────────────────────────────────────────
 [[env.preview.secrets_store.bindings]]
 binding = "SECRETS"
 store_id = "b9824d3280c54573a24137c7e7143b33"
-# Temporarily disabled: Wrangler 4.105.0 warns this preview env field is unexpected.
-# Re-enable only after confirming current Wrangler config schema supports env.preview.secrets_store.
-# [[env.preview.secrets_store.bindings]]
-# binding = "SECRETS"
-# store_id = "b9824d3280c54573a24137c7e7143b33"
 
 # ── Durable Object migrations ───────────────────────────────────────────────────────────────────
 [[migrations]]
