@@ -23,6 +23,11 @@
 - `PUBLIC_API=https://api.goldshore.ai`
 - `PUBLIC_GATEWAY=https://gw.goldshore.ai`
 
+**Runtime data bindings:**
+
+- None. `gs-web` must not bind `KV`, `DB`, or `GS_ASSETS`; contact, lead, and form configuration storage is served through `gs-api` (`/v1/forms/*`).
+- Do not add `GS_CONFIG` unless a specific Pages Function requires public, request-time, read-only config reads.
+
 ---
 
 ### 2. Admin (Cockpit)
