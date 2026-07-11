@@ -25,6 +25,20 @@ export interface CrawlIssue {
   samples: string[];
 }
 
+type SearchConsoleRow = {
+  keys?: string[];
+  clicks?: number;
+  impressions?: number;
+  ctr?: number;
+  position?: number;
+};
+
+type IndexingIssueRow = {
+  issueType?: CrawlIssue['type'];
+  severity?: CrawlIssue['severity'];
+  issues?: Array<{ url?: string }>;
+};
+
 export class GoogleSearchConsoleIntegration extends BaseIntegration {
   private siteUrl: string;
   private accessToken: string;
@@ -85,9 +99,9 @@ export class GoogleSearchConsoleIntegration extends BaseIntegration {
 
       if (!response.ok) throw new Error('Failed to fetch queries');
 
-      const data = await response.json();
-      return (data.rows || []).map((row: Record<string, unknown>) => ({
-        query: row.keys?.[0] || '',
+      const data = (await response.json()) as { rows?: SearchConsoleRow[] };
+      return (data.rows || []).map((row) => ({
+        query: row.keys?.[0] ?? '',
         clicks: row.clicks || 0,
         impressions: row.impressions || 0,
         ctr: (row.ctr || 0) * 100,
@@ -126,9 +140,9 @@ export class GoogleSearchConsoleIntegration extends BaseIntegration {
 
       if (!response.ok) throw new Error('Failed to fetch metrics');
 
-      const data = await response.json();
-      return (data.rows || []).map((row: Record<string, unknown>) => ({
-        date: row.keys?.[0] || '',
+      const data = (await response.json()) as { rows?: SearchConsoleRow[] };
+      return (data.rows || []).map((row) => ({
+        date: row.keys?.[0] ?? '',
         clicks: row.clicks || 0,
         impressions: row.impressions || 0,
         ctr: (row.ctr || 0) * 100,
@@ -175,12 +189,12 @@ export class GoogleSearchConsoleIntegration extends BaseIntegration {
 
       if (!response.ok) throw new Error('Failed to fetch indexing issues');
 
-      const data = await response.json();
-      return (data.issues || []).map((issue: Record<string, unknown>) => ({
-        type: issue.issueType,
-        severity: issue.severity,
+      const data = (await response.json()) as { issues?: IndexingIssueRow[] };
+      return (data.issues || []).map((issue) => ({
+        type: issue.issueType ?? 'WARNING',
+        severity: issue.severity ?? 'WARNING',
         count: issue.issues?.length || 0,
-        samples: issue.issues?.slice(0, 3).map((i: Record<string, unknown>) => i.url) || [],
+        samples: issue.issues?.slice(0, 3).map((i) => i.url ?? '') || [],
       }));
     } catch (error) {
       console.error('Error fetching indexing issues:', error);

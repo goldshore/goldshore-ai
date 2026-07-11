@@ -22,6 +22,9 @@ Last updated: 2026-05-29
 | `gateway.goldshore.ai` | Gateway alias | `marzton/goldshore-ai` | Redirect/Worker alias | `gs-gateway` | No |
 | `admin.goldshore.ai` | Internal admin UI | `marzton/goldshore-ai` | Cloudflare Pages | `gs-admin` | Internal |
 | `admin.goldshore.org` | Protected admin alias for the GoldShore Admin cockpit; covered by Access policy `GoldShore-Admin-ZT` | `marzton/goldshore-ai` | Cloudflare Pages | `gs-admin` | Internal |
+| `trading.goldshore.ai` | Protected trading dashboard | `marzton/goldshore-ai` | Cloudflare Worker | `gs-trading-prod` | Internal |
+| `dashboard.goldshore.ai` | Protected trading dashboard alias | `marzton/goldshore-ai` | Cloudflare Worker | `gs-trading-prod` | Internal |
+| `dash.goldshore.ai` | Short protected trading dashboard alias | `marzton/goldshore-ai` | Cloudflare Worker | `gs-trading-prod` | Internal |
 | `ops.goldshore.ai` | Internal control plane | `marzton/goldshore-ai` | Cloudflare Worker | `gs-control` | Internal |
 | `agent.goldshore.ai` | Agent endpoint | `marzton/goldshore-ai` | Cloudflare Worker | `gs-agent`/`gs-gateway` | Internal |
 | `mail.goldshore.ai` | Mail/form routing | `marzton/goldshore-ai` | Cloudflare Worker | `gs-mail` | Service |
