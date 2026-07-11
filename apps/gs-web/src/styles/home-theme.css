@@ -1319,8 +1319,16 @@ code {
     padding-top: 0.5rem;
   }
   .topbar nav.nav-open { display: flex; }
+  /* The 0.62rem desktop micro-nav is unreadable in the mobile dropdown;
+     bump to a phone-legible size and full-height tap targets. */
   .topbar nav a,
-  .nav-login { padding: 0.85rem 0.5rem; width: 100%; border-radius: 2px; }
+  .nav-login {
+    padding: 1rem 0.75rem;
+    width: 100%;
+    border-radius: 2px;
+    font-size: 0.9rem;
+    letter-spacing: 0.12em;
+  }
   .metrics        { grid-template-columns: repeat(2,1fr); }
   .sector-grid    { grid-template-columns: 1fr 1fr; }
   .telemetry-grid { grid-template-columns: 1fr; }
