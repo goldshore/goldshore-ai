@@ -87,7 +87,7 @@ jobs:
       - name: Deploy to Cloudflare Pages
         run: pnpm exec wrangler pages deploy apps/gs-admin/dist --project-name=gs-admin --branch=${{ github.ref_name }}
 
-  # ── Canonical Worker ─────────────────────────────────────────────────────────
+  # ── Canonical Worker ────────────────────────────────────────────────────────
   deploy-workers:
     name: Deploy ${{ matrix.app }}
     if: >

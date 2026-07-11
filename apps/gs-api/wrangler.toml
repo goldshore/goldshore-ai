@@ -47,6 +47,11 @@ database_name = "goldshore"
 database_id = "gs_db_001"
 
 [[env.prod.d1_databases]]
+binding = "DB"
+database_name = "goldshore"
+database_id = "gs_db_001"
+
+[[env.prod.d1_databases]]
 binding = "PLATFORM_DB"
 database_name = "gs_platform_db"
 database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
@@ -88,7 +93,7 @@ environment = "prod"
 
 [[env.prod.services]]
 binding = "GS_WEB"
-service = "gs-web"
+service = "gs-web-app"
 environment = "prod"
 
 [[env.prod.services]]
@@ -207,7 +212,7 @@ service = "gs-mail"
 
 [[env.preview.services]]
 binding = "GS_WEB"
-service = "gs-web"
+service = "gs-web-app"
 
 [[env.preview.services]]
 binding = "API_SERVICE"
