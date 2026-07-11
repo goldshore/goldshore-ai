@@ -1,0 +1,75 @@
+{
+  "folders": [
+    { "name": "goldshore-ai (root)", "path": "." },
+    { "name": "gs-web", "path": "apps/gs-web" },
+    { "name": "gs-api", "path": "apps/gs-api" },
+    { "name": "packages/ui", "path": "packages/ui" },
+    { "name": "packages/auth", "path": "packages/auth" },
+    { "name": "packages/config", "path": "packages/config" }
+  ],
+  "settings": {
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    },
+    "tailwindCSS.experimental.classRegex": [
+      ["clsx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"],
+      ["cn\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
+    ],
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/.wrangler": true,
+      "**/dist": true,
+      "**/.astro": true
+    },
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/dist": true,
+      "**/.wrangler": true
+    },
+    "[astro]": {
+      "editor.defaultFormatter": "astro-build.astro-vscode"
+    },
+    "cloudflare-workers-bindings.wranglerConfigPath": "apps/gs-web/wrangler.toml",
+    "terminal.integrated.defaultProfile.linux": "bash",
+    "git.autofetch": true
+  },
+  "extensions": {
+    "recommendations": [
+      "astro-build.astro-vscode",
+      "cloudflare.cloudflare-workers-bindings-vscode",
+      "esbenp.prettier-vscode",
+      "bradlc.vscode-tailwindcss",
+      "dbaeumer.vscode-eslint",
+      "eamodio.gitlens",
+      "ms-vscode.vscode-typescript-next",
+      "WallabyJs.console-ninja"
+    ]
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "dev: gs-web",
+        "type": "shell",
+        "command": "pnpm --filter gs-web dev",
+        "group": "build",
+        "presentation": { "panel": "dedicated" }
+      },
+      {
+        "label": "build: all",
+        "type": "shell",
+        "command": "pnpm turbo run build",
+        "group": { "kind": "build", "isDefault": true }
+      },
+      {
+        "label": "typecheck: all",
+        "type": "shell",
+        "command": "pnpm turbo run typecheck",
+        "group": "test"
+      }
+    ]
+  }
+}

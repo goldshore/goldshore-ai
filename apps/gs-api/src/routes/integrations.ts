@@ -46,6 +46,10 @@ integrations.get("/", async (c) => {
       }
 
       case "sync": {
+        const session = buildAdminSession(c.get("accessClaims"));
+        if (!hasAdminPermission(session.permissions, "system:integrations:manage")) {
+          return c.json({ error: "Forbidden" }, 403);
+        }
         const results = await registry.syncAll();
         return c.json({ success: true, data: results });
       }
@@ -64,8 +68,8 @@ integrations.get("/", async (c) => {
   }
 });
 
-// POST /integrations - Create or delete integrations (requires integration management permission)
-integrations.post("/", requireIntegrationManagement, async (c) => {
+// POST /integrations - Create or delete integrations (requires system:integrations:manage permission)
+integrations.post("/", requirePermission("system:integrations:manage"), async (c) => {
   const kv = c.env.KV;
 
   if (!kv) {
