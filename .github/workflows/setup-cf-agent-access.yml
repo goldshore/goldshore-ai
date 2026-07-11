@@ -85,6 +85,59 @@ jobs:
           echo "All required CF API permissions verified."
 
       # ------------------------------------------------------------------ #
+      # 0a. When skip_apps=true, verify required apps exist before rotating
+      #     or revoking any service token. Policy refreshes still run later;
+      #     this guard only prevents issuing credentials that cannot be
+      #     attached to every required Access app.
+      # ------------------------------------------------------------------ #
+      - name: Preflight existing Access apps when app creation is skipped
+        if: ${{ inputs.skip_apps }}
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          INCLUDE_SSH_LAPTOP: ${{ inputs.include_ssh_laptop }}
+          INCLUDE_MCP_PORTAL: ${{ inputs.include_mcp_portal }}
+        run: |
+          set -euo pipefail
+
+          APPS=$(curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps" \
+            -H "Authorization: Bearer $CF_TOKEN")
+
+          require_app() {
+            local name="$1" domain="${2:-}"
+            local id
+            id=$(echo "$APPS" | jq -r --arg n "$name" --arg d "$domain" \
+              '[.result[] | select(.name == $n or ($d != "" and ((.domain == $d) or ((.self_hosted_domains // []) | index($d)))))] | first | .id // empty')
+            if [ -z "$id" ]; then
+              echo "::error::skip_apps=true but required Access app is missing: $name ($domain)."
+              return 1
+            fi
+            echo "Preflight found Access app [$name]: $id"
+          }
+
+          require_app "GoldShore Trading - Schwab Callback" "trading.goldshore.ai/oauth/schwab/callback"
+          require_app "GoldShore Trading - Robinhood Callback" "trading.goldshore.ai/oauth/robinhood/callback"
+          require_app "Goldshore API - Public Probes" "api.goldshore.ai/health"
+          require_app "Goldshore Gateway - Public Probes" "gw.goldshore.ai/health"
+          require_app "Dashboard" "goldshore.ai/app"
+          require_app "GoldShore Admin" "admin.goldshore.ai"
+          require_app "GoldShore Trading" "trading.goldshore.ai"
+          require_app "Goldshore Ops" "ops.goldshore.ai"
+          require_app "Signals" "signals.goldshore.ai"
+          require_app "Goldshore API" "api.goldshore.ai"
+          require_app "GoldShore MCP" "mcp.goldshore.ai"
+          require_app "Goldshore Gateway" "gw.goldshore.ai"
+          require_app "GoldShore-Web-Preview" "preview.goldshore.ai"
+
+          if [ "$INCLUDE_SSH_LAPTOP" = "true" ]; then
+            require_app "Temp HP Laptop SSH" "ssh-laptop.goldshore.ai"
+          fi
+          if [ "$INCLUDE_MCP_PORTAL" = "true" ]; then
+            require_app "Goldshore MCP Portal" "mcp.goldshore.ai"
+          fi
+
+          echo "skip_apps preflight passed; token rotation can safely proceed to policy refresh."
+
+      # ------------------------------------------------------------------ #
       # 1. Revoke compromised service token
       # ------------------------------------------------------------------ #
       - name: Revoke compromised service token
@@ -470,13 +523,17 @@ jobs:
           upsert_full_access "Signals"           "signals.goldshore.ai" \
             '["signals.goldshore.org","gs-signals-prod.goldshore.workers.dev"]'
           # Goldshore API: uses documented name to match existing AUD in wrangler.toml;
-          # pushes AUD to api workers on first-run creation (Gate 5e). This must
-          # remain a full-access app (Owner access + Goldshore agents policies),
-          # not a service-token-only app: browser admin routes such as
-          # /admin/goldclaw call api.goldshore.ai with credentials: 'include'
-          # and gs-api expects Cloudflare Access user claims on protected routes.
-          # Keep service-token-only Access limited to machine-only/path-scoped apps.
-          upsert_full_access "Goldshore API"     "api.goldshore.ai" "[]" \
+          # pushes AUD to api workers on first-run creation (Gate 5e). Keep this
+          # host on upsert_full_access (owner/user allow + service-token policy)
+          # because browser-based admin routes call api.goldshore.ai with
+          # credentials: 'include' and need a human Cloudflare Access session.
+          # Service-token-only access is limited to machine-only/path-scoped apps.
+          # Keep this app on the full api.goldshore.ai host and list every
+          # protected route family served by gs-api so Access issues one AUD for
+          # browser calls to /goldclaw, /admin, /users, /ai, /v1, etc. The public
+          # probes above remain path-scoped bypass apps.
+          API_PROTECTED_DOMAINS='["api.goldshore.ai/goldclaw","api.goldshore.ai/admin","api.goldshore.ai/users","api.goldshore.ai/ai","api.goldshore.ai/v1"]'
+          upsert_full_access "Goldshore API"     "api.goldshore.ai" "$API_PROTECTED_DOMAINS" \
             "gs-api gs-api-prod"
           assert_full_access_policies "Goldshore API" "api.goldshore.ai"
           # GoldShore MCP: human + agent per docs ("approved human identities and agents")
@@ -492,6 +549,8 @@ jobs:
           if [ "$MISSING_REQUIRED_APPS" -ne 0 ]; then
             echo "::error::One or more required Access apps were missing while skip_apps=true. Policies were not updated for those apps, so new credentials were not propagated."
             exit 1
+          fi
+
           # ------------------------------------------------------------------
           # Gated apps (workflow_dispatch inputs)
           # ------------------------------------------------------------------
