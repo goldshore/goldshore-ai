@@ -82,10 +82,6 @@ binding = "GS_WEB"
 service = "gs-web"
 environment = "prod"
 
-[[env.prod.services]]
-binding = "GOLDSHORE_AI"
-service = "goldshore-ai"
-environment = "prod"
 
 [[env.prod.queues.producers]]
 binding = "JOBS_QUEUE"

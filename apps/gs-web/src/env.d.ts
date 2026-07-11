@@ -28,19 +28,6 @@ interface D1PreparedStatement<Row = Record<string, unknown>> {
 }
 
 // Global Cloudflare Env types
-interface KVNamespace {
-  put(
-    key: string,
-    value: string | ReadableStream | ArrayBuffer,
-    options?: unknown,
-  ): Promise<void>;
-  get(key: string, options?: unknown): Promise<string | null>;
-}
-
-interface D1Database {
-  prepare<Row = Record<string, unknown>>(query: string): D1PreparedStatement<Row>;
-}
-
 interface Env {
   KV: KVNamespace;
   PLATFORM_DB: D1Database;

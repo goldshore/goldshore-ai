@@ -1,16 +1,7 @@
 import type { APIRoute } from 'astro';
-import {
-  buildAdminSession,
-  verifyAccessWithClaims,
-  type AdminPermission,
-  type Env as AccessEnv,
-} from '@goldshore/auth';
-import { parseJson } from '@goldshore/utils';
 
-/**
- * Admin UI form configuration collection endpoint.
- * Requires `forms:read` for GET and `forms:write` for POST.
- */
+const apiBase = (env: Env | undefined) =>
+  (env?.PUBLIC_API || 'https://api.goldshore.ai').replace(/\/$/, '');
 
 const normalizeRow = (row: Record<string, string>) => ({
   id: row.id,
