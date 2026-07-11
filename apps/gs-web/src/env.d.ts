@@ -23,6 +23,7 @@ interface D1Result<Row> {
 interface D1PreparedStatement<Row = Record<string, unknown>> {
   bind(...values: unknown[]): D1PreparedStatement<Row>;
   all(): Promise<D1Result<Row>>;
+  first<T = Row>(): Promise<T | null>;
   run(): Promise<unknown>;
 }
 
@@ -42,7 +43,7 @@ interface D1Database {
 
 interface Env {
   KV: KVNamespace;
-  DB: D1Database;
+  PLATFORM_DB: D1Database;
   CONTACT_TTL_SECONDS?: string;
   CONTACT_NOTIFICATION_EMAILS?: string;
   MAILCHANNELS_SENDER_EMAIL?: string;

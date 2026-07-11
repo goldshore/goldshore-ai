@@ -12,6 +12,10 @@ export type Env = {
   AUTH_SESSION?: DurableObjectNamespace;
   AI: Ai;
   SECRETS: SecretsStore;
+  JOBS_QUEUE?: Queue;
+  EVENTS_QUEUE?: Queue;
+  MAIL_JOBS_QUEUE?: Queue;
+  DEAD_LETTER_QUEUE?: Queue;
   OPENAI_API_KEY?: string;
   GEMINI_API_KEY?: string;
   ANTHROPIC_API_KEY?: string;
@@ -38,6 +42,7 @@ export type Env = {
   MAIL_BLOCKED_SENDERS?: string;
   MAIL_ALLOWED_RECIPIENTS?: string;
   AGENT?: Fetcher;
+  GS_WEB?: Fetcher;
   API_ORIGIN?: string;
   ADMIN_URL?: string;
   ENV?: string;

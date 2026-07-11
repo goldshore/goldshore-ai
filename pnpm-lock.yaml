@@ -87,96 +87,6 @@ importers:
         specifier: ^4.3.6
         version: 4.4.3
 
-  apps/armsway-com:
-    devDependencies:
-      '@cloudflare/workers-types':
-        specifier: ^5.20260708.1
-        version: 5.20260711.1
-      typescript:
-        specifier: ^5.4.2
-        version: 5.9.3
-      wrangler:
-        specifier: ^4.103.0
-        version: 4.110.0(@cloudflare/workers-types@5.20260711.1)
-
-  apps/banproof-me:
-    dependencies:
-      hono:
-        specifier: ^4.12.25
-        version: 4.12.29
-    devDependencies:
-      '@cloudflare/workers-types':
-        specifier: ^5.20260708.1
-        version: 5.20260711.1
-      typescript:
-        specifier: ^5.4.2
-        version: 5.9.3
-      wrangler:
-        specifier: ^4.103.0
-        version: 4.110.0(@cloudflare/workers-types@5.20260711.1)
-
-  apps/gs-admin:
-    dependencies:
-      '@goldshore/auth':
-        specifier: workspace:*
-        version: link:../../packages/auth
-      '@goldshore/config':
-        specifier: workspace:*
-        version: link:../../packages/config
-      '@goldshore/integrations':
-        specifier: workspace:*
-        version: link:../../packages/integrations
-      '@goldshore/schema':
-        specifier: workspace:*
-        version: link:../../packages/schema
-      '@goldshore/theme':
-        specifier: workspace:*
-        version: link:../../packages/theme
-      '@goldshore/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
-      '@goldshore/utils':
-        specifier: workspace:*
-        version: link:../../packages/utils
-      astro:
-        specifier: ^6.4.6
-        version: 6.4.8(@types/node@26.1.1)(lightningcss@1.32.0)(rollup@4.62.2)(tsx@4.23.0)(yaml@2.9.0)
-    devDependencies:
-      '@astrojs/cloudflare':
-        specifier: 13.7.0
-        version: 13.7.0(@types/node@26.1.1)(astro@6.4.8(@types/node@26.1.1)(lightningcss@1.32.0)(rollup@4.62.2)(tsx@4.23.0)(yaml@2.9.0))(lightningcss@1.32.0)(tsx@4.23.0)(workerd@1.20260708.1)(wrangler@4.110.0(@cloudflare/workers-types@5.20260711.1))(yaml@2.9.0)
-      '@astrojs/tailwind':
-        specifier: ^6.0.2
-        version: 6.0.2(astro@6.4.8(@types/node@26.1.1)(lightningcss@1.32.0)(rollup@4.62.2)(tsx@4.23.0)(yaml@2.9.0))(tailwindcss@4.3.2)
-      '@cloudflare/workers-types':
-        specifier: ^5.20260708.1
-        version: 5.20260711.1
-      tailwindcss:
-        specifier: ^4.3.1
-        version: 4.3.2
-      typescript:
-        specifier: ^5.4.2
-        version: 5.9.3
-
-  apps/gs-agent:
-    dependencies:
-      '@goldshore/auth':
-        specifier: workspace:*
-        version: link:../../packages/auth
-      hono:
-        specifier: ^4.12.25
-        version: 4.12.29
-    devDependencies:
-      '@cloudflare/workers-types':
-        specifier: ^5.20260708.1
-        version: 5.20260711.1
-      typescript:
-        specifier: ^5.4.2
-        version: 5.9.3
-      wrangler:
-        specifier: ^4.103.0
-        version: 4.110.0(@cloudflare/workers-types@5.20260711.1)
-
   apps/gs-api:
     dependencies:
       '@goldshore/ai-providers':
@@ -216,117 +126,6 @@ importers:
       tsx:
         specifier: ^4.7.1
         version: 4.23.0
-      typescript:
-        specifier: ^5.4.2
-        version: 5.9.3
-      wrangler:
-        specifier: ^4.103.0
-        version: 4.110.0(@cloudflare/workers-types@5.20260711.1)
-
-  apps/gs-control:
-    dependencies:
-      '@goldshore/auth':
-        specifier: workspace:*
-        version: link:../../packages/auth
-      '@goldshore/utils':
-        specifier: workspace:*
-        version: link:../../packages/utils
-      '@hono/zod-validator':
-        specifier: ^0.8.0
-        version: 0.8.0(hono@4.12.29)(zod@4.4.3)
-      hono:
-        specifier: ^4.12.25
-        version: 4.12.29
-      zod:
-        specifier: ^4.3.6
-        version: 4.4.3
-    devDependencies:
-      '@cloudflare/workers-types':
-        specifier: ^5.20260708.1
-        version: 5.20260711.1
-      tsx:
-        specifier: ^4.7.1
-        version: 4.23.0
-      typescript:
-        specifier: ^5.4.2
-        version: 5.9.3
-      wrangler:
-        specifier: ^4.103.0
-        version: 4.110.0(@cloudflare/workers-types@5.20260711.1)
-
-  apps/gs-core-worker:
-    devDependencies:
-      '@cloudflare/workers-types':
-        specifier: ^5.20260708.1
-        version: 5.20260711.1
-      typescript:
-        specifier: ^5.4.2
-        version: 5.9.3
-      wrangler:
-        specifier: ^4.103.0
-        version: 4.110.0(@cloudflare/workers-types@5.20260711.1)
-
-  apps/gs-gateway:
-    dependencies:
-      '@goldshore/auth':
-        specifier: workspace:*
-        version: link:../../packages/auth
-      hono:
-        specifier: ^4.12.25
-        version: 4.12.29
-      zod:
-        specifier: ^4.3.6
-        version: 4.4.3
-    devDependencies:
-      '@cloudflare/workers-types':
-        specifier: ^5.20260708.1
-        version: 5.20260711.1
-      '@types/node':
-        specifier: ^26.1.1
-        version: 26.1.1
-      tsx:
-        specifier: ^4.21.0
-        version: 4.23.0
-      typescript:
-        specifier: ^5.4.2
-        version: 5.9.3
-      wrangler:
-        specifier: ^4.103.0
-        version: 4.110.0(@cloudflare/workers-types@5.20260711.1)
-
-  apps/gs-mail: {}
-
-  apps/gs-platform:
-    dependencies:
-      '@goldshore/auth':
-        specifier: workspace:^
-        version: link:../../packages/auth
-      hono:
-        specifier: ^4.12.25
-        version: 4.12.29
-    devDependencies:
-      '@cloudflare/workers-types':
-        specifier: ^5.20260708.1
-        version: 5.20260711.1
-      typescript:
-        specifier: ^5.4.2
-        version: 5.9.3
-      wrangler:
-        specifier: ^4.103.0
-        version: 4.110.0(@cloudflare/workers-types@5.20260711.1)
-
-  apps/gs-trading:
-    dependencies:
-      '@goldshore/auth':
-        specifier: workspace:*
-        version: link:../../packages/auth
-      hono:
-        specifier: ^4.12.25
-        version: 4.12.29
-    devDependencies:
-      '@cloudflare/workers-types':
-        specifier: ^5.20260708.1
-        version: 5.20260711.1
       typescript:
         specifier: ^5.4.2
         version: 5.9.3
@@ -406,8 +205,6 @@ importers:
       typescript:
         specifier: ^5.4.2
         version: 5.9.3
-
-  apps/gs-www-redirect: {}
 
   packages/ai-providers: {}
 
@@ -984,12 +781,6 @@ packages:
     peerDependencies:
       hono: '>=3.9.0'
       zod: ^3.19.1
-
-  '@hono/zod-validator@0.8.0':
-    resolution: {integrity: sha512-5uS4S1/LKtZQYvD4BtpPUFkOv8d1wNxHHrChm26buMiEYc1FrHWvDUaKVBwkiVtvSExHSpLGDvcnpI2Copyj9w==}
-    peerDependencies:
-      hono: '>=4.10.0'
-      zod: ^3.25.0 || ^4.0.0
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -5205,11 +4996,6 @@ snapshots:
     dependencies:
       hono: 4.12.29
       zod: 3.25.76
-
-  '@hono/zod-validator@0.8.0(hono@4.12.29)(zod@4.4.3)':
-    dependencies:
-      hono: 4.12.29
-      zod: 4.4.3
 
   '@humanfs/core@0.19.2':
     dependencies:
