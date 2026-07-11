@@ -52,8 +52,16 @@ cloudflare:
         content: "gs-mail.goldshore-account.workers.dev"
         proxied: true
 
-      # F. Trading Worker (trading.goldshore.ai) — route-based, requires proxied DNS
+      # F. Trading dashboard aliases — route-based, protected by GoldShore-Trading-ZT
       - name: "trading"
+        type: CNAME
+        content: "gs-trading-prod.goldshore-account.workers.dev"
+        proxied: true
+      - name: "dashboard"
+        type: CNAME
+        content: "gs-trading-prod.goldshore-account.workers.dev"
+        proxied: true
+      - name: "dash"
         type: CNAME
         content: "gs-trading-prod.goldshore-account.workers.dev"
         proxied: true
@@ -113,6 +121,29 @@ cloudflare:
         domains:
           - "ops.goldshore.ai"
         action: "allow"
+        rules:
+          include:
+            - email_domain: "goldshore.ai"
+            - email: "marstonr6@gmail.com"
+          allowed_identity_providers:
+            - "google_workspace"
+            - "github_goldshore_deploy"
+            - "github"
+            - "email_otp"
+
+      - name: "GoldShore-Trading-ZT"
+        domains:
+          - "trading.goldshore.ai"
+          - "dashboard.goldshore.ai"
+          - "dash.goldshore.ai"
+        action: "allow"
+        paths:
+          - "/*"
+        public_paths:
+          - "/health"
+          - "/version"
+          - "/oauth/schwab/callback"
+          - "/oauth/robinhood/callback"
         rules:
           include:
             - email_domain: "goldshore.ai"
