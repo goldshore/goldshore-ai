@@ -1,5 +1,9 @@
 name: Repair pnpm lockfile
 
+# Repairs invalid or drifted pnpm-lock.yaml files from package manifests.
+# This workflow is intentionally idempotent: if the regenerated lockfile matches,
+# it exits without committing.
+
 on:
   workflow_dispatch:
   push:
