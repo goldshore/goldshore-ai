@@ -114,7 +114,7 @@ For Claude/Codex assistance with Google API integration: provide the API name, s
 |------|---------|-------|
 | `marzton/goldshore-gateway` | `gs-platform` worker | Platform front door; routes all subdomain traffic |
 | `marzton/goldshore-admin` | `admin.goldshore.org` (Pages) | Older admin, being superseded by `apps/gs-admin` |
-| `marzton/goldshore-core` → `apps/banproof-me` | `banproof-me` worker | Security/ban-check; called by gateway on every request. Built with Antigravity + Codex. |
+| `marzton/goldshore-core` | external `banproof-me` worker | Security/ban-check currently called by gateway on every request. If migrated into this repo, it must become `apps/gs-api` routes, middleware, queues, or service bindings — never a new `apps/gs-security`, `apps/banproof-me`, or other satellite Worker. |
 
 ---
 
@@ -150,7 +150,7 @@ What's on this branch:
 pnpm install
 pnpm build
 pnpm --filter gs-web dev
-pnpm --filter gs-admin dev
+pnpm --filter gs-api dev
 pnpm turbo run build --filter=gs-web
 ```
 
@@ -162,7 +162,7 @@ pnpm turbo run build --filter=gs-web
 |----------|------|--------|
 | 1 | `goldshore-ops` | Archive — KV template stub, never built |
 | 2 | `goldshore-web` | Already deprecated — remove from CI |
-| 3 | `goldshore-core` | Route `banproof-me` security logic into `apps/gs-api` (AGENTS.md forbids new Workers under `apps/`); archive standalone |
+| 3 | `goldshore-core` | Keep `banproof-me` external until it can be folded into the existing `apps/gs-api` flow as routes, middleware, queues, or service bindings; do not create `apps/gs-security`, `apps/banproof-me`, or any other new Worker app under `apps/`; archive standalone only after `gs-api` parity is verified |
 | 4 | `goldshore-api` | Confirm `goldshore/apps/goldshore-api` at parity → archive standalone |
 | 5 | `goldshore-admin` | Confirm `apps/gs-admin` at parity → archive standalone |
 | 6 | `goldshore-gateway` | Replace stub with real gateway code → archive standalone |
