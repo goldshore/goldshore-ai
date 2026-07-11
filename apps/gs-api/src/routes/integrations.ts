@@ -1,8 +1,7 @@
 import { Hono } from "hono";
 import { getIntegrationRegistry, INTEGRATION_DEFINITIONS } from "../lib/IntegrationRegistry";
 import { Env, Variables } from "../types";
-import { requirePermission, getActor } from "../auth";
-import { buildAdminSession, hasAdminPermission } from "@goldshore/auth";
+import { requirePermission } from "../auth";
 import integrationKeys from "./integration-keys";
 import whatsappCommands from "./whatsapp-commands";
 import oauth from "./oauth";
@@ -12,12 +11,22 @@ const integrations = new Hono<{
   Variables: Variables;
 }>();
 
+const requireIntegrationManagement = requirePermission("system:integrations:manage");
+
 /**
  * Integration Management API
  * Terminal endpoint for third-party integration lifecycle: CRUD, sync, status monitoring
  */
 
 // GET /integrations?action=list|definitions|status|sync
+integrations.get("/", async (c, next) => {
+  if ((c.req.query("action") || "list") === "sync") {
+    return requireIntegrationManagement(c, next);
+  }
+
+  await next();
+});
+
 integrations.get("/", async (c) => {
   const action = c.req.query("action") || "list";
   const kv = c.env.KV;
@@ -37,10 +46,6 @@ integrations.get("/", async (c) => {
       }
 
       case "sync": {
-        const session = buildAdminSession(c.get("accessClaims"));
-        if (!hasAdminPermission(session.permissions, "system:write")) {
-          return c.json({ error: "Forbidden" }, 403);
-        }
         const results = await registry.syncAll();
         return c.json({ success: true, data: results });
       }
@@ -59,8 +64,8 @@ integrations.get("/", async (c) => {
   }
 });
 
-// POST /integrations - Create or delete integrations (requires system:write permission)
-integrations.post("/", requirePermission("system:write"), async (c) => {
+// POST /integrations - Create or delete integrations (requires integration management permission)
+integrations.post("/", requireIntegrationManagement, async (c) => {
   const kv = c.env.KV;
 
   if (!kv) {
