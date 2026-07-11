@@ -19,18 +19,6 @@ on:
         description: 'Comma-separated permissions for create (e.g. "workers_scripts:edit,d1:edit")'
         required: false
         type: string
-      cf_user_token:
-        description: 'CF API Token with User→API Tokens:Edit (overrides CF_USER_TOKEN secret)'
-        required: false
-        type: string
-      cf_auth_email:
-        description: 'Cloudflare account email for Global API Key auth (overrides CF_AUTH_EMAIL secret)'
-        required: false
-        type: string
-      cf_auth_key:
-        description: 'Cloudflare Global API Key (use with cf_auth_email; overrides CF_AUTH_KEY secret)'
-        required: false
-        type: string
 
 permissions:
   contents: read
@@ -40,9 +28,9 @@ jobs:
     name: Manage CF Tokens (${{ inputs.action }})
     runs-on: ubuntu-latest
     env:
-      CF_USER_TOKEN: ${{ inputs.cf_user_token != '' && inputs.cf_user_token || secrets.CF_USER_TOKEN }}
-      CF_AUTH_EMAIL: ${{ inputs.cf_auth_email != '' && inputs.cf_auth_email || secrets.CF_AUTH_EMAIL }}
-      CF_AUTH_KEY: ${{ inputs.cf_auth_key != '' && inputs.cf_auth_key || secrets.CF_AUTH_KEY }}
+      CF_USER_TOKEN: ${{ secrets.CF_USER_TOKEN }}
+      CF_AUTH_EMAIL: ${{ secrets.CF_AUTH_EMAIL }}
+      CF_AUTH_KEY: ${{ secrets.CF_AUTH_KEY }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
     steps:
@@ -83,7 +71,7 @@ jobs:
       - name: List tokens
         if: inputs.action == 'list'
         env:
-          CF_USER_TOKEN: ${{ inputs.cf_user_token != '' && inputs.cf_user_token || secrets.CF_USER_TOKEN }}
+          CF_USER_TOKEN: ${{ secrets.CF_USER_TOKEN }}
         run: |
           python3 - <<'PY'
           import json, os, urllib.request, urllib.error
@@ -125,7 +113,7 @@ jobs:
       - name: Create token
         if: inputs.action == 'create'
         env:
-          CF_USER_TOKEN: ${{ inputs.cf_user_token != '' && inputs.cf_user_token || secrets.CF_USER_TOKEN }}
+          CF_USER_TOKEN: ${{ secrets.CF_USER_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           TOKEN_NAME: ${{ inputs.token_name }}
           TOKEN_PERMISSIONS: ${{ inputs.token_permissions }}
@@ -143,8 +131,10 @@ jobs:
 
           if email and key:
               headers = {"X-Auth-Email": email, "X-Auth-Key": key, "Content-Type": "application/json"}
-          else:
+          elif token:
               headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+          else:
+              raise SystemExit("No credentials. Configure CF_USER_TOKEN or both CF_AUTH_EMAIL and CF_AUTH_KEY as GitHub secrets.")
 
           PERM_MAP = {
               "workers_scripts:edit": {"id": "e086da7e2179491d91ee5f35b3ca210a", "effect": "allow"},
@@ -201,7 +191,7 @@ jobs:
       - name: Delete token
         if: inputs.action == 'delete'
         env:
-          CF_USER_TOKEN: ${{ inputs.cf_user_token != '' && inputs.cf_user_token || secrets.CF_USER_TOKEN }}
+          CF_USER_TOKEN: ${{ secrets.CF_USER_TOKEN }}
           TOKEN_NAME: ${{ inputs.token_name }}
         run: |
           python3 - <<'PY'
@@ -214,8 +204,10 @@ jobs:
 
           if email and key:
               headers = {"X-Auth-Email": email, "X-Auth-Key": key, "Content-Type": "application/json"}
-          else:
+          elif token:
               headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+          else:
+              raise SystemExit("No credentials. Configure CF_USER_TOKEN or both CF_AUTH_EMAIL and CF_AUTH_KEY as GitHub secrets.")
 
           def cf(method, path, body=None):
               req = urllib.request.Request(
