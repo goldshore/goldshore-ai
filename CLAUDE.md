@@ -51,23 +51,18 @@ After adding key to GitHub, test with: `ssh -T git@github.com`
 
 ## Monorepo structure
 
-pnpm 9 + Turborepo. All apps in `apps/*`, shared code in `packages/*`.
+pnpm 9 + Turborepo. This repository intentionally exposes only the two canonical apps below plus shared code in `packages/*`.
 
 ### Apps
 
-**Per AGENTS.md:** this repo is a two-app monorepo. New frontend work → `apps/gs-web`; new backend work → `apps/gs-api`. All other apps are legacy stubs retained for workspace validation only — do not route new tasks there.
+**Per AGENTS.md:** this repo is a strict two-app monorepo. New frontend work → `apps/gs-web`; new backend work, including routing, cron jobs, DB operations, AI logic, queues, email receivers, and proxy code → `apps/gs-api`. Do not route any work to unsupported legacy app names such as `gs-admin`, `gs-mcp`, `gs-gateway`, `gs-cron`, or `gs-signals` in this repository.
 
 | App | Worker name | Routes | Status |
 |-----|-------------|--------|--------|
-| `apps/gs-web` | `gs-web` | `goldshore.ai/*` | ✅ Astro + Cloudflare Workers |
-| `apps/gs-api` | `gs-api` | `api.goldshore.ai/*` | ✅ Active |
-| `apps/gs-admin` | `gs-admin` | `admin.goldshore.ai/*` | ⚠️ Legacy — do not route new work here |
-| `apps/gs-mcp` | `gs-mcp` | `mcp.goldshore.ai/*` | ⚠️ Legacy — do not route new work here |
-| `apps/gs-gateway` | `gs-platform` | `gw/gateway/ops/agent/api.goldshore.ai/*` | ⚠️ STUB — real code in `marzton/goldshore-gateway` |
-| `apps/gs-cron` | `gs-cron` | (scheduled) | ⚠️ Legacy — do not route new work here |
-| `apps/gs-signals` | `gs-signals` | internal | ⚠️ Legacy — do not route new work here |
+| `apps/gs-web` | `gs-web` | `goldshore.ai/*` | ✅ Canonical Astro frontend |
+| `apps/gs-api` | `gs-api` | `api.goldshore.ai/*` | ✅ Canonical unified API Worker |
 
-The gateway stub at `apps/gs-gateway/wrangler.toml` is intentional — it satisfies workspace validation without owning deployment.
+If a task appears to require a separate admin, gateway, MCP, cron, mail, signals, or agent worker, implement it as a sub-route, handler, queue consumer, or scheduled flow inside `apps/gs-api`, or as a page/sub-route inside `apps/gs-web`.
 
 ### Shared packages
 
@@ -118,7 +113,7 @@ For Claude/Codex assistance with Google API integration: provide the API name, s
 
 ---
 
-## Key Cloudflare bindings (gs-admin)
+## Key Cloudflare bindings (gs-api)
 
 - KV: `GS_CONFIG` (`d02c0c7951a244a7987e23d8af16b7b2`), `KV_SESSIONS`
 - D1: `PLATFORM_DB` (`9703574e-adb7-481e-8d98-96f8ce5f8a90`), `GS_AUDIT_DB` (`1ae71d76-188f-481b-91d9-db2d39013f68`)
@@ -164,8 +159,8 @@ pnpm turbo run build --filter=gs-web
 | 2 | `goldshore-web` | Already deprecated — remove from CI |
 | 3 | `goldshore-core` | Keep `banproof-me` external until it can be folded into the existing `apps/gs-api` flow as routes, middleware, queues, or service bindings; do not create `apps/gs-security`, `apps/banproof-me`, or any other new Worker app under `apps/`; archive standalone only after `gs-api` parity is verified |
 | 4 | `goldshore-api` | Confirm `goldshore/apps/goldshore-api` at parity → archive standalone |
-| 5 | `goldshore-admin` | Confirm `apps/gs-admin` at parity → archive standalone |
-| 6 | `goldshore-gateway` | Replace stub with real gateway code → archive standalone |
+| 5 | `goldshore-admin` | Move replacement admin UX into `apps/gs-web` sub-routes, then archive standalone |
+| 6 | `goldshore-gateway` | Route gateway responsibilities through `apps/gs-api`, then archive standalone |
 
 ---
 
