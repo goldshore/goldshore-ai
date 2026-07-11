@@ -6,9 +6,9 @@ compatibility_flags = ["nodejs_compat"]
 workers_dev = false
 
 [env.prod]
-routes = [
-  { pattern = "ops.goldshore.ai/*", zone_name = "goldshore.ai" }
-]
+# Consolidated into gs-api. Keep this legacy config route-free to prevent
+# hostname ownership collisions during validation and deployment.
+routes = []
 
 [env.prod.vars]
 ENV = "production"
@@ -38,9 +38,9 @@ service = "gs-gateway"
 environment = "prod"
 
 [env.preview]
-routes = [
-  { pattern = "ops-preview.goldshore.ai/*", zone_name = "goldshore.ai" }
-]
+# Consolidated into gs-api. Preview control traffic should route through gs-api
+# once a preview hostname is explicitly approved.
+routes = []
 
 [env.preview.vars]
 ENV = "preview"
