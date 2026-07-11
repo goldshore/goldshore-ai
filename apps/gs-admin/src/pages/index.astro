@@ -26,7 +26,7 @@ const adminService = createAdminService({
   actor: 'admin-dashboard'
 });
 
-const systemInfo = await adminService.getSystemInfo();
+const systemInfo = await adminService.getSystemInfo() as { timestamp?: string } | null;
 ---
 
 <AdminLayout title="Overview">

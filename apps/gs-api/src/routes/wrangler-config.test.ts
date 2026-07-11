@@ -14,16 +14,28 @@ describe('gs-api wrangler env bindings', () => {
         wranglerToml,
         new RegExp(`\\[\\[env\\.${envName}\\.kv_namespaces\\]\\][\\s\\S]*?binding = "KV"[\\s\\S]*?id = "`)
       );
+      assert.match(
+        wranglerToml,
+        new RegExp(`\\[\\[env\\.${envName}\\.kv_namespaces\\]\\][\\s\\S]*?binding = "RISK_RADAR_CACHE"[\\s\\S]*?id = "`)
+      );
     });
 
-    it(`defines PLATFORM_DB, GS_ASSETS, and AI bindings for ${envName}`, () => {
+    it(`defines platform, Risk Radar, and AI bindings for ${envName}`, () => {
       assert.match(
         wranglerToml,
         new RegExp(`\\[\\[env\\.${envName}\\.r2_buckets\\]\\][\\s\\S]*?binding = "GS_ASSETS"`)
       );
       assert.match(
         wranglerToml,
+        new RegExp(`\\[\\[env\\.${envName}\\.r2_buckets\\]\\][\\s\\S]*?binding = "RISK_RADAR_R2"`)
+      );
+      assert.match(
+        wranglerToml,
         new RegExp(`\\[\\[env\\.${envName}\\.d1_databases\\]\\][\\s\\S]*?binding = "PLATFORM_DB"`)
+      );
+      assert.match(
+        wranglerToml,
+        new RegExp(`\\[\\[env\\.${envName}\\.d1_databases\\]\\][\\s\\S]*?binding = "RISK_RADAR_DB"`)
       );
       assert.match(
         wranglerToml,
