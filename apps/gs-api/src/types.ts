@@ -54,13 +54,6 @@ export type Env = {
   CLOUDFLARE_API_TOKEN?: string;
   CLOUDFLARE_ACCOUNT_ID?: string;
   CLOUDFLARE_ZONE_ID?: string;
-  MAIL_FORWARD_TO?: string;
-  FORWARD_TO?: string;
-  MAIL_BLOCKED_SENDERS?: string;
-  MAIL_ALLOWED_RECIPIENTS?: string;
-  AGENT?: Fetcher;
-  API_ORIGIN?: string;
-  DEV_AUTH_BYPASS?: string;
 };
 
 export type Variables = {

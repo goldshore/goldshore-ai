@@ -206,8 +206,6 @@ const createStaticServer = async (documents) => {
   const byHtmlPath = new Map(documents.map((doc) => [doc.relativePath, doc.html]));
   const byUrlPath = await buildAssetIndex();
 
-const createStaticServer = (documents) => {
-  const byPath = new Map(documents.map((doc) => [doc.relativePath, doc.html]));
   return createServer(async (req, res) => {
     const rawPathname = (req.url || '/').split('?')[0];
     let pathname;
@@ -216,8 +214,10 @@ const createStaticServer = (documents) => {
     } catch {
       pathname = rawPathname;
     }
-    const key = pathname === '/' ? 'index.html' : `${pathname.replace(/^\//, '').replace(/\/$/, '')}/index.html`;
-    const html = byPath.get(key);
+    const htmlKey = pathname === '/'
+      ? 'index.html'
+      : `${pathname.replace(/^\//, '').replace(/\/$/, '')}/index.html`;
+    const html = byHtmlPath.get(htmlKey);
     if (html) {
       res.statusCode = 200;
       res.setHeader('content-type', 'text/html; charset=utf-8');

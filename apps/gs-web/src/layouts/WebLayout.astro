@@ -1,13 +1,6 @@
 ---
 import GoldShoreShell from './GoldShoreShell.astro';
 import Logo from '../components/brand/Logo.astro';
-import '@goldshore/theme/styles/tokens.css';
-import '@goldshore/theme/styles/base.css';
-import '@goldshore/theme/styles/components.css';
-import '@goldshore/theme/styles/layout.css';
-import '../styles/global.css';
-import Logo from '../components/brand/Logo.astro';
-import { HTML_CSP_META_FALLBACK } from '../security/policy';
 import { WEB_META_CSP } from '../utils/csp';
 import '../styles/goldshore-shell.css';
 
@@ -24,36 +17,12 @@ const navLinks = [
   { href: '/developer', label: 'Developer' },
 ];
 
-const navLinks = [
-  { href: '/', label: 'Home' },
-  { href: '/about', label: 'About' },
-  { href: '/team', label: 'Team' },
-  { href: '/contact?inquiry=strategy-call', label: 'Book Strategy Call' },
-  { href: '/contact', label: 'Contact' },
-  { href: '/risk-radar', label: 'Risk Radar' },
-  { href: '/developer', label: 'Developer Hub' },
-];
 const footerLinks = [
   { href: '/', label: 'Home' },
   { href: '/platform', label: 'Platform' },
   { href: '/legal/privacy', label: 'Privacy' },
   { href: '/legal/terms', label: 'Terms' },
 ];
-const mobileNavId = 'mobile-navigation';
-
-const CANONICAL_ORIGIN = 'https://goldshore.org';
-
-const {
-  title = 'GoldShore',
-  description = 'GoldShore AI',
-  currentPath = Astro.url.pathname,
-  canonicalPath = Astro.url.pathname,
-  ogTitle = title,
-  ogDescription = description,
-} = Astro.props;
-
-const canonicalUrl = new URL(canonicalPath, CANONICAL_ORIGIN).toString();
-const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
 ---
 
 <html lang="en">
@@ -88,8 +57,10 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
     <div class="gs-page-shell">
       <header class="header" data-menu-open="false">
         <div class="header__inner">
-          <a href="/" class="gs-logo-link" aria-label="Gold Shore home">
-            <Logo class="gs-logo gs-logo--lockup" title="Gold Shore" variant="lockup" />
+          <a href="/" class="header-brand" aria-label="Gold Shore home">
+            <span class="header-brand__coords">40°42′45″N<br />74°00′21″W</span>
+            <span class="header-brand__mark">GS·LAB·v2.84</span>
+            <span class="header-brand__lockup"><strong>Gold Shore Labs</strong><em>GoldShore</em></span>
           </a>
 
           <nav class="desktop-nav" aria-label="Primary navigation">
@@ -330,12 +301,6 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
         font-size: 0.62rem;
         letter-spacing: 0.09em;
         text-transform: uppercase;
-      .gs-logo--lockup {
-        width: clamp(220px, 24vw, 320px);
-      }
-
-      .gs-logo--footer {
-        width: 28px;
       }
 
       .header-brand__lockup {
@@ -655,10 +620,6 @@ const shouldRenderCspMeta = !Astro.locals.securityPolicySource;
 
         .menu-button {
           display: inline-grid;
-        }
-
-        .gs-logo--lockup {
-          width: clamp(190px, 44vw, 260px);
         }
       }
 
