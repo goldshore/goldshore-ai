@@ -80,9 +80,53 @@ jobs:
             echo "::error::Aborting BEFORE any revocation to avoid stranding Access apps on a revoked token."
             exit 1
           fi
-          echo "CF token Access Apps scope: OK (HTTP $APPS_STATUS)"
+          echo "CF token Access Apps list scope: OK (HTTP $APPS_STATUS)"
 
-          echo "All required CF API permissions verified."
+          # Check 3: prove Apps/Policies edit with a temporary app and policy.
+          # Listing apps can succeed for tokens that later fail when this workflow
+          # upserts /access/apps or /policies after revocation, so validate the
+          # exact write surfaces before touching the existing service token.
+          PROBE_NAME="codex-access-permission-probe-${GITHUB_RUN_ID:-manual}-${GITHUB_RUN_ATTEMPT:-1}"
+          PROBE_DOMAIN="codex-access-probe-${GITHUB_RUN_ID:-manual}-${GITHUB_RUN_ATTEMPT:-1}.goldshore.ai"
+          PROBE_APP_RESP=$(jq -nc \
+            --arg n "$PROBE_NAME" \
+            --arg d "$PROBE_DOMAIN" \
+            '{name:$n,type:"self_hosted",domain:$d,self_hosted_domains:[$d],session_duration:"1h"}' | \
+            curl -s -X POST "$CF_API/accounts/$CF_ACCOUNT/access/apps" \
+              -H "Authorization: Bearer $CF_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data @-)
+          PROBE_APP_ID=$(echo "$PROBE_APP_RESP" | jq -r '.result.id // empty')
+          if [ -z "$PROBE_APP_ID" ]; then
+            echo "::error::CLOUDFLARE_API_TOKEN cannot create Access apps; aborting BEFORE token revocation."
+            echo "$PROBE_APP_RESP" | jq .
+            exit 1
+          fi
+
+          cleanup_probe() {
+            curl -s -X DELETE \
+              "$CF_API/accounts/$CF_ACCOUNT/access/apps/$PROBE_APP_ID" \
+              -H "Authorization: Bearer $CF_TOKEN" > /dev/null || true
+          }
+          trap cleanup_probe EXIT
+
+          PROBE_POLICY_RESP=$(jq -nc \
+            '{name:"Codex permission probe",decision:"bypass",include:[{"everyone":{}}],exclude:[],require:[]}' | \
+            curl -s -X POST "$CF_API/accounts/$CF_ACCOUNT/access/apps/$PROBE_APP_ID/policies" \
+              -H "Authorization: Bearer $CF_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data @-)
+          PROBE_POLICY_ID=$(echo "$PROBE_POLICY_RESP" | jq -r '.result.id // empty')
+          if [ -z "$PROBE_POLICY_ID" ]; then
+            echo "::error::CLOUDFLARE_API_TOKEN cannot create Access policies; aborting BEFORE token revocation."
+            echo "$PROBE_POLICY_RESP" | jq .
+            exit 1
+          fi
+          cleanup_probe
+          trap - EXIT
+          echo "CF token Access Apps/Policies edit scope: OK"
+
+          echo "All required CF API permissions verified before service-token revocation."
 
       # ------------------------------------------------------------------ #
       # 1. Revoke compromised service token
