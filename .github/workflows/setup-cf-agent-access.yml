@@ -181,11 +181,8 @@ jobs:
               '[.result[] | select(.name == $n or ($d != "" and ((.domain == $d) or ((.self_hosted_domains // []) | index($d)))))] | first | .id // empty'
           }
 
-          # PUT existing app with full body so stale domain/path bindings from
-          # prior runs are corrected. CF Access uses PUT (not PATCH) for updates;
-          # a PATCH would fail under set -euo pipefail after token revoke.
-          update_app() {
-            local app_id="$1" name="$2" domain="$3" extra_domains="${4:-[]}"
+          access_app_payload() {
+            local name="$1" domain="$2" extra_domains="${3:-[]}"
             jq -nc \
               --arg n "$name" \
               --arg d "$domain" \
@@ -194,7 +191,17 @@ jobs:
                 self_hosted_domains:([$d] + $ed),
                 session_duration:"24h",
                 http_only_cookie_attribute:true,
-                auto_redirect_to_identity:false}' | \
+                auto_redirect_to_identity:false}'
+          }
+
+          # PUT existing app with the same full desired-state body used for
+          # creation so stale domain/path bindings from prior runs are
+          # corrected. Cloudflare Access documents full application updates via
+          # PUT, not PATCH; using PATCH can fail after token revoke and strand a
+          # rotation before policies and secrets are refreshed.
+          update_app() {
+            local app_id="$1" name="$2" domain="$3" extra_domains="${4:-[]}"
+            access_app_payload "$name" "$domain" "$extra_domains" | \
             curl -sf -X PUT "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id" \
               -H "Authorization: Bearer $CF_TOKEN" \
               -H "Content-Type: application/json" \
@@ -222,15 +229,7 @@ jobs:
           # Caller extracts .result.id and .result.aud from the returned JSON.
           make_app_json() {
             local name="$1" domain="$2" extra_domains="${3:-[]}"
-            jq -nc \
-              --arg n "$name" \
-              --arg d "$domain" \
-              --argjson ed "$extra_domains" \
-              '{name:$n,type:"self_hosted",domain:$d,
-                self_hosted_domains:([$d] + $ed),
-                session_duration:"24h",
-                http_only_cookie_attribute:true,
-                auto_redirect_to_identity:false}' | \
+            access_app_payload "$name" "$domain" "$extra_domains" | \
             curl -sf -X POST "$CF_API/accounts/$CF_ACCOUNT/access/apps" \
               -H "Authorization: Bearer $CF_TOKEN" \
               -H "Content-Type: application/json" \
@@ -294,6 +293,28 @@ jobs:
               add_policy "$AID" "Owner access"     "allow"        "$OWNER_INCLUDE"
               sync_aud_workers "$AUD" "$aud_workers"
             fi
+          }
+
+
+          assert_full_access_policies() {
+            local app_name="$1" domain="$2"
+            local app_id policies
+            app_id=$(find_app "$app_name" "$domain")
+            if [ -z "$app_id" ]; then
+              echo "::error::Cannot verify Access policies for [$app_name]; app was not found."
+              MISSING_REQUIRED_APPS=1
+              return
+            fi
+            policies=$(curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies" \
+              -H "Authorization: Bearer $CF_TOKEN")
+            echo "$policies" | jq -e '.result[] | select(.decision == "allow" and .name == "Owner access")' > /dev/null || {
+              echo "::error::[$app_name] is missing the Owner access allow policy required for browser Cloudflare Access sessions."
+              MISSING_REQUIRED_APPS=1
+            }
+            echo "$policies" | jq -e '.result[] | select(.decision == "non_identity" and .name == "Goldshore agents")' > /dev/null || {
+              echo "::error::[$app_name] is missing the Goldshore agents service-token policy required for machine access."
+              MISSING_REQUIRED_APPS=1
+            }
           }
 
           # upsert_bypass_app: creates a path-scoped Access app with a bypass-everyone policy.
@@ -449,13 +470,15 @@ jobs:
           upsert_full_access "Signals"           "signals.goldshore.ai" \
             '["signals.goldshore.org","gs-signals-prod.goldshore.workers.dev"]'
           # Goldshore API: uses documented name to match existing AUD in wrangler.toml;
-          # pushes AUD to api workers on first-run creation (Gate 5e). Keep this
-          # host on upsert_full_access (owner/user allow + service-token policy)
-          # because browser-based admin routes call api.goldshore.ai with
-          # credentials: 'include' and need a human Cloudflare Access session.
-          # Service-token-only access is limited to machine-only/path-scoped apps.
+          # pushes AUD to api workers on first-run creation (Gate 5e). This must
+          # remain a full-access app (Owner access + Goldshore agents policies),
+          # not a service-token-only app: browser admin routes such as
+          # /admin/goldclaw call api.goldshore.ai with credentials: 'include'
+          # and gs-api expects Cloudflare Access user claims on protected routes.
+          # Keep service-token-only Access limited to machine-only/path-scoped apps.
           upsert_full_access "Goldshore API"     "api.goldshore.ai" "[]" \
             "gs-api gs-api-prod"
+          assert_full_access_policies "Goldshore API" "api.goldshore.ai"
           # GoldShore MCP: human + agent per docs ("approved human identities and agents")
           upsert_full_access "GoldShore MCP"     "mcp.goldshore.ai" "[]" \
             "gs-mcp"
