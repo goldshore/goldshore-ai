@@ -18,7 +18,7 @@
 
 ---
 
-## Workers (canonical set — 32 active)
+## Workers (canonical set — 34 active)
 
 | Worker name | Purpose | Domains served | Fail policy |
 |---|---|---|---|
@@ -50,10 +50,12 @@
 | `armsway-com-prod` | Production-env deployment of armsway-com (`wrangler --env prod`) | armsway.com, www.armsway.com | Fail open (public) |
 | `gs-www-redirect` | www → apex redirect worker | www.goldshore.ai, www.goldshore.org | Fail open |
 | `gs-www-redirect-prod` | Production-env deployment of gs-www-redirect (`wrangler --env production`) | www.goldshore.ai, www.goldshore.org | Fail open |
+| `gs-www-redirect-production` | Stale alternate production deployment of gs-www-redirect created by `wrangler --env production` without a `name` override; duplicate of `gs-www-redirect-prod` — delete from CF dashboard once `gs-www-redirect-prod` is confirmed handling all traffic | — | Fail open |
 | `banproof` | BanProof legacy worker | — | Fail closed |
 | `partners-in-pools` | Matteo's pool business client site (partnersinpools.com) | partnersinpools.com | Fail open (public) |
 | `gs-mcp` | MCP server — Model Context Protocol endpoint for AI agent tooling | — | Fail closed |
 | `gs-web-prod` | Main web application worker for goldshore.ai and goldshore.org apex | goldshore.ai, goldshore.org | Fail open (public) |
+| `goldclaw` | Goldclaw auth/monetization integration worker; handles auth sessions and monetization flows | — | Fail closed |
 
 **Workers NOT on this list must not exist. Any live worker absent from this table will fail the CI audit. See Gate 1 below.**
 
@@ -199,6 +201,8 @@ Two workers in your account have unknown origin. You must decide to keep or dele
 | 1j | `gs-www-redirect-prod` — prod-env deployment of gs-www-redirect. Added to canonical table. | — | ✅ DONE |
 | 1k | `armsway-com-prod` — prod-env deployment of armsway-com. Added to canonical table. | — | ✅ DONE |
 | 1l | `gs-web-preview` — preview-env deployment of gs-web (`wrangler --env preview`). Added to canonical table; serves preview.goldshore.ai. | — | ✅ DONE |
+| 1m | `goldclaw` — goldclaw auth/monetization integration worker. Added to canonical table. | — | ✅ DONE |
+| 1n | `gs-www-redirect-production` — stale alternate production deployment of gs-www-redirect created by `wrangler --env production` without a `name` override; duplicate of `gs-www-redirect-prod`. Added to canonical table. Delete from CF dashboard once `gs-www-redirect-prod` is confirmed handling all www traffic. | [CF Dashboard](https://dash.cloudflare.com/f77de112d2019e5456a3198a8bb50bd2/workers-and-pages) | ⬜ TODO (delete from CF) |
 
 ---
 
