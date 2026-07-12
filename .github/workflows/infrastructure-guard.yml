@@ -30,13 +30,8 @@ jobs:
 
       - name: Verify all wrangler configs reference canonical worker names
         run: |
-          # Dynamically extract canonical worker names from the live-inventory table in
-          # INFRASTRUCTURE.md. The heading was renamed from "## Workers" during the
-          # 2026-07 doc restructure (infra/INFRASTRUCTURE.md split into live inventory,
-          # legacy dispositions, and target architecture) without updating this guard,
-          # which made CANONICAL_WORKERS empty and failed every PR touching
-          # apps/*/wrangler.toml or infra/**.
-          CANONICAL_WORKERS=$(sed -n '/^## Current live Cloudflare worker inventory/,/^---$/p' infra/INFRASTRUCTURE.md | grep -oP '^\| `\K[a-z0-9_-]+(?=` \|)' | sort -u)
+          # Dynamically extract canonical worker names from the Workers table in INFRASTRUCTURE.md
+          CANONICAL_WORKERS=$(sed -n '/^## Workers/,/^---$/p' infra/INFRASTRUCTURE.md | grep -oP '^\| `\K[a-z0-9_-]+(?=` \|)' | sort -u)
 
           echo "Canonical workers:"
           echo "$CANONICAL_WORKERS"
@@ -199,13 +194,11 @@ jobs:
           with open("infra/INFRASTRUCTURE.md") as f:
               manifest = f.read()
 
-          # Extract worker names from the live-inventory section (fail if found outside this).
-          # Heading renamed during the 2026-07 doc restructure; see the matching comment
-          # in the manifest-integrity job above.
+          # Extract worker names from canonical Workers section (fail if found outside this)
           import re
-          workers_section = re.search(r"(?ms)^## Current live Cloudflare worker inventory[^\n]*\n(.*?)(?=^## |\Z)", manifest)
+          workers_section = re.search(r"(?ms)^## Workers \(canonical[^\n]*\n(.*?)(?=^## |\Z)", manifest)
           if not workers_section:
-              raise SystemExit("Could not find '## Current live Cloudflare worker inventory' section in infra/INFRASTRUCTURE.md")
+              raise SystemExit("Could not find '## Workers (canonical' section in infra/INFRASTRUCTURE.md")
           canonical = sorted(set(re.findall(r"\| `([a-z0-9_-]+)` \|", workers_section.group(1))))
 
           print(f"Live workers:      {live_names}")
