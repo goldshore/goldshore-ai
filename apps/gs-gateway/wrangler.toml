@@ -1,0 +1,28 @@
+# Contract placeholder — gateway is deployed from the goldshore-gateway repo
+# (as worker name gs-platform). This file satisfies the monorepo workspace
+# contract and EXPECTED_HOST_OWNERS checks in scripts/validate-worker-names.ts.
+name = "gs-gateway"
+main = "src/index.ts"
+compatibility_date = "2025-03-07"
+
+workers_dev = false
+
+[env.dev]
+routes = []
+
+[env.dev.vars]
+ENV = "dev"
+
+[[env.dev.queues.producers]]
+binding = "CHECKOUT_EVENTS_QUEUE"
+queue = "gs-platform-checkout-events-dev"
+
+[[env.dev.queues.producers]]
+binding = "CONTACT_EVENTS_QUEUE"
+queue = "gs-platform-contact-events-dev"
+
+[env.prod]
+# Legacy gateway routes are consolidated into gs-api or external live-state
+# cleanup. Keep this repo-managed placeholder route-free to prevent hostname
+# ownership collisions. Do not re-add agent.goldshore.ai here without an ADR.
+routes = []

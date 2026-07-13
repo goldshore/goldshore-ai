@@ -1,46 +1,9 @@
 import type { APIRoute } from 'astro';
-import {
-  buildAdminSession,
-  verifyAccessWithClaims,
-  type AdminPermission,
-  type Env as AccessEnv,
-} from '@goldshore/auth';
-import { parseJson } from '@goldshore/utils';
-
-/**
- * Admin UI form configuration item endpoint.
- * Requires `forms:read` for GET and `forms:write` for PUT/PATCH.
- */
 
 export const prerender = false;
 
-const normalizeRow = (row: Record<string, string>) => ({
-  id: row.id,
-  slug: row.slug,
-  name: row.name,
-  status: row.status,
-  fields: parseJson(row.fields ?? null, [] as Record<string, unknown>[]),
-  recipients: parseJson(row.recipients ?? null, [] as Record<string, unknown>[]),
-  integrations: parseJson(row.integrations ?? null, [] as Record<string, unknown>[]),
-  createdAt: row.created_at,
-  updatedAt: row.updated_at,
-});
-
-const isSameOriginRequest = (request: Request) => {
-  const expectedOrigin = new URL(request.url).origin;
-  const originHeader = request.headers.get('origin');
-  if (originHeader) {
-    return originHeader === expectedOrigin;
-  }
-
-  const refererHeader = request.headers.get('referer');
-  if (refererHeader) {
-    try {
-      return new URL(refererHeader).origin === expectedOrigin;
-    } catch {
-      return false;
-    }
-  }
+const apiBase = (env: Env | undefined) =>
+  (env?.PUBLIC_API || 'https://api.goldshore.ai').replace(/\/$/, '');
 
   const fetchSite = request.headers.get('sec-fetch-site');
   if (fetchSite) {
@@ -78,7 +41,7 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
   const env = locals.runtime?.env as Env | undefined;
   const slug = params.slug;
 
-  if (!env?.DB) {
+  if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
   }
 
@@ -91,7 +54,7 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
     return new Response('Form slug is required.', { status: 400 });
   }
 
-  const result = await env.DB.prepare(
+  const result = await env.PLATFORM_DB.prepare(
     `SELECT id, slug, name, status, fields, recipients, integrations, created_at, updated_at
      FROM form_configs
      WHERE slug = ?
@@ -112,7 +75,7 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
   const env = locals.runtime?.env as Env | undefined;
   const slug = params.slug;
 
-  if (!env?.DB) {
+  if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
   }
 
@@ -137,7 +100,7 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     integrations?: Record<string, unknown>[];
   };
 
-  const existing = await env.DB.prepare(
+  const existing = await env.PLATFORM_DB.prepare(
     `SELECT id, slug, name, status, fields, recipients, integrations, created_at, updated_at
      FROM form_configs
      WHERE slug = ?
@@ -161,7 +124,7 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
 
   const now = new Date().toISOString();
 
-  await env.DB.prepare(
+  await env.PLATFORM_DB.prepare(
     `UPDATE form_configs
      SET name = ?, status = ?, fields = ?, recipients = ?, integrations = ?, updated_at = ?
      WHERE slug = ?`
@@ -192,9 +155,6 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
   });
 };
 
+export const GET: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
+export const PUT: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
 export const PATCH = PUT;
-
-export const __testing = {
-  isSameOriginRequest,
-  requirePermission,
-};
