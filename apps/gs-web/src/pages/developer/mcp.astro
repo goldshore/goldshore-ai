@@ -1,0 +1,268 @@
+---
+import MarketingLayout from '../../layouts/MarketingLayout.astro';
+import Logo from '../../components/brand/Logo.astro';
+
+export const prerender = true;
+
+const accessItems = [
+  {
+    title: 'Who can use it',
+    body: 'Only you, approved operators, and a dedicated agent/service identity path.',
+  },
+  {
+    title: 'How it is gated',
+    body: 'Cloudflare Access sits in front of the host so the endpoint does not accept anonymous use.',
+  },
+  {
+    title: 'What it is for',
+    body: 'Controlled prompts, read/write actions, and internal tool calls that support the GoldShore stack.',
+  },
+  {
+    title: 'What stays out',
+    body: 'Public prompt boxes, open registrations, and broad anonymous tooling access.',
+  },
+];
+---
+
+<MarketingLayout
+  title="GoldShore MCP | Private Access"
+  description="GoldShore MCP is a private surface for approved humans and agents. Cloudflare Access gates the endpoint before any private tool loads."
+>
+  <section class="mcp-hero gs-shell-section">
+    <div class="mcp-hero__copy">
+      <p class="gs-eyebrow">GoldShore MCP</p>
+      <h1>Private tooling for approved humans and agents.</h1>
+      <p class="mcp-lead">
+        The public site can explain the offering, but <code>mcp.goldshore.ai</code> itself is reserved
+        for identities that have already been approved. That keeps the surface useful for the
+        team without turning it into an open prompt endpoint.
+      </p>
+      <div class="mcp-actions">
+        <a href="/contact" class="hero-button hero-button--primary">Request access</a>
+        <a href="/developer" class="hero-button hero-button--secondary">Back to developer hub</a>
+      </div>
+    </div>
+
+    <aside class="mcp-hero__panel">
+      <div class="mcp-brand">
+        <Logo class="mcp-brand__logo" title="GoldShore" variant="lockup" />
+        <div>
+          <p class="mcp-brand__eyebrow">Access overview</p>
+          <strong>Cloudflare Access enforced</strong>
+        </div>
+      </div>
+
+      <dl class="mcp-stats">
+        <div>
+          <dt>Endpoint</dt>
+          <dd>mcp.goldshore.ai</dd>
+        </div>
+        <div>
+          <dt>Model</dt>
+          <dd>Streamable HTTP</dd>
+        </div>
+        <div>
+          <dt>Audience</dt>
+          <dd>Approved humans + agents</dd>
+        </div>
+        <div>
+          <dt>Gate</dt>
+          <dd>Identity and service auth</dd>
+        </div>
+      </dl>
+    </aside>
+  </section>
+
+  <section class="gs-section gs-section--padded">
+    <div class="gs-grid columns-2">
+      {accessItems.map((item) => (
+        <article class="mcp-card">
+          <h2>{item.title}</h2>
+          <p>{item.body}</p>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <section class="gs-section gs-section--padded">
+    <div class="mcp-policy">
+      <div>
+        <p class="gs-eyebrow">Policy</p>
+        <h2>Public explanation, private execution.</h2>
+      </div>
+      <p>
+        GoldShore can describe the MCP capability on the public site, but the live host stays
+        behind Cloudflare Access and does not accept anonymous prompts or changes. That gives
+        the product a front door without making the underlying tool surface public.
+      </p>
+    </div>
+  </section>
+
+  <style>
+    .mcp-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(290px, 0.8fr);
+      gap: 1.5rem;
+      align-items: start;
+      padding-top: 4.5rem;
+    }
+
+    .mcp-hero h1 {
+      margin: 0.75rem 0 1rem;
+      font-size: clamp(2.8rem, 5vw, 5rem);
+      line-height: 0.94;
+      letter-spacing: -0.05em;
+      max-width: 12ch;
+    }
+
+    .mcp-lead {
+      max-width: 62ch;
+      color: var(--gs-text-dim);
+      line-height: 1.8;
+    }
+
+    .mcp-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.9rem;
+      margin-top: 1.5rem;
+    }
+
+    .hero-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 3rem;
+      padding: 0.8rem 1.25rem;
+      border-radius: 999px;
+      text-decoration: none;
+      font-weight: 700;
+      border: 1px solid transparent;
+    }
+
+    .hero-button--primary {
+      background: linear-gradient(135deg, #7dd3fc, #2dd4bf);
+      color: #04111f;
+    }
+
+    .hero-button--secondary {
+      border-color: rgba(255, 255, 255, 0.12);
+      color: #f4f7fb;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .mcp-hero__panel {
+      padding: 1.5rem;
+      border-radius: 24px;
+      border: 1px solid rgba(159, 220, 255, 0.12);
+      background:
+        radial-gradient(circle at top left, rgba(66, 153, 225, 0.18), transparent 38%),
+        rgba(10, 18, 36, 0.78);
+      box-shadow: var(--gs-shadow);
+    }
+
+    .mcp-brand {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .mcp-brand__logo {
+      width: 92px;
+      height: auto;
+      flex: 0 0 auto;
+    }
+
+    .mcp-brand__eyebrow {
+      margin: 0 0 0.25rem;
+      color: rgba(233, 238, 252, 0.68);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 0.8rem;
+    }
+
+    .mcp-stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.9rem;
+      margin: 0;
+    }
+
+    .mcp-stats div {
+      padding: 1rem;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .mcp-stats dt {
+      margin-bottom: 0.3rem;
+      color: rgba(233, 238, 252, 0.68);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-size: 0.74rem;
+    }
+
+    .mcp-stats dd {
+      margin: 0;
+      font-weight: 700;
+      color: #f7fbff;
+    }
+
+    .mcp-card {
+      padding: 1.4rem;
+      border-radius: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(10, 18, 36, 0.72);
+      box-shadow: var(--gs-shadow);
+    }
+
+    .mcp-card h2 {
+      margin-top: 0;
+      margin-bottom: 0.7rem;
+      font-size: 1.35rem;
+    }
+
+    .mcp-card p {
+      margin-bottom: 0;
+      color: var(--gs-text-dim);
+      line-height: 1.75;
+    }
+
+    .mcp-policy {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+      gap: 1.25rem;
+      align-items: start;
+      padding: 1.6rem;
+      border-radius: 24px;
+      border: 1px solid rgba(159, 220, 255, 0.12);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)),
+        rgba(10, 18, 36, 0.7);
+    }
+
+    .mcp-policy h2 {
+      margin-top: 0;
+      margin-bottom: 0;
+    }
+
+    .mcp-policy p {
+      margin-bottom: 0;
+      color: var(--gs-text-dim);
+      line-height: 1.8;
+    }
+
+    @media (max-width: 960px) {
+      .mcp-hero,
+      .mcp-policy {
+        grid-template-columns: 1fr;
+      }
+
+      .mcp-stats {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</MarketingLayout>
