@@ -6,6 +6,9 @@ const ACCESS_PROTECTED_HOSTS = new Set([
   'gs-admin.pages.dev',
   'mcp.goldshore.ai',
   'ops.goldshore.ai',
+  'trading.goldshore.ai',
+  'dashboard.goldshore.ai',
+  'dash.goldshore.ai',
 ]);
 
 const ACCESS_PROTECTED_HOST_PATTERNS = [

@@ -12,7 +12,7 @@ preview_id = "2c14b79b76e6453ab57c6dde6116a11d"
 [[d1_databases]]
 binding = "PAPER_DB"
 database_name = "goldshore-paper-trading"
-database_id = "PLACEHOLDER_D1_DB_ID"
+database_id = "af94f483-b98b-41c5-aa23-3fbed2764b52"
 
 [vars]
 ENV = "development"
@@ -20,9 +20,9 @@ ENV = "development"
 # ---- Production environment --------------------------------------------------
 [env.prod]
 name = "gs-trading-prod"
-routes = [
-  { pattern = "trading.goldshore.ai/*", zone_name = "goldshore.ai" },
-]
+# Consolidated into gs-api trading routes. Keep this legacy config route-free
+# to prevent hostname ownership collisions during validation and deployment.
+routes = []
 
 # kv_namespaces is NOT inherited by named environments in Wrangler — must be re-declared.
 [[env.prod.kv_namespaces]]
@@ -32,7 +32,7 @@ id = "9b3314c3b7af40a284a8c9b6e2990709"
 [[env.prod.d1_databases]]
 binding = "PAPER_DB"
 database_name = "goldshore-paper-trading"
-database_id = "PLACEHOLDER_D1_DB_ID"
+database_id = "af94f483-b98b-41c5-aa23-3fbed2764b52"
 
 [env.prod.vars]
 ENV = "production"
@@ -54,7 +54,7 @@ id = "2c14b79b76e6453ab57c6dde6116a11d"
 [[env.preview.d1_databases]]
 binding = "PAPER_DB"
 database_name = "goldshore-paper-trading"
-database_id = "PLACEHOLDER_D1_DB_ID"
+database_id = "af94f483-b98b-41c5-aa23-3fbed2764b52"
 
 [env.preview.vars]
 ENV = "preview"

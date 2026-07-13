@@ -23,6 +23,10 @@ compatibility_flags = ["nodejs_compat"]
 workers_dev = false
 
 [env.prod]
+routes = [
+  { pattern = "banproof.me", custom_domain = true },
+  { pattern = "www.banproof.me", custom_domain = true }
+]
 vars = { ENV = "production" }
 
 # 1. BANPROOF_CONFIG — ban cache (fast IP / user lookups)
@@ -70,10 +74,6 @@ service = "gs-api"
 environment = "prod"
 
 # 9b. GS_CONTROL — gs-control service binding (operator plane)
-[[env.prod.services]]
-binding = "GS_CONTROL"
-service = "gs-control"
-environment = "prod"
 
 # 9. BAN_EVENTS — queue producer for async ban event processing
 [[env.prod.queues.producers]]
@@ -125,10 +125,6 @@ binding = "GS_API"
 service = "gs-api"
 environment = "preview"
 
-[[env.preview.services]]
-binding = "GS_CONTROL"
-service = "gs-control"
-environment = "prod"
 
 [[env.preview.queues.producers]]
 binding = "BAN_EVENTS"
