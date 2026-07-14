@@ -865,7 +865,8 @@ async function route(req, res, port) {
     if (req.method === "POST" && url.pathname === "/api/apply") return handleApply(req, res);
     return json(res, 404, { error: "Not found" });
   } catch (error) {
-    return json(res, 500, { error: error instanceof Error ? error.message : String(error) });
+    console.error("Unhandled route error:", error);
+    return json(res, 500, { error: "Internal server error" });
   }
 }
 
