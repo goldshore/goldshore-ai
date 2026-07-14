@@ -19,6 +19,8 @@ build
 !.env.example
 *.local
 .dev.vars
+env.secrets.runtime.json
+*.secrets.json
 
 # Logs
 *.log

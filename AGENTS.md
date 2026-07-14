@@ -39,6 +39,17 @@ Example format:
 
 All API services and workers must use the `gs-control` build token for Cloudflare Worker Builds. When updating build settings in the Cloudflare Dashboard, ensure that the token used corresponds to the `gs-control` service.
 
+## Secret Synchronization
+
+The canonical secret-name and value contract is `infra/secrets/secret-sync.manifest.yaml`. AI agents must update this manifest before adding, renaming, or removing GitHub Actions, GitHub Agents, or Cloudflare Worker secrets.
+
+Rules:
+
+1. **No plaintext in git:** Never commit secret values. Use environment variables, ignored local files such as `env.secrets.runtime.json`, or the controlled workflow inputs.
+2. **No ad hoc names:** Workflow secret references must use canonical names from the manifest. Deprecated aliases may remain only as manifest targets during a tracked migration.
+3. **Run the guard:** After secret-name changes, run `node scripts/sync-secrets.mjs check` and `node scripts/sync-secrets.mjs audit --strict`.
+4. **No value logging:** Do not print secret values in logs, comments, PR descriptions, or agent handoffs. Use `--fingerprints` only when a non-plaintext value identity check is necessary.
+
 ## Tagging for Review
 
 To request a review of an error or issue, please use the following tags in your comments or pull request descriptions:

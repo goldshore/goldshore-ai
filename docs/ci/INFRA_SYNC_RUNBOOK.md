@@ -20,16 +20,13 @@ Run `Maintenance: Cloudflare Infra Reconcile` manually when:
 
 Set these repository secrets before enabling the workflow:
 
-- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN`
 - `CLOUDFLARE_ACCOUNT_ID`
-- `CLOUDFLARE_KV_NAMESPACE_API_ID`
-- `CLOUDFLARE_KV_NAMESPACE_GATEWAY_ID`
+- `GH_PAT` (required only when `.github/workflows/sync-secrets.yml` applies GitHub Actions or GitHub Agents secrets)
 
-Optional for token rotation without downtime:
+Runtime and AI-agent secret names are defined in `infra/secrets/secret-sync.manifest.yaml`. Add or rename secrets there before updating workflows or Cloudflare Worker runtime settings.
 
-- `CLOUDFLARE_BUILD_API_TOKEN` (if set, workflows prefer this token and fall back to `CLOUDFLARE_API_TOKEN`)
-
-Do not store Cloudflare credentials or namespace IDs in tracked workflow files or scripts.
+Do not store Cloudflare credentials, namespace IDs, or secret values in tracked workflow files or scripts.
 
 ## gs-control token rotation checklist
 
@@ -51,9 +48,9 @@ For each Worker/Pages project involved in the deploy chain:
 
 Rotate the GitHub Actions secrets in the same maintenance window so preview and production jobs consume the same credential set:
 
-- Update `CLOUDFLARE_API_TOKEN` if the base deploy token changed.
-- Update `CLOUDFLARE_BUILD_API_TOKEN` if you are using the dedicated build-token override path.
+- Update `CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN` if the repository deploy token changed.
 - Confirm `CLOUDFLARE_ACCOUNT_ID` is still the correct target account.
+- Run `.github/workflows/sync-secrets.yml` in `audit` mode, then `apply` mode after reviewing the target plan.
 
 #### Workflow-to-secret map
 

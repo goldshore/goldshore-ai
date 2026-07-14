@@ -7,9 +7,11 @@ export type GoldClawProviderId =
   | 'google_business_profile'
   | 'meta_business'
   | 'instagram'
+  | 'stripe'
   | 'x_premium'
   | 'cloudflare'
-  | 'sandbox';
+  | 'sandbox'
+  | 'openclaw';
 
 export type GoldClawCapability =
   | 'oauth'
@@ -17,6 +19,7 @@ export type GoldClawCapability =
   | 'draft_strategy'
   | 'draft_content'
   | 'publish_requires_approval'
+  | 'payment_changes_require_approval'
   | 'budget_changes_require_approval'
   | 'secure_code_execution';
 
@@ -119,6 +122,16 @@ export const GOLDCLAW_PROVIDERS: GoldClawProviderDefinition[] = [
     firstMilestone: 'Create a content cadence dashboard and draft posts for human approval.',
   },
   {
+    id: 'stripe',
+    label: 'Stripe Commerce',
+    category: 'commerce',
+    goal: 'Read revenue, customer, charge, refund, and subscription health for monetization planning.',
+    capabilities: ['read_metrics', 'draft_strategy', 'payment_changes_require_approval'],
+    requiredSecrets: ['STRIPE_API_KEY'],
+    optionalSecrets: ['STRIPE_WEBHOOK_SECRET', 'STRIPE_CONNECT_CLIENT_ID'],
+    firstMilestone: 'Connect read-only revenue reporting before enabling checkout or subscription changes.',
+  },
+  {
     id: 'x_premium',
     label: 'X Premium / Ads',
     category: 'social',
@@ -148,6 +161,16 @@ export const GOLDCLAW_PROVIDERS: GoldClawProviderDefinition[] = [
     optionalSecrets: ['GOLDCLAW_SANDBOX_PROVIDER'],
     firstMilestone: 'Connect a container host with strict timeouts and network rules.',
   },
+  {
+    id: 'openclaw',
+    label: 'OpenClaw Self-Hosted LLM',
+    category: 'compute',
+    goal: 'Route private operator analysis, tool calls, and draft generation through the self-hosted OpenClaw endpoint.',
+    capabilities: ['secure_code_execution', 'draft_strategy'],
+    requiredSecrets: ['OPENCLAW_BASE_URL', 'OPENCLAW_API_KEY'],
+    optionalSecrets: ['OPENCLAW_MODEL'],
+    firstMilestone: 'Add a health check and model identity check before routing GoldClaw briefs to OpenClaw.',
+  },
 ];
 
 export const GOLDCLAW_30_DAY_PLAN: GoldClawLaunchPhase[] = [
@@ -158,15 +181,16 @@ export const GOLDCLAW_30_DAY_PLAN: GoldClawLaunchPhase[] = [
       'Rotate any exposed developer/API tokens and move all secrets into Cloudflare secrets or encrypted OAuth token storage.',
       'Confirm Cloudflare Access protects admin and API routes for marstonr6@gmail.com, admin@goldshore.org, and goldshorelabs@gmail.com.',
       'Connect Google OAuth in read-only mode for Search Console, Analytics, Business Profile, and Ads.',
+      'Confirm Stripe and OpenClaw credentials are stored as Cloudflare secrets before wiring live calls.',
     ],
   },
   {
     dayRange: 'Days 4-10',
     title: 'Read-only marketing intelligence',
     outcomes: [
-      'Pull SEO, analytics, ads, reviews, and social metrics into GoldClaw status cards.',
+      'Pull SEO, analytics, ads, reviews, revenue, and social metrics into GoldClaw status cards.',
       'Generate daily strategy briefs with no external writes.',
-      'Create a monetization readiness checklist for Google, Meta/Instagram, and X.',
+      'Create a monetization readiness checklist for Google, Meta/Instagram, Stripe, OpenClaw, and X.',
     ],
   },
   {
@@ -176,6 +200,7 @@ export const GOLDCLAW_30_DAY_PLAN: GoldClawLaunchPhase[] = [
       'Generate content calendars, ad experiments, SEO tasks, landing page briefs, and client offer drafts.',
       'Add approval gates for posting, campaign edits, spend changes, and profile updates.',
       'Connect sandbox/container execution for longer analysis jobs and rendered page audits.',
+      'Route selected draft-generation jobs through OpenClaw only after health checks and audit logging are in place.',
     ],
   },
   {
@@ -243,7 +268,9 @@ export const buildGoldClawStrategyBrief = (
       'Finish OAuth/secrets setup for Google, Meta, X, Cloudflare, and sandbox runtime.',
       'Use Google Search Console and Analytics as the first truth sources for SEO and offer demand.',
       'Use Meta/Instagram and X as content-growth loops before enabling any paid spend actions.',
+      'Use Stripe as the revenue truth source for productized service packaging and weekly monetization reviews.',
       'Route all long-running analysis and browser/rendering work to a sandbox API instead of the Worker request path.',
+      'Route OpenClaw through a single self-hosted endpoint with explicit model and audit metadata.',
     ],
     readyProviders: ready.map((provider) => provider.label),
     blockedProviders: blocked.map((provider) => ({
@@ -253,6 +280,7 @@ export const buildGoldClawStrategyBrief = (
     })),
     approvalGates: [
       'No campaign budget edits without explicit human approval.',
+      'No checkout, subscription, refund, invoice, or product-price changes without explicit human approval.',
       'No social posting without explicit human approval.',
       'No OAuth token plaintext in source, logs, chat, tickets, or unencrypted KV values.',
       'No arbitrary container execution without sandbox timeouts, egress policy, and audit logging.',

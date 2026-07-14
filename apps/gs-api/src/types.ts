@@ -8,11 +8,13 @@ export type Env = {
   GS_ASSETS: R2Bucket;
   AUTH_SESSION?: DurableObjectNamespace;
   AI: Ai;
-  SECRETS: SecretsStore;
+  INTEGRATION_MASTER_KEY?: SecretsStoreSecret | string;
   OPENAI_API_KEY?: string;
   GEMINI_API_KEY?: string;
   JWT_SECRET?: string;
   STRIPE_API_KEY?: string;
+  STRIPE_WEBHOOK_SECRET?: string;
+  STRIPE_CONNECT_CLIENT_ID?: string;
   SENDGRID_API_KEY?: string;
   ACCESS_CLIENT_SECRET?: string;
   CLOUDFLARE_ACCESS_AUDIENCE?: string;
@@ -50,6 +52,9 @@ export type Env = {
   GOLDCLAW_SANDBOX_API_URL?: string;
   GOLDCLAW_SANDBOX_API_TOKEN?: string;
   GOLDCLAW_SANDBOX_PROVIDER?: string;
+  OPENCLAW_BASE_URL?: string;
+  OPENCLAW_API_KEY?: string;
+  OPENCLAW_MODEL?: string;
   OAUTH_TOKEN_ENCRYPTION_KEY?: string;
   CLOUDFLARE_API_TOKEN?: string;
   CLOUDFLARE_ACCOUNT_ID?: string;

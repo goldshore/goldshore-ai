@@ -2,5 +2,8 @@
     "chatgpt.openOnStartup": true,
     "githubPullRequests.ignoredPullRequestBranches": [
         "main"
-    ]
+    ],
+    "cloudflareDevTools.cache.purgeAutomatically": true,
+    "cloudflareDevTools.developmentModeStatus.enable": true,
+    "cloudflareDevTools.developmentModeStatus.interval": 60
 }

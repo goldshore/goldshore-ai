@@ -1,11 +1,20 @@
 #!/bin/bash
 set -euo pipefail
 
+cd "${CLAUDE_PROJECT_DIR:-/home/user/goldshore-ai}"
+
 if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
+  echo "GoldClaw local workspace: $(pwd)"
+  echo "Canonical MCP endpoint: https://mcp.goldshore.ai/mcp"
+  echo "Canonical secret manifest: infra/secrets/secret-sync.manifest.yaml"
+  if command -v git >/dev/null 2>&1; then
+    git status -sb || true
+  fi
+  if command -v node >/dev/null 2>&1 && [ -f scripts/sync-secrets.mjs ]; then
+    node scripts/sync-secrets.mjs check || true
+  fi
   exit 0
 fi
-
-cd "${CLAUDE_PROJECT_DIR:-/home/user/goldshore-ai}"
 
 echo "Installing pnpm dependencies..."
 pnpm install --frozen-lockfile=false

@@ -1,0 +1,24 @@
+name = "gs-mcp"
+main = "src/index.ts"
+account_id = "f77de112d2019e5456a3198a8bb50bd2"
+compatibility_date = "2025-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+workers_dev = false
+
+[env.prod]
+name = "gs-mcp"
+routes = [
+  { pattern = "mcp.goldshore.ai/*", zone_name = "goldshore.ai" }
+]
+
+[env.prod.vars]
+ENVIRONMENT = "production"
+GS_AGENT_BASE = "https://agent.goldshore.ai"
+GS_API_BASE = "https://api.goldshore.ai"
+GS_SIGNALS_BASE = "https://signals.goldshore.ai"
+
+# Required production secrets:
+# CLOUDFLARE_ACCOUNT_ID
+# CLOUDFLARE_API_TOKEN
+# GS_INTERNAL_SECRET

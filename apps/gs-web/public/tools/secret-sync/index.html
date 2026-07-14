@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GoldShore Secret Sync</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #081012;
+        --panel: #10191d;
+        --panel-2: #142126;
+        --line: #243237;
+        --text: #ecf4f1;
+        --muted: #94a7a7;
+        --green: #45c272;
+        --amber: #f7b84b;
+        --red: #e76767;
+        --blue: #5bb4f0;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          linear-gradient(180deg, rgba(69, 194, 114, 0.05), transparent 34rem),
+          var(--bg);
+        color: var(--text);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      button, input, select {
+        font: inherit;
+      }
+      button {
+        border: 1px solid var(--line);
+        background: #172329;
+        color: var(--text);
+        border-radius: 6px;
+        padding: 0.65rem 0.9rem;
+        cursor: pointer;
+      }
+      button.primary { background: var(--amber); border-color: var(--amber); color: #17130a; font-weight: 700; }
+      button.good { border-color: rgba(69, 194, 114, 0.45); color: #a9f3c3; }
+      button.danger { border-color: rgba(231, 103, 103, 0.55); color: #ffc0c0; }
+      button:disabled { opacity: 0.5; cursor: not-allowed; }
+      input, select {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #0b1518;
+        color: var(--text);
+        padding: 0.62rem 0.7rem;
+      }
+      label { display: grid; gap: 0.38rem; color: var(--muted); font-size: 0.82rem; }
+      .shell { display: grid; grid-template-columns: 17rem minmax(0, 1fr); min-height: 100vh; }
+      aside {
+        border-right: 1px solid var(--line);
+        padding: 1.4rem;
+        background: rgba(8, 16, 18, 0.82);
+      }
+      main { padding: 1.4rem; }
+      .brand { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 2rem; font-weight: 800; }
+      .mark {
+        display: grid;
+        place-items: center;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+        background: var(--amber);
+        color: #15110a;
+        font-weight: 900;
+      }
+      .steps { display: grid; gap: 0.95rem; }
+      .step { padding: 0.85rem; border-radius: 8px; color: var(--muted); border: 1px solid transparent; }
+      .step.active { color: var(--text); border-color: var(--line); background: #111d22; }
+      .foot { position: fixed; left: 1rem; bottom: 1rem; width: 15rem; color: var(--muted); font-size: 0.78rem; }
+      .topbar { display: flex; justify-content: space-between; align-items: start; gap: 1rem; margin-bottom: 1rem; }
+      h1 { margin: 0 0 0.35rem; font-size: 1.45rem; line-height: 1.2; }
+      p { margin: 0; color: var(--muted); }
+      .grid { display: grid; gap: 1rem; }
+      .cards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .two { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+      .card {
+        background: linear-gradient(180deg, rgba(255,255,255,0.025), transparent), var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 1rem;
+      }
+      .card h2 { margin: 0 0 0.8rem; font-size: 0.95rem; }
+      .status { display: inline-flex; align-items: center; gap: 0.35rem; border-radius: 999px; padding: 0.28rem 0.52rem; font-size: 0.78rem; border: 1px solid var(--line); }
+      .status.ready { color: #a9f3c3; border-color: rgba(69, 194, 114, 0.35); background: rgba(69, 194, 114, 0.08); }
+      .status.warn { color: #ffd58a; border-color: rgba(247, 184, 75, 0.35); background: rgba(247, 184, 75, 0.08); }
+      .status.bad { color: #ffc0c0; border-color: rgba(231, 103, 103, 0.35); background: rgba(231, 103, 103, 0.08); }
+      .actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.9rem; }
+      .formrow { display: grid; grid-template-columns: 1fr 1.3fr auto; gap: 0.65rem; margin-top: 0.85rem; align-items: end; }
+      table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+      th, td { text-align: left; border-bottom: 1px solid var(--line); padding: 0.68rem 0.55rem; vertical-align: top; }
+      th { color: #bed0cf; font-size: 0.76rem; font-weight: 700; background: #111b20; }
+      td { color: #d8e5e2; }
+      .tag { display: inline-block; border-radius: 999px; padding: 0.22rem 0.48rem; font-size: 0.74rem; border: 1px solid var(--line); }
+      .tag.ready { color: #a9f3c3; }
+      .tag.missing { color: #ffc0c0; }
+      .tag.optional-missing { color: #ffd58a; }
+      .toolbar { display: flex; gap: 0.7rem; justify-content: space-between; align-items: end; margin-bottom: 0.8rem; }
+      .toggles { display: flex; gap: 0.9rem; align-items: center; color: var(--muted); font-size: 0.84rem; }
+      .toggles input { width: auto; }
+      pre {
+        white-space: pre-wrap;
+        max-height: 18rem;
+        overflow: auto;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 1rem;
+        background: #091114;
+        color: #c7d6d3;
+      }
+      .hint { color: var(--muted); font-size: 0.78rem; margin-top: 0.45rem; }
+      @media (max-width: 1000px) {
+        .shell { grid-template-columns: 1fr; }
+        aside { position: static; border-right: 0; border-bottom: 1px solid var(--line); }
+        .foot { position: static; width: auto; margin-top: 2rem; }
+        .cards, .two, .formrow { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside>
+        <div class="brand"><span class="mark">G</span><span>GoldShore<br />Secret Sync</span></div>
+        <div class="steps">
+          <div class="step active">1. Connect providers</div>
+          <div class="step active">2. Inspect KV sources</div>
+          <div class="step active">3. Review dry-run plan</div>
+          <div class="step active">4. Apply with confirmation</div>
+        </div>
+        <div class="foot">
+          <strong>Local-only session</strong><br />
+          Tokens stay in this Node process memory unless you explicitly store them elsewhere.
+        </div>
+      </aside>
+      <main>
+        <div class="topbar">
+          <div>
+            <h1>Infrastructure Secret Synchronization</h1>
+            <p>Connect Cloudflare and GitHub, read allowed KV source keys, then apply the manifest targets without logging values.</p>
+          </div>
+          <button id="refresh">Refresh</button>
+        </div>
+
+        <section class="grid cards">
+          <div class="card">
+            <h2>Cloudflare</h2>
+            <span id="cfStatus" class="status warn">Checking</span>
+            <div class="actions">
+              <button class="good" id="cfSso">Cloudflare SSO</button>
+              <button class="primary" id="ssoAutoApply">SSO Auto-Apply</button>
+              <button class="good" id="cfOauth">OAuth PKCE</button>
+            </div>
+            <div class="formrow">
+              <label>Account ID<input id="cfAccount" autocomplete="off" /></label>
+              <label>API token fallback<input id="cfToken" type="password" autocomplete="off" /></label>
+              <button id="cfTokenSave">Use Token</button>
+            </div>
+            <div class="toggles" style="margin-top:0.75rem">
+              <label><input id="cfRemember" type="checkbox" checked /> Keep on this laptop</label>
+              <label><input id="cfDeployToken" type="checkbox" /> Also sync as deploy token</label>
+            </div>
+            <div class="hint">New token fallback values are verified with Cloudflare before they overwrite the ignored local runtime file.</div>
+          </div>
+          <div class="card">
+            <h2>GitHub</h2>
+            <span id="ghStatus" class="status warn">Checking</span>
+            <div class="actions">
+              <button class="good" id="ghDevice">Device OAuth</button>
+              <button id="ghOauthSave">Save OAuth ID</button>
+            </div>
+            <div class="formrow">
+              <label>OAuth client ID<input id="ghClient" autocomplete="off" /></label>
+              <label>Token fallback<input id="ghToken" type="password" autocomplete="off" /></label>
+              <button id="ghTokenSave">Use Token</button>
+            </div>
+            <div class="toggles" style="margin-top:0.75rem">
+              <label><input id="ghRemember" type="checkbox" checked /> Keep on this laptop</label>
+            </div>
+            <div id="ghDeviceBox" class="hint"></div>
+          </div>
+          <div class="card">
+            <h2>Source Policy</h2>
+            <label>Cloudflare write auth
+              <select id="cfAuthMode">
+                <option value="wrangler" selected>Wrangler SSO</option>
+                <option value="auto">Auto</option>
+                <option value="token">API token</option>
+              </select>
+            </label>
+            <label style="margin-top:0.75rem">GitHub write auth
+              <select id="ghAuthMode">
+                <option value="cli" selected>GitHub CLI</option>
+                <option value="token">Saved token</option>
+                <option value="auto">Auto</option>
+              </select>
+            </label>
+            <div class="toggles">
+              <label><input id="allowKv" type="checkbox" checked /> Allow KV fallback</label>
+              <label><input id="strict" type="checkbox" /> Strict required values</label>
+              <label><input id="fingerprints" type="checkbox" /> Fingerprints</label>
+            </div>
+            <div class="actions">
+              <button id="loadNamespaces">Load KV Namespaces</button>
+              <button class="primary" id="loadPlan">Review Plan</button>
+            </div>
+          </div>
+          <div class="card">
+            <h2>Apply</h2>
+            <label>Confirm write sync<input id="confirm" placeholder="Type APPLY" autocomplete="off" /></label>
+            <div class="actions">
+              <button id="dryApply">Dry-Run Apply</button>
+              <button class="primary" id="apply">Apply Sync</button>
+            </div>
+            <div class="hint">Writes GitHub secrets and Cloudflare Worker secrets from the manifest.</div>
+          </div>
+        </section>
+
+        <section class="card" style="margin-top:1rem">
+          <div class="toolbar">
+            <h2>Cloudflare OAuth Setup</h2>
+            <button id="oauthRefresh">Refresh OAuth Fields</button>
+          </div>
+          <table>
+            <thead><tr><th>Field</th><th>Value</th></tr></thead>
+            <tbody id="oauthRows"><tr><td colspan="2">Not loaded.</td></tr></tbody>
+          </table>
+          <div class="formrow">
+            <label>OAuth Client ID<input id="cfOauthClient" autocomplete="off" /></label>
+            <label>Publisher TXT<input id="cfOauthPublisherTxt" autocomplete="off" /></label>
+            <button id="saveOauthClient">Save OAuth</button>
+          </div>
+          <div class="actions">
+            <button id="oauthOpenDashboard">Open OAuth Clients</button>
+            <button id="oauthCopyJson">Copy Setup JSON</button>
+          </div>
+          <div id="oauthPresence" class="hint">Create the Cloudflare OAuth client, paste the Client ID here, then use OAuth PKCE.</div>
+        </section>
+
+        <section class="grid two" style="margin-top:1rem">
+          <div class="card">
+            <div class="toolbar"><h2>Cloudflare KV Namespaces</h2></div>
+            <table>
+              <thead><tr><th>Name</th><th>ID</th></tr></thead>
+              <tbody id="namespaces"><tr><td colspan="2">Not loaded.</td></tr></tbody>
+            </table>
+          </div>
+          <div class="card">
+            <div class="toolbar"><h2>Manifest Plan</h2><button id="copyPlan">Copy JSON</button></div>
+            <table>
+              <thead><tr><th>Secret</th><th>Status</th><th>Source</th><th>Targets</th></tr></thead>
+              <tbody id="planRows"><tr><td colspan="4">Run Review Plan.</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card" style="margin-top:1rem">
+          <h2>Source Vault</h2>
+          <div class="hint">Run Review Plan to load missing required values. Saved values go to the ignored local runtime file.</div>
+          <div id="sourceVault" style="margin-top:0.85rem">No plan loaded.</div>
+        </section>
+
+        <section class="card" style="margin-top:1rem">
+          <div class="toolbar">
+            <h2>Cloudflare Agent Setup</h2>
+            <span id="cfAgentAccessStatus" class="status warn">Access unchecked</span>
+          </div>
+          <div class="hint">Syncs Cloudflare MCP server registrations from the official agent setup prompt into local agent configs. This does not sync secret values.</div>
+          <div class="actions">
+            <button id="agentAccessCheck">Check API Access</button>
+            <button id="agentStatus">Fetch Setup Status</button>
+            <button class="primary" id="agentSyncConfigs">Sync MCP Configs</button>
+            <button id="agentInstallSkills">Install Skills</button>
+            <button id="agentCodexMcp">Codex MCP Add</button>
+            <button id="agentCodexLogin">Codex Cloudflare Login</button>
+          </div>
+          <table style="margin-top:0.85rem">
+            <thead><tr><th>Target</th><th>Present</th><th>Missing</th></tr></thead>
+            <tbody id="agentRows"><tr><td colspan="3">Not checked.</td></tr></tbody>
+          </table>
+          <pre id="agentPrompt" style="margin-top:0.85rem; max-height:10rem">Official prompt not fetched.</pre>
+        </section>
+
+        <section class="card" style="margin-top:1rem">
+          <h2>Run Log</h2>
+          <pre id="log">Ready.</pre>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      let latestPlan = null;
+      let oauthConfig = null;
+      let githubPollTimer = null;
+      const $ = (id) => document.getElementById(id);
+      const log = (value) => { $("log").textContent = typeof value === "string" ? value : JSON.stringify(value, null, 2); };
+      const h = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      })[char]);
+      const post = async (path, body = {}) => {
+        const res = await fetch(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+        const data = await res.json();
+        if (!res.ok) throw data;
+        return data;
+      };
+      const statusClass = (ready) => ready ? "status ready" : "status warn";
+      async function refresh() {
+        const state = await fetch("/api/state").then((r) => r.json());
+        const cfReady = state.cloudflare.verify.connected || state.cloudflare.wranglerSso?.authenticated;
+        $("cfStatus").className = statusClass(cfReady);
+        $("cfStatus").textContent = state.cloudflare.wranglerSso?.authenticated ? "SSO ready" : (state.cloudflare.verify.connected ? "Token connected" : (state.cloudflare.authTokenPresent ? "Token present, verify failed" : "Not connected"));
+        $("ghStatus").className = statusClass(state.github.tokenPresent);
+        $("ghStatus").textContent = state.github.tokenPresent ? "Token available" : "Not connected";
+        if (state.localPersistence?.filePresent) {
+          log({ ...state, localPersistence: { ...state.localPersistence, note: "Saved key names only; values are not returned." } });
+          return;
+        }
+        $("cfAccount").value = state.cloudflare.accountIdPresent ? $("cfAccount").value : "";
+        log(state);
+      }
+      async function loadNamespaces() {
+        const data = await fetch("/api/kv/namespaces").then((r) => r.json());
+        if (!data.ok) { log(data); return; }
+        $("namespaces").innerHTML = data.namespaces.map((ns) => `<tr><td>${h(ns.title)}</td><td><code>${h(ns.id)}</code></td></tr>`).join("") || `<tr><td colspan="2">No namespaces found.</td></tr>`;
+      }
+      async function loadOauthConfig(options = {}) {
+        const data = await fetch("/api/cloudflare/oauth/config").then((r) => r.json());
+        oauthConfig = data;
+        const rows = [
+          ["Dashboard", `<a href="${h(data.dashboardUrl)}" target="_blank" rel="noreferrer">OAuth clients</a>`],
+          ["Client name", `<code>${h(data.clientName)}</code>`],
+          ["Client URL", `<code>${h(data.clientUrl)}</code>`],
+          ["Redirect callback", `<code>${h(data.redirectUri)}</code>`],
+          ["Response type", `<code>${h(data.responseType)}</code>`],
+          ["Grant type", `<code>${h(data.grantType)}</code>`],
+          ["Token auth method", `<code>${h(data.tokenEndpointAuthMethod)}</code>`],
+          ["PKCE", `<code>${data.pkceRequired ? "required" : "optional"} / ${h(data.pkceMethod)}</code>`],
+          ["Authorization endpoint", `<code>${h(data.authorizationEndpoint)}</code>`],
+          ["Token endpoint", `<code>${h(data.tokenEndpoint)}</code>`],
+          ["Scopes", `<code>${h(data.scopeString)}</code>`],
+          ["Publisher TXT", data.publisherVerificationTxt ? `<code>${h(data.publisherVerificationTxt)}</code>` : `<span class="hint">Not saved.</span>`]
+        ];
+        $("oauthRows").innerHTML = rows.map(([name, value]) => `<tr><td>${h(name)}</td><td>${value}</td></tr>`).join("");
+        if (data.publisherVerificationTxt && !$("cfOauthPublisherTxt").value) $("cfOauthPublisherTxt").value = data.publisherVerificationTxt;
+        $("oauthPresence").innerHTML = `
+          <span class="tag ${data.clientIdPresent ? "ready" : "missing"}">${data.clientIdPresent ? "Client ID saved" : "Client ID missing"}</span>
+          <span class="tag ready">Use <code>none</code> token auth</span>
+          <span class="tag ready">No client secret required</span>
+        `;
+        if (!options.silent) log({ ...data, note: "Client ID and secret values are not returned." });
+        return data;
+      }
+      async function loadPlan() {
+        const qs = new URLSearchParams({
+          allowKvSource: $("allowKv").checked,
+          strict: $("strict").checked,
+          fingerprints: $("fingerprints").checked
+        });
+        const res = await fetch(`/api/plan?${qs}`);
+        const data = await res.json();
+        if (!res.ok || data.ok === false) { log(data); return; }
+        latestPlan = data;
+        $("planRows").innerHTML = data.rows.map((row) => {
+          const targets = row.targets.map((target) => h(target.label)).join("<br>");
+          const status = h(row.status);
+          const source = `${h(row.source || "none")}${row.warning ? `<div class="hint">${h(row.warning)}</div>` : ""}`;
+          return `<tr><td><strong>${h(row.canonicalName)}</strong><div class="hint">${h(row.id)}</div></td><td><span class="tag ${status}">${status}</span></td><td>${source}</td><td>${targets}</td></tr>`;
+        }).join("");
+        renderSourceVault(data.rows);
+        log({ generatedAt: data.generatedAt, rows: data.rows.length });
+      }
+      function renderSourceVault(rows) {
+        const missing = rows.filter((row) => row.required && row.status === "missing");
+        if (missing.length === 0) {
+          $("sourceVault").innerHTML = "All required source values are present.";
+          return;
+        }
+        const canGenerate = missing.filter((row) => ["CONTROL_SYNC_TOKEN", "JWT_SECRET"].includes(row.sourceEnv)).map((row) => row.sourceEnv);
+        const accessMissing = missing.some((row) => row.sourceEnv === "ACCESS_CLIENT_SECRET");
+        $("sourceVault").innerHTML = `
+          <strong>Missing required source values</strong>
+          <div class="hint">Paste each value once; it is saved to <code>env.secrets.runtime.json</code> and never returned by the local API.</div>
+          ${canGenerate.length ? `<div class="actions"><button id="generateInternal">Generate CONTROL/JWT Values</button></div>` : ""}
+          ${accessMissing ? `<div class="hint"><strong>ACCESS_CLIENT_SECRET</strong> comes from Cloudflare Zero Trust Access Service Tokens. Create or rotate a service token, then paste its client secret here.</div>` : ""}
+          <div class="grid" style="margin-top:0.75rem">
+            ${missing.map((row) => `
+              <label>${h(row.sourceEnv)}
+                <input type="password" autocomplete="off" data-source-key="${h(row.sourceEnv)}" placeholder="${h(row.canonicalName)}" />
+              </label>
+            `).join("")}
+          </div>
+          <div class="actions"><button id="saveSources">Save Source Values</button></div>
+        `;
+        if ($("generateInternal")) {
+          $("generateInternal").onclick = async () => {
+            const result = await post("/api/source-values/generate-internal", { keys: canGenerate });
+            log(result);
+            await loadPlan();
+          };
+        }
+        $("saveSources").onclick = async () => {
+          const values = {};
+          document.querySelectorAll("[data-source-key]").forEach((input) => {
+            if (input.value) values[input.dataset.sourceKey] = input.value;
+          });
+          const result = await post("/api/source-values", { values });
+          document.querySelectorAll("[data-source-key]").forEach((input) => { input.value = ""; });
+          log(result);
+          await loadPlan();
+        };
+      }
+      async function apply(dryRun) {
+        const data = await post("/api/apply", {
+          confirm: dryRun ? "APPLY" : $("confirm").value,
+          dryRun,
+          preflight: true,
+          allowKvSource: $("allowKv").checked,
+          strict: $("strict").checked,
+          cloudflareAuth: $("cfAuthMode").value,
+          githubAuth: $("ghAuthMode").value
+        });
+        log(data);
+      }
+      async function waitForCloudflareSso() {
+        for (let attempt = 0; attempt < 90; attempt += 1) {
+          const status = await fetch("/api/cloudflare/sso/status").then((r) => r.json());
+          if (status.authenticated) return status;
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+        }
+        throw { error: "Cloudflare SSO did not complete before the timeout." };
+      }
+      function renderAgentSetup(data) {
+        const rows = data.configs || data.results || [];
+        $("agentRows").innerHTML = rows.map((row) => `
+          <tr>
+            <td><code>${h(row.path)}</code><div class="hint">${h(row.rootKey || "")}</div></td>
+            <td>${h((row.present || row.changed || []).join(", ") || "none")}</td>
+            <td>${h((row.missing || []).join(", ") || "none")}</td>
+          </tr>
+        `).join("") || `<tr><td colspan="3">No config details returned.</td></tr>`;
+        if (data.prompt) {
+          $("agentPrompt").textContent = `${data.prompt.url}\nstatus=${data.prompt.status} length=${data.prompt.length || 0}\n\n${data.prompt.excerpt || data.prompt.error || ""}`;
+        }
+      }
+      async function loadAgentSetup() {
+        const data = await fetch("/api/agent-setup/status").then((r) => r.json());
+        renderAgentSetup(data);
+        log(data);
+      }
+      async function checkCloudflareAgentAccess() {
+        const res = await fetch("/api/cloudflare/agent-access");
+        const data = await res.json();
+        const ready = Boolean(data.report?.ok);
+        $("cfAgentAccessStatus").className = ready ? "status ready" : "status bad";
+        $("cfAgentAccessStatus").textContent = ready ? "API access ready" : "API access incomplete";
+        log(data);
+      }
+      $("refresh").onclick = refresh;
+      $("oauthRefresh").onclick = () => loadOauthConfig().catch(log);
+      $("oauthOpenDashboard").onclick = async () => {
+        const data = oauthConfig || await loadOauthConfig({ silent: true });
+        window.open(data.dashboardUrl, "_blank", "noreferrer");
+      };
+      $("oauthCopyJson").onclick = async () => {
+        const data = oauthConfig || await loadOauthConfig({ silent: true });
+        await navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+        log({ ok: true, copied: "cloudflare-oauth-setup" });
+      };
+      $("saveOauthClient").onclick = async () => {
+        const result = await post("/api/cloudflare/oauth/save-client", {
+          clientId: $("cfOauthClient").value,
+          publisherTxt: $("cfOauthPublisherTxt").value
+        });
+        $("cfOauthClient").value = "";
+        log(result);
+        await loadOauthConfig({ silent: true });
+        await refresh();
+      };
+      $("loadNamespaces").onclick = () => loadNamespaces().catch(log);
+      $("loadPlan").onclick = () => loadPlan().catch(log);
+      $("dryApply").onclick = () => apply(true).catch(log);
+      $("apply").onclick = () => apply(false).catch(log);
+      $("agentStatus").onclick = () => loadAgentSetup().catch(log);
+      $("agentAccessCheck").onclick = () => checkCloudflareAgentAccess().catch(log);
+      $("agentSyncConfigs").onclick = async () => {
+        const result = await post("/api/agent-setup/sync-configs", {});
+        renderAgentSetup(result);
+        log(result);
+      };
+      $("agentInstallSkills").onclick = async () => {
+        const result = await post("/api/agent-setup/install-skills", {});
+        log(result);
+        await loadAgentSetup().catch(log);
+      };
+      $("agentCodexMcp").onclick = async () => {
+        const result = await post("/api/agent-setup/codex-mcp", {});
+        log(result);
+        await loadAgentSetup().catch(log);
+      };
+      $("agentCodexLogin").onclick = async () => {
+        const result = await post("/api/agent-setup/codex-login", {});
+        log(result);
+      };
+      $("cfSso").onclick = async () => {
+        const result = await post("/api/cloudflare/sso/start", {});
+        log(result);
+      };
+      $("ssoAutoApply").onclick = async () => {
+        $("cfAuthMode").value = "wrangler";
+        $("strict").checked = true;
+        const started = await post("/api/cloudflare/sso/start", {});
+        log(started);
+        await waitForCloudflareSso();
+        await refresh();
+        await loadPlan();
+        $("confirm").value = "APPLY";
+        await apply(false);
+      };
+      $("cfTokenSave").onclick = async () => {
+        const result = await post("/api/cloudflare/token", {
+          accountId: $("cfAccount").value,
+          token: $("cfToken").value,
+          remember: $("cfRemember").checked,
+          syncDeployToken: $("cfDeployToken").checked
+        });
+        $("cfToken").value = "";
+        log(result);
+        await refresh();
+      };
+      $("ghTokenSave").onclick = async () => {
+        const result = await post("/api/github/token", { token: $("ghToken").value, remember: $("ghRemember").checked });
+        $("ghToken").value = "";
+        log(result);
+        await refresh();
+      };
+      $("ghOauthSave").onclick = async () => {
+        const result = await post("/api/github/oauth/save-client", { clientId: $("ghClient").value });
+        $("ghClient").value = "";
+        log(result);
+        await refresh();
+      };
+      $("cfOauth").onclick = async () => {
+        const payload = $("cfOauthClient").value ? { clientId: $("cfOauthClient").value } : {};
+        const data = await post("/api/cloudflare/oauth/start", payload);
+        log(data);
+      };
+      $("ghDevice").onclick = async () => {
+        const data = await post("/api/github/device/start", { clientId: $("ghClient").value });
+        $("ghDeviceBox").innerHTML = `Open <a href="${h(data.verificationUri)}" target="_blank" rel="noreferrer">${h(data.verificationUri)}</a> and enter <strong>${h(data.userCode)}</strong>.`;
+        log(data);
+        if (githubPollTimer) clearTimeout(githubPollTimer);
+        const poll = async () => {
+          const result = await post("/api/github/device/poll", {}).catch((error) => error);
+          if (result.connected) { await refresh(); log(result); return; }
+          if (result.pending) {
+            githubPollTimer = setTimeout(poll, Math.max(5, Number(result.interval || data.interval || 5)) * 1000);
+            return;
+          }
+          log(result);
+        };
+        githubPollTimer = setTimeout(poll, Math.max(5, Number(data.interval || 5)) * 1000);
+      };
+      $("copyPlan").onclick = async () => { if (latestPlan) await navigator.clipboard.writeText(JSON.stringify(latestPlan, null, 2)); };
+      refresh().catch(log);
+      loadOauthConfig({ silent: true }).catch(log);
+    </script>
+  </body>
+</html>

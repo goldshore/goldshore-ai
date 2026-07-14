@@ -30,6 +30,9 @@ jobs:
         run: pnpm run repo:health
         continue-on-error: false
 
+      - name: Secret name guard
+        run: pnpm run secrets:check
+
       - name: Enforce banproof production bindings
         if: ${{ vars.ENABLE_BANPROOF_BINDINGS_CHECK == 'true' }}
         run: pnpm check:banproof-bindings

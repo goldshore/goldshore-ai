@@ -13,16 +13,22 @@ const TAG_LENGTH = 128; // 128 bits
  * Retrieve and import the master encryption key from Cloudflare Secrets Store
  */
 export async function getMasterKey(env: any): Promise<CryptoKey> {
-  if (!env.SECRETS) {
-    throw new Error('SECRETS store not configured in Cloudflare bindings');
+  const masterKeySecret =
+    typeof env.INTEGRATION_MASTER_KEY === 'string'
+      ? env.INTEGRATION_MASTER_KEY
+      : typeof env.INTEGRATION_MASTER_KEY?.get === 'function'
+        ? await env.INTEGRATION_MASTER_KEY.get()
+        : typeof env.OAUTH_TOKEN_ENCRYPTION_KEY === 'string'
+          ? env.OAUTH_TOKEN_ENCRYPTION_KEY
+          : typeof env.SECRETS?.get === 'function'
+            ? await env.SECRETS.get('INTEGRATION_MASTER_KEY')
+            : null;
+
+  if (!masterKeySecret) {
+    throw new Error('INTEGRATION_MASTER_KEY is not configured');
   }
 
   try {
-    const masterKeySecret = await env.SECRETS.get('INTEGRATION_MASTER_KEY');
-    if (!masterKeySecret) {
-      throw new Error('INTEGRATION_MASTER_KEY not found in Secrets Store');
-    }
-
     const keyData = new TextEncoder().encode(masterKeySecret);
     return await crypto.subtle.importKey(
       'raw',

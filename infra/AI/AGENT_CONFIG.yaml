@@ -8,14 +8,22 @@ agent:
 
   bootstrap:
     - read: ../cloudflare/desired-state.yaml
+    - read: ../secrets/secret-sync.manifest.yaml
     - read: ../cloudflare/runbooks/CLOUDFLARE_APPS.md
     - read: ../cloudflare/runbooks/DNS_AND_EMAIL.md
     - read: ../../AGENT_GLOBAL_RULES.md
 
   requirements:
     enforce_desired_state: true
+    enforce_secret_sync_manifest: true
     require_confirmation_for_destructive: true
     never_expose_secrets: true
+
+  secrets:
+    manifest: ../secrets/secret-sync.manifest.yaml
+    audit_command: node scripts/sync-secrets.mjs audit --strict
+    apply_command: node scripts/sync-secrets.mjs apply
+    check_command: node scripts/sync-secrets.mjs check
 
   cloudflare:
     use_api: true

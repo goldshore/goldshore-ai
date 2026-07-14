@@ -5,6 +5,7 @@
     "dbaeumer.vscode-eslint",
     "bradlc.vscode-tailwindcss",
     "unifiedjs.vscode-mdx",
-    "openai.chatgpt"
+    "openai.chatgpt",
+    "alessandrobenassi.cloudflare-devtools"
   ]
 }
