@@ -371,7 +371,7 @@ function runCommand(command, args, options = {}) {
 function quoteCmdArg(value) {
   const stringValue = String(value);
   if (/^[A-Za-z0-9_:/=.,@+-]+$/.test(stringValue)) return stringValue;
-  return `"${stringValue.replace(/"/g, '\\"')}"`;
+  return `"${stringValue.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
 }
 
 function runAgentCli(command, args, options = {}) {
