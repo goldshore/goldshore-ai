@@ -186,13 +186,22 @@ function base64url(buffer) {
 }
 
 function openUrl(url) {
+  let safeUrl;
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:" || parsed.hostname !== "github.com") return;
+    safeUrl = parsed.toString();
+  } catch {
+    return;
+  }
+
   const command =
     process.platform === "win32"
       ? "cmd"
       : process.platform === "darwin"
         ? "open"
         : "xdg-open";
-  const args = process.platform === "win32" ? ["/c", "start", "", url] : [url];
+  const args = process.platform === "win32" ? ["/c", "start", "", safeUrl] : [safeUrl];
   const child = spawn(command, args, {
     cwd: root,
     detached: true,
