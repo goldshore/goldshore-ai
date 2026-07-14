@@ -152,18 +152,26 @@ async function main() {
   }
 
   if (!args.has('--apply') && !args.has('--apply-dns')) {
+    const mask = (value) =>
+      typeof value === 'string' && value.length > 8
+        ? `${value.slice(0, 4)}...${value.slice(-4)}`
+        : '[redacted]';
+
     console.log(
       JSON.stringify(
         {
-          account_id: ACCOUNT_ID,
-          client_id: CLIENT_ID,
-          zone_id: ZONE_ID,
-          zone_name: ZONE_NAME,
-          oauth_client_patch: desiredClient,
+          account_id: mask(ACCOUNT_ID),
+          client_id: mask(CLIENT_ID),
+          zone_id: mask(ZONE_ID),
+          zone_name: '[redacted]',
+          oauth_client_patch: {
+            visibility: desiredClient.visibility ?? 'private',
+            fields: Object.keys(desiredClient).length
+          },
           publisher_txt_record: {
             type: 'TXT',
-            name: ZONE_NAME,
-            content: PUBLISHER_TXT
+            name: '[redacted]',
+            content: '[redacted]'
           }
         },
         null,
