@@ -7,8 +7,11 @@ declare namespace Cloudflare {
 	}
 	interface Env {
 		KV: KVNamespace;
+		RISK_RADAR_CACHE?: KVNamespace;
 		ASSETS: R2Bucket;
+		RISK_RADAR_R2?: R2Bucket;
 		CONTENT_DB: D1Database;
+		RISK_RADAR_DB?: D1Database;
 		AI: Ai;
 		ENV: "production";
 		CLOUDFLARE_ACCESS_AUDIENCE: "YOUR_AUDIENCE_TAG_HERE";
