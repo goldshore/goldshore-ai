@@ -1,13 +1,11 @@
 ---
 export const prerender = false;
 
-import AdminLayout from '../../../layouts/AdminLayout.astro';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { GSButton } from '@goldshore/ui';
-
-const title = 'Integration API Keys';
 ---
 
-<AdminLayout title="API Keys | GoldShore Admin">
+<BaseLayout title="API Keys | GoldShore Admin" description="Secure integration API key management">
   <div class="max-w-7xl mx-auto p-8 space-y-8">
     <!-- Header -->
     <div class="flex items-center justify-between">
@@ -629,4 +627,4 @@ const title = 'Integration API Keys';
     // Refresh commands every 30 seconds (for nanny mode WhatsApp reactions)
     setInterval(loadPendingCommands, 30000);
   </script>
-</AdminLayout>
+</BaseLayout>

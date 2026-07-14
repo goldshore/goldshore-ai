@@ -109,7 +109,7 @@ For Claude/Codex assistance with Google API integration: provide the API name, s
 |------|---------|-------|
 | `marzton/goldshore-gateway` | `gs-platform` worker | Platform front door; routes all subdomain traffic |
 | `marzton/goldshore-admin` | `admin.goldshore.org` (Pages) | Older admin; any replacement UI belongs under `apps/gs-web` sub-routes |
-| `marzton/goldshore-core` | `banproof-me` worker | Security/ban-check; future integration should route through `apps/gs-api` queues/routes. |
+| `marzton/goldshore-core` | `banproof-me` worker | Security/ban-check; future integration must route through `apps/gs-api` queues/routes (or stay external) and must not create `apps/gs-security`. |
 
 ---
 
@@ -157,7 +157,7 @@ pnpm turbo run build --filter=gs-web
 |----------|------|--------|
 | 1 | `goldshore-ops` | Archive — KV template stub, never built |
 | 2 | `goldshore-web` | Already deprecated — remove from CI |
-| 3 | `goldshore-core` | Route `banproof-me` security logic into `apps/gs-api` (AGENTS.md forbids new Workers under `apps/`); archive standalone |
+| 3 | `goldshore-core` | Route `banproof-me` security logic into `apps/gs-api` queues/routes (or keep it external); do **not** create `apps/gs-security` or any other new Worker under `apps/`; archive standalone |
 | 4 | `goldshore-api` | Confirm `goldshore/apps/goldshore-api` at parity → archive standalone |
 | 5 | `goldshore-admin` | Move replacement admin UX into `apps/gs-web` sub-routes, then archive standalone |
 | 6 | `goldshore-gateway` | Route gateway responsibilities through `apps/gs-api`, then archive standalone |

@@ -131,8 +131,10 @@ jobs:
 
           if email and key:
               headers = {"X-Auth-Email": email, "X-Auth-Key": key, "Content-Type": "application/json"}
-          else:
+          elif token:
               headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+          else:
+              raise SystemExit("No credentials. Configure CF_USER_TOKEN or both CF_AUTH_EMAIL and CF_AUTH_KEY as GitHub secrets.")
 
           PERM_MAP = {
               "workers_scripts:edit": {"id": "e086da7e2179491d91ee5f35b3ca210a", "effect": "allow"},
@@ -202,8 +204,10 @@ jobs:
 
           if email and key:
               headers = {"X-Auth-Email": email, "X-Auth-Key": key, "Content-Type": "application/json"}
-          else:
+          elif token:
               headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+          else:
+              raise SystemExit("No credentials. Configure CF_USER_TOKEN or both CF_AUTH_EMAIL and CF_AUTH_KEY as GitHub secrets.")
 
           def cf(method, path, body=None):
               req = urllib.request.Request(
