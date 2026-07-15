@@ -427,9 +427,9 @@ jobs:
 
 
           assert_full_access_policies() {
-            local app_name="$1" domain="$2"
+            local app_name="$1" domain="$2" expected_aud="${3:-}"
             local app_id policies
-            app_id=$(find_app "$app_name" "$domain")
+            app_id=$(find_app "$app_name" "$domain" "$expected_aud")
             if [ -z "$app_id" ]; then
               echo "::error::Cannot verify Access policies for [$app_name]; app was not found."
               MISSING_REQUIRED_APPS=1
@@ -468,6 +468,87 @@ jobs:
               echo "Created bypass app [$name]: $AID"
               add_bypass_policy "$AID"
             fi
+          }
+
+          # upsert_ssh_app: browser-rendered SSH app (type "ssh"). Owner-only,
+          # short session, hidden from the App Launcher. Has its own JSON body
+          # because update_app/make_app_json hardcode type "self_hosted" and
+          # must never PUT over a non-self_hosted app (that would rewrite its type).
+          # The app alone does nothing until a cloudflared tunnel publishes the
+          # hostname with an SSH origin.
+          upsert_ssh_app() {
+            local name="$1" domain="$2"
+            local body
+            body=$(jq -nc --arg n "$name" --arg d "$domain" \
+              '{name:$n,type:"ssh",domain:$d,
+                self_hosted_domains:[$d],
+                session_duration:"4h",
+                skip_interstitial:true,
+                app_launcher_visible:false,
+                http_only_cookie_attribute:true,
+                auto_redirect_to_identity:false}')
+            AID=$(find_app "$name")
+            if [ -n "$AID" ]; then
+              echo "Found existing SSH app [$name]: $AID — updating and refreshing policies"
+              echo "$body" | curl -sf -X PUT \
+                "$CF_API/accounts/$CF_ACCOUNT/access/apps/$AID" \
+                -H "Authorization: Bearer $CF_TOKEN" \
+                -H "Content-Type: application/json" \
+                --data @- | jq -r '"  updated ssh app => \(.success)"'
+              refresh_policies "$AID"
+            elif [ "$SKIP_NEW_APPS" = "true" ]; then
+              echo "INFO: No existing [$name] app and skip_apps=true — skipped."
+              return
+            else
+              AID=$(echo "$body" | curl -sf -X POST \
+                "$CF_API/accounts/$CF_ACCOUNT/access/apps" \
+                -H "Authorization: Bearer $CF_TOKEN" \
+                -H "Content-Type: application/json" \
+                --data @- | jq -r '.result.id // empty')
+              [ -z "$AID" ] && { echo "WARNING: failed to create ssh app $name"; return; }
+              echo "Created SSH app [$name]: $AID"
+            fi
+            add_policy "$AID" "Owner access" "allow" "$OWNER_INCLUDE"
+          }
+
+          # upsert_mcp_portal: MCP Server Portal app (type "mcp_portal") on the
+          # given hostname. Gated behind include_mcp_portal because it targets
+          # the same hostname as the self_hosted "GoldShore MCP" app — enable it
+          # only if you actually use the Cloudflare MCP Server Portal product,
+          # and remove/re-scope the self_hosted app first to avoid two apps
+          # competing for one host.
+          upsert_mcp_portal() {
+            local name="$1" domain="$2"
+            local body
+            body=$(jq -nc --arg n "$name" --arg d "$domain" \
+              '{name:$n,type:"mcp_portal",domain:$d,
+                self_hosted_domains:[$d],
+                session_duration:"24h",
+                http_only_cookie_attribute:true,
+                auto_redirect_to_identity:false}')
+            AID=$(find_app "$name")
+            if [ -n "$AID" ]; then
+              echo "Found existing MCP portal app [$name]: $AID — updating and refreshing policies"
+              echo "$body" | curl -sf -X PUT \
+                "$CF_API/accounts/$CF_ACCOUNT/access/apps/$AID" \
+                -H "Authorization: Bearer $CF_TOKEN" \
+                -H "Content-Type: application/json" \
+                --data @- | jq -r '"  updated mcp_portal app => \(.success)"'
+              refresh_policies "$AID"
+            elif [ "$SKIP_NEW_APPS" = "true" ]; then
+              echo "INFO: No existing [$name] app and skip_apps=true — skipped."
+              return
+            else
+              AID=$(echo "$body" | curl -sf -X POST \
+                "$CF_API/accounts/$CF_ACCOUNT/access/apps" \
+                -H "Authorization: Bearer $CF_TOKEN" \
+                -H "Content-Type: application/json" \
+                --data @- | jq -r '.result.id // empty')
+              [ -z "$AID" ] && { echo "WARNING: failed to create mcp_portal app $name"; return; }
+              echo "Created MCP portal app [$name]: $AID"
+            fi
+            add_policy "$AID" "Goldshore agents" "non_identity" "$SERVICE_INCLUDE"
+            add_policy "$AID" "Owner access"     "allow"        "$OWNER_INCLUDE"
           }
 
           # upsert_ssh_app: browser-rendered SSH app (type "ssh"). Owner-only,
@@ -603,16 +684,14 @@ jobs:
           # because browser-based admin routes call api.goldshore.ai with
           # credentials: 'include' and need a human Cloudflare Access session.
           # Service-token-only access is limited to machine-only/path-scoped apps.
-          upsert_full_access "Goldshore API"     "api.goldshore.ai" "[]" \
-            "gs-api gs-api-prod" "$GS_API_ACCESS_AUD"
           # Keep this app on the full api.goldshore.ai host and list every
           # protected route family served by gs-api so Access issues one AUD for
           # browser calls to /goldclaw, /admin, /users, /ai, /v1, etc. The public
           # probes above remain path-scoped bypass apps.
           API_PROTECTED_DOMAINS='["api.goldshore.ai/goldclaw","api.goldshore.ai/admin","api.goldshore.ai/users","api.goldshore.ai/ai","api.goldshore.ai/v1"]'
           upsert_full_access "Goldshore API"     "api.goldshore.ai" "$API_PROTECTED_DOMAINS" \
-            "gs-api gs-api-prod"
-          assert_full_access_policies "Goldshore API" "api.goldshore.ai"
+            "gs-api gs-api-prod" "$GS_API_ACCESS_AUD"
+          assert_full_access_policies "Goldshore API" "api.goldshore.ai" "$GS_API_ACCESS_AUD"
           # GoldShore MCP: human + agent per docs ("approved human identities and agents")
           upsert_full_access "GoldShore MCP"     "mcp.goldshore.ai" "[]" \
             "gs-mcp" \
