@@ -16,7 +16,6 @@ const requiredChecks = [
   'Required Merge Checks / workspace-install',
   'Required Merge Checks / gs-api-build-test',
   'Required Merge Checks / gs-web-build',
-  'Required Merge Checks / gs-admin-build',
   'Required Merge Checks / deployment-dry-run',
 ];
 

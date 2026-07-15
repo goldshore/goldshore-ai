@@ -23,31 +23,21 @@ interface D1Result<Row> {
 interface D1PreparedStatement<Row = Record<string, unknown>> {
   bind(...values: unknown[]): D1PreparedStatement<Row>;
   all(): Promise<D1Result<Row>>;
+  first<T = Row>(): Promise<T | null>;
   run(): Promise<unknown>;
 }
 
 // Global Cloudflare Env types
-interface KVNamespace {
-  put(
-    key: string,
-    value: string | ReadableStream | ArrayBuffer,
-    options?: unknown,
-  ): Promise<void>;
-  get(key: string, options?: unknown): Promise<string | null>;
-}
-
-interface D1Database {
-  prepare<Row = Record<string, unknown>>(query: string): D1PreparedStatement<Row>;
-}
-
 interface Env {
   KV: KVNamespace;
-  DB: D1Database;
+  PLATFORM_DB: D1Database;
   CONTACT_TTL_SECONDS?: string;
   CONTACT_NOTIFICATION_EMAILS?: string;
   MAILCHANNELS_SENDER_EMAIL?: string;
   MAILCHANNELS_SENDER_NAME?: string;
   MAILCHANNELS_API_URL?: string;
+  CLOUDFLARE_TEAM_DOMAIN?: string;
+  CLOUDFLARE_ACCESS_AUDIENCE?: string;
 }
 
 declare namespace App {
