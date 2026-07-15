@@ -36,6 +36,7 @@ bucket_name = "gs-assets"
 
 [env.prod.vars]
 ENV = "production"
+PUBLIC_API = "https://api.goldshore.ai"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 CLOUDFLARE_ACCESS_AUDIENCE = "8b6e1890f664c52ad265a240948a1f3315a757e19b4a0fa180ffe952b81a0daf"
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
@@ -67,6 +68,7 @@ bucket_name = "gs-assets-preview"
 
 [env.preview.vars]
 ENV = "preview"
+PUBLIC_API = "https://api-preview.goldshore.ai"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 CLOUDFLARE_ACCESS_AUDIENCE = "8b6e1890f664c52ad265a240948a1f3315a757e19b4a0fa180ffe952b81a0daf"
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
