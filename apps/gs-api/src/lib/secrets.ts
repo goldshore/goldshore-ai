@@ -233,16 +233,31 @@ export async function revokeSecret(
   revokedBy: string
 ): Promise<void> {
   try {
-    // Update integration status if this was the last active secret
     const metadata = await getSecretMetadata(env, secretId);
 
-    if (metadata) {
-      // Could add logic here to check if integration has other active secrets
-      // and update integration.secrets_status accordingly
+    if (!metadata) {
+      throw new Error('Secret not found');
     }
 
-    // Secrets are retained in DB for audit trail (soft delete via tombstone)
-    // In a future enhancement, could add 'revoked_at' column and soft-delete logic
+    const deleteStmt = env.PLATFORM_DB.prepare(`
+      DELETE FROM integration_secrets
+      WHERE id = ?
+    `);
+
+    await deleteStmt.bind(secretId).run();
+
+    const remainingSecrets = await listSecrets(env, metadata.integration_id);
+    if (remainingSecrets.length === 0) {
+      const updateIntegrationStmt = env.PLATFORM_DB.prepare(`
+        UPDATE integrations
+        SET secrets_status = 'revoked', last_secret_sync = ?
+        WHERE id = ?
+      `);
+
+      await updateIntegrationStmt.bind(new Date().toISOString(), metadata.integration_id).run();
+    }
+
+    void revokedBy;
   } catch (error) {
     console.error('Failed to revoke secret:', error);
     throw new Error('Failed to revoke secret');

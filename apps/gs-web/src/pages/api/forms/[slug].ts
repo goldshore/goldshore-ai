@@ -78,7 +78,7 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
   const env = locals.runtime?.env as Env | undefined;
   const slug = params.slug;
 
-  if (!env?.DB) {
+  if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
   }
 
@@ -91,7 +91,7 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
     return new Response('Form slug is required.', { status: 400 });
   }
 
-  const result = await env.DB.prepare(
+  const result = await env.PLATFORM_DB.prepare(
     `SELECT id, slug, name, status, fields, recipients, integrations, created_at, updated_at
      FROM form_configs
      WHERE slug = ?
@@ -112,7 +112,7 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
   const env = locals.runtime?.env as Env | undefined;
   const slug = params.slug;
 
-  if (!env?.DB) {
+  if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
   }
 
@@ -137,7 +137,7 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     integrations?: Record<string, unknown>[];
   };
 
-  const existing = await env.DB.prepare(
+  const existing = await env.PLATFORM_DB.prepare(
     `SELECT id, slug, name, status, fields, recipients, integrations, created_at, updated_at
      FROM form_configs
      WHERE slug = ?
@@ -161,7 +161,7 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
 
   const now = new Date().toISOString();
 
-  await env.DB.prepare(
+  await env.PLATFORM_DB.prepare(
     `UPDATE form_configs
      SET name = ?, status = ?, fields = ?, recipients = ?, integrations = ?, updated_at = ?
      WHERE slug = ?`
