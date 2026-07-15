@@ -72,6 +72,6 @@ jobs:
         working-directory: apps/gs-api
         run: pnpm exec wrangler whoami
 
-      - name: Deploy GS API worker preview to Cloudflare
+      - name: Validate GS API worker preview deploy
         working-directory: apps/gs-api
-        run: pnpm exec wrangler deploy --env preview --config wrangler.toml
+        run: pnpm exec wrangler deploy --env preview --config wrangler.toml --dry-run --outdir=dist-preview
