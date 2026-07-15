@@ -1,7 +1,9 @@
 name: Deploy (dispatched from satellite repo)
 
 # Triggered by other repos via repository_dispatch.
-# CF secrets live here only — satellite repos send a GS_DISPATCH_TOKEN PAT.
+# CF secrets live here only — satellite repos send a rotated GS_DISPATCH_TOKEN
+# backed by a GitHub App installation token or fine-grained PAT scoped only to
+# marzton/goldshore-ai with Contents: write for repository_dispatch.
 #
 # Required payload fields:
 #   repo              e.g. "marzton/banproof-me"
