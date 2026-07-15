@@ -6,6 +6,7 @@
 > Last certified: 2026-04-29 | Certified by: Rob Marston (@marzton)
 > Repo alignment pass: 2026-06-30 | `goldshore.org` apex ownership moved to `gs-web-prod`; `www.goldshore.org` ownership moved to `gs-www-redirect-prod`.
 > Redirect cleanup pass: 2026-07-11 | `gs-www-redirect-prod` is the sole canonical www redirect Worker for `www.goldshore.ai/*` and `www.goldshore.org/*`; the stale alternate production deployment is no longer part of the canonical set.
+> Live audit reconciliation pass: 2026-07-15 | Recorded observed `gs-api-prod`, `gs-api-staging`, and legacy `gs-agent-preview` workers so live-state audit reflects Cloudflare reality without expanding the in-repo app set.
 
 ---
 
@@ -27,11 +28,14 @@ This section records the **current live Cloudflare inventory** so audit tooling 
 |---|---|---|---|---|---|
 | `gs-api` | Unified API layer | `api.goldshore.ai` | **Canonical in-repo app:** keep in `apps/gs-api` | Keep | Fail closed |
 | `gs-api-preview` | Preview environment for `gs-api` | — | **Canonical in-repo preview:** keep tied to `apps/gs-api` | Keep while preview is needed | Fail closed |
+| `gs-api-prod` | Production deployment of `gs-api` | `api.goldshore.ai` | **Canonical production deploy:** deploy from `apps/gs-api` | Keep | Fail closed |
+| `gs-api-staging` | Staging deployment of `gs-api` | — | **Canonical staging deploy:** keep tied to `apps/gs-api` | Keep while staging is needed | Fail closed |
 | `gs-web` | Goldshore web frontend static assets / non-prod deployment | — | **Canonical in-repo app:** keep in `apps/gs-web` | Keep only if still used for non-prod/static deployment | Fail open (public) |
 | `gs-web-preview` | Preview environment for `gs-web` | `preview.goldshore.ai` | **Canonical in-repo preview:** keep tied to `apps/gs-web` | Keep while preview is needed | Fail open |
 | `gs-web-staging` | Staging variant of `gs-web` | `staging.goldshore.ai` | **Canonical in-repo staging:** keep tied to `apps/gs-web` | Keep while staging is needed | Fail open |
 | `gs-web-prod` | Main public web application worker for `goldshore.ai` and `goldshore.org` apex | `goldshore.ai`, `goldshore.org` | **Canonical production deploy:** deploy from `apps/gs-web` | Keep | Fail open (public) |
 | `gs-agent` | Legacy AI agent worker | — | **Legacy non-canonical:** migrate AI routes/logic into `apps/gs-api` queues/routes | Delete from Cloudflare after traffic and service-binding verification | Fail closed |
+| `gs-agent-preview` | Preview deployment of legacy `gs-agent` | — | **Legacy non-canonical:** do not target from this repo; migrate any still-needed preview behavior into `apps/gs-api` | Delete from Cloudflare after traffic and service-binding verification | Fail closed |
 | `gs-agent-prod` | Production-env deployment of legacy `gs-agent` | — | **Legacy non-canonical:** migrate AI routes/logic into `apps/gs-api` queues/routes | Delete from Cloudflare after traffic and service-binding verification | Fail closed |
 | `gs-mail` | Legacy transactional mail dispatch | `mail.goldshore.ai` / CF mail routing | **Legacy non-canonical:** migrate mail routes, dispatch, and email handlers into `apps/gs-api` | Delete from Cloudflare after mail traffic verification | Fail closed |
 | `gs-control` | Legacy build control / ops service | `ops.goldshore.ai` | **Legacy non-canonical:** migrate API/ops endpoints into `apps/gs-api`; migrate any UI into `apps/gs-web` `/admin` or `/ops` routes | Delete from Cloudflare after ops traffic verification; keep only the Cloudflare build token name as an external credential reference | Fail closed |
