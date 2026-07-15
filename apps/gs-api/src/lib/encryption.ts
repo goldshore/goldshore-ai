@@ -1,7 +1,7 @@
 /**
  * Encryption utilities for secure credential storage
  * Uses Web Crypto API (SubtleCrypto) with AES-256-GCM
- * Master key sourced from a Cloudflare Secrets Store secret binding
+ * Master key sourced from Cloudflare Secrets Store
  */
 
 const ALGORITHM = 'AES-GCM';
@@ -10,15 +10,19 @@ const IV_LENGTH = 16; // 128 bits
 const TAG_LENGTH = 128; // 128 bits
 
 /**
- * Retrieve and import the master encryption key from a Secrets Store binding.
+ * Retrieve and import the master encryption key from Cloudflare Secrets Store
  */
 export async function getMasterKey(env: any): Promise<CryptoKey> {
-  const masterKeySecret = env.INTEGRATION_MASTER_KEY;
-  if (!masterKeySecret) {
-    throw new Error('INTEGRATION_MASTER_KEY secret binding is not configured');
+  if (!env.SECRETS) {
+    throw new Error('SECRETS store not configured in Cloudflare bindings');
   }
 
   try {
+    const masterKeySecret = await env.SECRETS.get('INTEGRATION_MASTER_KEY');
+    if (!masterKeySecret) {
+      throw new Error('INTEGRATION_MASTER_KEY not found in Secrets Store');
+    }
+
     const keyData = new TextEncoder().encode(masterKeySecret);
     return await crypto.subtle.importKey(
       'raw',

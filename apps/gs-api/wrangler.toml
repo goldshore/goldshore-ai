@@ -31,7 +31,7 @@ GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.go
 GOOGLE_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/goldclaw/oauth/google/callback"
 
 # ── KV ──────────────────────────────────────────────────────────────────────────────────────
-[[env.prod.kv_namespaces]]
+[[env.production.kv_namespaces]]
 binding = "KV"
 id = "e0b8b807191346c3b0afc25fe716d2cd"
 
@@ -54,19 +54,21 @@ id = "0b56873b6d7b451f9279481920a15447"
 binding = "GS_ASSETS"
 bucket_name = "gs-assets"
 
-[[env.prod.r2_buckets]]
+[[env.production.r2_buckets]]
 binding = "TELEMETRY"
 bucket_name = "gs-telemetry-storage"
 
-# RISK_RADAR_R2: same situation as RISK_RADAR_CACHE above — pointed at the
-# live "risk-radar-raw" bucket (risk-radar repo) rather than the undeployed
-# "gs-risk-radar-raw" name from BINDINGS_MAP.md.
 [[env.prod.r2_buckets]]
 binding = "RISK_RADAR_R2"
-bucket_name = "risk-radar-raw"
+bucket_name = "gs-risk-radar-raw"
 
-# ── D1 ───────────────────────────────────────────────────────────────────────
-[[env.prod.d1_databases]]
+# ── D1 ──────────────────────────────────────────────────────────────────────────────────────
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "goldshore"
+database_id = "gs_db_001"
+
+[[env.production.d1_databases]]
 binding = "PLATFORM_DB"
 database_name = "gs_platform_db"
 database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
@@ -99,21 +101,26 @@ database_name = "gs_risk_radar_db"
 database_id = "aabedb82-60ca-5697-bbd5-9e85675ee7c5"
 
 [[env.prod.d1_databases]]
+binding = "RISK_RADAR_DB"
+database_name = "gs_risk_radar_db"
+database_id = "aabedb82-60ca-5697-bbd5-9e85675ee7c5"
+
+[[env.prod.d1_databases]]
 binding = "JOBS_DB"
 database_name = "gs_jobs_db"
 database_id = "750c469c-788d-49e8-9254-77231cffd70f"
 
 # ── AI ──────────────────────────────────────────────────────────────────────────────────────
-[env.prod.ai]
+[env.production.ai]
 binding = "AI"
 
 # ── Durable Objects ──────────────────────────────────────────────────────────────────────
-[[env.prod.durable_objects.bindings]]
+[[env.production.durable_objects.bindings]]
 name = "AUTH_SESSION"
 class_name = "AuthSession"
 
 # ── Services ──────────────────────────────────────────────────────────────────────────────────────
-[[env.prod.services]]
+[[env.production.services]]
 binding = "AGENT"
 service = "gs-agent"
 environment = "prod"
@@ -123,23 +130,18 @@ binding = "GS_MAIL"
 service = "gs-mail"
 environment = "prod"
 
-[[env.prod.services]]
+[[env.production.services]]
+binding = "GS_WEB PROD"
+service = "gs-web-prod"
+environment = "prod"
+
+[[env.production.services]]
 binding = "GOLDSHORE_AI"
 service = "goldshore-ai"
 environment = "prod"
 
-# GS_WEB PROD service binding removed: its binding name contained a literal
-# space ("GS_WEB PROD"), making it unreachable as env.GS_WEB from any normal
-# code reference — it was silently dead. infra/Cloudflare/BINDINGS_MAP.md
-# independently lists GS_WEB / GS_WEB PROD among bindings "not part of the
-# repo-managed gs-api binding set... do not reintroduce without an ADR
-# update." AGENT/GS_MAIL/GOLDSHORE_AI are carried forward unchanged from the
-# environment that's actually live today; whether those three should also be
-# retired is a Phase 3/4 (SOP) question that needs the calling code checked
-# first, not a config-only change.
-
 # ── Queues (producers) ───────────────────────────────────────────────────────────
-[[env.prod.queues.producers]]
+[[env.production.queues.producers]]
 binding = "JOBS_QUEUE"
 queue = "goldshore-jobs"
 
@@ -176,6 +178,9 @@ script_name = "gs-signals-prod"
 # env.INTEGRATION_MASTER_KEY directly.
 [[env.prod.secrets_store_secrets]]
 binding = "INTEGRATION_MASTER_KEY"
+# ── Secrets Store ───────────────────────────────────────────────────────────────────────────────────
+[[env.production.secrets_store.bindings]]
+binding = "SECRETS"
 store_id = "b9824d3280c54573a24137c7e7143b33"
 secret_name = "INTEGRATION_MASTER_KEY"
 
@@ -270,6 +275,11 @@ database_name = "gs_risk_radar_db"
 database_id = "fe25ba0b-7d1e-5362-a03f-065487222a08"
 
 [[env.preview.d1_databases]]
+binding = "RISK_RADAR_DB"
+database_name = "gs_risk_radar_db"
+database_id = "fe25ba0b-7d1e-5362-a03f-065487222a08"
+
+[[env.preview.d1_databases]]
 binding = "JOBS_DB"
 database_name = "gs_jobs_db"
 database_id = "750c469c-788d-49e8-9254-77231cffd70f"
@@ -319,6 +329,9 @@ queue = "gs-mail-dead-letter"
 # env.INTEGRATION_MASTER_KEY directly.
 [[env.preview.secrets_store_secrets]]
 binding = "INTEGRATION_MASTER_KEY"
+# ── Secrets Store ───────────────────────────────────────────────────────────────────
+[[env.preview.secrets_store.bindings]]
+binding = "SECRETS"
 store_id = "b9824d3280c54573a24137c7e7143b33"
 secret_name = "INTEGRATION_MASTER_KEY"
 

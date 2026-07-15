@@ -476,6 +476,16 @@ jobs:
               add_policy "$AID" "Owner access"     "allow"        "$OWNER_INCLUDE"
               sync_aud_workers "$AUD" "$aud_workers"
             fi
+            policies=$(curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies" \
+              -H "Authorization: Bearer $CF_TOKEN")
+            echo "$policies" | jq -e '.result[] | select(.decision == "allow" and .name == "Owner access")' > /dev/null || {
+              echo "::error::[$app_name] is missing the Owner access allow policy required for browser Cloudflare Access sessions."
+              MISSING_REQUIRED_APPS=1
+            }
+            echo "$policies" | jq -e '.result[] | select(.decision == "non_identity" and .name == "Goldshore agents")' > /dev/null || {
+              echo "::error::[$app_name] is missing the Goldshore agents service-token policy required for machine access."
+              MISSING_REQUIRED_APPS=1
+            }
           }
 
 

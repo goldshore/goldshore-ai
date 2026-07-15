@@ -94,6 +94,13 @@
 - R2:
   - Binding: `GS_ASSETS`
   - Bucket: `gs-assets` _(historical alias only: `ASSETS`)_
+  - Binding: `DB`
+  - Database: `goldshore` / `gs_db_001` _(historical alias: `goldshore-api-db`)_
+  - Binding: `RISK_RADAR_DB`
+  - Database: `gs_risk_radar_db` _(Risk Radar canonical structured storage; API-only)_
+- R2:
+  - Binding: `ASSETS`
+  - Bucket: `gs-assets` _(historical alias: `goldshore-api-assets`)_
   - Binding: `RISK_RADAR_R2`
   - Bucket: `gs-risk-radar-raw` / `gs-risk-radar-raw-preview` _(Risk Radar raw source object storage; API-only)_
 - AI:
@@ -107,6 +114,8 @@
 **Risk Radar storage policy:** bind Risk Radar storage only to `gs-api`; `gs-web` must call API endpoints rather than receiving `RISK_RADAR_DB`, `RISK_RADAR_CACHE`, or `RISK_RADAR_R2` directly.
 
 **Unclear live-state note:** legacy dashboard service bindings such as `AGENT`, `GS_MAIL`, `GS_WEB`, `GS_WEB PROD`, `API_SERVICE`, `GOLDSHORE_AI`, and historical store-object binding `SECRETS` are not part of the repo-managed `gs-api` binding set. If present in Cloudflare, validate traffic before deleting, but do not reintroduce them into Wrangler config without an ADR update.
+
+**Risk Radar storage policy:** bind Risk Radar storage only to `gs-api`; `gs-web` must call API endpoints rather than receiving `RISK_RADAR_DB`, `RISK_RADAR_CACHE`, or `RISK_RADAR_R2` directly.
 
 ---
 
