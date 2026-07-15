@@ -3,8 +3,9 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 
 const distDir = path.resolve('dist');
-const astroDir = path.join(distDir, '_astro');
-const indexPath = path.join(distDir, 'index.html');
+const clientDir = path.join(distDir, 'client');
+const astroDir = path.join(clientDir, '_astro');
+const indexPath = path.join(clientDir, 'index.html');
 const webAppRoot = path.resolve('.');
 const webLayoutPath = path.join(webAppRoot, 'src', 'layouts', 'WebLayout.astro');
 const publicDir = path.join(webAppRoot, 'public');
