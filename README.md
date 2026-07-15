@@ -1,5 +1,7 @@
 # Gold Shore AI — Repository Operations Map
 
+[![Verify workflow mirrors](https://github.com/marzton/goldshore/actions/workflows/workflow-mirror-check.yml/badge.svg)](https://github.com/marzton/goldshore/actions/workflows/workflow-mirror-check.yml)
+
 ```text
              /\
             /__\        GOLD SHORE LABS
@@ -109,6 +111,17 @@ Important files:
 - `apps/gs-web/wrangler.toml` — Worker name, routes, KV, D1, R2, and environment variables.
 - `.github/workflows/deploy-gs-web.yml` — production deploy workflow.
 
+The production Worker route configuration is stored in `apps/gs-web/wrangler.toml` under the production environment.
+
+Bindings to check in `wrangler.toml`:
+
+- Worker assets binding.
+- KV namespace binding.
+- D1 database binding.
+- R2 bucket binding.
+- Environment variables.
+
+Secrets must never be committed. Keep tokens, API keys, R2 credentials, dashboard secrets, and OpenAI keys only in Cloudflare secrets, GitHub Actions secrets, or the appropriate platform secret manager.
 Expected production deploy command:
 
 ```bash
@@ -241,7 +254,7 @@ import WebLayout from '../../layouts/WebLayout.astro';
 import '../styles/global.css';
 ```
 
-This means subpages do **not** automatically inherit the homepage stylesheet, homepage nav, homepage footer, modals, starfield/cursor effects, or homepage interaction JavaScript.
+This means subpages do not automatically inherit the homepage stylesheet, homepage nav, homepage footer, modals, starfield/cursor effects, or homepage interaction JavaScript.
 
 Known areas to inspect:
 
@@ -299,6 +312,44 @@ Move shared UI into that shell:
 - shared footer
 - reveal animation
 - magnetic hover
+- starfield or cursor behavior
+- modal open and close behavior
+
+Then migrate subpages from `WebLayout` to `GoldShoreShell` gradually.
+
+Recommended first migration target:
+
+```text
+apps/gs-web/src/pages/risk-radar.astro
+```
+
+## Audit commands
+
+Find subpages still using the old layout:
+
+```bash
+grep -R "import WebLayout" -n apps/gs-web/src/pages apps/gs-web/src/layouts
+```
+
+Find public files that may override Astro routes:
+
+```bash
+find apps/gs-web/public -type f | sort
+```
+
+Check build logs for route collisions:
+
+```bash
+gh run view <RUN_ID> --log | grep -Ei 'Skipping src/pages|public folder|index.html|risk-radar'
+```
+
+Compare homepage and subpage imports:
+
+```bash
+grep -nE "import .*css|import .*Layout|WebLayout|home-theme" \
+  apps/gs-web/src/pages/index.astro \
+  apps/gs-web/src/pages/risk-radar.astro \
+  apps/gs-web/src/layouts/WebLayout.astro
 - cursor/starfield behavior
 - consistent CTA link handling
 
@@ -338,6 +389,26 @@ do
 done
 ```
 
+## OpenAI Platform guidance
+
+No browser page should expose an OpenAI API key.
+
+If AI Oracle, MCP, admin, dashboard, or other features call OpenAI-backed systems, route those calls through server-side Workers or API endpoints and store secrets only in:
+
+- Cloudflare Worker secrets.
+- GitHub Actions secrets.
+- OpenAI Platform key management.
+
+Never commit API tokens, R2 access keys, dashboard/admin secrets, or OpenAI keys.
+
+## Immediate next PRs
+
+1. Add a CI guard for public/Astro route collisions.
+2. Create `GoldShoreShell.astro` from the homepage shell.
+3. Move shared homepage effects into `gs-shell.css` and `gs-shell.js`.
+4. Migrate `risk-radar.astro` to `GoldShoreShell`.
+5. Normalize admin, dashboard, API, MCP, and core link targets.
+6. Review CSP for static routes and modal/API behavior.
 Content verification:
 
 ```bash

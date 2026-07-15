@@ -27,11 +27,18 @@
   const body = document.getElementById('inbox-table-body');
   const count = document.getElementById('inbox-count');
 
+  const escapeHtml = (value) => String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
   const renderRow = (mail) => {
     return `<tr class="border-b border-[var(--gs-color-border)]/50">
-      <td class="py-2 text-xs gs-text-subtle">${new Date(mail.timestamp).toLocaleString()}</td>
-      <td class="py-2">${mail.from}</td>
-      <td class="py-2 gs-text-subtle">${mail.subject}</td>
+      <td class="py-2 text-xs gs-text-subtle">${escapeHtml(new Date(mail.timestamp).toLocaleString())}</td>
+      <td class="py-2">${escapeHtml(mail.from)}</td>
+      <td class="py-2 gs-text-subtle">${escapeHtml(mail.subject)}</td>
     </tr>`;
   };
 

@@ -9,7 +9,7 @@ on:
     branches:
       - main
     paths:
-      - "apps/admin/**"
+      - "apps/gs-admin/**"
       - "packages/**"
       - "package.json"
       - "pnpm-lock.yaml"
@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@3df4d485d8ce6d2b61b8d12e8f44cdfffbea301e
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           run_install: false
 
@@ -34,7 +34,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build admin app
-        working-directory: apps/admin
+        working-directory: apps/gs-admin
         run: pnpm build
 
       - name: Deploy to Cloudflare Pages (production)
@@ -43,5 +43,5 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: gs-admin
-          directory: apps/admin/dist
+          directory: apps/gs-admin/dist
           branch: main
