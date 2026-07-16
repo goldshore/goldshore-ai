@@ -162,6 +162,13 @@ function loadValues(manifest, explicitFiles) {
   return values;
 }
 
+function hydrateNonSecretProcessEnv(manifest, values) {
+  const accountEnv = manifest.cloudflareKvFallback?.accountEnv || "CLOUDFLARE_ACCOUNT_ID";
+  if (!process.env[accountEnv] && values.get(accountEnv)) {
+    process.env[accountEnv] = values.get(accountEnv);
+  }
+}
+
 function expandRepos(manifest, target) {
   if (target.repo) return [target.repo];
   if (target.repoGroup) {
@@ -645,6 +652,7 @@ async function main() {
   }
 
   const values = loadValues(manifest, args.valuesFiles);
+  hydrateNonSecretProcessEnv(manifest, values);
   const rows = await buildPlan(manifest, values, args);
   if (args.json) {
     console.log(

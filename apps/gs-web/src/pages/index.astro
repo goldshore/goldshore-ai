@@ -33,6 +33,7 @@ const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Aut
   <meta property="og:title" content="Gold Shore Labs | Applied Intelligence" />
   <meta property="og:description" content="Applied intelligence for institutions that need clarity under pressure." />
   <title>Gold Shore Labs | Applied Intelligence</title>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@300;400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
@@ -310,6 +311,13 @@ export async function verifyAccess(req, env) {
     <label>Message
       <textarea name="message" id="qs-message" required rows="4" placeholder="Tell us about your inquiry (20+ characters)…"></textarea>
     </label>
+    <div class="turnstile-field">
+      <div
+        class="cf-turnstile"
+        data-sitekey="0x4AAAAAABpjjYpo5oUPFCrE"
+        data-action="turnstile-spin-v2"
+      ></div>
+    </div>
     <div id="qs-form-status" class="form-status" aria-live="polite"></div>
     <button type="submit" class="btn-form" id="qs-submit">Submit Request →</button>
   </form>
@@ -458,7 +466,7 @@ qsForm?.addEventListener('submit', async e => {
       window.location.href = '/thank-you';
     } else {
       const data = await res.json().catch(() => ({}));
-      qsStatus.textContent = data.error || 'Something went wrong. Please try again.';
+      qsStatus.textContent = data.error?.message || data.error || 'Something went wrong. Please try again.';
       qsStatus.className = 'form-status';
       qsSubmit.disabled = false;
       qsSubmit.textContent = 'Submit Request →';

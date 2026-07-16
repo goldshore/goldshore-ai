@@ -4,6 +4,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import FlowSection from '../components/FlowSection.astro';
 
 export const prerender = true;
+const TURNSTILE_SITEKEY = '0x4AAAAAABpjjYpo5oUPFCrE';
 ---
 
 <BaseLayout
@@ -116,6 +117,14 @@ export const prerender = true;
         <label for="message">Anything else we should know?</label>
         <textarea id="message" name="message" rows="3"></textarea>
       </div>
+      <div class="turnstile-field">
+        <div
+          class="cf-turnstile"
+          data-sitekey={TURNSTILE_SITEKEY}
+          data-action="turnstile-spin-v2"
+        >
+        </div>
+      </div>
       <GSButton type="submit">Submit intake</GSButton>
     </form>
   </FlowSection>
@@ -138,6 +147,10 @@ export const prerender = true;
       width: 1px;
       height: 1px;
       overflow: hidden;
+    }
+
+    .turnstile-field {
+      min-height: 65px;
     }
   </style>
 </BaseLayout>

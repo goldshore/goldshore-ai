@@ -45,6 +45,7 @@ interface Env {
   DB: D1Database;
   CONTACT_TTL_SECONDS?: string;
   CONTACT_NOTIFICATION_EMAILS?: string;
+  TURNSTILE_SECRET?: string;
   MAILCHANNELS_SENDER_EMAIL?: string;
   MAILCHANNELS_SENDER_NAME?: string;
   MAILCHANNELS_API_URL?: string;

@@ -41,7 +41,132 @@ const oauthProviders: Record<string, {
     token_url: 'https://graph.instagram.com/v18.0/oauth/access_token',
     scope: ['instagram_basic', 'instagram_content_publish'],
   },
+  github: {
+    client_id_env: 'GITHUB_OAUTH_CLIENT_ID',
+    client_secret_env: 'GITHUB_OAUTH_CLIENT_SECRET',
+    authorize_url: 'https://github.com/login/oauth/authorize',
+    token_url: 'https://github.com/login/oauth/access_token',
+    scope: ['repo', 'admin:repo_hook', 'workflow'],
+  },
 };
+
+async function exchangeAndStoreToken(
+  c: any,
+  provider: string,
+  body: {
+    code: string;
+    state: string;
+    integration_id?: string;
+  },
+) {
+  if (!provider || !body.code || !body.state) {
+    return c.json(
+      { error: 'Missing required fields: code, state' },
+      400
+    );
+  }
+
+  const providerConfig = oauthProviders[provider];
+  if (!providerConfig) {
+    return c.json({ error: `Unsupported OAuth provider: ${provider}` }, 400);
+  }
+
+  // Verify state
+  const stateData = await c.env.KV.get(`oauth:state:${body.state}`);
+  if (!stateData) {
+    return c.json({ error: 'Invalid or expired state parameter' }, 401);
+  }
+
+  const statePayload = JSON.parse(stateData);
+  const integrationId = body.integration_id || statePayload.integration_id;
+  if (!integrationId) {
+    return c.json({ error: 'Missing integration_id in OAuth state' }, 400);
+  }
+  if (statePayload.integration_id && statePayload.integration_id !== integrationId) {
+    return c.json({ error: 'Integration ID mismatch' }, 401);
+  }
+
+  // Exchange code for token
+  const clientId = c.env[providerConfig.client_id_env as keyof Env];
+  const clientSecret = c.env[providerConfig.client_secret_env as keyof Env];
+
+  if (!clientId || !clientSecret) {
+    return c.json({ error: 'OAuth client not configured' }, 503);
+  }
+
+  const tokenResponse = await fetch(providerConfig.token_url, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      code: body.code,
+      client_id: String(clientId),
+      client_secret: String(clientSecret),
+      redirect_uri: statePayload.redirect_uri,
+      grant_type: 'authorization_code',
+    }).toString(),
+  });
+
+  if (!tokenResponse.ok) {
+    const errorData = await tokenResponse.text();
+    console.error('Token exchange failed:', errorData);
+    return c.json({ error: 'Failed to exchange code for token' }, 400);
+  }
+
+  const tokenData = await tokenResponse.json<any>();
+  const accessToken = tokenData.access_token;
+  const refreshToken = tokenData.refresh_token;
+
+  if (!accessToken) {
+    return c.json({ error: 'No access token in response' }, 400);
+  }
+
+  // Store token as secret
+  const actor = getActor(c.get('accessClaims'), c.req.raw);
+  const result = await storeSecret(c.env, {
+    integration_id: integrationId,
+    key_type: 'oauth_token',
+    value: accessToken,
+    metadata: {
+      provider,
+      refresh_token: refreshToken,
+      expires_in: tokenData.expires_in,
+      scope: tokenData.scope,
+      token_type: tokenData.token_type,
+    },
+    expires_at: tokenData.expires_in
+      ? new Date(Date.now() + tokenData.expires_in * 1000).toISOString()
+      : undefined,
+  }, actor);
+
+  // Log token acquisition
+  await logAdminAction(c.env, {
+    action: 'oauth.token_acquired',
+    actor,
+    status: 'success',
+    metadata: {
+      provider,
+      integration_id: integrationId,
+      secret_id: result.id,
+    },
+  });
+
+  // Clean up state
+  await c.env.KV.delete(`oauth:state:${body.state}`);
+
+  return c.json({
+    success: true,
+    data: {
+      secret_id: result.id,
+      integration_id: integrationId,
+      provider,
+      created_at: result.created_at,
+      expires_at: result.expires_at,
+    },
+  }, 201);
+}
 
 /**
  * GET /oauth/authorize/:provider
@@ -125,105 +250,7 @@ oauth.post('/callback/:provider', async (c) => {
       integration_id: string;
     }>();
 
-    if (!provider || !body.code || !body.state || !body.integration_id) {
-      return c.json(
-        { error: 'Missing required fields: code, state, integration_id' },
-        400
-      );
-    }
-
-    const providerConfig = oauthProviders[provider];
-    if (!providerConfig) {
-      return c.json({ error: `Unsupported OAuth provider: ${provider}` }, 400);
-    }
-
-    // Verify state
-    const stateData = await c.env.KV.get(`oauth:state:${body.state}`);
-    if (!stateData) {
-      return c.json({ error: 'Invalid or expired state parameter' }, 401);
-    }
-
-    const statePayload = JSON.parse(stateData);
-    if (statePayload.integration_id !== body.integration_id) {
-      return c.json({ error: 'Integration ID mismatch' }, 401);
-    }
-
-    // Exchange code for token
-    const clientId = c.env[providerConfig.client_id_env as keyof Env];
-    const clientSecret = c.env[providerConfig.client_secret_env as keyof Env];
-
-    if (!clientId || !clientSecret) {
-      return c.json({ error: 'OAuth client not configured' }, 503);
-    }
-
-    const tokenResponse = await fetch(providerConfig.token_url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        code: body.code,
-        client_id: String(clientId),
-        client_secret: String(clientSecret),
-        redirect_uri: statePayload.redirect_uri,
-        grant_type: 'authorization_code',
-      }).toString(),
-    });
-
-    if (!tokenResponse.ok) {
-      const errorData = await tokenResponse.text();
-      console.error('Token exchange failed:', errorData);
-      return c.json({ error: 'Failed to exchange code for token' }, 400);
-    }
-
-    const tokenData = await tokenResponse.json<any>();
-    const accessToken = tokenData.access_token;
-    const refreshToken = tokenData.refresh_token;
-
-    if (!accessToken) {
-      return c.json({ error: 'No access token in response' }, 400);
-    }
-
-    // Store token as secret
-    const actor = getActor(c.get('accessClaims'), c.req.raw);
-    const result = await storeSecret(c.env, {
-      integration_id: body.integration_id,
-      key_type: 'oauth_token',
-      value: accessToken,
-      metadata: {
-        provider,
-        refresh_token: refreshToken,
-        expires_in: tokenData.expires_in,
-        scope: tokenData.scope,
-      },
-      expires_at: tokenData.expires_in
-        ? new Date(Date.now() + tokenData.expires_in * 1000).toISOString()
-        : undefined,
-    }, actor);
-
-    // Log token acquisition
-    await logAdminAction(c.env, {
-      action: 'oauth.token_acquired',
-      actor,
-      status: 'success',
-      metadata: {
-        provider,
-        integration_id: body.integration_id,
-        secret_id: result.id,
-      },
-    });
-
-    // Clean up state
-    await c.env.KV.delete(`oauth:state:${body.state}`);
-
-    return c.json({
-      success: true,
-      data: {
-        secret_id: result.id,
-        integration_id: body.integration_id,
-        provider,
-        created_at: result.created_at,
-        expires_at: result.expires_at,
-      },
-    }, 201);
+    return exchangeAndStoreToken(c, provider, body);
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
     console.error('OAuth callback error:', error);
@@ -236,6 +263,29 @@ oauth.post('/callback/:provider', async (c) => {
       metadata: { error: errorMsg, integration_id: body?.integration_id },
     });
 
+    return c.json({ error: errorMsg }, 500);
+  }
+});
+
+/**
+ * GET /oauth/github/callback
+ * GitHub OAuth callback endpoint configured in the GitHub OAuth App.
+ */
+oauth.get('/github/callback', async (c) => {
+  try {
+    const error = c.req.query('error');
+    if (error) {
+      return c.json({ error, error_description: c.req.query('error_description') }, 400);
+    }
+
+    return exchangeAndStoreToken(c, 'github', {
+      code: c.req.query('code') || '',
+      state: c.req.query('state') || '',
+      integration_id: c.req.query('integration_id') || undefined,
+    });
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error('GitHub OAuth callback error:', error);
     return c.json({ error: errorMsg }, 500);
   }
 });

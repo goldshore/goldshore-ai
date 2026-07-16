@@ -10,7 +10,7 @@ const getArgValue = (flag, fallback) => {
 };
 
 const mode = getArgValue('--mode', 'local');
-const outputPath = getArgValue('--output', 'apps/gs-admin/src/data/pii-scan-results.json');
+const outputPath = getArgValue('--output', 'reports/pii-scan-results.json');
 const summaryPath = getArgValue('--summary', 'reports/pii-scan-summary.md');
 const maxFindings = Number(getArgValue('--max-findings', '250'));
 
@@ -39,7 +39,6 @@ const skipExtensions = new Set([
 
 const webRoots = [
   'apps/gs-web',
-  'apps/gs-admin',
   'public',
   'docs'
 ];

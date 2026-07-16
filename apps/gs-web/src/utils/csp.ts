@@ -14,7 +14,7 @@ export const BROWSER_CONNECT_SRC = WEB_CONNECT_SRC;
 
 export const WEB_CSP_DIRECTIVES = {
   'default-src': [SELF],
-  'script-src': [SELF, UNSAFE_INLINE, 'https://*.cloudflare.com'],
+  'script-src': [SELF, UNSAFE_INLINE, 'https://*.cloudflare.com', 'https://challenges.cloudflare.com'],
   'style-src': [
     SELF,
     UNSAFE_INLINE,
@@ -23,7 +23,8 @@ export const WEB_CSP_DIRECTIVES = {
   ],
   'font-src': [SELF, 'https://fonts.gstatic.com'],
   'img-src': [SELF, 'data:', 'https://*.cloudflare.com'],
-  'connect-src': [...BROWSER_CONNECT_SRC],
+  'connect-src': [...BROWSER_CONNECT_SRC, 'https://challenges.cloudflare.com'],
+  'frame-src': ['https://challenges.cloudflare.com'],
   'object-src': [NONE],
   'base-uri': [SELF],
 } as const satisfies ContentSecurityPolicyDirectives;

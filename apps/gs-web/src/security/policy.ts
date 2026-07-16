@@ -2,11 +2,12 @@ const HTML_CSP_DIRECTIVES = [
   "default-src 'self'",
   // WebLayout still renders inline script/style blocks, so HTML keeps the
   // minimum inline allowances needed until those blocks are externalized.
-  "script-src 'self' 'unsafe-inline'",
+  "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com",
   "font-src 'self' https://fonts.gstatic.com",
   "img-src 'self' data:",
-  "connect-src 'self'",
+  "connect-src 'self' https://challenges.cloudflare.com",
+  "frame-src https://challenges.cloudflare.com",
   "frame-ancestors 'none'",
   "object-src 'none'",
   "base-uri 'self'"
@@ -25,12 +26,13 @@ export const HTML_CSP_META_FALLBACK = HTML_CSP_DIRECTIVES
 // this module at runtime.
 export const STATIC_RISK_RADAR_CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
-  "script-src 'self'",
+  "script-src 'self' https://challenges.cloudflare.com",
   "script-src-attr 'none'",
   "style-src 'self'",
   "font-src 'self'",
   "img-src 'self' data:",
-  "connect-src 'self'",
+  "connect-src 'self' https://challenges.cloudflare.com",
+  "frame-src https://challenges.cloudflare.com",
   "worker-src 'self'",
   "frame-ancestors 'none'",
   "object-src 'none'",

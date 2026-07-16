@@ -4,6 +4,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import FlowSection from '../components/FlowSection.astro';
 
 export const prerender = true;
+const TURNSTILE_SITEKEY = '0x4AAAAAABpjjYpo5oUPFCrE';
 ---
 
 <BaseLayout
@@ -109,6 +110,15 @@ export const prerender = true;
         aria-live="polite"
         role="status"
       >
+      </div>
+
+      <div class="turnstile-field">
+        <div
+          class="cf-turnstile"
+          data-sitekey={TURNSTILE_SITEKEY}
+          data-action="turnstile-spin-v2"
+        >
+        </div>
       </div>
 
       <GSButton type="submit">
@@ -420,6 +430,10 @@ export const prerender = true;
       background: color-mix(in srgb, var(--gs-danger) 14%, transparent);
       border-color: color-mix(in srgb, var(--gs-danger) 42%, transparent);
       color: color-mix(in srgb, var(--gs-danger) 62%, white);
+    }
+
+    .turnstile-field {
+      min-height: 65px;
     }
 
     #contact-form button[disabled] {

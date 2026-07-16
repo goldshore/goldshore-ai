@@ -25,6 +25,8 @@ import gearswipe from './routes/gearswipe';
 import crawler from './routes/crawler';
 import integrations from './routes/integrations';
 import goldclaw from './routes/goldclaw';
+import oauth from './routes/oauth';
+import githubWebhook from './routes/github';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
 import { type Env } from './types';
@@ -118,6 +120,8 @@ const isAllowedOrigin = (origin: string, allowedOrigins?: string) => {
 
 const isPublicPath = (path: string, method: string) => {
   if (method === 'OPTIONS') return true;
+  if (method === 'POST' && path === '/webhook/github') return true;
+  if (method === 'GET' && path === '/oauth/github/callback') return true;
   return (
     path === '/' ||
     path === '/version' ||
@@ -290,6 +294,8 @@ app.route('/templates', templates);
 app.route('/admin', admin);
 app.route('/admin/crawler', crawler);
 app.route('/integrations', integrations);
+app.route('/oauth', oauth);
+app.route('/webhook', githubWebhook);
 app.route('/goldclaw', goldclaw);
 app.route('/media', media);
 app.route('/pages', pages);

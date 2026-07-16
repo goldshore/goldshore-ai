@@ -6,7 +6,11 @@
     },
     "goldshore": {
       "type": "http",
-      "url": "https://mcp.goldshore.ai/mcp"
+      "url": "https://mcp.goldshore.ai/mcp",
+      "headers": {
+        "CF-Access-Client-Id": "${GS_MCP_CF_CLIENT_ID}",
+        "CF-Access-Client-Secret": "${GS_MCP_CF_CLIENT_SECRET}"
+      }
     },
     "atlassian-rovo": {
       "type": "http",

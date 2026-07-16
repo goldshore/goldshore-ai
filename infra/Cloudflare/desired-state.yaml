@@ -78,7 +78,13 @@ cloudflare:
         content: "preview-web.pages.dev"
         proxied: true
 
-      # H. SendGrid domain authentication + DMARC
+      # H. Private MCP surface — protected by GoldShore-MCP-ZT
+      - name: "mcp"
+        type: CNAME
+        content: "gateway.agents.cloudflare.com"
+        proxied: true
+
+      # I. SendGrid domain authentication + DMARC
       - name: "em5094"
         type: CNAME
         content: "u106406774.wl025.sendgrid.net"
@@ -111,6 +117,8 @@ cloudflare:
           include:
             - email_domain: "goldshore.ai"
             - email: "marstonr6@gmail.com"
+            - email: "goldshorelabs@gmail.com"
+            - email: "admin@goldshore.org"
           allowed_identity_providers:
             - "google_workspace"
             - "github_goldshore_deploy"
@@ -125,6 +133,8 @@ cloudflare:
           include:
             - email_domain: "goldshore.ai"
             - email: "marstonr6@gmail.com"
+            - email: "goldshorelabs@gmail.com"
+            - email: "admin@goldshore.org"
           allowed_identity_providers:
             - "google_workspace"
             - "github_goldshore_deploy"
@@ -148,6 +158,8 @@ cloudflare:
           include:
             - email_domain: "goldshore.ai"
             - email: "marstonr6@gmail.com"
+            - email: "goldshorelabs@gmail.com"
+            - email: "admin@goldshore.org"
           allowed_identity_providers:
             - "google_workspace"
             - "github_goldshore_deploy"
@@ -178,7 +190,10 @@ cloudflare:
           include:
             - email_domain: "goldshore.ai"
             - email: "marstonr6@gmail.com"
+            - email: "goldshorelabs@gmail.com"
+            - email: "admin@goldshore.org"
           allowed_identity_providers:
+            - "google_workspace"
             - "github_goldshore_deploy"
             - "github"
             - "email_otp"
@@ -203,11 +218,16 @@ cloudflare:
           - "/health"
           - "/status"
           - "/version"
+          - "/oauth/github/callback"
+          - "/webhook/github"
         rules:
           include:
             - email_domain: "goldshore.ai"
             - email: "marstonr6@gmail.com"
+            - email: "goldshorelabs@gmail.com"
+            - email: "admin@goldshore.org"
           allowed_identity_providers:
+            - "google_workspace"
             - "github_goldshore_deploy"
             - "github"
             - "email_otp"
@@ -219,6 +239,24 @@ cloudflare:
           include:
             - email_domain: "goldshore.ai"
             - email: "marstonr6@gmail.com"
+            - email: "goldshorelabs@gmail.com"
+            - email: "admin@goldshore.org"
+          allowed_identity_providers:
+            - "google_workspace"
+            - "github_goldshore_deploy"
+            - "github"
+            - "email_otp"
+
+      - name: "GoldShore-MCP-ZT"
+        domains:
+          - "mcp.goldshore.ai"
+        action: "allow"
+        rules:
+          include:
+            - email_domain: "goldshore.ai"
+            - email: "marstonr6@gmail.com"
+            - email: "goldshorelabs@gmail.com"
+            - email: "admin@goldshore.org"
           allowed_identity_providers:
             - "google_workspace"
             - "github_goldshore_deploy"
@@ -238,12 +276,14 @@ cloudflare:
         custom_domains:
           - "goldshore.ai"
 
-      - name: "gs-admin"
+      # Legacy Pages surface for admin.goldshore.* now serves the canonical gs-web app.
+      # Admin UI/routes must live under apps/gs-web, not apps/gs-admin.
+      - name: "gs-admin-prod"
         repo: "goldshore-ai"
         root_dir: "/" # Run from repo root for monorepo support
         production_branch: "main"
-        build_command: "pnpm --filter @goldshore/gs-admin build"
-        output_dir: "apps/gs-admin/dist"
+        build_command: "pnpm --filter @goldshore/gs-web build"
+        output_dir: "apps/gs-web/dist"
         custom_domains:
           - "admin.goldshore.ai"
           - "admin.goldshore.org"

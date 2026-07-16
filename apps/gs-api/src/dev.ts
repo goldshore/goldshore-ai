@@ -285,6 +285,8 @@ const devEnv: ApiEnv & { DEV_AUTH_BYPASS: string; ENV: string } = {
   STRIPE_API_KEY: 'local-dev-stripe-key',
   SENDGRID_API_KEY: 'local-dev-sendgrid-key',
   ACCESS_CLIENT_SECRET: 'local-dev-access-client-secret',
+  GITHUB_WEBHOOK_SECRET: 'local-dev-github-webhook-secret',
+  GITHUB_STATUS_REPORTING_DISABLED: '1',
   CLOUDFLARE_ACCESS_AUDIENCE: process.env.CLOUDFLARE_ACCESS_AUDIENCE,
   CLOUDFLARE_TEAM_DOMAIN: process.env.CLOUDFLARE_TEAM_DOMAIN,
   API_VERSION: 'local-dev',

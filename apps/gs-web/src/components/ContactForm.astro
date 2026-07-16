@@ -1,5 +1,6 @@
 ---
 const { heading = 'Contact operations', compact = false } = Astro.props;
+const TURNSTILE_SITEKEY = '0x4AAAAAABpjjYpo5oUPFCrE';
 ---
 
 <form data-contact-form class:list={['contact-form', compact && 'contact-form--compact']} action="/api/contact" method="post">
@@ -51,6 +52,15 @@ const { heading = 'Contact operations', compact = false } = Astro.props;
         required
       ></textarea>
     </label>
+  </div>
+
+  <div class="contact-form__turnstile">
+    <div
+      class="cf-turnstile"
+      data-sitekey={TURNSTILE_SITEKEY}
+      data-action="turnstile-spin-v2"
+    >
+    </div>
   </div>
 
   <div class="contact-form__footer">
@@ -270,6 +280,10 @@ const { heading = 'Contact operations', compact = false } = Astro.props;
 
   .contact-form__message {
     grid-column: 1 / -1;
+  }
+
+  .contact-form__turnstile {
+    min-height: 65px;
   }
 
   .contact-form__footer {

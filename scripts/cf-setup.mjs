@@ -49,9 +49,10 @@ const PAGES_PROJECTS = [
     root_dir: '',
   },
   {
-    name: 'gs-admin',
-    build_command: 'pnpm --filter @goldshore/gs-admin build',
-    destination_dir: 'apps/gs-admin/dist',
+    // Legacy admin Pages surface; source routes live in apps/gs-web after consolidation.
+    name: 'gs-admin-prod',
+    build_command: 'pnpm --filter @goldshore/gs-web build',
+    destination_dir: 'apps/gs-web/dist',
     root_dir: '',
   },
 ];

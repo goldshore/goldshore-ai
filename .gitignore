@@ -44,6 +44,11 @@ pnpm-debug.log*
 
 # Generated local reports/artifacts
 reports/*.txt
+reports/cloudflare-kv-secret-inventory-*.json
+reports/cloudflare-kv-secret-inventory-*.md
+reports/cloudflare-kv-claude-handoff-*.md
+reports/cloudflare-access-policy-audit-*.json
+reports/cloudflare-access-policy-audit-*.md
 verification/*.png
 .jules/verification/*.png
 .Jules/verification/*.png

@@ -11,7 +11,11 @@
     },
     "goldshore": {
       "type": "http",
-      "url": "https://mcp.goldshore.ai/mcp"
+      "url": "https://mcp.goldshore.ai/mcp",
+      "headers": {
+        "CF-Access-Client-Id": "${input:GS_MCP_CF_CLIENT_ID}",
+        "CF-Access-Client-Secret": "${input:GS_MCP_CF_CLIENT_SECRET}"
+      }
     },
     "atlassian-rovo": {
       "type": "http",
@@ -38,5 +42,17 @@
       "url": "https://observability.mcp.cloudflare.com/mcp"
     }
   },
-  "inputs": []
+  "inputs": [
+    {
+      "id": "GS_MCP_CF_CLIENT_ID",
+      "type": "promptString",
+      "description": "CF Access Service Token — Client ID for mcp.goldshore.ai (Cloudflare Dashboard → Zero Trust → Access → Service Auth)"
+    },
+    {
+      "id": "GS_MCP_CF_CLIENT_SECRET",
+      "type": "promptString",
+      "description": "CF Access Service Token — Client Secret for mcp.goldshore.ai",
+      "password": true
+    }
+  ]
 }

@@ -1153,6 +1153,10 @@ code {
 
 .form-status.success { color: var(--green); }
 
+.turnstile-field {
+  min-height: 65px;
+}
+
 .gs-honeypot {
   position: absolute;
   left: -10000px;

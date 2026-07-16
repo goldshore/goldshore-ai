@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { buildLeadAutoResponder } from '../../emails/leadAutoResponder';
 import { isValidEmail } from '../../utils/security';
 import { parseJson } from '@goldshore/utils';
+import { verifyTurnstileToken } from '../../utils/turnstile';
 
 // Default to 90 days if not set in environment
 const DEFAULT_CONTACT_TTL_SECONDS = 60 * 60 * 24 * 90;
@@ -176,6 +177,17 @@ const storeInD1 = async (
 
 const extractString = (value: FormDataEntryValue | null) =>
   typeof value === 'string' ? value.trim() : '';
+
+const verifyTurnstile = async (
+  env: Env | undefined,
+  token: string,
+  remoteip?: string,
+) => {
+  const failure = await verifyTurnstileToken(env?.TURNSTILE_SECRET, token, remoteip);
+  if (!failure) return null;
+
+  return buildError(failure.status, failure.code, failure.message, failure.details);
+};
 
 const normalizeWhitespace = (value: string) => value.replace(/\s+/g, ' ').trim();
 
@@ -437,6 +449,15 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const redirectTo = extractString(formData.get('redirectTo'));
   const isSpam = isSpamSubmission(formData);
   const env = locals.runtime?.env as Env | undefined;
+  const turnstileResponse = extractString(formData.get('cf-turnstile-response'));
+  const turnstileError = await verifyTurnstile(
+    env,
+    turnstileResponse,
+    request.headers.get('CF-Connecting-IP') ??
+      request.headers.get('X-Forwarded-For')?.split(',')[0]?.trim() ??
+      undefined,
+  );
+  if (turnstileError) return turnstileError;
 
   const submission: Submission = {
     id: crypto.randomUUID(),
@@ -666,3 +687,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
 };
 
 export const GET: APIRoute = async () => buildError(405, 'METHOD_NOT_ALLOWED', 'Method not allowed.');
+
+export const __testing = {
+  verifyTurnstile,
+  verifyTurnstileToken,
+};
