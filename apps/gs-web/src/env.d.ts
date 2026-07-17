@@ -38,6 +38,7 @@ interface Env {
   MAILCHANNELS_API_URL?: string;
   CLOUDFLARE_TEAM_DOMAIN?: string;
   CLOUDFLARE_ACCESS_AUDIENCE?: string;
+  PUBLIC_API?: string;
 }
 
 declare namespace App {
