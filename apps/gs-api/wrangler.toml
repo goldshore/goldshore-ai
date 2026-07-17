@@ -10,7 +10,7 @@ workers_dev = false
 # Canonical environment name is "prod". Use `wrangler deploy --env prod`.
 # ══════════════════════════════════════════════════════════════════════════════
 
-[env.production]
+[env.prod]
 routes = [
   { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" },
@@ -22,7 +22,7 @@ routes = [
   { pattern = "api.goldshore.org/*", zone_name = "goldshore.org" }
 ]
 
-[env.production.vars]
+[env.prod.vars]
 ENV = "production"
 CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
@@ -35,7 +35,7 @@ GOOGLE_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/goldclaw/oauth/google/call
 binding = "KV"
 id = "e0b8b807191346c3b0afc25fe716d2cd"
 
-[[env.production.kv_namespaces]]
+[[env.prod.kv_namespaces]]
 binding = "CONTROL_LOGS"
 id = "a52e94cb331c4e3db08f2aa507e6df09"
 
@@ -71,12 +71,12 @@ binding = "PLATFORM_DB"
 database_name = "gs_platform_db"
 database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
 
-[[env.production.d1_databases]]
+[[env.prod.d1_databases]]
 binding = "AUDIT_DB"
 database_name = "gs_audit_db"
 database_id = "1ae71d76-188f-481b-91d9-db2d39013f68"
 
-[[env.production.d1_databases]]
+[[env.prod.d1_databases]]
 binding = "SIGNALS_DB"
 database_name = "gs_signals_db"
 database_id = "76af4653-7f44-417b-b46e-250143d906fd"
@@ -92,11 +92,6 @@ database_id = "76af4653-7f44-417b-b46e-250143d906fd"
 binding = "RISK_RADAR_DB"
 database_name = "risk-radar-db"
 database_id = "b0bf3b0e-a7d0-49ae-ac82-4f19450b2ce2"
-
-[[env.prod.d1_databases]]
-binding = "RISK_RADAR_DB"
-database_name = "gs_risk_radar_db"
-database_id = "aabedb82-60ca-5697-bbd5-9e85675ee7c5"
 
 [[env.prod.d1_databases]]
 binding = "JOBS_DB"
@@ -118,7 +113,7 @@ binding = "AGENT"
 service = "gs-agent"
 environment = "prod"
 
-[[env.production.services]]
+[[env.prod.services]]
 binding = "GS_MAIL"
 service = "gs-mail"
 environment = "prod"
@@ -143,15 +138,15 @@ environment = "prod"
 binding = "JOBS_QUEUE"
 queue = "goldshore-jobs"
 
-[[env.production.queues.producers]]
+[[env.prod.queues.producers]]
 binding = "EVENTS_QUEUE"
 queue = "gs-events"
 
-[[env.production.queues.producers]]
+[[env.prod.queues.producers]]
 binding = "MAIL_JOBS_QUEUE"
 queue = "gs-mail-jobs"
 
-[[env.production.queues.producers]]
+[[env.prod.queues.producers]]
 binding = "DEAD_LETTER_QUEUE"
 queue = "gs-mail-dead-letter"
 
@@ -171,13 +166,10 @@ name = "signals-evaluator"
 class_name = "SignalsEvaluator"
 script_name = "gs-signals-prod"
 
-# ── Secrets Store ────────────────────────────────────────────────────────────
-# Secrets Store bindings are per secret, not a store object. The runtime reads
-# env.INTEGRATION_MASTER_KEY directly.
-[[env.prod.secrets_store_secrets]]
-binding = "INTEGRATION_MASTER_KEY"
-store_id = "b9824d3280c54573a24137c7e7143b33"
-secret_name = "INTEGRATION_MASTER_KEY"
+# ── Secrets ──────────────────────────────────────────────────────────────────
+# INTEGRATION_MASTER_KEY is provisioned as a normal Worker secret for this
+# environment. Do not re-add a Secrets Store binding until the referenced store
+# and secret exist in the Cloudflare account.
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Preview environment — deploys to workers.dev (no zone route needed)
@@ -247,11 +239,6 @@ database_name = "risk-radar-db"
 database_id = "b0bf3b0e-a7d0-49ae-ac82-4f19450b2ce2"
 
 [[env.preview.d1_databases]]
-binding = "RISK_RADAR_DB"
-database_name = "gs_risk_radar_db"
-database_id = "fe25ba0b-7d1e-5362-a03f-065487222a08"
-
-[[env.preview.d1_databases]]
 binding = "JOBS_DB"
 database_name = "gs_jobs_db"
 database_id = "750c469c-788d-49e8-9254-77231cffd70f"
@@ -282,13 +269,10 @@ queue = "gs-mail-jobs"
 binding = "DEAD_LETTER_QUEUE"
 queue = "gs-mail-dead-letter"
 
-# ── Secrets Store ────────────────────────────────────────────────────────────
-# Secrets Store bindings are per secret, not a store object. The runtime reads
-# env.INTEGRATION_MASTER_KEY directly.
-[[env.preview.secrets_store_secrets]]
-binding = "INTEGRATION_MASTER_KEY"
-store_id = "b9824d3280c54573a24137c7e7143b33"
-secret_name = "INTEGRATION_MASTER_KEY"
+# ── Secrets ──────────────────────────────────────────────────────────────────
+# INTEGRATION_MASTER_KEY is provisioned as a normal Worker secret for this
+# environment. Do not re-add a Secrets Store binding until the referenced store
+# and secret exist in the Cloudflare account.
 
 # ── Durable Object migrations ────────────────────────────────────────────────
 [[migrations]]

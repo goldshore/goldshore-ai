@@ -97,14 +97,22 @@ class_name = "AuthSession"
 
 
 [[env.prod.services]]
-binding = "GS_WEB"
-service = "gs-web"
+binding = "AGENT"
+service = "gs-agent"
+environment = "prod"
+
+[[env.prod.services]]
+binding = "GS_MAIL"
+service = "gs-mail"
 environment = "prod"
 
 [[env.prod.services]]
 binding = "GOLDSHORE_AI"
 service = "goldshore-ai"
 environment = "prod"
+
+# GS_WEB PROD service binding removed here too — see apps/gs-api/wrangler.toml
+# for why (dead binding name with a literal space, unreachable as env.GS_WEB).
 
 # ── Queues ───────────────────────────────────────────────────────────────────
 [[env.prod.queues.producers]]
@@ -139,13 +147,10 @@ name = "signals-evaluator"
 class_name = "SignalsEvaluator"
 script_name = "gs-signals-prod"
 
-# ── Secrets Store ────────────────────────────────────────────────────────────
-# Secrets Store bindings are per secret, not a store object. The runtime reads
-# env.INTEGRATION_MASTER_KEY directly.
-[[env.prod.secrets_store_secrets]]
-binding = "INTEGRATION_MASTER_KEY"
-store_id = "b9824d3280c54573a24137c7e7143b33"
-secret_name = "INTEGRATION_MASTER_KEY"
+# ── Secrets ──────────────────────────────────────────────────────────────────
+# INTEGRATION_MASTER_KEY is provisioned as a normal Worker secret for this
+# environment. Do not re-add a Secrets Store binding until the referenced store
+# and secret exist in the Cloudflare account.
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Preview environment
@@ -239,13 +244,10 @@ queue = "gs-mail-jobs"
 binding = "DEAD_LETTER_QUEUE"
 queue = "gs-mail-dead-letter"
 
-# ── Secrets Store ────────────────────────────────────────────────────────────
-# Secrets Store bindings are per secret, not a store object. The runtime reads
-# env.INTEGRATION_MASTER_KEY directly.
-[[env.preview.secrets_store_secrets]]
-binding = "INTEGRATION_MASTER_KEY"
-store_id = "b9824d3280c54573a24137c7e7143b33"
-secret_name = "INTEGRATION_MASTER_KEY"
+# ── Secrets ──────────────────────────────────────────────────────────────────
+# INTEGRATION_MASTER_KEY is provisioned as a normal Worker secret for this
+# environment. Do not re-add a Secrets Store binding until the referenced store
+# and secret exist in the Cloudflare account.
 
 # ── Durable Object migrations ────────────────────────────────────────────────
 [[migrations]]

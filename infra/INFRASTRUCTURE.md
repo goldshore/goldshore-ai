@@ -6,6 +6,7 @@
 > Last certified: 2026-04-29 | Certified by: Rob Marston (@marzton)
 > Repo alignment pass: 2026-06-30 | `goldshore.org` apex ownership moved to `gs-web-prod`; `www.goldshore.org` ownership moved to `gs-www-redirect-prod`.
 > Redirect cleanup pass: 2026-07-11 | `gs-www-redirect-prod` is the sole canonical www redirect Worker for `www.goldshore.ai/*` and `www.goldshore.org/*`; the stale alternate production deployment is no longer part of the canonical set.
+> Live audit reconciliation pass: 2026-07-15 | Recorded observed `gs-api-prod`, `gs-api-staging`, and legacy `gs-agent-preview` workers so live-state audit reflects Cloudflare reality without expanding the in-repo app set.
 
 ---
 
@@ -27,11 +28,14 @@ This section records the **current live Cloudflare inventory** so audit tooling 
 |---|---|---|---|---|---|
 | `gs-api` | Unified API layer | `api.goldshore.ai` | **Canonical in-repo app:** keep in `apps/gs-api` | Keep | Fail closed |
 | `gs-api-preview` | Preview environment for `gs-api` | — | **Canonical in-repo preview:** keep tied to `apps/gs-api` | Keep while preview is needed | Fail closed |
+| `gs-api-prod` | Production deployment of `gs-api` | `api.goldshore.ai` | **Canonical production deploy:** deploy from `apps/gs-api` | Keep | Fail closed |
+| `gs-api-staging` | Staging deployment of `gs-api` | — | **Canonical staging deploy:** keep tied to `apps/gs-api` | Keep while staging is needed | Fail closed |
 | `gs-web` | Goldshore web frontend static assets / non-prod deployment | — | **Canonical in-repo app:** keep in `apps/gs-web` | Keep only if still used for non-prod/static deployment | Fail open (public) |
 | `gs-web-preview` | Preview environment for `gs-web` | `preview.goldshore.ai` | **Canonical in-repo preview:** keep tied to `apps/gs-web` | Keep while preview is needed | Fail open |
 | `gs-web-staging` | Staging variant of `gs-web` | `staging.goldshore.ai` | **Canonical in-repo staging:** keep tied to `apps/gs-web` | Keep while staging is needed | Fail open |
 | `gs-web-prod` | Main public web application worker for `goldshore.ai` and `goldshore.org` apex | `goldshore.ai`, `goldshore.org` | **Canonical production deploy:** deploy from `apps/gs-web` | Keep | Fail open (public) |
 | `gs-agent` | Legacy AI agent worker | — | **Legacy non-canonical:** migrate AI routes/logic into `apps/gs-api` queues/routes | Delete from Cloudflare after traffic and service-binding verification | Fail closed |
+| `gs-agent-preview` | Preview deployment of legacy `gs-agent` | — | **Legacy non-canonical:** do not target from this repo; migrate any still-needed preview behavior into `apps/gs-api` | Delete from Cloudflare after traffic and service-binding verification | Fail closed |
 | `gs-agent-prod` | Production-env deployment of legacy `gs-agent` | — | **Legacy non-canonical:** migrate AI routes/logic into `apps/gs-api` queues/routes | Delete from Cloudflare after traffic and service-binding verification | Fail closed |
 | `gs-mail` | Legacy transactional mail dispatch | `mail.goldshore.ai` / CF mail routing | **Legacy non-canonical:** migrate mail routes, dispatch, and email handlers into `apps/gs-api` | Delete from Cloudflare after mail traffic verification | Fail closed |
 | `gs-control` | Legacy build control / ops service | `ops.goldshore.ai` | **Legacy non-canonical:** migrate API/ops endpoints into `apps/gs-api`; migrate any UI into `apps/gs-web` `/admin` or `/ops` routes | Delete from Cloudflare after ops traffic verification; keep only the Cloudflare build token name as an external credential reference | Fail closed |
@@ -164,38 +168,6 @@ This table records **live or recently observed routing**. Rows marked legacy/non
 | `armsway.com` | `armsway-com-prod` | 1 (public) | External to this repo | Fail open. |
 | `www.armsway.com` | `armsway-com-prod` | 1 (public) | External to this repo | Fail open. |
 | `partnersinpools.com` | `partners-in-pools` | 1 (public) | External to this repo | Matteo's pool business. |
-## Domain → Worker routing
-
-| Domain | Worker / Pages | Tier | Notes |
-|---|---|---|---|
-| `goldshore.ai` | `gs-web-prod` | 1 (public) | Canonical hostname |
-| `www.goldshore.ai` | `gs-www-redirect-prod` | 1 (public) | 308 → goldshore.ai |
-| `preview.goldshore.ai` | `gs-web-preview` | 1 (public) | Preview environment |
-| `dashboard.goldshore.ai` | `gs-trading-prod` | 3 (admin) | Protected trading dashboard alias |
-| `dash.goldshore.ai` | `gs-trading-prod` | 3 (admin) | Short protected trading dashboard alias |
-| `gw.goldshore.ai` | `gs-gateway-prod` | 2 (auth) | Fail closed |
-| `api.goldshore.ai` | `gs-api` | 2 (auth) | Direct API route; fail closed; /health /version /status public |
-| `agent.goldshore.ai` | `gs-gateway-prod` → `gs-agent-prod` | 2 (auth) | Fail closed |
-| `trading.goldshore.ai` | `gs-trading-prod` | 3 (admin) | Fail closed |
-| `goldshore.ai` | `gs-web` (Pages) | 1 (public) | Canonical hostname |
-| `www.goldshore.ai` | `gs-www-redirect` | 1 (public) | 308 → goldshore.ai |
-| `dashboard.goldshore.ai` | `gs-gateway` | 1 (public) | 308 → admin.goldshore.ai |
-| `gw.goldshore.ai` | `gs-gateway` | 2 (auth) | Fail closed |
-| `api.goldshore.ai` | `gs-api` | 2 (auth) | Fail closed; /health /version /status public; route must stay on the API Worker while it validates the API Access AUD |
-| `agent.goldshore.ai` | `gs-gateway` → `gs-agent` | 2 (auth) | Fail closed |
-| `trading.goldshore.ai` | `gs-trading` | 3 (admin) | Fail closed |
-| `ops.goldshore.ai` | `gs-control` | 3 (admin) | Fail closed |
-| `admin.goldshore.ai` | `gs-admin` (Pages) | 3 (admin) | Fail closed |
-| `admin.goldshore.org` | `gs-admin` (Pages) | 3 (admin) | Same app as admin.goldshore.ai |
-| `goldshore.org` | `gs-web-prod` | 1 (public) | Public `.org` apex serves the main Astro web app |
-| `www.goldshore.org` | `gs-www-redirect-prod` | 1 (public) | 308 → goldshore.ai |
-| `mail.goldshore.ai` | `gs-mail` | — | CF mail routing |
-| `banproof.me` | `banproof-me` | 1 | Fail closed |
-| `rmarston.com` | `rmarston-com` | 1 (public) | Fail open |
-| `www.rmarston.com` | `gs-www-redirect` | 1 (public) | 308 → rmarston.com (via Worker) |
-| `armsway.com` | `armsway-com-prod` | 1 (public) | Fail open |
-| `www.armsway.com` | `armsway-com-prod` | 1 (public) | Fail open |
-| `partnersinpools.com` | `partners-in-pools` | 1 (public) | Matteo's pool business |
 
 
 ## Access tiers
@@ -273,14 +245,12 @@ Two workers in your account have unknown origin. You must decide to keep or dele
 
 ### GATE 2 — Align `.org` apex and `www` ownership (BLOCKS: goldshore.org routing)
 
-`apps/gs-web` is the canonical owner for the Goldshore public web app. `gs-www-redirect-prod` is a temporary live redirect Worker and is not canonical in-repo architecture; migrate Goldshore redirect behavior into canonical app routing, then delete legacy redirect workers after traffic verification. The old `goldshore-org` redirect path is superseded unless live Cloudflare still shows an explicit dashboard route that needs removal.
-`apps/gs-web/wrangler.toml` owns `goldshore.org/*` through `gs-web-prod`. `apps/gs-www-redirect/wrangler.toml` owns `www.goldshore.org/*` through `gs-www-redirect-prod`. The old `goldshore-org` redirect path is superseded unless live Cloudflare still shows an explicit dashboard route that needs removal.
+`apps/gs-web/wrangler.toml` owns `goldshore.org/*` through `gs-web-prod`. `apps/gs-www-redirect/wrangler.toml` owns `www.goldshore.org/*` and `www.goldshore.ai/*` through `gs-www-redirect-prod` (note: this app's environment is named `production`, not `prod` — `wrangler deploy --env production` is correct for it specifically, unlike `gs-api`/`gs-web`). The old `goldshore-org` redirect path is superseded unless live Cloudflare still shows an explicit dashboard route that needs removal.
 
 | # | Action | Where | Status |
 |---|--------|--------|--------|
 | 2a | Deploy `gs-web-prod` with `wrangler deploy --env prod` so `goldshore.org/*` is attached to the main web app. | GitHub Actions / CF Dashboard | ⬜ TODO |
-| 2b | Keep `gs-www-redirect-prod` serving `www.goldshore.org/*` and `www.goldshore.ai/*` only until canonical redirect routing is verified in `apps/gs-web` or `apps/gs-api`. | GitHub Actions / CF Dashboard | ⬜ TODO |
-| 2b | Deploy `gs-www-redirect-prod` with `wrangler deploy --env production` so `www.goldshore.org/*` and `www.goldshore.ai/*` are attached to the redirect Worker. | GitHub Actions / CF Dashboard | ⬜ TODO |
+| 2b | Deploy `gs-www-redirect-prod` with `wrangler deploy --env production` so `www.goldshore.org/*` and `www.goldshore.ai/*` stay attached to the redirect Worker until canonical redirect routing is verified in `apps/gs-web` or `apps/gs-api`. | GitHub Actions / CF Dashboard | ⬜ TODO |
 | 2c | Verify: `curl -I https://goldshore.org` → public web app response, not a legacy redirect worker. | Browser or curl | ⬜ TODO |
 | 2d | Verify: `curl -I https://www.goldshore.org` → `308` to `https://goldshore.ai`. | Browser or curl | ⬜ TODO |
 | 2e | If Cloudflare still lists a `goldshore-org` route for `goldshore.org` or `www.goldshore.org`, remove it after the two Workers above are confirmed. | CF Dashboard | ⬜ TODO |

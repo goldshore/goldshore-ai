@@ -53,38 +53,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
       method: 'POST',
       headers: forwardedHeaders(request),
       body: formData,
-  const headers = new Headers(request.headers);
-  headers.delete('content-length');
-
-  const submission: Submission = {
-    id: crypto.randomUUID(),
-    formType,
-    status: 'new',
-    name: extractString(formData.get('name')),
-    email: extractString(formData.get('email')),
-    company: extractString(formData.get('company')),
-    role: extractString(formData.get('role')),
-    website: extractString(formData.get('website')),
-    teamSize: extractString(formData.get('teamSize')),
-    industry: extractString(formData.get('industry')),
-    timeline: extractString(formData.get('timeline')),
-    budget: extractString(formData.get('budget')),
-    goals: extractString(formData.get('goals')),
-    message: extractString(formData.get('message')),
-    receivedAt: new Date().toISOString(),
-    ipAddress: request.headers.get('CF-Connecting-IP') ?? undefined,
-    userAgent: request.headers.get('User-Agent') ?? undefined,
-    inquiry: extractString(formData.get('inquiry')),
-    dedupeKey: extractString(formData.get('dedupeKey')),
-  };
-
-  const normalizedSubmission = normalizeContactSubmission(submission);
-
-  if (isSpam) {
-    console.info('contact_submission_spam_blocked', {
-      submissionId: submission.id,
-      formType,
-      ipAddress: submission.ipAddress,
     });
   } catch {
     return buildError(request, 503, 'api_unavailable', 'Submission service unavailable.');
@@ -116,79 +84,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return Response.json(payload ?? { ok: true, redirectTo: redirectUrl.pathname }, {
       status: response.status,
     });
-    if (env?.PLATFORM_DB) {
-      await logSubmissionStatus(env.PLATFORM_DB, submission.id, formType, 'storage_failed', 'Storage unavailable.');
-    }
-    return buildError(503, 'storage_unavailable', 'Storage unavailable.');
   }
 
-  if (env?.PLATFORM_DB) {
-    await logSubmissionStatus(env.PLATFORM_DB, normalizedSubmission.id, formType, 'stored', 'Submission stored successfully.', {
-      dedupeKey: normalizedSubmission.dedupeKey,
-      recipients: formConfig.recipients,
-      integrations: formConfig.integrations
-    });
-  }
-
-  const recipients = parseNotificationRecipients(
-    formConfig.recipients,
-    env.CONTACT_NOTIFICATION_EMAILS,
-  );
-  const notificationResult = recipients.length
-    ? await sendMail(
-        env,
-        recipients,
-        `[GoldShore] New ${submission.formType} submission`,
-        [
-          `Name: ${submission.name || 'N/A'}`,
-          `Email: ${submission.email || 'N/A'}`,
-          `Inquiry: ${extractString(formData.get('inquiry')) || 'general'}`,
-          '',
-          submission.message || 'No message provided.',
-        ].join('\n'),
-        `<p><strong>Name:</strong> ${submission.name || 'N/A'}</p>
-<p><strong>Email:</strong> ${submission.email || 'N/A'}</p>
-<p><strong>Inquiry:</strong> ${extractString(formData.get('inquiry')) || 'general'}</p>
-<p><strong>Message:</strong></p>
-<p>${submission.message || 'No message provided.'}</p>`,
-        submission.email ? { email: submission.email, name: submission.name || undefined } : undefined,
-      )
-    : { attempted: false, reason: 'no_recipients' };
-
-  const autoResponderResult = submission.email
-    ? await sendMail(
-        env,
-        [{ email: submission.email, name: submission.name || undefined }],
-        autoResponder.subject,
-        autoResponder.text,
-        autoResponder.html,
-      )
-    : { attempted: false, reason: 'missing_submitter_email' };
-
-  console.info('contact_submission_outbound_email_result', {
-    submissionId: submission.id,
-    formType,
-    notificationResult,
-    autoResponderResult,
-  });
-  if (env?.PLATFORM_DB) {
-    await logSubmissionStatus(
-      env.PLATFORM_DB,
-      submission.id,
-      formType,
-      'email_attempted',
-      'Outbound email attempts completed.',
-      {
-        notification: notificationResult,
-        autoResponder: autoResponderResult,
-      },
-    );
-  }
-
-  const redirectUrl = safeRedirect(payload?.redirectTo ?? redirectTo, new URL(request.url).origin);
-  if (shouldReturnJson(request)) {
-    return Response.json({ ok: true, submissionId: payload?.submissionId, redirectTo: redirectUrl.pathname, mail: payload?.mail });
-  }
   return Response.redirect(redirectUrl, 303);
 };
 
