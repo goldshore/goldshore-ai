@@ -29,6 +29,8 @@ Public marketing site, documentation hub, and customer-facing Astro app for Gold
 - Pages project: `gs-web`
 - Local/app Wrangler config: `apps/gs-web/wrangler.jsonc`
 - Canonical Cloudflare manifest: `infra/Cloudflare/gs-web.wrangler.toml`
+- `gs-web` does not currently read `GS_CONFIG` directly.
+- Do not add a `GS_CONFIG` binding to the web Pages project unless a concrete `apps/gs-web` runtime consumer needs live request-time reads.
 - Preview and production deployments are driven by the live workflows under `.github/workflows/`.
 - Staging environments commonly point browser-visible runtime variables at preview services such as `https://api-preview.goldshore.ai` and `https://gw-preview.goldshore.ai`.
 
@@ -121,18 +123,16 @@ Preview environments are not public.
 - Cloudflare Access protects preview hostnames.
 - Non-interactive checks against preview environments should use Cloudflare Access service-token headers.
 
-## Contact form and mail delivery
+## Contact form and lead administration
 
-`/api/contact` stores submissions in KV/D1 and can send email through MailChannels from Cloudflare Pages Functions.
+`gs-web` does not hold runtime KV, D1, or R2 data bindings. `/api/contact`, `/api/admin/lead-submissions`, and `/api/forms/*` are thin same-origin compatibility proxies that forward request-time storage operations to `gs-api` under `/v1/forms/*`.
 
-Set these environment variables in the `gs-web` Pages project as needed:
+Set `PUBLIC_API` in the `gs-web` Worker environment to the matching API origin:
 
-- `MAILCHANNELS_SENDER_EMAIL`
-- `MAILCHANNELS_SENDER_NAME`
-- `CONTACT_NOTIFICATION_EMAILS`
-- `MAILCHANNELS_API_URL`
+- Production: `https://api.goldshore.ai`
+- Preview: `https://api-preview.goldshore.ai`
 
-Keep the existing `KV` and `DB` bindings so submissions still persist if mail delivery is degraded.
+Do not add `GS_CONFIG` or other data bindings to `gs-web` unless a specific Pages Function needs a public, request-time, read-only lookup that cannot be served by `gs-api`.
 
 ## Source of truth
 
