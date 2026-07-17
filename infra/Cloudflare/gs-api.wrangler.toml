@@ -94,6 +94,18 @@ binding = "AI"
 name = "AUTH_SESSION"
 class_name = "AuthSession"
 
+
+
+[[env.prod.services]]
+binding = "GS_WEB"
+service = "gs-web"
+environment = "prod"
+
+[[env.prod.services]]
+binding = "GOLDSHORE_AI"
+service = "goldshore-ai"
+environment = "prod"
+
 # ── Queues ───────────────────────────────────────────────────────────────────
 [[env.prod.queues.producers]]
 binding = "JOBS_QUEUE"

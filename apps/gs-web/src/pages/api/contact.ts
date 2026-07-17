@@ -1,5 +1,7 @@
 import type { APIRoute } from 'astro';
 
+export const prerender = false;
+
 const shouldReturnJson = (request: Request) => {
   const accept = request.headers.get('accept') ?? '';
   const requestedWith = request.headers.get('x-requested-with') ?? '';
@@ -25,6 +27,15 @@ const safeRedirect = (value: string | null, origin: string) => {
   }
 };
 
+const forwardedHeaders = (request: Request) => {
+  const headers = new Headers();
+  for (const name of ['accept', 'cf-connecting-ip', 'user-agent', 'x-forwarded-for']) {
+    const value = request.headers.get(name);
+    if (value) headers.set(name, value);
+  }
+  return headers;
+};
+
 export const POST: APIRoute = async ({ request, locals }) => {
   if (!request.headers.get('content-type')?.includes('form')) {
     return buildError(request, 415, 'unsupported_payload', 'Unsupported payload.');
@@ -35,6 +46,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const redirectTo = String(formData.get('redirectTo') || '');
   const env = locals.runtime?.env as Env | undefined;
   const target = new URL(`${apiBase(env)}/v1/forms/${encodeURIComponent(formType)}/submissions`);
+
+  let response: Response;
+  try {
+    response = await fetch(target, {
+      method: 'POST',
+      headers: forwardedHeaders(request),
+      body: formData,
   const headers = new Headers(request.headers);
   headers.delete('content-length');
 
@@ -68,107 +86,35 @@ export const POST: APIRoute = async ({ request, locals }) => {
       formType,
       ipAddress: submission.ipAddress,
     });
-    if (env?.PLATFORM_DB) {
-      await logSubmissionStatus(env.PLATFORM_DB, submission.id, formType, 'blocked_spam', 'Spam submission blocked.');
+  } catch {
+    return buildError(request, 503, 'api_unavailable', 'Submission service unavailable.');
+  }
+
+  const responseText = await response.text();
+  let payload: Record<string, unknown> | null = null;
+  if (responseText) {
+    try {
+      payload = JSON.parse(responseText) as Record<string, unknown>;
+    } catch {
+      payload = null;
     }
-    const redirectUrl = safeRedirect(redirectTo, new URL(request.url).origin);
-    if (respondJson) {
-      return jsonResponse({
-        ok: true,
-        submissionId: submission.id,
-        redirectTo: redirectUrl.pathname,
-        mail: {
-          notification: 'skipped',
-          autoResponder: 'skipped',
-        },
+  }
+
+  if (!response.ok) {
+    if (shouldReturnJson(request)) {
+      return Response.json(payload ?? { ok: false, code: 'submission_failed' }, {
+        status: response.status,
       });
     }
-    return Response.redirect(redirectUrl, 303);
+    return new Response(responseText || 'Submission failed.', { status: response.status });
   }
 
-  if (submission.email && !isValidEmail(submission.email)) {
-    console.info('contact_submission_validation_failed', {
-      submissionId: submission.id,
-      formType,
-      reason: 'invalid_email',
-    });
-    if (env?.PLATFORM_DB) {
-      await logSubmissionStatus(env.PLATFORM_DB, submission.id, formType, 'rejected', 'Invalid email address.');
-    }
-    return buildError(400, 'invalid_email', 'Invalid email address.');
-  }
+  const payloadRedirect = typeof payload?.redirectTo === 'string' ? payload.redirectTo : null;
+  const redirectUrl = safeRedirect(payloadRedirect ?? redirectTo, new URL(request.url).origin);
 
-  if (!env?.KV && !env?.PLATFORM_DB) {
-    return buildError(503, 'storage_unavailable', 'Storage unavailable.');
-  }
-
-  const formConfig = env?.PLATFORM_DB ? await fetchFormConfig(env.PLATFORM_DB, formType) : normalizeFormConfig(null, formType);
-
-  if (formConfig.status !== 'active') {
-    if (env?.PLATFORM_DB) {
-      await logSubmissionStatus(env.PLATFORM_DB, submission.id, formType, 'blocked', 'Form is not accepting submissions.', {
-        status: formConfig.status
-      });
-    }
-    return buildError(403, 'form_inactive', 'Form is not accepting submissions.');
-  }
-
-  const missingFields = validateRequiredFields(normalizedSubmission, formConfig.fields);
-  if (missingFields.length > 0) {
-    console.warn('contact_submission_validation_failed', {
-      formType,
-      submissionId: submission.id,
-      error: 'missing_required_fields',
-      fields: missingFields.map((field) => field.name),
-    });
-    if (env?.PLATFORM_DB) {
-      await logSubmissionStatus(env.PLATFORM_DB, submission.id, formType, 'rejected', 'Missing required fields.', {
-        fields: missingFields.map((field) => field.name)
-      });
-    }
-    return buildError(400, 'missing_required_fields', 'Missing required fields.', {
-      fields: missingFields.map((field) => field.name),
-    });
-  }
-
-  const ttl = env?.CONTACT_TTL_SECONDS ? parseInt(env.CONTACT_TTL_SECONDS, 10) : DEFAULT_CONTACT_TTL_SECONDS;
-
-  const autoResponder = buildLeadAutoResponder({
-    name: normalizedSubmission.name,
-    formType: normalizedSubmission.formType,
-  });
-
-  if (env?.PLATFORM_DB) {
-    const isDuplicate = await checkRecentDuplicate(env.PLATFORM_DB, normalizedSubmission);
-    if (isDuplicate) {
-      await logSubmissionStatus(
-        env.PLATFORM_DB,
-        normalizedSubmission.id,
-        formType,
-        'duplicate',
-        'Repeated submission detected within dedupe window.',
-        { dedupeKey: normalizedSubmission.dedupeKey }
-      );
-      const redirectUrl = safeRedirect(redirectTo, new URL(request.url).origin);
-      return Response.redirect(redirectUrl, 303);
-    }
-  }
-
-  const storageTasks: Promise<unknown>[] = [];
-  if (env?.KV)
-    storageTasks.push(storeInKv(env.KV, normalizedSubmission, autoResponder, ttl));
-  if (env?.PLATFORM_DB) storageTasks.push(storeInD1(env.PLATFORM_DB, normalizedSubmission, autoResponder));
-
-  const storageResults = await Promise.allSettled(storageTasks);
-  const storedSuccessfully = storageResults.some(
-    (result) => result.status === 'fulfilled',
-  );
-
-  if (!storedSuccessfully) {
-    console.error('contact_submission_persistence_failed', {
-      submissionId: submission.id,
-      formType,
-      storageResults,
+  if (shouldReturnJson(request)) {
+    return Response.json(payload ?? { ok: true, redirectTo: redirectUrl.pathname }, {
+      status: response.status,
     });
     if (env?.PLATFORM_DB) {
       await logSubmissionStatus(env.PLATFORM_DB, submission.id, formType, 'storage_failed', 'Storage unavailable.');
@@ -245,3 +191,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
   }
   return Response.redirect(redirectUrl, 303);
 };
+
+export const GET: APIRoute = async ({ request }) =>
+  buildError(request, 405, 'method_not_allowed', 'Method not allowed.');

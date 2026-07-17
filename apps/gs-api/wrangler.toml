@@ -180,7 +180,7 @@ store_id = "b9824d3280c54573a24137c7e7143b33"
 secret_name = "INTEGRATION_MASTER_KEY"
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Preview environment
+# Preview environment — deploys to workers.dev (no zone route needed)
 # ══════════════════════════════════════════════════════════════════════════════
 
 [env.preview]
