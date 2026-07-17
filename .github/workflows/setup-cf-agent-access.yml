@@ -679,7 +679,7 @@ jobs:
             '["signals.goldshore.org","gs-signals-prod.goldshore.workers.dev"]'
           # Goldshore API: uses documented name and pinned AUD to match the
           # existing Access app/AUD in wrangler.toml before rotating tokens;
-          # pushes AUD to api workers on first-run creation (Gate 5e). Keep this
+          # pushes AUD to the canonical API workers on first-run creation (Gate 5e). Keep this
           # host on upsert_full_access (owner/user allow + service-token policy)
           # because browser-based admin routes call api.goldshore.ai with
           # credentials: 'include' and need a human Cloudflare Access session.
@@ -694,12 +694,11 @@ jobs:
           assert_full_access_policies "Goldshore API" "api.goldshore.ai" "$GS_API_ACCESS_AUD"
           # GoldShore MCP: human + agent per docs ("approved human identities and agents")
           upsert_full_access "GoldShore MCP"     "mcp.goldshore.ai" "[]" \
-            "gs-mcp" \
+            "" \
             '["MCP"]'
           # Goldshore Gateway: gw + agent share app+AUD (Gate 5d); human + agent access
           upsert_full_access "Goldshore Gateway" "gw.goldshore.ai" \
-            '["gateway.goldshore.ai","agent.goldshore.ai","gs-agent.goldshore.workers.dev"]' \
-            "gs-gateway-prod gs-agent gs-agent-prod"
+            '["gateway.goldshore.ai","agent.goldshore.ai"]'
           # GoldShore-Web-Preview: preview.goldshore.ai (INFRASTRUCTURE.md Gate 5)
           upsert_full_access "GoldShore-Web-Preview" "preview.goldshore.ai"
 
@@ -773,7 +772,7 @@ jobs:
               -d "{\"name\":\"$key\",\"text\":\"$val\",\"type\":\"secret_text\"}" \
               | jq -r '"  \(.result.name // "?") => \(.success)"'
           }
-          for WORKER in gs-agent gs-agent-prod gs-mcp gs-api gs-api-prod gs-gateway-prod; do
+          for WORKER in gs-api gs-api-prod; do
             echo "Setting secrets on $WORKER:"
             put_secret "$WORKER" CF_ACCESS_CLIENT_ID     "$CLIENT_ID"
             put_secret "$WORKER" CF_ACCESS_CLIENT_SECRET "$CLIENT_SEC"
@@ -796,10 +795,10 @@ jobs:
             echo "| Service token UUID | \`$TOKEN_UUID\` |"
             echo "| CF-Access-Client-Id | \`$CLIENT_ID\` |"
             echo "| GitHub secrets | goldshore-ai, goldshore-gateway, goldclaw |"
-            echo "| Worker secrets | gs-agent, gs-agent-prod, gs-mcp, gs-api, gs-api-prod, gs-gateway-prod |"
+            echo "| Worker secrets | gs-api, gs-api-prod |"
             echo "| Bypass apps | Schwab Callback, Robinhood Callback, API Probes, Gateway Probes |"
             echo "| Full-access apps | Dashboard, GoldShore Admin, GoldShore Trading, Goldshore Ops, Signals, Goldshore API, GoldShore MCP, Goldshore Gateway, GoldShore-Web-Preview |"
-            echo "| Extra hostnames | admin.gs-admin.pages.dev (Admin), signals.goldshore.org + gs-signals-prod.goldshore.workers.dev (Signals), gs-api.goldshore.workers.dev (API), gs-agent.goldshore.workers.dev (Gateway) |"
+            echo "| Extra hostnames | signals.goldshore.org + gs-signals-prod.goldshore.workers.dev (Signals), gs-api.goldshore.workers.dev (API) |"
             echo "| Gated apps | Temp HP Laptop SSH (include_ssh_laptop=${{ inputs.include_ssh_laptop }}), Goldshore MCP Portal (include_mcp_portal=${{ inputs.include_mcp_portal }}) |"
             echo ""
             echo "> CF-Access-Client-Secret is stored in secrets only — never printed here."

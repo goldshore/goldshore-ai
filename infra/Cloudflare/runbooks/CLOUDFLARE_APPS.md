@@ -45,7 +45,7 @@ Cloudflare applications (Pages / Workers / KV / R2 / D1 / AI / Queues).
 10. Worker Builds token policy:
 
 - For `gs-web`, `gs-admin`, and `gs-api`, use the `gs-control` build token in Cloudflare Worker Builds.
-- For GitHub Actions worker deploy jobs in `deploy-platform.yml`, use only:
+- For GitHub Actions deploy jobs in `deploy-gs-api.yml` and `deploy-gs-web.yml`, use only:
   - `CLOUDFLARE_BUILD_API_TOKEN` (canonical build token secret)
   - `CLOUDFLARE_ACCOUNT_ID` (Cloudflare account secret)
 - Secret ownership:

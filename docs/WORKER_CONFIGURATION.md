@@ -22,7 +22,7 @@ Do not add new app workers or deploy workflows for retired services. All backend
   - AI: `AI`
   - Durable Object: `AUTH_SESSION`
   - Queues produced: `JOBS_QUEUE`, `EVENTS_QUEUE`, `MAIL_JOBS_QUEUE`, `DEAD_LETTER_QUEUE`; `gs-api` is also the production consumer for consolidated backend queues
-  - Secrets Store: `INTEGRATION_MASTER_KEY` per-secret binding
+  - Worker secret: `INTEGRATION_MASTER_KEY` (provision with `wrangler secret put`; do not use a Secrets Store binding unless the store and secret already exist)
 - **Retired aliases/service bindings:** `DB`, `ASSETS`, `TELEMETRY_DB`, `SECRETS`, `AGENT`, `GS_MAIL`, `GS_WEB`, `GS_WEB PROD`, `API_SERVICE`, and `GOLDSHORE_AI` must not be used as `gs-api` bindings. If Cloudflare still shows any of these in the dashboard, treat them as live-state cleanup candidates until a human confirms otherwise.
 
 ## `gs-web` (`apps/gs-web`)
