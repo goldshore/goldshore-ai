@@ -13,6 +13,17 @@ Do not add new app workers or deploy workflows for retired services. All backend
 ## `gs-api` (`apps/gs-api`)
 
 - **Wrangler:** `apps/gs-api/wrangler.toml`
+- **Production routes:** `api.goldshore.ai/*`, `api.goldshore.org/*`, plus consolidated backend hostnames `agent.goldshore.ai/*`, `mail.goldshore.ai/*`, `ops.goldshore.ai/*`, `trading.goldshore.ai/*`, `dashboard.goldshore.ai/*`, and `dash.goldshore.ai/*`
+- **Preview:** `workers_dev = true`; preview API route `api-preview.goldshore.ai/*`
+- **Canonical bindings:**
+  - KV: `KV`, `CONTROL_LOGS`, `RISK_RADAR_CACHE`
+  - D1: `PLATFORM_DB`, `AUDIT_DB`, `SIGNALS_DB`, `RISK_RADAR_DB`, `JOBS_DB`
+  - R2: `GS_ASSETS`, `TELEMETRY`, `RISK_RADAR_R2`
+  - AI: `AI`
+  - Durable Object: `AUTH_SESSION`
+  - Queues produced: `JOBS_QUEUE`, `EVENTS_QUEUE`, `MAIL_JOBS_QUEUE`, `DEAD_LETTER_QUEUE`; `gs-api` is also the production consumer for consolidated backend queues
+  - Secrets Store: `INTEGRATION_MASTER_KEY` per-secret binding
+- **Retired aliases/service bindings:** `DB`, `ASSETS`, `TELEMETRY_DB`, `SECRETS`, `AGENT`, `GS_MAIL`, `GS_WEB`, `GS_WEB PROD`, `API_SERVICE`, and `GOLDSHORE_AI` must not be used as `gs-api` bindings. If Cloudflare still shows any of these in the dashboard, treat them as live-state cleanup candidates until a human confirms otherwise.
 - **Production routes:** `api.goldshore.ai/*`, `api.goldshore.org/*`
 - **Preview:** `workers_dev = true`
 - **Canonical bindings:**

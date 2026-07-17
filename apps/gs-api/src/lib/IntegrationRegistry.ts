@@ -12,8 +12,9 @@ import { GoogleSearchConsoleIntegration } from './GoogleSearchConsole';
 import { StripeIntegration } from './Stripe';
 import { ZapierIntegration } from './Zapier';
 import { CustomIntegration } from './Custom';
+import { MetaAdsIntegration } from './MetaAds';
 
-export type IntegrationType = 'facebook_pixel' | 'whatsapp' | 'google_ads' | 'google_gsc' | 'stripe' | 'zapier' | 'custom';
+export type IntegrationType = 'facebook_pixel' | 'whatsapp' | 'google_ads' | 'google_gsc' | 'meta_ads' | 'stripe' | 'zapier' | 'custom';
 
 export interface IntegrationDefinition {
   id: string;
@@ -66,6 +67,14 @@ export const INTEGRATION_DEFINITIONS: Record<IntegrationType, IntegrationDefinit
     description: 'Monitor search rankings, clicks, impressions, and indexing',
     docUrl: 'https://developers.google.com/webmaster-tools',
     requiredFields: ['siteUrl', 'accessToken'],
+  },
+  meta_ads: {
+    id: 'meta_ads',
+    name: 'Meta Ads (Business Manager)',
+    type: 'meta_ads',
+    description: 'Manage Meta/Facebook ad campaigns, ad accounts, and performance insights',
+    docUrl: 'https://developers.facebook.com/docs/marketing-apis',
+    requiredFields: ['appId', 'businessId', 'accessToken', 'appSecret'],
   },
   stripe: {
     id: 'stripe',
@@ -126,6 +135,9 @@ export class IntegrationRegistry {
         break;
       case 'google_gsc':
         integration = new GoogleSearchConsoleIntegration(config);
+        break;
+      case 'meta_ads':
+        integration = new MetaAdsIntegration(config);
         break;
       case 'stripe':
         integration = new StripeIntegration(config);

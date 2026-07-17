@@ -11,6 +11,7 @@ export type Env = {
   RISK_RADAR_R2?: R2Bucket;
   AUTH_SESSION?: DurableObjectNamespace;
   AI: Ai;
+  INTEGRATION_MASTER_KEY?: string;
   SECRETS: SecretsStore;
   JOBS_QUEUE?: Queue;
   EVENTS_QUEUE?: Queue;
