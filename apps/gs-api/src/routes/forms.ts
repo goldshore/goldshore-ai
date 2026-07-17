@@ -122,7 +122,7 @@ forms.post('/:formId/submissions', async (c) => {
   const id = crypto.randomUUID();
   const formId = c.req.param('formId') || 'contact';
   const now = new Date().toISOString();
-  await c.env.PLATFORM_DB.prepare(`INSERT INTO lead_submissions (id, form_type, name, email, company, role, website, team_size, industry, timeline, budget, goals, message, status, received_at, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, ?, ?)`)    
+  await c.env.PLATFORM_DB.prepare(`INSERT INTO lead_submissions (id, form_type, name, email, company, role, website, team_size, industry, timeline, budget, goals, message, status, received_at, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, ?, ?)`)
     .bind(id, formId, body.name ?? null, body.email ?? null, body.company ?? null, body.role ?? null, body.website ?? null, body.teamSize ?? null, body.industry ?? null, body.timeline ?? null, body.budget ?? null, body.goals ?? null, body.message ?? null, now, c.req.header('CF-Connecting-IP') ?? null, c.req.header('User-Agent') ?? null).run();
   return c.json({ ok: true, status: 'received', formId, submissionId: id, submittedAt: now, redirectTo: String(body.redirectTo || '/contact?submitted=1'), mail: { notification: 'skipped', autoResponder: 'skipped' } }, 202);
 });
