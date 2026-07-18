@@ -115,6 +115,24 @@ export const getAdminRouteRule = (
     };
   }
 
+  if (
+    normalizedPath === '/admin/api-status' ||
+    normalizedPath === '/admin/workers/status' ||
+    normalizedPath === '/admin/workers/routes' ||
+    normalizedPath === '/admin/workers/bindings' ||
+    normalizedPath === '/api/admin/cf/workers' ||
+    normalizedPath === '/api/admin/cf/worker-detail' ||
+    normalizedPath === '/admin/monetization' ||
+    normalizedPath === '/api/admin/monetization/adsense'
+  ) {
+    return {
+      canonicalPath: normalizedPath,
+      kind: normalizedPath.startsWith('/api/') ? 'api' : 'page',
+      permission: 'system:read',
+      requiresAdminRole: true,
+    };
+  }
+
   if (normalizedPath === '/admin' || normalizedPath.startsWith('/admin/')) {
     return {
       canonicalPath: normalizedPath,
