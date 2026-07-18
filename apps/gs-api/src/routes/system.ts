@@ -162,6 +162,49 @@ const auditAccess = async (env: Env) => {
   return { applications: apps.result?.length ?? 0, policies: policies.result?.length ?? 0 };
 };
 
+system.get('/cf/workers', requirePermission('system:read'), async (c) => {
+  if (!c.env.CLOUDFLARE_ACCOUNT_ID) {
+    return c.json({ success: false, error: 'Missing CLOUDFLARE_ACCOUNT_ID' }, 503);
+  }
+  try {
+    const data = await cloudflareRequest(c.env, `/accounts/${c.env.CLOUDFLARE_ACCOUNT_ID}/workers/scripts`);
+    return c.json({ success: true, accountId: c.env.CLOUDFLARE_ACCOUNT_ID, workers: data.result ?? [] });
+  } catch (error) {
+    return c.json({ success: false, error: error instanceof Error ? error.message : 'Failed to list workers' }, 502);
+  }
+});
+
+system.get('/cf/workers/:name', requirePermission('system:read'), async (c) => {
+  const name = c.req.param('name');
+  if (!c.env.CLOUDFLARE_ACCOUNT_ID) {
+    return c.json({ success: false, error: 'Missing CLOUDFLARE_ACCOUNT_ID' }, 503);
+  }
+
+  try {
+    const settings = await cloudflareRequest(
+      c.env,
+      `/accounts/${c.env.CLOUDFLARE_ACCOUNT_ID}/workers/scripts/${encodeURIComponent(name)}/settings`,
+    );
+    const bindings = settings.result?.bindings ?? [];
+
+    let routes: Array<{ pattern: string }> = [];
+    if (c.env.CLOUDFLARE_ZONE_ID) {
+      try {
+        const routesData = await cloudflareRequest(c.env, `/zones/${c.env.CLOUDFLARE_ZONE_ID}/workers/routes`);
+        routes = ((routesData.result ?? []) as Array<{ pattern: string; script?: string }>)
+          .filter((route) => route.script === name)
+          .map((route) => ({ pattern: route.pattern }));
+      } catch {
+        // Zone routes are best-effort; a Worker can still be shown without them.
+      }
+    }
+
+    return c.json({ success: true, name, bindings, routes });
+  } catch (error) {
+    return c.json({ success: false, error: error instanceof Error ? error.message : 'Failed to load worker detail' }, 502);
+  }
+});
+
 system.post('/dns/apply', requirePermission('system:write'), (c) => executeAutomation(c, 'dns_apply', () => applyDns(c.env)));
 system.post('/workers/reconcile', requirePermission('system:write'), (c) => executeAutomation(c, 'workers_reconcile', () => reconcileWorkers(c.env)));
 system.post('/pages/deploy', requirePermission('system:write'), (c) => executeAutomation(c, 'pages_deploy', () => deployPages(c.env)));
