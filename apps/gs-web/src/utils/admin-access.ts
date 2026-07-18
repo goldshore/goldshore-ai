@@ -121,7 +121,9 @@ export const getAdminRouteRule = (
     normalizedPath === '/admin/workers/routes' ||
     normalizedPath === '/admin/workers/bindings' ||
     normalizedPath === '/api/admin/cf/workers' ||
-    normalizedPath === '/api/admin/cf/worker-detail'
+    normalizedPath === '/api/admin/cf/worker-detail' ||
+    normalizedPath === '/admin/monetization' ||
+    normalizedPath === '/api/admin/monetization/adsense'
   ) {
     return {
       canonicalPath: normalizedPath,
