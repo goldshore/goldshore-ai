@@ -115,6 +115,15 @@ export const getAdminRouteRule = (
     };
   }
 
+  if (normalizedPath === '/admin/api-status') {
+    return {
+      canonicalPath: normalizedPath,
+      kind: 'page',
+      permission: 'system:read',
+      requiresAdminRole: true,
+    };
+  }
+
   if (normalizedPath === '/admin' || normalizedPath.startsWith('/admin/')) {
     return {
       canonicalPath: normalizedPath,
