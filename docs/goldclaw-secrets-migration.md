@@ -40,11 +40,12 @@ specific GoldClaw feature — general infra credential that happened to be
 stored under the `goldclaw:` KV prefix. Don't build GoldClaw-specific
 plumbing around them.
 
-Still open: which repo besides `apps/gs-api` needs these bound. Candidates
-per `CLAUDE.md`'s "Standalone repos still running production code" table:
-`marzton/goldshore-gateway`, `marzton/goldshore-core`, or the sister
-monorepo `marzton/goldshore`. **Do not wire a second repo until this is
-confirmed** — don't guess.
+Resolved (2026-07-18): `apps/gs-api` in this monorepo is the only consumer.
+No second repo needed — per the user, the standalone Workers in
+`marzton/goldshore-gateway`/`marzton/goldshore-core`/etc. are on a path to
+becoming redundant now that a single repo can run multiple Workers, per
+`CLAUDE.md`'s existing "strict two-app monorepo" policy and repo migration
+plan. Don't wire bindings into those repos.
 
 ## Task split
 
@@ -61,8 +62,6 @@ confirmed** — don't guess.
       `wrangler secrets-store secret create`) using the already-rotated
       values. Real secret values should only ever be entered by a human or
       by Codex directly — never pasted into a Claude Code chat session.
-- [ ] Once confirmed, do the same for the second repo (pending
-      confirmation above).
 
 ### Claude Code — application code
 
@@ -79,6 +78,6 @@ confirmed** — don't guess.
 
 ## Status
 
-Not started — this doc reflects the plan as of 2026-07-18, pending: (1)
-confirmation of the second consuming repo, (2) Codex completing the
+Not started — this doc reflects the plan as of 2026-07-18. Scope is
+confirmed (single repo, `apps/gs-api` only); pending Codex completing the
 `wrangler.toml` bindings above.
