@@ -115,10 +115,17 @@ export const getAdminRouteRule = (
     };
   }
 
-  if (normalizedPath === '/admin/api-status') {
+  if (
+    normalizedPath === '/admin/api-status' ||
+    normalizedPath === '/admin/workers/status' ||
+    normalizedPath === '/admin/workers/routes' ||
+    normalizedPath === '/admin/workers/bindings' ||
+    normalizedPath === '/api/admin/cf/workers' ||
+    normalizedPath === '/api/admin/cf/worker-detail'
+  ) {
     return {
       canonicalPath: normalizedPath,
-      kind: 'page',
+      kind: normalizedPath.startsWith('/api/') ? 'api' : 'page',
       permission: 'system:read',
       requiresAdminRole: true,
     };
