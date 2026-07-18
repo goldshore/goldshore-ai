@@ -16,8 +16,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
         with:
           version: 9.15.4
@@ -25,12 +27,26 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+      - name: Normalize Cloudflare token
+        env:
+          RAW_CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+        run: |
+          token="$(
+            node <<'NODE'
+          const raw = process.env.RAW_CLOUDFLARE_API_TOKEN || "";
+          let token = raw.replace(/[\r\n]/g, "").trim();
+          const bearer = token.match(/(?:authorization\s*:\s*)?bearer\s+([^\s"',;}]+)/i);
+          if (bearer) token = bearer[1];
+          const cfut = token.match(/cfut_[A-Za-z0-9_-]+/);
+          if (cfut) token = cfut[0];
+          token = token.replace(/^[`'"]+|[`'",;}]+$/g, "").replace(/\s/g, "");
+          process.stdout.write(token);
+          NODE
+          )"
+          test -n "$token" || (echo "Missing: CLOUDFLARE_BUILD_API_TOKEN" && exit 1)
+          echo "::add-mask::$token"
+          echo "CLOUDFLARE_API_TOKEN=$token" >> "$GITHUB_ENV"
+          echo "CLOUDFLARE_BUILD_API_TOKEN=$token" >> "$GITHUB_ENV"
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @goldshore/gs-api build
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       - run: pnpm --filter @goldshore/gs-api deploy
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

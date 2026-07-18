@@ -49,21 +49,21 @@ Cloudflare worker deploy workflows and infra guard checks use the following cano
 | Secret name | Required for | Ownership |
 |---|---|---|
 | `CLOUDFLARE_ACCOUNT_ID` | All worker deploy jobs and Cloudflare infra guard checks | Cloudflare account owner / platform ops |
-| `CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN` | Deploy jobs for Cloudflare resources owned by `marzton/goldshore-ai` | `goldshore-ai` service owner / platform ops |
+| `CLOUDFLARE_BUILD_API_TOKEN` | Deploy jobs for Cloudflare resources owned by `marzton/goldshore-ai` | `gs-control` build token / platform ops |
 
 Policy:
 
-- `CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN` is the canonical deploy token secret for this repository; it must be scoped only to the Workers, Pages projects, Queues, Workflows, and zones deployed from `marzton/goldshore-ai`.
+- `CLOUDFLARE_BUILD_API_TOKEN` is the canonical deploy token secret for this repository; it must be scoped only to the Workers, Pages projects, Queues, Workflows, and zones deployed from `marzton/goldshore-ai`.
 - Do not add fallback expressions such as `secretA || secretB` in worker deploy workflows unless a documented exception is added to Cloudflare runbooks.
 
 Migration behavior:
 
-- If older tooling still references `CLOUDFLARE_API_TOKEN`, migrate by updating that tooling to set runtime env `CLOUDFLARE_API_TOKEN` from `secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN` in CI.
+- If older tooling still references `CLOUDFLARE_API_TOKEN`, migrate by updating that tooling to set runtime env `CLOUDFLARE_API_TOKEN` from `secrets.CLOUDFLARE_BUILD_API_TOKEN` in CI.
 - Do not add `||` fallbacks in workflow env blocks.
 - Temporary compatibility, if required, must be managed in secret administration with mirrored secret values and a tracked removal task.
 
 Repository token boundary:
 
 - Keep the mother/build repository token (`CLOUDFLARE_GOLDSHORE_BUILD_TOKEN` for `marzton/goldshore`) out of this repository.
-- Remove broad or legacy app-repo secrets such as `CLOUDFLARE_BUILD_API_TOKEN`, `CLOUDFLARE_API_TOKEN`, and `CF_WORKERS_BUILDS` after the repository-specific deploy token is installed.
+- Remove broad or legacy app-repo secrets such as `CLOUDFLARE_API_TOKEN` and `CF_WORKERS_BUILDS` after the repository-specific deploy token is installed.
 - Do not grant this repository token account-wide edit access; grant only the zones, Workers, Pages projects, Queues, and Workflows documented above.

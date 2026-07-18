@@ -29,6 +29,15 @@ CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 CONTROL_SYNC_TOKEN = "__PROD_CONTROL_SYNC_TOKEN__"
 GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
 GOOGLE_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/goldclaw/oauth/google/callback"
+CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
+MAILCHANNELS_SENDER_NAME = "GoldShore"
+
+# MAILCHANNELS_SENDER_EMAIL is a secret, not a var — never commit the value.
+#   wrangler secret put MAILCHANNELS_SENDER_EMAIL --env prod --name gs-api
+#   Value: hello@goldshore.ai
+# Without this secret, /v1/forms/:formId/submissions still persists the
+# submission to D1; it just reports mail as not attempted
+# (reason: "missing_mail_configuration") instead of failing the request.
 
 # ── KV ──────────────────────────────────────────────────────────────────────────────────────
 [[env.prod.kv_namespaces]]
@@ -233,6 +242,11 @@ routes = [
 [env.preview.vars]
 ENV = "preview"
 GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
+CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
+MAILCHANNELS_SENDER_NAME = "GoldShore"
+
+# MAILCHANNELS_SENDER_EMAIL secret — see env.prod above for the command;
+# use --env preview --name gs-api instead.
 
 # ── KV ───────────────────────────────────────────────────────────────────────
 [[env.preview.kv_namespaces]]
@@ -318,13 +332,10 @@ queue = "gs-mail-jobs"
 binding = "DEAD_LETTER_QUEUE"
 queue = "gs-mail-dead-letter"
 
-# ── Secrets Store ────────────────────────────────────────────────────────────
-# Secrets Store bindings are per secret, not a store object. The runtime reads
-# env.INTEGRATION_MASTER_KEY directly.
-[[env.preview.secrets_store_secrets]]
-binding = "INTEGRATION_MASTER_KEY"
-store_id = "b9824d3280c54573a24137c7e7143b33"
-secret_name = "INTEGRATION_MASTER_KEY"
+# ── Secrets ──────────────────────────────────────────────────────────────────
+# INTEGRATION_MASTER_KEY is provisioned as a normal Worker secret for this
+# environment. Do not re-add a Secrets Store binding until the referenced store
+# and secret exist in the Cloudflare account.
 
 # ── Durable Object migrations ────────────────────────────────────────────────
 [[migrations]]
