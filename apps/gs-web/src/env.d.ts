@@ -43,6 +43,10 @@ interface Env {
   GOOGLE_ADSENSE_CLIENT_SECRET?: string;
   GOOGLE_ADSENSE_REFRESH_TOKEN?: string;
   GOOGLE_ADSENSE_ACCOUNT_ID?: string;
+  GOOGLE_GSC_CLIENT_ID?: string;
+  GOOGLE_GSC_CLIENT_SECRET?: string;
+  GOOGLE_GSC_REFRESH_TOKEN?: string;
+  GOOGLE_GSC_SITE_URL?: string;
 }
 
 declare namespace App {
