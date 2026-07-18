@@ -350,9 +350,10 @@ const checkRecentDuplicate = async (db: D1Database, submission: Submission): Pro
        LIMIT 1`
     )
     .bind(submission.formType, submission.email, submission.message)
-    .first<{ id: string }>();
+    .all();
 
-  return Boolean(duplicateResult?.id);
+  const duplicateRow = duplicateResult.results?.[0] as { id?: string } | undefined;
+  return Boolean(duplicateRow?.id);
 };
 
 const safeRedirect = (redirectTo: string | null, origin: string) => {

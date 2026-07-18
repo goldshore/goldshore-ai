@@ -10,6 +10,7 @@ export const primaryNavLinks: NavLink[] = [
   { href: '/services/', label: 'Services' },
   { href: '/developer/', label: 'Developer' },
   { href: '/about/', label: 'About' },
+  { href: '/blog/', label: 'Blog' },
 ];
 
 export const platformLinks: NavLink[] = [
@@ -30,6 +31,7 @@ export const serviceLinks: NavLink[] = [
 
 export const companyLinks: NavLink[] = [
   { href: '/about/', label: 'About' },
+  { href: '/blog/', label: 'Blog' },
   { href: '/team/', label: 'Team' },
   { href: '/developer/', label: 'Developer Hub' },
   { href: '/status/', label: 'Status' },

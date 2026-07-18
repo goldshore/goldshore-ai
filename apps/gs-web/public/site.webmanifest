@@ -8,6 +8,7 @@
   "theme_color": "#1a3a7a",
   "icons": [
     { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" },
-    { "src": "/assets/gsl-logo.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "/favicon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/logo.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

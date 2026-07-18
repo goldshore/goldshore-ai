@@ -62,17 +62,21 @@ const legalLinks = [
       const emailInput = document.getElementById('subscription-email');
       const messageEl = document.getElementById('subscription-message');
 
-      if (form) {
+      if (
+        form instanceof HTMLFormElement &&
+        emailInput instanceof HTMLInputElement &&
+        messageEl instanceof HTMLElement
+      ) {
         form.addEventListener('submit', async (e) => {
           e.preventDefault();
-          const email = emailInput?.value;
+          const email = emailInput.value;
 
           if (!email) {
-            if (messageEl) messageEl.textContent = 'Please enter an email.';
+            messageEl.textContent = 'Please enter an email.';
             return;
           }
 
-          if (messageEl) messageEl.textContent = 'Subscribing...';
+          messageEl.textContent = 'Subscribing...';
 
           try {
             const response = await fetch('/api/leads/subscribe', {
@@ -84,13 +88,13 @@ const legalLinks = [
             const data = await response.json();
 
             if (response.ok) {
-              if (messageEl) messageEl.textContent = 'Thanks for subscribing!';
-              if (emailInput) emailInput.value = '';
+              messageEl.textContent = 'Thanks for subscribing!';
+              emailInput.value = '';
             } else {
-              if (messageEl) messageEl.textContent = data.message || 'Subscription failed.';
+              messageEl.textContent = data.message || 'Subscription failed.';
             }
           } catch (error) {
-            if (messageEl) messageEl.textContent = 'Network error. Please try again.';
+            messageEl.textContent = 'Network error. Please try again.';
           }
         });
       }

@@ -7,6 +7,7 @@ const navLinks = [
   { href: '/services/', label: 'Services' },
   { href: '/developer/', label: 'Developer' },
   { href: '/about/', label: 'About' },
+  { href: '/blog/', label: 'Blog' },
   { href: '/team/', label: 'Team' },
   { href: '/contact/', label: 'Contact' },
 ];
@@ -36,6 +37,7 @@ const footerColumns = [
     title: 'Company',
     links: [
       { href: '/about/', label: 'About' },
+      { href: '/blog/', label: 'Blog' },
       { href: '/team/', label: 'Team' },
       { href: '/developer/', label: 'Developer Hub' },
       { href: '/status/', label: 'Status' },
@@ -68,9 +70,14 @@ const isCurrent = (href: string) => activePath === href;
     <meta property="og:url" content={canonicalUrl} />
     <meta property="og:title" content={ogTitle} />
     <meta property="og:description" content={ogDescription} />
+    <meta name="theme-color" content="#06060a" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f7f4ee" media="(prefers-color-scheme: light)" />
+    <meta name="color-scheme" content="dark light" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon.png" type="image/png" sizes="32x32" />
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <link rel="apple-touch-icon" href="/logo.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />

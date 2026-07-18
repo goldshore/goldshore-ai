@@ -1,0 +1,192 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export const prerender = true;
+
+const notes = [
+  {
+    title: 'Vintage Intelligence Desk',
+    status: 'Queued',
+    summary:
+      'A field-notes stream for resale finds, provenance research, pricing signals, and content-ready appraisal narratives.',
+    tags: ['Resale', 'Research', 'Content'],
+  },
+  {
+    title: 'Operator Backlog',
+    status: 'Drafting',
+    summary:
+      'A plain-English record of active infrastructure goals, blocked credentials, and next safe actions for GoldShore agents.',
+    tags: ['GoldClaw', 'Admin', 'Agents'],
+  },
+  {
+    title: 'Risk And Culture Signals',
+    status: 'Planned',
+    summary:
+      'Longer essays tracking social, market, technology, and policy signals before they become obvious consensus.',
+    tags: ['Risk', 'Signals', 'Writing'],
+  },
+];
+---
+
+<BaseLayout
+  title="Field Notes | GoldShore"
+  description="GoldShore field notes for signal research, infrastructure decisions, resale provenance, and practical AI operations."
+  canonicalPath="/blog/"
+  ogTitle="GoldShore Field Notes"
+  ogDescription="Research notes and operating memos across AI systems, market signals, vintage provenance, and GoldShore infrastructure."
+>
+  <section class="page-shell gs-shell-section blog-page">
+    <p class="gs-eyebrow">Field Notes</p>
+    <h1>Research, provenance, and operating notes from the GoldShore desk.</h1>
+    <p class="page-intro">
+      This page gives the public site a stable home for essays, case notes, resale research,
+      infrastructure updates, and signal analysis. The first pass is intentionally static so it
+      can ship without new infrastructure or dashboard access.
+    </p>
+
+    <div class="note-grid" aria-label="Planned Field Notes streams">
+      {notes.map((note) => (
+        <article class="note-card">
+          <div class="note-card__meta">
+            <span>{note.status}</span>
+          </div>
+          <h2>{note.title}</h2>
+          <p>{note.summary}</p>
+          <div class="note-tags" aria-label={`${note.title} tags`}>
+            {note.tags.map((tag) => <span>{tag}</span>)}
+          </div>
+        </article>
+      ))}
+    </div>
+
+    <aside class="blog-next">
+      <p class="gs-eyebrow">Next content track</p>
+      <h2>Turn resale finds into documented signal stories.</h2>
+      <p>
+        The intended workflow is: item link or photo, source research, comparable sale checks,
+        provenance summary, risk notes, suggested listing copy, and social post variants. That
+        belongs behind the admin surface first, then selected stories can publish here.
+      </p>
+      <a href="/contact/" class="blog-cta">Request a briefing</a>
+    </aside>
+  </section>
+
+  <style>
+    .blog-page {
+      padding: var(--gs-space-9, 6rem) 0 calc(var(--gs-space-10, 7rem) + 1rem);
+    }
+
+    .blog-page h1 {
+      max-width: 15ch;
+      margin: 0.75rem 0 1rem;
+      font-size: clamp(2.25rem, 5.4vw, 4.25rem);
+      line-height: 1;
+    }
+
+    .page-intro {
+      max-width: 68ch;
+      color: var(--gs-text-dim);
+      line-height: 1.7;
+    }
+
+    .note-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .note-card,
+    .blog-next {
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(10, 18, 36, 0.72);
+      box-shadow: var(--gs-shadow);
+    }
+
+    .note-card {
+      min-height: 18rem;
+      padding: 1.25rem;
+      border-radius: 8px;
+      display: grid;
+      align-content: start;
+      gap: 0.8rem;
+    }
+
+    .note-card__meta {
+      display: flex;
+      justify-content: flex-start;
+    }
+
+    .note-card__meta span,
+    .note-tags span {
+      border: 1px solid rgba(217, 106, 50, 0.28);
+      background: rgba(217, 106, 50, 0.1);
+      color: var(--gs-primary);
+      font-family: 'DM Mono', ui-monospace, monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .note-card__meta span {
+      padding: 0.3rem 0.48rem;
+    }
+
+    .note-card h2 {
+      margin: 0;
+      font-size: clamp(1.15rem, 2vw, 1.45rem);
+    }
+
+    .note-card p,
+    .blog-next p {
+      margin: 0;
+      color: var(--gs-text-dim);
+      line-height: 1.65;
+    }
+
+    .note-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.2rem;
+    }
+
+    .note-tags span {
+      padding: 0.26rem 0.42rem;
+    }
+
+    .blog-next {
+      margin-top: 1rem;
+      padding: 1.35rem;
+      border-radius: 8px;
+    }
+
+    .blog-next h2 {
+      margin: 0.45rem 0 0.7rem;
+      font-size: clamp(1.25rem, 2.2vw, 1.65rem);
+    }
+
+    .blog-cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 1rem;
+      padding: 0.72rem 1rem;
+      border-radius: 2px;
+      background: var(--gs-primary);
+      color: var(--gs-bg);
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    @media (max-width: 960px) {
+      .note-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .note-card {
+        min-height: auto;
+      }
+    }
+  </style>
+</BaseLayout>

@@ -1,9 +1,14 @@
 // Astro's Cloudflare handler subpath is resolved by the Astro/Vite build.
-// @ts-expect-error TS2307: current astro check config does not use bundler resolution.
 import { handle } from '@astrojs/cloudflare/handler';
 
+type CloudflareHandleArgs = Parameters<typeof handle>;
+
 export default {
-  async fetch(request: Request, env: unknown, ctx: unknown) {
+  async fetch(
+    request: CloudflareHandleArgs[0],
+    env: CloudflareHandleArgs[1],
+    ctx: CloudflareHandleArgs[2],
+  ) {
     return handle(request, env, ctx);
   },
 };

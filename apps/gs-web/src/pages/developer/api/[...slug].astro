@@ -26,6 +26,11 @@ export async function getStaticPaths() {
 
 const { slug } = Astro.params;
 const endpoint = slug || '';
+const apiInfo = openapi.info as {
+  title: string;
+  version: string;
+  description?: string;
+};
 ---
 
 <Layout title="API Reference">
@@ -36,9 +41,9 @@ const endpoint = slug || '';
         <ApiEndpoint openapi={openapi} endpoint={endpoint} />
       ) : (
         <div class="api-intro">
-           <h1>{openapi.info.title}</h1>
-           {openapi.info.description && <p>{openapi.info.description}</p>}
-           <p>Version: {openapi.info.version}</p>
+           <h1>{apiInfo.title}</h1>
+           {apiInfo.description && <p>{apiInfo.description}</p>}
+           <p>Version: {apiInfo.version}</p>
            <hr />
            <h2>Getting Started</h2>
            <p>Select an endpoint from the sidebar to view details.</p>
