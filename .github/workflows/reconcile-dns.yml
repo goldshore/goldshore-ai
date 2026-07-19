@@ -110,14 +110,15 @@ jobs:
           fi
           echo "goldshore.ai zone id: $ZID_AI"
 
-          # goldshore.ai (apex) and api.goldshore.ai both report as MISSING via a
-          # type=CNAME query despite being live and working today -- almost
-          # certainly provisioned through a Pages/Workers custom-domain mechanism
-          # that doesn't show up as a plain CNAME through this API. Auto-creating
-          # a record for either without eyes-on verification risks a conflicting
-          # record on the two most important hostnames in the zone, so skip CREATE
-          # for them until manually confirmed.
-          SKIP_CREATE_HOSTS="goldshore.ai api.goldshore.ai"
+          # goldshore.ai (apex), api.goldshore.ai, and preview.goldshore.ai all
+          # report as MISSING via a type=CNAME query despite being live and
+          # working today -- provisioned through a Pages/Workers custom-domain
+          # mechanism that doesn't show up as a plain CNAME through this API.
+          # Confirmed for preview.goldshore.ai: Cloudflare rejected a real CREATE
+          # attempt with code 81062 ("A DNS record managed by Workers already
+          # exists on that host"). Skip CREATE for all three rather than let
+          # every run log a false MISSING/warning pair.
+          SKIP_CREATE_HOSTS="goldshore.ai api.goldshore.ai preview.goldshore.ai"
 
           CHANGED=0
 
