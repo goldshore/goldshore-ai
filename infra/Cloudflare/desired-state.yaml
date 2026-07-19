@@ -7,9 +7,20 @@ cloudflare:
   dns:
     records:
       # A. Web App (gs-web)
+      # No DNS record previously existed for the apex at all -- it is not a
+      # Workers Custom Domain (verified via the account-level Custom Domains
+      # API: goldshore.ai apex is absent from that list, unlike
+      # preview.goldshore.ai/core.goldshore.ai/agent.goldshore.ai/
+      # signals.goldshore.ai which are real Custom Domains). The zone-level
+      # Worker Route (goldshore.ai/* -> gs-web-prod) had nothing to activate
+      # it, so the hostname didn't resolve at all -- same failure mode as
+      # api.goldshore.ai above. Content points at the real live worker
+      # (gs-web-prod), matching the pattern already used for
+      # admin.goldshore.ai below, rather than the stale gs-web.pages.dev
+      # Pages target from before the Pages-to-Worker migration.
       - name: "goldshore.ai"
         type: CNAME
-        content: "gs-web.pages.dev"
+        content: "gs-web-prod.goldshore.workers.dev"
         proxied: true
       # www.goldshore.ai — DNS auto-provisioned by gs-www-redirect Worker custom_domain; do NOT add a manual CNAME here
       # goldshore.org + www.goldshore.org — owned by goldshore-org Worker (route-based, needs proxied DNS)
