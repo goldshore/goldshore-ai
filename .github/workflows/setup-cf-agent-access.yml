@@ -717,8 +717,13 @@ jobs:
           # app). The 5 specific paths are the authoritative protected surface;
           # the bare host was redundant with them, not additive coverage.
           API_PROTECTED_DOMAINS='["api.goldshore.ai/admin","api.goldshore.ai/users","api.goldshore.ai/ai","api.goldshore.ai/v1"]'
+          # aud_workers lists only "gs-api-prod": the account has no Worker
+          # script literally named "gs-api" (confirmed via workers list --
+          # apps/gs-api/wrangler.toml only ever deploys via --env prod/preview,
+          # producing gs-api-prod; a bare "gs-api" was never actually deployed
+          # and 404s on PUT /workers/scripts/gs-api/secrets).
           upsert_full_access "Goldshore API"     "api.goldshore.ai/goldclaw" "$API_PROTECTED_DOMAINS" \
-            "gs-api gs-api-prod" "$GS_API_ACCESS_AUD"
+            "gs-api-prod" "$GS_API_ACCESS_AUD"
           assert_full_access_policies "Goldshore API" "api.goldshore.ai/goldclaw" "$GS_API_ACCESS_AUD"
           # GoldShore MCP: human + agent per docs ("approved human identities and agents")
           upsert_full_access "GoldShore MCP"     "mcp.goldshore.ai" "[]" \
