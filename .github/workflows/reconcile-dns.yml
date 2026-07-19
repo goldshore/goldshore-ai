@@ -48,6 +48,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: DIAGNOSTIC -- retry Pages project delete + list deployments raw count (throwaway, do not merge)
+        run: |
+          set -euo pipefail
+          ACCOUNT_ID="f77de112d2019e5456a3198a8bb50bd2"
+          for PROJECT in gs-admin-prod gs-web-pages; do
+            echo "== raw deployments list for $PROJECT (page 1, per_page=100) =="
+            curl -sS "$CF_API/accounts/$ACCOUNT_ID/pages/projects/$PROJECT/deployments?per_page=100" \
+              -H "Authorization: Bearer $CF_TOKEN" | jq '{count: (.result | length), result_info}'
+            echo "== retry DELETE Pages project $PROJECT =="
+            curl -sS -w '\nHTTP_STATUS=%{http_code}\n' -X DELETE \
+              "$CF_API/accounts/$ACCOUNT_ID/pages/projects/$PROJECT" \
+              -H "Authorization: Bearer $CF_TOKEN"
+            echo ""
+          done
+          echo "== final Pages projects list =="
+          curl -sS "$CF_API/accounts/$ACCOUNT_ID/pages/projects" -H "Authorization: Bearer $CF_TOKEN" \
+            | jq '[.result[]? | {name, domains}]'
+
       - name: Extract desired DNS records (excluding goldshore.org)
         run: |
           set -euo pipefail
