@@ -41,9 +41,15 @@ cloudflare:
         proxied: true
 
       # D. API Worker
+      # No DNS record previously existed for api.goldshore.ai at all -- the
+      # zone-level Worker Route (api.goldshore.ai/* -> gs-api-prod) had
+      # nothing to activate it, so the hostname was down. Content value is
+      # mostly cosmetic (the Route intercepts before CNAME resolution
+      # matters) but points at the real live worker, gs-api-prod, matching
+      # the Route target rather than the nonexistent "gs-api".
       - name: "api"
         type: CNAME
-        content: "gs-api.goldshore.workers.dev"
+        content: "gs-api-prod.goldshore.workers.dev"
         proxied: true
 
       # E. Mail Worker
