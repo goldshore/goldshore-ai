@@ -292,7 +292,7 @@ jobs:
               --arg d "$domain" \
               --argjson ed "$extra_domains" \
               '{name:$n,type:"self_hosted",domain:$d,
-                self_hosted_domains:([$d] + $ed),
+                self_hosted_domains:(([$d] + $ed) | unique),
                 session_duration:"24h",
                 http_only_cookie_attribute:true,
                 auto_redirect_to_identity:false}'
@@ -659,7 +659,7 @@ jobs:
           # API: /, /health, /status, /version must be reachable by monitoring.
           upsert_bypass_app "Goldshore API - Public Probes" \
             "api.goldshore.ai" \
-            '["api.goldshore.ai/health","api.goldshore.ai/health/*","api.goldshore.ai/status","api.goldshore.ai/version","api.goldshore.ai/version.json"]'
+            '["api.goldshore.ai/health*","api.goldshore.ai/status","api.goldshore.ai/version","api.goldshore.ai/version.json"]'
 
           # Gateway: /health, /status, /version must be reachable by monitoring
           upsert_bypass_app "Goldshore Gateway - Public Probes" \
