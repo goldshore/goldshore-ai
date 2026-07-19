@@ -305,11 +305,19 @@ jobs:
           # rotation before policies and secrets are refreshed.
           update_app() {
             local app_id="$1" name="$2" domain="$3" extra_domains="${4:-[]}"
-            access_app_payload "$name" "$domain" "$extra_domains" | \
-            curl -sf -X PUT "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id" \
-              -H "Authorization: Bearer $CF_TOKEN" \
-              -H "Content-Type: application/json" \
-              --data @- | jq -r '"  updated app => \(.success)"'
+            local resp status body
+            resp=$(access_app_payload "$name" "$domain" "$extra_domains" | \
+              curl -sS -w '\n%{http_code}' -X PUT "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id" \
+                -H "Authorization: Bearer $CF_TOKEN" \
+                -H "Content-Type: application/json" \
+                --data @-)
+            status="${resp##*$'\n'}"
+            body="${resp%$'\n'*}"
+            if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+              echo "::error::CF API PUT /access/apps/$app_id failed for [$name] domain=[$domain] (HTTP $status): $body" >&2
+              exit 1
+            fi
+            echo "$body" | jq -r '"  updated app => \(.success)"'
           }
 
           get_app_aud() {
@@ -696,10 +704,15 @@ jobs:
           # protected route family served by gs-api so Access issues one AUD for
           # browser calls to /goldclaw, /admin, /users, /ai, /v1, etc. The public
           # probes above remain path-scoped bypass apps.
-          API_PROTECTED_DOMAINS='["api.goldshore.ai/goldclaw","api.goldshore.ai/admin","api.goldshore.ai/users","api.goldshore.ai/ai","api.goldshore.ai/v1"]'
-          upsert_full_access "Goldshore API"     "api.goldshore.ai" "$API_PROTECTED_DOMAINS" \
+          # Bare "api.goldshore.ai" dropped as its own destination: with the
+          # 5 protected paths that's 6 destinations, over Cloudflare's 5-per-app
+          # cap (access.api.error.invalid_request: too many destinations for one
+          # app). The 5 specific paths are the authoritative protected surface;
+          # the bare host was redundant with them, not additive coverage.
+          API_PROTECTED_DOMAINS='["api.goldshore.ai/admin","api.goldshore.ai/users","api.goldshore.ai/ai","api.goldshore.ai/v1"]'
+          upsert_full_access "Goldshore API"     "api.goldshore.ai/goldclaw" "$API_PROTECTED_DOMAINS" \
             "gs-api gs-api-prod" "$GS_API_ACCESS_AUD"
-          assert_full_access_policies "Goldshore API" "api.goldshore.ai" "$GS_API_ACCESS_AUD"
+          assert_full_access_policies "Goldshore API" "api.goldshore.ai/goldclaw" "$GS_API_ACCESS_AUD"
           # GoldShore MCP: human + agent per docs ("approved human identities and agents")
           upsert_full_access "GoldShore MCP"     "mcp.goldshore.ai" "[]" \
             "" \
