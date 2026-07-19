@@ -196,9 +196,16 @@ jobs:
             jq -r --arg cid "$OLD_CLIENT_ID" \
             '.result[] | select(.client_id == $cid) | .id // empty')
           if [ -n "$OLD_UUID" ]; then
-            curl -sf -X DELETE \
+            DEL_RESP=$(curl -sS -w '\n%{http_code}' -X DELETE \
               "$CF_API/accounts/$CF_ACCOUNT/access/service_tokens/$OLD_UUID" \
-              -H "Authorization: Bearer $CF_TOKEN" | jq -r '.success'
+              -H "Authorization: Bearer $CF_TOKEN")
+            DEL_STATUS="${DEL_RESP##*$'\n'}"
+            DEL_BODY="${DEL_RESP%$'\n'*}"
+            if [ "$DEL_STATUS" -lt 200 ] || [ "$DEL_STATUS" -ge 300 ]; then
+              echo "::error::CF API DELETE /access/service_tokens/$OLD_UUID failed (HTTP $DEL_STATUS): $DEL_BODY"
+              exit 1
+            fi
+            echo "$DEL_BODY" | jq -r '.success'
             echo "Revoked token UUID: $OLD_UUID"
           else
             echo "Compromised token not found — already revoked or never existed."
