@@ -48,6 +48,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: DIAGNOSTIC -- delete conflicting gs-web Worker script (throwaway, do not merge)
+        run: |
+          set -euo pipefail
+          ACCOUNT_ID="f77de112d2019e5456a3198a8bb50bd2"
+          echo "== confirm gs-web worker exists before delete =="
+          curl -sS -w '\nHTTP_STATUS=%{http_code}\n' \
+            "$CF_API/accounts/$ACCOUNT_ID/workers/scripts/gs-web" \
+            -H "Authorization: Bearer $CF_TOKEN"
+          echo ""
+          echo "== DELETE gs-web worker script =="
+          curl -sS -w '\nHTTP_STATUS=%{http_code}\n' -X DELETE \
+            "$CF_API/accounts/$ACCOUNT_ID/workers/scripts/gs-web" \
+            -H "Authorization: Bearer $CF_TOKEN"
+          echo ""
+          echo "== confirm gs-web worker is gone (expect 404 now) =="
+          curl -sS -w '\nHTTP_STATUS=%{http_code}\n' \
+            "$CF_API/accounts/$ACCOUNT_ID/workers/scripts/gs-web" \
+            -H "Authorization: Bearer $CF_TOKEN"
+
       - name: Extract desired DNS records (excluding goldshore.org)
         run: |
           set -euo pipefail
