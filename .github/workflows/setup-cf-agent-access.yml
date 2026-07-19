@@ -813,14 +813,24 @@ jobs:
           set -euo pipefail
           put_secret() {
             local worker="$1" key="$2" val="$3"
-            curl -sf -X PUT \
+            local resp status body
+            resp=$(curl -sS -w '\n%{http_code}' -X PUT \
               "$CF_API/accounts/$CF_ACCOUNT/workers/scripts/$worker/secrets" \
               -H "Authorization: Bearer $CF_TOKEN" \
               -H "Content-Type: application/json" \
-              -d "{\"name\":\"$key\",\"text\":\"$val\",\"type\":\"secret_text\"}" \
-              | jq -r '"  \(.result.name // "?") => \(.success)"'
+              -d "{\"name\":\"$key\",\"text\":\"$val\",\"type\":\"secret_text\"}")
+            status="${resp##*$'\n'}"
+            body="${resp%$'\n'*}"
+            if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+              echo "::warning::CF API PUT /workers/scripts/$worker/secrets failed for key=[$key] (HTTP $status), continuing: $body"
+              return 0
+            fi
+            echo "$body" | jq -r '"  \(.result.name // "?") => \(.success)"'
           }
-          for WORKER in gs-api gs-api-prod; do
+          # No Worker script literally named "gs-api" exists in the account --
+          # apps/gs-api/wrangler.toml only deploys via --env prod/preview,
+          # producing gs-api-prod. See the matching fix on the AUD sync above.
+          for WORKER in gs-api-prod; do
             echo "Setting secrets on $WORKER:"
             put_secret "$WORKER" CF_ACCESS_CLIENT_ID     "$CLIENT_ID"
             put_secret "$WORKER" CF_ACCESS_CLIENT_SECRET "$CLIENT_SEC"
