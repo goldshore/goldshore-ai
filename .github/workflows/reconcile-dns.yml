@@ -130,7 +130,11 @@ jobs:
 
             EXISTING_ID=$(echo "$LIST_BODY" | jq -r '.result[0].id // empty')
             EXISTING_CONTENT=$(echo "$LIST_BODY" | jq -r '.result[0].content // empty')
-            EXISTING_PROXIED=$(echo "$LIST_BODY" | jq -r '.result[0].proxied // empty')
+            # NOTE: do not use `// empty` for a boolean field -- jq's `//` treats
+            # `false` as falsy and would silently turn a legitimate proxied=false
+            # into "", causing every correctly-unproxied record to misreport as a
+            # mismatch against the string "false".
+            EXISTING_PROXIED=$(echo "$LIST_BODY" | jq -r 'if .result[0].proxied == null then "" else (.result[0].proxied | tostring) end')
 
             if [ -z "$EXISTING_ID" ]; then
               echo "MISSING: $FULL_NAME ($TYPE) -> $CONTENT [proxied=$PROXIED]"
