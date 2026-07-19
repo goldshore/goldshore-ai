@@ -196,6 +196,26 @@ jobs:
             jq -r --arg cid "$OLD_CLIENT_ID" \
             '.result[] | select(.client_id == $cid) | .id // empty')
           if [ -n "$OLD_UUID" ]; then
+            # Cloudflare refuses to delete a service token still referenced by
+            # any Access policy (code 12139). Find and remove every such
+            # reference first -- this can include apps outside the set this
+            # workflow otherwise manages, so scan all apps' policies rather
+            # than assuming it's one of the 9 known ones.
+            ALL_APPS=$(curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps" \
+              -H "Authorization: Bearer $CF_TOKEN" | jq -r '.result[].id')
+            for app_id in $ALL_APPS; do
+              STALE_POLICIES=$(curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies" \
+                -H "Authorization: Bearer $CF_TOKEN" | \
+                jq -r --arg tid "$OLD_UUID" \
+                '.result[] | select(.include[]?.service_token.token_id? == $tid) | .id // empty')
+              for pol_id in $STALE_POLICIES; do
+                [ -z "$pol_id" ] && continue
+                curl -sf -X DELETE \
+                  "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies/$pol_id" \
+                  -H "Authorization: Bearer $CF_TOKEN" > /dev/null
+                echo "Removed stale policy $pol_id (app $app_id) referencing old token"
+              done
+            done
             DEL_RESP=$(curl -sS -w '\n%{http_code}' -X DELETE \
               "$CF_API/accounts/$CF_ACCOUNT/access/service_tokens/$OLD_UUID" \
               -H "Authorization: Bearer $CF_TOKEN")
