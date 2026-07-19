@@ -48,36 +48,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: DIAGNOSTIC -- gs-web-prod build log + cache purge (throwaway)
-        env:
-          BUILD_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
-        run: |
-          set -euo pipefail
-          ACCOUNT_ID="f77de112d2019e5456a3198a8bb50bd2"
-          BUILD_UUID="dec65e35-82ad-4423-b910-e43446a4adfb"
-          echo "== build detail (CLOUDFLARE_API_TOKEN) =="
-          curl -sS -w '\nHTTP_STATUS=%{http_code}\n' \
-            "$CF_API/accounts/$ACCOUNT_ID/workers/builds/$BUILD_UUID" \
-            -H "Authorization: Bearer $CF_TOKEN" | head -c 4000
-          echo ""
-          echo "== build logs (CLOUDFLARE_API_TOKEN) =="
-          curl -sS -w '\nHTTP_STATUS=%{http_code}\n' \
-            "$CF_API/accounts/$ACCOUNT_ID/workers/builds/$BUILD_UUID/logs" \
-            -H "Authorization: Bearer $CF_TOKEN" | head -c 6000
-          echo ""
-          echo "== build detail (CLOUDFLARE_BUILD_API_TOKEN) =="
-          curl -sS -w '\nHTTP_STATUS=%{http_code}\n' \
-            "$CF_API/accounts/$ACCOUNT_ID/workers/builds/$BUILD_UUID" \
-            -H "Authorization: Bearer $BUILD_TOKEN" | head -c 4000
-          echo ""
-          echo "== zone purge_cache (goldshore.ai) =="
-          ZID=$(curl -sS "$CF_API/zones?name=goldshore.ai" -H "Authorization: Bearer $CF_TOKEN" | jq -r '.result[0].id')
-          curl -sS -w '\nHTTP_STATUS=%{http_code}\n' -X POST \
-            "$CF_API/zones/$ZID/purge_cache" \
-            -H "Authorization: Bearer $CF_TOKEN" \
-            -H "Content-Type: application/json" \
-            --data '{"purge_everything":true}'
-
       - name: Extract desired DNS records (excluding goldshore.org)
         run: |
           set -euo pipefail
@@ -122,23 +92,6 @@ jobs:
             exit 1
           fi
           echo "Zone goldshore.ai ($ZID): DNS scope OK"
-
-      - name: DIAGNOSTIC -- dump raw records for goldshore.ai/api.goldshore.ai
-        run: |
-          set -euo pipefail
-          ZID=$(curl -sS "$CF_API/zones?name=goldshore.ai" -H "Authorization: Bearer $CF_TOKEN" | jq -r '.result[0].id')
-          echo "== goldshore.ai (any type) =="
-          curl -sS "$CF_API/zones/$ZID/dns_records?name=goldshore.ai" -H "Authorization: Bearer $CF_TOKEN" | jq '.result'
-          echo "== api.goldshore.ai (any type) =="
-          curl -sS "$CF_API/zones/$ZID/dns_records?name=api.goldshore.ai" -H "Authorization: Bearer $CF_TOKEN" | jq '.result'
-          echo "== Workers Custom Domains (account-level) =="
-          curl -sS -w '\nHTTP_STATUS=%{http_code}\n' "$CF_API/accounts/f77de112d2019e5456a3198a8bb50bd2/workers/domains" -H "Authorization: Bearer $CF_TOKEN" | jq '.' || true
-          echo "== gs-web Pages project custom domains =="
-          curl -sS -w '\nHTTP_STATUS=%{http_code}\n' "$CF_API/accounts/f77de112d2019e5456a3198a8bb50bd2/pages/projects/gs-web/domains" -H "Authorization: Bearer $CF_TOKEN" | jq '.' || true
-          echo "== wildcard record check =="
-          curl -sS "$CF_API/zones/$ZID/dns_records?name=%2A.goldshore.ai" -H "Authorization: Bearer $CF_TOKEN" | jq '.result'
-          echo "== gs-api-prod worker routes (account-level, filtered) =="
-          curl -sS "$CF_API/zones/$ZID/workers/routes" -H "Authorization: Bearer $CF_TOKEN" | jq '.'
 
       - name: Reconcile records
         env:
