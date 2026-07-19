@@ -130,6 +130,14 @@ jobs:
 
             EXISTING_ID=$(echo "$LIST_BODY" | jq -r '.result[0].id // empty')
             EXISTING_CONTENT=$(echo "$LIST_BODY" | jq -r '.result[0].content // empty')
+            # Cloudflare returns TXT record content wrapped in literal quote
+            # characters; desired-state.yaml stores the unquoted value, so strip
+            # one matching pair before comparing or every TXT record would
+            # misreport as a mismatch even when the value is identical.
+            if [ "$TYPE" = "TXT" ]; then
+              EXISTING_CONTENT="${EXISTING_CONTENT%\"}"
+              EXISTING_CONTENT="${EXISTING_CONTENT#\"}"
+            fi
             # NOTE: do not use `// empty` for a boolean field -- jq's `//` treats
             # `false` as falsy and would silently turn a legitimate proxied=false
             # into "", causing every correctly-unproxied record to misreport as a
