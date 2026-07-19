@@ -229,7 +229,25 @@ jobs:
                   "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies/$pol_id" \
                   -H "Authorization: Bearer $CF_TOKEN")
                 if [ "$DP_STATUS" -lt 200 ] || [ "$DP_STATUS" -ge 300 ]; then
-                  echo "::warning::CF API DELETE policy $pol_id (app $app_id) failed (HTTP $DP_STATUS), continuing"
+                  # App-scoped delete failing (400) usually means this is a
+                  # reusable policy shared across apps, not app-specific --
+                  # it must be deleted via the account-level policies
+                  # endpoint instead. Report what we're touching before
+                  # touching it, since a reusable policy can be attached to
+                  # apps outside the 9 this workflow manages.
+                  APP_NAME=$(curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id" \
+                    -H "Authorization: Bearer $CF_TOKEN" | jq -r '.result.name // "?"' || echo "?")
+                  POL_DEF=$(curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/policies/$pol_id" \
+                    -H "Authorization: Bearer $CF_TOKEN" || echo '{}')
+                  echo "::notice::Policy $pol_id is reusable (app-scoped delete HTTP $DP_STATUS). Attached app: [$APP_NAME] ($app_id). Full definition: $(echo "$POL_DEF" | jq -c '.result // .')"
+                  RDP_STATUS=$(curl -sS -o /dev/null -w '%{http_code}' -X DELETE \
+                    "$CF_API/accounts/$CF_ACCOUNT/access/policies/$pol_id" \
+                    -H "Authorization: Bearer $CF_TOKEN")
+                  if [ "$RDP_STATUS" -lt 200 ] || [ "$RDP_STATUS" -ge 300 ]; then
+                    echo "::warning::CF API DELETE reusable policy $pol_id (account-level) also failed (HTTP $RDP_STATUS), continuing"
+                    continue
+                  fi
+                  echo "Removed reusable policy $pol_id (was on app [$APP_NAME] $app_id) referencing old token"
                   continue
                 fi
                 echo "Removed stale policy $pol_id (app $app_id) referencing old token"
