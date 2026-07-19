@@ -229,25 +229,39 @@ jobs:
                   "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies/$pol_id" \
                   -H "Authorization: Bearer $CF_TOKEN")
                 if [ "$DP_STATUS" -lt 200 ] || [ "$DP_STATUS" -ge 300 ]; then
-                  # App-scoped delete failing (400) usually means this is a
-                  # reusable policy shared across apps, not app-specific --
-                  # it must be deleted via the account-level policies
-                  # endpoint instead. Report what we're touching before
-                  # touching it, since a reusable policy can be attached to
-                  # apps outside the 9 this workflow manages.
+                  # App-scoped delete failing (400) means this is a reusable
+                  # policy shared across apps (Cloudflare confirmed via 409
+                  # on account-level DELETE while app_count > 0: it refuses
+                  # to delete a reusable policy still in use anywhere).
+                  # These are real, actively-used allow-lists (e.g. named
+                  # "Cloudflare Workers Preview URLs", covering human emails
+                  # + device posture + GitHub org + the old token), possibly
+                  # attached to apps outside the 9 this workflow manages
+                  # (Cloudflare's own App Launcher, seen in practice). The
+                  # correct fix is editing the policy to drop only the old
+                  # token's include entry, not deleting the whole thing.
                   APP_NAME=$(curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id" \
                     -H "Authorization: Bearer $CF_TOKEN" | jq -r '.result.name // "?"' || echo "?")
                   POL_DEF=$(curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/policies/$pol_id" \
                     -H "Authorization: Bearer $CF_TOKEN" || echo '{}')
-                  echo "::notice::Policy $pol_id is reusable (app-scoped delete HTTP $DP_STATUS). Attached app: [$APP_NAME] ($app_id). Full definition: $(echo "$POL_DEF" | jq -c '.result // .')"
-                  RDP_STATUS=$(curl -sS -o /dev/null -w '%{http_code}' -X DELETE \
+                  POL_RESULT=$(echo "$POL_DEF" | jq -c '.result // .')
+                  echo "::notice::Policy $pol_id is reusable (app-scoped delete HTTP $DP_STATUS). Attached app: [$APP_NAME] ($app_id). Full definition: $POL_RESULT"
+                  NEW_INCLUDE=$(echo "$POL_RESULT" | jq -c --arg tid "$OLD_UUID" \
+                    '[.include[] | select((.service_token.token_id // "") != $tid)]')
+                  UPDATE_BODY=$(echo "$POL_RESULT" | jq -c --argjson inc "$NEW_INCLUDE" \
+                    '{name, decision, include: $inc, exclude, require}')
+                  UPD_RESP=$(echo "$UPDATE_BODY" | curl -sS -w '\n%{http_code}' -X PUT \
                     "$CF_API/accounts/$CF_ACCOUNT/access/policies/$pol_id" \
-                    -H "Authorization: Bearer $CF_TOKEN")
-                  if [ "$RDP_STATUS" -lt 200 ] || [ "$RDP_STATUS" -ge 300 ]; then
-                    echo "::warning::CF API DELETE reusable policy $pol_id (account-level) also failed (HTTP $RDP_STATUS), continuing"
+                    -H "Authorization: Bearer $CF_TOKEN" \
+                    -H "Content-Type: application/json" \
+                    --data @-)
+                  UPD_STATUS="${UPD_RESP##*$'\n'}"
+                  UPD_BODY="${UPD_RESP%$'\n'*}"
+                  if [ "$UPD_STATUS" -lt 200 ] || [ "$UPD_STATUS" -ge 300 ]; then
+                    echo "::warning::CF API PUT reusable policy $pol_id (dropping old-token entry) failed (HTTP $UPD_STATUS), continuing: $UPD_BODY"
                     continue
                   fi
-                  echo "Removed reusable policy $pol_id (was on app [$APP_NAME] $app_id) referencing old token"
+                  echo "Edited reusable policy $pol_id [$(echo "$POL_RESULT" | jq -r '.name')]: removed old-token include entry, kept the rest"
                   continue
                 fi
                 echo "Removed stale policy $pol_id (app $app_id) referencing old token"
