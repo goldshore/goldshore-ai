@@ -15,8 +15,8 @@ This file is the canonical human-readable route ownership policy for GoldShore C
 | `api.goldshore.ai/*` | `gs-api` | Worker | API surface |
 | `gw.goldshore.ai/*` | `gs-gateway` | Worker | Gateway surface |
 | `agent.goldshore.ai/*` | `gs-gateway` | Worker | Agent-facing gateway route |
-| `admin.goldshore.ai` | `gs-admin` | Pages + Cloudflare Access | Admin UI |
-| `admin-preview.goldshore.ai` | `gs-admin` | Pages + Cloudflare Access | Admin preview UI |
+| `admin.goldshore.ai` | `gs-web` | Worker + Cloudflare Access | Admin UI (migrated off gs-admin; admin page content not yet ported into gs-web) |
+| `admin-preview.goldshore.ai` | `gs-admin` | Pages + Cloudflare Access | Admin preview UI (not yet migrated) |
 | `ops.goldshore.ai/*` | `gs-control` | Worker | Control plane |
 | `mail.goldshore.ai/*` | `gs-mail` | Worker | Mail/events worker |
 | `rmarston.com` | `rmarston-com` | Separate repo/project | Personal site |
