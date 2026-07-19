@@ -333,11 +333,19 @@ jobs:
           # Caller extracts .result.id and .result.aud from the returned JSON.
           make_app_json() {
             local name="$1" domain="$2" extra_domains="${3:-[]}"
-            access_app_payload "$name" "$domain" "$extra_domains" | \
-            curl -sf -X POST "$CF_API/accounts/$CF_ACCOUNT/access/apps" \
-              -H "Authorization: Bearer $CF_TOKEN" \
-              -H "Content-Type: application/json" \
-              --data @-
+            local resp status body
+            resp=$(access_app_payload "$name" "$domain" "$extra_domains" | \
+              curl -sS -w '\n%{http_code}' -X POST "$CF_API/accounts/$CF_ACCOUNT/access/apps" \
+                -H "Authorization: Bearer $CF_TOKEN" \
+                -H "Content-Type: application/json" \
+                --data @-)
+            status="${resp##*$'\n'}"
+            body="${resp%$'\n'*}"
+            if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+              echo "::error::CF API POST /access/apps failed for [$name] domain=[$domain] (HTTP $status): $body" >&2
+              exit 1
+            fi
+            echo "$body"
           }
 
           add_policy() {
