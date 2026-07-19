@@ -274,8 +274,12 @@ jobs:
             status="${resp##*$'\n'}"
             body="${resp%$'\n'*}"
             if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
-              echo "::error::CF API PUT /workers/scripts/$worker/secrets failed for key=[$key] (HTTP $status): $body" >&2
-              exit 1
+              # Non-fatal: this is a best-effort convenience sync (e.g. Cloudflare's
+              # "latest version not deployed" 10215 when Gradual Deployments has a
+              # pending version) and must not block the Access apps/policies that
+              # follow it in the script.
+              echo "::warning::CF API PUT /workers/scripts/$worker/secrets failed for key=[$key] (HTTP $status), continuing: $body"
+              return 0
             fi
             echo "$body" | jq -r '"  \(.result.name // "?") => \(.success)"'
           }
