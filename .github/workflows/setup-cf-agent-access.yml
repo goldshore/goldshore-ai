@@ -201,18 +201,37 @@ jobs:
             # reference first -- this can include apps outside the set this
             # workflow otherwise manages, so scan all apps' policies rather
             # than assuming it's one of the 9 known ones.
-            ALL_APPS=$(curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps" \
-              -H "Authorization: Bearer $CF_TOKEN" | jq -r '.result[].id')
+            APPS_RESP=$(curl -sS -w '\n%{http_code}' "$CF_API/accounts/$CF_ACCOUNT/access/apps" \
+              -H "Authorization: Bearer $CF_TOKEN")
+            APPS_STATUS="${APPS_RESP##*$'\n'}"
+            APPS_BODY="${APPS_RESP%$'\n'*}"
+            if [ "$APPS_STATUS" -lt 200 ] || [ "$APPS_STATUS" -ge 300 ]; then
+              echo "::warning::CF API GET /access/apps failed (HTTP $APPS_STATUS) while scanning for stale token references: $APPS_BODY"
+              ALL_APPS=""
+            else
+              ALL_APPS=$(echo "$APPS_BODY" | jq -r '.result[].id')
+            fi
             for app_id in $ALL_APPS; do
-              STALE_POLICIES=$(curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies" \
-                -H "Authorization: Bearer $CF_TOKEN" | \
+              POL_RESP=$(curl -sS -w '\n%{http_code}' "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies" \
+                -H "Authorization: Bearer $CF_TOKEN")
+              POL_STATUS="${POL_RESP##*$'\n'}"
+              POL_BODY="${POL_RESP%$'\n'*}"
+              if [ "$POL_STATUS" -lt 200 ] || [ "$POL_STATUS" -ge 300 ]; then
+                echo "::warning::CF API GET /access/apps/$app_id/policies failed (HTTP $POL_STATUS), skipping app: $POL_BODY"
+                continue
+              fi
+              STALE_POLICIES=$(echo "$POL_BODY" | \
                 jq -r --arg tid "$OLD_UUID" \
                 '.result[] | select(.include[]?.service_token.token_id? == $tid) | .id // empty')
               for pol_id in $STALE_POLICIES; do
                 [ -z "$pol_id" ] && continue
-                curl -sf -X DELETE \
+                DP_STATUS=$(curl -sS -o /dev/null -w '%{http_code}' -X DELETE \
                   "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies/$pol_id" \
-                  -H "Authorization: Bearer $CF_TOKEN" > /dev/null
+                  -H "Authorization: Bearer $CF_TOKEN")
+                if [ "$DP_STATUS" -lt 200 ] || [ "$DP_STATUS" -ge 300 ]; then
+                  echo "::warning::CF API DELETE policy $pol_id (app $app_id) failed (HTTP $DP_STATUS), continuing"
+                  continue
+                fi
                 echo "Removed stale policy $pol_id (app $app_id) referencing old token"
               done
             done
