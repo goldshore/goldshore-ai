@@ -395,6 +395,23 @@ jobs:
 
           # Delete only non-bypass policies so health-check and OAuth callback
           # bypass rules (on existing apps) are preserved across token rotations.
+          # Deleting stale policies is cleanup, not core correctness -- the
+          # replacement policies still get added right after by the caller
+          # regardless, so a failed delete here (leaving one stale duplicate)
+          # must not abort the whole run.
+          delete_policy() {
+            local app_id="$1" pol_id="$2"
+            local status
+            status=$(curl -sS -o /dev/null -w '%{http_code}' -X DELETE \
+              "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies/$pol_id" \
+              -H "Authorization: Bearer $CF_TOKEN")
+            if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+              echo "::warning::CF API DELETE policy $pol_id on app $app_id failed (HTTP $status), continuing"
+              return 0
+            fi
+            echo "  Deleted old policy: $pol_id"
+          }
+
           refresh_policies() {
             local app_id="$1"
             curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies" \
@@ -402,10 +419,7 @@ jobs:
             jq -r '.result[] | select(.decision != "bypass") | .id // empty' | \
             while read -r pol_id; do
               [ -z "$pol_id" ] && continue
-              curl -sf -X DELETE \
-                "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies/$pol_id" \
-                -H "Authorization: Bearer $CF_TOKEN" > /dev/null
-              echo "  Deleted old policy: $pol_id"
+              delete_policy "$app_id" "$pol_id"
             done
           }
 
@@ -416,10 +430,7 @@ jobs:
             jq -r '.result[] | .id // empty' | \
             while read -r pol_id; do
               [ -z "$pol_id" ] && continue
-              curl -sf -X DELETE \
-                "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies/$pol_id" \
-                -H "Authorization: Bearer $CF_TOKEN" > /dev/null
-              echo "  Deleted old bypass-app policy: $pol_id"
+              delete_policy "$app_id" "$pol_id"
             done
           }
 
