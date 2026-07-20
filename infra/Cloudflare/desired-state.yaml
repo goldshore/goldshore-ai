@@ -87,10 +87,11 @@ cloudflare:
         content: "gs-trading-prod.goldshore.workers.dev"
         proxied: true
 
-      # G. Control Worker (ops.goldshore.ai)
+      # G. Operations UI. Keep this on the deployed gs-admin Worker until the
+      # gs-control production Worker exists and its cutover is verified.
       - name: "ops"
         type: CNAME
-        content: "gs-control-prod.goldshore.workers.dev"
+        content: "gs-admin.goldshore.workers.dev"
         proxied: true
 
       # G. Preview deployments (claude/** branches)
