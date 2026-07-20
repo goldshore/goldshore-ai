@@ -119,17 +119,14 @@ new_sqlite_classes = ["AuthSession"]
 [[env.prod.services]]
 binding = "AGENT"
 service = "gs-agent"
-environment = "prod"
 
 [[env.prod.services]]
 binding = "GS_MAIL"
 service = "gs-mail"
-environment = "prod"
 
 [[env.prod.services]]
 binding = "GOLDSHORE_AI"
 service = "goldshore-ai"
-environment = "prod"
 
 # GS_WEB PROD service binding removed: its binding name contained a literal
 # space ("GS_WEB PROD"), making it unreachable as env.GS_WEB from any normal
