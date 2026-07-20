@@ -48,6 +48,55 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: DIAGNOSTIC -- audit armsway.com routes/domains + full worker labeling (throwaway, read-only, do not merge)
+        run: |
+          set -euo pipefail
+          ACCOUNT_ID="f77de112d2019e5456a3198a8bb50bd2"
+
+          echo "== armsway.com zone id =="
+          ZID_ARMS=$(curl -sS "$CF_API/zones?name=armsway.com" -H "Authorization: Bearer $CF_TOKEN" | jq -r '.result[0].id // empty')
+          echo "zone id: $ZID_ARMS"
+
+          echo "== armsway.com DNS records (all) =="
+          curl -sS "$CF_API/zones/$ZID_ARMS/dns_records" -H "Authorization: Bearer $CF_TOKEN" \
+            | jq '[.result[]? | {name, type, content, proxied}]'
+
+          echo "== armsway.com zone-level Worker Routes =="
+          curl -sS "$CF_API/zones/$ZID_ARMS/workers/routes" -H "Authorization: Bearer $CF_TOKEN" \
+            | jq '.'
+
+          echo "== Pages project 'armsway-com' details (custom domains) =="
+          curl -sS -w '\nHTTP_STATUS=%{http_code}\n' "$CF_API/accounts/$ACCOUNT_ID/pages/projects/armsway-com" \
+            -H "Authorization: Bearer $CF_TOKEN" | jq '{name, domains, canonical_deployment: {project_name: .result.canonical_deployment.project_name}}' 2>/dev/null || \
+            curl -sS "$CF_API/accounts/$ACCOUNT_ID/pages/projects/armsway-com" -H "Authorization: Bearer $CF_TOKEN"
+          echo ""
+
+          echo "== Pages project 'armsway-com' custom domains endpoint =="
+          curl -sS -w '\nHTTP_STATUS=%{http_code}\n' "$CF_API/accounts/$ACCOUNT_ID/pages/projects/armsway-com/domains" \
+            -H "Authorization: Bearer $CF_TOKEN"
+          echo ""
+
+          echo "== account-level Workers Custom Domains filtered to armsway =="
+          curl -sS "$CF_API/accounts/$ACCOUNT_ID/workers/domains" -H "Authorization: Bearer $CF_TOKEN" \
+            | jq '[.result[]? | select(.hostname | test("armsway"))]'
+
+          echo "== Worker script 'armsway-com' basic info =="
+          curl -sS -w '\nHTTP_STATUS=%{http_code}\n' "$CF_API/accounts/$ACCOUNT_ID/workers/scripts/armsway-com" \
+            -H "Authorization: Bearer $CF_TOKEN" | head -c 500
+          echo ""
+
+          echo "== ALL account Worker scripts (name, id, modified_on) =="
+          curl -sS "$CF_API/accounts/$ACCOUNT_ID/workers/scripts" -H "Authorization: Bearer $CF_TOKEN" \
+            | jq '[.result[]? | {name: .id, modified_on, created_on}] | sort_by(.name)'
+
+          echo "== ALL Pages projects (name, domains) =="
+          curl -sS "$CF_API/accounts/$ACCOUNT_ID/pages/projects" -H "Authorization: Bearer $CF_TOKEN" \
+            | jq '[.result[]? | {name, domains}]'
+
+          echo "== ALL zones on account =="
+          curl -sS "$CF_API/zones?per_page=50" -H "Authorization: Bearer $CF_TOKEN" \
+            | jq '[.result[]? | {name, id, status}]'
+
       - name: Extract desired DNS records (excluding goldshore.org)
         run: |
           set -euo pipefail
