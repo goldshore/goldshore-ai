@@ -23,8 +23,8 @@ cloudflare:
         content: "gs-web-prod.goldshore.workers.dev"
         proxied: true
       # www.goldshore.ai — DNS auto-provisioned by gs-www-redirect Worker custom_domain; do NOT add a manual CNAME here
-      # goldshore.org + www.goldshore.org — temporarily served by gs-web-prod
-      # until the dedicated goldshore-org application is deployed.
+      # goldshore.org + www.goldshore.org are served by the canonical gs-web
+      # Worker alongside goldshore.ai.
       - name: "goldshore.org"
         type: CNAME
         content: "gs-web-prod.goldshore.workers.dev"
@@ -37,10 +37,7 @@ cloudflare:
       # B. Admin (migrated from the standalone gs-admin Pages app into gs-web
       # sub-routes per CLAUDE.md's repo migration plan; gs-web owns
       # admin.goldshore.ai now via the admin.goldshore.ai/* route in
-      # apps/gs-web/wrangler.toml). admin.goldshore.org is out of scope here
-      # pending the separate goldshore.org ownership conflict
-      # (policy/ROUTE_POLICY.md vs docs/architecture/domain-ownership.md) --
-      # still points at the legacy gs-admin app until that's resolved.
+      # apps/gs-web/wrangler.toml). Both TLD aliases share this owner.
       - name: "admin"
         type: CNAME
         content: "gs-web-prod.goldshore.workers.dev"
@@ -48,7 +45,7 @@ cloudflare:
         zone: goldshore.ai
       - name: "admin"
         type: CNAME
-        content: "gs-admin.pages.dev"
+        content: "gs-web-prod.goldshore.workers.dev"
         proxied: true
         zone: goldshore.org
 
@@ -83,7 +80,7 @@ cloudflare:
         proxied: true
       - name: "dashboard"
         type: CNAME
-        content: "gs-gateway-prod.goldshore.workers.dev"
+        content: "gs-trading-prod.goldshore.workers.dev"
         proxied: true
       - name: "dash"
         type: CNAME
@@ -93,7 +90,7 @@ cloudflare:
       # G. Control Worker (ops.goldshore.ai)
       - name: "ops"
         type: CNAME
-        content: "gs-core-worker-prod.goldshore.workers.dev"
+        content: "gs-control-prod.goldshore.workers.dev"
         proxied: true
 
       # G. Preview deployments (claude/** branches)
