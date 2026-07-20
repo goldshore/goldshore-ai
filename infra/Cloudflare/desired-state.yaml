@@ -30,7 +30,7 @@ cloudflare:
         content: "100::"
         proxied: true
         zone: goldshore.org
-      - name: "www.goldshore.org"
+      - name: "www"
         type: AAAA
         content: "100::"
         proxied: true
