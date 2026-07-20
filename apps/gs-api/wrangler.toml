@@ -287,6 +287,7 @@ binding = "AI"
 [[env.preview.durable_objects.bindings]]
 name = "AUTH_SESSION"
 class_name = "AuthSession"
+script_name = "gs-api-prod"
 
 # ── Queues ───────────────────────────────────────────────────────────────────────────────────
 [[env.preview.queues.producers]]
