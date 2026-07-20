@@ -188,6 +188,12 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
       createdAt: row.created_at,
       updatedAt: now,
     },
+
+  const target = new URL(`${apiBase(env)}/v1/forms/configs/${encodeURIComponent(slug)}`);
+  const response = await fetch(target, {
+    method: request.method,
+    headers: forwardedHeaders(request),
+    body: request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.text(),
   });
 
   return new Response(response.body, { status: response.status, headers: response.headers });
