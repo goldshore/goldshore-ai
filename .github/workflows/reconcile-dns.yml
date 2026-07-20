@@ -46,29 +46,82 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
-      - name: DIAGNOSTIC -- check goldshore-jobs queue consumers and backlog (throwaway, read-only, no PR)
+      - name: DIAGNOSTIC -- verify and restore gs-gateway-prod routes on agent./gw.goldshore.ai if missing (throwaway, no PR, urgent post-incident check)
+        run: |
+          set -euo pipefail
+          ZID_AI="80e5c7c62d36a73f7a0e31bb3cd9223a"
+
+          echo "== current goldshore.ai zone-level Worker Routes =="
+          ROUTES=$(curl -sS "$CF_API/zones/$ZID_AI/workers/routes" -H "Authorization: Bearer $CF_TOKEN")
+          echo "$ROUTES" | jq '.'
+
+          for PATTERN in "agent.goldshore.ai/*" "gw.goldshore.ai/*"; do
+            EXISTS=$(echo "$ROUTES" | jq -r --arg p "$PATTERN" '[.result[] | select(.pattern == $p)] | length')
+            if [ "$EXISTS" = "0" ]; then
+              echo "MISSING route for $PATTERN -- recreating, pointed at gs-gateway-prod"
+              BODY=$(jq -nc --arg p "$PATTERN" '{pattern:$p, script:"gs-gateway-prod"}')
+              CREATE_RESP=$(echo "$BODY" | curl -sS -w '\nHTTP_STATUS=%{http_code}\n' -X POST \
+                "$CF_API/zones/$ZID_AI/workers/routes" \
+                -H "Authorization: Bearer $CF_TOKEN" \
+                -H "Content-Type: application/json" \
+                --data @-)
+              echo "$CREATE_RESP"
+            else
+              echo "OK: route for $PATTERN already exists"
+            fi
+          done
+
+          echo "== confirm: goldshore.ai zone-level Worker Routes after restore =="
+          curl -sS "$CF_API/zones/$ZID_AI/workers/routes" -H "Authorization: Bearer $CF_TOKEN" | jq '.'
+
+      - name: DIAGNOSTIC -- finish purging gs-admin-prod + delete gs-web-pages (throwaway, do not merge)
         run: |
           set -euo pipefail
           ACCOUNT_ID="f77de112d2019e5456a3198a8bb50bd2"
+          for PROJECT in gs-admin-prod gs-web-pages; do
+            echo "== Purging deployments for $PROJECT =="
+            DELETED=0
+            ITER=0
+            while [ "$ITER" -lt 150 ]; do
+              ITER=$((ITER+1))
+              RESP=$(curl -sS "$CF_API/accounts/$ACCOUNT_ID/pages/projects/$PROJECT/deployments?per_page=100" \
+                -H "Authorization: Bearer $CF_TOKEN")
+              IDS=$(echo "$RESP" | jq -r '.result[]?.id // empty')
+              if [ -z "$IDS" ]; then
+                echo "  no more deployments (iteration $ITER)"
+                break
+              fi
+              for ID in $IDS; do
+                STATUS=$(curl -sS -o /dev/null -w '%{http_code}' -X DELETE \
+                  "$CF_API/accounts/$ACCOUNT_ID/pages/projects/$PROJECT/deployments/$ID?force=true" \
+                  -H "Authorization: Bearer $CF_TOKEN")
+                if [ "$STATUS" = "200" ]; then
+                  DELETED=$((DELETED+1))
+                else
+                  echo "  ::warning:: failed to delete deployment $ID for $PROJECT (HTTP $STATUS)"
+                fi
+              done
+              echo "  deleted $DELETED deployments so far for $PROJECT (iteration $ITER)"
+            done
+            echo "== Total deleted for $PROJECT: $DELETED (iterations used: $ITER) =="
 
-          echo "== all Queues in account =="
-          QUEUES=$(curl -sS "$CF_API/accounts/$ACCOUNT_ID/queues" -H "Authorization: Bearer $CF_TOKEN")
-          echo "$QUEUES" | jq '[.result[] | {queue_id, queue_name}]'
+            echo "== DELETE Pages project $PROJECT =="
+            curl -sS -w '\nHTTP_STATUS=%{http_code}\n' -X DELETE \
+              "$CF_API/accounts/$ACCOUNT_ID/pages/projects/$PROJECT" \
+              -H "Authorization: Bearer $CF_TOKEN"
+            echo ""
+            echo "== confirm $PROJECT is gone (expect 404) =="
+            curl -sS -w '\nHTTP_STATUS=%{http_code}\n' \
+              "$CF_API/accounts/$ACCOUNT_ID/pages/projects/$PROJECT" \
+              -H "Authorization: Bearer $CF_TOKEN"
+            echo ""
+          done
 
-          QID=$(echo "$QUEUES" | jq -r '.result[] | select(.queue_name=="goldshore-jobs") | .queue_id')
-          if [ -z "$QID" ]; then
-            echo "::error::Could not find queue_id for goldshore-jobs"
-            exit 0
-          fi
-          echo "goldshore-jobs queue_id: $QID"
-
-          echo "== goldshore-jobs queue detail (consumers, producers) =="
-          curl -sS "$CF_API/accounts/$ACCOUNT_ID/queues/$QID" -H "Authorization: Bearer $CF_TOKEN" | jq '.'
-
-          echo "== goldshore-jobs consumers list =="
-          curl -sS "$CF_API/accounts/$ACCOUNT_ID/queues/$QID/consumers" -H "Authorization: Bearer $CF_TOKEN" | jq '.'
+          echo "== list all Pages projects (final state) =="
+          curl -sS "$CF_API/accounts/$ACCOUNT_ID/pages/projects" -H "Authorization: Bearer $CF_TOKEN" \
+            | jq '[.result[]? | {name, domains}]'
 
       - name: Extract desired DNS records (excluding goldshore.org)
         run: |

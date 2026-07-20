@@ -37,6 +37,22 @@ const isSameOriginRequest = (request: Request) => {
     return fetchSite === 'same-origin' || fetchSite === 'none';
   }
 
+  const refererHeader = request.headers.get('referer');
+  if (refererHeader) {
+    try {
+      return new URL(refererHeader).origin === expectedOrigin;
+    } catch {
+      return false;
+    }
+  }
+
+const forwardedHeaders = (request: Request) => {
+  const headers = new Headers();
+  for (const name of ['accept', 'authorization', 'cookie', 'cf-connecting-ip', 'user-agent', 'content-type']) {
+    const value = request.headers.get(name);
+    if (value) headers.set(name, value);
+  }
+
   return false;
 };
 
@@ -188,9 +204,24 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
       createdAt: row.created_at,
       updatedAt: now,
     },
+
+  const target = new URL(`${apiBase(env)}/v1/forms/configs/${encodeURIComponent(slug)}`);
+  const response = await fetch(target, {
+    method: request.method,
+    headers: forwardedHeaders(request),
+    body: request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.text(),
   });
 
   return new Response(response.body, { status: response.status, headers: response.headers });
+};
+
+export const GET: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
+export const PUT: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
+export const PATCH = PUT;
+
+export const __testing = {
+  isSameOriginRequest,
+  requirePermission,
 };
 
 export const GET: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
