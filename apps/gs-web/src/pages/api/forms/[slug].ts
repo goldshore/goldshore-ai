@@ -47,6 +47,22 @@ const isSameOriginRequest = (request: Request) => {
     return fetchSite === 'same-origin' || fetchSite === 'none';
   }
 
+  const refererHeader = request.headers.get('referer');
+  if (refererHeader) {
+    try {
+      return new URL(refererHeader).origin === expectedOrigin;
+    } catch {
+      return false;
+    }
+  }
+
+const forwardedHeaders = (request: Request) => {
+  const headers = new Headers();
+  for (const name of ['accept', 'authorization', 'cookie', 'cf-connecting-ip', 'user-agent', 'content-type']) {
+    const value = request.headers.get(name);
+    if (value) headers.set(name, value);
+  }
+
   return false;
 };
 
@@ -190,6 +206,13 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
       updatedAt: now,
     },
   });
+};
+
+export const PATCH = PUT;
+
+export const __testing = {
+  isSameOriginRequest,
+  requirePermission,
 };
 
 export const PATCH = PUT;
