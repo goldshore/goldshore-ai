@@ -27,12 +27,16 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   // no server-side auth of their own.
   if (isAdminPath(context.url.pathname)) {
     const runtimeEnv = context.locals.runtime?.env as Env | undefined;
-    const claims = await verifyAccessWithClaims(context.request, runtimeEnv ?? {});
-    if (!claims) {
-      return new Response('Unauthorized', {
-        status: 401,
-        headers: { 'content-type': 'text/plain; charset=utf-8' },
-      });
+    const allowLocalAdminBypass = import.meta.env.DEV || runtimeEnv?.DEV_AUTH_BYPASS === '1';
+
+    if (!allowLocalAdminBypass) {
+      const claims = await verifyAccessWithClaims(context.request, runtimeEnv ?? {});
+      if (!claims) {
+        return new Response('Unauthorized', {
+          status: 401,
+          headers: { 'content-type': 'text/plain; charset=utf-8' },
+        });
+      }
     }
   }
 
