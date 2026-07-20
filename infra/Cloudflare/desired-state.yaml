@@ -23,14 +23,15 @@ cloudflare:
         content: "gs-web-prod.goldshore.workers.dev"
         proxied: true
       # www.goldshore.ai — DNS auto-provisioned by gs-www-redirect Worker custom_domain; do NOT add a manual CNAME here
-      # goldshore.org + www.goldshore.org — owned by goldshore-org Worker (route-based, needs proxied DNS)
+      # goldshore.org + www.goldshore.org — temporarily served by gs-web-prod
+      # until the dedicated goldshore-org application is deployed.
       - name: "goldshore.org"
         type: CNAME
-        content: "goldshore-org.goldshore.workers.dev"
+        content: "gs-web-prod.goldshore.workers.dev"
         proxied: true
       - name: "www.goldshore.org"
         type: CNAME
-        content: "goldshore-org.goldshore.workers.dev"
+        content: "gs-web-prod.goldshore.workers.dev"
         proxied: true
 
       # B. Admin (migrated from the standalone gs-admin Pages app into gs-web
