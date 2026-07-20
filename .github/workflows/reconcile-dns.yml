@@ -48,6 +48,33 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: DIAGNOSTIC -- delete gs-gateway (+ its gateway.goldshore.ai route) and gs-agent/-prod/-preview (throwaway, no PR, user-confirmed orphaned duplicates)
+        run: |
+          set -euo pipefail
+          ACCOUNT_ID="f77de112d2019e5456a3198a8bb50bd2"
+          ZID_AI="80e5c7c62d36a73f7a0e31bb3cd9223a"
+
+          echo "== deleting Worker Route gateway.goldshore.ai/* (id a2d52f12f1324002816924ed15f5d161, script gs-gateway) =="
+          curl -sS -w '\nHTTP_STATUS=%{http_code}\n' -X DELETE \
+            "$CF_API/zones/$ZID_AI/workers/routes/a2d52f12f1324002816924ed15f5d161" \
+            -H "Authorization: Bearer $CF_TOKEN"
+          echo ""
+
+          for SCRIPT in gs-gateway gs-agent gs-agent-prod gs-agent-preview; do
+            echo "== deleting Worker script $SCRIPT =="
+            curl -sS -w '\nHTTP_STATUS=%{http_code}\n' -X DELETE \
+              "$CF_API/accounts/$ACCOUNT_ID/workers/scripts/$SCRIPT?force=true" \
+              -H "Authorization: Bearer $CF_TOKEN"
+            echo ""
+          done
+
+          echo "== confirm: goldshore.ai zone-level Worker Routes after cleanup =="
+          curl -sS "$CF_API/zones/$ZID_AI/workers/routes" -H "Authorization: Bearer $CF_TOKEN" | jq '.'
+
+          echo "== confirm: remaining scripts (grep-relevant subset) =="
+          curl -sS "$CF_API/accounts/$ACCOUNT_ID/workers/scripts" -H "Authorization: Bearer $CF_TOKEN" \
+            | jq -r '.result[] | .id' | grep -E '^(gs-gateway|gs-agent)' || echo "  (none remaining -- all four deleted)"
+
       - name: Extract desired DNS records (excluding goldshore.org)
         run: |
           set -euo pipefail
