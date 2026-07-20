@@ -43,11 +43,7 @@ const isSameOriginRequest = (request: Request) => {
   }
 
   const fetchSite = request.headers.get('sec-fetch-site');
-  if (fetchSite) {
-    return fetchSite === 'same-origin' || fetchSite === 'none';
-  }
-
-  return false;
+  return fetchSite === 'same-origin' || fetchSite === 'none';
 };
 
 const unauthorizedResponse = () =>
@@ -95,7 +91,7 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
     `SELECT id, slug, name, status, fields, recipients, integrations, created_at, updated_at
      FROM form_configs
      WHERE slug = ?
-     LIMIT 1`
+     LIMIT 1`,
   )
     .bind(slug)
     .all();
@@ -141,7 +137,7 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     `SELECT id, slug, name, status, fields, recipients, integrations, created_at, updated_at
      FROM form_configs
      WHERE slug = ?
-     LIMIT 1`
+     LIMIT 1`,
   )
     .bind(slug)
     .all();
@@ -158,13 +154,12 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     recipients: payload.recipients ?? parseJson(row.recipients ?? null, [] as Record<string, unknown>[]),
     integrations: payload.integrations ?? parseJson(row.integrations ?? null, [] as Record<string, unknown>[]),
   };
-
   const now = new Date().toISOString();
 
   await env.PLATFORM_DB.prepare(
     `UPDATE form_configs
      SET name = ?, status = ?, fields = ?, recipients = ?, integrations = ?, updated_at = ?
-     WHERE slug = ?`
+     WHERE slug = ?`,
   )
     .bind(
       updated.name,
@@ -173,7 +168,7 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
       JSON.stringify(updated.recipients),
       JSON.stringify(updated.integrations),
       now,
-      slug
+      slug,
     )
     .run();
 
