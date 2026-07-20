@@ -18,7 +18,8 @@ binding = "ASSETS"
 [env.prod]
 routes = [
   { pattern = "goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "goldshore.org/*", zone_name = "goldshore.org" }
+  { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "admin.goldshore.ai/*", zone_name = "goldshore.ai" }
 ]
 
 [[env.prod.kv_namespaces]]
