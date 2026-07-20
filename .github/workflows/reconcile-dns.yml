@@ -48,6 +48,33 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: DIAGNOSTIC -- audit routes for gs-api/gs-agent/gs-gateway pairs (throwaway, read-only, do not merge)
+        run: |
+          set -euo pipefail
+          ACCOUNT_ID="f77de112d2019e5456a3198a8bb50bd2"
+
+          ZID_AI=$(curl -sS "$CF_API/zones?name=goldshore.ai" -H "Authorization: Bearer $CF_TOKEN" | jq -r '.result[0].id')
+          ZID_ORG=$(curl -sS "$CF_API/zones?name=goldshore.org" -H "Authorization: Bearer $CF_TOKEN" | jq -r '.result[0].id')
+          echo "goldshore.ai zone: $ZID_AI"
+          echo "goldshore.org zone: $ZID_ORG"
+
+          echo "== goldshore.ai zone-level Worker Routes =="
+          curl -sS "$CF_API/zones/$ZID_AI/workers/routes" -H "Authorization: Bearer $CF_TOKEN" | jq '.'
+
+          echo "== goldshore.org zone-level Worker Routes =="
+          curl -sS "$CF_API/zones/$ZID_ORG/workers/routes" -H "Authorization: Bearer $CF_TOKEN" | jq '.'
+
+          echo "== account-level Workers Custom Domains (all) =="
+          curl -sS "$CF_API/accounts/$ACCOUNT_ID/workers/domains" -H "Authorization: Bearer $CF_TOKEN" \
+            | jq '[.result[]? | {hostname, service, environment}]'
+
+          for SCRIPT in gs-api gs-api-prod gs-api-staging gs-agent gs-agent-prod gs-agent-preview gs-gateway gs-gateway-prod; do
+            echo "== $SCRIPT subdomain (workers.dev) enabled check =="
+            curl -sS -w '\nHTTP_STATUS=%{http_code}\n' "$CF_API/accounts/$ACCOUNT_ID/workers/scripts/$SCRIPT/subdomain" \
+              -H "Authorization: Bearer $CF_TOKEN"
+            echo ""
+          done
+
       - name: Extract desired DNS records (excluding goldshore.org)
         run: |
           set -euo pipefail
