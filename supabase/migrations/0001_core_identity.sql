@@ -46,14 +46,19 @@ create or replace function public.is_goldshore_admin()
 returns boolean
 language sql
 stable
+security definer
+set search_path = ''
 as $$
   select exists (
     select 1
     from public.profiles p
-    where p.id = auth.uid()
+    where p.id = (select auth.uid())
       and p.role = 'admin'
   );
 $$;
+
+revoke execute on function public.is_goldshore_admin() from public, anon;
+grant execute on function public.is_goldshore_admin() to authenticated;
 
 create policy organizations_admin_all
 on public.organizations
@@ -73,6 +78,32 @@ using (
       and p.organization_id = organizations.id
   )
 );
+
+
+
+create or replace function public.protect_profile_authorization_fields()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if old.id = (select auth.uid())
+     and not public.is_goldshore_admin()
+     and (new.role is distinct from old.role
+       or new.organization_id is distinct from old.organization_id) then
+    raise exception 'profile role and organization cannot be changed by the profile owner';
+  end if;
+  return new;
+end;
+$$;
+
+revoke execute on function public.protect_profile_authorization_fields() from public, anon, authenticated;
+
+drop trigger if exists profiles_protect_authorization_fields on public.profiles;
+create trigger profiles_protect_authorization_fields
+before update on public.profiles
+for each row execute function public.protect_profile_authorization_fields();
 
 create policy profiles_admin_all
 on public.profiles

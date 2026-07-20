@@ -1,45 +1,23 @@
 name = "gs-web"
 compatibility_date = "2026-04-18"
 compatibility_flags = ["nodejs_compat"]
-pages_build_output_dir = "./dist"
 
-# ── Top-level bindings (used by wrangler dev and Pages Functions locally) ─────
-# Binding names KV and DB match what env.d.ts declares and the contact API uses.
+workers_dev = false
+main = "./src/worker.ts"
 
-[[kv_namespaces]]
-binding = "KV"
-id = "5f13370575784c9dacff522121104cb3"
+# Serve the Astro build as a Worker with Assets.
+# The Cloudflare adapter builds the configured Worker entrypoint and emits
+# static assets into dist. Keeping both `main` and an assets binding avoids
+# Wrangler treating the project as an assets-only Worker.
+[assets]
+directory = "./dist"
+binding = "ASSETS"
 
-[[d1_databases]]
-binding = "DB"
-database_name = "gs_platform_db"
-database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
-
-[[r2_buckets]]
-binding = "GS_ASSETS"
-bucket_name = "gs-assets"
-
-[vars]
-ENV = "production"
-CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-CLOUDFLARE_ACCESS_AUDIENCE = "8b6e1890f664c52ad265a240948a1f3315a757e19b4a0fa180ffe952b81a0daf"
-CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
-MAILCHANNELS_SENDER_NAME = "GoldShore"
-
-# Secrets (never commit — set via CLI or dashboard):
-#   wrangler pages secret put MAILCHANNELS_SENDER_EMAIL --project-name gs-web
-#   Value: hello@goldshore.ai  (domain must have SPF record for MailChannels)
-
-# ── Custom domains (Pages project) ───────────────────────────────────────────
-# rmarston.com is served by the standalone rmarston-com worker (separate repo/project).
-# goldshore.org is intentionally owned by gs-web in this monorepo; the standalone
-# goldshore-org repository should be treated as legacy/non-canonical unless revived.
+# ── Production ────────────────────────────────────────────────────────────────
 
 [env.prod]
-# goldshore.org is owned by goldshore-org Worker (redirects → goldshore.ai)
 routes = [
-  { pattern = "goldshore.ai", custom_domain = true },
-  { pattern = "goldshore.org", custom_domain = true }
+  { pattern = "goldshore.ai", custom_domain = true }
 ]
 
 [[env.prod.kv_namespaces]]
@@ -62,7 +40,11 @@ CLOUDFLARE_ACCESS_AUDIENCE = "8b6e1890f664c52ad265a240948a1f3315a757e19b4a0fa180
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
 MAILCHANNELS_SENDER_NAME = "GoldShore"
 
-# ── Preview environment ───────────────────────────────────────────────────────
+# Secrets (set via wrangler secret put — never commit):
+#   wrangler secret put MAILCHANNELS_SENDER_EMAIL --env prod --name gs-web
+#   Value: hello@goldshore.ai
+
+# ── Preview ───────────────────────────────────────────────────────────────────
 
 [env.preview]
 routes = [
@@ -86,3 +68,5 @@ bucket_name = "gs-assets-preview"
 ENV = "preview"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 CLOUDFLARE_ACCESS_AUDIENCE = "8b6e1890f664c52ad265a240948a1f3315a757e19b4a0fa180ffe952b81a0daf"
+CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
+MAILCHANNELS_SENDER_NAME = "GoldShore"
