@@ -1,6 +1,19 @@
 name: Deploy gs-web
 
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/gs-web/**'
+      - 'packages/**'
+      - 'scripts/build-openapi.mjs'
+      - 'scripts/verify-web-dist.mjs'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.node-version'
+      - '.nvmrc'
+      - '.github/workflows/deploy-gs-web.yml'
   push:
     branches: [main]
     paths:
@@ -22,7 +35,10 @@ concurrency:
 
 jobs:
   deploy:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event_name == 'pull_request' && 'preview' || 'production' }}
     permissions:
       contents: read
       deployments: write
@@ -42,7 +58,7 @@ jobs:
 
       - name: Normalize Cloudflare token
         env:
-          RAW_CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+          RAW_CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
         run: |
           token="$(
             node <<'NODE'
@@ -56,10 +72,9 @@ jobs:
           process.stdout.write(token);
           NODE
           )"
-          test -n "$token" || (echo "Missing: CLOUDFLARE_BUILD_API_TOKEN" && exit 1)
+          test -n "$token" || (echo "Missing: CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN" && exit 1)
           echo "::add-mask::$token"
           echo "CLOUDFLARE_API_TOKEN=$token" >> "$GITHUB_ENV"
-          echo "CLOUDFLARE_BUILD_API_TOKEN=$token" >> "$GITHUB_ENV"
 
       - name: Verify Cloudflare secrets
         run: |
@@ -67,10 +82,17 @@ jobs:
           test -n "$CLOUDFLARE_API_TOKEN"
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
-      - name: Build gs-web Pages output
+      - name: Build gs-web Worker output
         run: pnpm build:pages
 
-      - name: Deploy gs-web to Cloudflare Pages
-        run: pnpm exec wrangler pages deploy apps/gs-web/dist --project-name=gs-web --branch=${{ github.ref_name }}
+      - name: Deploy gs-web preview Worker
+        if: github.event_name == 'pull_request'
+        working-directory: apps/gs-web
+        run: pnpm exec wrangler deploy --env preview
+
+      - name: Deploy gs-web production Worker
+        if: github.event_name != 'pull_request'
+        working-directory: apps/gs-web
+        run: pnpm exec wrangler deploy --env prod

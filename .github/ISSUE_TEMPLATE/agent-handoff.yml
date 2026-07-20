@@ -1,0 +1,42 @@
+name: Agent handoff
+description: Coordinate Claude, Codex, local work, and remote deployments on one issue.
+title: "[handoff] "
+labels:
+  - handoff:needed
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use the labels and tags in this issue as the shared source of truth for Claude and Codex.
+  - type: dropdown
+    id: agent
+    attributes:
+      label: Requested agent
+      options:
+        - "@codex [agent:codex]"
+        - "@claude [agent:claude]"
+        - "Both @codex and @claude"
+    validations:
+      required: true
+  - type: checkboxes
+    id: environments
+    attributes:
+      label: Environments
+      options:
+        - label: "Local [env:local]"
+        - label: "Preview [env:preview]"
+        - label: "Production [env:production]"
+  - type: textarea
+    id: current_state
+    attributes:
+      label: Current state and evidence
+      description: Include branch, commit, workflow/run URL, commands, and exact failures.
+    validations:
+      required: true
+  - type: textarea
+    id: next_action
+    attributes:
+      label: Next action
+      description: State who should do what next and the acceptance criteria.
+    validations:
+      required: true
