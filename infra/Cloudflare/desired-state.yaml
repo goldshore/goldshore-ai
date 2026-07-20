@@ -7,25 +7,42 @@ cloudflare:
   dns:
     records:
       # A. Web App (gs-web)
+      # No DNS record previously existed for the apex at all -- it is not a
+      # Workers Custom Domain (verified via the account-level Custom Domains
+      # API: goldshore.ai apex is absent from that list, unlike
+      # preview.goldshore.ai/core.goldshore.ai/agent.goldshore.ai/
+      # signals.goldshore.ai which are real Custom Domains). The zone-level
+      # Worker Route (goldshore.ai/* -> gs-web-prod) had nothing to activate
+      # it, so the hostname didn't resolve at all -- same failure mode as
+      # api.goldshore.ai above. Content points at the real live worker
+      # (gs-web-prod), matching the pattern already used for
+      # admin.goldshore.ai below, rather than the stale gs-web.pages.dev
+      # Pages target from before the Pages-to-Worker migration.
       - name: "goldshore.ai"
         type: CNAME
-        content: "gs-web.pages.dev"
+        content: "gs-web-prod.goldshore.workers.dev"
         proxied: true
       # www.goldshore.ai — DNS auto-provisioned by gs-www-redirect Worker custom_domain; do NOT add a manual CNAME here
       # goldshore.org + www.goldshore.org — owned by goldshore-org Worker (route-based, needs proxied DNS)
       - name: "goldshore.org"
         type: CNAME
-        content: "goldshore-org.goldshore-account.workers.dev"
+        content: "goldshore-org.goldshore.workers.dev"
         proxied: true
       - name: "www.goldshore.org"
         type: CNAME
-        content: "goldshore-org.goldshore-account.workers.dev"
+        content: "goldshore-org.goldshore.workers.dev"
         proxied: true
 
-      # B. Admin App (gs-admin — both .ai and .org)
+      # B. Admin (migrated from the standalone gs-admin Pages app into gs-web
+      # sub-routes per CLAUDE.md's repo migration plan; gs-web owns
+      # admin.goldshore.ai now via the admin.goldshore.ai/* route in
+      # apps/gs-web/wrangler.toml). admin.goldshore.org is out of scope here
+      # pending the separate goldshore.org ownership conflict
+      # (policy/ROUTE_POLICY.md vs docs/architecture/domain-ownership.md) --
+      # still points at the legacy gs-admin app until that's resolved.
       - name: "admin"
         type: CNAME
-        content: "gs-admin.pages.dev"
+        content: "gs-web-prod.goldshore.workers.dev"
         proxied: true
         zone: goldshore.ai
       - name: "admin"
@@ -37,31 +54,45 @@ cloudflare:
       # C. API Gateway Worker
       - name: "gw"
         type: CNAME
-        content: "gs-gateway.goldshore-account.workers.dev"
+        content: "gs-gateway-prod.goldshore.workers.dev"
         proxied: true
 
       # D. API Worker
+      # No DNS record previously existed for api.goldshore.ai at all -- the
+      # zone-level Worker Route (api.goldshore.ai/* -> gs-api-prod) had
+      # nothing to activate it, so the hostname was down. Content value is
+      # mostly cosmetic (the Route intercepts before CNAME resolution
+      # matters) but points at the real live worker, gs-api-prod, matching
+      # the Route target rather than the nonexistent "gs-api".
       - name: "api"
         type: CNAME
-        content: "gs-api.goldshore-account.workers.dev"
+        content: "gs-api-prod.goldshore.workers.dev"
         proxied: true
 
       # E. Mail Worker
       - name: "mail"
         type: CNAME
-        content: "gs-mail.goldshore-account.workers.dev"
+        content: "gs-mail.goldshore.workers.dev"
         proxied: true
 
-      # F. Trading Worker (trading.goldshore.ai) — route-based, requires proxied DNS
+      # F. Trading dashboard aliases — route-based, protected by GoldShore-Trading-ZT
       - name: "trading"
         type: CNAME
-        content: "gs-trading-prod.goldshore-account.workers.dev"
+        content: "gs-trading-prod.goldshore.workers.dev"
+        proxied: true
+      - name: "dashboard"
+        type: CNAME
+        content: "gs-gateway-prod.goldshore.workers.dev"
+        proxied: true
+      - name: "dash"
+        type: CNAME
+        content: "gs-trading-prod.goldshore.workers.dev"
         proxied: true
 
       # G. Control Worker (ops.goldshore.ai)
       - name: "ops"
         type: CNAME
-        content: "gs-control.goldshore-account.workers.dev"
+        content: "gs-core-worker-prod.goldshore.workers.dev"
         proxied: true
 
       # G. Preview deployments (claude/** branches)
@@ -89,24 +120,26 @@ cloudflare:
 
   access:
     # Canonical human-readable IdP matrix: docs/domains-and-auth.md.
-    # Keep these desired-state Require rules aligned with that table; do not
-    # introduce separate per-app IdP decisions here.
+    # Keep Access application login methods aligned with that table, but do
+    # not encode alternative IdPs as multiple Require selectors because
+    # Cloudflare evaluates Require selectors conjunctively.
     policies:
       - name: "GoldShore-Admin-ZT"
         domains:
           - "admin.goldshore.ai"
           - "admin.goldshore.org"
           - "admin-preview.goldshore.ai"
+          - "admin.gs-admin.pages.dev"
         action: "allow"
         rules:
           include:
             - email_domain: "goldshore.ai"
             - email: "marstonr6@gmail.com"
-          require:
-            - identity_provider: "google_workspace"
-            - identity_provider: "github_goldshore_deploy"
-            - identity_provider: "github"
-            - identity_provider: "email_otp"
+          allowed_identity_providers:
+            - "google_workspace"
+            - "github_goldshore_deploy"
+            - "github"
+            - "email_otp"
 
       - name: "Goldshore Ops"
         domains:
@@ -116,17 +149,40 @@ cloudflare:
           include:
             - email_domain: "goldshore.ai"
             - email: "marstonr6@gmail.com"
-          require:
-            - identity_provider: "google_workspace"
-            - identity_provider: "github_goldshore_deploy"
-            - identity_provider: "github"
-            - identity_provider: "email_otp"
+          allowed_identity_providers:
+            - "google_workspace"
+            - "github_goldshore_deploy"
+            - "github"
+            - "email_otp"
+
+      - name: "GoldShore-Trading-ZT"
+        domains:
+          - "trading.goldshore.ai"
+          - "dashboard.goldshore.ai"
+          - "dash.goldshore.ai"
+        action: "allow"
+        paths:
+          - "/*"
+        public_paths:
+          - "/health"
+          - "/version"
+          - "/oauth/schwab/callback"
+          - "/oauth/robinhood/callback"
+        rules:
+          include:
+            - email_domain: "goldshore.ai"
+            - email: "marstonr6@gmail.com"
+          allowed_identity_providers:
+            - "google_workspace"
+            - "github_goldshore_deploy"
+            - "github"
+            - "email_otp"
 
       - name: "Goldshore Gateway"
         domains:
           - "gw.goldshore.ai"
-          - "api.goldshore.ai"
           - "agent.goldshore.ai"
+          - "gs-agent.goldshore.workers.dev"
         action: "allow"
         paths:
           - "/admin/*"
@@ -147,10 +203,40 @@ cloudflare:
           include:
             - email_domain: "goldshore.ai"
             - email: "marstonr6@gmail.com"
-          require:
-            - identity_provider: "github_goldshore_deploy"
-            - identity_provider: "github"
-            - identity_provider: "email_otp"
+          allowed_identity_providers:
+            - "github_goldshore_deploy"
+            - "github"
+            - "email_otp"
+
+      - name: "Goldshore API"
+        domains:
+          - "api.goldshore.ai"
+          - "gs-api.goldshore.workers.dev"
+        action: "allow"
+        audience: "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
+        paths:
+          - "/admin/*"
+          - "/internal/*"
+          - "/system/*"
+          - "/users/*"
+          - "/user/*"
+          - "/templates/*"
+          - "/media/*"
+          - "/pages/*"
+          - "/ai/*"
+        public_paths:
+          - "/"
+          - "/health"
+          - "/status"
+          - "/version"
+        rules:
+          include:
+            - email_domain: "goldshore.ai"
+            - email: "marstonr6@gmail.com"
+          allowed_identity_providers:
+            - "github_goldshore_deploy"
+            - "github"
+            - "email_otp"
 
       - name: "GoldShore-Web-Preview"
         domain: "preview.goldshore.ai"
@@ -159,11 +245,63 @@ cloudflare:
           include:
             - email_domain: "goldshore.ai"
             - email: "marstonr6@gmail.com"
-          require:
-            - identity_provider: "google_workspace"
-            - identity_provider: "github_goldshore_deploy"
-            - identity_provider: "github"
-            - identity_provider: "email_otp"
+          allowed_identity_providers:
+            - "google_workspace"
+            - "github_goldshore_deploy"
+            - "github"
+            - "email_otp"
+
+      # Previously only defined in setup-cf-agent-access.yml; mirrored here so
+      # this file stays the single declarative source of Access intent.
+      - name: "Signals"
+        domains:
+          - "signals.goldshore.ai"
+          - "signals.goldshore.org"
+          - "gs-signals-prod.goldshore.workers.dev"
+        action: "allow"
+        rules:
+          include:
+            - email_domain: "goldshore.ai"
+            - email: "marstonr6@gmail.com"
+          allowed_identity_providers:
+            - "google_workspace"
+            - "github_goldshore_deploy"
+            - "github"
+            - "email_otp"
+
+      - name: "GoldShore MCP"
+        domains:
+          - "mcp.goldshore.ai"
+        action: "allow"
+        rules:
+          include:
+            - email_domain: "goldshore.ai"
+            - email: "marstonr6@gmail.com"
+          allowed_identity_providers:
+            - "github_goldshore_deploy"
+            - "github"
+            - "email_otp"
+
+      # Browser SSH to the HP laptop (type "ssh" app; gated by the
+      # include_ssh_laptop input of setup-cf-agent-access.yml). Requires a
+      # cloudflared tunnel on the laptop publishing this hostname with an SSH
+      # origin — the Access app alone serves nothing.
+      - name: "Temp HP Laptop SSH"
+        type: "ssh"
+        domains:
+          - "ssh-laptop.goldshore.ai"
+        action: "allow"
+        session_duration: "4h"
+        app_launcher_visible: false
+        rules:
+          include:
+            - email_domain: "goldshore.ai"
+            - email: "marstonr6@gmail.com"
+          allowed_identity_providers:
+            - "google_workspace"
+            - "github_goldshore_deploy"
+            - "github"
+            - "email_otp"
 
   pages:
     projects:
