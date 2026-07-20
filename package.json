@@ -48,14 +48,14 @@
     "@typescript-eslint/parser": "^8.62.1",
     "astro": "^6.4.6",
     "eslint": "^10.5.0",
-    "eslint-plugin-astro": "^3.0.0",
+    "eslint-plugin-astro": "^3.0.1",
     "form-data": "^4.0.6",
     "octokit": "^5.0.5",
     "prettier": "^3.2.5",
     "prettier-plugin-astro": "^0.14.1",
     "svgo": "^4.0.1",
     "tailwindcss": "^4.3.1",
-    "tsx": "^4.21.0",
+    "tsx": "^4.23.1",
     "typescript": "^5.4.2",
     "wrangler": "^4.103.0",
     "yaml": "^2.9.0",
@@ -64,7 +64,7 @@
   "dependencies": {
     "@astrojs/cloudflare": "^13.7.0",
     "p-limit": "^7.3.0",
-    "turbo": "^2.9.12"
+    "turbo": "^2.10.5"
   },
   "pnpm": {
     "overrides": {
