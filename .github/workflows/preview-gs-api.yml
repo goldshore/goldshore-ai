@@ -10,11 +10,16 @@ on:
       - "packages/**"
       - "package.json"
       - "pnpm-lock.yaml"
+      - ".node-version"
+      - ".nvmrc"
+      - ".github/workflows/preview-gs-api.yml"
 
 jobs:
   preview-api:
     runs-on: ubuntu-latest
     name: Preview
+    environment:
+      name: preview
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
@@ -72,6 +77,6 @@ jobs:
         working-directory: apps/gs-api
         run: pnpm exec wrangler whoami
 
-      - name: Validate GS API worker preview deploy
+      - name: Deploy GS API worker preview
         working-directory: apps/gs-api
-        run: pnpm exec wrangler deploy --env preview --config wrangler.toml --dry-run --outdir=dist-preview
+        run: pnpm exec wrangler deploy --env preview --config wrangler.toml
