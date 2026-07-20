@@ -108,8 +108,8 @@ importers:
         specifier: ^2.16.0
         version: 2.16.1
       hono:
-        specifier: ^4.12.25
-        version: 4.12.29
+        specifier: ^4.12.31
+        version: 4.12.31
       openai:
         specifier: ^6.34.0
         version: 6.46.0(ws@8.21.0)(zod@4.4.3)
@@ -269,8 +269,8 @@ importers:
   packages/shared:
     dependencies:
       hono:
-        specifier: ^4.12.25
-        version: 4.12.29
+        specifier: ^4.12.31
+        version: 4.12.31
 
   packages/theme: {}
 
@@ -2663,8 +2663,8 @@ packages:
   hls.js@1.6.16:
     resolution: {integrity: sha512-VSIRpLfRwlAAdGL4wiTucx2ScRipo0ed1FBatWkyt832jC4CReKstga6yIhYVwGu9LOBjuX9wzmRMeQdBJtzEA==}
 
-  hono@4.12.29:
-    resolution: {integrity: sha512-1hNiRjawYrLq/4m3DQQjPGFg0VZkk4RjQJDff/excI6Dm9BiL75qxGrd7/c6YOxPdq6AscP3LiXhQ6fKFC1Waw==}
+  hono@4.12.31:
+    resolution: {integrity: sha512-zJIHFrl6bq3RDd2YusFNCDlM8qUprxKswyi/OPzPyzKDdyBXDqWx8bZlZ7R+saTdSTatUmb3O7K4SspGPaEOQg==}
     engines: {node: '>=16.9.0'}
 
   html-escaper@3.0.3:
@@ -5016,13 +5016,13 @@ snapshots:
       '@eslint/core': 1.2.1
       levn: 0.4.1
 
-  '@hono/node-server@1.19.14(hono@4.12.29)':
+  '@hono/node-server@1.19.14(hono@4.12.31)':
     dependencies:
-      hono: 4.12.29
+      hono: 4.12.31
 
-  '@hono/zod-validator@0.2.2(hono@4.12.29)(zod@3.25.76)':
+  '@hono/zod-validator@0.2.2(hono@4.12.31)(zod@3.25.76)':
     dependencies:
-      hono: 4.12.29
+      hono: 4.12.31
       zod: 3.25.76
 
   '@humanfs/core@0.19.2':
@@ -6531,8 +6531,8 @@ snapshots:
   drizzle-kit@0.20.18:
     dependencies:
       '@esbuild-kit/esm-loader': 2.6.5
-      '@hono/node-server': 1.19.14(hono@4.12.29)
-      '@hono/zod-validator': 0.2.2(hono@4.12.29)(zod@3.25.76)
+      '@hono/node-server': 1.19.14(hono@4.12.31)
+      '@hono/zod-validator': 0.2.2(hono@4.12.31)(zod@3.25.76)
       camelcase: 7.0.1
       chalk: 5.6.2
       commander: 9.5.0
@@ -6541,7 +6541,7 @@ snapshots:
       esbuild-register: 3.6.0(esbuild@0.25.12)
       glob: 8.1.0
       hanji: 0.0.5
-      hono: 4.12.29
+      hono: 4.12.31
       json-diff: 0.9.0
       minimatch: 7.4.9
       semver: 7.8.5
@@ -7116,7 +7116,7 @@ snapshots:
 
   hls.js@1.6.16: {}
 
-  hono@4.12.29: {}
+  hono@4.12.31: {}
 
   html-escaper@3.0.3: {}
 
