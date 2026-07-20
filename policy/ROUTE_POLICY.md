@@ -79,7 +79,7 @@ ops.goldshore.ai/*
 #### Pages (Custom Domains)
 ```
 admin.goldshore.org
-├── gs-admin Pages project (not yet migrated -- see admin.goldshore.ai above)
+├── gs-web worker (migrated admin UI; same route owner as admin.goldshore.ai)
 ├── Owner: gs-admin
 ├── Hosting: Cloudflare Pages
 └── Cloudflare Access application/policy: GoldShore Admin / GoldShore-Admin-ZT
@@ -130,7 +130,7 @@ www.banproof.me/*
 2. **Subdomain isolation.** Each subdomain is owned by exactly one service.
    - `api.*` → gs-api only
    - `gw.*` → gs-platform only
-   - `admin.goldshore.ai` → gs-web only (migrated); `admin.goldshore.org` → gs-admin Pages (not yet migrated)
+   - `admin.goldshore.ai`, `admin.goldshore.org` → gs-web only (migrated)
    - etc.
 
 3. **Custom domains vs. routes.** 
@@ -190,7 +190,7 @@ https://goldshore-ai.pages.dev/  (or custom domain)
 When accessed via:
 - `https://goldshore.ai/` → CORS allows it (wildcard or explicit)
 - `https://goldshore.org/` → goldshore-org router sets ASSETS_ORIGIN, CORS allows it
-- `https://admin.goldshore.ai/` → now served by gs-web directly (same build/assets as the main site); admin page content itself has not been ported into gs-web yet, so this route currently serves gs-web's normal routing until admin pages land under apps/gs-web/src/pages/admin/*
+- `https://admin.goldshore.ai/` and `https://admin.goldshore.org/` → served by gs-web directly; admin pages live under `apps/gs-web/src/pages/admin/*`
 
 **Recursion risk:** If gs-web tries to fetch from itself (e.g., prefetch WASM), ensure CORS doesn't loop back.
 
@@ -236,7 +236,7 @@ When accessed via:
 | Route | Zone | Audience | Policy |
 |---|---|---|---|
 | `admin.goldshore.ai` | goldshore.ai | gs-web | Email: @goldshore.ai, @marzton.dev |
-| `admin.goldshore.org` | goldshore.org | gs-admin (not yet migrated) | Same GoldShore Admin application/policy (`GoldShore-Admin-ZT`) as admin.goldshore.ai |
+| `admin.goldshore.org` | goldshore.org | gs-web | Same GoldShore Admin application/policy (`GoldShore-Admin-ZT`) as admin.goldshore.ai |
 | `admin-preview.goldshore.ai` | goldshore.ai | gs-admin-preview (not yet migrated) | Same as admin |
 | `admin.goldshore.ai` | goldshore.ai | gs-web | Identity-based allow: Email domains `@goldshore.ai`, `@marzton.dev`; Specific email: `marstonr6@gmail.com` |
 | `admin-preview.goldshore.ai` | goldshore.ai | gs-admin-preview | Identity-based allow: Email domains `@goldshore.ai`, `@marzton.dev`; Specific email: `marstonr6@gmail.com` |
