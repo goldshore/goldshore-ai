@@ -48,6 +48,34 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: DIAGNOSTIC -- verify and restore gs-gateway-prod routes on agent./gw.goldshore.ai if missing (throwaway, no PR, urgent post-incident check)
+        run: |
+          set -euo pipefail
+          ZID_AI="80e5c7c62d36a73f7a0e31bb3cd9223a"
+
+          echo "== current goldshore.ai zone-level Worker Routes =="
+          ROUTES=$(curl -sS "$CF_API/zones/$ZID_AI/workers/routes" -H "Authorization: Bearer $CF_TOKEN")
+          echo "$ROUTES" | jq '.'
+
+          for PATTERN in "agent.goldshore.ai/*" "gw.goldshore.ai/*"; do
+            EXISTS=$(echo "$ROUTES" | jq -r --arg p "$PATTERN" '[.result[] | select(.pattern == $p)] | length')
+            if [ "$EXISTS" = "0" ]; then
+              echo "MISSING route for $PATTERN -- recreating, pointed at gs-gateway-prod"
+              BODY=$(jq -nc --arg p "$PATTERN" '{pattern:$p, script:"gs-gateway-prod"}')
+              CREATE_RESP=$(echo "$BODY" | curl -sS -w '\nHTTP_STATUS=%{http_code}\n' -X POST \
+                "$CF_API/zones/$ZID_AI/workers/routes" \
+                -H "Authorization: Bearer $CF_TOKEN" \
+                -H "Content-Type: application/json" \
+                --data @-)
+              echo "$CREATE_RESP"
+            else
+              echo "OK: route for $PATTERN already exists"
+            fi
+          done
+
+          echo "== confirm: goldshore.ai zone-level Worker Routes after restore =="
+          curl -sS "$CF_API/zones/$ZID_AI/workers/routes" -H "Authorization: Bearer $CF_TOKEN" | jq '.'
+
       - name: Extract desired DNS records (excluding goldshore.org)
         run: |
           set -euo pipefail
