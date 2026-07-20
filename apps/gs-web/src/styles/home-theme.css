@@ -1223,7 +1223,7 @@ code {
 /* ── Footer ───────────────────────────────────────────────────────────────── */
 .site-footer {
   display: grid;
-  grid-template-columns: 2fr repeat(3,1fr);
+  grid-template-columns: 2fr repeat(4,1fr);
   gap: 2rem;
   padding: 4rem clamp(1rem,4vw,4rem) 2rem;
   border-top: 1px solid var(--b1);
