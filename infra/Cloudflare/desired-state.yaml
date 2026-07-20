@@ -68,6 +68,11 @@ cloudflare:
         type: CNAME
         content: "gs-api-prod.goldshore.workers.dev"
         proxied: true
+      - name: "api"
+        type: AAAA
+        content: "100::"
+        proxied: true
+        zone: goldshore.org
 
       # E. Mail Worker
       - name: "mail"
