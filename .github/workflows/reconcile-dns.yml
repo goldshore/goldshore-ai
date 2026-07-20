@@ -19,8 +19,42 @@ on:
         required: false
         default: true
         type: boolean
+      harden_tls:
+        description: 'Set Full (strict) and minimum TLS 1.2 on GoldShore/Armsway zones'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
+  harden-tls:
+    if: ${{ inputs.harden_tls }}
+    name: Harden zone TLS settings
+    runs-on: ubuntu-latest
+    permissions: {}
+    env:
+      CF_API: https://api.cloudflare.com/client/v4
+      CF_AUTH_EMAIL: ${{ secrets.CF_AUTH_EMAIL }}
+      CF_AUTH_KEY: ${{ secrets.CF_AUTH_KEY }}
+    steps:
+      - name: Require strict origin validation and TLS 1.2
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CF_AUTH_EMAIL"
+          test -n "$CF_AUTH_KEY"
+          echo "::add-mask::$CF_AUTH_KEY"
+          auth=(-H "X-Auth-Email: $CF_AUTH_EMAIL" -H "X-Auth-Key: $CF_AUTH_KEY")
+
+          for zone in goldshore.ai goldshore.org armsway.com; do
+            zone_id=$(curl -fsS "$CF_API/zones?name=$zone" "${auth[@]}" | jq -r '.result[0].id // empty')
+            test -n "$zone_id"
+            curl -fsS -X PATCH "$CF_API/zones/$zone_id/settings/ssl" "${auth[@]}" \
+              -H 'Content-Type: application/json' --data '{"value":"strict"}' >/dev/null
+            curl -fsS -X PATCH "$CF_API/zones/$zone_id/settings/min_tls_version" "${auth[@]}" \
+              -H 'Content-Type: application/json' --data '{"value":"1.2"}' >/dev/null
+            echo "Hardened TLS: $zone"
+          done
+
   reconcile:
     name: Reconcile DNS records
     runs-on: ubuntu-latest
