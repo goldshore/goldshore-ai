@@ -117,6 +117,10 @@ binding = "AI"
 name = "AUTH_SESSION"
 class_name = "AuthSession"
 
+[[env.prod.migrations]]
+tag = "v1-auth-session"
+new_sqlite_classes = ["AuthSession"]
+
 # ── Services ────────────────────────────────────────────────────────────────────────────────────────────
 [[env.prod.services]]
 binding = "AGENT"
@@ -311,7 +315,5 @@ queue = "gs-mail-dead-letter"
 # environment. Do not re-add a Secrets Store binding until the referenced store
 # and secret exist in the Cloudflare account.
 
-# ── Durable Object migrations ────────────────────────────────────────────────────────────────
-[[migrations]]
-tag = "v1-auth-session"
-new_sqlite_classes = ["AuthSession"]
+# AUTH_SESSION is owned and migrated by gs-api-prod. Preview binds to that
+# existing namespace above and intentionally declares no migration of its own.

@@ -108,4 +108,6 @@ jobs:
         run: pnpm exec wrangler deploy --env prod --dry-run --outdir .wrangler-dry-run
       - name: Web deploy dry-run (build)
         working-directory: apps/gs-web
-        run: pnpm exec wrangler deploy --env prod --dry-run --outdir .wrangler-dry-run
+        run: |
+          pnpm build
+          pnpm exec wrangler deploy --env prod --dry-run --outdir .wrangler-dry-run

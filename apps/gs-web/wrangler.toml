@@ -33,6 +33,10 @@ routes = [
 binding = "KV"
 id = "5f13370575784c9dacff522121104cb3"
 
+[[env.prod.kv_namespaces]]
+binding = "SESSION"
+id = "09ae2ffbffe24e628c9538c8129dfe33"
+
 [[env.prod.d1_databases]]
 binding = "PLATFORM_DB"
 database_name = "gs_platform_db"
@@ -64,6 +68,10 @@ routes = [
 [[env.preview.kv_namespaces]]
 binding = "KV"
 id = "5f13370575784c9dacff522121104cb3"
+
+[[env.preview.kv_namespaces]]
+binding = "SESSION"
+id = "09ae2ffbffe24e628c9538c8129dfe33"
 
 [[env.preview.d1_databases]]
 binding = "PLATFORM_DB"
