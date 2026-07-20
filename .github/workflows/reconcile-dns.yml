@@ -55,6 +55,16 @@ jobs:
             echo "Hardened TLS: $zone"
           done
 
+          # Bot Fight Mode challenges the admin login before Access can
+          # evaluate the user. Managed WAF, DDoS protection, Access, strict
+          # SSL, and TLS 1.2 remain enabled.
+          for zone in goldshore.ai goldshore.org; do
+            zone_id=$(curl -fsS "$CF_API/zones?name=$zone" "${auth[@]}" | jq -r '.result[0].id // empty')
+            curl -fsS -X PUT "$CF_API/zones/$zone_id/bot_management" "${auth[@]}" \
+              -H 'Content-Type: application/json' --data '{"fight_mode":false}' >/dev/null
+            echo "Disabled Bot Fight Mode: $zone"
+          done
+
   reconcile:
     name: Reconcile DNS records
     runs-on: ubuntu-latest
