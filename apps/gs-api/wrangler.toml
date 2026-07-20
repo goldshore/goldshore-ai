@@ -29,6 +29,15 @@ CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 CONTROL_SYNC_TOKEN = "__PROD_CONTROL_SYNC_TOKEN__"
 GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
 GOOGLE_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/goldclaw/oauth/google/callback"
+CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
+MAILCHANNELS_SENDER_NAME = "GoldShore"
+
+# MAILCHANNELS_SENDER_EMAIL is a secret, not a var — never commit the value.
+#   wrangler secret put MAILCHANNELS_SENDER_EMAIL --env prod --name gs-api
+#   Value: hello@goldshore.ai
+# Without this secret, /v1/forms/:formId/submissions still persists the
+# submission to D1; it just reports mail as not attempted
+# (reason: "missing_mail_configuration") instead of failing the request.
 
 # ── KV ──────────────────────────────────────────────────────────────────────────────────────
 [[env.prod.kv_namespaces]]
@@ -49,7 +58,7 @@ id = "a52e94cb331c4e3db08f2aa507e6df09"
 binding = "RISK_RADAR_CACHE"
 id = "0b56873b6d7b451f9279481920a15447"
 
-# ── R2 ───────────────────────────────────────────────────────────────────────
+# ── R2 ────────────────────────────────────────────────────────────────────────────
 [[env.prod.r2_buckets]]
 binding = "GS_ASSETS"
 bucket_name = "gs-assets"
@@ -65,7 +74,7 @@ bucket_name = "gs-telemetry-storage"
 binding = "RISK_RADAR_R2"
 bucket_name = "risk-radar-raw"
 
-# ── D1 ───────────────────────────────────────────────────────────────────────
+# ── D1 ────────────────────────────────────────────────────────────────────────────
 [[env.prod.d1_databases]]
 binding = "PLATFORM_DB"
 database_name = "gs_platform_db"
@@ -102,12 +111,12 @@ database_id = "750c469c-788d-49e8-9254-77231cffd70f"
 [env.prod.ai]
 binding = "AI"
 
-# ── Durable Objects ──────────────────────────────────────────────────────────────────────
+# ── Durable Objects ────────────────────────────────────────────────────────────────────────────────────
 [[env.prod.durable_objects.bindings]]
 name = "AUTH_SESSION"
 class_name = "AuthSession"
 
-# ── Services ──────────────────────────────────────────────────────────────────────────────────────
+# ── Services ────────────────────────────────────────────────────────────────────────────────────────────
 [[env.prod.services]]
 binding = "AGENT"
 service = "gs-agent"
@@ -133,7 +142,7 @@ environment = "prod"
 # retired is a Phase 3/4 (SOP) question that needs the calling code checked
 # first, not a config-only change.
 
-# ── Queues (producers) ───────────────────────────────────────────────────────────
+# ── Queues (producers) ──────────────────────────────────────────────────────────
 [[env.prod.queues.producers]]
 binding = "JOBS_QUEUE"
 queue = "goldshore-jobs"
@@ -159,14 +168,14 @@ queue = "gs-mail-jobs"
 [[env.prod.queues.consumers]]
 queue = "gs-events"
 
-# ── Workflows ────────────────────────────────────────────────────────────────
+# ── Workflows ──────────────────────────────────────────────────────────────────────────
 [[env.prod.workflows]]
 binding = "GS_SIGNALS"
 name = "signals-evaluator"
 class_name = "SignalsEvaluator"
 script_name = "gs-signals-prod"
 
-# ── Secrets Store ────────────────────────────────────────────────────────────
+# ── Secrets Store ──────────────────────────────────────────────────────────────────────
 # Secrets Store bindings are per secret, not a store object. The runtime reads
 # env.INTEGRATION_MASTER_KEY directly.
 [[env.prod.secrets_store_secrets]]
@@ -189,49 +198,6 @@ ENV = "production"
 CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 CONTROL_SYNC_TOKEN = "__PROD_CONTROL_SYNC_TOKEN__"
-
-# ══════════════════════════════════════════════════════════════════════════════
-# Preview environment — deploys to workers.dev (no zone route needed)
-# ══════════════════════════════════════════════════════════════════════════════
-
-[env.preview]
-workers_dev = true
-
-[env.production.vars]
-ENV = "production"
-CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
-CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-CONTROL_SYNC_TOKEN = "__PROD_CONTROL_SYNC_TOKEN__"
-GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
-GOOGLE_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/goldclaw/oauth/google/callback"
-
-# ══════════════════════════════════════════════════════════════════════════════
-# Preview environment — deploys to workers.dev (no zone route needed)
-# ══════════════════════════════════════════════════════════════════════════════
-
-[env.preview]
-workers_dev = true
-
-[env.production.vars]
-ENV = "production"
-CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
-CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-CONTROL_SYNC_TOKEN = "__PROD_CONTROL_SYNC_TOKEN__"
-GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
-GOOGLE_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/goldclaw/oauth/google/callback"
-
-# ══════════════════════════════════════════════════════════════════════════════
-# Preview environment — deploys to workers.dev (no zone route needed)
-# ══════════════════════════════════════════════════════════════════════════════
-
-[env.preview]
-workers_dev = true
-
-[env.production.vars]
-ENV = "production"
-CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
-CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-CONTROL_SYNC_TOKEN = "__PROD_CONTROL_SYNC_TOKEN__"
 GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
 GOOGLE_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/goldclaw/oauth/google/callback"
 
@@ -248,8 +214,13 @@ routes = [
 [env.preview.vars]
 ENV = "preview"
 GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
+CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
+MAILCHANNELS_SENDER_NAME = "GoldShore"
 
-# ── KV ───────────────────────────────────────────────────────────────────────
+# MAILCHANNELS_SENDER_EMAIL secret — see env.prod above for the command;
+# use --env preview --name gs-api instead.
+
+# ── KV ────────────────────────────────────────────────────────────────────────────
 [[env.preview.kv_namespaces]]
 binding = "KV"
 id = "d4d20cee39094b999dea3f7e5f4c533a"
@@ -264,7 +235,7 @@ id = "09e43cb8bd4749fdaaed0dc9d4ff2284"
 binding = "RISK_RADAR_CACHE"
 id = "0b56873b6d7b451f9279481920a15447"
 
-# ── R2 ───────────────────────────────────────────────────────────────────────
+# ── R2 ────────────────────────────────────────────────────────────────────────────
 [[env.preview.r2_buckets]]
 binding = "GS_ASSETS"
 bucket_name = "gs-assets-preview"
@@ -279,7 +250,7 @@ bucket_name = "gs-telemetry-storage"
 binding = "RISK_RADAR_R2"
 bucket_name = "risk-radar-raw"
 
-# ── D1 ───────────────────────────────────────────────────────────────────────
+# ── D1 ────────────────────────────────────────────────────────────────────────────
 [[env.preview.d1_databases]]
 binding = "PLATFORM_DB"
 database_name = "gs_platform_db"
@@ -307,16 +278,16 @@ binding = "JOBS_DB"
 database_name = "gs_jobs_db"
 database_id = "750c469c-788d-49e8-9254-77231cffd70f"
 
-# ── AI ───────────────────────────────────────────────────────────────────────
+# ── AI ──────────────────────────────────────────────────────────────────────────────────────
 [env.preview.ai]
 binding = "AI"
 
-# ── Durable Objects ──────────────────────────────────────────────────────────
+# ── Durable Objects ──────────────────────────────────────────────────────────────────────────────
 [[env.preview.durable_objects.bindings]]
 name = "AUTH_SESSION"
 class_name = "AuthSession"
 
-# ── Queues ───────────────────────────────────────────────────────────────────
+# ── Queues ───────────────────────────────────────────────────────────────────────────────────
 [[env.preview.queues.producers]]
 binding = "JOBS_QUEUE"
 queue = "goldshore-jobs"
@@ -333,15 +304,12 @@ queue = "gs-mail-jobs"
 binding = "DEAD_LETTER_QUEUE"
 queue = "gs-mail-dead-letter"
 
-# ── Secrets Store ────────────────────────────────────────────────────────────
-# Secrets Store bindings are per secret, not a store object. The runtime reads
-# env.INTEGRATION_MASTER_KEY directly.
-[[env.preview.secrets_store_secrets]]
-binding = "INTEGRATION_MASTER_KEY"
-store_id = "b9824d3280c54573a24137c7e7143b33"
-secret_name = "INTEGRATION_MASTER_KEY"
+# ── Secrets ──────────────────────────────────────────────────────────────────────────────────────
+# INTEGRATION_MASTER_KEY is provisioned as a normal Worker secret for this
+# environment. Do not re-add a Secrets Store binding until the referenced store
+# and secret exist in the Cloudflare account.
 
-# ── Durable Object migrations ────────────────────────────────────────────────
+# ── Durable Object migrations ────────────────────────────────────────────────────────────────
 [[migrations]]
 tag = "v1-auth-session"
 new_sqlite_classes = ["AuthSession"]
