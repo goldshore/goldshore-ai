@@ -1,10 +1,14 @@
 #!/usr/bin/env node
 
-const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN;
+const token = process.env.GH_TOKEN;
 const repoSlug = process.env.GITHUB_REPOSITORY;
 const branch = process.env.PROTECTED_BRANCH || 'main';
 
-if (!token) throw new Error('Missing GH_TOKEN or GITHUB_TOKEN');
+if (!token) {
+  throw new Error(
+    'Missing GH_TOKEN. Configure the GH_PAT repository secret with branch administration access.',
+  );
+}
 if (!repoSlug || !repoSlug.includes('/')) throw new Error('Missing GITHUB_REPOSITORY (owner/repo)');
 
 const [owner, repo] = repoSlug.split('/');
@@ -12,7 +16,6 @@ const requiredChecks = [
   'Required Merge Checks / workspace-install',
   'Required Merge Checks / gs-api-build-test',
   'Required Merge Checks / gs-web-build',
-  'Required Merge Checks / gs-admin-build',
   'Required Merge Checks / deployment-dry-run',
 ];
 

@@ -1,5 +1,7 @@
 # Gold Shore AI — Repository Operations Map
 
+[![Verify workflow mirrors](https://github.com/marzton/goldshore/actions/workflows/workflow-mirror-check.yml/badge.svg)](https://github.com/marzton/goldshore/actions/workflows/workflow-mirror-check.yml)
+
 ```text
              /\
             /__\        GOLD SHORE LABS
@@ -58,10 +60,10 @@ Secrets, API tokens, dashboard credentials, R2 keys, Access JWTs, and OpenAI key
 | Admin app | `apps/gs-admin` | Cloudflare Pages / Worker-adjacent app | Protected operator UI |
 | API | `apps/gs-api` | Cloudflare Worker | Core API surface |
 | Gateway | `apps/gs-gateway` | Cloudflare Worker | Gateway, agent ingress, bindings |
-| Agent | `apps/gs-agent` | Route-free Worker behind gateway binding | Agent service implementation |
-| Trading | `apps/gs-trading` | Cloudflare Worker | Trading / OAuth / paper trading surface |
-| Mail | `apps/gs-mail` | Cloudflare Worker | Mail/event handling |
-| Ops / control | `apps/gs-control` | Cloudflare Worker | Operator control plane |
+| Agent | `apps/gs-api/src/routes/agent.ts` + `gs-api` queue handler | Consolidated API route/queue consumer | Legacy `gs-agent` behavior now runs inside `gs-api`. |
+| Trading | `apps/gs-api/src/routes/trading.ts` | Consolidated API route | Trading / OAuth / paper trading surface now runs inside `gs-api`. |
+| Mail | `apps/gs-api/src/routes/mail.ts` + `gs-api` email/queue handlers | Consolidated API route/email handler | Mail/event handling now runs inside `gs-api`. |
+| Ops / control | `apps/gs-api/src/routes/control.ts` | Protected API admin/control route | Operator control plane now runs inside `gs-api`. |
 | Shared packages | `packages/*` | Workspace packages | Shared auth, engine, brand, and theme code |
 | Infrastructure docs | `infra/*`, `docs/*` | Documentation | Desired state, domain/auth notes, operational gates |
 | GitHub Actions | `.github/workflows/*` | GitHub CI/CD | Build and deploy automation |
@@ -82,11 +84,11 @@ admin-preview.goldshore.ai   -> gs-admin preview
 api.goldshore.ai             -> gs-api
 api-preview.goldshore.ai     -> gs-api preview
 gw.goldshore.ai              -> gs-gateway-prod
-agent.goldshore.ai           -> gs-gateway-prod service binding to gs-agent
+agent.goldshore.ai           -> gs-api /agent route
 mcp.goldshore.ai             -> gs-mcp / MCP surface
-trading.goldshore.ai         -> gs-trading-prod
-mail.goldshore.ai            -> gs-mail
-ops.goldshore.ai             -> gs-control
+trading.goldshore.ai         -> gs-api /trading route
+mail.goldshore.ai            -> gs-api mail route/email handler
+ops.goldshore.ai             -> gs-api /admin/control route
 dashboard.goldshore.ai       -> intended dashboard/admin redirect surface
 ```
 
