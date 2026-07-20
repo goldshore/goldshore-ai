@@ -49,4 +49,4 @@ jobs:
           echo "CLOUDFLARE_BUILD_API_TOKEN=$token" >> "$GITHUB_ENV"
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @goldshore/gs-api build
-      - run: pnpm --filter @goldshore/gs-api deploy
+      - run: pnpm --filter @goldshore/gs-api run deploy
