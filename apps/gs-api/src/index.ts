@@ -156,6 +156,12 @@ const isAllowedOrigin = (origin: string, allowedOrigins?: string) => {
 
 const isPublicPath = (path: string, method: string) => {
   if (method === 'OPTIONS') return true;
+  if (
+    method === 'POST' &&
+    /^\/v1\/forms\/[^/]+\/submissions$/.test(path)
+  ) {
+    return true;
+  }
   return (
     path === '/' ||
     path === '/version' ||
@@ -372,7 +378,7 @@ v1.get('/leads', (c) => c.json({ leads: [] }));
 
 app.route('/v1', v1);
 
-export { isAllowedOrigin, isPreviewOrigin, parseAllowedOrigins };
+export { isAllowedOrigin, isPreviewOrigin, isPublicPath, parseAllowedOrigins };
 
 const processQueueMessage = async (message: Message<any>, env: Env): Promise<void> => {
   const body = message.body;
