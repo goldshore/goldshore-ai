@@ -29,7 +29,8 @@ routes = [
 ENV = "production"
 CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-CONTROL_SYNC_TOKEN = "__PROD_CONTROL_SYNC_TOKEN__"
+# CONTROL_SYNC_TOKEN is a Worker secret. Never place a placeholder in vars:
+# Wrangler would overwrite the remote secret with that literal value.
 GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
 GOOGLE_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/goldclaw/oauth/google/callback"
 
@@ -95,21 +96,6 @@ name = "AUTH_SESSION"
 class_name = "AuthSession"
 
 
-
-[[env.prod.services]]
-binding = "AGENT"
-service = "gs-agent"
-environment = "prod"
-
-[[env.prod.services]]
-binding = "GS_MAIL"
-service = "gs-mail"
-environment = "prod"
-
-[[env.prod.services]]
-binding = "GOLDSHORE_AI"
-service = "goldshore-ai"
-environment = "prod"
 
 # GS_WEB PROD service binding removed here too — see apps/gs-api/wrangler.toml
 # for why (dead binding name with a literal space, unreachable as env.GS_WEB).

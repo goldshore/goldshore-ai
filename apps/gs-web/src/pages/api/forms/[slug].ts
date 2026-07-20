@@ -33,27 +33,7 @@ const isSameOriginRequest = (request: Request) => {
   }
 
   const fetchSite = request.headers.get('sec-fetch-site');
-  if (fetchSite) {
-    return fetchSite === 'same-origin' || fetchSite === 'none';
-  }
-
-  const refererHeader = request.headers.get('referer');
-  if (refererHeader) {
-    try {
-      return new URL(refererHeader).origin === expectedOrigin;
-    } catch {
-      return false;
-    }
-  }
-
-const forwardedHeaders = (request: Request) => {
-  const headers = new Headers();
-  for (const name of ['accept', 'authorization', 'cookie', 'cf-connecting-ip', 'user-agent', 'content-type']) {
-    const value = request.headers.get(name);
-    if (value) headers.set(name, value);
-  }
-
-  return false;
+  return fetchSite === 'same-origin' || fetchSite === 'none';
 };
 
 const unauthorizedResponse = () =>
@@ -101,7 +81,7 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
     `SELECT id, slug, name, status, fields, recipients, integrations, created_at, updated_at
      FROM form_configs
      WHERE slug = ?
-     LIMIT 1`
+     LIMIT 1`,
   )
     .bind(slug)
     .all();
@@ -156,7 +136,7 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     `SELECT id, slug, name, status, fields, recipients, integrations, created_at, updated_at
      FROM form_configs
      WHERE slug = ?
-     LIMIT 1`
+     LIMIT 1`,
   )
     .bind(slug)
     .all();
@@ -173,13 +153,12 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     recipients: payload.recipients ?? parseJson(row.recipients ?? null, [] as Record<string, unknown>[]),
     integrations: payload.integrations ?? parseJson(row.integrations ?? null, [] as Record<string, unknown>[]),
   };
-
   const now = new Date().toISOString();
 
   await env.PLATFORM_DB.prepare(
     `UPDATE form_configs
      SET name = ?, status = ?, fields = ?, recipients = ?, integrations = ?, updated_at = ?
-     WHERE slug = ?`
+     WHERE slug = ?`,
   )
     .bind(
       updated.name,
@@ -188,7 +167,7 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
       JSON.stringify(updated.recipients),
       JSON.stringify(updated.integrations),
       now,
-      slug
+      slug,
     )
     .run();
 

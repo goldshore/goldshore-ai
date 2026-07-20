@@ -2,6 +2,12 @@ name: Discover Cloudflare Resources
 
 on:
   workflow_dispatch:
+    inputs:
+      disconnect_legacy_builds:
+        description: 'Disconnect obsolete Workers Builds triggers from this repository'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -10,7 +16,66 @@ env:
   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
 jobs:
+  disconnect-legacy-builds:
+    if: ${{ inputs.disconnect_legacy_builds }}
+    name: Disconnect obsolete Workers Builds triggers
+    runs-on: ubuntu-latest
+    permissions: {}
+    env:
+      CF_API: https://api.cloudflare.com/client/v4
+      CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CF_AUTH_EMAIL: ${{ secrets.CF_AUTH_EMAIL }}
+      CF_AUTH_KEY: ${{ secrets.CF_AUTH_KEY }}
+    steps:
+      - name: Disconnect triggers without deleting Workers
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CF_ACCOUNT_ID"
+          test -n "$CF_AUTH_EMAIL"
+          test -n "$CF_AUTH_KEY"
+          echo "::add-mask::$CF_AUTH_KEY"
+
+          scripts=$(curl -fsS "$CF_API/accounts/$CF_ACCOUNT_ID/workers/scripts" \
+            -H "X-Auth-Email: $CF_AUTH_EMAIL" -H "X-Auth-Key: $CF_AUTH_KEY")
+
+          # These connections currently fail on every pull request and either
+          # target missing source trees, duplicate Workers, or retired apps.
+          # Deleting a build trigger does not delete the Worker or deployment.
+          workers=(
+            gs-email-router
+            gs-gateway-prod
+            gs-platform
+            gs-signals
+            gs-signals-prod
+            gs-todo
+            gs-www-redirect-production
+          )
+
+          for worker in "${workers[@]}"; do
+            tag=$(jq -r --arg worker "$worker" '.result[] | select(.id == $worker) | .tag' <<<"$scripts")
+            if [[ -z "$tag" ]]; then
+              echo "Already absent: $worker"
+              continue
+            fi
+
+            triggers=$(curl -fsS "$CF_API/accounts/$CF_ACCOUNT_ID/builds/workers/$tag/triggers" \
+              -H "X-Auth-Email: $CF_AUTH_EMAIL" -H "X-Auth-Key: $CF_AUTH_KEY")
+            mapfile -t ids < <(jq -r '.result[]?.trigger_uuid' <<<"$triggers")
+            if [[ ${#ids[@]} -eq 0 ]]; then
+              echo "Already disconnected: $worker"
+              continue
+            fi
+
+            for id in "${ids[@]}"; do
+              curl -fsS -X DELETE "$CF_API/accounts/$CF_ACCOUNT_ID/builds/triggers/$id" \
+                -H "X-Auth-Email: $CF_AUTH_EMAIL" -H "X-Auth-Key: $CF_AUTH_KEY" >/dev/null
+            done
+            echo "Disconnected ${#ids[@]} trigger(s): $worker"
+          done
+
   discover:
+    if: ${{ !inputs.disconnect_legacy_builds }}
     name: Discover CF Access AUDs, Workers, KV, and Pages
     runs-on: ubuntu-latest
     steps:

@@ -23,23 +23,23 @@ cloudflare:
         content: "gs-web-prod.goldshore.workers.dev"
         proxied: true
       # www.goldshore.ai — DNS auto-provisioned by gs-www-redirect Worker custom_domain; do NOT add a manual CNAME here
-      # goldshore.org + www.goldshore.org — owned by goldshore-org Worker (route-based, needs proxied DNS)
+      # goldshore.org + www.goldshore.org are served by the canonical gs-web
+      # Worker alongside goldshore.ai.
       - name: "goldshore.org"
-        type: CNAME
-        content: "goldshore-org.goldshore.workers.dev"
+        type: AAAA
+        content: "100::"
         proxied: true
-      - name: "www.goldshore.org"
-        type: CNAME
-        content: "goldshore-org.goldshore.workers.dev"
+        zone: goldshore.org
+      - name: "www"
+        type: AAAA
+        content: "100::"
         proxied: true
+        zone: goldshore.org
 
       # B. Admin (migrated from the standalone gs-admin Pages app into gs-web
       # sub-routes per CLAUDE.md's repo migration plan; gs-web owns
       # admin.goldshore.ai now via the admin.goldshore.ai/* route in
-      # apps/gs-web/wrangler.toml). admin.goldshore.org is out of scope here
-      # pending the separate goldshore.org ownership conflict
-      # (policy/ROUTE_POLICY.md vs docs/architecture/domain-ownership.md) --
-      # still points at the legacy gs-admin app until that's resolved.
+      # apps/gs-web/wrangler.toml). Both TLD aliases share this owner.
       - name: "admin"
         type: CNAME
         content: "gs-web-prod.goldshore.workers.dev"
@@ -47,7 +47,7 @@ cloudflare:
         zone: goldshore.ai
       - name: "admin"
         type: CNAME
-        content: "gs-admin.pages.dev"
+        content: "gs-web-prod.goldshore.workers.dev"
         proxied: true
         zone: goldshore.org
 
@@ -68,6 +68,11 @@ cloudflare:
         type: CNAME
         content: "gs-api-prod.goldshore.workers.dev"
         proxied: true
+      - name: "api"
+        type: AAAA
+        content: "100::"
+        proxied: true
+        zone: goldshore.org
 
       # E. Mail Worker
       - name: "mail"
@@ -82,17 +87,18 @@ cloudflare:
         proxied: true
       - name: "dashboard"
         type: CNAME
-        content: "gs-gateway-prod.goldshore.workers.dev"
+        content: "gs-trading-prod.goldshore.workers.dev"
         proxied: true
       - name: "dash"
         type: CNAME
         content: "gs-trading-prod.goldshore.workers.dev"
         proxied: true
 
-      # G. Control Worker (ops.goldshore.ai)
+      # G. Operations UI. Keep this on the deployed gs-admin Worker until the
+      # gs-control production Worker exists and its cutover is verified.
       - name: "ops"
         type: CNAME
-        content: "gs-core-worker-prod.goldshore.workers.dev"
+        content: "gs-admin.goldshore.workers.dev"
         proxied: true
 
       # G. Preview deployments (claude/** branches)

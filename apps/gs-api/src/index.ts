@@ -127,8 +127,6 @@ const requiredBindings = ['PLATFORM_DB', 'GS_ASSETS', 'AI'] as const;
 const expectedD1Binding = 'PLATFORM_DB' as const;
 const requiredSecrets = [
   'JWT_SECRET',
-  'STRIPE_API_KEY',
-  'SENDGRID_API_KEY',
   'ACCESS_CLIENT_SECRET',
 ] as const;
 
@@ -156,6 +154,12 @@ const isAllowedOrigin = (origin: string, allowedOrigins?: string) => {
 
 const isPublicPath = (path: string, method: string) => {
   if (method === 'OPTIONS') return true;
+  if (
+    method === 'POST' &&
+    /^\/v1\/forms\/[^/]+\/submissions$/.test(path)
+  ) {
+    return true;
+  }
   return (
     path === '/' ||
     path === '/version' ||
@@ -372,7 +376,29 @@ v1.get('/leads', (c) => c.json({ leads: [] }));
 
 app.route('/v1', v1);
 
-export { isAllowedOrigin, isPreviewOrigin, parseAllowedOrigins };
+export { isAllowedOrigin, isPreviewOrigin, isPublicPath, parseAllowedOrigins };
+
+const processQueueMessage = async (message: Message<any>, env: Env): Promise<void> => {
+  const body = message.body;
+  const type = typeof body === 'object' && body && 'type' in body ? String((body as { type?: unknown }).type) : 'unknown';
+  if (type === 'contact' || type === 'checkout') {
+    console.info({ event: 'mail_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
+    message.ack();
+    return;
+  }
+  if (type === 'trading' || type === 'trading-signal' || type === 'order') {
+    console.info({ event: 'trading_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
+    message.ack();
+    return;
+  }
+  if (type === 'signal' || type === 'atc') {
+    console.info({ event: 'core_signal_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
+    message.ack();
+    return;
+  }
+  console.info({ event: 'agent_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
+  message.ack();
+};
 
 const processQueueMessage = async (message: Message<any>, env: Env): Promise<void> => {
   const body = message.body;

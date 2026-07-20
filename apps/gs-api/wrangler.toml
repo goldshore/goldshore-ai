@@ -26,7 +26,8 @@ routes = [
 ENV = "production"
 CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-CONTROL_SYNC_TOKEN = "__PROD_CONTROL_SYNC_TOKEN__"
+# CONTROL_SYNC_TOKEN is a Worker secret. Keep it out of vars so deploys
+# preserve the remote secret instead of replacing it with a placeholder.
 GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
 GOOGLE_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/goldclaw/oauth/google/callback"
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
@@ -116,22 +117,11 @@ binding = "AI"
 name = "AUTH_SESSION"
 class_name = "AuthSession"
 
+[[env.prod.migrations]]
+tag = "v1-auth-session"
+new_sqlite_classes = ["AuthSession"]
+
 # ── Services ────────────────────────────────────────────────────────────────────────────────────────────
-[[env.prod.services]]
-binding = "AGENT"
-service = "gs-agent"
-environment = "prod"
-
-[[env.prod.services]]
-binding = "GS_MAIL"
-service = "gs-mail"
-environment = "prod"
-
-[[env.prod.services]]
-binding = "GOLDSHORE_AI"
-service = "goldshore-ai"
-environment = "prod"
-
 # GS_WEB PROD service binding removed: its binding name contained a literal
 # space ("GS_WEB PROD"), making it unreachable as env.GS_WEB from any normal
 # code reference — it was silently dead. infra/Cloudflare/BINDINGS_MAP.md
@@ -175,13 +165,9 @@ name = "signals-evaluator"
 class_name = "SignalsEvaluator"
 script_name = "gs-signals-prod"
 
-# ── Secrets Store ──────────────────────────────────────────────────────────────────────
-# Secrets Store bindings are per secret, not a store object. The runtime reads
-# env.INTEGRATION_MASTER_KEY directly.
-[[env.prod.secrets_store_secrets]]
-binding = "INTEGRATION_MASTER_KEY"
-store_id = "b9824d3280c54573a24137c7e7143b33"
-secret_name = "INTEGRATION_MASTER_KEY"
+# INTEGRATION_MASTER_KEY remains a normal Worker secret until a real Cloudflare
+# Secrets Store and secret are provisioned. Do not add a secrets_store_secrets
+# binding that points at a nonexistent store; that blocks every deployment.
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Production (named 'production') environment
@@ -197,7 +183,7 @@ routes = [
 ENV = "production"
 CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-CONTROL_SYNC_TOKEN = "__PROD_CONTROL_SYNC_TOKEN__"
+# CONTROL_SYNC_TOKEN is managed as a Worker secret; see env.prod above.
 GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
 GOOGLE_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/goldclaw/oauth/google/callback"
 
@@ -286,6 +272,7 @@ binding = "AI"
 [[env.preview.durable_objects.bindings]]
 name = "AUTH_SESSION"
 class_name = "AuthSession"
+script_name = "gs-api-prod"
 
 # ── Queues ───────────────────────────────────────────────────────────────────────────────────
 [[env.preview.queues.producers]]
@@ -309,7 +296,5 @@ queue = "gs-mail-dead-letter"
 # environment. Do not re-add a Secrets Store binding until the referenced store
 # and secret exist in the Cloudflare account.
 
-# ── Durable Object migrations ────────────────────────────────────────────────────────────────
-[[migrations]]
-tag = "v1-auth-session"
-new_sqlite_classes = ["AuthSession"]
+# AUTH_SESSION is owned and migrated by gs-api-prod. Preview binds to that
+# existing namespace above and intentionally declares no migration of its own.
