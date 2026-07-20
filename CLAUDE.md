@@ -109,16 +109,23 @@ For Claude/Codex assistance with Google API integration: provide the API name, s
 |------|---------|-------|
 | `marzton/goldshore-gateway` | `gs-platform` worker | Platform front door; routes all subdomain traffic |
 | `marzton/goldshore-admin` | `admin.goldshore.org` (Pages) | Older admin; any replacement UI belongs under `apps/gs-web` sub-routes |
-| `marzton/goldshore-core` | `banproof-me` worker | Security/ban-check; future integration should route through `apps/gs-api` queues/routes. |
+| `marzton/goldshore-core` | `banproof-me` worker | Security/ban-check; future integration must route through `apps/gs-api` queues/routes (or stay external) and must not create `apps/gs-security`. |
 
 ---
 
 ## Key Cloudflare bindings (gs-api)
 
-- KV: `GS_CONFIG` (`d02c0c7951a244a7987e23d8af16b7b2`), `KV_SESSIONS`
-- D1: `PLATFORM_DB` (`9703574e-adb7-481e-8d98-96f8ce5f8a90`), `GS_AUDIT_DB` (`1ae71d76-188f-481b-91d9-db2d39013f68`)
-- R2: `GS_ASSETS`
-- Services: `gs-trading-prod`, `gs-control`, `gs-api`
+`apps/gs-api/wrangler.toml` is the canonical config for `gs-api` bindings. Cross-check any future binding edits against the registry in [`infra/Cloudflare/BINDINGS_MAP.md`](infra/Cloudflare/BINDINGS_MAP.md) before changing this summary.
+
+- Environment names: `prod` and `preview`. `production` is a historical alias and should not be used in `apps/gs-api/wrangler.toml` or package scripts.
+- KV: `KV` (`e0b8b807191346c3b0afc25fe716d2cd` in `prod`; `d4d20cee39094b999dea3f7e5f4c533a` in `preview`), `CONTROL_LOGS` (`a52e94cb331c4e3db08f2aa507e6df09` in `prod`; `09e43cb8bd4749fdaaed0dc9d4ff2284` in `preview`), and `RISK_RADAR_CACHE`. Legacy historical aliases only: `GS_CONFIG`, `KV_SESSIONS`.
+- D1: `PLATFORM_DB` (`9703574e-adb7-481e-8d98-96f8ce5f8a90`), `AUDIT_DB` (`1ae71d76-188f-481b-91d9-db2d39013f68`), `SIGNALS_DB` (`76af4653-7f44-417b-b46e-250143d906fd`), `RISK_RADAR_DB`, and `JOBS_DB` (`750c469c-788d-49e8-9254-77231cffd70f`). Legacy historical aliases only: `DB` and `GS_AUDIT_DB`.
+- R2: `GS_ASSETS` (`gs-assets` in `prod`; `gs-assets-preview` in `preview`), `TELEMETRY` (`gs-telemetry-storage`), and `RISK_RADAR_R2`.
+- AI and Durable Objects: `AI`; `AUTH_SESSION` (`AuthSession`).
+- Queues: `JOBS_QUEUE` (`goldshore-jobs`), `EVENTS_QUEUE` (`gs-events`), `MAIL_JOBS_QUEUE` (`gs-mail-jobs`), `DEAD_LETTER_QUEUE` (`gs-mail-dead-letter`). `gs-api` also consumes the consolidated backend queues in `prod`.
+- Workflows: `GS_SIGNALS` → `signals-evaluator`.
+- Secrets Store: `INTEGRATION_MASTER_KEY` is bound as a per-secret Secrets Store binding from store `b9824d3280c54573a24137c7e7143b33`. Do not use the historical `SECRETS.get(...)` store-object shape in Wrangler config.
+- Unclear/live Cloudflare note: if the dashboard still shows legacy service bindings such as `AGENT`, `GS_MAIL`, `GS_WEB PROD`, `API_SERVICE`, or `GOLDSHORE_AI`, treat them as stale until a human confirms a live dependency; do not re-add them to repo-managed `gs-api` config without updating this file and `docs/WORKER_CONFIGURATION.md`.
 
 ---
 
@@ -134,7 +141,7 @@ What's on this branch:
 ## CI / deployment
 
 - GitHub Actions: Lighthouse CI threshold `LH_MIN_PERFORMANCE: 0.60`
-- Deploy token: `CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN` GitHub secret (renew via `manage-cf-tokens.yml` if expired)
+- Deploy token: `CLOUDFLARE_BUILD_API_TOKEN` GitHub secret (renew via `manage-cf-tokens.yml` if expired)
 - Workers deploy per-app via `wrangler deploy`
 
 ---
@@ -157,7 +164,7 @@ pnpm turbo run build --filter=gs-web
 |----------|------|--------|
 | 1 | `goldshore-ops` | Archive — KV template stub, never built |
 | 2 | `goldshore-web` | Already deprecated — remove from CI |
-| 3 | `goldshore-core` | Route `banproof-me` security logic into `apps/gs-api` (AGENTS.md forbids new Workers under `apps/`); archive standalone |
+| 3 | `goldshore-core` | Route `banproof-me` security logic into `apps/gs-api` queues/routes (or keep it external); do **not** create `apps/gs-security` or any other new Worker under `apps/`; archive standalone |
 | 4 | `goldshore-api` | Confirm `goldshore/apps/goldshore-api` at parity → archive standalone |
 | 5 | `goldshore-admin` | Move replacement admin UX into `apps/gs-web` sub-routes, then archive standalone |
 | 6 | `goldshore-gateway` | Route gateway responsibilities through `apps/gs-api`, then archive standalone |

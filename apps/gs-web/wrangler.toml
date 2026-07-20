@@ -18,7 +18,8 @@ binding = "ASSETS"
 [env.prod]
 routes = [
   { pattern = "goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "goldshore.org/*", zone_name = "goldshore.org" }
+  { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "admin.goldshore.ai/*", zone_name = "goldshore.ai" }
 ]
 
 [[env.prod.kv_namespaces]]
@@ -26,7 +27,7 @@ binding = "KV"
 id = "5f13370575784c9dacff522121104cb3"
 
 [[env.prod.d1_databases]]
-binding = "DB"
+binding = "PLATFORM_DB"
 database_name = "gs_platform_db"
 database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
 
@@ -36,6 +37,7 @@ bucket_name = "gs-assets"
 
 [env.prod.vars]
 ENV = "production"
+PUBLIC_API = "https://api.goldshore.ai"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 CLOUDFLARE_ACCESS_AUDIENCE = "8b6e1890f664c52ad265a240948a1f3315a757e19b4a0fa180ffe952b81a0daf"
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
@@ -57,7 +59,7 @@ binding = "KV"
 id = "5f13370575784c9dacff522121104cb3"
 
 [[env.preview.d1_databases]]
-binding = "DB"
+binding = "PLATFORM_DB"
 database_name = "gs_platform_db"
 database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
 
@@ -67,6 +69,7 @@ bucket_name = "gs-assets-preview"
 
 [env.preview.vars]
 ENV = "preview"
+PUBLIC_API = "https://api-preview.goldshore.ai"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 CLOUDFLARE_ACCESS_AUDIENCE = "8b6e1890f664c52ad265a240948a1f3315a757e19b4a0fa180ffe952b81a0daf"
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"

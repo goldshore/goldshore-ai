@@ -1,13 +1,23 @@
 ---
 import Sidebar from '../components/Sidebar.astro';
 import '../styles/admin.css';
+import { hasAdminPermission, type AdminPermission } from '@goldshore/auth';
 
 interface Props {
   title: string;
-  requiredPermission?: string;
+  requiredPermission?: AdminPermission;
 }
 
-const { title } = Astro.props;
+const { title, requiredPermission } = Astro.props;
+const session = Astro.locals.adminSession;
+
+if (!session?.isAuthenticated || session.roles.length === 0) {
+  return Astro.redirect('/login?next=' + encodeURIComponent(Astro.url.pathname));
+}
+
+if (requiredPermission && !hasAdminPermission(session.permissions, requiredPermission)) {
+  return new Response('Forbidden', { status: 403 });
+}
 ---
 <!doctype html>
 <html lang="en">
