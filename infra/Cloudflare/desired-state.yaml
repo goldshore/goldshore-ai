@@ -26,12 +26,12 @@ cloudflare:
       # goldshore.org + www.goldshore.org are served by the canonical gs-web
       # Worker alongside goldshore.ai.
       - name: "goldshore.org"
-        type: CNAME
-        content: "gs-web-prod.goldshore.workers.dev"
+        type: AAAA
+        content: "100::"
         proxied: true
       - name: "www.goldshore.org"
-        type: CNAME
-        content: "gs-web-prod.goldshore.workers.dev"
+        type: AAAA
+        content: "100::"
         proxied: true
 
       # B. Admin (migrated from the standalone gs-admin Pages app into gs-web
