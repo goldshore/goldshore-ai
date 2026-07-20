@@ -1,8 +1,8 @@
 # Repository Ownership & Service Registry
 
-**Source of truth for:** App locations, build paths, deployment targets, domain ownership  
-**Authority:** Marzton (account owner); gs-control (CI/CD authority for worker deployments)  
-**Last updated:** 2026-04-24  
+**Source of truth for:** App locations, build paths, deployment targets, domain ownership
+**Authority:** Marzton (account owner); gs-control (CI/CD authority for worker deployments)
+**Last updated:** 2026-04-24
 **Review cycle:** Quarterly or when new apps are added
 
 ---
@@ -68,20 +68,20 @@ marzton/goldshore-ai/
 
 ## Deployment Authority
 
-### Workers (`CLOUDFLARE_BUILD_API_TOKEN`)
+### Workers (`CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN`)
 
-**Authority:** `gs-control` service  
-**Owned by:** Platform ops  
-**Scope:** Deploy any worker on the account (gs-api, gs-platform, gs-control, gs-mail, gs-agent, goldshore-org, banproof-me)
+**Authority:** Repository-specific Cloudflare deploy token
+**Owned by:** Platform ops and the owning service team
+**Scope:** Deploy only the Cloudflare Workers, Pages projects, Queues, Workflows, and zones owned by `marzton/goldshore-ai`; do not grant account-wide edit permissions.
 
 **CI/CD:** All worker deployments must:
-1. Use `CLOUDFLARE_BUILD_API_TOKEN` exclusively (no fallback expressions)
+1. Use `CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN` exclusively in this repository (no fallback expressions)
 2. Target the canonical wrangler manifest path (from this table)
 3. Pass pre-deploy validation (scripts/validate-worker-names.ts)
 
 ### Pages Projects (GitHub Actions)
 
-**Authority:** Individual repo maintainers (gs-web, gs-admin repos if separate)  
+**Authority:** Individual repo maintainers (gs-web, gs-admin repos if separate)
 **Scope:** Deploy frontend builds to Cloudflare Pages
 
 **If separate repos:**
@@ -97,7 +97,7 @@ marzton/goldshore-ai/
 ### Primary Rules
 
 1. **One domain, one owner.** No service can claim routes on two domains without explicit permission from the owner.
-   - Exception: `goldshore.ai` is shared between gs-web (Pages) and workers (api.*, gw.*, ops.*, agent.*)  
+   - Exception: `goldshore.ai` is shared between gs-web (Pages) and workers (api.*, gw.*, ops.*, agent.*)
    - These are subdomains — no conflict.
 
 2. **Zone authority.** Each Cloudflare zone has one owner:
@@ -106,9 +106,9 @@ marzton/goldshore-ai/
    - `banproof.me` → BanProof (Marzton)
 
 3. **Custom domain vs. route distinction:**
-   - **Custom domain (Pages):** Cloudflare automatically routes apex/www to Pages project  
+   - **Custom domain (Pages):** Cloudflare automatically routes apex/www to Pages project
      Example: `goldshore.ai` → `gs-web.pages.dev`
-   - **Routes (Workers):** Explicit route patterns registered with worker  
+   - **Routes (Workers):** Explicit route patterns registered with worker
      Example: `api.goldshore.ai/*` → `gs-api` worker
 
 4. **No route conflicts.** If two workers claim the same route pattern, the first deployed wins (and breaks the second).
@@ -179,24 +179,24 @@ banproof-me (Worker)
 
 ### ❌ DO NOT
 
-1. **Deploy a worker without checking wrangler.toml is in the canonical path**  
-   ✅ Correct: `infra/Cloudflare/gs-api.wrangler.toml`  
+1. **Deploy a worker without checking wrangler.toml is in the canonical path**
+   ✅ Correct: `infra/Cloudflare/gs-api.wrangler.toml`
    ❌ Wrong: `apps/gs-api/wrangler.toml` (may be stale)
 
-2. **Use fallback expressions for `CLOUDFLARE_BUILD_API_TOKEN`**  
-   ✅ Correct: `${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}`  
+2. **Use fallback expressions for Cloudflare deploy tokens**
+   ✅ Correct: `${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}`
    ❌ Wrong: `${{ secrets.CLOUDFLARE_BUILD_API_TOKEN || secrets.CLOUDFLARE_API_TOKEN }}`
 
-3. **Deploy a Pages project with the same name as a worker**  
-   ✅ Correct: Worker `gs-api`, Pages project `gs-web`  
+3. **Deploy a Pages project with the same name as a worker**
+   ✅ Correct: Worker `gs-api`, Pages project `gs-web`
    ❌ Wrong: Worker `gs-api`, Pages project `gs-api`
 
-4. **Add a service to the monorepo without updating this registry**  
-   ✅ Correct: Add to monorepo, update REPO_OWNERSHIP.md, commit together  
+4. **Add a service to the monorepo without updating this registry**
+   ✅ Correct: Add to monorepo, update REPO_OWNERSHIP.md, commit together
    ❌ Wrong: Add service, deploy, leave docs out of sync
 
-5. **Deploy from a local machine or branch without an audit trail**  
-   ✅ Correct: All deployments go through `marzton/goldshore-ai` main branch + GitHub Actions  
+5. **Deploy from a local machine or branch without an audit trail**
+   ✅ Correct: All deployments go through `marzton/goldshore-ai` main branch + GitHub Actions
    ❌ Wrong: `wrangler deploy` from laptop (like current banproof-me)
 
 ---

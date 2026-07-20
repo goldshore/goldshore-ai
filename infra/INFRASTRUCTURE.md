@@ -23,6 +23,7 @@
 |---|---|---|---|
 | `gs-platform` | Main gateway — auth, CORS, routing hub | goldshore.ai, armsway.com | Fail closed on auth routes |
 | `gs-api` | API layer | api.goldshore.ai | Fail closed |
+| `gs-api-preview` | Preview environment for gs-api | — | Fail closed |
 | `gs-admin` | Admin dashboard worker | admin.goldshore.ai | Fail closed |
 | `gs-gateway` | Legacy gateway (to be superseded by gs-platform) | — | Fail closed |
 | `gs-agent` | AI agent worker | — | Fail closed |
@@ -95,7 +96,7 @@
 | `www.goldshore.ai` | `gs-www-redirect` | 1 (public) | 308 → goldshore.ai |
 | `dashboard.goldshore.ai` | `gs-gateway` | 1 (public) | 308 → admin.goldshore.ai |
 | `gw.goldshore.ai` | `gs-gateway` | 2 (auth) | Fail closed |
-| `api.goldshore.ai` | `gs-gateway` → `gs-api` | 2 (auth) | Fail closed; /health /version /status public |
+| `api.goldshore.ai` | `gs-api` | 2 (auth) | Direct API route; fail closed; /health /version /status public |
 | `agent.goldshore.ai` | `gs-gateway` → `gs-agent` | 2 (auth) | Fail closed |
 | `trading.goldshore.ai` | `gs-trading` | 3 (admin) | Fail closed |
 | `ops.goldshore.ai` | `gs-control` | 3 (admin) | Fail closed |
@@ -186,7 +187,7 @@ Merge PR #12 in `marzton/goldshore-org` so `goldshore.org` and `www.goldshore.or
 
 ### GATE 3 — Deploy gs-gateway subdomain routes (BLOCKS: dashboard, status subdomains)
 
-Merge PR #5117. `dashboard.goldshore.ai` uses Worker Custom Domain (auto-provisions DNS). `www.goldshore.ai` is owned by `gs-www-redirect` Worker (308 redirect there). `status.goldshore.ai` is reserved for the `gs-status` Pages project (see MODULE_B2_RUNTIME_WIRING.md) — not claimed by gs-gateway.
+Merge PR #5117. `dashboard.goldshore.ai` uses Worker Custom Domain (auto-provisions DNS). `www.goldshore.ai` is owned by `gs-www-redirect` Worker (308 redirect there). `agent.goldshore.ai/*` is owned by `gs-gateway` and forwards to `gs-agent` through the AGENT service binding; do not attach a direct custom domain to `gs-agent`. `status.goldshore.ai` is reserved for the `gs-status` Pages project (see MODULE_B2_RUNTIME_WIRING.md) — not claimed by gs-gateway.
 
 | # | Action | Where | Status |
 |---|--------|--------|--------|
@@ -199,12 +200,12 @@ Merge PR #5117. `dashboard.goldshore.ai` uses Worker Custom Domain (auto-provisi
 
 ### GATE 4 — CF Access identity providers (BLOCKS: SSO on any subdomain)
 
-You must configure Google and GitHub as OAuth providers in Cloudflare Zero Trust before any Access app policy works.
+Configure the identity providers required by the canonical Cloudflare Access IdP matrix in `docs/domains-and-auth.md`; that table is the only per-app IdP source of truth.
 
 | # | Action | Where | Status |
 |---|--------|--------|--------|
-| 4a | Go to CF Zero Trust → Settings → Authentication → Add Google as identity provider. Requires a Google OAuth client ID + secret (create one at console.cloud.google.com). | [CF Zero Trust](https://one.dash.cloudflare.com/f77de112d2019e5456a3198a8bb50bd2/settings/authentication) | ⬜ TODO |
-| 4b | Add GitHub as identity provider. Requires a GitHub OAuth App (create at github.com/settings/developers). Callback URL = `https://goldshore.cloudflareaccess.com/cdn-cgi/access/callback`. | [CF Zero Trust](https://one.dash.cloudflare.com/f77de112d2019e5456a3198a8bb50bd2/settings/authentication) | ⬜ TODO |
+| 4a | Go to CF Zero Trust → Settings → Authentication and configure Google Workspace and email OTP as required by the canonical matrix in `docs/domains-and-auth.md`. Requires a Google OAuth client ID + secret for Workspace. | [CF Zero Trust](https://one.dash.cloudflare.com/f77de112d2019e5456a3198a8bb50bd2/settings/authentication) | ⬜ TODO |
+| 4b | Add both GitHub providers named in the canonical matrix: GitHub GoldShore Deploy and generic GitHub. Each requires a GitHub OAuth App (create at github.com/settings/developers). Callback URL = `https://goldshore.cloudflareaccess.com/cdn-cgi/access/callback`. | [CF Zero Trust](https://one.dash.cloudflare.com/f77de112d2019e5456a3198a8bb50bd2/settings/authentication) | ⬜ TODO |
 | 4c | Test both logins — CF will show a "Test" button next to each provider after saving. | CF Zero Trust UI | ⬜ TODO |
 
 ---
@@ -213,15 +214,16 @@ You must configure Google and GitHub as OAuth providers in Cloudflare Zero Trust
 
 Create one Access application per protected subdomain group. All require Gate 4 to be complete.
 
-**Important:** `api.goldshore.ai` and `agent.goldshore.ai` both route to the same `gs-gateway` Worker, which holds a single `CLOUDFLARE_ACCESS_AUDIENCE` binding. They **must share one Access application** so the same AUD tag validates tokens from either subdomain. Public probes (`/health`, `/status`) must be excluded via a bypass policy so monitoring scripts don't hit the login wall.
+**Important:** Keep Access audience tags aligned with the Worker that validates them. `api.goldshore.ai` is validated by `gs-api` with its API Access AUD, so it must stay on the API Access application unless the downstream Worker secret/config changes at the same time. `gw.goldshore.ai` and `agent.goldshore.ai` share the gateway Access application/AUD. Public probes (`/health`, `/status`) must be excluded via a bypass policy so monitoring scripts do not hit the login wall. Configure allowed login methods or OR policies from the canonical Cloudflare Access IdP matrix in `docs/domains-and-auth.md`; do not encode alternative IdPs as multiple conjunctive Require selectors.
 
 | # | Subdomain(s) | Application name | Policy | Where | Status |
 |---|---|---|---|---|---|
 | 5a | `admin.goldshore.ai`, `admin-preview.goldshore.ai`, `admin.goldshore.org` | Goldshore Admin | Identity-based allow policy (not `non_identity` / `everyone`): Email domains `@goldshore.ai`, `@marzton.dev`; Specific email = marstonr6@gmail.com (allow) | [CF Access Apps](https://one.dash.cloudflare.com/f77de112d2019e5456a3198a8bb50bd2/access/apps) | ⬜ TODO |
 | 5b | `trading.goldshore.ai` | Goldshore Trading | Email = marstonr6@gmail.com (allow). Add **bypass policy** for `/oauth/schwab/callback` and `/oauth/robinhood/callback` (everyone) — Schwab/Robinhood redirect to these paths without an Access session. | CF Access Apps | ⬜ TODO |
 | 5c | `ops.goldshore.ai` | Goldshore Ops | Email = marstonr6@gmail.com (allow) | CF Access Apps | ⬜ TODO |
-| 5d | `gw.goldshore.ai` + `api.goldshore.ai` + `agent.goldshore.ai` | Goldshore Gateway | All three route to the same `gs-gateway` Worker — must share one Access app and one AUD tag. Email = marstonr6@gmail.com (allow). Add **bypass policy** for paths `/health`, `/status`, and `/version` (everyone). | CF Access Apps | ⬜ TODO |
-| 5e | Copy the **Audience (AUD) tag** for each app and store it as a GitHub Actions secret (`CLOUDFLARE_ACCESS_AUDIENCE_ADMIN`, `CLOUDFLARE_ACCESS_AUDIENCE_TRADING`, `CLOUDFLARE_ACCESS_AUDIENCE_GATEWAY`) and as wrangler secrets in each Worker. | CF Access App → Overview tab | ⬜ TODO |
+| 5d | `gw.goldshore.ai` + `agent.goldshore.ai` | Goldshore Gateway | These hosts share the gateway Access app and gateway AUD tag. Email = marstonr6@gmail.com (allow). Add **bypass policy** for paths `/health`, `/status`, and `/version` (everyone). | CF Access Apps | ⬜ TODO |
+| 5e | `api.goldshore.ai` | Goldshore API | Preserve the API Access app and AUD tag expected by `gs-api` (`d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b`). Email = marstonr6@gmail.com (allow). Add **bypass policy** for paths `/`, `/health`, `/status`, and `/version` (everyone). | CF Access Apps | ⬜ TODO |
+| 5f | Copy the **Audience (AUD) tag** for each app and store it as GitHub Actions secrets (`CLOUDFLARE_ACCESS_AUDIENCE_ADMIN`, `CLOUDFLARE_ACCESS_AUDIENCE_TRADING`, `CLOUDFLARE_ACCESS_AUDIENCE_GATEWAY`, `CLOUDFLARE_ACCESS_AUDIENCE_API`) and as wrangler secrets in each Worker. | CF Access App → Overview tab | ⬜ TODO |
 
 ---
 

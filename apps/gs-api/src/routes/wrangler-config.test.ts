@@ -16,14 +16,14 @@ describe('gs-api wrangler env bindings', () => {
       );
     });
 
-    it(`defines CONTENT_DB, ASSETS, and AI bindings for ${envName}`, () => {
+    it(`defines PLATFORM_DB, GS_ASSETS, and AI bindings for ${envName}`, () => {
       assert.match(
         wranglerToml,
-        new RegExp(`\\[\\[env\\.${envName}\\.r2_buckets\\]\\][\\s\\S]*?binding = "ASSETS"`)
+        new RegExp(`\\[\\[env\\.${envName}\\.r2_buckets\\]\\][\\s\\S]*?binding = "GS_ASSETS"`)
       );
       assert.match(
         wranglerToml,
-        new RegExp(`\\[\\[env\\.${envName}\\.d1_databases\\]\\][\\s\\S]*?binding = "CONTENT_DB"`)
+        new RegExp(`\\[\\[env\\.${envName}\\.d1_databases\\]\\][\\s\\S]*?binding = "PLATFORM_DB"`)
       );
       assert.match(
         wranglerToml,
