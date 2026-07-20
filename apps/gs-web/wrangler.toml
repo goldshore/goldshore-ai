@@ -25,7 +25,9 @@ id = "09ae2ffbffe24e628c9538c8129dfe33"
 [env.prod]
 routes = [
   { pattern = "goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "goldshore.org/*", zone_name = "goldshore.org" }
+  { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "admin.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "admin.goldshore.org/*", zone_name = "goldshore.org" }
 ]
 
 [[env.prod.kv_namespaces]]
