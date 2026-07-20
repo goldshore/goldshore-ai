@@ -185,21 +185,22 @@ jobs:
           fi
           echo "goldshore.ai zone id: $ZID_AI"
 
-          # preview.goldshore.ai reports as MISSING via a type=CNAME query
-          # despite being live and working today -- it's provisioned through
-          # a real Workers Custom Domain that doesn't show up as a plain
-          # CNAME through this API. Confirmed: Cloudflare rejected a real
-          # CREATE attempt with code 81062 ("A DNS record managed by Workers
-          # already exists on that host"). Skip CREATE rather than let every
-          # run log a false MISSING/warning pair.
+          # goldshore.ai (apex) and preview.goldshore.ai report as MISSING via a
+          # type=CNAME query despite being live and working today -- both are
+          # provisioned through a Workers Custom Domain mechanism that doesn't
+          # show up as a plain CNAME through this API. Confirmed for
+          # preview.goldshore.ai: Cloudflare rejected a real CREATE attempt
+          # with code 81062 ("A DNS record managed by Workers already exists
+          # on that host"). Skip CREATE for both rather than let every run log
+          # a false MISSING/warning pair.
           #
-          # goldshore.ai (apex) and api.goldshore.ai are deliberately NOT in
-          # this list: verified via the raw Cloudflare API that both have
-          # zero DNS records of any kind (no CNAME, no wildcard, no Custom
-          # Domain) despite having a configured Worker Route -- the route had
-          # nothing to activate it and the hostname was down. They need a
-          # real CREATE, not a skip.
-          SKIP_CREATE_HOSTS="preview.goldshore.ai"
+          # api.goldshore.ai is deliberately NOT in this list: verified via
+          # the raw Cloudflare API that it has zero DNS records of any kind
+          # (no CNAME, no wildcard, no Custom Domain) despite having a
+          # configured Worker Route (api.goldshore.ai/* -> gs-api-prod) --
+          # the route had nothing to activate it and the hostname was down.
+          # It needs a real CREATE, not a skip.
+          SKIP_CREATE_HOSTS="goldshore.ai preview.goldshore.ai"
 
           CHANGED=0
 
