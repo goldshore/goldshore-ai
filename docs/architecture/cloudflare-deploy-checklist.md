@@ -1,6 +1,6 @@
 # Cloudflare Deployment Checklist
 
-Last updated: 2026-06-15
+Last updated: 2026-07-11
 
 Use this checklist after any Cloudflare Pages or Worker deployment from `marzton/goldshore-ai`.
 
@@ -12,6 +12,39 @@ Repository: `marzton/goldshore-ai`
 - `CLOUDFLARE_BUILD_API_TOKEN`
 
 Do not use fallback expressions such as `CLOUDFLARE_BUILD_API_TOKEN || CLOUDFLARE_API_TOKEN` in workflows.
+
+## Cloudflare Pages build settings
+
+For the `gs-web` Cloudflare Pages project, use these settings:
+
+```text
+Framework preset: Astro
+Root directory: /
+Build command: npm run build
+Build output directory: apps/gs-web/dist
+Node version: 22.22.2 or newer 22.x
+PNPM version: 9.15.4
+```
+
+The repository pins Node through `.node-version` and `.nvmrc`. If the Cloudflare dashboard has a `NODE_VERSION` environment variable, it must be `22.22.2` or newer. Do not leave it at `20.20.0`; Astro 6 rejects Node 20.
+
+The root `npm run build` script is intentionally Pages-safe. It builds OpenAPI content, builds only `@goldshore/gs-web`, and verifies `apps/gs-web/dist`. Full monorepo builds should use `pnpm build:all` instead.
+
+Do not configure Cloudflare Pages to run `turbo run build` across the full monorepo. That causes Worker dry-runs, binding checks, and unrelated backend packages to execute during a public website build.
+
+## Lockfile status
+
+The current `pnpm-lock.yaml` contains a duplicated `apps/gs-gateway` importer. Until that lockfile is regenerated cleanly from a Node 22 environment, use:
+
+```bash
+pnpm install --no-frozen-lockfile
+```
+
+After the lockfile is repaired and committed, switch CI install commands back to:
+
+```bash
+pnpm install --frozen-lockfile
+```
 
 ## Deploy order
 
@@ -31,12 +64,12 @@ Run `.github/workflows/deploy-cloudflare.yml` with:
 ## Local deploy equivalents
 
 ```bash
-pnpm install --frozen-lockfile
+pnpm install --no-frozen-lockfile
 
-pnpm --filter @goldshore/gs-web build
+pnpm build
 pnpm exec wrangler pages deploy apps/gs-web/dist --project-name=gs-web --branch=main
 
-pnpm --filter @goldshore/gs-admin build
+pnpm build:pages:admin
 pnpm exec wrangler pages deploy apps/gs-admin/dist --project-name=gs-admin --branch=main
 
 pnpm --filter @goldshore/gs-api deploy

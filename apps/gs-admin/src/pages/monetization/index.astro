@@ -1,0 +1,203 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { GSButton } from '@goldshore/ui';
+
+const title = 'Monetization';
+---
+
+<AdminLayout title="Monetization | GoldShore Admin">
+  <div class="max-w-7xl mx-auto p-8 space-y-8">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-4xl gs-heading gs-text-accent">Monetization Dashboard</h1>
+        <p class="text-lg gs-text-subtle mt-2">Track earnings from Google AdSense and other revenue streams</p>
+      </div>
+      <div class="flex gap-3">
+        <GSButton variant="secondary" id="refresh-adsense">Refresh Data</GSButton>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-4 gap-6">
+      <div class="gs-card space-y-3">
+        <h2 class="text-sm font-semibold gs-text-subtle">Total Earnings</h2>
+        <p id="total-earnings" class="text-3xl font-bold gs-text-success">$0.00</p>
+        <p class="text-xs gs-text-subtle">Last 30 days</p>
+      </div>
+      <div class="gs-card space-y-3">
+        <h2 class="text-sm font-semibold gs-text-subtle">Impressions</h2>
+        <p id="total-impressions" class="text-3xl font-bold gs-text-info">0</p>
+        <p class="text-xs gs-text-subtle">Ad views</p>
+      </div>
+      <div class="gs-card space-y-3">
+        <h2 class="text-sm font-semibold gs-text-subtle">Clicks</h2>
+        <p id="total-clicks" class="text-3xl font-bold gs-text-warning">0</p>
+        <p class="text-xs gs-text-subtle">Ad interactions</p>
+      </div>
+      <div class="gs-card space-y-3">
+        <h2 class="text-sm font-semibold gs-text-subtle">Avg CPM</h2>
+        <p id="avg-cpm" class="text-3xl font-bold gs-text-accent">$0.00</p>
+        <p class="text-xs gs-text-subtle">Per 1000 impressions</p>
+      </div>
+    </div>
+
+    <div class="gs-card space-y-4">
+      <div>
+        <h2 class="text-2xl font-semibold">Earnings Over Time</h2>
+        <p class="text-sm gs-text-subtle mt-1">Daily earnings for the last 30 days</p>
+      </div>
+
+      <div id="adsense-loading" class="py-8 text-center">
+        <p class="gs-text-subtle">Loading AdSense data...</p>
+      </div>
+
+      <table id="adsense-table" class="gs-admin-table" style="display: none;">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Earnings</th>
+            <th>Impressions</th>
+            <th>Clicks</th>
+            <th>CTR</th>
+            <th>CPM</th>
+            <th>RPM</th>
+          </tr>
+        </thead>
+        <tbody id="adsense-tbody">
+        </tbody>
+      </table>
+
+      <div id="adsense-error" class="py-8 text-center gs-empty-state" style="display: none;">
+        <p>Unable to load AdSense data. Please check your configuration.</p>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6">
+      <div class="gs-card space-y-4">
+        <h2 class="text-2xl font-semibold">Google AdSense Configuration</h2>
+        <div class="space-y-3">
+          <label class="flex items-center gap-3 text-sm gs-text-subtle">
+            <input type="checkbox" class="h-4 w-4" id="adsense-configured" disabled />
+            Connected to Google AdSense
+          </label>
+          <label class="text-sm gs-text-subtle">
+            Account ID
+            <input type="text" id="adsense-account-id" class="gs-input mt-2 text-sm" readonly />
+          </label>
+          <label class="text-sm gs-text-subtle">
+            Status
+            <div id="adsense-status" class="text-sm mt-2 font-semibold gs-text-warning">Checking...</div>
+          </label>
+        </div>
+        <GSButton variant="secondary" id="configure-adsense">Configure AdSense</GSButton>
+      </div>
+
+      <div class="gs-card space-y-4">
+        <h2 class="text-2xl font-semibold">Other Revenue Streams</h2>
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-sm">Meta Business API</span>
+            <span class="gs-status--warn text-xs">Coming Soon</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-sm">Affiliate Programs</span>
+            <span class="gs-status--warn text-xs">Coming Soon</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-sm">Sponsorships</span>
+            <span class="gs-status--warn text-xs">Coming Soon</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const loadAdSenseData = async () => {
+        const loadingEl = document.getElementById('adsense-loading');
+        const tableEl = document.getElementById('adsense-table');
+        const errorEl = document.getElementById('adsense-error');
+        const tbodyEl = document.getElementById('adsense-tbody');
+
+        const totalEarningsEl = document.getElementById('total-earnings');
+        const totalImpressionsEl = document.getElementById('total-impressions');
+        const totalClicksEl = document.getElementById('total-clicks');
+        const avgCPMEl = document.getElementById('avg-cpm');
+        const statusEl = document.getElementById('adsense-status');
+
+        if (loadingEl) loadingEl.style.display = 'block';
+        if (tableEl) tableEl.style.display = 'none';
+        if (errorEl) errorEl.style.display = 'none';
+
+        try {
+          const response = await fetch('/api/monetization/adsense');
+          const data = await response.json();
+
+          if (loadingEl) loadingEl.style.display = 'none';
+
+          if (!data.success || !data.summary) {
+            if (errorEl) errorEl.style.display = 'block';
+            if (statusEl) statusEl.textContent = 'Not Connected';
+            if (statusEl) statusEl.classList.remove('gs-text-warning');
+            if (statusEl) statusEl.classList.add('gs-text-danger');
+            return;
+          }
+
+          const { summary, reports, account } = data;
+
+          // Update summary cards
+          if (totalEarningsEl) totalEarningsEl.textContent = `$${summary.totalEarnings.toFixed(2)}`;
+          if (totalImpressionsEl) totalImpressionsEl.textContent = summary.totalImpressions.toLocaleString();
+          if (totalClicksEl) totalClicksEl.textContent = summary.totalClicks.toLocaleString();
+          if (avgCPMEl) avgCPMEl.textContent = `$${summary.avgCPM.toFixed(2)}`;
+
+          if (statusEl) {
+            statusEl.textContent = 'Connected';
+            statusEl.classList.remove('gs-text-warning');
+            statusEl.classList.add('gs-text-success');
+          }
+
+          // Populate table
+          if (tbodyEl && reports && reports.length > 0) {
+            tbodyEl.innerHTML = reports.map((report) => {
+              const date = new Date(report.date).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+              });
+
+              return `
+                <tr>
+                  <td class="font-semibold">${date}</td>
+                  <td class="text-right">$${report.earnings.toFixed(2)}</td>
+                  <td class="text-right">${report.impressions.toLocaleString()}</td>
+                  <td class="text-right">${report.clicks.toLocaleString()}</td>
+                  <td class="text-right">${(report.ctr * 100).toFixed(2)}%</td>
+                  <td class="text-right">$${report.cpm.toFixed(2)}</td>
+                  <td class="text-right">$${report.rpm.toFixed(2)}</td>
+                </tr>
+              `;
+            }).join('');
+          }
+
+          if (tableEl) tableEl.style.display = 'table';
+        } catch (error) {
+          console.error('Error loading AdSense data:', error);
+          if (errorEl) errorEl.style.display = 'block';
+          if (statusEl) statusEl.textContent = 'Error';
+          if (statusEl) statusEl.classList.remove('gs-text-warning');
+          if (statusEl) statusEl.classList.add('gs-text-danger');
+        }
+      };
+
+      document.getElementById('refresh-adsense')?.addEventListener('click', loadAdSenseData);
+      document.getElementById('configure-adsense')?.addEventListener('click', () => {
+        alert('AdSense configuration flow will open OAuth authorization.');
+      });
+
+      loadAdSenseData();
+      setInterval(loadAdSenseData, 60000); // Refresh every minute
+    });
+  </script>
+</AdminLayout>
