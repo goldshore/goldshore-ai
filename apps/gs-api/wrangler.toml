@@ -174,13 +174,9 @@ name = "signals-evaluator"
 class_name = "SignalsEvaluator"
 script_name = "gs-signals-prod"
 
-# ── Secrets Store ──────────────────────────────────────────────────────────────────────
-# Secrets Store bindings are per secret, not a store object. The runtime reads
-# env.INTEGRATION_MASTER_KEY directly.
-[[env.prod.secrets_store_secrets]]
-binding = "INTEGRATION_MASTER_KEY"
-store_id = "b9824d3280c54573a24137c7e7143b33"
-secret_name = "INTEGRATION_MASTER_KEY"
+# INTEGRATION_MASTER_KEY remains a normal Worker secret until a real Cloudflare
+# Secrets Store and secret are provisioned. Do not add a secrets_store_secrets
+# binding that points at a nonexistent store; that blocks every deployment.
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Production (named 'production') environment
