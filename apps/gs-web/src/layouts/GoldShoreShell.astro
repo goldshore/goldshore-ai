@@ -7,6 +7,8 @@ const navLinks = [
   { href: '/services/', label: 'Services' },
   { href: '/developer/', label: 'Developer' },
   { href: '/about/', label: 'About' },
+  { href: '/team/', label: 'Team' },
+  { href: '/contact/', label: 'Contact' },
 ];
 
 const footerColumns = [
@@ -17,6 +19,7 @@ const footerColumns = [
       { href: '/platform/financial-signals', label: 'Financial Signals' },
       { href: '/platform/workflow-engine', label: 'Workflow Engine' },
       { href: '/platform/sentinel', label: 'Sentinel' },
+      { href: '/platform/ai-oracle', label: 'AI Oracle' },
     ],
   },
   {
@@ -26,6 +29,7 @@ const footerColumns = [
       { href: '/services/ai-implementation', label: 'AI Implementation' },
       { href: '/services/systems-integration', label: 'Systems Integration' },
       { href: '/services/design-dev', label: 'Design & Development' },
+      { href: '/services/consulting', label: 'Enterprise Consulting' },
     ],
   },
   {
@@ -34,6 +38,7 @@ const footerColumns = [
       { href: '/about/', label: 'About' },
       { href: '/team/', label: 'Team' },
       { href: '/developer/', label: 'Developer Hub' },
+      { href: '/status/', label: 'Status' },
       { href: '/contact/', label: 'Contact' },
     ],
   },
@@ -68,6 +73,7 @@ const isCurrent = (href: string) => activePath === href;
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+    <meta name="google-adsense-account" content="ca-pub-5105781580031290" />
   </head>
   <body>
     <a href="#content" class="skip-link">Skip to content</a>
@@ -79,12 +85,14 @@ const isCurrent = (href: string) => activePath === href;
           <nav class="main-nav" aria-label="Primary navigation">
             {navLinks.map((link) => <a href={link.href} aria-current={isCurrent(link.href) ? 'page' : undefined}>{link.label}</a>)}
             <a href="https://dashboard.goldshore.ai" class="nav-login">Access →</a>
+            <a href="https://admin.goldshore.ai" class="nav-login" data-admin-access-link>Access →</a>
             <a href="/contact/" class="nav-cta">Request Briefing</a>
           </nav>
         </div>
         <nav id="mobile-navigation" class="mobile-nav" aria-label="Mobile navigation">
           {navLinks.map((link) => <a href={link.href} aria-current={isCurrent(link.href) ? 'page' : undefined}>{link.label}</a>)}
           <a href="https://dashboard.goldshore.ai">Access →</a>
+          <a href="https://admin.goldshore.ai" data-admin-access-link>Access →</a>
           <a href="/contact/">Request Briefing</a>
         </nav>
       </header>
@@ -133,7 +141,13 @@ const isCurrent = (href: string) => activePath === href;
           if (event.key === 'Escape') setMenu(false);
         });
       };
+      const bindAdminAccessLinks = () => {
+        document.querySelectorAll('[data-admin-access-link]').forEach((link) => {
+          link.setAttribute('href', 'https://admin.goldshore.ai/');
+        });
+      };
       bindMenu();
+      bindAdminAccessLinks();
     </script>
   </body>
 </html>

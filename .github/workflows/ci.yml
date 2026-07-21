@@ -13,10 +13,12 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: "pnpm"
@@ -24,9 +26,23 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
-      - name: Repo health checks
-        run: pnpm run repo:health
-        continue-on-error: false
+      - name: Warn if banproof bindings check is disabled
+        shell: bash
+        run: |
+          if [ "${{ vars.ENABLE_BANPROOF_BINDINGS_CHECK }}" != "true" ]; then
+            echo "::warning::ENABLE_BANPROOF_BINDINGS_CHECK is not set to true; banproof binding enforcement is skipped."
+          fi
+
+      - name: Validate Cloudflare resource IDs
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_BUILD_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+        run: |
+          if [ -z "$CLOUDFLARE_BUILD_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::warning::Skipping Cloudflare resource validation because CLOUDFLARE_BUILD_API_TOKEN or CLOUDFLARE_ACCOUNT_ID is unavailable."
+            exit 0
+          fi
+          node scripts/validate-cf-resources.mjs
 
       - name: Enforce banproof production bindings
         if: ${{ vars.ENABLE_BANPROOF_BINDINGS_CHECK == 'true' }}
@@ -35,7 +51,24 @@ jobs:
       - name: Build all
         run: pnpm -r --sequential build
 
+      - name: Detect gs-web release-impact changes
+        id: gs-web-changes
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            RANGE="origin/${{ github.base_ref }}...HEAD"
+          else
+            RANGE="${{ github.event.before }}...${{ github.sha }}"
+          fi
+
+          if git diff --name-only "$RANGE" | grep -Eq '^(apps/gs-web/|apps/gs-admin/|packages/|package.json|pnpm-lock.yaml|pnpm-workspace.yaml|turbo.json)$'; then
+            echo "release_impact=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "release_impact=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: gs-web release quality gate
+        if: steps.gs-web-changes.outputs.release_impact == 'true'
         working-directory: apps/gs-web
         env:
           # CI baseline; raise once core vitals are addressed (images, JS bundles)

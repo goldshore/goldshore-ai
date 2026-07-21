@@ -30,13 +30,15 @@ projects:
           zone: goldshore.ai
         - pattern: 'agent.goldshore.ai/*'
           zone: goldshore.ai
-        - pattern: 'api.goldshore.ai/*'
-          zone: goldshore.ai
       max_daily_deploys: 10
       require_checks: ['smoke']
     - script: gs-api
       entry: apps/gs-api/dist/index.js
-      routes: [] # Accessed via gateway service binding
+      routes:
+        - pattern: 'api.goldshore.ai/*'
+          zone: goldshore.ai
+        - pattern: 'api.goldshore.org/*'
+          zone: goldshore.org
       max_daily_deploys: 10
     - script: gs-control
       entry: apps/gs-control/dist/index.js
@@ -54,6 +56,17 @@ projects:
         - pattern: 'mail.goldshore.ai/*'
           zone: goldshore.ai
       max_daily_deploys: 10
+    - script: gs-trading-prod
+      entry: apps/gs-trading/dist/index.js
+      routes:
+        - pattern: 'trading.goldshore.ai/*'
+          zone: goldshore.ai
+        - pattern: 'dashboard.goldshore.ai/*'
+          zone: goldshore.ai
+        - pattern: 'dash.goldshore.ai/*'
+          zone: goldshore.ai
+      max_daily_deploys: 6
+      require_checks: ['smoke']
 
 guards:
   dedupe_concurrency_key: 'cf-deploy'

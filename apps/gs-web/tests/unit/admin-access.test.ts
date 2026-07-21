@@ -44,6 +44,17 @@ test('redirects non-admin routes on the admin host back to the dashboard', () =>
   });
 });
 
+test('treats admin org aliases as protected admin hosts', () => {
+  const rule = getAdminRouteRule('/about', 'GET', 'admin.goldshore.org');
+
+  assert.deepEqual(rule, {
+    canonicalPath: '/app/dashboard',
+    kind: 'page',
+    permission: 'system:read',
+    requiresAdminRole: true,
+  });
+});
+
 test('leaves public site routes alone on the public host', () => {
   const rule = getAdminRouteRule('/about', 'GET', 'goldshore.ai');
 
