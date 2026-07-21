@@ -7,6 +7,7 @@
 > Repo alignment pass: 2026-06-30 | `goldshore.org` apex ownership moved to `gs-web-prod`; `www.goldshore.org` ownership moved to `gs-www-redirect-prod`.
 > Redirect cleanup pass: 2026-07-11 | `gs-www-redirect-prod` is the sole canonical www redirect Worker for `www.goldshore.ai/*` and `www.goldshore.org/*`; the stale alternate production deployment is no longer part of the canonical set.
 > Live audit reconciliation pass: 2026-07-15 | Recorded observed `gs-api-prod`, `gs-api-staging`, and legacy `gs-agent-preview` workers so live-state audit reflects Cloudflare reality without expanding the in-repo app set.
+> Goldshore API rebuild note: 2026-07-21 | Bare `gs-api` is intentionally retained as the `marzton/goldshore-api` rebuild Worker. Canonical live API routes remain on `gs-api-prod` from this monorepo.
 
 ---
 
@@ -26,7 +27,7 @@ This section records the **current live Cloudflare inventory** so audit tooling 
 
 | Worker name | Current purpose / observed role | Domains served | Repository disposition | Cloudflare disposition | Fail policy |
 |---|---|---|---|---|---|
-| `gs-api` | Unified API layer | `api.goldshore.ai` | **Canonical in-repo app:** keep in `apps/gs-api` | Keep | Fail closed |
+| `gs-api` | External rebuild target for `marzton/goldshore-api` | — | **External rebuild Worker:** do not delete or disconnect from this repo; live API routes remain on `gs-api-prod` | Keep | Fail closed |
 | `gs-api-preview` | Preview environment for `gs-api` | — | **Canonical in-repo preview:** keep tied to `apps/gs-api` | Keep while preview is needed | Fail closed |
 | `gs-api-prod` | Production deployment of `gs-api` | `api.goldshore.ai` | **Canonical production deploy:** deploy from `apps/gs-api` | Keep | Fail closed |
 | `gs-api-staging` | Staging deployment of `gs-api` | — | **Canonical staging deploy:** keep tied to `apps/gs-api` | Keep while staging is needed | Fail closed |

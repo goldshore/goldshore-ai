@@ -18,7 +18,7 @@ routes = [
 
 [env.prod.vars]
 ENV = "production"
-CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
+CLOUDFLARE_ACCESS_AUDIENCE = "8510d42c31fc791e295427031ffeef7c7ebc0f1b62d8634fbb284bf82562f528"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 # CONTROL_SYNC_TOKEN is a Worker secret. Keep it out of vars so deploys
 # preserve the remote secret instead of replacing it with a placeholder.
@@ -191,7 +191,7 @@ routes = [
 
 [env.production.vars]
 ENV = "production"
-CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
+CLOUDFLARE_ACCESS_AUDIENCE = "8510d42c31fc791e295427031ffeef7c7ebc0f1b62d8634fbb284bf82562f528"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 # CONTROL_SYNC_TOKEN is managed as a Worker secret; see env.prod above.
 GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
