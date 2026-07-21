@@ -16,6 +16,8 @@ const ACCOUNT_ID = (process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_
 const TOKEN = normalizeCloudflareToken(
   process.env.CLOUDFLARE_BUILD_API_TOKEN || process.env.CLOUDFLARE_API_TOKEN || '',
 );
+const SHOULD_SKIP_AUTH_FAILURE =
+  process.env.GITHUB_EVENT_NAME === 'pull_request' || process.env.CI_VALIDATE_CF_ALLOW_AUTH_SKIP === '1';
 const ROOT = process.cwd();
 const APPS_DIR = path.join(ROOT, 'apps');
 
@@ -75,6 +77,12 @@ async function cfGet(pathname) {
   });
   const body = await res.text();
   if (!res.ok) {
+    if (SHOULD_SKIP_AUTH_FAILURE && [400, 401, 403].includes(res.status)) {
+      console.log(
+        `${YELLOW}::warning::Skipping Cloudflare resource validation because Cloudflare auth failed for ${pathname}: HTTP ${res.status}${RESET}`,
+      );
+      process.exit(0);
+    }
     throw new Error(`Cloudflare API request failed for ${pathname}: HTTP ${res.status} ${body}`);
   }
   const json = JSON.parse(body);
