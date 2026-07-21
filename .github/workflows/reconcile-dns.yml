@@ -71,11 +71,15 @@ jobs:
           }
 
           # Idempotent guard: if an app already matches this name or domain,
-          # do nothing rather than create a duplicate.
+          # print its existing policies for verification and stop rather
+          # than create a duplicate.
           EXISTING=$(api_get "$CF_API/accounts/$CF_ACCOUNT/access/apps?per_page=100" | \
             jq -r '[.result[] | select(.name == "GoldShore MCP" or .domain == "mcp.goldshore.ai" or ((.self_hosted_domains // []) | index("mcp.goldshore.ai")))] | first | .id // empty')
           if [ -n "$EXISTING" ]; then
             echo "GoldShore MCP Access app already exists: $EXISTING -- nothing to do."
+            echo "== existing policies =="
+            api_get "$CF_API/accounts/$CF_ACCOUNT/access/apps/$EXISTING/policies" | \
+              jq '[.result[] | {name, decision, include}]'
             exit 0
           fi
 
