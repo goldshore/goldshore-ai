@@ -45,6 +45,20 @@ jobs:
           fi
           node scripts/validate-cf-resources.mjs
 
+      - name: Warn if banproof binding check is disabled
+        if: ${{ vars.ENABLE_BANPROOF_BINDINGS_CHECK != 'true' }}
+        run: echo "::warning::ENABLE_BANPROOF_BINDINGS_CHECK is not set; skipping banproof production binding validation."
+
+      - name: Enforce banproof production bindings
+        if: ${{ vars.ENABLE_BANPROOF_BINDINGS_CHECK == 'true' }}
+        run: pnpm check:banproof-bindings
+
+      - name: Validate CF resource IDs
+        env:
+          CLOUDFLARE_BUILD_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: node scripts/validate-cf-resources.mjs
+
       - name: Build all
         run: pnpm -r --sequential build
 

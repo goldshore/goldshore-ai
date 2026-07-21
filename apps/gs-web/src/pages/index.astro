@@ -301,14 +301,14 @@ export async function verifyAccess(req, env) {
     <label>Interest
       <select name="inquiry" required>
         <option value="">Select area of interest</option>
-        <option value="general">General inquiry</option>
-        <option value="strategy-call">Strategy call</option>
+        <option value="general-inquiry">General inquiry</option>
+        <option value="strategy-call">Strategy Call</option>
         <option value="project-scope">Project scoping</option>
         <option value="support">Support</option>
       </select>
     </label>
     <label>Message
-      <textarea name="message" id="qs-message" required rows="4" placeholder="Tell us about your inquiry (20+ characters)…"></textarea>
+      <textarea name="message" id="qs-message" required rows="4" placeholder="Tell us about your inquiry..."></textarea>
     </label>
     <div id="qs-form-status" class="form-status" aria-live="polite"></div>
     <button type="submit" class="btn-form" id="qs-submit">Submit Request →</button>

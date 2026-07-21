@@ -35,6 +35,7 @@ jobs:
       CF_API: https://api.cloudflare.com/client/v4
       RAW_CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
       CLOUDFLARE_BUILD_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+      CF_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
     steps:
       - name: Normalize Cloudflare token
         shell: bash
@@ -62,6 +63,9 @@ jobs:
           set -euo pipefail
           test -n "$CF_API_TOKEN"
           auth=(-H "Authorization: Bearer $CF_API_TOKEN")
+          echo "::add-mask::$CF_API_TOKEN"
+          token=$(node -e "const t=process.env.CF_API_TOKEN||''; process.stdout.write(t.trim())")
+          auth=(-H "Authorization: Bearer $token")
 
           for zone in goldshore.ai goldshore.org armsway.com; do
             zone_id=$(curl -fsS "$CF_API/zones?name=$zone" "${auth[@]}" | jq -r '.result[0].id // empty')
