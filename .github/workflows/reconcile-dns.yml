@@ -6,16 +6,8 @@ name: Reconcile DNS
 # infra/Cloudflare/runbooks/DNS_AND_EMAIL.md ("Delete record" requires explicit
 # confirmation).
 #
-# goldshore.org and www.goldshore.org are intentionally excluded below. Three repo
-# docs disagree on who owns them:
-#   - infra/Cloudflare/desired-state.yaml and policy/ROUTE_POLICY.md (Authority:
-#     Marzton, 2026-04-24) describe a standalone "goldshore-org" router Worker.
-#   - docs/architecture/domain-ownership.md (2026-06-15, later) says gs-web/Pages
-#     owns goldshore.org, and explicitly states "goldshore-org is not canonical".
-#   - infra/Cloudflare/deploy.ts's gs-web smoke check treats goldshore.org as part
-#     of gs-web's own deploy verification, matching the domain-ownership.md read.
-# Resolve that conflict (update whichever doc is stale) before adding these two
-# records back here.
+# The desired-state file is authoritative for both goldshore.ai and goldshore.org.
+# Each record is reconciled in its declared zone.
 #
 # Run manually: Actions -> Reconcile DNS -> Run workflow. dry_run defaults to true.
 
@@ -27,8 +19,93 @@ on:
         required: false
         default: true
         type: boolean
+      harden_tls:
+        description: 'Set Full (strict) and minimum TLS 1.2 on GoldShore/Armsway zones'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
+  harden-tls:
+    if: ${{ inputs.harden_tls }}
+    name: Harden zone TLS settings
+    runs-on: ubuntu-latest
+    permissions: {}
+    env:
+      CF_API: https://api.cloudflare.com/client/v4
+      CLOUDFLARE_BUILD_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+    steps:
+      - name: Normalize Cloudflare token
+        shell: bash
+        run: |
+          token="$(
+            node <<'NODE'
+          const raw = process.env.CLOUDFLARE_BUILD_API_TOKEN || "";
+          let token = raw.replace(/[\r\n]/g, "").trim();
+          const bearer = token.match(/(?:authorization\s*:\s*)?bearer\s+([^\s"',;}]+)/i);
+          if (bearer) token = bearer[1];
+          const cfut = token.match(/cfut_[A-Za-z0-9_-]+/);
+          if (cfut) token = cfut[0];
+          token = token.replace(/^[`'"]+|[`'",;}]+$/g, "").replace(/\s/g, "");
+          process.stdout.write(token);
+          NODE
+          )"
+          if [ -n "$token" ]; then
+            echo "::add-mask::$token"
+            echo "CF_API_TOKEN=$token" >> "$GITHUB_ENV"
+          fi
+
+      - name: Require strict origin validation and TLS 1.2
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CF_API_TOKEN"
+          auth=(-H "Authorization: Bearer $CF_API_TOKEN")
+
+          for zone in goldshore.ai goldshore.org armsway.com; do
+            zone_id=$(curl -fsS "$CF_API/zones?name=$zone" "${auth[@]}" | jq -r '.result[0].id // empty')
+            test -n "$zone_id"
+            curl -fsS -X PATCH "$CF_API/zones/$zone_id/settings/ssl" "${auth[@]}" \
+              -H 'Content-Type: application/json' --data '{"value":"strict"}' >/dev/null
+            curl -fsS -X PATCH "$CF_API/zones/$zone_id/settings/min_tls_version" "${auth[@]}" \
+              -H 'Content-Type: application/json' --data '{"value":"1.2"}' >/dev/null
+            echo "Hardened TLS: $zone"
+          done
+
+          # Bot Fight Mode challenges the admin login before Access can
+          # evaluate the user. Managed WAF, DDoS protection, Access, strict
+          # SSL, and TLS 1.2 remain enabled.
+          for zone in goldshore.ai goldshore.org; do
+            zone_id=$(curl -fsS "$CF_API/zones?name=$zone" "${auth[@]}" | jq -r '.result[0].id // empty')
+            curl -fsS -X PUT "$CF_API/zones/$zone_id/bot_management" "${auth[@]}" \
+              -H 'Content-Type: application/json' --data '{"fight_mode":false}' >/dev/null
+            echo "Disabled Bot Fight Mode: $zone"
+          done
+
+          reconcile_route() {
+            local zone="$1" pattern="$2" script="$3" zone_id routes route_id body
+            zone_id=$(curl -fsS "$CF_API/zones?name=$zone" "${auth[@]}" | jq -r '.result[0].id // empty')
+            routes=$(curl -fsS "$CF_API/zones/$zone_id/workers/routes" "${auth[@]}")
+            route_id=$(jq -r --arg pattern "$pattern" '.result[] | select(.pattern == $pattern) | .id' <<<"$routes")
+            body=$(jq -nc --arg pattern "$pattern" --arg script "$script" '{pattern:$pattern,script:$script}')
+            if [[ -n "$route_id" ]]; then
+              curl -fsS -X PUT "$CF_API/zones/$zone_id/workers/routes/$route_id" "${auth[@]}" \
+                -H 'Content-Type: application/json' --data "$body" >/dev/null
+            else
+              curl -fsS -X POST "$CF_API/zones/$zone_id/workers/routes" "${auth[@]}" \
+                -H 'Content-Type: application/json' --data "$body" >/dev/null
+            fi
+            echo "Reconciled route: $pattern -> $script"
+          }
+
+          reconcile_route goldshore.ai 'goldshore.ai/*' gs-web-prod
+          reconcile_route goldshore.ai 'admin.goldshore.ai/*' gs-web-prod
+          reconcile_route goldshore.ai 'admin-preview.goldshore.ai/*' gs-web-prod
+          reconcile_route goldshore.ai 'api.goldshore.ai/*' gs-api-prod
+          reconcile_route goldshore.org 'goldshore.org/*' gs-web-prod
+          reconcile_route goldshore.org 'admin.goldshore.org/*' gs-web-prod
+          reconcile_route goldshore.org 'api.goldshore.org/*' gs-api-prod
+
   reconcile:
     name: Reconcile DNS records
     runs-on: ubuntu-latest
@@ -46,9 +123,9 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
-      - name: Extract desired DNS records (excluding goldshore.org)
+      - name: Extract desired DNS records
         run: |
           set -euo pipefail
           python3 - <<'EOF' > desired_records.json
@@ -61,8 +138,6 @@ jobs:
           for r in cfg['cloudflare']['dns']['records']:
               name = r['name']
               zone = r.get('zone', 'goldshore.ai')
-              if zone == 'goldshore.org' or name in ('goldshore.org', 'www.goldshore.org'):
-                  continue
               full_name = zone if name == zone else f"{name}.{zone}"
               out.append({
                   'name': name,
@@ -75,7 +150,7 @@ jobs:
 
           print(json.dumps(out))
           EOF
-          echo "Extracted $(jq 'length' desired_records.json) desired records (goldshore.org excluded, see workflow header):"
+          echo "Extracted $(jq 'length' desired_records.json) desired records:"
           jq -r '.[] | "  \(.full_name) (\(.type)) -> \(.content) [proxied=\(.proxied)]"' desired_records.json
 
       - name: Verify CF token has Zone DNS scope
@@ -103,13 +178,6 @@ jobs:
             curl -sS "$CF_API/zones?name=$1" -H "Authorization: Bearer $CF_TOKEN" | jq -r '.result[0].id // empty'
           }
 
-          ZID_AI=$(get_zone_id goldshore.ai)
-          if [ -z "$ZID_AI" ]; then
-            echo "::error::Could not resolve zone id for goldshore.ai"
-            exit 1
-          fi
-          echo "goldshore.ai zone id: $ZID_AI"
-
           # preview.goldshore.ai reports as MISSING via a type=CNAME query
           # despite being live and working today -- it's provisioned through
           # a real Workers Custom Domain that doesn't show up as a plain
@@ -118,24 +186,30 @@ jobs:
           # already exists on that host"). Skip CREATE rather than let every
           # run log a false MISSING/warning pair.
           #
-          # goldshore.ai (apex) and api.goldshore.ai are deliberately NOT in
-          # this list: verified via the raw Cloudflare API that both have
-          # zero DNS records of any kind (no CNAME, no wildcard, no Custom
-          # Domain) despite having a configured Worker Route -- the route had
-          # nothing to activate it and the hostname was down. They need a
-          # real CREATE, not a skip.
-          SKIP_CREATE_HOSTS="preview.goldshore.ai"
+          # api.goldshore.ai is deliberately NOT in this list: verified via
+          # the raw Cloudflare API that it has zero DNS records of any kind
+          # (no CNAME, no wildcard, no Custom Domain) despite having a
+          # configured Worker Route (api.goldshore.ai/* -> gs-api-prod) --
+          # the route had nothing to activate it and the hostname was down.
+          # It needs a real CREATE, not a skip.
+          SKIP_CREATE_HOSTS="goldshore.ai preview.goldshore.ai"
 
           CHANGED=0
 
           while read -r rec; do
             FULL_NAME=$(echo "$rec" | jq -r '.full_name')
+            ZONE=$(echo "$rec" | jq -r '.zone')
             TYPE=$(echo "$rec" | jq -r '.type')
             CONTENT=$(echo "$rec" | jq -r '.content')
             PROXIED=$(echo "$rec" | jq -r '.proxied')
+            ZID=$(get_zone_id "$ZONE")
+            if [ -z "$ZID" ]; then
+              echo "::warning::Could not resolve zone id for $ZONE -- skipping $FULL_NAME"
+              continue
+            fi
 
             LIST_RESP=$(curl -sS -w '\n%{http_code}' \
-              "$CF_API/zones/$ZID_AI/dns_records?name=$FULL_NAME&type=$TYPE" \
+              "$CF_API/zones/$ZID/dns_records?name=$FULL_NAME&type=$TYPE" \
               -H "Authorization: Bearer $CF_TOKEN")
             LIST_STATUS="${LIST_RESP##*$'\n'}"
             LIST_BODY="${LIST_RESP%$'\n'*}"
@@ -176,7 +250,7 @@ jobs:
               BODY=$(jq -nc --arg t "$TYPE" --arg n "$FULL_NAME" --arg c "$CONTENT" --argjson p "$PROXIED" \
                 '{type:$t,name:$n,content:$c,proxied:$p,ttl:1}')
               CREATE_RESP=$(echo "$BODY" | curl -sS -w '\n%{http_code}' -X POST \
-                "$CF_API/zones/$ZID_AI/dns_records" \
+                "$CF_API/zones/$ZID/dns_records" \
                 -H "Authorization: Bearer $CF_TOKEN" \
                 -H "Content-Type: application/json" \
                 --data @-)
@@ -204,7 +278,7 @@ jobs:
             BODY=$(jq -nc --arg t "$TYPE" --arg n "$FULL_NAME" --arg c "$CONTENT" --argjson p "$PROXIED" \
               '{type:$t,name:$n,content:$c,proxied:$p,ttl:1}')
             UPDATE_RESP=$(echo "$BODY" | curl -sS -w '\n%{http_code}' -X PUT \
-              "$CF_API/zones/$ZID_AI/dns_records/$EXISTING_ID" \
+              "$CF_API/zones/$ZID/dns_records/$EXISTING_ID" \
               -H "Authorization: Bearer $CF_TOKEN" \
               -H "Content-Type: application/json" \
               --data @-)

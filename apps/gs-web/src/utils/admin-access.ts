@@ -10,7 +10,12 @@ import {
 
 export const CANONICAL_ADMIN_ORIGIN = 'https://admin.goldshore.ai';
 
-const ADMIN_HOSTS = new Set(['admin.goldshore.ai', 'admin-preview.goldshore.ai']);
+const ADMIN_HOSTS = new Set([
+  'admin.goldshore.ai',
+  'admin.goldshore.org',
+  'admin-preview.goldshore.ai',
+  'admin-preview.goldshore.org',
+]);
 
 const STATIC_PATH_PREFIXES = [
   '/_astro/',
