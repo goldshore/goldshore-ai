@@ -13,10 +13,10 @@ if (!repoSlug || !repoSlug.includes('/')) throw new Error('Missing GITHUB_REPOSI
 
 const [owner, repo] = repoSlug.split('/');
 const requiredChecks = [
-  'Required Merge Checks / workspace-install',
-  'Required Merge Checks / gs-api-build-test',
-  'Required Merge Checks / gs-web-build',
-  'Required Merge Checks / deployment-dry-run',
+  'workspace-install',
+  'gs-api-build-test',
+  'gs-web-build',
+  'deployment-dry-run',
 ];
 
 const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/branches/${branch}/protection`, {
