@@ -27,16 +27,18 @@
 
 ### 2. Admin (Cockpit)
 
-- Project: `gs-admin`
+`admin.goldshore.ai` was migrated off the standalone `gs-admin` Pages project onto `gs-web` (route `admin.goldshore.ai/*` in `apps/gs-web/wrangler.toml`), per CLAUDE.md's repo migration plan. The DNS/routing cutover is done; the actual admin page/route content under `apps/gs-admin/src` has not been ported into `apps/gs-web` yet — that migration is in progress.
+
+- Project (legacy, not yet retired): `gs-admin`
 - Repo: `goldshore-ai`
 - Root: `apps/gs-admin`
-- Custom Domains:
-  - `admin.goldshore.ai`
+- Custom Domains still on the legacy project:
   - `admin-preview.goldshore.ai`
+  - `admin.goldshore.org` (pending the separate `goldshore.org` ownership conflict — see `policy/ROUTE_POLICY.md` vs `docs/architecture/domain-ownership.md`)
 
 **Zero Trust:**
 
-- Access policy required on `admin.goldshore.ai` (email allowlist).
+- Access policy required on `admin.goldshore.ai` (email allowlist) — unchanged by the cutover, still applies to the same hostname regardless of which Worker/Pages project serves it.
 
 **Environment Variables:**
 
@@ -99,10 +101,9 @@
 - AI:
   - Binding: `AI`
   - Gateway: `goldshore-ai-gateway`
-- Secrets Store:
+- Worker secrets:
   - Binding: `INTEGRATION_MASTER_KEY`
-  - Store: `b9824d3280c54573a24137c7e7143b33`
-  - Secret: `INTEGRATION_MASTER_KEY`
+  - Secret: `INTEGRATION_MASTER_KEY` (normal Worker secret; do not configure `secrets_store_secrets` until the referenced Cloudflare Secrets Store exists)
 
 **Risk Radar storage policy:** bind Risk Radar storage only to `gs-api`; `gs-web` must call API endpoints rather than receiving `RISK_RADAR_DB`, `RISK_RADAR_CACHE`, or `RISK_RADAR_R2` directly.
 
