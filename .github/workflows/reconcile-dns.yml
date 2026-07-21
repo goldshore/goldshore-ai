@@ -21,6 +21,86 @@ on:
         type: boolean
 
 jobs:
+  harden-tls:
+    if: ${{ inputs.harden_tls }}
+    name: Harden zone TLS settings
+    runs-on: ubuntu-latest
+    permissions: {}
+    env:
+      CF_API: https://api.cloudflare.com/client/v4
+      CLOUDFLARE_BUILD_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+    steps:
+      - name: Normalize Cloudflare token
+        shell: bash
+        run: |
+          token="$(
+            node <<'NODE'
+          const raw = process.env.CLOUDFLARE_BUILD_API_TOKEN || "";
+          let token = raw.replace(/[\r\n]/g, "").trim();
+          const bearer = token.match(/(?:authorization\s*:\s*)?bearer\s+([^\s"',;}]+)/i);
+          if (bearer) token = bearer[1];
+          const cfut = token.match(/cfut_[A-Za-z0-9_-]+/);
+          if (cfut) token = cfut[0];
+          token = token.replace(/^[`'"]+|[`'",;}]+$/g, "").replace(/\s/g, "");
+          process.stdout.write(token);
+          NODE
+          )"
+          if [ -n "$token" ]; then
+            echo "::add-mask::$token"
+            echo "CF_API_TOKEN=$token" >> "$GITHUB_ENV"
+          fi
+
+      - name: Require strict origin validation and TLS 1.2
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CF_API_TOKEN"
+          auth=(-H "Authorization: Bearer $CF_API_TOKEN")
+
+          for zone in goldshore.ai goldshore.org armsway.com; do
+            zone_id=$(curl -fsS "$CF_API/zones?name=$zone" "${auth[@]}" | jq -r '.result[0].id // empty')
+            test -n "$zone_id"
+            curl -fsS -X PATCH "$CF_API/zones/$zone_id/settings/ssl" "${auth[@]}" \
+              -H 'Content-Type: application/json' --data '{"value":"strict"}' >/dev/null
+            curl -fsS -X PATCH "$CF_API/zones/$zone_id/settings/min_tls_version" "${auth[@]}" \
+              -H 'Content-Type: application/json' --data '{"value":"1.2"}' >/dev/null
+            echo "Hardened TLS: $zone"
+          done
+
+          # Bot Fight Mode challenges the admin login before Access can
+          # evaluate the user. Managed WAF, DDoS protection, Access, strict
+          # SSL, and TLS 1.2 remain enabled.
+          for zone in goldshore.ai goldshore.org; do
+            zone_id=$(curl -fsS "$CF_API/zones?name=$zone" "${auth[@]}" | jq -r '.result[0].id // empty')
+            curl -fsS -X PUT "$CF_API/zones/$zone_id/bot_management" "${auth[@]}" \
+              -H 'Content-Type: application/json' --data '{"fight_mode":false}' >/dev/null
+            echo "Disabled Bot Fight Mode: $zone"
+          done
+
+          reconcile_route() {
+            local zone="$1" pattern="$2" script="$3" zone_id routes route_id body
+            zone_id=$(curl -fsS "$CF_API/zones?name=$zone" "${auth[@]}" | jq -r '.result[0].id // empty')
+            routes=$(curl -fsS "$CF_API/zones/$zone_id/workers/routes" "${auth[@]}")
+            route_id=$(jq -r --arg pattern "$pattern" '.result[] | select(.pattern == $pattern) | .id' <<<"$routes")
+            body=$(jq -nc --arg pattern "$pattern" --arg script "$script" '{pattern:$pattern,script:$script}')
+            if [[ -n "$route_id" ]]; then
+              curl -fsS -X PUT "$CF_API/zones/$zone_id/workers/routes/$route_id" "${auth[@]}" \
+                -H 'Content-Type: application/json' --data "$body" >/dev/null
+            else
+              curl -fsS -X POST "$CF_API/zones/$zone_id/workers/routes" "${auth[@]}" \
+                -H 'Content-Type: application/json' --data "$body" >/dev/null
+            fi
+            echo "Reconciled route: $pattern -> $script"
+          }
+
+          reconcile_route goldshore.ai 'goldshore.ai/*' gs-web-prod
+          reconcile_route goldshore.ai 'admin.goldshore.ai/*' gs-web-prod
+          reconcile_route goldshore.ai 'admin-preview.goldshore.ai/*' gs-web-prod
+          reconcile_route goldshore.ai 'api.goldshore.ai/*' gs-api-prod
+          reconcile_route goldshore.org 'goldshore.org/*' gs-web-prod
+          reconcile_route goldshore.org 'admin.goldshore.org/*' gs-web-prod
+          reconcile_route goldshore.org 'api.goldshore.org/*' gs-api-prod
+
   reconcile:
     name: Reconcile DNS records
     runs-on: ubuntu-latest
