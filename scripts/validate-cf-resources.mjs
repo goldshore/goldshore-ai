@@ -3,8 +3,19 @@
 import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 
-const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_ID || '';
-const TOKEN = process.env.CLOUDFLARE_BUILD_API_TOKEN || process.env.CLOUDFLARE_API_TOKEN || '';
+const normalizeCloudflareToken = (raw) => {
+  let token = (raw || '').replace(/[\r\n]/g, '').trim();
+  const bearer = token.match(/(?:authorization\s*:\s*)?bearer\s+([^\s"',;}]+)/i);
+  if (bearer) token = bearer[1];
+  const cfut = token.match(/cfut_[A-Za-z0-9_-]+/);
+  if (cfut) token = cfut[0];
+  return token.replace(/^[`'"]+|[`'",;}]+$/g, '').replace(/\s/g, '');
+};
+
+const ACCOUNT_ID = (process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_ID || '').trim();
+const TOKEN = normalizeCloudflareToken(
+  process.env.CLOUDFLARE_BUILD_API_TOKEN || process.env.CLOUDFLARE_API_TOKEN || '',
+);
 const ROOT = process.cwd();
 const APPS_DIR = path.join(ROOT, 'apps');
 
