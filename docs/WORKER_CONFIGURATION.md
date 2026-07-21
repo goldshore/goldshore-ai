@@ -15,6 +15,7 @@ Do not add new app workers or deploy workflows for retired services. All backend
 - **Wrangler:** `apps/gs-api/wrangler.toml`
 - **Production routes:** `api.goldshore.ai/*`, `api.goldshore.org/*`, plus consolidated backend hostnames `agent.goldshore.ai/*`, `mail.goldshore.ai/*`, `ops.goldshore.ai/*`, `trading.goldshore.ai/*`, `dashboard.goldshore.ai/*`, and `dash.goldshore.ai/*`
 - **Preview:** `workers_dev = true`; preview API route `api-preview.goldshore.ai/*`
+- **Cloudflare Builds fallback:** top-level bindings intentionally mirror production runtime bindings because the dashboard Workers Builds integration may run `wrangler versions upload` without `--env prod`. Do not remove that block until the dashboard trigger is disabled or changed to `wrangler deploy --env prod --config wrangler.toml`.
 - **Canonical bindings:**
   - KV: `KV`, `CONTROL_LOGS`, `RISK_RADAR_CACHE`
   - D1: `PLATFORM_DB`, `AUDIT_DB`, `SIGNALS_DB`, `RISK_RADAR_DB`, `JOBS_DB`

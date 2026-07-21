@@ -60,6 +60,10 @@ jobs:
           # Do not include bare gs-api here. It is intentionally connected to
           # marzton/goldshore-api as a rebuild target for that repo/Worker.
           workers=(
+            # Bare gs-api is a legacy dashboard-side duplicate. Canonical API
+            # builds are gs-api-prod and gs-api-preview; leaving gs-api
+            # connected makes PR checks fail on Durable Object version uploads.
+            gs-api
             gs-email-router
             gs-gateway-prod
             gs-platform

@@ -22,6 +22,8 @@ const environmentBlock = (toml: string, environment: string) => {
   return match[1];
 };
 
+const topLevelBlock = (toml: string) => toml.split(/\r?\n\[env\.prod\]/)[0];
+
 const routePatterns = (block: string) =>
   [...block.matchAll(/pattern\s*=\s*"([^"]+)"/g)].map((match) => match[1]);
 
@@ -82,6 +84,29 @@ describe('gs-api wrangler env bindings', () => {
       );
     });
   }
+
+  it('keeps top-level bindings safe for Cloudflare Workers Builds version uploads', () => {
+    const topLevel = topLevelBlock(wranglerToml);
+
+    assert.match(topLevel, /\[vars\][\s\S]*?ENV\s*=\s*"production"/);
+    assert.match(
+      topLevel,
+      /\[vars\][\s\S]*?CLOUDFLARE_ACCESS_AUDIENCE\s*=\s*"8510d42c31fc791e295427031ffeef7c7ebc0f1b62d8634fbb284bf82562f528"/,
+    );
+    assert.match(
+      topLevel,
+      /\[\[kv_namespaces\]\][\s\S]*?binding\s*=\s*"KV"[\s\S]*?id\s*=\s*"e0b8b807191346c3b0afc25fe716d2cd"/,
+    );
+    assert.match(
+      topLevel,
+      /\[\[d1_databases\]\][\s\S]*?binding\s*=\s*"PLATFORM_DB"/,
+    );
+    assert.match(
+      topLevel,
+      /\[\[r2_buckets\]\][\s\S]*?binding\s*=\s*"GS_ASSETS"/,
+    );
+    assert.match(topLevel, /\[ai\][\s\S]*?binding\s*=\s*"AI"/);
+  });
 
   it('routes consolidated backend hostnames to the canonical API Worker', () => {
     assert.deepEqual(routePatterns(environmentBlock(wranglerToml, 'prod')), [
