@@ -32,6 +32,7 @@ Do not add new app workers or deploy workflows for retired services. All backend
 - **Preview route:** `preview.goldshore.ai`
 - **Canonical bindings:**
   - Worker Assets: `ASSETS`
+  - Cloudflare Images: `IMAGES`
   - KV: `KV`
   - D1: `PLATFORM_DB`
   - R2: `GS_ASSETS`
