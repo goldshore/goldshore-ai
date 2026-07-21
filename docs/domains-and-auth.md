@@ -148,5 +148,9 @@ When adding preview callback URLs in GitHub App settings, ensure the same hostna
 ### Cloudflare Access OIDC callback (GitHub IdP)
 
 - `https://goldshore.cloudflareaccess.com/cdn-cgi/access/callback`
+- Canonical OAuth app: `Gold Shore Cloudflare Access`
+- Canonical OAuth client ID: `Ov23liQ0fWArxJvZL7A5`
+- Store its client secret only in the repository Actions secret
+  `GOLDSHORE_ACCESS_GITHUB_CLIENT_SECRET`.
 
 Use this exact callback URL in the GitHub OAuth app configuration used by Cloudflare Access. The GitHub OAuth app homepage should be `https://goldshore.cloudflareaccess.com`; Cloudflare Access stores the GitHub OAuth client ID and client secret in the Zero Trust identity provider configuration. If this endpoint changes, update both the GitHub OAuth app and Cloudflare Access IdP configuration together to avoid login failures.

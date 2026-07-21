@@ -10,6 +10,9 @@ on:
       - "packages/**"
       - "package.json"
       - "pnpm-lock.yaml"
+      - ".node-version"
+      - ".nvmrc"
+      - ".github/workflows/preview-gs-api.yml"
 
 jobs:
   preview-api:
