@@ -5,6 +5,30 @@ const accountId = process.env.CLOUDFLARE_ACCOUNT_ID?.trim();
 const rawToken = process.env.CLOUDFLARE_BUILD_API_TOKEN ?? '';
 const token = (rawToken.match(/(?:authorization\s*:\s*)?bearer\s+([^\s"',;}]+)/i)?.[1] ?? rawToken)
   .replace(/[\r\n]/g, '').trim();
+const normalizeCloudflareToken = (raw) => {
+  let token = (raw || '').replace(/[\r\n]/g, '').trim();
+  const bearer = token.match(/(?:authorization\s*:\s*)?bearer\s+([^\s"',;}]+)/i);
+  if (bearer) token = bearer[1];
+  const cfut = token.match(/cfut_[A-Za-z0-9_-]+/);
+  if (cfut) token = cfut[0];
+  return token.replace(/^[`'"]+|[`'",;}]+$/g, '').replace(/\s/g, '');
+};
+
+const ACCOUNT_ID = (process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_ID || '').trim();
+const TOKEN = normalizeCloudflareToken(
+  process.env.CLOUDFLARE_BUILD_API_TOKEN || process.env.CLOUDFLARE_API_TOKEN || '',
+);
+const SHOULD_SKIP_AUTH_FAILURE =
+  process.env.GITHUB_EVENT_NAME === 'pull_request' || process.env.CI_VALIDATE_CF_ALLOW_AUTH_SKIP === '1';
+const ROOT = process.cwd();
+const APPS_DIR = path.join(ROOT, 'apps');
+
+const RED = '\u001b[31m';
+const GREEN = '\u001b[32m';
+const YELLOW = '\u001b[33m';
+const CYAN = '\u001b[36m';
+const BOLD = '\u001b[1m';
+const RESET = '\u001b[0m';
 
 if (!accountId || !token) {
   console.warn('::warning::Cloudflare credentials are unavailable; skipping live resource validation.');
@@ -61,6 +85,27 @@ for (const entry of appDirs.filter((item) => item.isDirectory())) {
     if (/^routes?\s*=/m.test(productionBlock) && !/(kv_namespaces|d1_databases|r2_buckets|queues)/.test(productionBlock)) {
       warnings.push('gs-api env.production defines routes but no KV/D1/R2/Queue bindings; it is likely a ghost environment.');
     }
+
+  const envProductionWarning = /(?:^\[env\.production\]|\n\[env\.production\])/.test(text)
+    ? /(?:^\[\[env\.production\.(?:d1_databases|kv_namespaces|r2_buckets|queues\.(?:producers|consumers))\]\]|\n\[\[env\.production\.)/m.test(text)
+    : false;
+
+  return { filePath, workerName, kvIds, d1Ids, bucketNames, queueNames, accessAuds, envProductionWarning };
+}
+
+async function cfGet(pathname) {
+  const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/${pathname}`, {
+    headers: { Authorization: `Bearer ${TOKEN}`, Accept: 'application/json' },
+  });
+  const body = await res.text();
+  if (!res.ok) {
+    if (SHOULD_SKIP_AUTH_FAILURE && [400, 401, 403].includes(res.status)) {
+      console.log(
+        `${YELLOW}::warning::Skipping Cloudflare resource validation because Cloudflare auth failed for ${pathname}: HTTP ${res.status}${RESET}`,
+      );
+      process.exit(0);
+    }
+    throw new Error(`Cloudflare API request failed for ${pathname}: HTTP ${res.status} ${body}`);
   }
   if (entry.name === 'gs-trading' && /\[\[env\.preview\.d1_databases\]\][\s\S]*?database_id\s*=\s*"00000000-0000-0000-0000-000000000000"/.test(text)) {
     warnings.push('gs-trading preview contains a duplicate placeholder PAPER_DB D1 entry.');

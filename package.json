@@ -40,9 +40,8 @@
     "check:wrangler-placeholders": "node scripts/check-wrangler-placeholders.mjs"
   },
   "devDependencies": {
-    "@astrojs/mdx": "^5.0.4",
+    "@astrojs/mdx": "^7.0.3",
     "@astrojs/sitemap": "^3.7.2",
-    "@astrojs/tailwind": "^6.0.2",
     "@types/node": "^26.1.1",
     "@typescript-eslint/eslint-plugin": "^8.57.2",
     "@typescript-eslint/parser": "^8.65.0",
@@ -54,7 +53,6 @@
     "prettier": "^3.2.5",
     "prettier-plugin-astro": "^0.14.1",
     "svgo": "^4.0.1",
-    "tailwindcss": "^4.3.1",
     "tsx": "^4.23.1",
     "typescript": "^5.4.2",
     "wrangler": "^4.112.0",

@@ -9,3 +9,9 @@ allowBuilds:
   esbuild: true
   sharp: true
   workerd: true
+
+overrides:
+  '@astrojs/cloudflare': 14.1.4
+  postal-mime: 2.7.3
+  wrangler: ^4.112.0
+  typescript: ^5.4.2

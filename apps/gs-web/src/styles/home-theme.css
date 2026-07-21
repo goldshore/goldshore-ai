@@ -7,13 +7,13 @@
   --plate: #141420;
   --panel: #1a1a28;
   --seam: #20202e;
-  --ox: #a04820;
-  --ox-bright: #c05828;
+  --ox: #d3743e;
+  --ox-bright: #f09154;
   --ox-dim: rgba(160,72,32,0.14);
   --ox-border: rgba(160,72,32,0.28);
   --t1: #eceae4;
   --t2: #b8b4a8;
-  --t3: #6e6a60;
+  --t3: #9a9589;
   --t4: #3a3830;
   --b0: rgba(255,255,255,0.03);
   --b1: rgba(255,255,255,0.06);
@@ -62,6 +62,15 @@ body.gs-home {
 }
 
 a { color: inherit; }
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--ox-bright);
+  outline-offset: 3px;
+}
 
 /* ── Starfield ────────────────────────────────────────────────────────────── */
 #starfield {
@@ -494,7 +503,6 @@ h1 .accent::after {
 .metrics div {
   background: var(--iron);
   padding: 1rem 1.15rem;
-  cursor: pointer;
 }
 
 .metrics span, .metrics em {
@@ -579,7 +587,6 @@ h2 {
   border: 1px solid var(--b1);
   padding: 1.5rem;
   transition: border-color 0.25s, background 0.25s;
-  cursor: pointer;
   text-decoration: none;
 }
 
@@ -894,7 +901,6 @@ code {
   align-items: center;
   border-top: 1px solid var(--b1);
   padding: 0.85rem 0;
-  cursor: pointer;
   transition: background 0.2s;
 }
 
@@ -944,7 +950,6 @@ code {
   align-items: center;
   padding: 0.9rem 1rem;
   border-bottom: 1px solid var(--b0);
-  cursor: pointer;
   transition: background 0.2s;
 }
 
@@ -1180,7 +1185,9 @@ code {
 
 .quick-form input:focus,
 .quick-form select:focus,
-.quick-form textarea:focus { border-color: var(--ox-border); }
+.quick-form textarea:focus {
+  border-color: var(--ox-bright);
+}
 
 .form-status {
   font-family: var(--font-mono);
