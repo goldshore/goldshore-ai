@@ -89,7 +89,13 @@ async function cfGet(pathname) {
   if (!json.success) {
     throw new Error(`Cloudflare API returned failure for ${pathname}: ${body}`);
   }
-  return json.result ?? [];
+  const result = json.result ?? [];
+  if (Array.isArray(result)) return result;
+
+  // Some account APIs (notably R2) wrap collections in an object such as
+  // `{ buckets: [...] }` instead of returning the array directly.
+  const nestedCollection = Object.values(result).find(Array.isArray);
+  return nestedCollection ?? [];
 }
 
 const [kvNamespaces, d1Databases, r2Buckets, queues, workers, accessApps] = await Promise.all([
