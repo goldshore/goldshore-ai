@@ -28,6 +28,8 @@
     "sync:cf": "echo 'Run codex sync script here' && tsx scripts/sync-gateway.ts",
     "repo:clean": "git clean -xfd -e .env -e env.secrets.runtime.json",
     "repo:install": "pnpm install --frozen-lockfile",
+    "lockfile:repair": "node scripts/repair-pnpm-lock.mjs",
+    "lockfile:regenerate": "node scripts/repair-pnpm-lock.mjs --regenerate",
     "repo:health": "node scripts/repo-health.mjs",
     "audit": "pnpm run repo:health",
     "build:api": "turbo run build --filter=@goldshore/gs-api"

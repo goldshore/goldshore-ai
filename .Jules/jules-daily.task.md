@@ -1,84 +1,88 @@
-# Jules Daily Guardian (All Branches)
+# Jules Daily Guardian
 
-You are Jules operating as the repo’s daily maintenance agent.
+You are Jules operating as the repository maintenance agent for GoldShore.
 
 ## Mission
-Once per day, perform a full-repo health sweep across **all branches** and:
-1) detect breakages, drift, duplication, and config inconsistencies
-2) apply safe fixes where possible
-3) open PRs with clear titles + summaries
-4) never break production workflows
 
-## Branch Scope
-- Enumerate all remote branches (origin/*).
-- Prioritize:
-  1) main
-  2) release/*
-  3) develop (if present)
-  4) feature/* (most recent commit date first)
-- Skip branches older than 90 days **unless** they are main/release/develop.
+Perform a repo health sweep and keep the current consolidation intact:
 
-## What to Check (Required)
-### A) Workspace integrity
-- Repo root structure sanity (monorepo layout, duplicated folders, nested monorepos).
-- Ensure no accidental recursion: e.g. `astro-goldshore/astro-goldshore/...`
+1. Detect breakages, drift, duplication, and config inconsistencies.
+2. Apply safe fixes where possible.
+3. Report unsafe or ambiguous changes instead of guessing.
+4. Never break production workflows or revive retired apps.
 
-### B) Install + build sanity
+## Required Contract
+
+- Only `apps/gs-web` and `apps/gs-api` are active app roots.
+- All frontend/admin/docs UI work belongs in `apps/gs-web`.
+- All backend, cron, queue, email, auth, proxy, AI, and control logic belongs in `apps/gs-api`.
+- Do not create new app directories under `apps/`.
+- Do not create new active `deploy-*.yml` workflows.
+
+## Required Checks
+
 Run:
-- `pnpm -v` (confirm pnpm exists)
-- `pnpm install --frozen-lockfile` (or `pnpm install` if lockfile mismatch is expected)
-- `pnpm -r build` (monorepo build)
-- If present: `pnpm -r test`, `pnpm -r lint`, `pnpm -r typecheck`
 
-### C) Cloudflare / Wrangler sanity
-- Validate `wrangler.toml` and any `infra/cloudflare/*.toml` files:
-  - required fields: `name`, `main`, `compatibility_date`
-  - routes patterns not conflicting
-  - secrets NOT committed
+- `pnpm -v`
+- `pnpm install --frozen-lockfile`
+- `pnpm validate`
+- `pnpm lint`
+- `pnpm test`
+- `pnpm build`
 
-### D) Astro sanity
-- Validate `astro.config.*` adapter settings for Cloudflare projects
-- Confirm `.astro/` not committed
-- Confirm `src/env.d.ts` exists if required by TS tooling
+## Additional Sweep
 
-### E) Git hygiene
-- Confirm `.gitignore` is clean and correct
-- Detect tracked files that should be ignored (env files, caches, build outputs)
+### Workspace integrity
 
-### F) Generated artifacts
-- Ensure generated OpenAPI JSON isn’t committed if it’s meant to be generated
-- Confirm paths and ignore rules align with project structure
+- Confirm `pnpm-workspace.yaml` does not include stale app roots.
+- Confirm there are no nested monorepo roots outside `archive/`.
+- Confirm `apps/` contains only `gs-web` and `gs-api`.
 
-## Fix Rules (Safety)
-- Only do mechanical/safe fixes automatically:
-  - formatting, lint autofix (if configured)
-  - .gitignore corrections
-  - removing committed cache/build artifacts
-  - tightening scripts/config that are clearly wrong (typos, missing commas, wrong paths)
-  - moving duplicate nested monorepo contents only if deterministic and verified
-- Never delete anything without a reversible plan:
-  - prefer moving to `archive/` or making a PR that deletes only after confirming duplicates
-- Never rotate secrets or modify production credentials.
+### Cloudflare and Wrangler
+
+- Validate active Wrangler config for `apps/gs-api`.
+- Confirm web deployment targets `gs-web` Pages.
+- Confirm API deployment targets `gs-api` Worker or the extracted `goldshore-api` repo when that migration is explicit.
+- Confirm routes and domains follow `docs/cloudflare-routing-plan.md`.
+- Ensure Cloudflare Worker Builds for API services use the `gs-control` build token.
+
+### Git and secret hygiene
+
+- Confirm `.claude/settings.local.json` stays ignored.
+- Detect committed secrets, env files, caches, and build outputs.
+- Do not regenerate or commit `pnpm-lock.yaml` unless dependency versions intentionally changed.
+- If `pnpm-lock.yaml` conflicts but no package manifests changed, keep main's lockfile instead of regenerating.
+
+### Recent Claude fixes
+
+- Preserve theme/hero/Penrose work.
+- Preserve preview DNS workflow reverts.
+- Preserve workflow rename to staging semantics.
+- Preserve Cloudflare routing cleanup notes.
+
+## Safe Fix Rules
+
+Safe automatic fixes:
+
+- `.gitignore` corrections.
+- Validation script drift.
+- Broken Jules runner scripts.
+- Stale documentation references that contradict the current contract.
+- Formatting/lint autofix when configured.
+
+Unsafe automatic fixes:
+
+- Production deploys.
+- Credential changes.
+- Removing real app code without a migration plan.
+- Reintroducing `gs-admin`, `gs-agent`, `gs-gateway`, `gs-control`, `gs-mail`, or `apps/risk-radar`.
 
 ## Output Requirements
-For each branch checked:
-- Summarize status:
-  - install: pass/fail
-  - build: pass/fail
-  - lint/test/typecheck: pass/fail (if applicable)
-  - key findings
-- If fixes are made:
-  - open a PR with:
-    - title: `chore(daily): <short fix summary> [<branch>]`
-    - body:
-      - what was wrong
-      - what changed
-      - how to verify
-      - risk notes
-- If the branch is too broken or ambiguous:
-  - open an Issue with clear reproduction steps and logs snippet.
 
-## Constraints
-- Keep changes minimal per PR.
-- Prefer multiple small PRs over one giant PR.
-- Never merge; only propose.
+For each sweep, report:
+
+- Commands run and pass/fail status.
+- Files changed.
+- Contract violations found.
+- Remaining manual actions.
+- Verification evidence.

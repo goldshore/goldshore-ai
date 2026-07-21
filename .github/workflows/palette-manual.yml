@@ -29,7 +29,7 @@ jobs:
         run: npm install -g pnpm
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Run Palette Agent
         run: node .Jules/run-palette.js

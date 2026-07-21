@@ -1,142 +1,82 @@
-# Operation: Risk Radar & Sentinel
+# Jules Mission: GoldShore Consolidation Guard
 
-Here is a clear set of instructions you can send to Codex and Jules to get your repositories back in order, install the Risk Radar app, and evaluate their work using a points‑based system. These steps assume you will run them in a GitHub environment with proper write access. They include both technical tasks and a scoring structure for accountability.
+Last updated: 2026-07-21
 
----
+## Publishing Rule
 
-## 1. General Setup
+By default, completed repair work should be committed to a branch, pushed, and opened as a pull request unless the operator explicitly asks for local-only work.
 
-* **Repositories in scope:**
+## Current Repository Contract
 
-  * `goldshore.github.io` (organization-level GitHub Pages site).
-  * `astro-goldshore` (your main project site).
-* **Goal:** Consolidate code, resolve merge conflicts (including the pnpm file conflicts), and install the Risk Radar app into both repositories without disrupting existing functionality.
+GoldShore is a two-app monorepo:
 
----
+- `apps/gs-web` is the only frontend application.
+- `apps/gs-api` is the only Cloudflare Worker/API application.
 
-## 2. Tasks for Codex
+Do not create or revive satellite app directories such as `apps/gs-admin`, `apps/gs-agent`, `apps/gs-gateway`, `apps/gs-control`, `apps/gs-mail`, or `apps/risk-radar`. Admin, docs, settings, and internal UI surfaces belong under routes in `apps/gs-web`. Backend routing, cron, email handlers, queue consumers, auth, proxy logic, AI orchestration, and control endpoints belong in `apps/gs-api`.
 
-Codex should focus on the heavy lifting: cloning repos, resolving code issues, merging, and integrating the new app. Each item has a point value (positive points for success, negative points for delays or new conflicts).
+## Jules Responsibilities
 
-1. **Clone and Inspect Repos**
+1. Preserve the two-app structure.
+2. Keep active deploy workflows limited to:
+   - `.github/workflows/deploy-gs-web.yml`
+   - `.github/workflows/deploy-gs-api.yml`
+3. Keep preview/staging workflows aligned with the two app names:
+   - `.github/workflows/preview-gs-web.yml`
+   - `.github/workflows/preview-gs-api.yml`
+4. Validate that `pnpm-workspace.yaml` only includes the active app roots and shared package roots.
+5. Treat Cloudflare Worker Builds for API services as requiring the `gs-control` build token.
+6. Never commit local Claude settings or secrets. `.claude/settings.local.json` must stay ignored.
+7. Use commit and PR descriptions that start with a merge strategy line:
+   - `Merge Strategy: Squash`
+   - `Merge Strategy: Merge Commit`
 
-   * Pull latest `main` branches of both repositories.
-   * Generate a report of outstanding branches and open pull requests.
-   * **Points:** +5 for completeness, −10 if missing branches or unmerged PRs.
+## Recent Claude Fixes To Preserve
 
-2. **Audit Merge Conflicts**
+- Reverted preview DNS workflow sprawl. Do not reintroduce setup-preview-dns workflows or ad hoc Cloudflare deploy workflows.
+- Added `.claude/settings.local.json` ignore hygiene. Do not expose Claude local settings.
+- Hardened theme and hero work around the Penrose mark, parallax hero, and production theme. Do not overwrite those assets with older archive copies.
+- Renamed web preview workflow to staging semantics while keeping the file name canonical.
+- Documented the GoldShore domain portfolio, existing Cloudflare project reuse, and HostGator VPS integration model in `docs/cloudflare-routing-plan.md`.
+- Confirmed routing cleanup needs:
+  - Cloudflare Pages should own the public web surface.
+  - Worker custom domains should own API surfaces when the Worker is the origin.
+  - GitHub Pages custom domains should not conflict with Cloudflare Pages ownership.
+  - `api.goldshore.ai/health` must be fixed before any API extraction cutover.
 
-   * Search across all branches for conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`).
-   * Identify the specific file(s) causing 300+ manual conflicts (likely the pnpm lock file).
-   * **Points:** +10 for each resolved conflict file, −20 for any conflict left unresolved.
+## Required Sweep
 
-3. **Resolve the pnpm Lock Conflicts**
+Run these checks before proposing changes:
 
-   * Determine which branch is the correct source of truth for the `pnpm` file.
-   * Reconcile the conflicting versions, commit the final lock file, and push.
-   * **Points:** +20 for full resolution, −30 for introducing new install errors.
+```bash
+pnpm validate
+pnpm lint
+pnpm test
+pnpm build
+```
 
-4. **Consolidate Features**
+If a check fails, report the failing command, the relevant log excerpt, and the exact files involved. Apply only safe, scoped fixes.
 
-   * Merge outstanding feature branches into `main` after conflicts are resolved.
-   * Use interactive rebase or merge with commit messages indicating what was resolved.
-   * **Points:** +10 per successful merge, −15 per failed merge requiring reversion.
+## Safe Fix Scope
 
-5. **Install Risk Radar**
+Jules may automatically fix:
 
-   * Create a subfolder at `/apps/risk-radar/` in each repo.
-   * Add the PWA files (index.html, app.js, styles, manifest, service worker, assets).
-   * Ensure relative paths in `manifest.webmanifest` and service worker are correct (`start_url` and `scope` set to `./`).
-   * Add a link to the app in the root site navigation.
-   * **Points:** +15 per repo if the PWA works without breaking existing content, −25 if it causes page build failures.
+- Broken `.Jules` runner scripts.
+- Stale references that revive pre-consolidation app names.
+- Workspace and validation guard drift.
+- Missing ignore rules for local settings, caches, and generated artifacts.
+- Mechanical formatting or lint issues when configured.
 
-6. **Summary Report**
+Jules must not automatically:
 
-   * Provide a written summary of all changes made: conflict files, branches merged, files added, and any error logs.
-   * Include commit hashes for traceability.
-   * **Points:** +10 for clear, detailed summary, −10 if missing key details.
+- Delete real user-authored application code without a clear consolidation plan.
+- Rotate secrets or edit production credentials.
+- Deploy to Cloudflare production.
+- Add new app directories or new `deploy-*.yml` workflows.
+- Replace current `gs-web` or `gs-api` source with archived code.
 
----
+## Cloudflare Routing Rule
 
-## 3. Tasks for Jules
+Use the current routing plan in `docs/cloudflare-routing-plan.md` when changing DNS, Pages domains, Worker routes, or custom domains. If Cloudflare MCP is unavailable, document the limitation and use Wrangler, repo config, and dashboard/API evidence instead of guessing.
 
-Jules should concentrate on feature testing, security, and cross‑checking Codex’s work. Jules gets rewarded for finding issues and ensuring quality, and penalized for missing problems.
-
-1. **Review Codex’s Conflict Resolutions**
-
-   * Pull Codex’s updated branches.
-   * Verify there are no remaining conflict markers.
-   * Check `pnpm install` runs cleanly.
-   * **Points:** +10 for each confirmed resolved conflict, −20 for each conflict still present.
-
-2. **Security & Feature Audit**
-
-   * Run a security scan (e.g. check for outdated packages, high‑risk deps).
-   * Ensure there are no exposed secrets or misconfigured env files.
-   * Check for broken features due to merges.
-   * **Points:** +10 for each issue found and documented, +5 for each issue fixed, −15 if security warnings are ignored.
-
-3. **Test Risk Radar Integration**
-
-   * Navigate to `/apps/risk-radar/` on both repos’ GitHub Pages URLs and confirm:
-
-     * It loads without 404s.
-     * PWA service worker registers successfully.
-     * Links from the root site to the app and back work.
-   * File bug reports if anything breaks.
-   * **Points:** +15 if the app works perfectly, −20 per major bug.
-
-4. **Submit Feedback to Codex**
-
-   * Provide constructive comments about conflicts, security fixes, and PWA performance.
-   * Suggest improvements or highlight missed items.
-   * **Points:** +5 for each useful suggestion, −10 if feedback is missing or unhelpful.
-
-5. **Final Report**
-
-   * Summarize findings, fixes applied, and highlight any remaining issues needing attention.
-   * Include metrics on new features (like the Risk Radar app) and their performance.
-   * **Points:** +10 for a detailed report, −10 if incomplete.
-
----
-
-## 4. Collaboration Rules
-
-* **Joint Accountability:** Codex and Jules must review each other’s work; failure to cross‑check will result in a **−50 point deduction** for both.
-* **Confidentiality:** Avoid pushing changes with secrets, tokens, or untested code.
-* **Communication:** Document and reference each commit so points are easy to track; for each significant change, they must mention the commit hash in their report.
-
----
-
-## 5. Summary & Scoring
-
-* **Starting Points:** Codex is at **−300**, Jules is neutral.
-* **Bonus:** Delivering the fully working Risk Radar app in both repos without merge issues = **+100 points** each.
-* **Penalties:** Introducing new merge conflicts, leaving errors unresolved, or ignoring partner feedback will incur heavy deductions (−50 or more, per incident).
-
----
-
-## 6. Items Needed for Detailed Git Instructions
-
-For these tasks, Codex and Jules will require:
-
-1. **List of all branches:**
-   (See `git branch -r` output in repo)
-   - `main`
-   - `feat/monorepo-restructure` (Likely source of truth for structure)
-   - `feat/admin-app-scaffold`
-   - `feat/module-*` (Active development)
-   - `origin/jules/sentinel-*` (Automated updates)
-
-2. **Any recent PRs:**
-   Check GitHub Pull Requests tab for `is:open`.
-
-3. **The PWA package (Risk Radar):**
-   *Pending upload by user or Codex generation.*
-
-4. **Correct `pnpm-lock.yaml` Source:**
-   `main` is the primary source of truth. If `pnpm-lock.yaml` is conflicted, regenerate it using `pnpm install` from the root of `main`.
-
-5. **Deployment environment details:**
-   - Production: Cloudflare Pages (`gs-web`, `gs-admin`) / Workers.
-   - Preview: `*-preview.goldshore.ai`.
+Do not delete existing Cloudflare Pages or Workers projects just because they are legacy. Assign them explicit roles, keep one owner per hostname, and use the HostGator VPS only as a private/protected origin for database, email, or non-Worker features.

@@ -1,46 +1,77 @@
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
-import { join } from "node:path";
 
 const APPS_DIR = path.resolve(process.cwd(), "apps");
-const REQUIRED_FILES = ["wrangler.toml", "package.json", "tsconfig.json", "src/index.ts"];
-const LEGACY_API_WORKER_PATH = "apps/api-worker";
-const GS_API_PATH = "apps/gs-api";
-const DEPLOYMENT_CONFIG_FILES = [
-  ".github/workflows/deploy-gs-api.yml",
-  ".github/workflows/preview-gs-api.yml",
-  ".github/workflows-disabled/deploy-api-worker.yml",
-  "infra/Cloudflare/config.yaml",
-  "infra/Cloudflare/desired-state.yaml",
-  "infra/Cloudflare/gs-api.wrangler.toml",
-  "infra/Cloudflare/legacy/goldshore-api.wrangler.toml",
-] as const;
+const REQUIRED_APP_DIRS = ["gs-api", "gs-web"] as const;
+const ALLOWED_APP_DIRS = new Set<string>(REQUIRED_APP_DIRS);
+const GS_API_REQUIRED_FILES = ["wrangler.toml", "package.json", "tsconfig.json", "src/index.ts"];
+const GS_WEB_REQUIRED_FILES = ["wrangler.jsonc", "package.json", "astro.config.mjs", "src"];
+const DISALLOWED_APP_DIRS = ["gs-admin", "gs-agent", "gs-control", "gs-gateway", "gs-mail"];
+const ACTIVE_DEPLOY_WORKFLOWS = [".github/workflows/deploy-gs-api.yml", ".github/workflows/deploy-gs-web.yml"];
 
-function findWorkerDirectories(): string[] {
+function appDirectories(): string[] {
+  if (!existsSync(APPS_DIR)) {
+    return [];
+  }
+
   return readdirSync(APPS_DIR)
     .map((entry) => path.join(APPS_DIR, entry))
-    .filter((fullPath) => statSync(fullPath).isDirectory())
-    .filter((fullPath) => existsSync(path.join(fullPath, "wrangler.toml")))
-    .filter((fullPath) => !fullPath.includes(`${path.sep}legacy${path.sep}`));
+    .filter((fullPath) => statSync(fullPath).isDirectory());
 }
 
-function validateCanonicalApiWorkerPaths(): string[] {
+function missingFiles(appName: string, requiredFiles: readonly string[]): string[] {
+  const appPath = path.join(APPS_DIR, appName);
+  return requiredFiles.filter((file) => !existsSync(path.join(appPath, file)));
+}
+
+function validateActiveDeployWorkflows(): string[] {
   const failures: string[] = [];
 
-  for (const filePath of DEPLOYMENT_CONFIG_FILES) {
-    if (!existsSync(filePath)) {
-      failures.push(`missing deployment config file: ${filePath}`);
+  if (!existsSync(".github/workflows")) {
+    return failures;
+  }
+
+  const deployWorkflows = readdirSync(".github/workflows")
+    .filter((file) => /^deploy-.*\.ya?ml$/.test(file))
+    .map((file) => `.github/workflows/${file}`)
+    .sort();
+
+  for (const workflow of ACTIVE_DEPLOY_WORKFLOWS) {
+    if (!existsSync(workflow)) {
+      failures.push(`missing active deploy workflow: ${workflow}`);
+    }
+  }
+
+  for (const workflow of deployWorkflows) {
+    if (!ACTIVE_DEPLOY_WORKFLOWS.includes(workflow)) {
+      failures.push(`unexpected active deploy workflow: ${workflow}`);
+    }
+  }
+
+  return failures;
+}
+
+function validateDeploymentConfigReferences(): string[] {
+  const failures: string[] = [];
+  const files = [
+    ".github/workflows/deploy-gs-api.yml",
+    ".github/workflows/preview-gs-api.yml",
+    ".github/workflows/deploy-gs-web.yml",
+    ".github/workflows/preview-gs-web.yml",
+    "pnpm-workspace.yaml",
+  ];
+
+  for (const file of files) {
+    if (!existsSync(file)) {
+      failures.push(`missing deployment/workspace config file: ${file}`);
       continue;
     }
 
-    const content = readFileSync(filePath, "utf8");
-
-    if (content.includes(LEGACY_API_WORKER_PATH)) {
-      failures.push(`${filePath}: contains legacy API worker path \"${LEGACY_API_WORKER_PATH}\"`);
-    }
-
-    if (!content.includes(GS_API_PATH)) {
-      failures.push(`${filePath}: missing canonical API worker path \"${GS_API_PATH}\"`);
+    const content = readFileSync(file, "utf8");
+    for (const disallowed of DISALLOWED_APP_DIRS) {
+      if (content.includes(`apps/${disallowed}`)) {
+        failures.push(`${file}: contains disallowed app path "apps/${disallowed}"`);
+      }
     }
   }
 
@@ -50,76 +81,48 @@ function validateCanonicalApiWorkerPaths(): string[] {
 export function validateWorkerStructure(): string[] {
   const failures: string[] = [];
 
-  for (const workerDir of findWorkerDirectories()) {
-    const folderName = path.basename(workerDir);
-    // Ignore frontend apps for typical worker validation
-    if (folderName === 'gs-admin' || folderName === 'gs-web') continue;
+  if (!existsSync(APPS_DIR)) {
+    return ["apps directory not found"];
+  }
 
-    const missingFiles = REQUIRED_FILES.filter((file) => !existsSync(path.join(workerDir, file)));
+  const apps = appDirectories().map((dir) => path.basename(dir)).sort();
 
-    if (missingFiles.length > 0) {
-      failures.push(`${folderName}: missing required file(s): ${missingFiles.join(", ")}`);
+  for (const app of REQUIRED_APP_DIRS) {
+    if (!apps.includes(app)) {
+      failures.push(`missing required app directory: apps/${app}`);
     }
   }
 
-  failures.push(...validateCanonicalApiWorkerPaths());
+  for (const app of apps) {
+    if (!ALLOWED_APP_DIRS.has(app)) {
+      failures.push(`unexpected app directory after consolidation: apps/${app}`);
+    }
+  }
+
+  const apiMissing = missingFiles("gs-api", GS_API_REQUIRED_FILES);
+  if (apiMissing.length > 0) {
+    failures.push(`gs-api: missing required file(s): ${apiMissing.join(", ")}`);
+  }
+
+  const webMissing = missingFiles("gs-web", GS_WEB_REQUIRED_FILES);
+  if (webMissing.length > 0) {
+    failures.push(`gs-web: missing required file(s): ${webMissing.join(", ")}`);
+  }
+
+  failures.push(...validateActiveDeployWorkflows());
+  failures.push(...validateDeploymentConfigReferences());
 
   return failures;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const failures = validateWorkerStructure();
-  let failed = false;
 
   if (failures.length > 0) {
     console.error("Worker structure validation failed:\n");
     for (const failure of failures) {
       console.error(`- ${failure}`);
     }
-    failed = true;
-  }
-
-  const CANONICAL_WORKERS = ["gs-agent", "gs-api", "gs-control", "gs-gateway", "gs-mail"];
-
-  if (!existsSync(APPS_DIR)) {
-    console.error("apps directory not found");
-    process.exit(1);
-  }
-
-  for (const worker of CANONICAL_WORKERS) {
-    const workerDir = join(APPS_DIR, worker);
-    const wranglerPath = join(workerDir, "wrangler.toml");
-
-    if (!existsSync(workerDir)) {
-      failed = true;
-      console.error(`Missing canonical worker directory: ${workerDir}`);
-      continue;
-    }
-
-    if (!existsSync(wranglerPath)) {
-      failed = true;
-      console.error(`Missing wrangler.toml: ${wranglerPath}`);
-      continue;
-    }
-  }
-
-  const appsDirs = readdirSync(APPS_DIR, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && entry.name.startsWith("gs-"))
-    .map((entry) => entry.name)
-    .sort();
-
-  const unexpectedWorkers = appsDirs.filter(
-    (dir) => existsSync(join(APPS_DIR, dir, "wrangler.toml")) && !CANONICAL_WORKERS.includes(dir) && dir !== 'gs-admin' && dir !== 'gs-web',
-  );
-
-  if (unexpectedWorkers.length > 0) {
-    failed = true;
-    console.error(
-      `Unexpected worker directories with wrangler.toml: ${unexpectedWorkers.map((dir) => `apps/${dir}`).join(", ")}`,
-    );
-  }
-
-  if (failed) {
     process.exit(1);
   }
 

@@ -5,11 +5,11 @@ const https = require('https');
 
 // --- Configuration ---
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-const [OWNER, REPO] = (process.env.GITHUB_REPOSITORY || 'goldshore/astro-goldshore').split('/');
+const [OWNER, REPO] = (process.env.GITHUB_REPOSITORY || 'marzton/goldshore-ai').split('/');
 const ARGS = process.argv.slice(2);
 const IS_SCHEDULE = process.env.GITHUB_EVENT_NAME === 'schedule';
 const MODE = (ARGS.includes('--mode=sweep') || IS_SCHEDULE) ? 'SWEEP' : 'PR';
-const REPORT_FILE = '.jules/guard/report.json';
+const REPORT_FILE = '.Jules/guard/report.json';
 
 // --- Helpers ---
 
@@ -145,16 +145,26 @@ const RULES = {
 // --- Check 1: Merge Markers ---
 console.log('1. Checking for merge markers...');
 try {
-  // grep returns 0 if match found (which means failure for us), 1 if no match (success)
-  // We exclude this file itself from grep to avoid false positives
-  // Also excluding .Jules/ directory as it contains scripts checking for these markers
-  // And ops/ directory as it contains documentation about markers
-  execSync('grep -r "<<<<<<<" . --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=.Jules --exclude-dir=ops');
-  console.error('❌ Merge markers found! Please resolve conflicts before pushing.');
-  process.exit(1);
-} catch (e) {
-  // grep returns exit code 1 when no matches found, which is what we want
+  const matches = execFileSafe('git', [
+    'grep',
+    '-n',
+    '<<<<<<<',
+    '--',
+    '.',
+    ':(exclude).Jules/**',
+    ':(exclude).git/**',
+    ':(exclude)node_modules/**',
+    ':(exclude)archive/**',
+  ], { ignoreError: true });
+  if (matches) {
+    console.error('❌ Merge markers found! Please resolve conflicts before pushing.');
+    console.error(matches);
+    process.exit(1);
+  }
   console.log('✅ No merge markers found.');
+} catch (e) {
+  console.error(`❌ Merge marker check failed: ${e.message}`);
+  process.exit(1);
 }
 
 // --- Specific Fixers ---
@@ -299,12 +309,8 @@ function resolveMechanicalConflicts() {
     const conflictedFiles = conflictedFilesStr.split('\n').filter(Boolean);
 
     if (conflictedFiles.includes('pnpm-lock.yaml')) {
-        log('Resolving lockfile conflict...', 'ACTION');
-        try { if (fs.existsSync('pnpm-lock.yaml')) fs.unlinkSync('pnpm-lock.yaml'); } catch(e) {}
-        try { if (fs.existsSync('node_modules')) fs.rmSync('node_modules', { recursive: true, force: true }); } catch(e) {}
-
-        log('Regenerating lockfile (pnpm install)...', 'ACTION');
-        run('pnpm install', { ignoreError: true });
+        log('Repairing pnpm lockfile conflict through repository policy...', 'ACTION');
+        run('pnpm lockfile:repair');
         resolvedFiles.push('pnpm-lock.yaml');
         execFileSafe('git', ['add', 'pnpm-lock.yaml']);
     }

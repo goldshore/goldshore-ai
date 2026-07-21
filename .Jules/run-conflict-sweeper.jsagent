@@ -16,13 +16,10 @@ function run(cmd) {
 }
 
 // 1. Detect Lockfile Conflict
-// We assume this runs in a context where we might have just pulled or merged
-// and want to see if pnpm-lock.yaml is in a bad state or if we just want to regenerate it to be safe.
-// Since "Golden Rule" says: "If pnpm-lock.yaml conflicts: delete + regenerate",
-// We can check if the file has conflict markers OR just regeneration logic if requested.
-
-// For this sweeper, we'll try to detect if we are in a "conflicted state" regarding lockfile
-// by checking if `pnpm install` fails or if the file has markers.
+// Lockfile churn makes PRs hard to merge. Default policy:
+// - if the branch did not change package manifests, keep main's lockfile
+// - regenerate only when package manifests changed or FORCE_REGENERATE_LOCKFILE is set
+// Shared implementation lives in scripts/repair-pnpm-lock.mjs.
 
 const lockfile = 'pnpm-lock.yaml';
 
@@ -36,20 +33,18 @@ if (fs.existsSync(lockfile)) {
 }
 
 if (hasConflict || process.env.FORCE_REGENERATE_LOCKFILE) {
-    console.log('Regenerating lockfile per Golden Rule 0.1...');
+    console.log('Repairing pnpm lockfile through repository policy...');
     try {
-        if (fs.existsSync(lockfile)) fs.unlinkSync(lockfile);
-        if (fs.existsSync('node_modules')) fs.rmSync('node_modules', { recursive: true, force: true });
+        const command = process.env.FORCE_REGENERATE_LOCKFILE
+            ? 'pnpm lockfile:regenerate'
+            : 'pnpm lockfile:repair';
+        run(command);
 
-        run('pnpm install');
-
-        // If in a git repo, stage it?
-        // We leave committing to the caller (GitHub Action or user)
-        console.log('✅ Lockfile regenerated.');
+        console.log('✅ Lockfile repaired.');
     } catch (e) {
-        console.error('❌ Failed to regenerate lockfile.');
+        console.error('❌ Failed to repair lockfile.');
         process.exit(1);
     }
 } else {
-    console.log('No lockfile conflict detected. Skipping regeneration.');
+    console.log('No lockfile conflict detected. Skipping repair.');
 }
