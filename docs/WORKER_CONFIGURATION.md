@@ -21,7 +21,7 @@ Do not add new app workers or deploy workflows for retired services. All backend
   - R2: `GS_ASSETS`, `TELEMETRY`, `RISK_RADAR_R2`
   - AI: `AI`
   - Durable Object: `AUTH_SESSION`
-  - Queues produced: `JOBS_QUEUE`, `EVENTS_QUEUE`, `MAIL_JOBS_QUEUE`, `DEAD_LETTER_QUEUE`; `gs-api` is also the production consumer for consolidated backend queues
+  - Queues produced: `JOBS_QUEUE`, `EVENTS_QUEUE`, `MAIL_JOBS_QUEUE`, `DEAD_LETTER_QUEUE`; production queue consumers are not declared by `gs-api` while live Cloudflare routes `goldshore-jobs`/`gs-events` to `gs-mail` and `gs-mail-jobs` to an HTTP pull consumer
   - Worker secret: `INTEGRATION_MASTER_KEY` (provision with `wrangler secret put`; do not use a Secrets Store binding unless the store and secret already exist)
 - **Retired aliases/service bindings:** `DB`, `ASSETS`, `TELEMETRY_DB`, `SECRETS`, `AGENT`, `GS_MAIL`, `GS_WEB`, `GS_WEB PROD`, `API_SERVICE`, and `GOLDSHORE_AI` must not be used as `gs-api` bindings. If Cloudflare still shows any of these in the dashboard, treat them as live-state cleanup candidates until a human confirms otherwise.
 
@@ -32,6 +32,7 @@ Do not add new app workers or deploy workflows for retired services. All backend
 - **Preview route:** `preview.goldshore.ai`
 - **Canonical bindings:**
   - Worker Assets: `ASSETS`
+  - Cloudflare Images: `IMAGES`
   - KV: `KV`
   - D1: `PLATFORM_DB`
   - R2: `GS_ASSETS`
