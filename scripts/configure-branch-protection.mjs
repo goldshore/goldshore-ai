@@ -32,11 +32,10 @@ const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/branches/
       contexts: requiredChecks,
     },
     enforce_admins: true,
-    required_pull_request_reviews: {
-      required_approving_review_count: 1,
-      dismiss_stale_reviews: true,
-      require_code_owner_reviews: true,
-    },
+    // This is a personal repository with a single active maintainer. Keep PRs,
+    // strict checks, conversation resolution, and admin enforcement, but do
+    // not require approval from a second account controlled by the owner.
+    required_pull_request_reviews: null,
     restrictions: null,
     allow_force_pushes: false,
     allow_deletions: false,

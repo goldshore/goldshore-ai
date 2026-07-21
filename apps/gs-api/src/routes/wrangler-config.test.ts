@@ -4,6 +4,16 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const wranglerToml = readFileSync(resolve(import.meta.dirname, '../../wrangler.toml'), 'utf8');
+const webWranglerToml = readFileSync(resolve(import.meta.dirname, '../../../gs-web/wrangler.toml'), 'utf8');
+
+const environmentBlock = (toml: string, environment: string) => {
+  const match = toml.match(new RegExp(`\\[env\\.${environment}\\]([\\s\\S]*?)(?=\\n\\[env\\.${environment}\\.|\\n\\[env\\.|$)`));
+  assert.ok(match, `missing [env.${environment}] block`);
+  return match[1];
+};
+
+const routePatterns = (block: string) =>
+  [...block.matchAll(/pattern\s*=\s*"([^"]+)"/g)].map((match) => match[1]);
 
 describe('gs-api wrangler env bindings', () => {
   // Canonical environments are [env.prod] and [env.preview].
@@ -43,4 +53,20 @@ describe('gs-api wrangler env bindings', () => {
       );
     });
   }
+
+  it('limits production hostname ownership to canonical API routes', () => {
+    assert.deepEqual(routePatterns(environmentBlock(wranglerToml, 'prod')), [
+      'api.goldshore.ai/*',
+      'api.goldshore.org/*',
+    ]);
+  });
+
+  it('keeps web and migrated admin hosts separate from API hosts', () => {
+    assert.deepEqual(routePatterns(environmentBlock(webWranglerToml, 'prod')), [
+      'goldshore.ai/*',
+      'goldshore.org/*',
+      'admin.goldshore.ai/*',
+      'admin.goldshore.org/*',
+    ]);
+  });
 });

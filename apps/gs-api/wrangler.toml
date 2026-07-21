@@ -13,12 +13,6 @@ workers_dev = false
 [env.prod]
 routes = [
   { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "mail.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "ops.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "trading.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "dashboard.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "dash.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "api.goldshore.org/*", zone_name = "goldshore.org" }
 ]
 
@@ -26,7 +20,8 @@ routes = [
 ENV = "production"
 CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-CONTROL_SYNC_TOKEN = "__PROD_CONTROL_SYNC_TOKEN__"
+# CONTROL_SYNC_TOKEN is a Worker secret. Keep it out of vars so deploys
+# preserve the remote secret instead of replacing it with a placeholder.
 GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
 GOOGLE_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/goldclaw/oauth/google/callback"
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
@@ -223,7 +218,7 @@ MAILCHANNELS_SENDER_NAME = "GoldShore"
 # ── KV ────────────────────────────────────────────────────────────────────────────
 [[env.preview.kv_namespaces]]
 binding = "KV"
-id = "d4d20cee39094b999dea3f7e5f4c533a"
+id = "20d2c096b673433597d084a562993021"
 
 [[env.preview.kv_namespaces]]
 binding = "CONTROL_LOGS"
@@ -286,6 +281,7 @@ binding = "AI"
 [[env.preview.durable_objects.bindings]]
 name = "AUTH_SESSION"
 class_name = "AuthSession"
+script_name = "gs-api-prod"
 
 # ── Queues ───────────────────────────────────────────────────────────────────────────────────
 [[env.preview.queues.producers]]

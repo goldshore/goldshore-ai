@@ -105,6 +105,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: API deploy dry-run
         working-directory: apps/gs-api
-        run: pnpm exec wrangler deploy --dry-run --outdir .wrangler-dry-run
+        run: pnpm exec wrangler deploy --env prod --dry-run --outdir .wrangler-dry-run
       - name: Web deploy dry-run (build)
-        run: pnpm --dir apps/gs-web build
+        working-directory: apps/gs-web
+        run: |
+          pnpm build
+          pnpm exec wrangler deploy --env prod --dry-run --outdir .wrangler-dry-run
