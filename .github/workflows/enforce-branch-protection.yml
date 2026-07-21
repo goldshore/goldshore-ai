@@ -31,7 +31,7 @@ jobs:
           PROTECTED_BRANCH: main
         run: |
           if [ -z "$GH_TOKEN" ]; then
-            echo "::warning::GH_PAT is not configured; skipping branch protection update."
+            echo "::warning::GH_PAT is not configured; skipping branch protection enforcement."
             exit 0
           fi
           node scripts/configure-branch-protection.mjs
