@@ -33,17 +33,32 @@ jobs:
     permissions: {}
     env:
       CF_API: https://api.cloudflare.com/client/v4
-      CF_AUTH_EMAIL: ${{ secrets.CF_AUTH_EMAIL }}
-      CF_AUTH_KEY: ${{ secrets.CF_AUTH_KEY }}
+      RAW_CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
     steps:
+      - name: Normalize Cloudflare token
+        shell: bash
+        run: |
+          token="$(node <<'NODE'
+          const raw = process.env.RAW_CLOUDFLARE_API_TOKEN || '';
+          let token = raw.replace(/[\r\n]/g, '').trim();
+          const bearer = token.match(/(?:authorization\s*:\s*)?bearer\s+([^\s"',;}]+)/i);
+          if (bearer) token = bearer[1];
+          process.stdout.write(token);
+          NODE
+          )"
+          if [ -z "$token" ]; then
+            echo "::error::CLOUDFLARE_BUILD_API_TOKEN is missing or empty."
+            exit 1
+          fi
+          echo "::add-mask::$token"
+          echo "CF_API_TOKEN=$token" >> "$GITHUB_ENV"
+
       - name: Require strict origin validation and TLS 1.2
         shell: bash
         run: |
           set -euo pipefail
-          test -n "$CF_AUTH_EMAIL"
-          test -n "$CF_AUTH_KEY"
-          echo "::add-mask::$CF_AUTH_KEY"
-          auth=(-H "X-Auth-Email: $CF_AUTH_EMAIL" -H "X-Auth-Key: $CF_AUTH_KEY")
+          test -n "$CF_API_TOKEN"
+          auth=(-H "Authorization: Bearer $CF_API_TOKEN")
 
           for zone in goldshore.ai goldshore.org armsway.com; do
             zone_id=$(curl -fsS "$CF_API/zones?name=$zone" "${auth[@]}" | jq -r '.result[0].id // empty')

@@ -288,7 +288,7 @@ export async function verifyAccess(req, env) {
   </div>
   <form class="quick-form" id="quick-form" method="POST" action="/api/contact">
     <h3>Quick Inquiry</h3>
-    <input type="hidden" name="formType" value="homepage-inquiry" />
+    <input type="hidden" name="formType" value="general-inquiry" />
     <input type="hidden" name="redirectTo" value="/thank-you" />
     <input type="hidden" name="formStartedAt" id="qs-form-started" value="" />
     <input type="hidden" name="dedupeKey" id="qs-dedupe-key" value="" />
@@ -301,9 +301,9 @@ export async function verifyAccess(req, env) {
     <label>Interest
       <select name="inquiry" required>
         <option value="">Select area of interest</option>
-        <option value="general">General Enquiry</option>
-        <option value="strategy-call">Strategy Call</option>
-        <option value="project-scope">Project Scope</option>
+        <option value="general">General inquiry</option>
+        <option value="strategy-call">Strategy call</option>
+        <option value="project-scope">Project scoping</option>
         <option value="support">Support</option>
       </select>
     </label>

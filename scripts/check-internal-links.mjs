@@ -2,8 +2,8 @@ import { access, readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const DEFAULT_DIST_DIR = 'apps/gs-web/dist';
-// /workflows has no page yet; Risk Radar lives at /apps/risk-radar.
-const DEFAULT_ROUTES = ['/developer', '/apps/risk-radar'];
+// Keep the legacy app entry plus the primary homepage-linked routes in CI coverage.
+const DEFAULT_ROUTES = ['/developer', '/apps/risk-radar', '/', '/platform', '/risk-radar', '/services', '/about', '/contact'];
 
 const baseDistDir = path.resolve(process.env.DIST_DIR ?? DEFAULT_DIST_DIR);
 // Cloudflare Pages adapter v13+ outputs pre-rendered pages to dist/client/
