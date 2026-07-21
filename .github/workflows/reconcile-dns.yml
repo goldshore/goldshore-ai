@@ -34,24 +34,27 @@ jobs:
     env:
       CF_API: https://api.cloudflare.com/client/v4
       RAW_CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+      CLOUDFLARE_BUILD_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
     steps:
       - name: Normalize Cloudflare token
         shell: bash
         run: |
-          token="$(node <<'NODE'
-          const raw = process.env.RAW_CLOUDFLARE_API_TOKEN || '';
-          let token = raw.replace(/[\r\n]/g, '').trim();
+          token="$(
+            node <<'NODE'
+          const raw = process.env.CLOUDFLARE_BUILD_API_TOKEN || "";
+          let token = raw.replace(/[\r\n]/g, "").trim();
           const bearer = token.match(/(?:authorization\s*:\s*)?bearer\s+([^\s"',;}]+)/i);
           if (bearer) token = bearer[1];
+          const cfut = token.match(/cfut_[A-Za-z0-9_-]+/);
+          if (cfut) token = cfut[0];
+          token = token.replace(/^[`'"]+|[`'",;}]+$/g, "").replace(/\s/g, "");
           process.stdout.write(token);
           NODE
           )"
-          if [ -z "$token" ]; then
-            echo "::error::CLOUDFLARE_BUILD_API_TOKEN is missing or empty."
-            exit 1
+          if [ -n "$token" ]; then
+            echo "::add-mask::$token"
+            echo "CF_API_TOKEN=$token" >> "$GITHUB_ENV"
           fi
-          echo "::add-mask::$token"
-          echo "CF_API_TOKEN=$token" >> "$GITHUB_ENV"
 
       - name: Require strict origin validation and TLS 1.2
         shell: bash
