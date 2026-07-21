@@ -140,11 +140,8 @@ const isCurrent = (href: string) => activePath === href;
         });
       };
       const bindAdminAccessLinks = () => {
-        const adminHost = window.location.hostname.endsWith('goldshore.org')
-          ? 'admin.goldshore.org'
-          : 'admin.goldshore.ai';
         document.querySelectorAll('[data-admin-access-link]').forEach((link) => {
-          link.setAttribute('href', `https://${adminHost}`);
+          link.setAttribute('href', 'https://admin.goldshore.ai/');
         });
       };
       bindMenu();

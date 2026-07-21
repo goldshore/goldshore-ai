@@ -161,6 +161,7 @@ jobs:
           require_app "GoldShore Trading - Schwab Callback" "trading.goldshore.ai/oauth/schwab/callback"
           require_app "GoldShore Trading - Robinhood Callback" "trading.goldshore.ai/oauth/robinhood/callback"
           require_app "Goldshore API - Public Probes" "api.goldshore.ai/health"
+          require_app "Goldshore API - Public Forms" "api.goldshore.ai/v1/forms/*"
           require_app "Goldshore Gateway - Public Probes" "gw.goldshore.ai/health"
           require_app "Dashboard" "goldshore.ai/app"
           require_app "GoldShore Admin" "admin.goldshore.ai"
@@ -196,9 +197,87 @@ jobs:
             jq -r --arg cid "$OLD_CLIENT_ID" \
             '.result[] | select(.client_id == $cid) | .id // empty')
           if [ -n "$OLD_UUID" ]; then
-            curl -sf -X DELETE \
+            # Cloudflare refuses to delete a service token still referenced by
+            # any Access policy (code 12139). Find and remove every such
+            # reference first -- this can include apps outside the set this
+            # workflow otherwise manages, so scan all apps' policies rather
+            # than assuming it's one of the 9 known ones.
+            APPS_RESP=$(curl -sS -w '\n%{http_code}' "$CF_API/accounts/$CF_ACCOUNT/access/apps" \
+              -H "Authorization: Bearer $CF_TOKEN")
+            APPS_STATUS="${APPS_RESP##*$'\n'}"
+            APPS_BODY="${APPS_RESP%$'\n'*}"
+            if [ "$APPS_STATUS" -lt 200 ] || [ "$APPS_STATUS" -ge 300 ]; then
+              echo "::warning::CF API GET /access/apps failed (HTTP $APPS_STATUS) while scanning for stale token references: $APPS_BODY"
+              ALL_APPS=""
+            else
+              ALL_APPS=$(echo "$APPS_BODY" | jq -r '.result[].id')
+            fi
+            for app_id in $ALL_APPS; do
+              POL_RESP=$(curl -sS -w '\n%{http_code}' "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies" \
+                -H "Authorization: Bearer $CF_TOKEN")
+              POL_STATUS="${POL_RESP##*$'\n'}"
+              POL_BODY="${POL_RESP%$'\n'*}"
+              if [ "$POL_STATUS" -lt 200 ] || [ "$POL_STATUS" -ge 300 ]; then
+                echo "::warning::CF API GET /access/apps/$app_id/policies failed (HTTP $POL_STATUS), skipping app: $POL_BODY"
+                continue
+              fi
+              STALE_POLICIES=$(echo "$POL_BODY" | \
+                jq -r --arg tid "$OLD_UUID" \
+                '.result[] | select(.include[]?.service_token.token_id? == $tid) | .id // empty')
+              for pol_id in $STALE_POLICIES; do
+                [ -z "$pol_id" ] && continue
+                DP_STATUS=$(curl -sS -o /dev/null -w '%{http_code}' -X DELETE \
+                  "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies/$pol_id" \
+                  -H "Authorization: Bearer $CF_TOKEN")
+                if [ "$DP_STATUS" -lt 200 ] || [ "$DP_STATUS" -ge 300 ]; then
+                  # App-scoped delete failing (400) means this is a reusable
+                  # policy shared across apps (Cloudflare confirmed via 409
+                  # on account-level DELETE while app_count > 0: it refuses
+                  # to delete a reusable policy still in use anywhere).
+                  # These are real, actively-used allow-lists (e.g. named
+                  # "Cloudflare Workers Preview URLs", covering human emails
+                  # + device posture + GitHub org + the old token), possibly
+                  # attached to apps outside the 9 this workflow manages
+                  # (Cloudflare's own App Launcher, seen in practice). The
+                  # correct fix is editing the policy to drop only the old
+                  # token's include entry, not deleting the whole thing.
+                  APP_NAME=$(curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id" \
+                    -H "Authorization: Bearer $CF_TOKEN" | jq -r '.result.name // "?"' || echo "?")
+                  POL_DEF=$(curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/policies/$pol_id" \
+                    -H "Authorization: Bearer $CF_TOKEN" || echo '{}')
+                  POL_RESULT=$(echo "$POL_DEF" | jq -c '.result // .')
+                  echo "::notice::Policy $pol_id is reusable (app-scoped delete HTTP $DP_STATUS). Attached app: [$APP_NAME] ($app_id). Full definition: $POL_RESULT"
+                  NEW_INCLUDE=$(echo "$POL_RESULT" | jq -c --arg tid "$OLD_UUID" \
+                    '[.include[] | select((.service_token.token_id // "") != $tid)]')
+                  UPDATE_BODY=$(echo "$POL_RESULT" | jq -c --argjson inc "$NEW_INCLUDE" \
+                    '{name, decision, include: $inc, exclude, require}')
+                  UPD_RESP=$(echo "$UPDATE_BODY" | curl -sS -w '\n%{http_code}' -X PUT \
+                    "$CF_API/accounts/$CF_ACCOUNT/access/policies/$pol_id" \
+                    -H "Authorization: Bearer $CF_TOKEN" \
+                    -H "Content-Type: application/json" \
+                    --data @-)
+                  UPD_STATUS="${UPD_RESP##*$'\n'}"
+                  UPD_BODY="${UPD_RESP%$'\n'*}"
+                  if [ "$UPD_STATUS" -lt 200 ] || [ "$UPD_STATUS" -ge 300 ]; then
+                    echo "::warning::CF API PUT reusable policy $pol_id (dropping old-token entry) failed (HTTP $UPD_STATUS), continuing: $UPD_BODY"
+                    continue
+                  fi
+                  echo "Edited reusable policy $pol_id [$(echo "$POL_RESULT" | jq -r '.name')]: removed old-token include entry, kept the rest"
+                  continue
+                fi
+                echo "Removed stale policy $pol_id (app $app_id) referencing old token"
+              done
+            done
+            DEL_RESP=$(curl -sS -w '\n%{http_code}' -X DELETE \
               "$CF_API/accounts/$CF_ACCOUNT/access/service_tokens/$OLD_UUID" \
-              -H "Authorization: Bearer $CF_TOKEN" | jq -r '.success'
+              -H "Authorization: Bearer $CF_TOKEN")
+            DEL_STATUS="${DEL_RESP##*$'\n'}"
+            DEL_BODY="${DEL_RESP%$'\n'*}"
+            if [ "$DEL_STATUS" -lt 200 ] || [ "$DEL_STATUS" -ge 300 ]; then
+              echo "::error::CF API DELETE /access/service_tokens/$OLD_UUID failed (HTTP $DEL_STATUS): $DEL_BODY"
+              exit 1
+            fi
+            echo "$DEL_BODY" | jq -r '.success'
             echo "Revoked token UUID: $OLD_UUID"
           else
             echo "Compromised token not found — already revoked or never existed."
@@ -265,12 +344,23 @@ jobs:
           # push_worker_secret is also used here to keep Worker AUD secrets in sync
           push_worker_secret() {
             local worker="$1" key="$2" val="$3"
-            curl -sf -X PUT \
+            local resp status body
+            resp=$(curl -sS -w '\n%{http_code}' -X PUT \
               "$CF_API/accounts/$CF_ACCOUNT/workers/scripts/$worker/secrets" \
               -H "Authorization: Bearer $CF_TOKEN" \
               -H "Content-Type: application/json" \
-              -d "{\"name\":\"$key\",\"text\":\"$val\",\"type\":\"secret_text\"}" \
-              | jq -r '"  \(.result.name // "?") => \(.success)"'
+              -d "{\"name\":\"$key\",\"text\":\"$val\",\"type\":\"secret_text\"}")
+            status="${resp##*$'\n'}"
+            body="${resp%$'\n'*}"
+            if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+              # Non-fatal: this is a best-effort convenience sync (e.g. Cloudflare's
+              # "latest version not deployed" 10215 when Gradual Deployments has a
+              # pending version) and must not block the Access apps/policies that
+              # follow it in the script.
+              echo "::warning::CF API PUT /workers/scripts/$worker/secrets failed for key=[$key] (HTTP $status), continuing: $body"
+              return 0
+            fi
+            echo "$body" | jq -r '"  \(.result.name // "?") => \(.success)"'
           }
 
           find_app() {
@@ -292,7 +382,7 @@ jobs:
               --arg d "$domain" \
               --argjson ed "$extra_domains" \
               '{name:$n,type:"self_hosted",domain:$d,
-                self_hosted_domains:([$d] + $ed),
+                self_hosted_domains:(([$d] + $ed) | unique),
                 session_duration:"24h",
                 http_only_cookie_attribute:true,
                 auto_redirect_to_identity:false}'
@@ -305,11 +395,19 @@ jobs:
           # rotation before policies and secrets are refreshed.
           update_app() {
             local app_id="$1" name="$2" domain="$3" extra_domains="${4:-[]}"
-            access_app_payload "$name" "$domain" "$extra_domains" | \
-            curl -sf -X PUT "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id" \
-              -H "Authorization: Bearer $CF_TOKEN" \
-              -H "Content-Type: application/json" \
-              --data @- | jq -r '"  updated app => \(.success)"'
+            local resp status body
+            resp=$(access_app_payload "$name" "$domain" "$extra_domains" | \
+              curl -sS -w '\n%{http_code}' -X PUT "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id" \
+                -H "Authorization: Bearer $CF_TOKEN" \
+                -H "Content-Type: application/json" \
+                --data @-)
+            status="${resp##*$'\n'}"
+            body="${resp%$'\n'*}"
+            if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+              echo "::error::CF API PUT /access/apps/$app_id failed for [$name] domain=[$domain] (HTTP $status): $body" >&2
+              exit 1
+            fi
+            echo "$body" | jq -r '"  updated app => \(.success)"'
           }
 
           get_app_aud() {
@@ -333,11 +431,19 @@ jobs:
           # Caller extracts .result.id and .result.aud from the returned JSON.
           make_app_json() {
             local name="$1" domain="$2" extra_domains="${3:-[]}"
-            access_app_payload "$name" "$domain" "$extra_domains" | \
-            curl -sf -X POST "$CF_API/accounts/$CF_ACCOUNT/access/apps" \
-              -H "Authorization: Bearer $CF_TOKEN" \
-              -H "Content-Type: application/json" \
-              --data @-
+            local resp status body
+            resp=$(access_app_payload "$name" "$domain" "$extra_domains" | \
+              curl -sS -w '\n%{http_code}' -X POST "$CF_API/accounts/$CF_ACCOUNT/access/apps" \
+                -H "Authorization: Bearer $CF_TOKEN" \
+                -H "Content-Type: application/json" \
+                --data @-)
+            status="${resp##*$'\n'}"
+            body="${resp%$'\n'*}"
+            if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+              echo "::error::CF API POST /access/apps failed for [$name] domain=[$domain] (HTTP $status): $body" >&2
+              exit 1
+            fi
+            echo "$body"
           }
 
           add_policy() {
@@ -368,6 +474,23 @@ jobs:
 
           # Delete only non-bypass policies so health-check and OAuth callback
           # bypass rules (on existing apps) are preserved across token rotations.
+          # Deleting stale policies is cleanup, not core correctness -- the
+          # replacement policies still get added right after by the caller
+          # regardless, so a failed delete here (leaving one stale duplicate)
+          # must not abort the whole run.
+          delete_policy() {
+            local app_id="$1" pol_id="$2"
+            local status
+            status=$(curl -sS -o /dev/null -w '%{http_code}' -X DELETE \
+              "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies/$pol_id" \
+              -H "Authorization: Bearer $CF_TOKEN")
+            if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+              echo "::warning::CF API DELETE policy $pol_id on app $app_id failed (HTTP $status), continuing"
+              return 0
+            fi
+            echo "  Deleted old policy: $pol_id"
+          }
+
           refresh_policies() {
             local app_id="$1"
             curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies" \
@@ -375,10 +498,7 @@ jobs:
             jq -r '.result[] | select(.decision != "bypass") | .id // empty' | \
             while read -r pol_id; do
               [ -z "$pol_id" ] && continue
-              curl -sf -X DELETE \
-                "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies/$pol_id" \
-                -H "Authorization: Bearer $CF_TOKEN" > /dev/null
-              echo "  Deleted old policy: $pol_id"
+              delete_policy "$app_id" "$pol_id"
             done
           }
 
@@ -389,10 +509,7 @@ jobs:
             jq -r '.result[] | .id // empty' | \
             while read -r pol_id; do
               [ -z "$pol_id" ] && continue
-              curl -sf -X DELETE \
-                "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies/$pol_id" \
-                -H "Authorization: Bearer $CF_TOKEN" > /dev/null
-              echo "  Deleted old bypass-app policy: $pol_id"
+              delete_policy "$app_id" "$pol_id"
             done
           }
 
@@ -651,7 +768,15 @@ jobs:
           # API: /, /health, /status, /version must be reachable by monitoring.
           upsert_bypass_app "Goldshore API - Public Probes" \
             "api.goldshore.ai" \
-            '["api.goldshore.ai/health","api.goldshore.ai/health/*","api.goldshore.ai/status","api.goldshore.ai/version","api.goldshore.ai/version.json"]'
+            '["api.goldshore.ai/health*","api.goldshore.ai/status","api.goldshore.ai/version","api.goldshore.ai/version.json"]'
+
+          # Public websites submit contact, intake, and newsletter forms through
+          # this path. gs-api independently limits unauthenticated requests to
+          # POST /v1/forms/:formId/submissions; configs and lead-management
+          # endpoints remain protected by application authentication.
+          upsert_bypass_app "Goldshore API - Public Forms" \
+            "api.goldshore.ai/v1/forms/*" \
+            '[]'
 
           # Gateway: /health, /status, /version must be reachable by monitoring
           upsert_bypass_app "Goldshore Gateway - Public Probes" \
@@ -688,10 +813,20 @@ jobs:
           # protected route family served by gs-api so Access issues one AUD for
           # browser calls to /goldclaw, /admin, /users, /ai, /v1, etc. The public
           # probes above remain path-scoped bypass apps.
-          API_PROTECTED_DOMAINS='["api.goldshore.ai/goldclaw","api.goldshore.ai/admin","api.goldshore.ai/users","api.goldshore.ai/ai","api.goldshore.ai/v1"]'
-          upsert_full_access "Goldshore API"     "api.goldshore.ai" "$API_PROTECTED_DOMAINS" \
-            "gs-api gs-api-prod" "$GS_API_ACCESS_AUD"
-          assert_full_access_policies "Goldshore API" "api.goldshore.ai" "$GS_API_ACCESS_AUD"
+          # Bare "api.goldshore.ai" dropped as its own destination: with the
+          # 5 protected paths that's 6 destinations, over Cloudflare's 5-per-app
+          # cap (access.api.error.invalid_request: too many destinations for one
+          # app). The 5 specific paths are the authoritative protected surface;
+          # the bare host was redundant with them, not additive coverage.
+          API_PROTECTED_DOMAINS='["api.goldshore.ai/admin","api.goldshore.ai/users","api.goldshore.ai/ai","api.goldshore.ai/v1"]'
+          # aud_workers lists only "gs-api-prod": the account has no Worker
+          # script literally named "gs-api" (confirmed via workers list --
+          # apps/gs-api/wrangler.toml only ever deploys via --env prod/preview,
+          # producing gs-api-prod; a bare "gs-api" was never actually deployed
+          # and 404s on PUT /workers/scripts/gs-api/secrets).
+          upsert_full_access "Goldshore API"     "api.goldshore.ai/goldclaw" "$API_PROTECTED_DOMAINS" \
+            "gs-api-prod" "$GS_API_ACCESS_AUD"
+          assert_full_access_policies "Goldshore API" "api.goldshore.ai/goldclaw" "$GS_API_ACCESS_AUD"
           # GoldShore MCP: human + agent per docs ("approved human identities and agents")
           upsert_full_access "GoldShore MCP"     "mcp.goldshore.ai" "[]" \
             "" \
@@ -765,14 +900,24 @@ jobs:
           set -euo pipefail
           put_secret() {
             local worker="$1" key="$2" val="$3"
-            curl -sf -X PUT \
+            local resp status body
+            resp=$(curl -sS -w '\n%{http_code}' -X PUT \
               "$CF_API/accounts/$CF_ACCOUNT/workers/scripts/$worker/secrets" \
               -H "Authorization: Bearer $CF_TOKEN" \
               -H "Content-Type: application/json" \
-              -d "{\"name\":\"$key\",\"text\":\"$val\",\"type\":\"secret_text\"}" \
-              | jq -r '"  \(.result.name // "?") => \(.success)"'
+              -d "{\"name\":\"$key\",\"text\":\"$val\",\"type\":\"secret_text\"}")
+            status="${resp##*$'\n'}"
+            body="${resp%$'\n'*}"
+            if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+              echo "::warning::CF API PUT /workers/scripts/$worker/secrets failed for key=[$key] (HTTP $status), continuing: $body"
+              return 0
+            fi
+            echo "$body" | jq -r '"  \(.result.name // "?") => \(.success)"'
           }
-          for WORKER in gs-api gs-api-prod; do
+          # No Worker script literally named "gs-api" exists in the account --
+          # apps/gs-api/wrangler.toml only deploys via --env prod/preview,
+          # producing gs-api-prod. See the matching fix on the AUD sync above.
+          for WORKER in gs-api-prod; do
             echo "Setting secrets on $WORKER:"
             put_secret "$WORKER" CF_ACCESS_CLIENT_ID     "$CLIENT_ID"
             put_secret "$WORKER" CF_ACCESS_CLIENT_SECRET "$CLIENT_SEC"
