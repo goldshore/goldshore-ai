@@ -3,17 +3,34 @@ import assert from 'node:assert';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const wranglerToml = readFileSync(resolve(import.meta.dirname, '../../wrangler.toml'), 'utf8');
-const webWranglerToml = readFileSync(resolve(import.meta.dirname, '../../../gs-web/wrangler.toml'), 'utf8');
+const wranglerToml = readFileSync(
+  resolve(import.meta.dirname, '../../wrangler.toml'),
+  'utf8',
+);
+const webWranglerToml = readFileSync(
+  resolve(import.meta.dirname, '../../../gs-web/wrangler.toml'),
+  'utf8',
+);
 
 const environmentBlock = (toml: string, environment: string) => {
-  const match = toml.match(new RegExp(`\\[env\\.${environment}\\]([\\s\\S]*?)(?=\\n\\[env\\.${environment}\\.|\\n\\[env\\.|$)`));
+  const match = toml.match(
+    new RegExp(
+      `\\[env\\.${environment}\\]([\\s\\S]*?)(?=\\n\\[env\\.${environment}\\.|\\n\\[env\\.|$)`,
+    ),
+  );
   assert.ok(match, `missing [env.${environment}] block`);
   return match[1];
 };
 
 const routePatterns = (block: string) =>
   [...block.matchAll(/pattern\s*=\s*"([^"]+)"/g)].map((match) => match[1]);
+
+const queueConsumerNames = (block: string) =>
+  [
+    ...block.matchAll(
+      /\[\[env\.[^.]+\.queues\.consumers\]\][\s\S]*?queue\s*=\s*"([^"]+)"/g,
+    ),
+  ].map((match) => match[1]);
 
 describe('gs-api wrangler env bindings', () => {
   // Canonical environments are [env.prod] and [env.preview].
@@ -22,34 +39,46 @@ describe('gs-api wrangler env bindings', () => {
     it(`keeps the KV binding required by runtime handlers in ${envName}`, () => {
       assert.match(
         wranglerToml,
-        new RegExp(`\\[\\[env\\.${envName}\\.kv_namespaces\\]\\][\\s\\S]*?binding = "KV"[\\s\\S]*?id = "`)
+        new RegExp(
+          `\\[\\[env\\.${envName}\\.kv_namespaces\\]\\][\\s\\S]*?binding = "KV"[\\s\\S]*?id = "`,
+        ),
       );
       assert.match(
         wranglerToml,
-        new RegExp(`\\[\\[env\\.${envName}\\.kv_namespaces\\]\\][\\s\\S]*?binding = "RISK_RADAR_CACHE"[\\s\\S]*?id = "`)
+        new RegExp(
+          `\\[\\[env\\.${envName}\\.kv_namespaces\\]\\][\\s\\S]*?binding = "RISK_RADAR_CACHE"[\\s\\S]*?id = "`,
+        ),
       );
     });
 
     it(`defines platform, Risk Radar, and AI bindings for ${envName}`, () => {
       assert.match(
         wranglerToml,
-        new RegExp(`\\[\\[env\\.${envName}\\.r2_buckets\\]\\][\\s\\S]*?binding = "GS_ASSETS"`)
+        new RegExp(
+          `\\[\\[env\\.${envName}\\.r2_buckets\\]\\][\\s\\S]*?binding = "GS_ASSETS"`,
+        ),
       );
       assert.match(
         wranglerToml,
-        new RegExp(`\\[\\[env\\.${envName}\\.r2_buckets\\]\\][\\s\\S]*?binding = "RISK_RADAR_R2"`)
+        new RegExp(
+          `\\[\\[env\\.${envName}\\.r2_buckets\\]\\][\\s\\S]*?binding = "RISK_RADAR_R2"`,
+        ),
       );
       assert.match(
         wranglerToml,
-        new RegExp(`\\[\\[env\\.${envName}\\.d1_databases\\]\\][\\s\\S]*?binding = "PLATFORM_DB"`)
+        new RegExp(
+          `\\[\\[env\\.${envName}\\.d1_databases\\]\\][\\s\\S]*?binding = "PLATFORM_DB"`,
+        ),
       );
       assert.match(
         wranglerToml,
-        new RegExp(`\\[\\[env\\.${envName}\\.d1_databases\\]\\][\\s\\S]*?binding = "RISK_RADAR_DB"`)
+        new RegExp(
+          `\\[\\[env\\.${envName}\\.d1_databases\\]\\][\\s\\S]*?binding = "RISK_RADAR_DB"`,
+        ),
       );
       assert.match(
         wranglerToml,
-        new RegExp(`\\[env\\.${envName}\\.ai\\][\\s\\S]*?binding = "AI"`)
+        new RegExp(`\\[env\\.${envName}\\.ai\\][\\s\\S]*?binding = "AI"`),
       );
     });
   }
@@ -66,6 +95,13 @@ describe('gs-api wrangler env bindings', () => {
       'gw.goldshore.ai/*',
       'api.goldshore.org/*',
     ]);
+  });
+
+  it('keeps production gs-api queue ownership producer-only for externally consumed queues', () => {
+    assert.deepEqual(
+      queueConsumerNames(environmentBlock(wranglerToml, 'prod')),
+      [],
+    );
   });
 
   it('keeps web and migrated admin hosts separate from API hosts', () => {
