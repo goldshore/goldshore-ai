@@ -8,7 +8,6 @@ on:
       - "Repo Health"
       - "Deploy gs-web"
       - "Deploy gs-api"
-      - "Deploy Cloudflare apps"
       - "Manage Cloudflare Tokens"
     types: [completed]
   schedule:
@@ -63,7 +62,7 @@ jobs:
           REPO: ${{ github.repository }}
           CUSTOM_MSG: ${{ github.event.inputs.message }}
           HAS_CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
-          HAS_DEPLOY_TOKEN: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN != '' }}
+          HAS_DEPLOY_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN != '' }}
           HAS_GCHAT: ${{ secrets.GOOGLE_CHAT_WEBHOOK != '' }}
           HAS_GOOGLE_OAUTH_CLIENT: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID != '' }}
           HAS_ADS_TOKEN: ${{ secrets.GOOGLE_ADS_DEVELOPER_TOKEN != '' }}
@@ -82,7 +81,7 @@ jobs:
           MSG+="Repo: $REPO\n\n"
           MSG+="*Cloudflare*\n"
           MSG+="  CLOUDFLARE_API_TOKEN: $(check $HAS_CF_TOKEN)\n"
-          MSG+="  CLOUDFLARE_DEPLOY_TOKEN: $(check $HAS_DEPLOY_TOKEN)\n"
+          MSG+="  CLOUDFLARE_BUILD_API_TOKEN: $(check $HAS_DEPLOY_TOKEN)\n"
           MSG+="  -> Renew at: https://dash.cloudflare.com/profile/api-tokens\n\n"
           MSG+="*Google APIs*\n"
           MSG+="  GOOGLE_OAUTH_CLIENT_ID: $(check $HAS_GOOGLE_OAUTH_CLIENT)\n"
