@@ -54,9 +54,16 @@ describe('gs-api wrangler env bindings', () => {
     });
   }
 
-  it('limits production hostname ownership to canonical API routes', () => {
+  it('routes consolidated backend hostnames to the canonical API Worker', () => {
     assert.deepEqual(routePatterns(environmentBlock(wranglerToml, 'prod')), [
       'api.goldshore.ai/*',
+      'agent.goldshore.ai/*',
+      'mail.goldshore.ai/*',
+      'ops.goldshore.ai/*',
+      'trading.goldshore.ai/*',
+      'dashboard.goldshore.ai/*',
+      'dash.goldshore.ai/*',
+      'gw.goldshore.ai/*',
       'api.goldshore.org/*',
     ]);
   });
@@ -66,6 +73,7 @@ describe('gs-api wrangler env bindings', () => {
       'goldshore.ai/*',
       'goldshore.org/*',
       'admin.goldshore.ai/*',
+      'admin-preview.goldshore.ai/*',
       'admin.goldshore.org/*',
     ]);
   });
