@@ -45,6 +45,11 @@ cloudflare:
         content: "gs-web-prod.goldshore.workers.dev"
         proxied: true
         zone: goldshore.ai
+      - name: "admin-preview"
+        type: CNAME
+        content: "gs-web-prod.goldshore.workers.dev"
+        proxied: true
+        zone: goldshore.ai
       - name: "admin"
         type: CNAME
         content: "gs-web-prod.goldshore.workers.dev"
