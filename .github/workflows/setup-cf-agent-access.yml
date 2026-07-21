@@ -161,6 +161,7 @@ jobs:
           require_app "GoldShore Trading - Schwab Callback" "trading.goldshore.ai/oauth/schwab/callback"
           require_app "GoldShore Trading - Robinhood Callback" "trading.goldshore.ai/oauth/robinhood/callback"
           require_app "Goldshore API - Public Probes" "api.goldshore.ai/health"
+          require_app "Goldshore API - Public Forms" "api.goldshore.ai/v1/forms/*"
           require_app "Goldshore Gateway - Public Probes" "gw.goldshore.ai/health"
           require_app "Dashboard" "goldshore.ai/app"
           require_app "GoldShore Admin" "admin.goldshore.ai"
@@ -229,7 +230,39 @@ jobs:
                   "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies/$pol_id" \
                   -H "Authorization: Bearer $CF_TOKEN")
                 if [ "$DP_STATUS" -lt 200 ] || [ "$DP_STATUS" -ge 300 ]; then
-                  echo "::warning::CF API DELETE policy $pol_id (app $app_id) failed (HTTP $DP_STATUS), continuing"
+                  # App-scoped delete failing (400) means this is a reusable
+                  # policy shared across apps (Cloudflare confirmed via 409
+                  # on account-level DELETE while app_count > 0: it refuses
+                  # to delete a reusable policy still in use anywhere).
+                  # These are real, actively-used allow-lists (e.g. named
+                  # "Cloudflare Workers Preview URLs", covering human emails
+                  # + device posture + GitHub org + the old token), possibly
+                  # attached to apps outside the 9 this workflow manages
+                  # (Cloudflare's own App Launcher, seen in practice). The
+                  # correct fix is editing the policy to drop only the old
+                  # token's include entry, not deleting the whole thing.
+                  APP_NAME=$(curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id" \
+                    -H "Authorization: Bearer $CF_TOKEN" | jq -r '.result.name // "?"' || echo "?")
+                  POL_DEF=$(curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/policies/$pol_id" \
+                    -H "Authorization: Bearer $CF_TOKEN" || echo '{}')
+                  POL_RESULT=$(echo "$POL_DEF" | jq -c '.result // .')
+                  echo "::notice::Policy $pol_id is reusable (app-scoped delete HTTP $DP_STATUS). Attached app: [$APP_NAME] ($app_id). Full definition: $POL_RESULT"
+                  NEW_INCLUDE=$(echo "$POL_RESULT" | jq -c --arg tid "$OLD_UUID" \
+                    '[.include[] | select((.service_token.token_id // "") != $tid)]')
+                  UPDATE_BODY=$(echo "$POL_RESULT" | jq -c --argjson inc "$NEW_INCLUDE" \
+                    '{name, decision, include: $inc, exclude, require}')
+                  UPD_RESP=$(echo "$UPDATE_BODY" | curl -sS -w '\n%{http_code}' -X PUT \
+                    "$CF_API/accounts/$CF_ACCOUNT/access/policies/$pol_id" \
+                    -H "Authorization: Bearer $CF_TOKEN" \
+                    -H "Content-Type: application/json" \
+                    --data @-)
+                  UPD_STATUS="${UPD_RESP##*$'\n'}"
+                  UPD_BODY="${UPD_RESP%$'\n'*}"
+                  if [ "$UPD_STATUS" -lt 200 ] || [ "$UPD_STATUS" -ge 300 ]; then
+                    echo "::warning::CF API PUT reusable policy $pol_id (dropping old-token entry) failed (HTTP $UPD_STATUS), continuing: $UPD_BODY"
+                    continue
+                  fi
+                  echo "Edited reusable policy $pol_id [$(echo "$POL_RESULT" | jq -r '.name')]: removed old-token include entry, kept the rest"
                   continue
                 fi
                 echo "Removed stale policy $pol_id (app $app_id) referencing old token"
@@ -736,6 +769,14 @@ jobs:
           upsert_bypass_app "Goldshore API - Public Probes" \
             "api.goldshore.ai" \
             '["api.goldshore.ai/health*","api.goldshore.ai/status","api.goldshore.ai/version","api.goldshore.ai/version.json"]'
+
+          # Public websites submit contact, intake, and newsletter forms through
+          # this path. gs-api independently limits unauthenticated requests to
+          # POST /v1/forms/:formId/submissions; configs and lead-management
+          # endpoints remain protected by application authentication.
+          upsert_bypass_app "Goldshore API - Public Forms" \
+            "api.goldshore.ai/v1/forms/*" \
+            '[]'
 
           # Gateway: /health, /status, /version must be reachable by monitoring
           upsert_bypass_app "Goldshore Gateway - Public Probes" \

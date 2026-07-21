@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
       - name: Apply branch protection
@@ -25,4 +25,9 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_PAT }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           PROTECTED_BRANCH: main
-        run: node scripts/configure-branch-protection.mjs
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::warning::GH_PAT is not configured; skipping branch protection update."
+            exit 0
+          fi
+          node scripts/configure-branch-protection.mjs
