@@ -83,6 +83,7 @@ jobs:
 
           reconcile_route goldshore.ai 'goldshore.ai/*' gs-web-prod
           reconcile_route goldshore.ai 'admin.goldshore.ai/*' gs-web-prod
+          reconcile_route goldshore.ai 'admin-preview.goldshore.ai/*' gs-web-prod
           reconcile_route goldshore.ai 'api.goldshore.ai/*' gs-api-prod
           reconcile_route goldshore.org 'goldshore.org/*' gs-web-prod
           reconcile_route goldshore.org 'admin.goldshore.org/*' gs-web-prod
