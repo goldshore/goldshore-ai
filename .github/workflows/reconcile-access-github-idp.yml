@@ -95,4 +95,5 @@ jobs:
           test -n "$location"
           page=$(curl -fsSL "$location")
           grep -q "$GITHUB_OAUTH_CLIENT_ID" <<<"$page"
+          ! grep -q "Iv23limmOL0SIIk3cZcl" <<<"$page"
           echo "Verified admin.goldshore.ai uses the dedicated GitHub OAuth client."
