@@ -203,7 +203,7 @@ MAILCHANNELS_SENDER_NAME = "GoldShore"
 # ── KV ────────────────────────────────────────────────────────────────────────────
 [[env.preview.kv_namespaces]]
 binding = "KV"
-id = "d4d20cee39094b999dea3f7e5f4c533a"
+id = "20d2c096b673433597d084a562993021"
 
 [[env.preview.kv_namespaces]]
 binding = "CONTROL_LOGS"
