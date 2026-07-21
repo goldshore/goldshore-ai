@@ -1,9 +1,14 @@
 import type { APIRoute } from 'astro';
+import {
+  buildAdminSession,
+  verifyAccessWithClaims,
+  type AdminPermission,
+  type Env as AccessEnv,
+} from '@goldshore/auth';
+import { parseJson } from '@goldshore/utils';
 
 export const prerender = false;
 
-const apiBase = (env: Env | undefined) =>
-  (env?.PUBLIC_API || 'https://api.goldshore.ai').replace(/\/$/, '');
 const normalizeRow = (row: Record<string, string>) => ({
   id: row.id,
   slug: row.slug,
@@ -19,9 +24,7 @@ const normalizeRow = (row: Record<string, string>) => ({
 const isSameOriginRequest = (request: Request) => {
   const expectedOrigin = new URL(request.url).origin;
   const originHeader = request.headers.get('origin');
-  if (originHeader) {
-    return originHeader === expectedOrigin;
-  }
+  if (originHeader) return originHeader === expectedOrigin;
 
   const refererHeader = request.headers.get('referer');
   if (refererHeader) {
@@ -33,7 +36,8 @@ const isSameOriginRequest = (request: Request) => {
   }
 
   const fetchSite = request.headers.get('sec-fetch-site');
-  return fetchSite === 'same-origin' || fetchSite === 'none';
+  if (fetchSite) return fetchSite === 'same-origin' || fetchSite === 'none';
+  return false;
 };
 
 const unauthorizedResponse = () =>
@@ -48,9 +52,7 @@ const requirePermission = async (
   permission: AdminPermission,
 ) => {
   const claims = await verifyAccessWithClaims(request, env);
-  if (!claims) {
-    return { response: unauthorizedResponse() };
-  }
+  if (!claims) return { response: unauthorizedResponse() };
 
   const session = buildAdminSession(claims);
   if (!session.permissions.includes(permission)) {
@@ -63,66 +65,35 @@ const requirePermission = async (
 export const GET: APIRoute = async ({ request, locals, params }) => {
   const env = locals.runtime?.env as Env | undefined;
   const slug = params.slug;
-
-  if (!env?.PLATFORM_DB) {
-    return new Response('Storage unavailable.', { status: 503 });
-  }
+  if (!env?.PLATFORM_DB) return new Response('Storage unavailable.', { status: 503 });
 
   const auth = await requirePermission(request, env as AccessEnv, 'forms:read');
-  if (auth.response) {
-    return auth.response;
-  }
-
-  if (!slug) {
-    return new Response('Form slug is required.', { status: 400 });
-  }
+  if (auth.response) return auth.response;
+  if (!slug) return new Response('Form slug is required.', { status: 400 });
 
   const result = await env.PLATFORM_DB.prepare(
     `SELECT id, slug, name, status, fields, recipients, integrations, created_at, updated_at
      FROM form_configs
      WHERE slug = ?
      LIMIT 1`,
-  )
-    .bind(slug)
-    .all();
+  ).bind(slug).all();
 
-const forwardedHeaders = (request: Request) => {
-  const headers = new Headers();
-  for (const name of ['accept', 'authorization', 'cookie', 'cf-connecting-ip', 'user-agent', 'content-type']) {
-    const value = request.headers.get(name);
-    if (value) headers.set(name, value);
-  }
-  return headers;
+  const row = result?.results?.[0] as Record<string, string> | undefined;
+  if (!row) return new Response('Form not found.', { status: 404 });
+  return Response.json({ config: normalizeRow(row) });
 };
 
-const proxy = async (request: Request, env: Env | undefined, slug?: string) => {
-  if (!slug) return new Response('Form slug is required.', { status: 400 });
-
-  const target = new URL(`${apiBase(env)}/v1/forms/configs/${encodeURIComponent(slug)}`);
-  const response = await fetch(target, {
-    method: request.method,
-    headers: forwardedHeaders(request),
-    body: request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.text(),
 export const PUT: APIRoute = async ({ request, locals, params }) => {
   const env = locals.runtime?.env as Env | undefined;
   const slug = params.slug;
-
-  if (!env?.PLATFORM_DB) {
-    return new Response('Storage unavailable.', { status: 503 });
-  }
-
+  if (!env?.PLATFORM_DB) return new Response('Storage unavailable.', { status: 503 });
   if (!isSameOriginRequest(request)) {
     return forbiddenResponse('Forbidden: CSRF check failed.');
   }
 
   const auth = await requirePermission(request, env as AccessEnv, 'forms:write');
-  if (auth.response) {
-    return auth.response;
-  }
-
-  if (!slug) {
-    return new Response('Form slug is required.', { status: 400 });
-  }
+  if (auth.response) return auth.response;
+  if (!slug) return new Response('Form slug is required.', { status: 400 });
 
   const payload = (await request.json()) as {
     name?: string;
@@ -137,14 +108,10 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
      FROM form_configs
      WHERE slug = ?
      LIMIT 1`,
-  )
-    .bind(slug)
-    .all();
+  ).bind(slug).all();
 
   const row = existing?.results?.[0] as Record<string, string> | undefined;
-  if (!row) {
-    return new Response('Form not found.', { status: 404 });
-  }
+  if (!row) return new Response('Form not found.', { status: 404 });
 
   const updated = {
     name: payload.name ?? row.name,
@@ -159,17 +126,15 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     `UPDATE form_configs
      SET name = ?, status = ?, fields = ?, recipients = ?, integrations = ?, updated_at = ?
      WHERE slug = ?`,
-  )
-    .bind(
-      updated.name,
-      updated.status,
-      JSON.stringify(updated.fields),
-      JSON.stringify(updated.recipients),
-      JSON.stringify(updated.integrations),
-      now,
-      slug,
-    )
-    .run();
+  ).bind(
+    updated.name,
+    updated.status,
+    JSON.stringify(updated.fields),
+    JSON.stringify(updated.recipients),
+    JSON.stringify(updated.integrations),
+    now,
+    slug,
+  ).run();
 
   return Response.json({
     config: {
@@ -183,26 +148,9 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
       createdAt: row.created_at,
       updatedAt: now,
     },
-
-  const target = new URL(`${apiBase(env)}/v1/forms/configs/${encodeURIComponent(slug)}`);
-  const response = await fetch(target, {
-    method: request.method,
-    headers: forwardedHeaders(request),
-    body: request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.text(),
   });
-
-  return new Response(response.body, { status: response.status, headers: response.headers });
 };
 
-export const GET: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
-export const PUT: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
 export const PATCH = PUT;
 
-export const __testing = {
-  isSameOriginRequest,
-  requirePermission,
-};
-
-export const GET: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
-export const PUT: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
-export const PATCH = PUT;
+export const __testing = { isSameOriginRequest, requirePermission };
