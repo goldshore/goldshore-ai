@@ -3,7 +3,7 @@ import path from 'node:path';
 
 const DEFAULT_DIST_DIR = 'apps/gs-web/dist';
 // /workflows has no page yet; Risk Radar lives at /apps/risk-radar.
-const DEFAULT_ROUTES = ['/developer', '/apps/risk-radar'];
+const DEFAULT_ROUTES = ['/platform', '/risk-radar', '/services', '/developer', '/about', '/apps/risk-radar'];
 
 const baseDistDir = path.resolve(process.env.DIST_DIR ?? DEFAULT_DIST_DIR);
 // Cloudflare Pages adapter v13+ outputs pre-rendered pages to dist/client/
