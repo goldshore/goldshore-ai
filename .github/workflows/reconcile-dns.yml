@@ -147,13 +147,21 @@ jobs:
             curl -sS "$CF_API/zones?name=$1" -H "Authorization: Bearer $CF_TOKEN" | jq -r '.result[0].id // empty'
           }
 
-          # preview.goldshore.ai reports as MISSING via a type=CNAME query
-          # despite being live and working today -- it's provisioned through
-          # a real Workers Custom Domain that doesn't show up as a plain
-          # CNAME through this API. Confirmed: Cloudflare rejected a real
-          # CREATE attempt with code 81062 ("A DNS record managed by Workers
-          # already exists on that host"). Skip CREATE rather than let every
-          # run log a false MISSING/warning pair.
+          ZID_AI=$(get_zone_id goldshore.ai)
+          if [ -z "$ZID_AI" ]; then
+            echo "::error::Could not resolve zone id for goldshore.ai"
+            exit 1
+          fi
+          echo "goldshore.ai zone id: $ZID_AI"
+
+          # goldshore.ai (apex) and preview.goldshore.ai report as MISSING via a
+          # type=CNAME query despite being live and working today -- both are
+          # provisioned through a Workers Custom Domain mechanism that doesn't
+          # show up as a plain CNAME through this API. Confirmed for
+          # preview.goldshore.ai: Cloudflare rejected a real CREATE attempt
+          # with code 81062 ("A DNS record managed by Workers already exists
+          # on that host"). Skip CREATE for both rather than let every run log
+          # a false MISSING/warning pair.
           #
           # api.goldshore.ai is deliberately NOT in this list: verified via
           # the raw Cloudflare API that it has zero DNS records of any kind
