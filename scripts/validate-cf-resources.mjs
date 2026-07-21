@@ -3,16 +3,21 @@
 import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 
-const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_ID || '';
-const rawToken = process.env.CLOUDFLARE_BUILD_API_TOKEN || process.env.CLOUDFLARE_API_TOKEN || '';
-const TOKEN = (() => {
-  let token = rawToken.replace(/[\r\n]/g, '').trim();
+const normalizeCloudflareToken = (raw) => {
+  let token = (raw || '').replace(/[\r\n]/g, '').trim();
   const bearer = token.match(/(?:authorization\s*:\s*)?bearer\s+([^\s"',;}]+)/i);
   if (bearer) token = bearer[1];
   const cfut = token.match(/cfut_[A-Za-z0-9_-]+/);
   if (cfut) token = cfut[0];
   return token.replace(/^[`'"]+|[`'",;}]+$/g, '').replace(/\s/g, '');
-})();
+};
+
+const ACCOUNT_ID = (process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_ID || '').trim();
+const TOKEN = normalizeCloudflareToken(
+  process.env.CLOUDFLARE_BUILD_API_TOKEN || process.env.CLOUDFLARE_API_TOKEN || '',
+);
+const SHOULD_SKIP_AUTH_FAILURE =
+  process.env.GITHUB_EVENT_NAME === 'pull_request' || process.env.CI_VALIDATE_CF_ALLOW_AUTH_SKIP === '1';
 const ROOT = process.cwd();
 const APPS_DIR = path.join(ROOT, 'apps');
 
@@ -72,6 +77,12 @@ async function cfGet(pathname) {
   });
   const body = await res.text();
   if (!res.ok) {
+    if (SHOULD_SKIP_AUTH_FAILURE && [400, 401, 403].includes(res.status)) {
+      console.log(
+        `${YELLOW}::warning::Skipping Cloudflare resource validation because Cloudflare auth failed for ${pathname}: HTTP ${res.status}${RESET}`,
+      );
+      process.exit(0);
+    }
     throw new Error(`Cloudflare API request failed for ${pathname}: HTTP ${res.status} ${body}`);
   }
   const json = JSON.parse(body);

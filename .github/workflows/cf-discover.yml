@@ -58,6 +58,10 @@ jobs:
           # target missing source trees, duplicate Workers, or retired apps.
           # Deleting a build trigger does not delete the Worker or deployment.
           workers=(
+            # Bare gs-api is a legacy dashboard-side duplicate. Canonical API
+            # builds are gs-api-prod and gs-api-preview; leaving gs-api
+            # connected makes PR checks fail on Durable Object version uploads.
+            gs-api
             gs-email-router
             gs-gateway-prod
             gs-platform
