@@ -4787,7 +4787,6 @@ snapshots:
       - terser
       - tsx
       - utf-8-validate
-      - workerd
       - yaml
 
   '@astrojs/cloudflare@13.7.0(@types/node@26.1.1)(astro@7.1.0(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(rollup@4.62.2)(tsx@4.23.1)(yaml@2.9.0))(lightningcss@1.33.0)(tsx@4.23.1)(workerd@1.20260714.1)(wrangler@4.112.0(@cloudflare/workers-types@5.20260719.1))(yaml@2.9.0)':
