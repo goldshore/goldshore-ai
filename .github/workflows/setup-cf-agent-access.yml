@@ -161,6 +161,7 @@ jobs:
           require_app "GoldShore Trading - Schwab Callback" "trading.goldshore.ai/oauth/schwab/callback"
           require_app "GoldShore Trading - Robinhood Callback" "trading.goldshore.ai/oauth/robinhood/callback"
           require_app "Goldshore API - Public Probes" "api.goldshore.ai/health"
+          require_app "Goldshore API - Public Forms" "api.goldshore.ai/v1/forms/*"
           require_app "Goldshore Gateway - Public Probes" "gw.goldshore.ai/health"
           require_app "Dashboard" "goldshore.ai/app"
           require_app "GoldShore Admin" "admin.goldshore.ai"
@@ -768,6 +769,14 @@ jobs:
           upsert_bypass_app "Goldshore API - Public Probes" \
             "api.goldshore.ai" \
             '["api.goldshore.ai/health*","api.goldshore.ai/status","api.goldshore.ai/version","api.goldshore.ai/version.json"]'
+
+          # Public websites submit contact, intake, and newsletter forms through
+          # this path. gs-api independently limits unauthenticated requests to
+          # POST /v1/forms/:formId/submissions; configs and lead-management
+          # endpoints remain protected by application authentication.
+          upsert_bypass_app "Goldshore API - Public Forms" \
+            "api.goldshore.ai/v1/forms/*" \
+            '[]'
 
           # Gateway: /health, /status, /version must be reachable by monitoring
           upsert_bypass_app "Goldshore Gateway - Public Probes" \
