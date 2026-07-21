@@ -35,11 +35,12 @@ preview.goldshore.ai
 └── Same build, same code, different DNS name (for QA)
 
 admin.goldshore.ai
-├── gs-admin Pages project
+├── gs-web Worker (migrated off the standalone gs-admin Pages project)
+├── Route: admin.goldshore.ai/* (apps/gs-web/wrangler.toml env.prod)
 └── Cloudflare Access policy: email allowlist required
 
 admin-preview.goldshore.ai
-├── gs-admin Pages preview environment
+├── gs-admin Pages preview environment (not yet migrated)
 └── Same Access policy as admin.goldshore.ai
 ```
 
@@ -78,7 +79,7 @@ ops.goldshore.ai/*
 #### Pages (Custom Domains)
 ```
 admin.goldshore.org
-├── gs-admin Pages project
+├── gs-web worker (migrated admin UI; same route owner as admin.goldshore.ai)
 ├── Owner: gs-admin
 ├── Hosting: Cloudflare Pages
 └── Cloudflare Access application/policy: GoldShore Admin / GoldShore-Admin-ZT
@@ -129,7 +130,7 @@ www.banproof.me/*
 2. **Subdomain isolation.** Each subdomain is owned by exactly one service.
    - `api.*` → gs-api only
    - `gw.*` → gs-platform only
-   - `admin.*` → gs-admin Pages only
+   - `admin.goldshore.ai`, `admin.goldshore.org` → gs-web only (migrated)
    - etc.
 
 3. **Custom domains vs. routes.** 
@@ -189,7 +190,7 @@ https://goldshore-ai.pages.dev/  (or custom domain)
 When accessed via:
 - `https://goldshore.ai/` → CORS allows it (wildcard or explicit)
 - `https://goldshore.org/` → goldshore-org router sets ASSETS_ORIGIN, CORS allows it
-- `https://admin.goldshore.ai/` → gs-admin is a separate build, may have own assets
+- `https://admin.goldshore.ai/` and `https://admin.goldshore.org/` → served by gs-web directly; admin pages live under `apps/gs-web/src/pages/admin/*`
 
 **Recursion risk:** If gs-web tries to fetch from itself (e.g., prefetch WASM), ensure CORS doesn't loop back.
 
@@ -234,10 +235,10 @@ When accessed via:
 
 | Route | Zone | Audience | Policy |
 |---|---|---|---|
-| `admin.goldshore.ai` | goldshore.ai | gs-admin | Email: @goldshore.ai, @marzton.dev |
-| `admin.goldshore.org` | goldshore.org | gs-admin | Same GoldShore Admin application/policy (`GoldShore-Admin-ZT`) as admin.goldshore.ai |
-| `admin-preview.goldshore.ai` | goldshore.ai | gs-admin-preview | Same as admin |
-| `admin.goldshore.ai` | goldshore.ai | gs-admin | Identity-based allow: Email domains `@goldshore.ai`, `@marzton.dev`; Specific email: `marstonr6@gmail.com` |
+| `admin.goldshore.ai` | goldshore.ai | gs-web | Email: @goldshore.ai, @marzton.dev |
+| `admin.goldshore.org` | goldshore.org | gs-web | Same GoldShore Admin application/policy (`GoldShore-Admin-ZT`) as admin.goldshore.ai |
+| `admin-preview.goldshore.ai` | goldshore.ai | gs-admin-preview (not yet migrated) | Same as admin |
+| `admin.goldshore.ai` | goldshore.ai | gs-web | Identity-based allow: Email domains `@goldshore.ai`, `@marzton.dev`; Specific email: `marstonr6@gmail.com` |
 | `admin-preview.goldshore.ai` | goldshore.ai | gs-admin-preview | Identity-based allow: Email domains `@goldshore.ai`, `@marzton.dev`; Specific email: `marstonr6@gmail.com` |
 | `ops.goldshore.ai` | goldshore.ai | gs-control | Email: @goldshore.ai (ops team only) |
 | `agent.goldshore.ai/*` | goldshore.ai | Goldshore Gateway shared AUD | Bypass `/health` and `/status`; protect all other agent paths |
