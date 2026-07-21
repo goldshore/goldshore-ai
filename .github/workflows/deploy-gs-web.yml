@@ -82,7 +82,7 @@ jobs:
           test -n "$CLOUDFLARE_API_TOKEN"
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Build gs-web Worker output
         run: pnpm build:pages
