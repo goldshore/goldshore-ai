@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import * as assert from 'node:assert/strict';
 
-import app, { isAllowedOrigin, isPreviewOrigin } from './index';
+import app, { isAllowedOrigin, isPreviewOrigin, isPublicPath } from './index';
 
 const requiredRuntimeEnv = {
   PLATFORM_DB: {} as any,
@@ -25,6 +25,14 @@ test('allows documented goldshore-pages.dev preview origins', () => {
 
 test('rejects unrelated origins', () => {
   assert.equal(isAllowedOrigin('https://evil.example.com'), false);
+});
+
+test('allows only public form submission writes through API authentication', () => {
+  assert.equal(isPublicPath('/v1/forms/contact/submissions', 'POST'), true);
+  assert.equal(isPublicPath('/v1/forms/newsletter/submissions', 'POST'), true);
+  assert.equal(isPublicPath('/v1/forms/contact/submissions', 'GET'), false);
+  assert.equal(isPublicPath('/v1/forms/configs', 'GET'), false);
+  assert.equal(isPublicPath('/v1/forms/leads', 'GET'), false);
 });
 
 test('exposes /version without Cloudflare Access', async () => {
