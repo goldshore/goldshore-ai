@@ -1,0 +1,61 @@
+name: Reconcile Access GitHub IdP
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  reconcile:
+    name: Repair Cloudflare Access GitHub login
+    runs-on: ubuntu-latest
+    env:
+      CF_ACCOUNT_ID: f77de112d2019e5456a3198a8bb50bd2
+      CF_API: https://api.cloudflare.com/client/v4
+      GITHUB_OAUTH_CLIENT_ID: Ov23liQ0fWArxJvZL7A5
+      GITHUB_OAUTH_CLIENT_SECRET: ${{ secrets.GOLDSHORE_ACCESS_GITHUB_CLIENT_SECRET }}
+      CF_AUTH_EMAIL: ${{ secrets.CF_AUTH_EMAIL }}
+      CF_AUTH_KEY: ${{ secrets.CF_AUTH_KEY }}
+    steps:
+      - name: Reconcile dedicated GitHub OAuth identity provider
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$GITHUB_OAUTH_CLIENT_SECRET"
+          test -n "$CF_AUTH_EMAIL"
+          test -n "$CF_AUTH_KEY"
+          echo "::add-mask::$GITHUB_OAUTH_CLIENT_SECRET"
+          echo "::add-mask::$CF_AUTH_KEY"
+
+          auth=(-H "X-Auth-Email: $CF_AUTH_EMAIL" -H "X-Auth-Key: $CF_AUTH_KEY")
+          endpoint="$CF_API/accounts/$CF_ACCOUNT_ID/access/identity_providers"
+          providers=$(curl -fsS "$endpoint" "${auth[@]}")
+          idp_id=$(jq -r '.result[] | select(.type == "github" and .name == "Gold Shore Cloudflare Access") | .id' <<<"$providers" | head -n1)
+
+          if [[ -z "$idp_id" ]]; then
+            echo "::error::Cloudflare GitHub IdP 'Gold Shore Cloudflare Access' was not found."
+            exit 1
+          fi
+
+          body=$(jq -nc \
+            --arg name "Gold Shore Cloudflare Access" \
+            --arg client_id "$GITHUB_OAUTH_CLIENT_ID" \
+            --arg client_secret "$GITHUB_OAUTH_CLIENT_SECRET" \
+            '{name:$name,type:"github",config:{client_id:$client_id,client_secret:$client_secret}}')
+
+          result=$(curl -fsS -X PUT "$endpoint/$idp_id" "${auth[@]}" \
+            -H 'Content-Type: application/json' --data "$body")
+          jq -e --arg client_id "$GITHUB_OAUTH_CLIENT_ID" \
+            '.success == true and .result.type == "github" and .result.config.client_id == $client_id' \
+            <<<"$result" >/dev/null
+          echo "Reconciled Cloudflare Access GitHub IdP: Gold Shore Cloudflare Access"
+
+      - name: Verify admin login advertises the repaired OAuth client
+        shell: bash
+        run: |
+          set -euo pipefail
+          location=$(curl -fsSI https://admin.goldshore.ai/ | awk 'BEGIN{IGNORECASE=1} /^location:/{sub(/\r$/, ""); print substr($0,11); exit}')
+          test -n "$location"
+          page=$(curl -fsSL "$location")
+          grep -q "$GITHUB_OAUTH_CLIENT_ID" <<<"$page"
+          echo "Verified admin.goldshore.ai uses the dedicated GitHub OAuth client."

@@ -13,13 +13,21 @@ main = "./src/worker.ts"
 directory = "./dist"
 binding = "ASSETS"
 
+# Astro builds before a Wrangler environment is selected. Define its session
+# binding at the top level so the generated deployment config reuses the
+# existing namespace instead of attempting automatic provisioning.
+[[kv_namespaces]]
+binding = "SESSION"
+id = "09ae2ffbffe24e628c9538c8129dfe33"
+
 # ── Production ──────────────────────────────────────────────────────────────────────────────────────
 
 [env.prod]
 routes = [
   { pattern = "goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
-  { pattern = "admin.goldshore.ai/*", zone_name = "goldshore.ai" }
+  { pattern = "admin.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "admin.goldshore.org/*", zone_name = "goldshore.org" }
 ]
 
 [[env.prod.kv_namespaces]]
