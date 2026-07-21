@@ -155,7 +155,8 @@ rows.sort((a, b) => order[a.status] - order[b.status] || a.type.localeCompare(b.
 
 const colorFor = (status) => (status === 'ok' ? GREEN : status === 'warning' ? YELLOW : RED);
 console.log(`${BOLD}Cloudflare resource validation${RESET}`);
-console.log(`Account: ${ACCOUNT_ID}`);
+const maskedAccountId = ACCOUNT_ID.length > 4 ? `***${ACCOUNT_ID.slice(-4)}` : '***';
+console.log(`Account: ${maskedAccountId}`);
 console.log(`${CYAN}Type    Status   Item / Detail${RESET}`);
 for (const row of rows) {
   const detail = row.detail ? ` (${row.detail})` : '';
