@@ -5,8 +5,11 @@ import DocsSearch from './DocsSearch.astro';
 const { currentSlug } = Astro.props;
 const pages = await getCollection('docs');
 
-// Sort by optional "order" key
 pages.sort((a, b) => (a.data.order ?? 999) - (b.data.order ?? 999));
+
+function getEntrySlug(p: any): string {
+  return (p.slug as string | undefined) ?? p.id.replace(/\.(md|mdx)$/, '');
+}
 
 function getHref(slug: string) {
   return slug === 'index' ? '/developer/docs' : `/developer/docs/${slug}`;
@@ -18,19 +21,22 @@ function getHref(slug: string) {
     <DocsSearch />
   </div>
 
-  <h3 class="section-title"><span>◎</span>Documentation</h3>
+  <h3 class="section-title"><span>&#9675;</span>Documentation</h3>
   <ul class="docs-nav">
-    {pages.map((page) => (
-      <li>
-        <a
-          href={getHref(page.id)}
-          class={currentSlug === page.id ? "active" : ""}
-          aria-current={currentSlug === page.id ? "page" : undefined}
-        >
-          {page.data.title}
-        </a>
-      </li>
-    ))}
+    {pages.map((page) => {
+      const slug = getEntrySlug(page);
+      return (
+        <li>
+          <a
+            href={getHref(slug)}
+            class={currentSlug === slug ? 'active' : ''}
+            aria-current={currentSlug === slug ? 'page' : undefined}
+          >
+            {page.data.title}
+          </a>
+        </li>
+      );
+    })}
   </ul>
 </aside>
 

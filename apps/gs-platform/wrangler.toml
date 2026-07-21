@@ -42,7 +42,7 @@ id = "5f13370575784c9dacff522121104cb3"
 
 # ── R2 ──────────────────────────────────────────────────────────────────────────
 [[env.prod.r2_buckets]]
-binding = "ASSETS"
+binding = "GS_ASSETS"
 bucket_name = "gs-assets"
 
 # ── Service bindings (hub → spoke) ───────────────────────────────────────────
@@ -51,15 +51,7 @@ binding = "SECURITY"
 service = "banproof-me"
 environment = "prod"
 
-[[env.prod.services]]
-binding = "SIGNALS"
-service = "gs-signals-prod"
-environment = "prod"
 
-[[env.prod.services]]
-binding = "MAIL"
-service = "gs-mail"
-environment = "prod"
 
 # gs-core-worker is no longer proxied through gs-platform.
 # armsway-com worker binds directly to gs-core-worker for its own needs.

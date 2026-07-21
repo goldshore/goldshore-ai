@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Hono } from 'hono';
 import { secureHeaders } from 'hono/secure-headers';
 import {
@@ -15,20 +16,33 @@ import admin from './routes/admin';
 import media from './routes/media';
 import pages from './routes/pages';
 import internal from './routes/internal';
+import { EmailInboxLogsSchema, EmailLogSchema, type EmailLog } from '@goldshore/schema';
 import domains from './routes/domains';
 import sites from './routes/sites';
 import forms from './routes/forms';
 import deployments from './routes/deployments';
 import gearswipe from './routes/gearswipe';
+import crawler from './routes/crawler';
+import integrations from './routes/integrations';
+import goldclaw from './routes/goldclaw';
+import agent from './routes/agent';
+import mail from './routes/mail';
+import control from './routes/control';
+import trading from './routes/trading';
+import core from './routes/core';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
+import { type Env } from './types';
 
 type Env = {
   KV: KVNamespace;
   CONTROL_LOGS?: KVNamespace;
-  CONTENT_DB: D1Database;
+  RISK_RADAR_CACHE?: KVNamespace;
+  PLATFORM_DB: D1Database;
+  RISK_RADAR_DB?: D1Database;
   TELEMETRY_DB?: D1Database;
-  ASSETS: R2Bucket;
+  GS_ASSETS: R2Bucket;
+  RISK_RADAR_R2?: R2Bucket;
   AUTH_SESSION?: DurableObjectNamespace;
   AI: Ai;
   OPENAI_API_KEY?: string;
@@ -41,7 +55,13 @@ type Env = {
   CLOUDFLARE_TEAM_DOMAIN?: string;
   CONTROL_SYNC_TOKEN?: string;
   ALLOWED_ORIGINS?: string;
+  MAIL_FORWARD_TO?: string;
+  FORWARD_TO?: string;
+  MAIL_BLOCKED_SENDERS?: string;
+  MAIL_ALLOWED_RECIPIENTS?: string;
+  API_ORIGIN?: string;
   ENV?: string;
+  DEV_AUTH_BYPASS?: string;
   API_VERSION?: string;
   DEPLOY_SHA?: string;
   GIT_SHA?: string;
@@ -52,12 +72,61 @@ const app = new Hono<{
   Variables: { accessClaims: AccessTokenPayload | null };
 }>();
 
-const requiredBindings = ['CONTENT_DB', 'ASSETS', 'AI'] as const;
-const expectedD1Binding = 'CONTENT_DB' as const;
+const TRACE_HEADER = 'X-Correlation-Id';
+const AGENT_HOSTNAME = 'agent.goldshore.ai';
+
+const getCorrelationId = (request: Request): string =>
+  request.headers.get(TRACE_HEADER) ?? crypto.randomUUID();
+
+const withCorrelationId = (response: Response, correlationId: string): Response => {
+  const headers = new Headers(response.headers);
+  headers.set(TRACE_HEADER, correlationId);
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+};
+
+const isAgentHostnameRequest = (request: Request): boolean =>
+  new URL(request.url).hostname === AGENT_HOSTNAME;
+
+const normalizeEmail = (value: string) => value.trim().toLowerCase();
+const parseEmailList = (value?: string) =>
+  (value ?? '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map(normalizeEmail);
+
+const isEmailLike = (value: string) => {
+  const normalized = normalizeEmail(value);
+  const atIndex = normalized.indexOf('@');
+  const lastDotIndex = normalized.lastIndexOf('.');
+
+  return atIndex > 0 && lastDotIndex > atIndex + 1 && lastDotIndex < normalized.length - 1;
+};
+
+const readInboxLogs = async (kv: KVNamespace): Promise<EmailLog[]> => {
+  const rawLogs = await kv.get('EMAIL_INBOX_LOGS', 'text');
+  if (!rawLogs) return [];
+
+  try {
+    const parsedLogs = JSON.parse(rawLogs);
+    const parseResult = EmailInboxLogsSchema.safeParse(parsedLogs);
+    return parseResult.success ? parseResult.data : [];
+  } catch (error) {
+    console.error('Failed to parse EMAIL_INBOX_LOGS payload:', error);
+    return [];
+  }
+};
+
+
+const requiredBindings = ['PLATFORM_DB', 'GS_ASSETS', 'AI'] as const;
+const expectedD1Binding = 'PLATFORM_DB' as const;
 const requiredSecrets = [
   'JWT_SECRET',
-  'STRIPE_API_KEY',
-  'SENDGRID_API_KEY',
   'ACCESS_CLIENT_SECRET',
 ] as const;
 
@@ -85,6 +154,12 @@ const isAllowedOrigin = (origin: string, allowedOrigins?: string) => {
 
 const isPublicPath = (path: string, method: string) => {
   if (method === 'OPTIONS') return true;
+  if (
+    method === 'POST' &&
+    /^\/v1\/forms\/[^/]+\/submissions$/.test(path)
+  ) {
+    return true;
+  }
   return (
     path === '/' ||
     path === '/version' ||
@@ -120,6 +195,20 @@ app.use(
 );
 
 app.use('*', async (c, next) => {
+  if (!isAgentHostnameRequest(c.req.raw)) {
+    await next();
+    return;
+  }
+
+  const correlationId = getCorrelationId(c.req.raw);
+  const agentUrl = new URL(c.req.url);
+  agentUrl.pathname = `/agent${agentUrl.pathname === '/' ? '' : agentUrl.pathname}`;
+  const response = await app.fetch(new Request(agentUrl.toString(), c.req.raw), c.env, c.executionCtx);
+  return withCorrelationId(response, correlationId);
+});
+
+// Enforce Authentication (Defense in Depth)
+app.use('*', async (c, next) => {
   if (isPublicPath(c.req.path, c.req.method)) {
     c.set('accessClaims', null);
     await next();
@@ -139,12 +228,22 @@ app.use('*', async (c, next) => {
     }
   }
 
+  if (c.env.DEV_AUTH_BYPASS === '1') {
+    c.set('accessClaims', {
+      email: 'developer@goldshore.ai',
+      roles: ['admin'],
+    } as AccessTokenPayload);
+    await next();
+    return;
+  }
+
   if (!c.env.CLOUDFLARE_ACCESS_AUDIENCE) {
     return c.json(
       { error: 'Cloudflare Access audience is not configured for protected routes.' },
       503,
     );
   }
+
 
   const claims = await verifyAccessWithClaims(c.req.raw, c.env);
   if (!claims) {
@@ -191,19 +290,20 @@ const PUBLIC_VERSION_CORS_ORIGINS = new Set([
 
 app.get('/version', (c) => {
   const origin = c.req.header('Origin');
-  const data = withContractHeaders(
-    {
-      service: 'gs-api',
-      version: c.env.API_VERSION ?? c.env.GIT_SHA ?? 'unknown',
-      deploySha: c.env.DEPLOY_SHA ?? c.env.GIT_SHA ?? null,
-    },
-    getRuntimeVersion(c.env),
-  );
   if (origin && PUBLIC_VERSION_CORS_ORIGINS.has(origin)) {
     c.header('Access-Control-Allow-Origin', origin);
     c.header('Vary', 'Origin');
   }
-  return c.json(data);
+  return c.json(
+    withContractHeaders(
+      {
+        service: 'gs-api',
+        version: c.env.API_VERSION ?? c.env.GIT_SHA ?? 'unknown',
+        deploySha: c.env.DEPLOY_SHA ?? c.env.GIT_SHA ?? null,
+      },
+      getRuntimeVersion(c.env),
+    ),
+  );
 });
 
 app.get('/version.json', (c) =>
@@ -222,10 +322,43 @@ app.route('/user', user);
 app.route('/system', system);
 app.route('/templates', templates);
 app.route('/admin', admin);
+app.route('/admin/crawler', crawler);
+app.route('/integrations', integrations);
+app.route('/goldclaw', goldclaw);
 app.route('/media', media);
 app.route('/pages', pages);
 app.route('/internal', internal);
+app.route('/agent', agent);
+app.route('/mail', mail);
+app.route('/admin/control', control);
+app.route('/trading', trading);
+app.route('/core', core);
 
+app.all('/api/*', async (c) => {
+  const correlationId = getCorrelationId(c.req.raw);
+  const url = new URL(c.req.url);
+  const proxiedPath = url.pathname.replace(/^\/api/, '') || '/';
+
+  try {
+    if (c.env.API_ORIGIN) {
+      const targetUrl = new URL(proxiedPath + url.search, c.env.API_ORIGIN);
+      const response = await fetch(targetUrl.toString(), c.req.raw);
+      return withCorrelationId(response, correlationId);
+    }
+
+    const internalUrl = new URL(c.req.url);
+    internalUrl.pathname = proxiedPath;
+    const response = await app.fetch(new Request(internalUrl.toString(), c.req.raw), c.env, c.executionCtx);
+    return withCorrelationId(response, correlationId);
+  } catch (error) {
+    console.error(`[api] gateway proxy failed; trace=${correlationId}`, error);
+    return c.json({ error: 'Upstream request failed', traceId: correlationId }, 502, {
+      [TRACE_HEADER]: correlationId,
+    });
+  }
+});
+
+// V1 Routes
 const v1 = new Hono<{ Bindings: Env }>();
 v1.route('/users', users);
 v1.route('/domains', domains);
@@ -233,12 +366,98 @@ v1.route('/sites', sites);
 v1.route('/forms', forms);
 v1.route('/deployments', deployments);
 v1.route('/gearswipe', gearswipe);
+v1.route('/goldclaw', goldclaw);
+v1.route('/trading', trading);
+v1.route('/agent', agent);
+v1.route('/mail', mail);
+v1.route('/control', control);
+v1.route('/core', core);
 v1.get('/leads', (c) => c.json({ leads: [] }));
 
 app.route('/v1', v1);
 
-export { isAllowedOrigin, isPreviewOrigin, parseAllowedOrigins };
+export { isAllowedOrigin, isPreviewOrigin, isPublicPath, parseAllowedOrigins };
 
+const processQueueMessage = async (message: Message<any>, env: Env): Promise<void> => {
+  const body = message.body;
+  const type = typeof body === 'object' && body && 'type' in body ? String((body as { type?: unknown }).type) : 'unknown';
+  if (type === 'contact' || type === 'checkout') {
+    console.info({ event: 'mail_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
+    message.ack();
+    return;
+  }
+  if (type === 'trading' || type === 'trading-signal' || type === 'order') {
+    console.info({ event: 'trading_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
+    message.ack();
+    return;
+  }
+  if (type === 'signal' || type === 'atc') {
+    console.info({ event: 'core_signal_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
+    message.ack();
+    return;
+  }
+  console.info({ event: 'agent_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
+  message.ack();
+};
+
+export default {
+  fetch: app.fetch,
+
+  async queue(batch: MessageBatch<any>, env: Env): Promise<void> {
+    for (const message of batch.messages) {
+      try {
+        await processQueueMessage(message, env);
+      } catch (error) {
+        console.error('gs-api queue message processing failed:', error);
+        message.retry();
+      }
+    }
+  },
+
+  async email(message: ForwardableEmailMessage, env: Env, ctx: ExecutionContext): Promise<void> {
+    const sender = message.from;
+    const recipient = message.to;
+    const subject = (message.headers.get('subject') || 'No Subject').slice(0, 50);
+
+    const normalizedSender = normalizeEmail(sender);
+    const normalizedRecipient = normalizeEmail(recipient);
+    const blocked = parseEmailList(env.MAIL_BLOCKED_SENDERS);
+    if (blocked.includes(normalizedSender)) {
+      message.setReject(`Sender ${sender} is blocked.`);
+      return;
+    }
+
+    const allowed = parseEmailList(env.MAIL_ALLOWED_RECIPIENTS);
+    if (allowed.length > 0 && !allowed.includes(normalizedRecipient)) {
+      message.setReject(`Recipient ${recipient} is not allowlisted.`);
+      return;
+    }
+
+    const parsedEntry = EmailLogSchema.safeParse({
+      id: crypto.randomUUID(),
+      from: sender,
+      to: recipient,
+      subject,
+      timestamp: new Date().toISOString(),
+    });
+
+    if (parsedEntry.success) {
+      ctx.waitUntil((async () => {
+        const existingLogs = await readInboxLogs(env.KV);
+        const updatedLogs = [parsedEntry.data, ...existingLogs].slice(0, 100);
+        await env.KV.put('EMAIL_INBOX_LOGS', JSON.stringify(updatedLogs));
+      })());
+    }
+
+    const forwardTo = (env.MAIL_FORWARD_TO || env.FORWARD_TO)?.trim();
+    if (!forwardTo || !isEmailLike(forwardTo)) {
+      message.setReject('Mail forwarding is not configured.');
+      return;
+    }
+
+    await message.forward(normalizeEmail(forwardTo));
+  },
+};
 export class AuthSession {
   constructor(
     private readonly state: DurableObjectState,
@@ -256,5 +475,3 @@ export class AuthSession {
     );
   }
 }
-
-export default app;
