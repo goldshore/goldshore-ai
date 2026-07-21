@@ -33,17 +33,16 @@ jobs:
     permissions: {}
     env:
       CF_API: https://api.cloudflare.com/client/v4
-      CF_AUTH_EMAIL: ${{ secrets.CF_AUTH_EMAIL }}
-      CF_AUTH_KEY: ${{ secrets.CF_AUTH_KEY }}
+      CF_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
     steps:
       - name: Require strict origin validation and TLS 1.2
         shell: bash
         run: |
           set -euo pipefail
-          test -n "$CF_AUTH_EMAIL"
-          test -n "$CF_AUTH_KEY"
-          echo "::add-mask::$CF_AUTH_KEY"
-          auth=(-H "X-Auth-Email: $CF_AUTH_EMAIL" -H "X-Auth-Key: $CF_AUTH_KEY")
+          test -n "$CF_API_TOKEN"
+          echo "::add-mask::$CF_API_TOKEN"
+          token=$(node -e "const t=process.env.CF_API_TOKEN||''; process.stdout.write(t.trim())")
+          auth=(-H "Authorization: Bearer $token")
 
           for zone in goldshore.ai goldshore.org armsway.com; do
             zone_id=$(curl -fsS "$CF_API/zones?name=$zone" "${auth[@]}" | jq -r '.result[0].id // empty')
