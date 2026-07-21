@@ -223,7 +223,7 @@ cloudflare:
           - "api.goldshore.ai"
           - "gs-api.goldshore.workers.dev"
         action: "allow"
-        audience: "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
+        audience: "8510d42c31fc791e295427031ffeef7c7ebc0f1b62d8634fbb284bf82562f528"
         paths:
           - "/admin/*"
           - "/internal/*"
