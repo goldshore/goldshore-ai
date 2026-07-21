@@ -58,7 +58,7 @@ jobs:
           NODE
           }
 
-          for source in CLOUDFLARE_BUILD_API_TOKEN CLOUDFLARE_API_TOKEN; do
+          for source in CLOUDFLARE_API_TOKEN CLOUDFLARE_BUILD_API_TOKEN; do
             token="$(normalize_token "$source")"
             if [ -n "$token" ]; then
               echo "::add-mask::$token"
