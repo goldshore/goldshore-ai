@@ -26,16 +26,17 @@ on:
         type: boolean
 
 jobs:
-  harden-tls:
-    if: ${{ inputs.harden_tls }}
-    name: Harden zone TLS settings
+  diagnostic-mcp-portal:
+    name: DIAGNOSTIC -- mcp.goldshore.ai DNS + Access app type (throwaway, read-only, no PR)
     runs-on: ubuntu-latest
     permissions: {}
     env:
       CF_API: https://api.cloudflare.com/client/v4
+      CF_ACCOUNT: f77de112d2019e5456a3198a8bb50bd2
+      CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_BUILD_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
     steps:
-      - name: Normalize Cloudflare token
+      - name: Normalize Cloudflare build token
         shell: bash
         run: |
           token="$(
@@ -52,60 +53,28 @@ jobs:
           )"
           if [ -n "$token" ]; then
             echo "::add-mask::$token"
-            echo "CF_API_TOKEN=$token" >> "$GITHUB_ENV"
+            echo "CF_BUILD_TOKEN=$token" >> "$GITHUB_ENV"
           fi
 
-      - name: Require strict origin validation and TLS 1.2
-        shell: bash
+      - name: Check mcp.goldshore.ai DNS record
         run: |
           set -euo pipefail
-          test -n "$CF_API_TOKEN"
-          auth=(-H "Authorization: Bearer $CF_API_TOKEN")
+          ZID=$(curl -sS "$CF_API/zones?name=goldshore.ai" -H "Authorization: Bearer $CF_TOKEN" | jq -r '.result[0].id // empty')
+          echo "== raw DNS records matching mcp.goldshore.ai =="
+          curl -sS "$CF_API/zones/$ZID/dns_records?name=mcp.goldshore.ai" -H "Authorization: Bearer $CF_TOKEN" | jq '.result'
 
-          for zone in goldshore.ai goldshore.org armsway.com; do
-            zone_id=$(curl -fsS "$CF_API/zones?name=$zone" "${auth[@]}" | jq -r '.result[0].id // empty')
-            test -n "$zone_id"
-            curl -fsS -X PATCH "$CF_API/zones/$zone_id/settings/ssl" "${auth[@]}" \
-              -H 'Content-Type: application/json' --data '{"value":"strict"}' >/dev/null
-            curl -fsS -X PATCH "$CF_API/zones/$zone_id/settings/min_tls_version" "${auth[@]}" \
-              -H 'Content-Type: application/json' --data '{"value":"1.2"}' >/dev/null
-            echo "Hardened TLS: $zone"
-          done
+          echo "== account-level Workers Custom Domains matching mcp =="
+          curl -sS "$CF_API/accounts/$CF_ACCOUNT/workers/domains" -H "Authorization: Bearer $CF_TOKEN" \
+            | jq '[.result[]? | select(.hostname | test("mcp"))]'
 
-          # Bot Fight Mode challenges the admin login before Access can
-          # evaluate the user. Managed WAF, DDoS protection, Access, strict
-          # SSL, and TLS 1.2 remain enabled.
-          for zone in goldshore.ai goldshore.org; do
-            zone_id=$(curl -fsS "$CF_API/zones?name=$zone" "${auth[@]}" | jq -r '.result[0].id // empty')
-            curl -fsS -X PUT "$CF_API/zones/$zone_id/bot_management" "${auth[@]}" \
-              -H 'Content-Type: application/json' --data '{"fight_mode":false}' >/dev/null
-            echo "Disabled Bot Fight Mode: $zone"
-          done
-
-          reconcile_route() {
-            local zone="$1" pattern="$2" script="$3" zone_id routes route_id body
-            zone_id=$(curl -fsS "$CF_API/zones?name=$zone" "${auth[@]}" | jq -r '.result[0].id // empty')
-            routes=$(curl -fsS "$CF_API/zones/$zone_id/workers/routes" "${auth[@]}")
-            route_id=$(jq -r --arg pattern "$pattern" '.result[] | select(.pattern == $pattern) | .id' <<<"$routes")
-            body=$(jq -nc --arg pattern "$pattern" --arg script "$script" '{pattern:$pattern,script:$script}')
-            if [[ -n "$route_id" ]]; then
-              curl -fsS -X PUT "$CF_API/zones/$zone_id/workers/routes/$route_id" "${auth[@]}" \
-                -H 'Content-Type: application/json' --data "$body" >/dev/null
-            else
-              curl -fsS -X POST "$CF_API/zones/$zone_id/workers/routes" "${auth[@]}" \
-                -H 'Content-Type: application/json' --data "$body" >/dev/null
-            fi
-            echo "Reconciled route: $pattern -> $script"
-          }
-
-          reconcile_route goldshore.ai 'goldshore.ai/*' gs-web-prod
-          reconcile_route goldshore.ai 'admin.goldshore.ai/*' gs-web-prod
-          reconcile_route goldshore.ai 'admin-preview.goldshore.ai/*' gs-web-prod
-          reconcile_route goldshore.ai 'api.goldshore.ai/*' gs-api-prod
-          reconcile_route goldshore.org 'goldshore.org/*' gs-web-prod
-          reconcile_route goldshore.org 'admin.goldshore.org/*' gs-web-prod
-          reconcile_route goldshore.org 'api.goldshore.org/*' gs-api-prod
-
+      - name: Check Cloudflare Access apps for mcp.goldshore.ai
+        run: |
+          set -euo pipefail
+          test -n "${CF_BUILD_TOKEN:-}"
+          echo "== all Access apps whose domain mentions mcp =="
+          curl -sS "$CF_API/accounts/$CF_ACCOUNT/access/apps?per_page=100" \
+            -H "Authorization: Bearer $CF_BUILD_TOKEN" \
+            | jq '[.result[]? | select((.domain // "" | test("mcp")) or (.name | test("MCP"; "i"))) | {id, name, type, domain, self_hosted_domains}]'
   reconcile:
     name: Reconcile DNS records
     runs-on: ubuntu-latest
