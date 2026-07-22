@@ -74,9 +74,8 @@ const requirePermission = async (
   return { response: null };
 };
 
-export const GET: APIRoute = async ({ request, locals, params }) => {
-  const env = locals.runtime?.env as Env | undefined;
-  const slug = params.slug;
+const proxy = async (request: Request, env: Env | undefined, slug?: string) => {
+  if (!slug) return new Response('Form slug is required.', { status: 400 });
 
   if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
