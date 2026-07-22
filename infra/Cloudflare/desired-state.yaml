@@ -61,6 +61,10 @@ cloudflare:
         type: CNAME
         content: "gs-api-prod.goldshore.workers.dev"
         proxied: true
+      - name: "agent"
+        type: CNAME
+        content: "gs-api-prod.goldshore.workers.dev"
+        proxied: true
 
       # D. API Worker
       # No DNS record previously existed for api.goldshore.ai at all -- the
