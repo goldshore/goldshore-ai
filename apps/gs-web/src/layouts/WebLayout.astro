@@ -1,5 +1,9 @@
 ---
 import GoldShoreShell from './GoldShoreShell.astro';
+import '../styles/goldshore-shell.css';
+
+const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.props;
+---
 import Logo from '../components/brand/Logo.astro';
 import '@goldshore/theme/styles/tokens.css';
 import '@goldshore/theme/styles/base.css';
