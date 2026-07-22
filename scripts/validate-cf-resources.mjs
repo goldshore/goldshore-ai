@@ -1,4 +1,6 @@
-import { readFile, readdir } from 'node:fs/promises';
+#!/usr/bin/env node
+
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const accountId = process.env.CLOUDFLARE_ACCOUNT_ID?.trim();
@@ -21,7 +23,7 @@ const TOKEN = normalizeCloudflareToken(
 const SHOULD_SKIP_AUTH_FAILURE =
   process.env.GITHUB_EVENT_NAME === 'pull_request' || process.env.CI_VALIDATE_CF_ALLOW_AUTH_SKIP === '1';
 const ROOT = process.cwd();
-const APPS_DIR = path.join(ROOT, 'apps');
+const CANONICAL_APP_DIRS = ['gs-web', 'gs-api'];
 
 const RED = '\u001b[31m';
 const GREEN = '\u001b[32m';
@@ -42,6 +44,16 @@ const external = new Set([
   'r2:risk-radar-raw',
   'd1:b0bf3b0e-a7d0-49ae-ac82-4f19450b2ce2',
 ]);
+const appTomls = [];
+for (const appName of CANONICAL_APP_DIRS) {
+  const tomlPath = path.join(ROOT, 'apps', appName, 'wrangler.toml');
+  try {
+    await readFile(tomlPath, 'utf8');
+    appTomls.push(tomlPath);
+  } catch {
+    // ignore
+  }
+}
 
 const request = async (endpoint) => {
   const response = await fetch(`${API}${endpoint}`, { headers: { Authorization: `Bearer ${token}` } });
@@ -110,6 +122,13 @@ async function cfGet(pathname) {
   if (entry.name === 'gs-trading' && /\[\[env\.preview\.d1_databases\]\][\s\S]*?database_id\s*=\s*"00000000-0000-0000-0000-000000000000"/.test(text)) {
     warnings.push('gs-trading preview contains a duplicate placeholder PAPER_DB D1 entry.');
   }
+  const result = json.result ?? [];
+  if (Array.isArray(result)) return result;
+
+  // Some account APIs (notably R2) wrap collections in an object such as
+  // `{ buckets: [...] }` instead of returning the array directly.
+  const nestedCollection = Object.values(result).find(Array.isArray);
+  return nestedCollection ?? [];
 }
 
 const inventories = await Promise.all([

@@ -37,7 +37,7 @@ jobs:
       - name: Validate CF resource IDs
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_BUILD_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+          CLOUDFLARE_BUILD_API_TOKEN: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
         run: |
           if [ -z "$CLOUDFLARE_BUILD_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
             echo "::warning::Cloudflare credentials are unavailable; skipping live resource validation."
