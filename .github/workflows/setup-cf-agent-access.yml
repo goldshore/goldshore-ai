@@ -161,6 +161,7 @@ jobs:
           require_app "GoldShore Trading - Schwab Callback" "trading.goldshore.ai/oauth/schwab/callback"
           require_app "GoldShore Trading - Robinhood Callback" "trading.goldshore.ai/oauth/robinhood/callback"
           require_app "Goldshore API - Public Probes" "api.goldshore.ai/health"
+          require_app "Goldshore API - Public Forms" "api.goldshore.ai/v1/forms/*"
           require_app "Goldshore Gateway - Public Probes" "gw.goldshore.ai/health"
           require_app "Dashboard" "goldshore.ai/app"
           require_app "GoldShore Admin" "admin.goldshore.ai"
@@ -769,6 +770,14 @@ jobs:
             "api.goldshore.ai" \
             '["api.goldshore.ai/health*","api.goldshore.ai/status","api.goldshore.ai/version","api.goldshore.ai/version.json"]'
 
+          # Public websites submit contact, intake, and newsletter forms through
+          # this path. gs-api independently limits unauthenticated requests to
+          # POST /v1/forms/:formId/submissions; configs and lead-management
+          # endpoints remain protected by application authentication.
+          upsert_bypass_app "Goldshore API - Public Forms" \
+            "api.goldshore.ai/v1/forms/*" \
+            '[]'
+
           # Gateway: /health, /status, /version must be reachable by monitoring
           upsert_bypass_app "Goldshore Gateway - Public Probes" \
             "gw.goldshore.ai/health" \
@@ -804,17 +813,21 @@ jobs:
           # protected route family served by gs-api so Access issues one AUD for
           # browser calls to /goldclaw, /admin, /users, /ai, /v1, etc. The public
           # probes above remain path-scoped bypass apps.
+          API_PROTECTED_DOMAINS='["api.goldshore.ai/goldclaw","api.goldshore.ai/admin","api.goldshore.ai/users","api.goldshore.ai/ai","api.goldshore.ai/v1"]'
+          upsert_full_access "Goldshore API"     "api.goldshore.ai" "$API_PROTECTED_DOMAINS" \
+            "gs-api gs-api-prod" "$GS_API_ACCESS_AUD"
+          assert_full_access_policies "Goldshore API" "api.goldshore.ai" "$GS_API_ACCESS_AUD"
           # Bare "api.goldshore.ai" dropped as its own destination: with the
           # 5 protected paths that's 6 destinations, over Cloudflare's 5-per-app
           # cap (access.api.error.invalid_request: too many destinations for one
           # app). The 5 specific paths are the authoritative protected surface;
           # the bare host was redundant with them, not additive coverage.
           API_PROTECTED_DOMAINS='["api.goldshore.ai/admin","api.goldshore.ai/users","api.goldshore.ai/ai","api.goldshore.ai/v1"]'
-          # aud_workers lists only "gs-api-prod": the account has no Worker
-          # script literally named "gs-api" (confirmed via workers list --
-          # apps/gs-api/wrangler.toml only ever deploys via --env prod/preview,
-          # producing gs-api-prod; a bare "gs-api" was never actually deployed
-          # and 404s on PUT /workers/scripts/gs-api/secrets).
+          # aud_workers lists only "gs-api-prod" because live
+          # api.goldshore.ai traffic is routed there from this monorepo. Bare
+          # "gs-api" is intentionally reserved for the marzton/goldshore-api
+          # rebuild Worker and should be managed by that repository's deploy
+          # flow, not this monorepo Access sync.
           upsert_full_access "Goldshore API"     "api.goldshore.ai/goldclaw" "$API_PROTECTED_DOMAINS" \
             "gs-api-prod" "$GS_API_ACCESS_AUD"
           assert_full_access_policies "Goldshore API" "api.goldshore.ai/goldclaw" "$GS_API_ACCESS_AUD"
@@ -905,9 +918,8 @@ jobs:
             fi
             echo "$body" | jq -r '"  \(.result.name // "?") => \(.success)"'
           }
-          # No Worker script literally named "gs-api" exists in the account --
-          # apps/gs-api/wrangler.toml only deploys via --env prod/preview,
-          # producing gs-api-prod. See the matching fix on the AUD sync above.
+          # Only the monorepo-owned production Worker is updated here. Bare
+          # gs-api is intentionally reserved for marzton/goldshore-api rebuilds.
           for WORKER in gs-api-prod; do
             echo "Setting secrets on $WORKER:"
             put_secret "$WORKER" CF_ACCESS_CLIENT_ID     "$CLIENT_ID"
@@ -931,7 +943,7 @@ jobs:
             echo "| Service token UUID | \`$TOKEN_UUID\` |"
             echo "| CF-Access-Client-Id | \`$CLIENT_ID\` |"
             echo "| GitHub secrets | goldshore-ai, goldshore-gateway, goldclaw |"
-            echo "| Worker secrets | gs-api, gs-api-prod |"
+            echo "| Worker secrets | gs-api-prod (bare gs-api is owned by marzton/goldshore-api) |"
             echo "| Bypass apps | Schwab Callback, Robinhood Callback, API Probes, Gateway Probes |"
             echo "| Full-access apps | Dashboard, GoldShore Admin, GoldShore Trading, Goldshore Ops, Signals, Goldshore API, GoldShore MCP, Goldshore Gateway, GoldShore-Web-Preview |"
             echo "| Extra hostnames | signals.goldshore.org + gs-signals-prod.goldshore.workers.dev (Signals), gs-api.goldshore.workers.dev (API) |"

@@ -11,12 +11,12 @@ if rg -n 'CLOUDFLARE_(BUILD_)?API_TOKEN:\s*\$\{\{[^}]*\|\|[^}]*\}\}' "$workflows
 fi
 
 echo "Checking canonical deploy token wiring..."
-if ! rg -n 'RAW_CLOUDFLARE_API_TOKEN:\s*\$\{\{\s*secrets\.CLOUDFLARE_BUILD_API_TOKEN\s*\}\}' "$workflows_dir/deploy-gs-api.yml" >/dev/null; then
-  echo "deploy-gs-api.yml must normalize secrets.CLOUDFLARE_BUILD_API_TOKEN before use"
+if ! rg -n 'RAW_CLOUDFLARE_API_TOKEN:\s*\$\{\{\s*secrets\.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN\s*\}\}' "$workflows_dir/deploy-gs-api.yml" >/dev/null; then
+  echo "deploy-gs-api.yml must normalize secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN before use"
   exit 1
 fi
-if ! rg -n 'RAW_CLOUDFLARE_API_TOKEN:\s*\$\{\{\s*secrets\.CLOUDFLARE_BUILD_API_TOKEN\s*\}\}' "$workflows_dir/deploy-gs-web.yml" >/dev/null; then
-  echo "deploy-gs-web.yml must normalize secrets.CLOUDFLARE_BUILD_API_TOKEN before use"
+if ! rg -n 'RAW_CLOUDFLARE_API_TOKEN:\s*\$\{\{\s*secrets\.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN\s*\}\}' "$workflows_dir/deploy-gs-web.yml" >/dev/null; then
+  echo "deploy-gs-web.yml must normalize secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN before use"
   exit 1
 fi
 
