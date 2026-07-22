@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  goldclaw:
+    build: .
+    container_name: goldclaw-dev
+    restart: unless-stopped
+    environment:
+      GOLDSHORE_API_URL: ${GOLDSHORE_API_URL:-https://api.goldshore.ai}
+      GOLDSHORE_API_TOKEN: ${GOLDSHORE_API_TOKEN}
+      GOOGLE_SERVICE_ACCOUNT: ${GOOGLE_SERVICE_ACCOUNT}
+      GOOGLE_ADS_DEVELOPER_TOKEN: ${GOOGLE_ADS_DEVELOPER_TOKEN}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    networks:
+      - goldshore
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+
+networks:
+  goldshore:
+    driver: bridge
