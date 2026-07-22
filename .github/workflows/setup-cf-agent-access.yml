@@ -813,6 +813,10 @@ jobs:
           # protected route family served by gs-api so Access issues one AUD for
           # browser calls to /goldclaw, /admin, /users, /ai, /v1, etc. The public
           # probes above remain path-scoped bypass apps.
+          API_PROTECTED_DOMAINS='["api.goldshore.ai/goldclaw","api.goldshore.ai/admin","api.goldshore.ai/users","api.goldshore.ai/ai","api.goldshore.ai/v1"]'
+          upsert_full_access "Goldshore API"     "api.goldshore.ai" "$API_PROTECTED_DOMAINS" \
+            "gs-api gs-api-prod" "$GS_API_ACCESS_AUD"
+          assert_full_access_policies "Goldshore API" "api.goldshore.ai" "$GS_API_ACCESS_AUD"
           # Bare "api.goldshore.ai" dropped as its own destination: with the
           # 5 protected paths that's 6 destinations, over Cloudflare's 5-per-app
           # cap (access.api.error.invalid_request: too many destinations for one

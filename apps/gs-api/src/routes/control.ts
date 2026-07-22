@@ -10,7 +10,11 @@ const hasAdminRole = (claims: any, env: any) => {
 };
 
 control.use('*', async (c, next) => {
-  if (c.req.path === '/' || c.req.path === '/health') return next();
+  if (
+    c.req.path === '/' ||
+    c.req.path === '/health' ||
+    c.req.path === '/admin/control/health'
+  ) return next();
   if (!hasAdminRole(c.get('accessClaims'), c.env)) return c.json({ error: 'Forbidden' }, 403);
   return next();
 });
