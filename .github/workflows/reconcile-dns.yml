@@ -402,13 +402,13 @@ jobs:
           # already exists on that host"). Skip CREATE rather than let every
           # run log a false MISSING/warning pair.
           #
-          # api.goldshore.ai is deliberately NOT in this list: verified via
-          # the raw Cloudflare API that it has zero DNS records of any kind
-          # (no CNAME, no wildcard, no Custom Domain) despite having a
-          # configured Worker Route (api.goldshore.ai/* -> gs-api-prod) --
-          # the route had nothing to activate it and the hostname was down.
-          # It needs a real CREATE, not a skip.
-          SKIP_CREATE_HOSTS="goldshore.ai preview.goldshore.ai"
+          # goldshore.ai (apex) and api.goldshore.ai are deliberately NOT in
+          # this list: verified via the raw Cloudflare API that both have
+          # zero DNS records of any kind (no CNAME, no wildcard, no Custom
+          # Domain) despite having a configured Worker Route -- the route had
+          # nothing to activate it and the hostname was down. They need a
+          # real CREATE, not a skip.
+          SKIP_CREATE_HOSTS="preview.goldshore.ai"
 
           CHANGED=0
 
