@@ -25,7 +25,10 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  overflow-x: clip;
+}
 
 .skip-nav {
   position: absolute;
@@ -59,6 +62,18 @@ body.gs-home {
   font-weight: 300;
   line-height: 1.6;
   overflow-x: hidden;
+}
+
+body.gs-home main,
+body.gs-home main > section,
+body.gs-home main > section > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+body.gs-home code {
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 a { color: inherit; }
