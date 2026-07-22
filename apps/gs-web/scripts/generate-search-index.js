@@ -38,7 +38,7 @@ async function getDocs() {
     const content = await readFile(file, 'utf-8');
 
     // Extract frontmatter block (first block between ---)
-    const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+    const frontmatterMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
     const frontmatter = frontmatterMatch ? frontmatterMatch[1] : '';
 
     // Parse title
