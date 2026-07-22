@@ -191,6 +191,7 @@ When accessed via:
 - `https://goldshore.ai/` → CORS allows it (wildcard or explicit)
 - `https://goldshore.org/` → goldshore-org router sets ASSETS_ORIGIN, CORS allows it
 - `https://admin.goldshore.ai/` → now served by gs-web directly (same build/assets as the main site); admin page content itself has not been ported into gs-web yet, so this route currently serves gs-web's normal routing until admin pages land under apps/gs-web/src/pages/admin/*
+- `https://admin.goldshore.ai/` and `https://admin.goldshore.org/` → served by gs-web directly; admin pages live under `apps/gs-web/src/pages/admin/*`
 
 **Recursion risk:** If gs-web tries to fetch from itself (e.g., prefetch WASM), ensure CORS doesn't loop back.
 

@@ -9,27 +9,7 @@ import '../styles/global.css';
 import { WEB_META_CSP } from '../utils/csp';
 import '../styles/goldshore-shell.css';
 
-const { title, description, canonicalPath, ogTitle: _ogTitle, ogDescription: _ogDescription } = Astro.props;
-const ogTitle = _ogTitle ?? title;
-const ogDescription = _ogDescription ?? description;
-
-const siteUrl = Astro.site || new URL('https://goldshore.ai');
-const canonicalUrl = new URL(canonicalPath || '/', siteUrl).href;
-const currentPath = canonicalPath || '/';
-const mobileNavId = 'mobile-navigation';
-
-const navLinks = [
-  { href: '/', label: 'Home' },
-  { href: '/platform', label: 'Platform' },
-  { href: '/developer', label: 'Developer' },
-];
-
-const footerLinks = [
-  { href: '/', label: 'Home' },
-  { href: '/platform', label: 'Platform' },
-  { href: '/legal/privacy', label: 'Privacy' },
-  { href: '/legal/terms', label: 'Terms' },
-];
+const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.props;
 ---
 
 <html lang="en">
