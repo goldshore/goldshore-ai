@@ -111,14 +111,11 @@ queue = "gs-mail-jobs"
 binding = "DEAD_LETTER_QUEUE"
 queue = "gs-mail-dead-letter"
 
-[[env.prod.queues.consumers]]
-queue = "goldshore-jobs"
-
-[[env.prod.queues.consumers]]
-queue = "gs-mail-jobs"
-
-[[env.prod.queues.consumers]]
-queue = "gs-events"
+# Production queue consumers are owned outside gs-api today:
+# - goldshore-jobs and gs-events are consumed by gs-mail.
+# - gs-mail-jobs is configured as an HTTP pull consumer.
+# Keep gs-api as a producer only so deploys do not fail while attempting to
+# replace existing queue consumers.
 
 # ── Workflows ────────────────────────────────────────────────────────────────
 [[env.prod.workflows]]

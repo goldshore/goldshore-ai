@@ -56,7 +56,7 @@ const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Aut
     <a href="/services/">Services</a>
     <a href="/developer/">Developer</a>
     <a href="/about/">About</a>
-    <button id="open-access-modal" class="nav-login">Access →</button>
+    <button type="button" id="open-access-modal" class="nav-login">Access →</button>
     <a class="nav-cta" href="#engage">Request Briefing</a>
   </nav>
 </header>
@@ -533,15 +533,6 @@ window.addEventListener('load', function () {
       });
     });
   }
-
-  /* Ping on click */
-  document.querySelectorAll('.ticker-item, .anomaly, .metrics div').forEach(el => {
-    el.addEventListener('click', () => {
-      el.classList.remove('is-pinged');
-      void el.offsetWidth;
-      el.classList.add('is-pinged');
-    });
-  });
 
 }, { once: true, passive: true });
 </script>

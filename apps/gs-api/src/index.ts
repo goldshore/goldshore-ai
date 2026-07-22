@@ -73,7 +73,15 @@ const app = new Hono<{
 }>();
 
 const TRACE_HEADER = 'X-Correlation-Id';
-const AGENT_HOSTNAME = 'agent.goldshore.ai';
+const HOST_ROUTE_PREFIXES = new Map([
+  ['agent.goldshore.ai', '/agent'],
+  ['mail.goldshore.ai', '/mail'],
+  ['ops.goldshore.ai', '/admin/control'],
+  ['trading.goldshore.ai', '/trading'],
+  ['dashboard.goldshore.ai', '/trading'],
+  ['dash.goldshore.ai', '/trading'],
+  ['gw.goldshore.ai', '/core'],
+]);
 
 const getCorrelationId = (request: Request): string =>
   request.headers.get(TRACE_HEADER) ?? crypto.randomUUID();
@@ -89,8 +97,8 @@ const withCorrelationId = (response: Response, correlationId: string): Response 
   });
 };
 
-const isAgentHostnameRequest = (request: Request): boolean =>
-  new URL(request.url).hostname === AGENT_HOSTNAME;
+const getHostRoutePrefix = (request: Request): string | undefined =>
+  HOST_ROUTE_PREFIXES.get(new URL(request.url).hostname);
 
 const normalizeEmail = (value: string) => value.trim().toLowerCase();
 const parseEmailList = (value?: string) =>
@@ -164,7 +172,8 @@ const isPublicPath = (path: string, method: string) => {
     path === '/' ||
     path === '/version' ||
     path === '/health' ||
-    path.startsWith('/health/')
+    path.startsWith('/health/') ||
+    /^\/(?:agent|mail|admin\/control|trading|core)\/health$/.test(path)
   );
 };
 
@@ -195,15 +204,16 @@ app.use(
 );
 
 app.use('*', async (c, next) => {
-  if (!isAgentHostnameRequest(c.req.raw)) {
+  const routePrefix = getHostRoutePrefix(c.req.raw);
+  if (!routePrefix || c.req.path === routePrefix || c.req.path.startsWith(`${routePrefix}/`)) {
     await next();
     return;
   }
 
   const correlationId = getCorrelationId(c.req.raw);
-  const agentUrl = new URL(c.req.url);
-  agentUrl.pathname = `/agent${agentUrl.pathname === '/' ? '' : agentUrl.pathname}`;
-  const response = await app.fetch(new Request(agentUrl.toString(), c.req.raw), c.env, c.executionCtx);
+  const routedUrl = new URL(c.req.url);
+  routedUrl.pathname = `${routePrefix}${routedUrl.pathname === '/' ? '' : routedUrl.pathname}`;
+  const response = await app.fetch(new Request(routedUrl.toString(), c.req.raw), c.env, c.executionCtx);
   return withCorrelationId(response, correlationId);
 });
 
@@ -376,7 +386,7 @@ v1.get('/leads', (c) => c.json({ leads: [] }));
 
 app.route('/v1', v1);
 
-export { isAllowedOrigin, isPreviewOrigin, isPublicPath, parseAllowedOrigins };
+export { app, isAllowedOrigin, isPreviewOrigin, isPublicPath, parseAllowedOrigins };
 
 const processQueueMessage = async (message: Message<any>, env: Env): Promise<void> => {
   const body = message.body;

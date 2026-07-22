@@ -1,6 +1,5 @@
-# Contract placeholder — gateway is deployed from the goldshore-gateway repo
-# (as worker name gs-platform). This file satisfies the monorepo workspace
-# contract and EXPECTED_HOST_OWNERS checks in scripts/validate-worker-names.ts.
+# Contracted gateway worker for this monorepo.
+# Production deployment uses the gs-gateway-prod environment.
 name = "gs-gateway"
 main = "src/index.ts"
 compatibility_date = "2025-03-07"
@@ -22,7 +21,13 @@ binding = "CONTACT_EVENTS_QUEUE"
 queue = "gs-platform-contact-events-dev"
 
 [env.prod]
-# Legacy gateway routes are consolidated into gs-api or external live-state
-# cleanup. Keep this repo-managed placeholder route-free to prevent hostname
-# ownership collisions. Do not re-add agent.goldshore.ai here without an ADR.
-routes = []
+routes = [
+  { pattern = "gw.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" }
+]
+
+[env.prod.vars]
+ENV = "production"
+CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
+# Set CLOUDFLARE_ACCESS_AUDIENCE as a Worker secret in Cloudflare.
+# The live AUD tag must match the Goldshore Gateway Access application.

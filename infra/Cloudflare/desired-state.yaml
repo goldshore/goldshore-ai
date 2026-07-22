@@ -45,6 +45,11 @@ cloudflare:
         content: "gs-web-prod.goldshore.workers.dev"
         proxied: true
         zone: goldshore.ai
+      - name: "admin-preview"
+        type: CNAME
+        content: "gs-web-prod.goldshore.workers.dev"
+        proxied: true
+        zone: goldshore.ai
       - name: "admin"
         type: CNAME
         content: "gs-web-prod.goldshore.workers.dev"
@@ -54,7 +59,11 @@ cloudflare:
       # C. API Gateway Worker
       - name: "gw"
         type: CNAME
-        content: "gs-gateway-prod.goldshore.workers.dev"
+        content: "gs-api-prod.goldshore.workers.dev"
+        proxied: true
+      - name: "agent"
+        type: CNAME
+        content: "gs-api-prod.goldshore.workers.dev"
         proxied: true
 
       # D. API Worker
@@ -77,28 +86,27 @@ cloudflare:
       # E. Mail Worker
       - name: "mail"
         type: CNAME
-        content: "gs-mail.goldshore.workers.dev"
+        content: "gs-api-prod.goldshore.workers.dev"
         proxied: true
 
       # F. Trading dashboard aliases — route-based, protected by GoldShore-Trading-ZT
       - name: "trading"
         type: CNAME
-        content: "gs-trading-prod.goldshore.workers.dev"
+        content: "gs-api-prod.goldshore.workers.dev"
         proxied: true
       - name: "dashboard"
         type: CNAME
-        content: "gs-trading-prod.goldshore.workers.dev"
+        content: "gs-api-prod.goldshore.workers.dev"
         proxied: true
       - name: "dash"
         type: CNAME
-        content: "gs-trading-prod.goldshore.workers.dev"
+        content: "gs-api-prod.goldshore.workers.dev"
         proxied: true
 
-      # G. Operations UI. Keep this on the deployed gs-admin Worker until the
-      # gs-control production Worker exists and its cutover is verified.
+      # G. Consolidated operations API.
       - name: "ops"
         type: CNAME
-        content: "gs-admin.goldshore.workers.dev"
+        content: "gs-api-prod.goldshore.workers.dev"
         proxied: true
 
       # G. Preview deployments (claude/** branches)
@@ -219,7 +227,7 @@ cloudflare:
           - "api.goldshore.ai"
           - "gs-api.goldshore.workers.dev"
         action: "allow"
-        audience: "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
+        audience: "8510d42c31fc791e295427031ffeef7c7ebc0f1b62d8634fbb284bf82562f528"
         paths:
           - "/admin/*"
           - "/internal/*"
@@ -310,45 +318,9 @@ cloudflare:
             - "email_otp"
 
   pages:
-    projects:
-      - name: "gs-web"
-        repo: "goldshore-ai"
-        root_dir: "/" # Run from repo root for monorepo support
-        production_branch: "main"
-        build_command: "pnpm --filter @goldshore/gs-web build"
-        output_dir: "apps/gs-web/dist"
-        # www.goldshore.ai owned by gs-www-redirect Worker (308 → goldshore.ai)
-        # goldshore.org + www.goldshore.org owned by goldshore-org Worker (308 → goldshore.ai)
-        custom_domains:
-          - "goldshore.ai"
-
-      - name: "gs-admin"
-        repo: "goldshore-ai"
-        root_dir: "/" # Run from repo root for monorepo support
-        production_branch: "main"
-        build_command: "pnpm --filter @goldshore/gs-admin build"
-        output_dir: "apps/gs-admin/dist"
-        custom_domains:
-          - "admin.goldshore.ai"
-          - "admin.goldshore.org"
-        bindings:
-          kv:
-            - name: "KV"
-              namespace: "gs_admin_kv_001"
-          d1:
-            - name: "DB"
-              database_name: "goldshore"
-              database_id: "gs_db_001"
-          r2:
-            - name: "ASSETS"
-              bucket_name: "gs-assets"
-          services:
-            - binding: "API_SERVICE"
-              service: "gs-api"
-              environment: "prod"
-          secrets:
-            - CLOUDFLARE_ACCESS_AUDIENCE  # set via: wrangler pages secret put
-            - ADMIN_API_KEY               # set via: wrangler pages secret put
+    # Production moved from Pages to Workers with Assets. Keep this explicit so
+    # automation does not recreate the retired gs-web/gs-admin Pages projects.
+    projects: []
 
   workers:
     services:
@@ -356,53 +328,48 @@ cloudflare:
         script_path: "apps/gs-api/dist/index.js"
         routes:
           - pattern: "api.goldshore.ai/*"
+          - pattern: "agent.goldshore.ai/*"
+          - pattern: "mail.goldshore.ai/*"
+          - pattern: "ops.goldshore.ai/*"
+          - pattern: "trading.goldshore.ai/*"
+          - pattern: "dashboard.goldshore.ai/*"
+          - pattern: "dash.goldshore.ai/*"
+          - pattern: "gw.goldshore.ai/*"
+          - pattern: "api.goldshore.org/*"
         bindings:
           kv:
             - name: "KV"
-              namespace: "goldshore-api-kv" # Historical resource name; gs-api canonical service prefix
+              namespace: "GS_API_KV"
           d1:
-            - name: "DB"
-              database_name: "goldshore-api-db" # Historical resource name; gs-api canonical service prefix
+            - name: "PLATFORM_DB"
+              database_name: "gs_platform_db"
           r2:
-            - name: "ASSETS"
-              bucket_name: "goldshore-api-assets" # Historical resource name; gs-api canonical service prefix
+            - name: "GS_ASSETS"
+              bucket_name: "gs-assets"
           ai:
             - name: "AI"
               gateway: "goldshore-ai-gateway"
 
-      - name: "gs-gateway"
-        script_path: "apps/gs-gateway/dist/index.js"
+      - name: "gs-web"
+        script_path: "apps/gs-web/dist/_worker.js/index.js"
         routes:
-          - pattern: "gw.goldshore.ai/*"
+          - pattern: "goldshore.ai/*"
+          - pattern: "goldshore.org/*"
+          - pattern: "admin.goldshore.ai/*"
+          - pattern: "admin-preview.goldshore.ai/*"
+          - pattern: "admin.goldshore.org/*"
         bindings:
-          services:
-            - binding: "API"
-              service: "gs-api"
-              environment: "prod"
           kv:
-            - name: "GATEWAY_KV"
-              namespace: "goldshore-gw-kv"
-
-      - name: "gs-control"
-        script_path: "apps/gs-control/dist/index.js"
-        routes:
-          - pattern: "ops.goldshore.ai/*"
-        bindings:
-          services:
-            - binding: "API"
-              service: "gs-api"
-              environment: "prod"
-          env_vars:
-            CONTROL_SERVICE: "true"
-
-      - name: "gs-mail"
-        script_path: "apps/gs-mail/dist/index.js"
-        routes:
-          - pattern: "mail.goldshore.ai/*"
-        bindings:
-          env_vars:
-            MAIL_SERVICE: "true"
-            MAIL_ALLOWED_RECIPIENTS: "ops@goldshore.ai,inbox@goldshore.ai"
+            - name: "KV"
+              namespace: "GOLDSHORE-AI"
+            - name: "SESSION"
+              namespace: "KV_SESSIONS"
+          d1:
+            - name: "PLATFORM_DB"
+              database_name: "gs_platform_db"
+          r2:
+            - name: "GS_ASSETS"
+              bucket_name: "gs-assets"
 
   email:
     routing:
