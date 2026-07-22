@@ -1,14 +1,16 @@
 ---
 import GoldShoreShell from './GoldShoreShell.astro';
+import '../styles/goldshore-shell.css';
+
+const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.props;
+---
 import Logo from '../components/brand/Logo.astro';
 import '@goldshore/theme/styles/tokens.css';
 import '@goldshore/theme/styles/base.css';
 import '@goldshore/theme/styles/components.css';
 import '@goldshore/theme/styles/layout.css';
 import '../styles/global.css';
-import Logo from '../components/brand/Logo.astro';
 import { WEB_META_CSP } from '../utils/csp';
-import '../styles/global.css';
 import '../styles/goldshore-shell.css';
 
 const { title, description, canonicalPath, ogTitle: _ogTitle, ogDescription: _ogDescription } = Astro.props;
@@ -226,11 +228,8 @@ const footerLinks = [
       };
 
       const bindAdminAccessLinks = () => {
-        const adminHost = window.location.hostname.endsWith('goldshore.org')
-          ? 'admin.goldshore.org'
-          : 'admin.goldshore.ai';
         document.querySelectorAll('[data-admin-access-link]').forEach((link) => {
-          link.setAttribute('href', `https://${adminHost}`);
+          link.setAttribute('href', 'https://admin.goldshore.ai/');
         });
       };
 
