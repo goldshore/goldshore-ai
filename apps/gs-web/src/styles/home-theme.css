@@ -646,7 +646,10 @@ h2 {
 
 /* ── Marquee ──────────────────────────────────────────────────────────────── */
 .marquee {
-  overflow: hidden;
+  width: 100%;
+  max-width: 100vw;
+  overflow: clip;
+  contain: inline-size;
   border-block: 1px solid var(--b1);
   background: var(--ox-dim);
 }
