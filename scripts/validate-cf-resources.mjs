@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFile, readdir } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const normalizeCloudflareToken = (raw) => {
@@ -19,7 +19,7 @@ const TOKEN = normalizeCloudflareToken(
 const SHOULD_SKIP_AUTH_FAILURE =
   process.env.GITHUB_EVENT_NAME === 'pull_request' || process.env.CI_VALIDATE_CF_ALLOW_AUTH_SKIP === '1';
 const ROOT = process.cwd();
-const APPS_DIR = path.join(ROOT, 'apps');
+const CANONICAL_APP_DIRS = ['gs-web', 'gs-api'];
 
 const RED = '\u001b[31m';
 const GREEN = '\u001b[32m';
@@ -38,9 +38,8 @@ if (!TOKEN) {
 }
 
 const appTomls = [];
-for await (const entry of await readdir(APPS_DIR, { withFileTypes: true })) {
-  if (!entry.isDirectory()) continue;
-  const tomlPath = path.join(APPS_DIR, entry.name, 'wrangler.toml');
+for (const appName of CANONICAL_APP_DIRS) {
+  const tomlPath = path.join(ROOT, 'apps', appName, 'wrangler.toml');
   try {
     await readFile(tomlPath, 'utf8');
     appTomls.push(tomlPath);
@@ -89,7 +88,13 @@ async function cfGet(pathname) {
   if (!json.success) {
     throw new Error(`Cloudflare API returned failure for ${pathname}: ${body}`);
   }
-  return json.result ?? [];
+  const result = json.result ?? [];
+  if (Array.isArray(result)) return result;
+
+  // Some account APIs (notably R2) wrap collections in an object such as
+  // `{ buckets: [...] }` instead of returning the array directly.
+  const nestedCollection = Object.values(result).find(Array.isArray);
+  return nestedCollection ?? [];
 }
 
 const [kvNamespaces, d1Databases, r2Buckets, queues, workers, accessApps] = await Promise.all([
