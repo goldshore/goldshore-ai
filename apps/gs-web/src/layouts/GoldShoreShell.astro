@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import '../styles/public-theme.css';
 
 const navLinks = [
   { href: '/platform/', label: 'Platform' },
@@ -53,6 +54,7 @@ const {
 } = Astro.props;
 
 const canonicalUrl = new URL(canonicalPath, 'https://goldshore.ai').toString();
+const socialImageUrl = new URL('/logo.png', 'https://goldshore.ai').toString();
 const activePath = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.url.pathname}/`;
 const isCurrent = (href: string) => activePath === href;
 ---
@@ -68,12 +70,29 @@ const isCurrent = (href: string) => activePath === href;
     <meta property="og:url" content={canonicalUrl} />
     <meta property="og:title" content={ogTitle} />
     <meta property="og:description" content={ogDescription} />
+    <meta property="og:image" content={socialImageUrl} />
+    <meta property="og:site_name" content="GoldShore" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={ogTitle} />
+    <meta name="twitter:description" content={ogDescription} />
+    <meta name="twitter:image" content={socialImageUrl} />
+    <meta name="robots" content="index,follow,max-image-preview:large" />
+    <meta name="theme-color" content="#06060a" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon.png" type="image/png" sizes="32x32" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
     <meta name="google-adsense-account" content="ca-pub-5105781580031290" />
+    <script type="application/ld+json" set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: 'Gold Shore Labs',
+      alternateName: 'GoldShore',
+      url: 'https://goldshore.ai',
+      logo: 'https://goldshore.ai/logo.png',
+      sameAs: [],
+    })}></script>
   </head>
   <body>
     <a href="#content" class="skip-link">Skip to content</a>
@@ -148,6 +167,9 @@ const isCurrent = (href: string) => activePath === href;
       };
       bindMenu();
       bindAdminAccessLinks();
+    </script>
+    <script>
+      import '../scripts/page-motion';
     </script>
   </body>
 </html>
