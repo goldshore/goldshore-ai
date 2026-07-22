@@ -61,6 +61,10 @@ cloudflare:
         type: CNAME
         content: "gs-api-prod.goldshore.workers.dev"
         proxied: true
+      - name: "agent"
+        type: CNAME
+        content: "gs-api-prod.goldshore.workers.dev"
+        proxied: true
 
       # D. API Worker
       # No DNS record previously existed for api.goldshore.ai at all -- the
@@ -108,7 +112,7 @@ cloudflare:
       # G. Preview deployments (claude/** branches)
       - name: "preview"
         type: CNAME
-        content: "preview-web.pages.dev"
+        content: "preview-gs-web.pages.dev"
         proxied: true
 
       # H. SendGrid domain authentication + DMARC
