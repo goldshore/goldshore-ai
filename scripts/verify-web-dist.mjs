@@ -7,7 +7,7 @@ const clientDir = path.join(distDir, 'client');
 const astroDir = path.join(clientDir, '_astro');
 const indexPath = path.join(clientDir, 'index.html');
 const webAppRoot = path.resolve('.');
-const webLayoutPath = path.join(webAppRoot, 'src', 'layouts', 'WebLayout.astro');
+const canonicalLayoutPath = path.join(webAppRoot, 'src', 'layouts', 'GoldShoreShell.astro');
 const publicDir = path.join(webAppRoot, 'public');
 
 const errors = [];
@@ -48,10 +48,10 @@ if (existsSync(indexPath)) {
   }
 }
 
-if (!existsSync(webLayoutPath)) {
-  errors.push(`Missing layout file: ${webLayoutPath}`);
+if (!existsSync(canonicalLayoutPath)) {
+  errors.push(`Missing layout file: ${canonicalLayoutPath}`);
 } else {
-  const layoutSource = readFileSync(webLayoutPath, 'utf8');
+  const layoutSource = readFileSync(canonicalLayoutPath, 'utf8');
   const iconLinkPattern = /<link\s+[^>]*rel=["']icon["'][^>]*>/gi;
   const hrefPattern = /\shref=["']([^"']+)["']/i;
   const declaredIconHrefs = [...layoutSource.matchAll(iconLinkPattern)]
@@ -62,7 +62,7 @@ if (!existsSync(webLayoutPath)) {
     .filter((href) => typeof href === 'string');
 
   if (declaredIconHrefs.length === 0) {
-    errors.push(`No favicon <link rel="icon"> tags found in ${webLayoutPath}`);
+    errors.push(`No favicon <link rel="icon"> tags found in ${canonicalLayoutPath}`);
   }
 
   for (const href of declaredIconHrefs) {

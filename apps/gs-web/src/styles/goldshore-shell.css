@@ -168,8 +168,9 @@
 .gs-shell-v284 .site-footer {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(220px, 1.35fr) repeat(3, minmax(150px, 0.8fr));
-  gap: clamp(1.4rem, 3vw, 2.4rem);
+  grid-template-columns: minmax(260px, 1.15fr) repeat(3, minmax(145px, 0.72fr));
+  align-items: start;
+  gap: clamp(1.35rem, 2.6vw, 2.25rem);
   padding: clamp(2.2rem, 6vw, 4rem) clamp(1rem, 5vw, 4rem);
   border-top: 1px solid rgba(255,255,255,0.08);
   background: rgba(5,5,7,0.78);
@@ -252,7 +253,17 @@
   line-height: 1.55;
 }
 
-.gs-shell-v284 .site-footer a { text-decoration: none; }
+.gs-shell-v284 .site-footer a {
+  display: inline-flex;
+  max-width: 100%;
+  text-decoration: none;
+  transition: color 160ms ease, transform 160ms ease;
+}
+
+.gs-shell-v284 .site-footer a:hover {
+  color: var(--gs-primary, #d96a32);
+  transform: translateX(0.18rem);
+}
 
 .gs-shell-v284 .footer-meta-block {
   position: absolute;
@@ -290,7 +301,7 @@
 
 .gs-shell-v284 .site-footer small {
   grid-column: 1 / -1;
-  padding-right: min(34vw, 20rem);
+  padding-right: 0;
   font-size: 0.78rem;
   padding-right: 0;
   font-size: 0.78rem;
@@ -306,7 +317,7 @@
   .gs-shell-v284 .main-nav { display: none; }
   .gs-shell-v284 .nav-toggle { display: inline-flex; }
   .gs-shell-v284 .topbar[data-menu-open='true'] .mobile-nav { display: grid; }
-  .gs-shell-v284 .site-footer { grid-template-columns: 1fr 1fr; }
+  .gs-shell-v284 .site-footer { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .gs-shell-v284 .footer-brand { grid-column: 1 / -1; }
   .gs-shell-v284 .site-footer small { padding-right: 0; margin-top: 3rem; }
   .gs-shell-v284 .site-footer { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
