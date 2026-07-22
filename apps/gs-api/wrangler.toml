@@ -93,6 +93,13 @@ queue = "gs-mail-dead-letter"
 [env.prod]
 routes = [
   { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "mail.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "ops.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "trading.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "dashboard.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "dash.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "gw.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "api.goldshore.org/*", zone_name = "goldshore.org" }
 ]
 
@@ -239,24 +246,6 @@ script_name = "gs-signals-prod"
 # INTEGRATION_MASTER_KEY remains a normal Worker secret until a real Cloudflare
 # Secrets Store and secret are provisioned. Do not add a secrets_store_secrets
 # binding that points at a nonexistent store; that blocks every deployment.
-
-# ══════════════════════════════════════════════════════════════════════════════
-# Production (named 'production') environment
-# ══════════════════════════════════════════════════════════════════════════════
-
-[env.production]
-routes = [
-  { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "api.goldshore.org/*", zone_name = "goldshore.org" }
-]
-
-[env.production.vars]
-ENV = "production"
-CLOUDFLARE_ACCESS_AUDIENCE = "8510d42c31fc791e295427031ffeef7c7ebc0f1b62d8634fbb284bf82562f528"
-CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-# CONTROL_SYNC_TOKEN is managed as a Worker secret; see env.prod above.
-GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
-GOOGLE_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/goldclaw/oauth/google/callback"
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Preview environment — deploys to workers.dev (no zone route needed)
