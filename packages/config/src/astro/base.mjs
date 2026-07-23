@@ -16,7 +16,7 @@ export function createAstroConfig(overrides = {}) {
     outDir: './dist',
     output: 'server',
     prefetch: true,
-    adapter: cloudflare(),
+    adapter: cloudflare({ prerenderEnvironment: 'node' }),
     integrations: [],
     vite: {
       plugins: [],
