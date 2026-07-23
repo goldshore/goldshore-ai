@@ -1,9 +1,14 @@
 import type { APIRoute } from 'astro';
+import {
+  buildAdminSession,
+  verifyAccessWithClaims,
+  type AdminPermission,
+  type Env as AccessEnv,
+} from '@goldshore/auth';
+import { parseJson } from '@goldshore/utils';
 
 export const prerender = false;
 
-const apiBase = (env: Env | undefined) =>
-  (env?.PUBLIC_API || 'https://api.goldshore.ai').replace(/\/$/, '');
 const normalizeRow = (row: Record<string, string>) => ({
   id: row.id,
   slug: row.slug,
@@ -64,8 +69,9 @@ const requirePermission = async (
   return { response: null };
 };
 
-const proxy = async (request: Request, env: Env | undefined, slug?: string) => {
-  if (!slug) return new Response('Form slug is required.', { status: 400 });
+export const GET: APIRoute = async ({ request, locals, params }) => {
+  const env = locals.runtime?.env as Env | undefined;
+  const slug = params.slug;
 
   if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
@@ -89,23 +95,14 @@ const proxy = async (request: Request, env: Env | undefined, slug?: string) => {
     .bind(slug)
     .all();
 
-const forwardedHeaders = (request: Request) => {
-  const headers = new Headers();
-  for (const name of ['accept', 'authorization', 'cookie', 'cf-connecting-ip', 'user-agent', 'content-type']) {
-    const value = request.headers.get(name);
-    if (value) headers.set(name, value);
+  const row = result?.results?.[0] as Record<string, string> | undefined;
+  if (!row) {
+    return new Response('Form not found.', { status: 404 });
   }
-  return headers;
+
+  return Response.json({ config: normalizeRow(row) });
 };
 
-const proxy = async (request: Request, env: Env | undefined, slug?: string) => {
-  if (!slug) return new Response('Form slug is required.', { status: 400 });
-
-  const target = new URL(`${apiBase(env)}/v1/forms/configs/${encodeURIComponent(slug)}`);
-  const response = await fetch(target, {
-    method: request.method,
-    headers: forwardedHeaders(request),
-    body: request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.text(),
 export const PUT: APIRoute = async ({ request, locals, params }) => {
   const env = locals.runtime?.env as Env | undefined;
   const slug = params.slug;
@@ -188,10 +185,6 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
       updatedAt: now,
     },
   });
-
-  return new Response(response.body, { status: response.status, headers: response.headers });
 };
 
-export const GET: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
-export const PUT: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
 export const PATCH = PUT;
