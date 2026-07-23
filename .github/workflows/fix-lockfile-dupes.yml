@@ -1,0 +1,73 @@
+name: Fix pnpm lockfile duplicate snapshot keys
+
+# One-shot workflow: run manually, fixes duplicates on main, force-pushes
+# to fix/lockfile-dedupe so CI can pass.
+on:
+  workflow_dispatch:
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deduplicate pnpm-lock.yaml snapshot keys
+        run: |
+          python3 - <<'PYEOF'
+          import re
+
+          with open('pnpm-lock.yaml', 'r') as f:
+              lines = f.read().split('\n')
+
+          snap_start = next(
+              (i for i, l in enumerate(lines) if l.rstrip() == 'snapshots:'),
+              None
+          )
+          if snap_start is None:
+              raise ValueError('snapshots: section not found')
+
+          TOP_KEY = re.compile(r"^  '[^']+':")
+          seen = set()
+          result = lines[:snap_start + 1]
+          i = snap_start + 1
+          total = len(lines)
+
+          while i < total:
+              line = lines[i]
+              if TOP_KEY.match(line):
+                  key = line.rstrip()
+                  if key in seen:
+                      # skip this duplicate entry (all continuation lines)
+                      i += 1
+                      while i < total and not TOP_KEY.match(lines[i]):
+                          i += 1
+                      continue
+                  seen.add(key)
+              result.append(line)
+              i += 1
+
+          orig = len(lines)
+          fixed_len = len(result)
+          print(f'Original: {orig} lines')
+          print(f'Fixed:    {fixed_len} lines')
+          print(f'Removed:  {orig - fixed_len} lines')
+          print(f'Unique snapshot keys: {len(seen)}')
+
+          with open('pnpm-lock.yaml', 'w') as f:
+              f.write('\n'.join(result))
+          PYEOF
+
+      - name: Commit and force-push to fix/lockfile-dedupe
+        run: |
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add pnpm-lock.yaml
+          git diff --staged --stat
+          git commit -m "fix: remove duplicate snapshot entries from pnpm-lock.yaml"
+          git push --force origin HEAD:refs/heads/fix/lockfile-dedupe
