@@ -4,14 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  '@astrojs/cloudflare': 14.1.4
-  '@astrojs/adapter-cloudflare': 12.6.12
-  postal-mime: 2.7.3
-  wrangler: ^4.112.0
-  typescript: ^5.4.2
-  esbuild: 0.25.12
-
 importers:
 
   .:
