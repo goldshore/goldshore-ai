@@ -287,6 +287,9 @@ jobs:
           reconcile_route goldshore.org 'goldshore.org/*' gs-web-prod
           reconcile_route goldshore.org 'admin.goldshore.org/*' gs-web-prod
           reconcile_route goldshore.org 'api.goldshore.org/*' gs-api-prod
+          echo "== account-level Workers Custom Domains matching mcp =="
+          curl -sS "$CF_API/accounts/$CF_ACCOUNT/workers/domains" -H "Authorization: Bearer $CF_TOKEN" \
+            | jq '[.result[]? | select(.hostname | test("mcp"))]'
 
       - name: Check Cloudflare Access apps for mcp.goldshore.ai
         run: |
