@@ -193,7 +193,7 @@ database_id = "750c469c-788d-49e8-9254-77231cffd70f"
 [env.prod.ai]
 binding = "AI"
 
-# ── Durable Objects ────────────────────────────────────────────────────────────────────────────────────
+# ── Durable Objects ──────────────────────────────────────────────────────────────────────
 [[env.prod.durable_objects.bindings]]
 name = "AUTH_SESSION"
 class_name = "AuthSession"
@@ -203,6 +203,22 @@ tag = "v1-auth-session"
 new_sqlite_classes = ["AuthSession"]
 
 # ── Services ────────────────────────────────────────────────────────────────────────────────────────────
+# ── Services ──────────────────────────────────────────────────────────────────────────────────────
+[[env.prod.services]]
+binding = "AGENT"
+service = "gs-agent"
+environment = "prod"
+
+[[env.prod.services]]
+binding = "GS_MAIL"
+service = "gs-mail"
+environment = "prod"
+
+[[env.prod.services]]
+binding = "GOLDSHORE_AI"
+service = "goldshore-ai"
+environment = "prod"
+
 # GS_WEB PROD service binding removed: its binding name contained a literal
 # space ("GS_WEB PROD"), making it unreachable as env.GS_WEB from any normal
 # code reference — it was silently dead. infra/Cloudflare/BINDINGS_MAP.md
@@ -213,7 +229,7 @@ new_sqlite_classes = ["AuthSession"]
 # retired is a Phase 3/4 (SOP) question that needs the calling code checked
 # first, not a config-only change.
 
-# ── Queues (producers) ──────────────────────────────────────────────────────────
+# ── Queues (producers) ───────────────────────────────────────────────────────────
 [[env.prod.queues.producers]]
 binding = "JOBS_QUEUE"
 queue = "goldshore-jobs"
@@ -351,7 +367,7 @@ queue = "gs-mail-jobs"
 binding = "DEAD_LETTER_QUEUE"
 queue = "gs-mail-dead-letter"
 
-# ── Secrets ──────────────────────────────────────────────────────────────────────────────────────
+# ── Secrets ──────────────────────────────────────────────────────────────────
 # INTEGRATION_MASTER_KEY is provisioned as a normal Worker secret for this
 # environment. Do not re-add a Secrets Store binding until the referenced store
 # and secret exist in the Cloudflare account.
