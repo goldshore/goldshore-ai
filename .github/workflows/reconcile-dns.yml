@@ -178,7 +178,7 @@ jobs:
           # its secret) instead of minting a new one, so no other Access
           # app's machine-auth policy is disturbed by this change.
           TOKEN_UUID=$(api_get "$CF_API/accounts/$CF_ACCOUNT/access/service_tokens" | \
-            jq -r '.result[] | select(.name == "goldshore-agents") | .id // empty' | head -n1)
+             jq -r '.result[] | select(.name == "goldshore-agents") | .id // empty' | head -n1)
           if [ -z "$TOKEN_UUID" ]; then
             echo "::error::Could not find existing 'goldshore-agents' service token -- refusing to create an agent policy without it."
             exit 1

@@ -21,12 +21,12 @@ const SHOULD_SKIP_AUTH_FAILURE =
 const ROOT = process.cwd();
 const CANONICAL_APP_DIRS = ['gs-web', 'gs-api'];
 
-const RED = '\u001b[31m';
-const GREEN = '\u001b[32m';
-const YELLOW = '\u001b[33m';
-const CYAN = '\u001b[36m';
-const BOLD = '\u001b[1m';
-const RESET = '\u001b[0m';
+const RED = '[31m';
+const GREEN = '[32m';
+const YELLOW = '[33m';
+const CYAN = '[36m';
+const BOLD = '[1m';
+const RESET = '[0m';
 
 if (!ACCOUNT_ID) {
   console.log(`${YELLOW}::warning::CLOUDFLARE_ACCOUNT_ID is missing; skipping Cloudflare resource validation.${RESET}`);
