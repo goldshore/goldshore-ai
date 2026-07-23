@@ -74,7 +74,7 @@ jobs:
               jq '[.result[] | {name, decision, include}]'
           fi
   fix-mcp-remove-allow-everyone:
-    name: FIX -- remove GoldShore MCP "Service Login: allow everyone" policy (throwaway, no PR)
+    name: 'FIX -- remove GoldShore MCP "Service Login: allow everyone" policy (throwaway, no PR)'
     runs-on: ubuntu-latest
     permissions: {}
     env:
