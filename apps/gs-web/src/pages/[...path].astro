@@ -35,23 +35,34 @@ if (slug) {
 
 {page ? (
   page.status === 'disabled' ? (
-    <BaseLayout title={`Page Disabled | GoldShore`}>
-      <section class="max-w-4xl mx-auto py-24 px-6 text-center">
-        <h1 class="text-4xl gs-heading mb-6" style="color: var(--gs-brand-gold);">Page Disabled</h1>
-        <p class="text-lg text-[var(--gs-text-secondary)] mb-8">
-          This page is currently disabled. Please check back later or contact support.
-        </p>
-        <a href="/" class="text-[var(--gs-brand-gold)] hover:underline">Return to GoldShore Home</a>
+    <BaseLayout
+      title="Page Disabled | GoldShore"
+      description="This GoldShore page is currently unavailable."
+      canonicalPath={`/${slug}/`}
+    >
+      <section class="gs-section gs-slug-page gs-slug-page--message" aria-labelledby="disabled-page-title">
+        <div class="gs-slug-page__inner">
+          <p class="gs-eyebrow">GoldShore</p>
+          <h1 id="disabled-page-title">Page Disabled</h1>
+          <p class="page-intro">This page is currently disabled. Please check back later or contact support.</p>
+          <a href="/" class="gs-slug-page__action">Return to GoldShore Home</a>
+        </div>
       </section>
     </BaseLayout>
   ) : (
-    <BaseLayout title={`${page.title} | GoldShore`}>
-      <section class="max-w-5xl mx-auto py-16 px-6">
-        <header class="mb-10">
-          <p class="text-sm uppercase tracking-[0.3em] text-[var(--gs-text-tertiary)]">GoldShore</p>
-          <h1 class="text-4xl gs-heading mt-3">{page.title}</h1>
-        </header>
-        <article class="prose prose-invert max-w-none" set:html={page.body} />
+    <BaseLayout
+      title={`${page.title} | GoldShore`}
+      description={`GoldShore information page: ${page.title}`}
+      canonicalPath={`/${page.slug || slug}/`}
+    >
+      <section class="gs-section gs-slug-page" aria-labelledby="slug-page-title">
+        <div class="gs-slug-page__inner">
+          <header class="gs-slug-page__header">
+            <p class="gs-eyebrow">GoldShore</p>
+            <h1 id="slug-page-title">{page.title}</h1>
+          </header>
+          <article class="gs-rich-content" set:html={page.body} />
+        </div>
       </section>
     </BaseLayout>
   )
