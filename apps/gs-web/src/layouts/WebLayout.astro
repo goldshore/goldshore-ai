@@ -1,37 +1,23 @@
 ---
-import GoldShoreShell from './GoldShoreShell.astro';
 import Logo from '../components/brand/Logo.astro';
 import '@goldshore/theme/styles/tokens.css';
 import '@goldshore/theme/styles/base.css';
 import '@goldshore/theme/styles/components.css';
 import '@goldshore/theme/styles/layout.css';
 import '../styles/global.css';
-import Logo from '../components/brand/Logo.astro';
-import { WEB_META_CSP } from '../utils/csp';
-import '../styles/global.css';
 import '../styles/goldshore-shell.css';
+import { primaryNavLinks, companyLinks } from '../config/navigation';
 
-const { title, description, canonicalPath, ogTitle: _ogTitle, ogDescription: _ogDescription } = Astro.props;
-const ogTitle = _ogTitle ?? title;
-const ogDescription = _ogDescription ?? description;
-
-const siteUrl = Astro.site || new URL('https://goldshore.ai');
-const canonicalUrl = new URL(canonicalPath || '/', siteUrl).href;
-const currentPath = canonicalPath || '/';
+const { title, description, canonicalPath } = Astro.props;
+const ogTitle = Astro.props.ogTitle ?? title;
+const ogDescription = Astro.props.ogDescription ?? description;
+const canonicalUrl = canonicalPath
+  ? new URL(canonicalPath, 'https://goldshore.ai').toString()
+  : Astro.url.href;
+const navLinks = primaryNavLinks;
+const footerLinks = companyLinks;
+const currentPath = Astro.url.pathname;
 const mobileNavId = 'mobile-navigation';
-
-const navLinks = [
-  { href: '/', label: 'Home' },
-  { href: '/platform', label: 'Platform' },
-  { href: '/developer', label: 'Developer' },
-];
-
-const footerLinks = [
-  { href: '/', label: 'Home' },
-  { href: '/platform', label: 'Platform' },
-  { href: '/legal/privacy', label: 'Privacy' },
-  { href: '/legal/terms', label: 'Terms' },
-];
 ---
 
 <html lang="en">
@@ -222,6 +208,12 @@ const footerLinks = [
 
         document.addEventListener('astro:before-swap', () => {
           setMenu(false);
+        });
+      };
+
+      const bindAdminAccessLinks = () => {
+        document.querySelectorAll('[data-admin-access-link]').forEach((link) => {
+          link.setAttribute('href', 'https://admin.goldshore.ai/');
         });
       };
 
@@ -651,12 +643,3 @@ const footerLinks = [
     </style>
   </body>
 </html>
-<GoldShoreShell
-  title={title}
-  description={description}
-  canonicalPath={canonicalPath}
-  ogTitle={ogTitle ?? title}
-  ogDescription={ogDescription ?? description}
->
-  <slot />
-</GoldShoreShell>

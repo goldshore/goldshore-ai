@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>GoldShore Access</title>
+  <style>
+    :root{color-scheme:dark;--void:#06060a;--panel:#141420;--oxide:#d3743e;--bright:#f09154;--text:#eceae4;--dim:#aaa69c;--teal:#499488}
+    *{box-sizing:border-box}body{min-height:100vh;margin:0;display:grid;place-items:center;padding:1rem;background:var(--void);color:var(--text);font-family:Arial,sans-serif}
+    body:before{content:"";position:fixed;inset:0;pointer-events:none;background:linear-gradient(115deg,rgba(211,116,62,.1),transparent 32%),linear-gradient(300deg,rgba(73,148,136,.08),transparent 30%),repeating-linear-gradient(90deg,rgba(255,255,255,.025) 0 1px,transparent 1px 7.5rem)}
+    main{position:relative;width:min(100%,42rem);padding:clamp(2rem,6vw,4rem);border:1px solid rgba(255,255,255,.1);border-radius:4px;background:rgba(20,20,32,.94);box-shadow:0 30px 80px rgba(0,0,0,.35)}
+    .mark{display:inline-block;padding:.5rem .65rem;border:1px solid rgba(211,116,62,.4);color:var(--bright);font:700 .7rem/1 monospace;letter-spacing:.12em;text-transform:uppercase}
+    h1{max-width:12ch;margin:2rem 0 1rem;font-size:clamp(2.4rem,8vw,5rem);line-height:.96}p{max-width:54ch;color:var(--dim);line-height:1.7}
+    a{display:inline-flex;margin-top:1rem;padding:.8rem 1rem;border:1px solid rgba(211,116,62,.55);border-radius:2px;background:var(--oxide);color:var(--void);font-weight:700;text-decoration:none}
+    small{display:block;margin-top:2rem;color:var(--dim);font-family:monospace;letter-spacing:.08em;text-transform:uppercase}
+    @media(prefers-reduced-motion:no-preference){main{animation:enter .55s cubic-bezier(.22,1,.36,1)}@keyframes enter{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}}
+  </style>
+</head>
+<body>
+  <main>
+    <span class="mark">GS · Secure Access</span>
+    <h1>Access not authorized.</h1>
+    <p>Your identity was verified, but it is not assigned to this GoldShore workspace. Use an approved GoldShore account or contact operations for access.</p>
+    <a href="mailto:ops@goldshore.ai?subject=GoldShore%20Access%20Request">Request access</a>
+    <small>Gold Shore Labs · New York</small>
+  </main>
+</body>
+</html>
