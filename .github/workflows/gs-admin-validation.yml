@@ -49,11 +49,11 @@ jobs:
         run: pnpm --filter @goldshore/gs-admin build
 
       - name: Validate mock Wrangler configuration
-        run: pnpm exec wrangler types --config apps/gs-admin/wrangler.mock.toml --env mock
+        run: pnpm exec wrangler types --config apps/gs-admin/wrangler.mock.toml
 
       - name: Apply mock D1 migration locally
         run: >-
-          pnpm exec wrangler d1 execute gs-admin-mock
+          pnpm exec wrangler d1 execute gs_platform_db_mock
           --local
           --config apps/gs-admin/wrangler.mock.toml
           --file packages/schema/migrations/d1/0010_mock_mail_mcp_api.sql
