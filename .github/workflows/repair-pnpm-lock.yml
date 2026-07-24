@@ -23,6 +23,7 @@ concurrency:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   repair:
@@ -51,6 +52,8 @@ jobs:
           pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Commit repaired lockfile if changed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if git diff --quiet -- pnpm-lock.yaml; then
             echo "pnpm-lock.yaml already clean."
@@ -59,6 +62,20 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          branch="automation/repair-pnpm-lock"
+          git switch -C "$branch"
           git add pnpm-lock.yaml
-          git commit -m "Regenerate pnpm lockfile"
-          git push
+          git commit -m "Merge strategy: squash
+
+          Regenerate pnpm lockfile"
+          git push --force-with-lease origin "$branch"
+
+          if ! gh pr view "$branch" >/dev/null 2>&1; then
+            gh pr create \
+              --base main \
+              --head "$branch" \
+              --title "Regenerate pnpm lockfile" \
+              --body "Merge strategy: squash
+
+          Automated repair of pnpm-lock.yaml after manifest drift."
+          fi

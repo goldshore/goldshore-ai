@@ -41,6 +41,20 @@ All API services and workers must use the `gs-control` build token for Cloudflar
 
 ## Tagging for Review
 
+### Claude/Codex issue handoff contract
+
+GitHub issues are the shared source of truth between local and remote agent sessions. Before starting work, read the issue's latest comments and labels; before handing work off, comment with the branch, commit, checks, deployment URLs, blockers, and next action.
+
+Use these inline tags in issue bodies or comments; `.github/workflows/issue-agent-triage.yml` mirrors them to labels:
+
+* `@codex` or `[agent:codex]`
+* `@claude` or `[agent:claude]`
+* `[env:local]`, `[env:preview]`, or `[env:production]`
+* `[status:ready]` or `[status:blocked]`
+* `[handoff:needed]`
+
+Never assume an unpushed local change exists remotely. A handoff is complete only when its commit SHA and remote branch or PR are recorded on the issue.
+
 To request a review of an error or issue, please use the following tags in your comments or pull request descriptions:
 
 *   **@Jules-Bot `[review-request]`**: For a general code review.

@@ -1,15 +1,23 @@
 import type { MiddlewareHandler } from 'astro';
 import { verifyAccessWithClaims } from '@goldshore/auth';
 import { HTML_CONTENT_SECURITY_POLICY } from './security/policy';
+import { isAdminHost, isStaticAssetPath } from './utils/admin-access';
 
 const ADMIN_PATH_PREFIXES = ['/admin', '/api/admin'];
 
 const isAdminPath = (pathname: string) =>
   ADMIN_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 
+const getRequestHostname = (request: Request, url: URL) =>
+  (request.headers.get('host') ?? url.hostname).split(':')[0].toLowerCase();
+
+const isProtectedAdminRequest = (request: Request, url: URL) =>
+  isAdminPath(url.pathname) ||
+  (isAdminHost(getRequestHostname(request, url)) && !isStaticAssetPath(url.pathname));
+
 export const onRequest: MiddlewareHandler = async (context, next) => {
   // Redirect risk.goldshore.ai root → /risk-radar (subdomain alias for the product page).
-  const host = context.request.headers.get('host') ?? '';
+  const host = getRequestHostname(context.request, context.url);
   if (
     (host === 'risk.goldshore.ai' || host === 'risk.goldshore.org') &&
     context.url.pathname === '/'
@@ -25,14 +33,18 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   // the only thing standing between the public internet and these pages,
   // since the apps/gs-web/src/pages/admin/*.astro page shells otherwise have
   // no server-side auth of their own.
-  if (isAdminPath(context.url.pathname)) {
+  if (isProtectedAdminRequest(context.request, context.url)) {
     const runtimeEnv = context.locals.runtime?.env as Env | undefined;
-    const claims = await verifyAccessWithClaims(context.request, runtimeEnv ?? {});
-    if (!claims) {
-      return new Response('Unauthorized', {
-        status: 401,
-        headers: { 'content-type': 'text/plain; charset=utf-8' },
-      });
+    const allowLocalAdminBypass = import.meta.env.DEV || runtimeEnv?.DEV_AUTH_BYPASS === '1';
+
+    if (!allowLocalAdminBypass) {
+      const claims = await verifyAccessWithClaims(context.request, runtimeEnv ?? {});
+      if (!claims) {
+        return new Response('Unauthorized', {
+          status: 401,
+          headers: { 'content-type': 'text/plain; charset=utf-8' },
+        });
+      }
     }
   }
 
