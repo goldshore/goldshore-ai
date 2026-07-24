@@ -74,7 +74,7 @@ jobs:
               jq '[.result[] | {name, decision, include}]'
           fi
   fix-mcp-remove-allow-everyone:
-    name: 'FIX 2 -- unlink (not delete) the reusable "Service Login: allow everyone" policy from GoldShore MCP only (throwaway, no PR)'
+    name: 'FIX 3 -- GET full app object, drop Service Login from its policies field, PUT the whole app back (throwaway, no PR)'
     runs-on: ubuntu-latest
     permissions: {}
     env:
@@ -82,7 +82,7 @@ jobs:
       CF_ACCOUNT: f77de112d2019e5456a3198a8bb50bd2
       CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     steps:
-      - name: Unlink the reusable policy from GoldShore MCP's policy list (App Launcher and Temp HP Laptop SSH keep their own attachment, untouched)
+      - name: Unlink the reusable policy from GoldShore MCP by PUTting the full application object minus that one policy id
         shell: bash
         run: |
           set -euo pipefail
@@ -108,23 +108,35 @@ jobs:
             jq -r '.result[] | select(.name == "GoldShore MCP") | .id')
           test -n "$MCP_ID"
 
-          POLICIES=$(api_call GET "$CF_API/accounts/$CF_ACCOUNT/access/apps/$MCP_ID/policies")
-          echo "Current policies on GoldShore MCP:"
-          echo "$POLICIES" | jq '[.result[] | {id, name, decision}]'
+          echo "== full application object (GET, to inspect the exact shape of any 'policies' field) =="
+          APP=$(api_call GET "$CF_API/accounts/$CF_ACCOUNT/access/apps/$MCP_ID")
+          echo "$APP" | jq '.result | keys'
+          echo "$APP" | jq '.result.policies // "no top-level policies field on the application object"'
 
-          KEEP_IDS=$(echo "$POLICIES" | jq -c '[.result[] | select(.name != "Service Login") | .id]')
-          REMOVED_COUNT=$(echo "$POLICIES" | jq '[.result[] | select(.name == "Service Login")] | length')
+          HAS_POLICIES_FIELD=$(echo "$APP" | jq '(.result | has("policies"))')
+          if [ "$HAS_POLICIES_FIELD" != "true" ]; then
+            echo "::error::Application object has no top-level 'policies' field -- my assumption about the API shape was wrong again. Stopping without mutating anything. See the 'keys' output above for what fields actually exist."
+            exit 1
+          fi
 
-          if [ "$REMOVED_COUNT" = "0" ]; then
-            echo "No 'Service Login' policy attached to GoldShore MCP -- already removed."
+          KEEP=$(echo "$APP" | jq -c '.result.policies | map(select(
+            if (type == "object") then (.name != "Service Login" and .id != "22b2ddc4-3037-426f-9018-b1058afde027")
+            else (. != "22b2ddc4-3037-426f-9018-b1058afde027")
+            end
+          ))')
+          ORIG_COUNT=$(echo "$APP" | jq '.result.policies | length')
+          KEEP_COUNT=$(echo "$KEEP" | jq 'length')
+          echo "policies field had $ORIG_COUNT entries, keeping $KEEP_COUNT after removing Service Login"
+
+          if [ "$ORIG_COUNT" = "$KEEP_COUNT" ]; then
+            echo "Service Login was not present in the policies field in this shape -- nothing to remove here."
             exit 0
           fi
 
-          echo "Setting GoldShore MCP's policy list to exclude 'Service Login' ($REMOVED_COUNT match(es) removed), keeping: $KEEP_IDS"
-          BODY=$(jq -nc --argjson ids "$KEEP_IDS" '{policies:$ids}')
-          api_call PUT "$CF_API/accounts/$CF_ACCOUNT/access/apps/$MCP_ID/policies" "$BODY" >/dev/null
+          UPDATED_APP=$(echo "$APP" | jq --argjson keep "$KEEP" '.result | .policies = $keep')
+          api_call PUT "$CF_API/accounts/$CF_ACCOUNT/access/apps/$MCP_ID" "$UPDATED_APP" >/dev/null
 
-          echo "Done. Policies now on GoldShore MCP:"
+          echo "Done. Policies now effective on GoldShore MCP:"
           api_call GET "$CF_API/accounts/$CF_ACCOUNT/access/apps/$MCP_ID/policies" | \
             jq '[.result[] | {name, decision, include}]'
   create-mcp-access-app:
