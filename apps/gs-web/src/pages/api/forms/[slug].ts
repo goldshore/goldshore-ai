@@ -264,6 +264,39 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     .bind(slug)
     .all();
 
+
+  if (!slug) return new Response('Form slug is required.', { status: 400 });
+
+  if (!env?.PLATFORM_DB) {
+    return new Response('Storage unavailable.', { status: 503 });
+  }
+
+  if (!isSameOriginRequest(request)) {
+    return forbiddenResponse('Forbidden: CSRF check failed.');
+  }
+
+  const auth = await requirePermission(request, env as AccessEnv, 'forms:write');
+  if (auth.response) {
+    return auth.response;
+  }
+
+  const payload = (await request.json()) as {
+    name?: string;
+    status?: string;
+    fields?: Record<string, unknown>[];
+    recipients?: Record<string, unknown>[];
+    integrations?: Record<string, unknown>[];
+  };
+
+  const existing = await env.PLATFORM_DB.prepare(
+    `SELECT id, slug, name, status, fields, recipients, integrations, created_at, updated_at
+     FROM form_configs
+     WHERE slug = ?
+     LIMIT 1`
+  )
+    .bind(slug)
+    .all();
+
   const row = existing?.results?.[0] as Record<string, string> | undefined;
   if (!row) {
     return new Response('Form not found.', { status: 404 });
