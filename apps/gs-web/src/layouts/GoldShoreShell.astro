@@ -84,13 +84,13 @@ const isCurrent = (href: string) => activePath === href;
           <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="mobile-navigation" aria-label="Toggle menu"><span></span><span></span><span></span></button>
           <nav class="main-nav" aria-label="Primary navigation">
             {navLinks.map((link) => <a href={link.href} aria-current={isCurrent(link.href) ? 'page' : undefined}>{link.label}</a>)}
-            <a href="https://admin.goldshore.ai" class="nav-login" data-admin-access-link>Access →</a>
+            <a href="/admin/lead-submissions" class="nav-login">Access →</a>
             <a href="/contact/" class="nav-cta">Request Briefing</a>
           </nav>
         </div>
         <nav id="mobile-navigation" class="mobile-nav" aria-label="Mobile navigation">
           {navLinks.map((link) => <a href={link.href} aria-current={isCurrent(link.href) ? 'page' : undefined}>{link.label}</a>)}
-          <a href="https://admin.goldshore.ai" data-admin-access-link>Access →</a>
+          <a href="/admin/lead-submissions">Access →</a>
           <a href="/contact/">Request Briefing</a>
         </nav>
       </header>
@@ -139,16 +139,7 @@ const isCurrent = (href: string) => activePath === href;
           if (event.key === 'Escape') setMenu(false);
         });
       };
-      const bindAdminAccessLinks = () => {
-        const adminHost = window.location.hostname.endsWith('goldshore.org')
-          ? 'admin.goldshore.org'
-          : 'admin.goldshore.ai';
-        document.querySelectorAll('[data-admin-access-link]').forEach((link) => {
-          link.setAttribute('href', `https://${adminHost}`);
-        });
-      };
       bindMenu();
-      bindAdminAccessLinks();
     </script>
   </body>
 </html>
