@@ -91,6 +91,21 @@ class_name = "AuthSession"
 
 
 
+[[env.prod.services]]
+binding = "AGENT"
+service = "gs-agent"
+environment = "prod"
+
+[[env.prod.services]]
+binding = "GS_MAIL"
+service = "gs-mail"
+environment = "prod"
+
+[[env.prod.services]]
+binding = "GOLDSHORE_AI"
+service = "goldshore-ai"
+environment = "prod"
+
 # GS_WEB PROD service binding removed here too — see apps/gs-api/wrangler.toml
 # for why (dead binding name with a literal space, unreachable as env.GS_WEB).
 
