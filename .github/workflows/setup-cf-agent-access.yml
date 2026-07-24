@@ -373,6 +373,11 @@ jobs:
                 or ($aud != "" and .aud == $aud)
                 or ($d != "" and ((.domain == $d) or ((.self_hosted_domains // []) | index($d))))
               )] | first | .id // empty'
+            local name="$1" domain="${2:-}"
+            curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps" \
+              -H "Authorization: Bearer $CF_TOKEN" | \
+            jq -r --arg n "$name" --arg d "$domain" \
+              '[.result[] | select(.name == $n or ($d != "" and ((.domain == $d) or ((.self_hosted_domains // []) | index($d)))))] | first | .id // empty'
           }
 
           access_app_payload() {
@@ -425,6 +430,28 @@ jobs:
                 push_worker_secret "$w" CLOUDFLARE_ACCESS_AUDIENCE "$aud"
               done
             fi
+            access_app_payload "$name" "$domain" "$extra_domains" | \
+            curl -sf -X PUT "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id" \
+              -H "Authorization: Bearer $CF_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data @- | jq -r '"  updated app => \(.success)"'
+          }
+
+          get_app_aud() {
+            local app_id="$1"
+            curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id" \
+              -H "Authorization: Bearer $CF_TOKEN" | \
+            jq -r '.result.aud // empty'
+          }
+
+          sync_aud_workers() {
+            local aud="$1" aud_workers="${2:-}"
+            if [ -n "$aud_workers" ] && [ -n "$aud" ]; then
+              echo "  Propagating CLOUDFLARE_ACCESS_AUDIENCE to: $aud_workers"
+              for w in $aud_workers; do
+                push_worker_secret "$w" CLOUDFLARE_ACCESS_AUDIENCE "$aud"
+              done
+            fi
           }
 
           # Create a new app and return the full CF response JSON.
@@ -444,6 +471,11 @@ jobs:
               exit 1
             fi
             echo "$body"
+            access_app_payload "$name" "$domain" "$extra_domains" | \
+            curl -sf -X POST "$CF_API/accounts/$CF_ACCOUNT/access/apps" \
+              -H "Authorization: Bearer $CF_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data @-
           }
 
           add_policy() {
@@ -520,6 +552,8 @@ jobs:
           upsert_full_access() {
             local name="$1" domain="$2" extra_domains="${3:-[]}" aud_workers="${4:-}" expected_aud="${5:-}"
             AID=$(find_app "$name" "$domain" "$expected_aud")
+            local name="$1" domain="$2" extra_domains="${3:-[]}" aud_workers="${4:-}"
+            AID=$(find_app "$name" "$domain")
             if [ -n "$AID" ]; then
               echo "Found existing app [$name]: $AID — updating domains, refreshing policies, and syncing AUD"
               update_app "$AID" "$name" "$domain" "$extra_domains"
@@ -540,6 +574,28 @@ jobs:
               add_policy "$AID" "Owner access"     "allow"        "$OWNER_INCLUDE"
               sync_aud_workers "$AUD" "$aud_workers"
             fi
+          }
+
+
+          assert_full_access_policies() {
+            local app_name="$1" domain="$2"
+            local app_id policies
+            app_id=$(find_app "$app_name" "$domain")
+            if [ -z "$app_id" ]; then
+              echo "::error::Cannot verify Access policies for [$app_name]; app was not found."
+              MISSING_REQUIRED_APPS=1
+              return
+            fi
+            policies=$(curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies" \
+              -H "Authorization: Bearer $CF_TOKEN")
+            echo "$policies" | jq -e '.result[] | select(.decision == "allow" and .name == "Owner access")' > /dev/null || {
+              echo "::error::[$app_name] is missing the Owner access allow policy required for browser Cloudflare Access sessions."
+              MISSING_REQUIRED_APPS=1
+            }
+            echo "$policies" | jq -e '.result[] | select(.decision == "non_identity" and .name == "Goldshore agents")' > /dev/null || {
+              echo "::error::[$app_name] is missing the Goldshore agents service-token policy required for machine access."
+              MISSING_REQUIRED_APPS=1
+            }
           }
 
 
@@ -570,6 +626,8 @@ jobs:
           upsert_bypass_app() {
             local name="$1" domain="$2" extra_domains="${3:-[]}" aliases="${4:-[]}"
             AID=$(find_app "$name" "$aliases")
+            local name="$1" domain="$2" extra_domains="${3:-[]}"
+            AID=$(find_app "$name" "$domain")
             if [ -n "$AID" ]; then
               echo "Found existing bypass app [$name]: $AID — updating domains and bypass policy"
               update_app "$AID" "$name" "$domain" "$extra_domains"
@@ -813,12 +871,34 @@ jobs:
           # protected route family served by gs-api so Access issues one AUD for
           # browser calls to /goldclaw, /admin, /users, /ai, /v1, etc. The public
           # probes above remain path-scoped bypass apps.
+          API_PROTECTED_DOMAINS='["api.goldshore.ai/goldclaw","api.goldshore.ai/admin","api.goldshore.ai/users","api.goldshore.ai/ai","api.goldshore.ai/v1"]'
+          upsert_full_access "Goldshore API"     "api.goldshore.ai" "$API_PROTECTED_DOMAINS" \
+            "gs-api gs-api-prod" "$GS_API_ACCESS_AUD"
+          assert_full_access_policies "Goldshore API" "api.goldshore.ai" "$GS_API_ACCESS_AUD"
           # Bare "api.goldshore.ai" dropped as its own destination: with the
           # 5 protected paths that's 6 destinations, over Cloudflare's 5-per-app
           # cap (access.api.error.invalid_request: too many destinations for one
           # app). The 5 specific paths are the authoritative protected surface;
           # the bare host was redundant with them, not additive coverage.
           API_PROTECTED_DOMAINS='["api.goldshore.ai/admin","api.goldshore.ai/users","api.goldshore.ai/ai","api.goldshore.ai/v1"]'
+          # aud_workers lists only "gs-api-prod" because live
+          # api.goldshore.ai traffic is routed there from this monorepo. Bare
+          # "gs-api" is intentionally reserved for the marzton/goldshore-api
+          # rebuild Worker and should be managed by that repository's deploy
+          # flow, not this monorepo Access sync.
+          upsert_full_access "Goldshore API"     "api.goldshore.ai/goldclaw" "$API_PROTECTED_DOMAINS" \
+            "gs-api-prod" "$GS_API_ACCESS_AUD"
+          assert_full_access_policies "Goldshore API" "api.goldshore.ai/goldclaw" "$GS_API_ACCESS_AUD"
+          # Goldshore API: uses documented name to match existing AUD in wrangler.toml;
+          # pushes AUD to api workers on first-run creation (Gate 5e). This must
+          # remain a full-access app (Owner access + Goldshore agents policies),
+          # not a service-token-only app: browser admin routes such as
+          # /admin/goldclaw call api.goldshore.ai with credentials: 'include'
+          # and gs-api expects Cloudflare Access user claims on protected routes.
+          # Keep service-token-only Access limited to machine-only/path-scoped apps.
+          upsert_full_access "Goldshore API"     "api.goldshore.ai" "[]" \
+            "gs-api gs-api-prod"
+          assert_full_access_policies "Goldshore API" "api.goldshore.ai"
           # aud_workers lists only "gs-api-prod": the account has no Worker
           # script literally named "gs-api" (confirmed via workers list --
           # apps/gs-api/wrangler.toml only ever deploys via --env prod/preview,
@@ -914,6 +994,8 @@ jobs:
             fi
             echo "$body" | jq -r '"  \(.result.name // "?") => \(.success)"'
           }
+          # Only the monorepo-owned production Worker is updated here. Bare
+          # gs-api is intentionally reserved for marzton/goldshore-api rebuilds.
           # No Worker script literally named "gs-api" exists in the account --
           # apps/gs-api/wrangler.toml only deploys via --env prod/preview,
           # producing gs-api-prod. See the matching fix on the AUD sync above.
@@ -940,7 +1022,7 @@ jobs:
             echo "| Service token UUID | \`$TOKEN_UUID\` |"
             echo "| CF-Access-Client-Id | \`$CLIENT_ID\` |"
             echo "| GitHub secrets | goldshore-ai, goldshore-gateway, goldclaw |"
-            echo "| Worker secrets | gs-api, gs-api-prod |"
+            echo "| Worker secrets | gs-api-prod (bare gs-api is owned by marzton/goldshore-api) |"
             echo "| Bypass apps | Schwab Callback, Robinhood Callback, API Probes, Gateway Probes |"
             echo "| Full-access apps | Dashboard, GoldShore Admin, GoldShore Trading, Goldshore Ops, Signals, Goldshore API, GoldShore MCP, Goldshore Gateway, GoldShore-Web-Preview |"
             echo "| Extra hostnames | signals.goldshore.org + gs-signals-prod.goldshore.workers.dev (Signals), gs-api.goldshore.workers.dev (API) |"

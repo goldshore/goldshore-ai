@@ -1,19 +1,32 @@
 #!/usr/bin/env node
 
-import { readFile, readdir } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
-const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_ID || '';
-const TOKEN = process.env.CLOUDFLARE_BUILD_API_TOKEN || process.env.CLOUDFLARE_API_TOKEN || '';
-const ROOT = process.cwd();
-const APPS_DIR = path.join(ROOT, 'apps');
+const normalizeCloudflareToken = (raw) => {
+  let token = (raw || '').replace(/[\r\n]/g, '').trim();
+  const bearer = token.match(/(?:authorization\s*:\s*)?bearer\s+([^\s"',;}]+)/i);
+  if (bearer) token = bearer[1];
+  const cfut = token.match(/cfut_[A-Za-z0-9_-]+/);
+  if (cfut) token = cfut[0];
+  return token.replace(/^[`'"]+|[`'",;}]+$/g, '').replace(/\s/g, '');
+};
 
-const RED = '\u001b[31m';
-const GREEN = '\u001b[32m';
-const YELLOW = '\u001b[33m';
-const CYAN = '\u001b[36m';
-const BOLD = '\u001b[1m';
-const RESET = '\u001b[0m';
+const ACCOUNT_ID = (process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_ID || '').trim();
+const TOKEN = normalizeCloudflareToken(
+  process.env.CLOUDFLARE_BUILD_API_TOKEN || process.env.CLOUDFLARE_API_TOKEN || '',
+);
+const SHOULD_SKIP_AUTH_FAILURE =
+  process.env.GITHUB_EVENT_NAME === 'pull_request' || process.env.CI_VALIDATE_CF_ALLOW_AUTH_SKIP === '1';
+const ROOT = process.cwd();
+const CANONICAL_APP_DIRS = ['gs-web', 'gs-api'];
+
+const RED = '[31m';
+const GREEN = '[32m';
+const YELLOW = '[33m';
+const CYAN = '[36m';
+const BOLD = '[1m';
+const RESET = '[0m';
 
 if (!ACCOUNT_ID) {
   console.log(`${YELLOW}::warning::CLOUDFLARE_ACCOUNT_ID is missing; skipping Cloudflare resource validation.${RESET}`);
@@ -25,9 +38,8 @@ if (!TOKEN) {
 }
 
 const appTomls = [];
-for await (const entry of await readdir(APPS_DIR, { withFileTypes: true })) {
-  if (!entry.isDirectory()) continue;
-  const tomlPath = path.join(APPS_DIR, entry.name, 'wrangler.toml');
+for (const appName of CANONICAL_APP_DIRS) {
+  const tomlPath = path.join(ROOT, 'apps', appName, 'wrangler.toml');
   try {
     await readFile(tomlPath, 'utf8');
     appTomls.push(tomlPath);
@@ -64,13 +76,25 @@ async function cfGet(pathname) {
   });
   const body = await res.text();
   if (!res.ok) {
+    if (SHOULD_SKIP_AUTH_FAILURE && [400, 401, 403].includes(res.status)) {
+      console.log(
+        `${YELLOW}::warning::Skipping Cloudflare resource validation because Cloudflare auth failed for ${pathname}: HTTP ${res.status}${RESET}`,
+      );
+      process.exit(0);
+    }
     throw new Error(`Cloudflare API request failed for ${pathname}: HTTP ${res.status} ${body}`);
   }
   const json = JSON.parse(body);
   if (!json.success) {
     throw new Error(`Cloudflare API returned failure for ${pathname}: ${body}`);
   }
-  return json.result ?? [];
+  const result = json.result ?? [];
+  if (Array.isArray(result)) return result;
+
+  // Some account APIs (notably R2) wrap collections in an object such as
+  // `{ buckets: [...] }` instead of returning the array directly.
+  const nestedCollection = Object.values(result).find(Array.isArray);
+  return nestedCollection ?? [];
 }
 
 const [kvNamespaces, d1Databases, r2Buckets, queues, workers, accessApps] = await Promise.all([

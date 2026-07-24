@@ -1,4 +1,11 @@
 import type { APIRoute } from 'astro';
+import {
+  buildAdminSession,
+  verifyAccessWithClaims,
+  type AdminPermission,
+  type Env as AccessEnv,
+} from '@goldshore/auth';
+import { parseJson } from '@goldshore/utils';
 
 export const prerender = false;
 
@@ -33,7 +40,11 @@ const isSameOriginRequest = (request: Request) => {
   }
 
   const fetchSite = request.headers.get('sec-fetch-site');
-  return fetchSite === 'same-origin' || fetchSite === 'none';
+  if (fetchSite) {
+    return fetchSite === 'same-origin' || fetchSite === 'none';
+  }
+
+  return false;
 };
 
 const unauthorizedResponse = () =>
@@ -64,6 +75,8 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
   const env = locals.runtime?.env as Env | undefined;
   const slug = params.slug;
 
+  if (!slug) return new Response('Form slug is required.', { status: 400 });
+
   if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
   }
@@ -73,15 +86,11 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
     return auth.response;
   }
 
-  if (!slug) {
-    return new Response('Form slug is required.', { status: 400 });
-  }
-
   const result = await env.PLATFORM_DB.prepare(
     `SELECT id, slug, name, status, fields, recipients, integrations, created_at, updated_at
      FROM form_configs
      WHERE slug = ?
-     LIMIT 1`,
+     LIMIT 1`
   )
     .bind(slug)
     .all();
@@ -92,10 +101,14 @@ const forwardedHeaders = (request: Request) => {
     const value = request.headers.get(name);
     if (value) headers.set(name, value);
   }
-  return headers;
+
+  return { response: null };
 };
 
-const proxy = async (request: Request, env: Env | undefined, slug?: string) => {
+export const GET: APIRoute = async ({ request, locals, params }) => {
+  const env = locals.runtime?.env as Env | undefined;
+  const slug = params.slug;
+
   if (!slug) return new Response('Form slug is required.', { status: 400 });
 
   const target = new URL(`${apiBase(env)}/v1/forms/configs/${encodeURIComponent(slug)}`);
@@ -107,10 +120,16 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
   const env = locals.runtime?.env as Env | undefined;
   const slug = params.slug;
 
+  if (!slug) return new Response('Form slug is required.', { status: 400 });
+
   if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
   }
 
+  const auth = await requirePermission(request, env as AccessEnv, 'forms:read');
+  if (auth.response) {
+    return auth.response;
+  }
   if (!isSameOriginRequest(request)) {
     return forbiddenResponse('Forbidden: CSRF check failed.');
   }
@@ -118,10 +137,6 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
   const auth = await requirePermission(request, env as AccessEnv, 'forms:write');
   if (auth.response) {
     return auth.response;
-  }
-
-  if (!slug) {
-    return new Response('Form slug is required.', { status: 400 });
   }
 
   const payload = (await request.json()) as {
@@ -136,7 +151,7 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     `SELECT id, slug, name, status, fields, recipients, integrations, created_at, updated_at
      FROM form_configs
      WHERE slug = ?
-     LIMIT 1`,
+     LIMIT 1`
   )
     .bind(slug)
     .all();
@@ -153,12 +168,13 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     recipients: payload.recipients ?? parseJson(row.recipients ?? null, [] as Record<string, unknown>[]),
     integrations: payload.integrations ?? parseJson(row.integrations ?? null, [] as Record<string, unknown>[]),
   };
+
   const now = new Date().toISOString();
 
   await env.PLATFORM_DB.prepare(
     `UPDATE form_configs
      SET name = ?, status = ?, fields = ?, recipients = ?, integrations = ?, updated_at = ?
-     WHERE slug = ?`,
+     WHERE slug = ?`
   )
     .bind(
       updated.name,
@@ -167,7 +183,7 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
       JSON.stringify(updated.recipients),
       JSON.stringify(updated.integrations),
       now,
-      slug,
+      slug
     )
     .run();
 
@@ -191,18 +207,183 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     body: request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.text(),
   });
 
-  return new Response(response.body, { status: response.status, headers: response.headers });
+  const result = await env.PLATFORM_DB.prepare(
+    `SELECT id, slug, name, status, fields, recipients, integrations, created_at, updated_at
+     FROM form_configs
+     WHERE slug = ?
+     LIMIT 1`
+  )
+    .bind(slug)
+    .all();
+
+  const row = result?.results?.[0] as Record<string, string> | undefined;
+  if (!row) {
+    return new Response('Form not found.', { status: 404 });
+  }
+
+  return Response.json({ config: normalizeRow(row) });
 };
 
-export const GET: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
-export const PUT: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
-export const PATCH = PUT;
+export const PUT: APIRoute = async ({ request, locals, params }) => {
+  const env = locals.runtime?.env as Env | undefined;
+  const slug = params.slug;
 
-export const __testing = {
-  isSameOriginRequest,
-  requirePermission,
+  if (!slug) return new Response('Form slug is required.', { status: 400 });
+
+  if (!env?.PLATFORM_DB) {
+    return new Response('Storage unavailable.', { status: 503 });
+  }
+
+  if (!isSameOriginRequest(request)) {
+    return forbiddenResponse('Forbidden: CSRF check failed.');
+  }
+
+  const auth = await requirePermission(request, env as AccessEnv, 'forms:write');
+  if (auth.response) {
+    return auth.response;
+  }
+
+  const payload = (await request.json()) as {
+    name?: string;
+    status?: string;
+    fields?: Record<string, unknown>[];
+    recipients?: Record<string, unknown>[];
+    integrations?: Record<string, unknown>[];
+  };
+
+  const existing = await env.PLATFORM_DB.prepare(
+    `SELECT id, slug, name, status, fields, recipients, integrations, created_at, updated_at
+     FROM form_configs
+     WHERE slug = ?
+     LIMIT 1`
+  )
+    .bind(slug)
+    .all();
+
+  const row = existing?.results?.[0] as Record<string, string> | undefined;
+  if (!row) {
+    return new Response('Form not found.', { status: 404 });
+  }
+
+  const updated = {
+    name: payload.name ?? row.name,
+    status: payload.status ?? row.status,
+    fields: payload.fields ?? parseJson(row.fields ?? null, [] as Record<string, unknown>[]),
+    recipients: payload.recipients ?? parseJson(row.recipients ?? null, [] as Record<string, unknown>[]),
+    integrations: payload.integrations ?? parseJson(row.integrations ?? null, [] as Record<string, unknown>[]),
+  };
+
+  const now = new Date().toISOString();
+
+  await env.PLATFORM_DB.prepare(
+    `UPDATE form_configs
+     SET name = ?, status = ?, fields = ?, recipients = ?, integrations = ?, updated_at = ?
+     WHERE slug = ?`
+  )
+    .bind(
+      updated.name,
+      updated.status,
+      JSON.stringify(updated.fields),
+      JSON.stringify(updated.recipients),
+      JSON.stringify(updated.integrations),
+      now,
+      slug
+    )
+    .run();
+
+  return Response.json({
+    config: {
+      id: row.id,
+      slug,
+      name: updated.name,
+      status: updated.status,
+      fields: updated.fields,
+      recipients: updated.recipients,
+      integrations: updated.integrations,
+      createdAt: row.created_at,
+      updatedAt: now,
+    },
+  });
 };
 
-export const GET: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
-export const PUT: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
-export const PATCH = PUT;
+export const PUT: APIRoute = async ({ request, locals, params }) => {
+  const env = locals.runtime?.env as Env | undefined;
+  const slug = params.slug;
+
+  if (!slug) return new Response('Form slug is required.', { status: 400 });
+
+  if (!env?.PLATFORM_DB) {
+    return new Response('Storage unavailable.', { status: 503 });
+  }
+
+  if (!isSameOriginRequest(request)) {
+    return forbiddenResponse('Forbidden: CSRF check failed.');
+  }
+
+  const auth = await requirePermission(request, env as AccessEnv, 'forms:write');
+  if (auth.response) {
+    return auth.response;
+  }
+
+  const payload = (await request.json()) as {
+    name?: string;
+    status?: string;
+    fields?: Record<string, unknown>[];
+    recipients?: Record<string, unknown>[];
+    integrations?: Record<string, unknown>[];
+  };
+
+  const existing = await env.PLATFORM_DB.prepare(
+    `SELECT id, slug, name, status, fields, recipients, integrations, created_at, updated_at
+     FROM form_configs
+     WHERE slug = ?
+     LIMIT 1`
+  )
+    .bind(slug)
+    .all();
+
+  const row = existing?.results?.[0] as Record<string, string> | undefined;
+  if (!row) {
+    return new Response('Form not found.', { status: 404 });
+  }
+
+  const updated = {
+    name: payload.name ?? row.name,
+    status: payload.status ?? row.status,
+    fields: payload.fields ?? parseJson(row.fields ?? null, [] as Record<string, unknown>[]),
+    recipients: payload.recipients ?? parseJson(row.recipients ?? null, [] as Record<string, unknown>[]),
+    integrations: payload.integrations ?? parseJson(row.integrations ?? null, [] as Record<string, unknown>[]),
+  };
+
+  const now = new Date().toISOString();
+
+  await env.PLATFORM_DB.prepare(
+    `UPDATE form_configs
+     SET name = ?, status = ?, fields = ?, recipients = ?, integrations = ?, updated_at = ?
+     WHERE slug = ?`
+  )
+    .bind(
+      updated.name,
+      updated.status,
+      JSON.stringify(updated.fields),
+      JSON.stringify(updated.recipients),
+      JSON.stringify(updated.integrations),
+      now,
+      slug
+    )
+    .run();
+
+  return Response.json({
+    config: {
+      id: row.id,
+      slug,
+      name: updated.name,
+      status: updated.status,
+      fields: updated.fields,
+      recipients: updated.recipients,
+      integrations: updated.integrations,
+      createdAt: row.created_at,
+      updatedAt: now,
+    },
+  });
+};

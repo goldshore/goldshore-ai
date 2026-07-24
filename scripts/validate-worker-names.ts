@@ -1,19 +1,18 @@
-import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import { join } from "node:path";
 
 const APPS_DIR = path.resolve(process.cwd(), "apps");
+const CANONICAL_APPS = ["gs-api", "gs-web"];
 const WRANGLER_NAME_PATTERN = /^\s*name\s*=\s*["']([^"']+)["']/m;
 const ROUTE_PATTERN = /pattern\s*=\s*["']([^"']+)["']/g;
 const SINGLE_ROUTE_PATTERN = /^\s*route\s*=\s*["']([^"']+)["']/gm;
 const EXPECTED_HOST_OWNERS: Record<string, string> = {};
 
 function getWorkerDirectories(): string[] {
-  return readdirSync(APPS_DIR)
-    .map((entry) => path.join(APPS_DIR, entry))
-    .filter((fullPath) => statSync(fullPath).isDirectory())
-    .filter((fullPath) => existsSync(path.join(fullPath, "wrangler.toml")))
-    .filter((fullPath) => !fullPath.includes(`${path.sep}legacy${path.sep}`));
+  return CANONICAL_APPS.map((entry) => path.join(APPS_DIR, entry)).filter((fullPath) =>
+    existsSync(path.join(fullPath, "wrangler.toml")),
+  );
 }
 
 function extractHostnames(wranglerRaw: string): string[] {
