@@ -305,7 +305,3 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     },
   });
 };
-
-export const GET: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
-export const PUT: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
-export const PATCH = PUT;
