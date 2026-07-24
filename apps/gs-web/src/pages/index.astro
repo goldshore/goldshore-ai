@@ -288,7 +288,7 @@ export async function verifyAccess(req, env) {
   </div>
   <form class="quick-form" id="quick-form" method="POST" action="/api/contact">
     <h3>Quick Inquiry</h3>
-    <input type="hidden" name="formType" value="homepage-inquiry" />
+    <input type="hidden" name="formType" value="general-inquiry" />
     <input type="hidden" name="redirectTo" value="/thank-you" />
     <input type="hidden" name="formStartedAt" id="qs-form-started" value="" />
     <input type="hidden" name="dedupeKey" id="qs-dedupe-key" value="" />
@@ -301,14 +301,14 @@ export async function verifyAccess(req, env) {
     <label>Interest
       <select name="inquiry" required>
         <option value="">Select area of interest</option>
-        <option value="general">General Enquiry</option>
+        <option value="general-inquiry">General inquiry</option>
         <option value="strategy-call">Strategy Call</option>
-        <option value="project-scope">Project Scope</option>
+        <option value="project-scope">Project scoping</option>
         <option value="support">Support</option>
       </select>
     </label>
     <label>Message
-      <textarea name="message" id="qs-message" required rows="4" placeholder="Tell us about your inquiry (20+ characters)…"></textarea>
+      <textarea name="message" id="qs-message" required rows="4" placeholder="Tell us about your inquiry..."></textarea>
     </label>
     <div id="qs-form-status" class="form-status" aria-live="polite"></div>
     <button type="submit" class="btn-form" id="qs-submit">Submit Request →</button>
@@ -368,22 +368,17 @@ export async function verifyAccess(req, env) {
     <h2 id="access-modal-title">Access Goldshore</h2>
     <p class="modal-lead">Select a destination to continue.</p>
     <div class="modal-grid">
-      <a href="https://admin.goldshore.ai" class="modal-card" rel="noopener noreferrer" target="_blank" data-admin-access-link>
+      <a href="https://admin.goldshore.ai" class="modal-card" data-admin-access-link>
         <span class="modal-icon">⬡</span>
         <strong>Admin</strong>
         <span>Operator dashboard</span>
-      </a>
-      <a href="https://admin.goldshore.org" class="modal-card" rel="noopener noreferrer" target="_blank" data-admin-alternate-link>
-        <span class="modal-icon">◈</span>
-        <strong data-admin-alternate-title>Admin .org</strong>
-        <span data-admin-alternate-copy>Protected organisation alias</span>
       </a>
       <a href="/developer/mcp" class="modal-card">
         <span class="modal-icon">⬢</span>
         <strong>MCP</strong>
         <span>Model Context Protocol</span>
       </a>
-      <a href="https://api.goldshore.ai" class="modal-card" rel="noopener noreferrer" target="_blank">
+      <a href="https://api.goldshore.ai" class="modal-card">
         <span class="modal-icon">◉</span>
         <strong>API</strong>
         <span>Developer access</span>
@@ -418,22 +413,6 @@ const accessModal = document.getElementById('access-modal');
 document.getElementById('open-access-modal')?.addEventListener('click', () => accessModal?.showModal());
 document.querySelector('.modal-close')?.addEventListener('click', () => accessModal?.close());
 accessModal?.addEventListener('click', e => { if (e.target === accessModal) accessModal.close(); });
-
-/* ── Host-aware admin links ────────────────────────────────────────────────────────────────────── */
-const adminHost = 'admin.goldshore.ai';
-const alternateAdminHost = 'admin.goldshore.org';
-document.querySelectorAll('[data-admin-access-link]').forEach(link => {
-  link.setAttribute('href', `https://${adminHost}/`);
-});
-document.querySelectorAll('[data-admin-alternate-link]').forEach(link => {
-  link.setAttribute('href', `https://${alternateAdminHost}/`);
-});
-document.querySelectorAll('[data-admin-alternate-title]').forEach(el => {
-  el.textContent = 'Admin .org';
-});
-document.querySelectorAll('[data-admin-alternate-copy]').forEach(el => {
-  el.textContent = 'Protected organisation alias';
-});
 
 /* ── Quick engage form ───────────────────────────────────────────────────────────────────────── */
 const qsForm    = document.getElementById('quick-form');

@@ -1,0 +1,50 @@
+version: 1
+status: proposed
+owner_app: gs-api
+
+r2:
+  production:
+    - binding: LEGACY_ARCHIVE
+      bucket: gs-legacy-archive
+      public: false
+      purpose: Immutable source captures, manifests, and derived private artifacts
+    - binding: CONTACT_IMPORTS
+      bucket: gs-contact-imports
+      public: false
+      purpose: Temporary raw contact imports pending consent and suppression review
+  preview:
+    - binding: LEGACY_ARCHIVE
+      bucket: gs-legacy-archive-preview
+      public: false
+    - binding: CONTACT_IMPORTS
+      bucket: gs-contact-imports-preview
+      public: false
+
+d1:
+  production:
+    binding: CONTACTS_DB
+    database: gs_contacts_db
+    migration: apps/gs-api/db/migrations/0003_contact_archive_catalog.sql
+  preview:
+    binding: CONTACTS_DB
+    database: gs_contacts_db_preview
+    migration: apps/gs-api/db/migrations/0003_contact_archive_catalog.sql
+
+queues:
+  production:
+    binding: ARCHIVE_JOBS_QUEUE
+    queue: gs-archive-jobs
+    dead_letter_queue: gs-mail-dead-letter
+  preview:
+    binding: ARCHIVE_JOBS_QUEUE
+    queue: gs-archive-jobs-preview
+    dead_letter_queue: gs-mail-dead-letter
+
+controls:
+  raw_data_in_github: false
+  public_bucket_access: false
+  production_preview_data_sharing: false
+  contact_default_status: quarantined
+  suppression_precedence: global
+  require_restore_test_before_source_deletion: true
+
