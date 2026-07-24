@@ -4,6 +4,11 @@ packages:
   - 'packages/*'
   # Intentionally retained non-deploy infrastructure workspaces.
   - 'infra/*'
+allowBuilds:
+  es5-ext: true
+  esbuild: true
+  sharp: true
+  workerd: true
 
 overrides:
   '@astrojs/cloudflare': 14.1.4

@@ -112,7 +112,19 @@ cloudflare:
       # G. Preview deployments (claude/** branches)
       - name: "preview"
         type: CNAME
-        content: "preview-web.pages.dev"
+        content: "preview-gs-web.pages.dev"
+        proxied: true
+
+      # H. MCP server (goldshore-mcp-prod worker, deployed from marzton/goldshore)
+      - name: "mcp"
+        type: CNAME
+        content: "goldshore-mcp-prod.goldshore.workers.dev"
+        proxied: true
+
+      # I. Signals dashboard (gs-signals-prod workflow worker)
+      - name: "signals"
+        type: CNAME
+        content: "gs-signals-prod.goldshore.workers.dev"
         proxied: true
 
       # H. SendGrid domain authentication + DMARC
@@ -138,6 +150,29 @@ cloudflare:
     # not encode alternative IdPs as multiple Require selectors because
     # Cloudflare evaluates Require selectors conjunctively.
     policies:
+      # Dashboard: goldshore.ai/app — the main authenticated entry point served
+      # by gs-web. This is the app shown in the CF Access App Launcher as
+      # "Dashboard". Protects /app and all sub-paths; /health is public.
+      - name: "GoldShore-Dashboard"
+        domains:
+          - "goldshore.ai"
+        action: "allow"
+        paths:
+          - "/app*"
+        public_paths:
+          - "/health"
+          - "/version"
+        rules:
+          include:
+            - email_domain: "goldshore.ai"
+            - email: "marstonr6@gmail.com"
+            - email: "goldshorelabs@gmail.com"
+          allowed_identity_providers:
+            - "google_workspace"
+            - "github_goldshore_deploy"
+            - "github"
+            - "email_otp"
+
       - name: "GoldShore-Admin-ZT"
         domains:
           - "admin.goldshore.ai"
@@ -291,6 +326,7 @@ cloudflare:
           include:
             - email_domain: "goldshore.ai"
             - email: "marstonr6@gmail.com"
+            - email: "goldshorelabs@gmail.com"
           allowed_identity_providers:
             - "github_goldshore_deploy"
             - "github"

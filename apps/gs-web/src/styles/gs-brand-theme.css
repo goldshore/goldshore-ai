@@ -50,10 +50,29 @@
   --gs-accent-strong:    var(--gs-copper-strong);
   --gs-accent-soft:      var(--gs-copper-soft);
 
-  /* Typography */
-  --gs-font-display:     'Space Grotesk', 'Inter', system-ui, sans-serif;
-  --gs-font-body:        'Inter', system-ui, sans-serif;
+  /* Typography — aligned with home page */
+  --gs-font-display:     'Syne', system-ui, sans-serif;
+  --gs-font-body:        'DM Sans', system-ui, sans-serif;
+  --gs-font-mono:        'DM Mono', ui-monospace, monospace;
   --gs-font-heading:     var(--gs-font-display);
+
+  /* Text — warm white matching home page palette */
+  --gs-text:             #eceae4;
+  --gs-text-dim:         #b8b4a8;
+  --gs-text-muted:       #6e6a60;
+  --gs-color-text:       #eceae4;
+  --gs-color-subtle:     #b8b4a8;
+  --gs-color-faint:      #6e6a60;
+
+  /* Surfaces — void-dark matching home page card tone */
+  --gs-bg:               #06060a;
+  --gs-color-bg:         #06060a;
+  --gs-surface:          rgba(20, 20, 32, 0.82);
+  --gs-color-surface:    rgba(20, 20, 32, 0.82);
+  --gs-color-muted-surface: rgba(14, 14, 22, 0.72);
+  --gs-border:           rgba(160, 72, 32, 0.18);
+  --gs-border-subtle:    rgba(255, 255, 255, 0.06);
+  --gs-color-border:     rgba(255, 255, 255, 0.08);
 
   /* Header tokens */
   --gs-header-border-accent: rgba(217, 106, 50, 0.2);
@@ -67,18 +86,31 @@
 }
 
 /* ── BACKGROUND & BODY ── */
-html { background: #050507; }
+html { background: #06060a; }
 
 body {
   background:
-    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(217,106,50,0.06) 0%, transparent 60%),
-    linear-gradient(180deg, #050507 0%, #070809 50%, #060708 100%);
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(160,72,32,0.10) 0%, transparent 60%),
+    #06060a;
   font-family: var(--gs-font-body);
   color: var(--gs-text);
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--gs-font-display);
+  letter-spacing: -0.03em;
+}
+
+/* Section h1 — Syne uppercase display treatment matching home page */
+.gs-section > h1,
+.gs-section > div > h1 {
+  font-size: clamp(2rem, 3.5vw, 3.2rem);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+  color: #eceae4;
+  margin-bottom: 0.5rem;
 }
 
 /* Copper grid lines */
@@ -123,9 +155,11 @@ h1, h2, h3, h4, h5, h6 {
 .header a,
 [class*="nav-link"],
 [class*="gs-nav"] a {
-  color: rgba(241,244,248,0.6) !important;
-  font-size: 0.82rem !important;
-  letter-spacing: 0.04em !important;
+  color: #b8b4a8 !important;
+  font-family: 'DM Mono', ui-monospace, monospace !important;
+  font-size: 0.62rem !important;
+  letter-spacing: 0.09em !important;
+  text-transform: uppercase !important;
   transition: color 200ms !important;
 }
 
@@ -184,15 +218,96 @@ h1 strong, h2 strong { color: var(--gs-copper); }
 /* ── CARDS & SURFACES ── */
 [class*="gs-feature-card"],
 [class*="gs-panel"],
-[class*="gs-card"] {
-  border-color: rgba(217,106,50,0.14) !important;
+[class*="gs-card"],
+.gs-card,
+.gs-panel {
+  background: rgba(20, 20, 32, 0.82) !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
   transition: border-color 200ms, box-shadow 200ms !important;
 }
 
 [class*="gs-feature-card"]:hover,
-[class*="gs-panel"]:hover {
-  border-color: rgba(217,106,50,0.30) !important;
-  box-shadow: 0 0 0 1px rgba(217,106,50,0.10) !important;
+[class*="gs-panel"]:hover,
+.gs-card:hover {
+  border-color: rgba(160, 72, 32, 0.28) !important;
+  box-shadow: 0 0 0 1px rgba(160, 72, 32, 0.08), 0 8px 32px rgba(0,0,0,0.4) !important;
+}
+
+/* ── BUTTONS — pill-shaped, DM Mono, matching home page nav-cta style ── */
+.gs-button {
+  border-radius: 999px !important;
+  font-family: 'DM Mono', ui-monospace, monospace !important;
+  font-size: 0.72rem !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  background: rgba(160, 72, 32, 0.14) !important;
+  color: #eceae4 !important;
+  border: 1px solid rgba(160, 72, 32, 0.30) !important;
+  box-shadow: none !important;
+}
+.gs-button:hover {
+  background: rgba(160, 72, 32, 0.24) !important;
+  border-color: rgba(160, 72, 32, 0.50) !important;
+  transform: none !important;
+  box-shadow: 0 0 14px rgba(160, 72, 32, 0.18) !important;
+}
+
+/* ── TABLE — DM Mono headers, subtle borders ── */
+.gs-table th {
+  font-family: 'DM Mono', ui-monospace, monospace !important;
+  font-size: 0.62rem !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  color: #6e6a60 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+.gs-table td {
+  font-size: 0.875rem !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+  color: #b8b4a8 !important;
+}
+.gs-table td strong { color: #eceae4 !important; }
+.gs-table tbody tr:hover {
+  background: rgba(160, 72, 32, 0.05) !important;
+}
+
+/* ── BADGES ── */
+.gs-badge {
+  font-family: 'DM Mono', ui-monospace, monospace !important;
+  font-size: 0.62rem !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  border-radius: 999px !important;
+}
+.gs-badge.info {
+  background: rgba(160, 72, 32, 0.12) !important;
+  border-color: rgba(160, 72, 32, 0.35) !important;
+  color: #d4906a !important;
+}
+.gs-badge.success {
+  background: rgba(74, 222, 128, 0.10) !important;
+  border-color: rgba(74, 222, 128, 0.30) !important;
+  color: #86efac !important;
+}
+
+/* ── FORM INPUTS — dark surface, copper focus ── */
+input, select, textarea {
+  background: rgba(10, 10, 14, 0.6) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #eceae4 !important;
+  font-family: 'DM Sans', system-ui, sans-serif !important;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: rgba(160, 72, 32, 0.50) !important;
+  box-shadow: 0 0 0 3px rgba(160, 72, 32, 0.12) !important;
+}
+label {
+  font-family: 'DM Mono', ui-monospace, monospace !important;
+  font-size: 0.68rem !important;
+  letter-spacing: 0.10em !important;
+  text-transform: uppercase !important;
+  color: #6e6a60 !important;
+  font-weight: 400 !important;
 }
 
 /* ── INLINE LINKS ── */
