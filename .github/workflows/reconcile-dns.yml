@@ -47,14 +47,24 @@ on:
 
 jobs:
   apply-safe-dns-fixes:
-    name: 'THROWAWAY -- apply only the 4 low-risk DNS corrections (no repoint off gs-api-prod, no PR)'
+    name: 'THROWAWAY -- check whether signals.goldshore.ai is already live via Workers Custom Domain (read-only, no PR)'
     runs-on: ubuntu-latest
     permissions: {}
     env:
       CF_API: https://api.cloudflare.com/client/v4
+      CF_ACCOUNT: f77de112d2019e5456a3198a8bb50bd2
       CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     steps:
-      - name: Apply www.goldshore.ai, admin-preview.goldshore.ai, mcp.goldshore.ai, signals.goldshore.ai
+      - name: Check account-level Workers Custom Domains for signals.goldshore.ai
+        shell: bash
+        run: |
+          set -euo pipefail
+          auth=(-H "Authorization: Bearer $CF_TOKEN")
+          curl -sS "$CF_API/accounts/$CF_ACCOUNT/workers/domains" "${auth[@]}" \
+            | jq '[.result[]? | select(.hostname == "signals.goldshore.ai")]'
+
+      - name: OLD -- apply www.goldshore.ai, admin-preview.goldshore.ai, mcp.goldshore.ai (already applied, kept for reference)
+        if: false
         shell: bash
         run: |
           set -euo pipefail
