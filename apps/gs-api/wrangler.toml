@@ -202,6 +202,11 @@ class_name = "AuthSession"
 tag = "v1-auth-session"
 new_sqlite_classes = ["AuthSession"]
 
+# ── Cron Triggers (Scheduled Jobs) ──────────────────────────────────────────────────────────────
+# Token rotation job: Runs daily at 2 AM UTC to refresh expiring OAuth tokens
+[[env.prod.triggers.crons]]
+cron = "0 2 * * *"
+
 # ── Services ────────────────────────────────────────────────────────────────────────────────────────────
 # ── Services ──────────────────────────────────────────────────────────────────────────────────────
 [[env.prod.services]]
