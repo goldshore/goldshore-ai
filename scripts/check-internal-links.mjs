@@ -19,6 +19,12 @@ const idsCache = new Map();
 
 const isExternal = (href) => /^(?:[a-zA-Z][a-zA-Z\d+.-]*:|\/\/)/.test(href);
 
+// Server-rendered-only routes (Cloudflare Access-gated admin/app pages, login)
+// are never pre-rendered into dist/, so they can't be verified against the
+// static output even though they're real, working routes.
+const SSR_PREFIXES = ['/app/', '/admin/', '/login'];
+const isSsrOnlyPath = (pathname) => SSR_PREFIXES.some((prefix) => `${pathname}/`.startsWith(prefix));
+
 const normalizeRoutePath = (pathname) => {
   if (!pathname || pathname === '/') {
     return '/index.html';
@@ -120,6 +126,10 @@ for (const sourceRoute of routes) {
       const resolved = new URL(href, `https://goldshore.local${sourcePath.endsWith('/') ? sourcePath : `${sourcePath}/`}`);
       targetPathname = resolved.pathname;
       targetHash = resolved.hash.replace(/^#/, '');
+    }
+
+    if (isSsrOnlyPath(targetPathname)) {
+      continue;
     }
 
     const targetFile = distFileFromPath(targetPathname);

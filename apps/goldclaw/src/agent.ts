@@ -5,6 +5,8 @@ import { analyzeOAuthTokenExpiry } from './tools/health';
 import { getIntegrationCostAnalysis } from './tools/health';
 import { testApiConnection } from './tools/health';
 import { fetchAuditTrail } from './tools/health';
+import { analyzeCostAnomalies } from './tools/cost-optimization';
+import { assessOperationRiskWithLLM } from './tools/approval';
 
 interface ScheduledJob {
   name: string;
@@ -86,7 +88,7 @@ class GoldClawAgent {
   }
 
   private async runCostReport(): Promise<void> {
-    console.log('[CostReport] Generating daily cost report...');
+    console.log('[CostReport] Generating daily cost report with anomaly analysis...');
     try {
       const integrations = await this.api.getIntegrations();
       const costs = await Promise.all(
@@ -103,8 +105,20 @@ class GoldClawAgent {
           (costByProvider[cost.provider] || 0) + cost.estimatedMonthlyCost;
       }
 
+      // Analyze cost anomalies and trends
+      const costReport = await analyzeCostAnomalies(this.api, this.google);
+
       console.log(`[CostReport] Total estimated monthly cost: $${totalCost.toFixed(2)}`);
       console.log('[CostReport] Cost by provider:', costByProvider);
+      console.log(`[CostReport] Detected ${costReport.anomalies.length} cost anomalies`);
+      console.log('[CostReport] Recommendations:', costReport.recommendations);
+
+      // Queue anomaly alerts
+      for (const anomaly of costReport.anomalies) {
+        console.log(
+          `[CostReport] Alert: ${anomaly.provider} ${anomaly.anomalyType} (+${anomaly.changePercent.toFixed(1)}%)`
+        );
+      }
 
       await this.api.logAdminAction({
         action: 'goldclaw.cost_report',
@@ -113,6 +127,9 @@ class GoldClawAgent {
           total_cost: totalCost,
           cost_by_provider: costByProvider,
           integration_count: integrations.length,
+          anomaly_count: costReport.anomalies.length,
+          top_anomalies: costReport.anomalies.slice(0, 3),
+          recommendations: costReport.recommendations,
         },
       });
     } catch (error) {
@@ -156,28 +173,59 @@ class GoldClawAgent {
     );
     const errorCount = recentAudit.filter((a) => a.status === 'error').length;
     const uptime = errorCount === 0 ? '99.9%' : `${Math.round((1 - errorCount / recentAudit.length) * 100)}%`;
-    const riskLevel = errorCount === 0 ? 'low ✅' : 'medium ⚠️';
 
-    const message = `🔑 ${token.provider} key rotation needed
+    // Enhanced risk assessment with LLM
+    const riskAssessment = await assessOperationRiskWithLLM({
+      recentErrorCount: errorCount,
+      uptime,
+      operationTimelineMinutes: 1,
+      isProduction: true,
+      rotationCount: 0,
+    }, null); // Pass null for LLM for now (fallback to local rules)
+
+    const riskEmoji =
+      riskAssessment.riskLevel === 'low'
+        ? '✅'
+        : riskAssessment.riskLevel === 'medium'
+          ? '⚠️'
+          : '🚩';
+
+    // Cost context for recommendations
+    const costAnalysis = await getIntegrationCostAnalysis(
+      this.api,
+      this.google,
+      token.integrationId
+    );
+
+    let costImpact = '';
+    if (costAnalysis.estimatedMonthlyCost > 500) {
+      costImpact = `\n💰 High-value integration ($${costAnalysis.estimatedMonthlyCost.toFixed(0)}/mo)`;
+    }
+
+    const message = `🔑 ${token.provider.toUpperCase()} Token Rotation
 Expires in: ${daysLeft} day${daysLeft !== 1 ? 's' : ''}
-Recent uptime: ${uptime}
-Risk: ${riskLevel}
+Recent uptime: ${uptime} (${errorCount} errors)
+Risk: ${riskAssessment.riskLevel} ${riskEmoji}${costImpact}
 
-React ✅ to approve rotation`;
+${riskAssessment.recommendations.slice(0, 2).map((r) => `• ${r}`).join('\n')}
+
+React ✅ to approve or ❌ to skip`;
 
     await this.api.queueCommand({
       command: `rotate-${token.provider}`,
       metadata: {
         secret_id: token.id,
         integration_id: token.integrationId,
-        risk_level: riskLevel,
+        risk_level: riskAssessment.riskLevel,
         uptime: uptime,
+        risk_reasoning: riskAssessment.reasoning,
+        cost_monthly: costAnalysis.estimatedMonthlyCost,
       },
       approval_method: 'whatsapp_reaction',
       message,
     });
 
-    console.log(`[TokenScan] Approval request queued for ${token.provider}`);
+    console.log(`[TokenScan] Enhanced approval request queued for ${token.provider}`);
   }
 
   private async runAuditAnalysis(): Promise<void> {

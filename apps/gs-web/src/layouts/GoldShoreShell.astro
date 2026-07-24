@@ -135,13 +135,7 @@ const isCurrent = (href: string) => {
           if (event.key === 'Escape') setMenu(false);
         });
       };
-      const bindAdminAccessLinks = () => {
-        document.querySelectorAll('[data-admin-access-link]').forEach((link) => {
-          link.setAttribute('href', 'https://admin.goldshore.ai/');
-        });
-      };
       bindMenu();
-      bindAdminAccessLinks();
     </script>
     <script>
       import '../scripts/page-motion';

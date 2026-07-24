@@ -1,5 +1,25 @@
 ---
-import GoldShoreShell from './GoldShoreShell.astro';
+import Logo from '../components/brand/Logo.astro';
+import '@goldshore/theme/styles/tokens.css';
+import '@goldshore/theme/styles/base.css';
+import '@goldshore/theme/styles/components.css';
+import '@goldshore/theme/styles/layout.css';
+import '../styles/global.css';
+import '../styles/goldshore-shell.css';
+import { primaryNavLinks, companyLinks } from '../config/navigation';
+import { WEB_META_CSP } from '../utils/csp';
+
+const { title, description, canonicalPath } = Astro.props;
+const ogTitle = Astro.props.ogTitle ?? title;
+const ogDescription = Astro.props.ogDescription ?? description;
+const canonicalUrl = canonicalPath
+  ? new URL(canonicalPath, 'https://goldshore.ai').toString()
+  : Astro.url.href;
+const navLinks = primaryNavLinks;
+const footerLinks = companyLinks;
+const currentPath = Astro.url.pathname;
+const mobileNavId = 'mobile-navigation';
+---
 import Logo from '../components/brand/Logo.astro';
 import '@goldshore/theme/styles/tokens.css';
 import '@goldshore/theme/styles/base.css';
@@ -8,9 +28,6 @@ import '@goldshore/theme/styles/layout.css';
 import '../styles/global.css';
 import { WEB_META_CSP } from '../utils/csp';
 import '../styles/goldshore-shell.css';
-
-const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.props;
----
 
 <html lang="en">
   <head>
@@ -59,7 +76,7 @@ const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.prop
                 </a>
               ))}
             </div>
-            <a href="https://admin.goldshore.ai" class="header-login" data-admin-access-link>Log in</a>
+            <a href="/admin/lead-submissions" class="header-login">Log in</a>
             <a href="/contact" class="header-cta">Get a Briefing</a>
           </nav>
 
@@ -96,7 +113,7 @@ const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.prop
 
             <div class="menu-panel__actions">
               <a href="/contact" class="header-cta header-cta--mobile">Get a Briefing</a>
-              <a href="https://admin.goldshore.ai" class="menu-secondary-link" data-admin-access-link>Log in</a>
+              <a href="/admin/lead-submissions" class="menu-secondary-link">Log in</a>
               <a href="/developer" class="menu-secondary-link">Open Developer Hub</a>
             </div>
           </div>
@@ -203,14 +220,7 @@ const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.prop
         });
       };
 
-      const bindAdminAccessLinks = () => {
-        document.querySelectorAll('[data-admin-access-link]').forEach((link) => {
-          link.setAttribute('href', 'https://admin.goldshore.ai/');
-        });
-      };
-
       bindMenu();
-      bindAdminAccessLinks();
     </script>
 
     <style is:global>
@@ -636,12 +646,3 @@ const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.prop
     </style>
   </body>
 </html>
-<GoldShoreShell
-  title={title}
-  description={description}
-  canonicalPath={canonicalPath}
-  ogTitle={ogTitle ?? title}
-  ogDescription={ogDescription ?? description}
->
-  <slot />
-</GoldShoreShell>
