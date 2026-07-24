@@ -46,6 +46,76 @@ on:
         type: boolean
 
 jobs:
+  apply-safe-dns-fixes:
+    name: 'THROWAWAY -- apply only the 4 low-risk DNS corrections (no repoint off gs-api-prod, no PR)'
+    runs-on: ubuntu-latest
+    permissions: {}
+    env:
+      CF_API: https://api.cloudflare.com/client/v4
+      CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - name: Apply www.goldshore.ai, admin-preview.goldshore.ai, mcp.goldshore.ai, signals.goldshore.ai
+        shell: bash
+        run: |
+          set -euo pipefail
+          auth=(-H "Authorization: Bearer $CF_TOKEN")
+
+          api_call() {
+            local method="$1" url="$2" data="${3:-}" resp status body
+            if [ -n "$data" ]; then
+              resp=$(curl -sS -w '\n%{http_code}' -X "$method" "$url" "${auth[@]}" -H 'Content-Type: application/json' --data "$data")
+            else
+              resp=$(curl -sS -w '\n%{http_code}' -X "$method" "$url" "${auth[@]}")
+            fi
+            status="${resp##*$'\n'}"
+            body="${resp%$'\n'*}"
+            if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+              echo "::error::$method $url failed (HTTP $status): $body" >&2
+              exit 1
+            fi
+            echo "$body"
+          }
+
+          ZID=$(api_call GET "$CF_API/zones?name=goldshore.ai" | jq -r '.result[0].id')
+          test -n "$ZID"
+          echo "goldshore.ai zone: $ZID"
+
+          update_record() {
+            local name="$1" content="$2" proxied="$3" id body
+            id=$(api_call GET "$CF_API/zones/$ZID/dns_records?name=$name&type=CNAME" | jq -r '.result[0].id // empty')
+            if [ -z "$id" ]; then
+              echo "::error::No existing CNAME found for $name -- expected an UPDATE target, not a CREATE. Skipping."
+              return 1
+            fi
+            body=$(jq -nc --arg t CNAME --arg n "$name" --arg c "$content" --argjson p "$proxied" '{type:$t,name:$n,content:$c,proxied:$p,ttl:1}')
+            api_call PUT "$CF_API/zones/$ZID/dns_records/$id" "$body" >/dev/null
+            echo "Updated $name -> $content [proxied=$proxied]"
+          }
+
+          create_record() {
+            local name="$1" content="$2" proxied="$3" existing body
+            existing=$(api_call GET "$CF_API/zones/$ZID/dns_records?name=$name&type=CNAME" | jq -r '.result[0].id // empty')
+            if [ -n "$existing" ]; then
+              echo "$name already exists ($existing) -- skipping create."
+              return 0
+            fi
+            body=$(jq -nc --arg t CNAME --arg n "$name" --arg c "$content" --argjson p "$proxied" '{type:$t,name:$n,content:$c,proxied:$p,ttl:1}')
+            api_call POST "$CF_API/zones/$ZID/dns_records" "$body" >/dev/null
+            echo "Created $name -> $content [proxied=$proxied]"
+          }
+
+          update_record "www.goldshore.ai" "goldshore-org.goldshore.workers.dev" true
+          update_record "admin-preview.goldshore.ai" "gs-web-prod.goldshore.workers.dev" false
+          update_record "mcp.goldshore.ai" "goldshore-mcp-prod.goldshore.workers.dev" true
+          create_record "signals.goldshore.ai" "gs-signals-prod.goldshore.workers.dev" true
+
+          echo ""
+          echo "== verifying =="
+          for name in www.goldshore.ai admin-preview.goldshore.ai mcp.goldshore.ai signals.goldshore.ai; do
+            api_call GET "$CF_API/zones/$ZID/dns_records?name=$name&type=CNAME" | \
+              jq -r --arg n "$name" '.result[0] | "\($n): \(.content) [proxied=\(.proxied)]"'
+          done
+
   diagnostic-access-apps:
     name: DIAGNOSTIC -- full Access apps + domains + MCP policy re-check (throwaway, read-only, no PR)
     runs-on: ubuntu-latest
