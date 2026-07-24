@@ -252,15 +252,6 @@
   line-height: 1.55;
 }
 
-.gs-shell-v284 .site-footer a { text-decoration: none; }
-
-.gs-shell-v284 .footer-meta-block {
-  position: absolute;
-  right: clamp(1rem, 5vw, 4rem);
-  bottom: clamp(1rem, 3vw, 2rem);
-  display: grid;
-  justify-items: end;
-  gap: 0.18rem;
 .gs-shell-v284 .site-footer a {
   display: inline-flex;
   max-width: 100%;
