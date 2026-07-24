@@ -67,23 +67,23 @@
   }
 }
 
+@keyframes gs-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @supports (animation-timeline: view()) {
   .gs-view-timeline {
     animation-timeline: view();
     animation-name: gs-fade-in;
     animation-fill-mode: both;
     animation-timing-function: linear;
-  }
-
-  @keyframes gs-fade-in {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
   }
 }
 
