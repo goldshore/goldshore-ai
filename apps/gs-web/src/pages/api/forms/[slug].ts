@@ -73,6 +73,8 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
   const env = locals.runtime?.env as Env | undefined;
   const slug = params.slug;
 
+  if (!slug) return new Response('Form slug is required.', { status: 400 });
+
   if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
   }
@@ -80,10 +82,6 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
   const auth = await requirePermission(request, env as AccessEnv, 'forms:read');
   if (auth.response) {
     return auth.response;
-  }
-
-  if (!slug) {
-    return new Response('Form slug is required.', { status: 400 });
   }
 
   const result = await env.PLATFORM_DB.prepare(
@@ -107,6 +105,8 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
   const env = locals.runtime?.env as Env | undefined;
   const slug = params.slug;
 
+  if (!slug) return new Response('Form slug is required.', { status: 400 });
+
   if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
   }
@@ -118,10 +118,6 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
   const auth = await requirePermission(request, env as AccessEnv, 'forms:write');
   if (auth.response) {
     return auth.response;
-  }
-
-  if (!slug) {
-    return new Response('Form slug is required.', { status: 400 });
   }
 
   const payload = (await request.json()) as {
