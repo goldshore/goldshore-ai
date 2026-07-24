@@ -16,15 +16,8 @@ export default defineConfig({
     ...baseConfig.vite,
     server: isLocalDev ? { allowedHosts: true } : undefined,
     build: {
-      rollupOptions: {
-        output: {
-          // Disable CSS code splitting to prevent lightningcss minification issues
-          assetFileNames: 'assets/[name].[ext]'
-        }
-      },
-      // Disable CSS and JS minification to avoid lightningcss @keyframes issues
-      minify: false,
-      cssCodeSplit: false
+      // Disable minification to avoid lightningcss @keyframes issues
+      minify: false
     },
     resolve: {
       ...baseConfig.vite?.resolve,
