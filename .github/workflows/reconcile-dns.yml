@@ -487,6 +487,8 @@ jobs:
           curl -sS "$CF_API/accounts/$CF_ACCOUNT/access/apps?per_page=100" \
             -H "Authorization: Bearer $CF_BUILD_TOKEN" \
             | jq '[.result[]? | select((.domain // "" | test("mcp")) or (.name | test("MCP"; "i"))) | {id, name, type, domain, self_hosted_domains}]'
+
+jobs:
   reconcile:
     name: Reconcile DNS records
     runs-on: ubuntu-latest
@@ -505,6 +507,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+
+      - name: Extract desired DNS records
+        uses: actions/checkout@v4
 
       - name: DIAGNOSTIC -- check goldshore-jobs queue consumers and backlog (throwaway, read-only, no PR)
         run: |
@@ -592,6 +597,13 @@ jobs:
           # with code 81062 ("A DNS record managed by Workers already exists
           # on that host"). Skip CREATE for both rather than let every run log
           # a false MISSING/warning pair.
+          # preview.goldshore.ai reports as MISSING via a type=CNAME query
+          # despite being live and working today -- it's provisioned through
+          # a real Workers Custom Domain that doesn't show up as a plain
+          # CNAME through this API. Confirmed: Cloudflare rejected a real
+          # CREATE attempt with code 81062 ("A DNS record managed by Workers
+          # already exists on that host"). Skip CREATE rather than let every
+          # run log a false MISSING/warning pair.
           #
           # goldshore.ai (apex) and api.goldshore.ai are deliberately NOT in
           # this list: verified via the raw Cloudflare API that both have
@@ -617,6 +629,12 @@ jobs:
 
             LIST_RESP=$(curl -sS -w '\n%{http_code}' \
               "$CF_API/zones/$ZID/dns_records?name=$FULL_NAME&type=$TYPE" \
+            TYPE=$(echo "$rec" | jq -r '.type')
+            CONTENT=$(echo "$rec" | jq -r '.content')
+            PROXIED=$(echo "$rec" | jq -r '.proxied')
+
+            LIST_RESP=$(curl -sS -w '\n%{http_code}' \
+              "$CF_API/zones/$ZID_AI/dns_records?name=$FULL_NAME&type=$TYPE" \
               -H "Authorization: Bearer $CF_TOKEN")
             LIST_STATUS="${LIST_RESP##*$'\n'}"
             LIST_BODY="${LIST_RESP%$'\n'*}"
@@ -658,6 +676,7 @@ jobs:
                 '{type:$t,name:$n,content:$c,proxied:$p,ttl:1}')
               CREATE_RESP=$(echo "$BODY" | curl -sS -w '\n%{http_code}' -X POST \
                 "$CF_API/zones/$ZID/dns_records" \
+                "$CF_API/zones/$ZID_AI/dns_records" \
                 -H "Authorization: Bearer $CF_TOKEN" \
                 -H "Content-Type: application/json" \
                 --data @-)
@@ -686,6 +705,7 @@ jobs:
               '{type:$t,name:$n,content:$c,proxied:$p,ttl:1}')
             UPDATE_RESP=$(echo "$BODY" | curl -sS -w '\n%{http_code}' -X PUT \
               "$CF_API/zones/$ZID/dns_records/$EXISTING_ID" \
+              "$CF_API/zones/$ZID_AI/dns_records/$EXISTING_ID" \
               -H "Authorization: Bearer $CF_TOKEN" \
               -H "Content-Type: application/json" \
               --data @-)
