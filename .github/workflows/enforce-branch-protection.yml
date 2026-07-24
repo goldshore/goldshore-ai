@@ -20,9 +20,18 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 22
+      - name: Skip when GH_PAT is missing
+        if: ${{ secrets.GH_PAT == '' }}
+        run: echo "::warning::GH_PAT is missing; skipping branch protection reconciliation."
       - name: Apply branch protection
+        if: ${{ secrets.GH_PAT != '' }}
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           PROTECTED_BRANCH: main
-        run: node scripts/configure-branch-protection.mjs
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::warning::GH_PAT is not configured; skipping branch protection enforcement."
+            exit 0
+          fi
+          node scripts/configure-branch-protection.mjs

@@ -6,14 +6,19 @@ on:
     paths:
       - 'apps/gs-api/**'
       - 'packages/**'
+      - 'package.json'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
+      - '.node-version'
+      - '.nvmrc'
       - '.github/workflows/deploy-gs-api.yml'
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: production
     permissions:
       contents: read
     env:
@@ -49,4 +54,66 @@ jobs:
           echo "CLOUDFLARE_BUILD_API_TOKEN=$token" >> "$GITHUB_ENV"
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @goldshore/gs-api build
-      - run: pnpm --filter @goldshore/gs-api deploy
+      - name: Provision gs-api Worker secrets
+        working-directory: apps/gs-api
+        env:
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          ACCESS_CLIENT_SECRET: ${{ secrets.ACCESS_CLIENT_SECRET }}
+          CONTROL_SYNC_TOKEN: ${{ secrets.CONTROL_SYNC_TOKEN }}
+          INTEGRATION_MASTER_KEY: ${{ secrets.INTEGRATION_MASTER_KEY }}
+          MAILCHANNELS_SENDER_EMAIL: ${{ secrets.MAILCHANNELS_SENDER_EMAIL }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GOOGLE_API_GEMINI }}
+        run: |
+          node <<'NODE' > worker-secrets.json
+          const names = [
+            'JWT_SECRET',
+            'ACCESS_CLIENT_SECRET',
+            'CONTROL_SYNC_TOKEN',
+            'INTEGRATION_MASTER_KEY',
+            'MAILCHANNELS_SENDER_EMAIL',
+            'OPENAI_API_KEY',
+            'GEMINI_API_KEY',
+          ];
+          const secrets = Object.fromEntries(
+            names.map((name) => [name, process.env[name]]).filter(([, value]) => value),
+          );
+          const required = ['JWT_SECRET', 'ACCESS_CLIENT_SECRET', 'CONTROL_SYNC_TOKEN'];
+          const missing = required.filter((name) => !secrets[name]);
+          if (missing.length) throw new Error(`Missing required GitHub secrets: ${missing.join(', ')}`);
+          process.stdout.write(JSON.stringify(secrets));
+          NODE
+          pnpm exec wrangler secret bulk worker-secrets.json --env prod
+          rm worker-secrets.json
+      - run: pnpm --filter @goldshore/gs-api run deploy
+      - name: Provision gs-api Worker secrets
+        working-directory: apps/gs-api
+        env:
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          ACCESS_CLIENT_SECRET: ${{ secrets.ACCESS_CLIENT_SECRET }}
+          CONTROL_SYNC_TOKEN: ${{ secrets.CONTROL_SYNC_TOKEN }}
+          INTEGRATION_MASTER_KEY: ${{ secrets.INTEGRATION_MASTER_KEY }}
+          MAILCHANNELS_SENDER_EMAIL: ${{ secrets.MAILCHANNELS_SENDER_EMAIL }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GOOGLE_API_GEMINI }}
+        run: |
+          node <<'NODE' > worker-secrets.json
+          const names = [
+            'JWT_SECRET',
+            'ACCESS_CLIENT_SECRET',
+            'CONTROL_SYNC_TOKEN',
+            'INTEGRATION_MASTER_KEY',
+            'MAILCHANNELS_SENDER_EMAIL',
+            'OPENAI_API_KEY',
+            'GEMINI_API_KEY',
+          ];
+          const secrets = Object.fromEntries(
+            names.map((name) => [name, process.env[name]]).filter(([, value]) => value),
+          );
+          const required = ['JWT_SECRET', 'ACCESS_CLIENT_SECRET', 'CONTROL_SYNC_TOKEN'];
+          const missing = required.filter((name) => !secrets[name]);
+          if (missing.length) throw new Error(`Missing required GitHub secrets: ${missing.join(', ')}`);
+          process.stdout.write(JSON.stringify(secrets));
+          NODE
+          pnpm exec wrangler secret bulk worker-secrets.json --env prod
+          rm worker-secrets.json
