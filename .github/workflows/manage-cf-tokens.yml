@@ -103,6 +103,21 @@ jobs:
                   raise SystemExit(f"Cloudflare token is not active: {verified.get('status')}")
           else:
               raise SystemExit("No credentials. Configure CF_USER_TOKEN or both CF_AUTH_EMAIL and CF_AUTH_KEY as GitHub secrets.")
+
+          req = urllib.request.Request("https://api.cloudflare.com/client/v4/user", headers=headers)
+          try:
+              with urllib.request.urlopen(req) as r:
+                  data = json.loads(r.read())
+                  if data["success"]:
+                      u = data["result"]
+                      print(f"Auth method : {method}")
+                      print(f"Email       : {u.get('email')}")
+                      print(f"Username    : {u.get('username')}")
+                  else:
+                      raise SystemExit(f"Auth rejected: {data['errors']}")
+          except urllib.error.HTTPError as e:
+              body = e.read().decode()
+              raise SystemExit(f"HTTP {e.code} on /user:\n{body}")
           PY
 
       - name: List tokens
@@ -127,6 +142,11 @@ jobs:
               raise SystemExit("No credentials. Configure CF_USER_TOKEN or both CF_AUTH_EMAIL and CF_AUTH_KEY as GitHub secrets.")
 
           print(f"Auth method : {method}")
+
+          elif token:
+              headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+          else:
+              raise SystemExit("No credentials. Configure CF_USER_TOKEN or both CF_AUTH_EMAIL and CF_AUTH_KEY as GitHub secrets.")
 
           def cf_get(path):
               req = urllib.request.Request(
