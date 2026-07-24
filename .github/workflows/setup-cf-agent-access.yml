@@ -899,6 +899,14 @@ jobs:
           upsert_full_access "Goldshore API"     "api.goldshore.ai" "[]" \
             "gs-api gs-api-prod"
           assert_full_access_policies "Goldshore API" "api.goldshore.ai"
+          # aud_workers lists only "gs-api-prod": the account has no Worker
+          # script literally named "gs-api" (confirmed via workers list --
+          # apps/gs-api/wrangler.toml only ever deploys via --env prod/preview,
+          # producing gs-api-prod; a bare "gs-api" was never actually deployed
+          # and 404s on PUT /workers/scripts/gs-api/secrets).
+          upsert_full_access "Goldshore API"     "api.goldshore.ai/goldclaw" "$API_PROTECTED_DOMAINS" \
+            "gs-api-prod" "$GS_API_ACCESS_AUD"
+          assert_full_access_policies "Goldshore API" "api.goldshore.ai/goldclaw" "$GS_API_ACCESS_AUD"
           # GoldShore MCP: human + agent per docs ("approved human identities and agents")
           upsert_full_access "GoldShore MCP"     "mcp.goldshore.ai" "[]" \
             "" \
@@ -988,6 +996,9 @@ jobs:
           }
           # Only the monorepo-owned production Worker is updated here. Bare
           # gs-api is intentionally reserved for marzton/goldshore-api rebuilds.
+          # No Worker script literally named "gs-api" exists in the account --
+          # apps/gs-api/wrangler.toml only deploys via --env prod/preview,
+          # producing gs-api-prod. See the matching fix on the AUD sync above.
           for WORKER in gs-api-prod; do
             echo "Setting secrets on $WORKER:"
             put_secret "$WORKER" CF_ACCESS_CLIENT_ID     "$CLIENT_ID"
