@@ -68,8 +68,8 @@ const getDocuments = async () => {
   }));
 };
 
-// Routes served via SSR (auth-protected portals, etc.) — not expected to be pre-rendered
-const SSR_PREFIXES = ['/app/', '/admin/'];
+// Routes served via SSR (auth-protected portals, redirect pages, etc.) — not expected to be pre-rendered
+const SSR_PREFIXES = ['/app/', '/admin/', '/login'];
 
 const getExpectedRoutes = async () => {
   const files = await walk(PAGES_DIR);
