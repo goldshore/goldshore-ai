@@ -161,59 +161,7 @@ jobs:
           require_app "GoldShore Trading - Schwab Callback" "trading.goldshore.ai/oauth/schwab/callback"
           require_app "GoldShore Trading - Robinhood Callback" "trading.goldshore.ai/oauth/robinhood/callback"
           require_app "Goldshore API - Public Probes" "api.goldshore.ai/health"
-          require_app "Goldshore Gateway - Public Probes" "gw.goldshore.ai/health"
-          require_app "Dashboard" "goldshore.ai/app"
-          require_app "GoldShore Admin" "admin.goldshore.ai"
-          require_app "GoldShore Trading" "trading.goldshore.ai"
-          require_app "Goldshore Ops" "ops.goldshore.ai"
-          require_app "Signals" "signals.goldshore.ai"
-          require_app "Goldshore API" "api.goldshore.ai"
-          require_app "GoldShore MCP" "mcp.goldshore.ai"
-          require_app "Goldshore Gateway" "gw.goldshore.ai"
-          require_app "GoldShore-Web-Preview" "preview.goldshore.ai"
-
-          if [ "$INCLUDE_SSH_LAPTOP" = "true" ]; then
-            require_app "Temp HP Laptop SSH" "ssh-laptop.goldshore.ai"
-          fi
-          if [ "$INCLUDE_MCP_PORTAL" = "true" ]; then
-            require_app "Goldshore MCP Portal" "mcp.goldshore.ai"
-          fi
-
-          echo "skip_apps preflight passed; token rotation can safely proceed to policy refresh."
-
-      # ------------------------------------------------------------------ #
-      # 0a. When skip_apps=true, verify required apps exist before rotating
-      #     or revoking any service token. Policy refreshes still run later;
-      #     this guard only prevents issuing credentials that cannot be
-      #     attached to every required Access app.
-      # ------------------------------------------------------------------ #
-      - name: Preflight existing Access apps when app creation is skipped
-        if: ${{ inputs.skip_apps }}
-        env:
-          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          INCLUDE_SSH_LAPTOP: ${{ inputs.include_ssh_laptop }}
-          INCLUDE_MCP_PORTAL: ${{ inputs.include_mcp_portal }}
-        run: |
-          set -euo pipefail
-
-          APPS=$(curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps" \
-            -H "Authorization: Bearer $CF_TOKEN")
-
-          require_app() {
-            local name="$1" domain="${2:-}"
-            local id
-            id=$(echo "$APPS" | jq -r --arg n "$name" --arg d "$domain" \
-              '[.result[] | select(.name == $n or ($d != "" and ((.domain == $d) or ((.self_hosted_domains // []) | index($d)))))] | first | .id // empty')
-            if [ -z "$id" ]; then
-              echo "::error::skip_apps=true but required Access app is missing: $name ($domain)."
-              return 1
-            fi
-            echo "Preflight found Access app [$name]: $id"
-          }
-
-          require_app "GoldShore Trading - Schwab Callback" "trading.goldshore.ai/oauth/schwab/callback"
-          require_app "GoldShore Trading - Robinhood Callback" "trading.goldshore.ai/oauth/robinhood/callback"
-          require_app "Goldshore API - Public Probes" "api.goldshore.ai/health"
+          require_app "Goldshore API - Public Forms" "api.goldshore.ai/v1/forms/*"
           require_app "Goldshore Gateway - Public Probes" "gw.goldshore.ai/health"
           require_app "Dashboard" "goldshore.ai/app"
           require_app "GoldShore Admin" "admin.goldshore.ai"
@@ -249,9 +197,87 @@ jobs:
             jq -r --arg cid "$OLD_CLIENT_ID" \
             '.result[] | select(.client_id == $cid) | .id // empty')
           if [ -n "$OLD_UUID" ]; then
-            curl -sf -X DELETE \
+            # Cloudflare refuses to delete a service token still referenced by
+            # any Access policy (code 12139). Find and remove every such
+            # reference first -- this can include apps outside the set this
+            # workflow otherwise manages, so scan all apps' policies rather
+            # than assuming it's one of the 9 known ones.
+            APPS_RESP=$(curl -sS -w '\n%{http_code}' "$CF_API/accounts/$CF_ACCOUNT/access/apps" \
+              -H "Authorization: Bearer $CF_TOKEN")
+            APPS_STATUS="${APPS_RESP##*$'\n'}"
+            APPS_BODY="${APPS_RESP%$'\n'*}"
+            if [ "$APPS_STATUS" -lt 200 ] || [ "$APPS_STATUS" -ge 300 ]; then
+              echo "::warning::CF API GET /access/apps failed (HTTP $APPS_STATUS) while scanning for stale token references: $APPS_BODY"
+              ALL_APPS=""
+            else
+              ALL_APPS=$(echo "$APPS_BODY" | jq -r '.result[].id')
+            fi
+            for app_id in $ALL_APPS; do
+              POL_RESP=$(curl -sS -w '\n%{http_code}' "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies" \
+                -H "Authorization: Bearer $CF_TOKEN")
+              POL_STATUS="${POL_RESP##*$'\n'}"
+              POL_BODY="${POL_RESP%$'\n'*}"
+              if [ "$POL_STATUS" -lt 200 ] || [ "$POL_STATUS" -ge 300 ]; then
+                echo "::warning::CF API GET /access/apps/$app_id/policies failed (HTTP $POL_STATUS), skipping app: $POL_BODY"
+                continue
+              fi
+              STALE_POLICIES=$(echo "$POL_BODY" | \
+                jq -r --arg tid "$OLD_UUID" \
+                '.result[] | select(.include[]?.service_token.token_id? == $tid) | .id // empty')
+              for pol_id in $STALE_POLICIES; do
+                [ -z "$pol_id" ] && continue
+                DP_STATUS=$(curl -sS -o /dev/null -w '%{http_code}' -X DELETE \
+                  "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies/$pol_id" \
+                  -H "Authorization: Bearer $CF_TOKEN")
+                if [ "$DP_STATUS" -lt 200 ] || [ "$DP_STATUS" -ge 300 ]; then
+                  # App-scoped delete failing (400) means this is a reusable
+                  # policy shared across apps (Cloudflare confirmed via 409
+                  # on account-level DELETE while app_count > 0: it refuses
+                  # to delete a reusable policy still in use anywhere).
+                  # These are real, actively-used allow-lists (e.g. named
+                  # "Cloudflare Workers Preview URLs", covering human emails
+                  # + device posture + GitHub org + the old token), possibly
+                  # attached to apps outside the 9 this workflow manages
+                  # (Cloudflare's own App Launcher, seen in practice). The
+                  # correct fix is editing the policy to drop only the old
+                  # token's include entry, not deleting the whole thing.
+                  APP_NAME=$(curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id" \
+                    -H "Authorization: Bearer $CF_TOKEN" | jq -r '.result.name // "?"' || echo "?")
+                  POL_DEF=$(curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/policies/$pol_id" \
+                    -H "Authorization: Bearer $CF_TOKEN" || echo '{}')
+                  POL_RESULT=$(echo "$POL_DEF" | jq -c '.result // .')
+                  echo "::notice::Policy $pol_id is reusable (app-scoped delete HTTP $DP_STATUS). Attached app: [$APP_NAME] ($app_id). Full definition: $POL_RESULT"
+                  NEW_INCLUDE=$(echo "$POL_RESULT" | jq -c --arg tid "$OLD_UUID" \
+                    '[.include[] | select((.service_token.token_id // "") != $tid)]')
+                  UPDATE_BODY=$(echo "$POL_RESULT" | jq -c --argjson inc "$NEW_INCLUDE" \
+                    '{name, decision, include: $inc, exclude, require}')
+                  UPD_RESP=$(echo "$UPDATE_BODY" | curl -sS -w '\n%{http_code}' -X PUT \
+                    "$CF_API/accounts/$CF_ACCOUNT/access/policies/$pol_id" \
+                    -H "Authorization: Bearer $CF_TOKEN" \
+                    -H "Content-Type: application/json" \
+                    --data @-)
+                  UPD_STATUS="${UPD_RESP##*$'\n'}"
+                  UPD_BODY="${UPD_RESP%$'\n'*}"
+                  if [ "$UPD_STATUS" -lt 200 ] || [ "$UPD_STATUS" -ge 300 ]; then
+                    echo "::warning::CF API PUT reusable policy $pol_id (dropping old-token entry) failed (HTTP $UPD_STATUS), continuing: $UPD_BODY"
+                    continue
+                  fi
+                  echo "Edited reusable policy $pol_id [$(echo "$POL_RESULT" | jq -r '.name')]: removed old-token include entry, kept the rest"
+                  continue
+                fi
+                echo "Removed stale policy $pol_id (app $app_id) referencing old token"
+              done
+            done
+            DEL_RESP=$(curl -sS -w '\n%{http_code}' -X DELETE \
               "$CF_API/accounts/$CF_ACCOUNT/access/service_tokens/$OLD_UUID" \
-              -H "Authorization: Bearer $CF_TOKEN" | jq -r '.success'
+              -H "Authorization: Bearer $CF_TOKEN")
+            DEL_STATUS="${DEL_RESP##*$'\n'}"
+            DEL_BODY="${DEL_RESP%$'\n'*}"
+            if [ "$DEL_STATUS" -lt 200 ] || [ "$DEL_STATUS" -ge 300 ]; then
+              echo "::error::CF API DELETE /access/service_tokens/$OLD_UUID failed (HTTP $DEL_STATUS): $DEL_BODY"
+              exit 1
+            fi
+            echo "$DEL_BODY" | jq -r '.success'
             echo "Revoked token UUID: $OLD_UUID"
           else
             echo "Compromised token not found — already revoked or never existed."
@@ -318,12 +344,23 @@ jobs:
           # push_worker_secret is also used here to keep Worker AUD secrets in sync
           push_worker_secret() {
             local worker="$1" key="$2" val="$3"
-            curl -sf -X PUT \
+            local resp status body
+            resp=$(curl -sS -w '\n%{http_code}' -X PUT \
               "$CF_API/accounts/$CF_ACCOUNT/workers/scripts/$worker/secrets" \
               -H "Authorization: Bearer $CF_TOKEN" \
               -H "Content-Type: application/json" \
-              -d "{\"name\":\"$key\",\"text\":\"$val\",\"type\":\"secret_text\"}" \
-              | jq -r '"  \(.result.name // "?") => \(.success)"'
+              -d "{\"name\":\"$key\",\"text\":\"$val\",\"type\":\"secret_text\"}")
+            status="${resp##*$'\n'}"
+            body="${resp%$'\n'*}"
+            if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+              # Non-fatal: this is a best-effort convenience sync (e.g. Cloudflare's
+              # "latest version not deployed" 10215 when Gradual Deployments has a
+              # pending version) and must not block the Access apps/policies that
+              # follow it in the script.
+              echo "::warning::CF API PUT /workers/scripts/$worker/secrets failed for key=[$key] (HTTP $status), continuing: $body"
+              return 0
+            fi
+            echo "$body" | jq -r '"  \(.result.name // "?") => \(.success)"'
           }
 
           find_app() {
@@ -336,6 +373,11 @@ jobs:
                 or ($aud != "" and .aud == $aud)
                 or ($d != "" and ((.domain == $d) or ((.self_hosted_domains // []) | index($d))))
               )] | first | .id // empty'
+            local name="$1" domain="${2:-}"
+            curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps" \
+              -H "Authorization: Bearer $CF_TOKEN" | \
+            jq -r --arg n "$name" --arg d "$domain" \
+              '[.result[] | select(.name == $n or ($d != "" and ((.domain == $d) or ((.self_hosted_domains // []) | index($d)))))] | first | .id // empty'
           }
 
           access_app_payload() {
@@ -345,7 +387,7 @@ jobs:
               --arg d "$domain" \
               --argjson ed "$extra_domains" \
               '{name:$n,type:"self_hosted",domain:$d,
-                self_hosted_domains:([$d] + $ed),
+                self_hosted_domains:(([$d] + $ed) | unique),
                 session_duration:"24h",
                 http_only_cookie_attribute:true,
                 auto_redirect_to_identity:false}'
@@ -358,6 +400,36 @@ jobs:
           # rotation before policies and secrets are refreshed.
           update_app() {
             local app_id="$1" name="$2" domain="$3" extra_domains="${4:-[]}"
+            local resp status body
+            resp=$(access_app_payload "$name" "$domain" "$extra_domains" | \
+              curl -sS -w '\n%{http_code}' -X PUT "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id" \
+                -H "Authorization: Bearer $CF_TOKEN" \
+                -H "Content-Type: application/json" \
+                --data @-)
+            status="${resp##*$'\n'}"
+            body="${resp%$'\n'*}"
+            if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+              echo "::error::CF API PUT /access/apps/$app_id failed for [$name] domain=[$domain] (HTTP $status): $body" >&2
+              exit 1
+            fi
+            echo "$body" | jq -r '"  updated app => \(.success)"'
+          }
+
+          get_app_aud() {
+            local app_id="$1"
+            curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id" \
+              -H "Authorization: Bearer $CF_TOKEN" | \
+            jq -r '.result.aud // empty'
+          }
+
+          sync_aud_workers() {
+            local aud="$1" aud_workers="${2:-}"
+            if [ -n "$aud_workers" ] && [ -n "$aud" ]; then
+              echo "  Propagating CLOUDFLARE_ACCESS_AUDIENCE to: $aud_workers"
+              for w in $aud_workers; do
+                push_worker_secret "$w" CLOUDFLARE_ACCESS_AUDIENCE "$aud"
+              done
+            fi
             access_app_payload "$name" "$domain" "$extra_domains" | \
             curl -sf -X PUT "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id" \
               -H "Authorization: Bearer $CF_TOKEN" \
@@ -386,6 +458,19 @@ jobs:
           # Caller extracts .result.id and .result.aud from the returned JSON.
           make_app_json() {
             local name="$1" domain="$2" extra_domains="${3:-[]}"
+            local resp status body
+            resp=$(access_app_payload "$name" "$domain" "$extra_domains" | \
+              curl -sS -w '\n%{http_code}' -X POST "$CF_API/accounts/$CF_ACCOUNT/access/apps" \
+                -H "Authorization: Bearer $CF_TOKEN" \
+                -H "Content-Type: application/json" \
+                --data @-)
+            status="${resp##*$'\n'}"
+            body="${resp%$'\n'*}"
+            if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+              echo "::error::CF API POST /access/apps failed for [$name] domain=[$domain] (HTTP $status): $body" >&2
+              exit 1
+            fi
+            echo "$body"
             access_app_payload "$name" "$domain" "$extra_domains" | \
             curl -sf -X POST "$CF_API/accounts/$CF_ACCOUNT/access/apps" \
               -H "Authorization: Bearer $CF_TOKEN" \
@@ -421,6 +506,23 @@ jobs:
 
           # Delete only non-bypass policies so health-check and OAuth callback
           # bypass rules (on existing apps) are preserved across token rotations.
+          # Deleting stale policies is cleanup, not core correctness -- the
+          # replacement policies still get added right after by the caller
+          # regardless, so a failed delete here (leaving one stale duplicate)
+          # must not abort the whole run.
+          delete_policy() {
+            local app_id="$1" pol_id="$2"
+            local status
+            status=$(curl -sS -o /dev/null -w '%{http_code}' -X DELETE \
+              "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies/$pol_id" \
+              -H "Authorization: Bearer $CF_TOKEN")
+            if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+              echo "::warning::CF API DELETE policy $pol_id on app $app_id failed (HTTP $status), continuing"
+              return 0
+            fi
+            echo "  Deleted old policy: $pol_id"
+          }
+
           refresh_policies() {
             local app_id="$1"
             curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies" \
@@ -428,10 +530,7 @@ jobs:
             jq -r '.result[] | select(.decision != "bypass") | .id // empty' | \
             while read -r pol_id; do
               [ -z "$pol_id" ] && continue
-              curl -sf -X DELETE \
-                "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies/$pol_id" \
-                -H "Authorization: Bearer $CF_TOKEN" > /dev/null
-              echo "  Deleted old policy: $pol_id"
+              delete_policy "$app_id" "$pol_id"
             done
           }
 
@@ -442,10 +541,7 @@ jobs:
             jq -r '.result[] | .id // empty' | \
             while read -r pol_id; do
               [ -z "$pol_id" ] && continue
-              curl -sf -X DELETE \
-                "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies/$pol_id" \
-                -H "Authorization: Bearer $CF_TOKEN" > /dev/null
-              echo "  Deleted old bypass-app policy: $pol_id"
+              delete_policy "$app_id" "$pol_id"
             done
           }
 
@@ -456,6 +552,8 @@ jobs:
           upsert_full_access() {
             local name="$1" domain="$2" extra_domains="${3:-[]}" aud_workers="${4:-}" expected_aud="${5:-}"
             AID=$(find_app "$name" "$domain" "$expected_aud")
+            local name="$1" domain="$2" extra_domains="${3:-[]}" aud_workers="${4:-}"
+            AID=$(find_app "$name" "$domain")
             if [ -n "$AID" ]; then
               echo "Found existing app [$name]: $AID — updating domains, refreshing policies, and syncing AUD"
               update_app "$AID" "$name" "$domain" "$extra_domains"
@@ -476,16 +574,6 @@ jobs:
               add_policy "$AID" "Owner access"     "allow"        "$OWNER_INCLUDE"
               sync_aud_workers "$AUD" "$aud_workers"
             fi
-            policies=$(curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies" \
-              -H "Authorization: Bearer $CF_TOKEN")
-            echo "$policies" | jq -e '.result[] | select(.decision == "allow" and .name == "Owner access")' > /dev/null || {
-              echo "::error::[$app_name] is missing the Owner access allow policy required for browser Cloudflare Access sessions."
-              MISSING_REQUIRED_APPS=1
-            }
-            echo "$policies" | jq -e '.result[] | select(.decision == "non_identity" and .name == "Goldshore agents")' > /dev/null || {
-              echo "::error::[$app_name] is missing the Goldshore agents service-token policy required for machine access."
-              MISSING_REQUIRED_APPS=1
-            }
           }
 
 
@@ -510,12 +598,36 @@ jobs:
             }
           }
 
+
+          assert_full_access_policies() {
+            local app_name="$1" domain="$2" expected_aud="${3:-}"
+            local app_id policies
+            app_id=$(find_app "$app_name" "$domain" "$expected_aud")
+            if [ -z "$app_id" ]; then
+              echo "::error::Cannot verify Access policies for [$app_name]; app was not found."
+              MISSING_REQUIRED_APPS=1
+              return
+            fi
+            policies=$(curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies" \
+              -H "Authorization: Bearer $CF_TOKEN")
+            echo "$policies" | jq -e '.result[] | select(.decision == "allow" and .name == "Owner access")' > /dev/null || {
+              echo "::error::[$app_name] is missing the Owner access allow policy required for browser Cloudflare Access sessions."
+              MISSING_REQUIRED_APPS=1
+            }
+            echo "$policies" | jq -e '.result[] | select(.decision == "non_identity" and .name == "Goldshore agents")' > /dev/null || {
+              echo "::error::[$app_name] is missing the Goldshore agents service-token policy required for machine access."
+              MISSING_REQUIRED_APPS=1
+            }
+          }
+
           # upsert_bypass_app: creates a path-scoped Access app with a bypass-everyone policy.
           # Used for public paths that must not hit the Access login wall.
           # CF Access resolves the more-specific path-scoped app before the broader allow app.
           upsert_bypass_app() {
             local name="$1" domain="$2" extra_domains="${3:-[]}" aliases="${4:-[]}"
             AID=$(find_app "$name" "$aliases")
+            local name="$1" domain="$2" extra_domains="${3:-[]}"
+            AID=$(find_app "$name" "$domain")
             if [ -n "$AID" ]; then
               echo "Found existing bypass app [$name]: $AID — updating domains and bypass policy"
               update_app "$AID" "$name" "$domain" "$extra_domains"
@@ -714,7 +826,15 @@ jobs:
           # API: /, /health, /status, /version must be reachable by monitoring.
           upsert_bypass_app "Goldshore API - Public Probes" \
             "api.goldshore.ai" \
-            '["api.goldshore.ai/health","api.goldshore.ai/health/*","api.goldshore.ai/status","api.goldshore.ai/version","api.goldshore.ai/version.json"]'
+            '["api.goldshore.ai/health*","api.goldshore.ai/status","api.goldshore.ai/version","api.goldshore.ai/version.json"]'
+
+          # Public websites submit contact, intake, and newsletter forms through
+          # this path. gs-api independently limits unauthenticated requests to
+          # POST /v1/forms/:formId/submissions; configs and lead-management
+          # endpoints remain protected by application authentication.
+          upsert_bypass_app "Goldshore API - Public Forms" \
+            "api.goldshore.ai/v1/forms/*" \
+            '[]'
 
           # Gateway: /health, /status, /version must be reachable by monitoring
           upsert_bypass_app "Goldshore Gateway - Public Probes" \
@@ -742,29 +862,58 @@ jobs:
             '["signals.goldshore.org","gs-signals-prod.goldshore.workers.dev"]'
           # Goldshore API: uses documented name and pinned AUD to match the
           # existing Access app/AUD in wrangler.toml before rotating tokens;
-          # pushes AUD to api workers on first-run creation (Gate 5e). Keep this
+          # pushes AUD to the canonical API workers on first-run creation (Gate 5e). Keep this
           # host on upsert_full_access (owner/user allow + service-token policy)
           # because browser-based admin routes call api.goldshore.ai with
           # credentials: 'include' and need a human Cloudflare Access session.
           # Service-token-only access is limited to machine-only/path-scoped apps.
-          upsert_full_access "Goldshore API"     "api.goldshore.ai" "[]" \
-            "gs-api gs-api-prod" "$GS_API_ACCESS_AUD"
           # Keep this app on the full api.goldshore.ai host and list every
           # protected route family served by gs-api so Access issues one AUD for
           # browser calls to /goldclaw, /admin, /users, /ai, /v1, etc. The public
           # probes above remain path-scoped bypass apps.
           API_PROTECTED_DOMAINS='["api.goldshore.ai/goldclaw","api.goldshore.ai/admin","api.goldshore.ai/users","api.goldshore.ai/ai","api.goldshore.ai/v1"]'
           upsert_full_access "Goldshore API"     "api.goldshore.ai" "$API_PROTECTED_DOMAINS" \
+            "gs-api gs-api-prod" "$GS_API_ACCESS_AUD"
+          assert_full_access_policies "Goldshore API" "api.goldshore.ai" "$GS_API_ACCESS_AUD"
+          # Bare "api.goldshore.ai" dropped as its own destination: with the
+          # 5 protected paths that's 6 destinations, over Cloudflare's 5-per-app
+          # cap (access.api.error.invalid_request: too many destinations for one
+          # app). The 5 specific paths are the authoritative protected surface;
+          # the bare host was redundant with them, not additive coverage.
+          API_PROTECTED_DOMAINS='["api.goldshore.ai/admin","api.goldshore.ai/users","api.goldshore.ai/ai","api.goldshore.ai/v1"]'
+          # aud_workers lists only "gs-api-prod" because live
+          # api.goldshore.ai traffic is routed there from this monorepo. Bare
+          # "gs-api" is intentionally reserved for the marzton/goldshore-api
+          # rebuild Worker and should be managed by that repository's deploy
+          # flow, not this monorepo Access sync.
+          upsert_full_access "Goldshore API"     "api.goldshore.ai/goldclaw" "$API_PROTECTED_DOMAINS" \
+            "gs-api-prod" "$GS_API_ACCESS_AUD"
+          assert_full_access_policies "Goldshore API" "api.goldshore.ai/goldclaw" "$GS_API_ACCESS_AUD"
+          # Goldshore API: uses documented name to match existing AUD in wrangler.toml;
+          # pushes AUD to api workers on first-run creation (Gate 5e). This must
+          # remain a full-access app (Owner access + Goldshore agents policies),
+          # not a service-token-only app: browser admin routes such as
+          # /admin/goldclaw call api.goldshore.ai with credentials: 'include'
+          # and gs-api expects Cloudflare Access user claims on protected routes.
+          # Keep service-token-only Access limited to machine-only/path-scoped apps.
+          upsert_full_access "Goldshore API"     "api.goldshore.ai" "[]" \
             "gs-api gs-api-prod"
           assert_full_access_policies "Goldshore API" "api.goldshore.ai"
+          # aud_workers lists only "gs-api-prod": the account has no Worker
+          # script literally named "gs-api" (confirmed via workers list --
+          # apps/gs-api/wrangler.toml only ever deploys via --env prod/preview,
+          # producing gs-api-prod; a bare "gs-api" was never actually deployed
+          # and 404s on PUT /workers/scripts/gs-api/secrets).
+          upsert_full_access "Goldshore API"     "api.goldshore.ai/goldclaw" "$API_PROTECTED_DOMAINS" \
+            "gs-api-prod" "$GS_API_ACCESS_AUD"
+          assert_full_access_policies "Goldshore API" "api.goldshore.ai/goldclaw" "$GS_API_ACCESS_AUD"
           # GoldShore MCP: human + agent per docs ("approved human identities and agents")
           upsert_full_access "GoldShore MCP"     "mcp.goldshore.ai" "[]" \
-            "gs-mcp" \
+            "" \
             '["MCP"]'
           # Goldshore Gateway: gw + agent share app+AUD (Gate 5d); human + agent access
           upsert_full_access "Goldshore Gateway" "gw.goldshore.ai" \
-            '["gateway.goldshore.ai","agent.goldshore.ai","gs-agent.goldshore.workers.dev"]' \
-            "gs-gateway-prod gs-agent gs-agent-prod"
+            '["gateway.goldshore.ai","agent.goldshore.ai"]'
           # GoldShore-Web-Preview: preview.goldshore.ai (INFRASTRUCTURE.md Gate 5)
           upsert_full_access "GoldShore-Web-Preview" "preview.goldshore.ai"
 
@@ -831,14 +980,26 @@ jobs:
           set -euo pipefail
           put_secret() {
             local worker="$1" key="$2" val="$3"
-            curl -sf -X PUT \
+            local resp status body
+            resp=$(curl -sS -w '\n%{http_code}' -X PUT \
               "$CF_API/accounts/$CF_ACCOUNT/workers/scripts/$worker/secrets" \
               -H "Authorization: Bearer $CF_TOKEN" \
               -H "Content-Type: application/json" \
-              -d "{\"name\":\"$key\",\"text\":\"$val\",\"type\":\"secret_text\"}" \
-              | jq -r '"  \(.result.name // "?") => \(.success)"'
+              -d "{\"name\":\"$key\",\"text\":\"$val\",\"type\":\"secret_text\"}")
+            status="${resp##*$'\n'}"
+            body="${resp%$'\n'*}"
+            if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+              echo "::warning::CF API PUT /workers/scripts/$worker/secrets failed for key=[$key] (HTTP $status), continuing: $body"
+              return 0
+            fi
+            echo "$body" | jq -r '"  \(.result.name // "?") => \(.success)"'
           }
-          for WORKER in gs-agent gs-agent-prod gs-mcp gs-api gs-api-prod gs-gateway-prod; do
+          # Only the monorepo-owned production Worker is updated here. Bare
+          # gs-api is intentionally reserved for marzton/goldshore-api rebuilds.
+          # No Worker script literally named "gs-api" exists in the account --
+          # apps/gs-api/wrangler.toml only deploys via --env prod/preview,
+          # producing gs-api-prod. See the matching fix on the AUD sync above.
+          for WORKER in gs-api-prod; do
             echo "Setting secrets on $WORKER:"
             put_secret "$WORKER" CF_ACCESS_CLIENT_ID     "$CLIENT_ID"
             put_secret "$WORKER" CF_ACCESS_CLIENT_SECRET "$CLIENT_SEC"
@@ -861,10 +1022,10 @@ jobs:
             echo "| Service token UUID | \`$TOKEN_UUID\` |"
             echo "| CF-Access-Client-Id | \`$CLIENT_ID\` |"
             echo "| GitHub secrets | goldshore-ai, goldshore-gateway, goldclaw |"
-            echo "| Worker secrets | gs-agent, gs-agent-prod, gs-mcp, gs-api, gs-api-prod, gs-gateway-prod |"
+            echo "| Worker secrets | gs-api-prod (bare gs-api is owned by marzton/goldshore-api) |"
             echo "| Bypass apps | Schwab Callback, Robinhood Callback, API Probes, Gateway Probes |"
             echo "| Full-access apps | Dashboard, GoldShore Admin, GoldShore Trading, Goldshore Ops, Signals, Goldshore API, GoldShore MCP, Goldshore Gateway, GoldShore-Web-Preview |"
-            echo "| Extra hostnames | admin.gs-admin.pages.dev (Admin), signals.goldshore.org + gs-signals-prod.goldshore.workers.dev (Signals), gs-api.goldshore.workers.dev (API), gs-agent.goldshore.workers.dev (Gateway) |"
+            echo "| Extra hostnames | signals.goldshore.org + gs-signals-prod.goldshore.workers.dev (Signals), gs-api.goldshore.workers.dev (API) |"
             echo "| Gated apps | Temp HP Laptop SSH (include_ssh_laptop=${{ inputs.include_ssh_laptop }}), Goldshore MCP Portal (include_mcp_portal=${{ inputs.include_mcp_portal }}) |"
             echo ""
             echo "> CF-Access-Client-Secret is stored in secrets only — never printed here."
