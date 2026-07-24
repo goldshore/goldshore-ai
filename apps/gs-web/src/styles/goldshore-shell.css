@@ -258,34 +258,6 @@
   line-height: 1.55;
 }
 
-.gs-shell-v284 .site-footer a { text-decoration: none; }
-
-.gs-shell-v284 .footer-meta-block {
-  position: absolute;
-  right: clamp(1rem, 5vw, 4rem);
-  bottom: clamp(1rem, 3vw, 2rem);
-  display: grid;
-  justify-items: end;
-  gap: 0.18rem;
-.gs-shell-v284 .site-footer a {
-  display: inline-flex;
-  max-width: 100%;
-  text-decoration: none;
-  transition: color 160ms ease, transform 160ms ease;
-}
-
-.gs-shell-v284 .site-footer a:hover {
-  color: var(--gs-primary, #d96a32);
-  transform: translateX(0.18rem);
-}
-
-.gs-shell-v284 .footer-meta-block {
-  position: absolute;
-  right: clamp(1rem, 5vw, 4rem);
-  bottom: clamp(1rem, 3vw, 2rem);
-  display: grid;
-  justify-items: end;
-  gap: 0.18rem;
 .gs-shell-v284 .site-footer a {
   display: inline-flex;
   max-width: 100%;
@@ -315,11 +287,6 @@
 
 .gs-shell-v284 .site-footer small {
   grid-column: 1 / -1;
-  padding-right: min(34vw, 20rem);
-  font-size: 0.78rem;
-  padding-right: 0;
-  font-size: 0.78rem;
-  padding-right: 0;
   font-size: 0.78rem;
   line-height: 1.65;
 }
