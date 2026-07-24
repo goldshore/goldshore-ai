@@ -24,6 +24,14 @@ const footerLinks = companyLinks;
 const currentPath = Astro.url.pathname;
 const mobileNavId = 'mobile-navigation';
 ---
+import Logo from '../components/brand/Logo.astro';
+import '@goldshore/theme/styles/tokens.css';
+import '@goldshore/theme/styles/base.css';
+import '@goldshore/theme/styles/components.css';
+import '@goldshore/theme/styles/layout.css';
+import '../styles/global.css';
+import { WEB_META_CSP } from '../utils/csp';
+import '../styles/goldshore-shell.css';
 
 <html lang="en">
   <head>
