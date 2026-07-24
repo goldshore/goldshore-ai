@@ -9,7 +9,9 @@ import { WEB_META_CSP } from '../utils/csp';
 import '../styles/goldshore-shell.css';
 import { primaryNavLinks, companyLinks } from '../config/navigation';
 
-const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.props;
+const { title, description, canonicalPath } = Astro.props;
+const ogTitle = Astro.props.ogTitle ?? title;
+const ogDescription = Astro.props.ogDescription ?? description;
 const canonicalUrl = canonicalPath
   ? new URL(canonicalPath, 'https://goldshore.ai').toString()
   : Astro.url.href;
