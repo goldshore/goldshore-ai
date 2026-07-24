@@ -400,8 +400,6 @@ jobs:
           curl -sS "$CF_API/accounts/$CF_ACCOUNT/access/apps?per_page=100" \
             -H "Authorization: Bearer $CF_BUILD_TOKEN" \
             | jq '[.result[]? | select((.domain // "" | test("mcp")) or (.name | test("MCP"; "i"))) | {id, name, type, domain, self_hosted_domains}]'
-
-jobs:
   reconcile:
     name: Reconcile DNS records
     runs-on: ubuntu-latest
@@ -517,13 +515,6 @@ jobs:
           # with code 81062 ("A DNS record managed by Workers already exists
           # on that host"). Skip CREATE for both rather than let every run log
           # a false MISSING/warning pair.
-          # preview.goldshore.ai reports as MISSING via a type=CNAME query
-          # despite being live and working today -- it's provisioned through
-          # a real Workers Custom Domain that doesn't show up as a plain
-          # CNAME through this API. Confirmed: Cloudflare rejected a real
-          # CREATE attempt with code 81062 ("A DNS record managed by Workers
-          # already exists on that host"). Skip CREATE rather than let every
-          # run log a false MISSING/warning pair.
           #
           # goldshore.ai (apex) and api.goldshore.ai are deliberately NOT in
           # this list: verified via the raw Cloudflare API that both have
