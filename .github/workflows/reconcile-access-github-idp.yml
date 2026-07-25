@@ -113,6 +113,7 @@ jobs:
             decision:"allow",
             include:[
               {"email_domain":{"domain":"goldshore.ai"}},
+              {"email_domain":{"domain":"goldshore.org"}},
               {"email":{"email":"marstonr6@gmail.com"}}
             ],
             exclude:[],
