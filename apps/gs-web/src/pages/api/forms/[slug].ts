@@ -108,10 +108,6 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     return new Response('Storage unavailable.', { status: 503 });
   }
 
-  const auth = await requirePermission(request, env as AccessEnv, 'forms:read');
-  if (auth.response) {
-    return auth.response;
-  }
   if (!isSameOriginRequest(request)) {
     return forbiddenResponse('Forbidden: CSRF check failed.');
   }
@@ -183,9 +179,7 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     },
   });
 
-  return new Response(response.body, { status: response.status, headers: response.headers });
 };
 
 export const GET: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
-export const PUT: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
 export const PATCH = PUT;
