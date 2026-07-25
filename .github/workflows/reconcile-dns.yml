@@ -46,86 +46,6 @@ on:
         type: boolean
 
 jobs:
-  apply-safe-dns-fixes:
-    name: 'THROWAWAY -- check whether signals.goldshore.ai is already live via Workers Custom Domain (read-only, no PR)'
-    runs-on: ubuntu-latest
-    permissions: {}
-    env:
-      CF_API: https://api.cloudflare.com/client/v4
-      CF_ACCOUNT: f77de112d2019e5456a3198a8bb50bd2
-      CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-    steps:
-      - name: Check account-level Workers Custom Domains for signals.goldshore.ai
-        shell: bash
-        run: |
-          set -euo pipefail
-          auth=(-H "Authorization: Bearer $CF_TOKEN")
-          curl -sS "$CF_API/accounts/$CF_ACCOUNT/workers/domains" "${auth[@]}" \
-            | jq '[.result[]? | select(.hostname == "signals.goldshore.ai")]'
-
-      - name: OLD -- apply www.goldshore.ai, admin-preview.goldshore.ai, mcp.goldshore.ai (already applied, kept for reference)
-        if: false
-        shell: bash
-        run: |
-          set -euo pipefail
-          auth=(-H "Authorization: Bearer $CF_TOKEN")
-
-          api_call() {
-            local method="$1" url="$2" data="${3:-}" resp status body
-            if [ -n "$data" ]; then
-              resp=$(curl -sS -w '\n%{http_code}' -X "$method" "$url" "${auth[@]}" -H 'Content-Type: application/json' --data "$data")
-            else
-              resp=$(curl -sS -w '\n%{http_code}' -X "$method" "$url" "${auth[@]}")
-            fi
-            status="${resp##*$'\n'}"
-            body="${resp%$'\n'*}"
-            if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
-              echo "::error::$method $url failed (HTTP $status): $body" >&2
-              exit 1
-            fi
-            echo "$body"
-          }
-
-          ZID=$(api_call GET "$CF_API/zones?name=goldshore.ai" | jq -r '.result[0].id')
-          test -n "$ZID"
-          echo "goldshore.ai zone: $ZID"
-
-          update_record() {
-            local name="$1" content="$2" proxied="$3" id body
-            id=$(api_call GET "$CF_API/zones/$ZID/dns_records?name=$name&type=CNAME" | jq -r '.result[0].id // empty')
-            if [ -z "$id" ]; then
-              echo "::error::No existing CNAME found for $name -- expected an UPDATE target, not a CREATE. Skipping."
-              return 1
-            fi
-            body=$(jq -nc --arg t CNAME --arg n "$name" --arg c "$content" --argjson p "$proxied" '{type:$t,name:$n,content:$c,proxied:$p,ttl:1}')
-            api_call PUT "$CF_API/zones/$ZID/dns_records/$id" "$body" >/dev/null
-            echo "Updated $name -> $content [proxied=$proxied]"
-          }
-
-          create_record() {
-            local name="$1" content="$2" proxied="$3" existing body
-            existing=$(api_call GET "$CF_API/zones/$ZID/dns_records?name=$name&type=CNAME" | jq -r '.result[0].id // empty')
-            if [ -n "$existing" ]; then
-              echo "$name already exists ($existing) -- skipping create."
-              return 0
-            fi
-            body=$(jq -nc --arg t CNAME --arg n "$name" --arg c "$content" --argjson p "$proxied" '{type:$t,name:$n,content:$c,proxied:$p,ttl:1}')
-            api_call POST "$CF_API/zones/$ZID/dns_records" "$body" >/dev/null
-            echo "Created $name -> $content [proxied=$proxied]"
-          }
-
-          update_record "www.goldshore.ai" "goldshore-org.goldshore.workers.dev" true
-          update_record "admin-preview.goldshore.ai" "gs-web-prod.goldshore.workers.dev" false
-          update_record "mcp.goldshore.ai" "goldshore-mcp-prod.goldshore.workers.dev" true
-          create_record "signals.goldshore.ai" "gs-signals-prod.goldshore.workers.dev" true
-
-          echo ""
-          echo "== verifying =="
-          for name in www.goldshore.ai admin-preview.goldshore.ai mcp.goldshore.ai signals.goldshore.ai; do
-            api_call GET "$CF_API/zones/$ZID/dns_records?name=$name&type=CNAME" | \
-              jq -r --arg n "$name" '.result[0] | "\($n): \(.content) [proxied=\(.proxied)]"'
-          done
-
   diagnostic-access-apps:
     name: DIAGNOSTIC -- full Access apps + domains + MCP policy re-check (throwaway, read-only, no PR)
     runs-on: ubuntu-latest
@@ -164,7 +84,7 @@ jobs:
               jq '[.result[] | {name, decision, include}]'
           fi
   fix-mcp-remove-allow-everyone:
-    name: 'Unlink the reusable "Service Login: allow everyone" policy from GoldShore MCP and Temp HP Laptop SSH'
+    name: 'FIX 2 -- unlink (not delete) the reusable "Service Login: allow everyone" policy from GoldShore MCP only (throwaway, no PR)'
     runs-on: ubuntu-latest
     permissions: {}
     env:
@@ -172,14 +92,7 @@ jobs:
       CF_ACCOUNT: f77de112d2019e5456a3198a8bb50bd2
       CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     steps:
-      # NOTE: the Access API rejects DELETE on a reusable policy through the
-      # per-app /access/apps/{id}/policies/{policy_id} endpoint (HTTP 400,
-      # "can not delete reusable policies through this endpoint"), and a PUT
-      # to that same collection endpoint returns HTTP 405. The only working
-      # method, confirmed against production: GET the full application
-      # object, drop the entry from its own `.policies` array, then PUT the
-      # whole application object back to /access/apps/{id}.
-      - name: Unlink the reusable "Service Login" policy from each named app, one at a time, verifying after each
+      - name: Unlink the reusable policy from GoldShore MCP's policy list (App Launcher and Temp HP Laptop SSH keep their own attachment, untouched)
         shell: bash
         run: |
           set -euo pipefail
@@ -201,43 +114,29 @@ jobs:
             echo "$body"
           }
 
-          fix_app() {
-            local app_name="$1" app_id app keep orig_count keep_count updated_app
-            echo "== $app_name =="
-            app_id=$(api_call GET "$CF_API/accounts/$CF_ACCOUNT/access/apps?per_page=100" | \
-              jq -r --arg n "$app_name" '.result[] | select(.name == $n) | .id')
-            if [ -z "$app_id" ]; then
-              echo "::error::App '$app_name' not found -- skipping."
-              return 1
-            fi
+          MCP_ID=$(api_call GET "$CF_API/accounts/$CF_ACCOUNT/access/apps?per_page=100" | \
+            jq -r '.result[] | select(.name == "GoldShore MCP") | .id')
+          test -n "$MCP_ID"
 
-            app=$(api_call GET "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id")
+          POLICIES=$(api_call GET "$CF_API/accounts/$CF_ACCOUNT/access/apps/$MCP_ID/policies")
+          echo "Current policies on GoldShore MCP:"
+          echo "$POLICIES" | jq '[.result[] | {id, name, decision}]'
 
-            keep=$(echo "$app" | jq -c '.result.policies | map(select(
-              if (type == "object") then (.name != "Service Login" and .id != "22b2ddc4-3037-426f-9018-b1058afde027")
-              else (. != "22b2ddc4-3037-426f-9018-b1058afde027")
-              end
-            ))')
-            orig_count=$(echo "$app" | jq '.result.policies | length')
-            keep_count=$(echo "$keep" | jq 'length')
-            echo "  policies: $orig_count -> $keep_count"
+          KEEP_IDS=$(echo "$POLICIES" | jq -c '[.result[] | select(.name != "Service Login") | .id]')
+          REMOVED_COUNT=$(echo "$POLICIES" | jq '[.result[] | select(.name == "Service Login")] | length')
 
-            if [ "$orig_count" = "$keep_count" ]; then
-              echo "  Service Login already absent -- nothing to do."
-              return 0
-            fi
+          if [ "$REMOVED_COUNT" = "0" ]; then
+            echo "No 'Service Login' policy attached to GoldShore MCP -- already removed."
+            exit 0
+          fi
 
-            updated_app=$(echo "$app" | jq --argjson keep "$keep" '.result | .policies = $keep')
-            api_call PUT "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id" "$updated_app" >/dev/null
+          echo "Setting GoldShore MCP's policy list to exclude 'Service Login' ($REMOVED_COUNT match(es) removed), keeping: $KEEP_IDS"
+          BODY=$(jq -nc --argjson ids "$KEEP_IDS" '{policies:$ids}')
+          api_call PUT "$CF_API/accounts/$CF_ACCOUNT/access/apps/$MCP_ID/policies" "$BODY" >/dev/null
 
-            echo "  Done. Effective policies now:"
-            api_call GET "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies" | \
-              jq '[.result[] | {name, decision}]'
-          }
-
-          fix_app "GoldShore MCP"
-          echo ""
-          fix_app "Temp HP Laptop SSH"
+          echo "Done. Policies now on GoldShore MCP:"
+          api_call GET "$CF_API/accounts/$CF_ACCOUNT/access/apps/$MCP_ID/policies" | \
+            jq '[.result[] | {name, decision, include}]'
   create-mcp-access-app:
     if: ${{ inputs.create_mcp_access }}
     name: Create missing GoldShore MCP Access Application
@@ -471,10 +370,68 @@ jobs:
       - name: Check mcp.goldshore.ai DNS record
         run: |
           set -euo pipefail
+          test -n "$CF_API_TOKEN"
+          auth=(-H "Authorization: Bearer $CF_API_TOKEN")
+
+          for zone in goldshore.ai goldshore.org armsway.com; do
+            zone_id=$(curl -fsS "$CF_API/zones?name=$zone" "${auth[@]}" | jq -r '.result[0].id // empty')
+            test -n "$zone_id"
+            curl -fsS -X PATCH "$CF_API/zones/$zone_id/settings/ssl" "${auth[@]}" \
+              -H 'Content-Type: application/json' --data '{"value":"strict"}' >/dev/null
+            curl -fsS -X PATCH "$CF_API/zones/$zone_id/settings/min_tls_version" "${auth[@]}" \
+              -H 'Content-Type: application/json' --data '{"value":"1.2"}' >/dev/null
+            echo "Hardened TLS: $zone"
+          done
+
+          # Bot Fight Mode challenges the admin login before Access can
+          # evaluate the user. Managed WAF, DDoS protection, Access, strict
+          # SSL, and TLS 1.2 remain enabled.
+          for zone in goldshore.ai goldshore.org; do
+            zone_id=$(curl -fsS "$CF_API/zones?name=$zone" "${auth[@]}" | jq -r '.result[0].id // empty')
+            curl -fsS -X PUT "$CF_API/zones/$zone_id/bot_management" "${auth[@]}" \
+              -H 'Content-Type: application/json' --data '{"fight_mode":false}' >/dev/null
+            echo "Disabled Bot Fight Mode: $zone"
+          done
+
+          reconcile_route() {
+            local zone="$1" pattern="$2" script="$3" zone_id routes route_id body
+            zone_id=$(curl -fsS "$CF_API/zones?name=$zone" "${auth[@]}" | jq -r '.result[0].id // empty')
+            routes=$(curl -fsS "$CF_API/zones/$zone_id/workers/routes" "${auth[@]}")
+            route_id=$(jq -r --arg pattern "$pattern" '.result[] | select(.pattern == $pattern) | .id' <<<"$routes")
+            body=$(jq -nc --arg pattern "$pattern" --arg script "$script" '{pattern:$pattern,script:$script}')
+            if [[ -n "$route_id" ]]; then
+              curl -fsS -X PUT "$CF_API/zones/$zone_id/workers/routes/$route_id" "${auth[@]}" \
+                -H 'Content-Type: application/json' --data "$body" >/dev/null
+            else
+              curl -fsS -X POST "$CF_API/zones/$zone_id/workers/routes" "${auth[@]}" \
+                -H 'Content-Type: application/json' --data "$body" >/dev/null
+            fi
+            echo "Reconciled route: $pattern -> $script"
+          }
+            echo "CF_BUILD_TOKEN=$token" >> "$GITHUB_ENV"
+          fi
+
+      - name: Check mcp.goldshore.ai DNS record
+        run: |
+          set -euo pipefail
           ZID=$(curl -sS "$CF_API/zones?name=goldshore.ai" -H "Authorization: Bearer $CF_TOKEN" | jq -r '.result[0].id // empty')
           echo "== raw DNS records matching mcp.goldshore.ai =="
           curl -sS "$CF_API/zones/$ZID/dns_records?name=mcp.goldshore.ai" -H "Authorization: Bearer $CF_TOKEN" | jq '.result'
 
+          reconcile_route goldshore.ai 'goldshore.ai/*' gs-web-prod
+          reconcile_route goldshore.ai 'admin.goldshore.ai/*' gs-web-prod
+          reconcile_route goldshore.ai 'admin-preview.goldshore.ai/*' gs-web-prod
+          reconcile_route goldshore.ai 'api.goldshore.ai/*' gs-api-prod
+          reconcile_route goldshore.ai 'agent.goldshore.ai/*' gs-api-prod
+          reconcile_route goldshore.ai 'mail.goldshore.ai/*' gs-api-prod
+          reconcile_route goldshore.ai 'ops.goldshore.ai/*' gs-api-prod
+          reconcile_route goldshore.ai 'trading.goldshore.ai/*' gs-api-prod
+          reconcile_route goldshore.ai 'dashboard.goldshore.ai/*' gs-api-prod
+          reconcile_route goldshore.ai 'dash.goldshore.ai/*' gs-api-prod
+          reconcile_route goldshore.ai 'gw.goldshore.ai/*' gs-api-prod
+          reconcile_route goldshore.org 'goldshore.org/*' gs-web-prod
+          reconcile_route goldshore.org 'admin.goldshore.org/*' gs-web-prod
+          reconcile_route goldshore.org 'api.goldshore.org/*' gs-api-prod
           echo "== account-level Workers Custom Domains matching mcp =="
           curl -sS "$CF_API/accounts/$CF_ACCOUNT/workers/domains" -H "Authorization: Bearer $CF_TOKEN" \
             | jq '[.result[]? | select(.hostname | test("mcp"))]'
@@ -487,6 +444,8 @@ jobs:
           curl -sS "$CF_API/accounts/$CF_ACCOUNT/access/apps?per_page=100" \
             -H "Authorization: Bearer $CF_BUILD_TOKEN" \
             | jq '[.result[]? | select((.domain // "" | test("mcp")) or (.name | test("MCP"; "i"))) | {id, name, type, domain, self_hosted_domains}]'
+
+jobs:
   reconcile:
     name: Reconcile DNS records
     runs-on: ubuntu-latest
@@ -505,28 +464,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-
-      - name: DIAGNOSTIC -- check goldshore-jobs queue consumers and backlog (throwaway, read-only, no PR)
-        run: |
-          set -euo pipefail
-          ACCOUNT_ID="f77de112d2019e5456a3198a8bb50bd2"
-
-          echo "== all Queues in account =="
-          QUEUES=$(curl -sS "$CF_API/accounts/$ACCOUNT_ID/queues" -H "Authorization: Bearer $CF_TOKEN")
-          echo "$QUEUES" | jq '[.result[] | {queue_id, queue_name}]'
-
-          QID=$(echo "$QUEUES" | jq -r '.result[] | select(.queue_name=="goldshore-jobs") | .queue_id')
-          if [ -z "$QID" ]; then
-            echo "::error::Could not find queue_id for goldshore-jobs"
-            exit 0
-          fi
-          echo "goldshore-jobs queue_id: $QID"
-
-          echo "== goldshore-jobs queue detail (consumers, producers) =="
-          curl -sS "$CF_API/accounts/$ACCOUNT_ID/queues/$QID" -H "Authorization: Bearer $CF_TOKEN" | jq '.'
-
-          echo "== goldshore-jobs consumers list =="
-          curl -sS "$CF_API/accounts/$ACCOUNT_ID/queues/$QID/consumers" -H "Authorization: Bearer $CF_TOKEN" | jq '.'
 
       - name: Extract desired DNS records (excluding goldshore.org)
         run: |
@@ -592,6 +529,13 @@ jobs:
           # with code 81062 ("A DNS record managed by Workers already exists
           # on that host"). Skip CREATE for both rather than let every run log
           # a false MISSING/warning pair.
+          # preview.goldshore.ai reports as MISSING via a type=CNAME query
+          # despite being live and working today -- it's provisioned through
+          # a real Workers Custom Domain that doesn't show up as a plain
+          # CNAME through this API. Confirmed: Cloudflare rejected a real
+          # CREATE attempt with code 81062 ("A DNS record managed by Workers
+          # already exists on that host"). Skip CREATE rather than let every
+          # run log a false MISSING/warning pair.
           #
           # goldshore.ai (apex) and api.goldshore.ai are deliberately NOT in
           # this list: verified via the raw Cloudflare API that both have
@@ -617,6 +561,12 @@ jobs:
 
             LIST_RESP=$(curl -sS -w '\n%{http_code}' \
               "$CF_API/zones/$ZID/dns_records?name=$FULL_NAME&type=$TYPE" \
+            TYPE=$(echo "$rec" | jq -r '.type')
+            CONTENT=$(echo "$rec" | jq -r '.content')
+            PROXIED=$(echo "$rec" | jq -r '.proxied')
+
+            LIST_RESP=$(curl -sS -w '\n%{http_code}' \
+              "$CF_API/zones/$ZID_AI/dns_records?name=$FULL_NAME&type=$TYPE" \
               -H "Authorization: Bearer $CF_TOKEN")
             LIST_STATUS="${LIST_RESP##*$'\n'}"
             LIST_BODY="${LIST_RESP%$'\n'*}"
@@ -658,6 +608,7 @@ jobs:
                 '{type:$t,name:$n,content:$c,proxied:$p,ttl:1}')
               CREATE_RESP=$(echo "$BODY" | curl -sS -w '\n%{http_code}' -X POST \
                 "$CF_API/zones/$ZID/dns_records" \
+                "$CF_API/zones/$ZID_AI/dns_records" \
                 -H "Authorization: Bearer $CF_TOKEN" \
                 -H "Content-Type: application/json" \
                 --data @-)
@@ -686,6 +637,7 @@ jobs:
               '{type:$t,name:$n,content:$c,proxied:$p,ttl:1}')
             UPDATE_RESP=$(echo "$BODY" | curl -sS -w '\n%{http_code}' -X PUT \
               "$CF_API/zones/$ZID/dns_records/$EXISTING_ID" \
+              "$CF_API/zones/$ZID_AI/dns_records/$EXISTING_ID" \
               -H "Authorization: Bearer $CF_TOKEN" \
               -H "Content-Type: application/json" \
               --data @-)

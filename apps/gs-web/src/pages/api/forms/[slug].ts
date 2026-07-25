@@ -9,8 +9,6 @@ import { parseJson } from '@goldshore/utils';
 
 export const prerender = false;
 
-const apiBase = (env: Env | undefined) =>
-  (env?.PUBLIC_API || 'https://api.goldshore.ai').replace(/\/$/, '');
 const normalizeRow = (row: Record<string, string>) => ({
   id: row.id,
   slug: row.slug,
@@ -71,9 +69,10 @@ const requirePermission = async (
   return { response: null };
 };
 
-export const GET: APIRoute = async ({ request, locals, params }) => {
-  const env = locals.runtime?.env as Env | undefined;
-  const slug = params.slug;
+const proxy = async (request: Request, env: Env | undefined, slug?: string) => {
+  if (!slug) return new Response('Form slug is required.', { status: 400 });
+
+  if (!slug) return new Response('Form slug is required.', { status: 400 });
 
   if (!slug) return new Response('Form slug is required.', { status: 400 });
 
@@ -113,6 +112,10 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     return new Response('Storage unavailable.', { status: 503 });
   }
 
+  const auth = await requirePermission(request, env as AccessEnv, 'forms:read');
+  if (auth.response) {
+    return auth.response;
+  }
   if (!isSameOriginRequest(request)) {
     return forbiddenResponse('Forbidden: CSRF check failed.');
   }
@@ -183,4 +186,10 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
       updatedAt: now,
     },
   });
+
+  return new Response(response.body, { status: response.status, headers: response.headers });
 };
+
+export const GET: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
+export const PUT: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
+export const PATCH = PUT;
