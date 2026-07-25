@@ -89,4 +89,4 @@ jobs:
         run: pnpm build:pages
 
       - name: Deploy gs-web to Cloudflare Pages
-        run: pnpm exec wrangler pages deploy apps/gs-web/dist --project-name=gs-web-pages --branch=${{ github.ref_name }}
+        run: pnpm exec wrangler pages deploy apps/gs-web/dist/client --project-name=gs-web-pages --branch=${{ github.ref_name }}
