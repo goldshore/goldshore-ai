@@ -74,8 +74,6 @@ const proxy = async (request: Request, env: Env | undefined, slug?: string) => {
 
   if (!slug) return new Response('Form slug is required.', { status: 400 });
 
-  if (!slug) return new Response('Form slug is required.', { status: 400 });
-
   if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
   }
