@@ -111,6 +111,10 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     return new Response('Storage unavailable.', { status: 503 });
   }
 
+  const auth = await requirePermission(request, env as AccessEnv, 'forms:read');
+  if (auth.response) {
+    return auth.response;
+  }
   if (!isSameOriginRequest(request)) {
     return forbiddenResponse('Forbidden: CSRF check failed.');
   }
