@@ -1,9 +1,14 @@
 import type { APIRoute } from 'astro';
+import {
+  buildAdminSession,
+  verifyAccessWithClaims,
+  type AdminPermission,
+  type Env as AccessEnv,
+} from '@goldshore/auth';
+import { parseJson } from '@goldshore/utils';
 
 export const prerender = false;
 
-const apiBase = (env: Env | undefined) =>
-  (env?.PUBLIC_API || 'https://api.goldshore.ai').replace(/\/$/, '');
 const normalizeRow = (row: Record<string, string>) => ({
   id: row.id,
   slug: row.slug,
@@ -67,6 +72,8 @@ const requirePermission = async (
 const proxy = async (request: Request, env: Env | undefined, slug?: string) => {
   if (!slug) return new Response('Form slug is required.', { status: 400 });
 
+  if (!slug) return new Response('Form slug is required.', { status: 400 });
+
   if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
   }
@@ -74,10 +81,6 @@ const proxy = async (request: Request, env: Env | undefined, slug?: string) => {
   const auth = await requirePermission(request, env as AccessEnv, 'forms:read');
   if (auth.response) {
     return auth.response;
-  }
-
-  if (!slug) {
-    return new Response('Form slug is required.', { status: 400 });
   }
 
   const result = await env.PLATFORM_DB.prepare(
@@ -89,31 +92,28 @@ const proxy = async (request: Request, env: Env | undefined, slug?: string) => {
     .bind(slug)
     .all();
 
-const forwardedHeaders = (request: Request) => {
-  const headers = new Headers();
-  for (const name of ['accept', 'authorization', 'cookie', 'cf-connecting-ip', 'user-agent', 'content-type']) {
-    const value = request.headers.get(name);
-    if (value) headers.set(name, value);
+  const row = result?.results?.[0] as Record<string, string> | undefined;
+  if (!row) {
+    return new Response('Form not found.', { status: 404 });
   }
-  return headers;
+
+  return Response.json({ config: normalizeRow(row) });
 };
 
-const proxy = async (request: Request, env: Env | undefined, slug?: string) => {
-  if (!slug) return new Response('Form slug is required.', { status: 400 });
-
-  const target = new URL(`${apiBase(env)}/v1/forms/configs/${encodeURIComponent(slug)}`);
-  const response = await fetch(target, {
-    method: request.method,
-    headers: forwardedHeaders(request),
-    body: request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.text(),
 export const PUT: APIRoute = async ({ request, locals, params }) => {
   const env = locals.runtime?.env as Env | undefined;
   const slug = params.slug;
+
+  if (!slug) return new Response('Form slug is required.', { status: 400 });
 
   if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
   }
 
+  const auth = await requirePermission(request, env as AccessEnv, 'forms:read');
+  if (auth.response) {
+    return auth.response;
+  }
   if (!isSameOriginRequest(request)) {
     return forbiddenResponse('Forbidden: CSRF check failed.');
   }
@@ -121,10 +121,6 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
   const auth = await requirePermission(request, env as AccessEnv, 'forms:write');
   if (auth.response) {
     return auth.response;
-  }
-
-  if (!slug) {
-    return new Response('Form slug is required.', { status: 400 });
   }
 
   const payload = (await request.json()) as {

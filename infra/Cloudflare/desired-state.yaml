@@ -33,6 +33,12 @@ cloudflare:
       - name: "www"
         type: AAAA
         content: "100::"
+        type: CNAME
+        content: "goldshore-org.goldshore.workers.dev"
+        proxied: true
+      - name: "www.goldshore.org"
+        type: CNAME
+        content: "goldshore-org.goldshore.workers.dev"
         proxied: true
         zone: goldshore.org
 
@@ -48,8 +54,22 @@ cloudflare:
       - name: "admin-preview"
         type: CNAME
         content: "gs-web-prod.goldshore.workers.dev"
+      # apps/gs-web/wrangler.toml). admin.goldshore.org is out of scope here
+      # pending the separate goldshore.org ownership conflict
+      # (policy/ROUTE_POLICY.md vs docs/architecture/domain-ownership.md) --
+      # still points at the legacy gs-admin app until that's resolved.
+      - name: "admin"
+        type: CNAME
+        content: "gs-web-prod.goldshore.workers.dev"
         proxied: true
         zone: goldshore.ai
+      - name: "admin-preview"
+        type: CNAME
+        content: "gs-web-prod.goldshore.workers.dev"
+      # apps/gs-web/wrangler.toml). admin.goldshore.org is out of scope here
+      # pending the separate goldshore.org ownership conflict
+      # (policy/ROUTE_POLICY.md vs docs/architecture/domain-ownership.md) --
+      # still points at the legacy gs-admin app until that's resolved.
       - name: "admin"
         type: CNAME
         content: "gs-web-prod.goldshore.workers.dev"
@@ -98,6 +118,10 @@ cloudflare:
         type: CNAME
         content: "gs-api-prod.goldshore.workers.dev"
         proxied: true
+      - name: "dashboard"
+        type: CNAME
+        content: "gs-gateway-prod.goldshore.workers.dev"
+        proxied: true
       - name: "dash"
         type: CNAME
         content: "gs-api-prod.goldshore.workers.dev"
@@ -113,6 +137,18 @@ cloudflare:
       - name: "preview"
         type: CNAME
         content: "preview-gs-web.pages.dev"
+        proxied: true
+
+      # H. MCP server (goldshore-mcp-prod worker, deployed from marzton/goldshore)
+      - name: "mcp"
+        type: CNAME
+        content: "goldshore-mcp-prod.goldshore.workers.dev"
+        proxied: true
+
+      # I. Signals dashboard (gs-signals-prod workflow worker)
+      - name: "signals"
+        type: CNAME
+        content: "gs-signals-prod.goldshore.workers.dev"
         proxied: true
 
       # H. SendGrid domain authentication + DMARC
@@ -138,6 +174,29 @@ cloudflare:
     # not encode alternative IdPs as multiple Require selectors because
     # Cloudflare evaluates Require selectors conjunctively.
     policies:
+      # Dashboard: goldshore.ai/app — the main authenticated entry point served
+      # by gs-web. This is the app shown in the CF Access App Launcher as
+      # "Dashboard". Protects /app and all sub-paths; /health is public.
+      - name: "GoldShore-Dashboard"
+        domains:
+          - "goldshore.ai"
+        action: "allow"
+        paths:
+          - "/app*"
+        public_paths:
+          - "/health"
+          - "/version"
+        rules:
+          include:
+            - email_domain: "goldshore.ai"
+            - email: "marstonr6@gmail.com"
+            - email: "goldshorelabs@gmail.com"
+          allowed_identity_providers:
+            - "google_workspace"
+            - "github_goldshore_deploy"
+            - "github"
+            - "email_otp"
+
       - name: "GoldShore-Admin-ZT"
         domains:
           - "admin.goldshore.ai"
@@ -291,6 +350,7 @@ cloudflare:
           include:
             - email_domain: "goldshore.ai"
             - email: "marstonr6@gmail.com"
+            - email: "goldshorelabs@gmail.com"
           allowed_identity_providers:
             - "github_goldshore_deploy"
             - "github"

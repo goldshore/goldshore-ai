@@ -419,22 +419,6 @@ document.getElementById('open-access-modal')?.addEventListener('click', () => ac
 document.querySelector('.modal-close')?.addEventListener('click', () => accessModal?.close());
 accessModal?.addEventListener('click', e => { if (e.target === accessModal) accessModal.close(); });
 
-/* ── Host-aware admin links ────────────────────────────────────────────────────────────────────── */
-const adminHost = 'admin.goldshore.ai';
-const alternateAdminHost = 'admin.goldshore.org';
-document.querySelectorAll('[data-admin-access-link]').forEach(link => {
-  link.setAttribute('href', `https://${adminHost}/`);
-});
-document.querySelectorAll('[data-admin-alternate-link]').forEach(link => {
-  link.setAttribute('href', `https://${alternateAdminHost}/`);
-});
-document.querySelectorAll('[data-admin-alternate-title]').forEach(el => {
-  el.textContent = 'Admin .org';
-});
-document.querySelectorAll('[data-admin-alternate-copy]').forEach(el => {
-  el.textContent = 'Protected organisation alias';
-});
-
 /* ── Quick engage form ───────────────────────────────────────────────────────────────────────── */
 const qsForm    = document.getElementById('quick-form');
 const qsStarted = document.getElementById('qs-form-started');
