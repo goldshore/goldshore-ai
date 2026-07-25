@@ -122,6 +122,10 @@ cloudflare:
         type: CNAME
         content: "gs-gateway-prod.goldshore.workers.dev"
         proxied: true
+      - name: "dashboard"
+        type: CNAME
+        content: "gs-gateway-prod.goldshore.workers.dev"
+        proxied: true
       - name: "dash"
         type: CNAME
         content: "gs-api-prod.goldshore.workers.dev"
