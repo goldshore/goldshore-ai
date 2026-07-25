@@ -9,8 +9,6 @@ import { parseJson } from '@goldshore/utils';
 
 export const prerender = false;
 
-const apiBase = (env: Env | undefined) =>
-  (env?.PUBLIC_API || 'https://api.goldshore.ai').replace(/\/$/, '');
 const normalizeRow = (row: Record<string, string>) => ({
   id: row.id,
   slug: row.slug,
