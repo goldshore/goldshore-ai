@@ -201,26 +201,69 @@ jobs:
 
           print(f"Auth method : {method}")
 
-          PERM_MAP = {
-              "workers_scripts:edit": {"id": "e086da7e2179491d91ee5f35b3ca210a", "effect": "allow"},
-              "d1:edit":              {"id": "2efd5506f9c8494dacb1fa10a3e7d5b6", "effect": "allow"},
-              "kv_storage:edit":      {"id": "f7f0eda5697f475c90846e879bab8666", "effect": "allow"},
-              "pages:edit":           {"id": "3030687196b94b638145a3953da2b699", "effect": "allow"},
-              "workers_routes:edit":  {"id": "9af8e4e7548b4d6a985399dc62d20d6a", "effect": "allow"},
-              "account_settings:read":{"id": "0f093e63e3424b1c8e1f7d11d72c1e39", "effect": "allow"},
-              "r2_storage:edit":      {"id": "6a770521628a4a50b5e026ceebb55c1c", "effect": "allow"},
-              "queues:edit":          {"id": "fde1bf37f0cd48b8897b5bdc9e7d5e14", "effect": "allow"},
+          # Keyword aliases: shorthand input -> words that must appear in the CF group name
+          PERM_KEYWORDS = {
+              "workers_scripts:edit": (["workers scripts"], "edit"),
+              "workers_routes:edit":  (["workers routes"], "edit"),
+              "d1:edit":              (["d1"], "edit"),
+              "kv_storage:edit":      (["kv storage"], "edit"),
+              "pages:edit":           (["pages"], "edit"),
+              "account_settings:read":(["account settings"], "read"),
+              "r2_storage:edit":      (["r2 storage"], "edit"),
+              "queues:edit":          (["queues"], "edit"),
           }
+
+          # Fetch live permission group list so IDs are always current
+          def cf_get(path):
+              req = urllib.request.Request(
+                  f"https://api.cloudflare.com/client/v4/{path}",
+                  headers=headers,
+              )
+              try:
+                  with urllib.request.urlopen(req) as r:
+                      data = json.loads(r.read())
+                      if not data["success"]:
+                          raise SystemExit(f"CF API error on {path}: {data}")
+                      return data["result"]
+              except urllib.error.HTTPError as e:
+                  raise SystemExit(f"CF API HTTP {e.code} on {path}:\n{e.read().decode()}")
+
+          all_groups = cf_get("user/tokens/permission_groups")
+          print(f"Fetched {len(all_groups)} permission groups from Cloudflare API")
+
+          def find_group(keywords, effect):
+              kws = [k.lower() for k in keywords]
+              effect_lc = effect.lower()
+              for g in all_groups:
+                  name_lc = g["name"].lower()
+                  scope_lc = g.get("scope_type", "").lower() if "scope_type" in g else ""
+                  # match all keywords in name
+                  if all(k in name_lc for k in kws):
+                      # prefer group whose name contains the effect word
+                      if effect_lc in name_lc:
+                          return g["id"]
+              # fallback: first match without effect constraint
+              for g in all_groups:
+                  name_lc = g["name"].lower()
+                  if all(k in name_lc for k in kws):
+                      return g["id"]
+              return None
 
           perms = []
           for p in PERMS_RAW.split(","):
               p = p.strip()
               if not p:
                   continue
-              if p in PERM_MAP:
-                  perms.append({"id": PERM_MAP[p]["id"], "effect": PERM_MAP[p]["effect"]})
+              if p in PERM_KEYWORDS:
+                  keywords, effect = PERM_KEYWORDS[p]
+                  gid = find_group(keywords, effect)
+                  if gid:
+                      perms.append({"id": gid, "effect": "allow"})
+                      print(f"  ✓ {p} -> {gid}")
+                  else:
+                      print(f"  WARNING: no match found for '{p}' — skipping")
               else:
-                  print(f"WARNING: unknown permission '{p}', skipping")
+                  print(f"  WARNING: unknown permission shorthand '{p}', skipping")
 
           body = json.dumps({
               "name": NAME,
