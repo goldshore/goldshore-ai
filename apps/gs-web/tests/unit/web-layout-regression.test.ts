@@ -37,6 +37,8 @@ test('Gold Shore page templates compose the shared shell and column contract', a
     "Astro.slots.has('aside')",
     "'gs-shell-section'",
     "'gs-column-grid'",
+    "heroMotion?: 'none' | 'starfield' | 'parallax'",
+    '<VibrantHeroField mode={heroMotion} />',
   ]) {
     assert.ok(pageTemplate.includes(contract), `Page template must retain ${contract}`);
   }

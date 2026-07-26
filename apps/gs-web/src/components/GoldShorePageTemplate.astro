@@ -1,5 +1,6 @@
 ---
 import WebLayout from '../layouts/WebLayout.astro';
+import VibrantHeroField from './hero/VibrantHeroField.astro';
 
 interface Props {
   title: string;
@@ -8,6 +9,7 @@ interface Props {
   eyebrow?: string;
   heading: string;
   intro?: string;
+  heroMotion?: 'none' | 'starfield' | 'parallax';
 }
 
 const {
@@ -17,6 +19,7 @@ const {
   eyebrow,
   heading,
   intro,
+  heroMotion = 'none',
 } = Astro.props;
 
 const hasActions = Astro.slots.has('actions');
@@ -26,6 +29,7 @@ const hasAside = Astro.slots.has('aside');
 <WebLayout {title} {description} {canonicalPath}>
   <article class="gs-template">
     <header class:list={['gs-template__hero', 'gs-shell-section', 'gs-column-grid', { 'has-aside': hasAside }]}>
+      {heroMotion !== 'none' && <VibrantHeroField mode={heroMotion} />}
       <div class="gs-template__hero-copy">
         {eyebrow && <p class="gs-template__eyebrow">{eyebrow}</p>}
         <h1>{heading}</h1>
@@ -50,6 +54,7 @@ const hasAside = Astro.slots.has('aside');
   }
 
   .gs-template__hero {
+    position: relative;
     align-items: end;
     min-height: clamp(30rem, 72vh, 48rem);
     padding-block: clamp(6rem, 13vw, 10rem) clamp(4rem, 8vw, 7rem);
@@ -57,6 +62,8 @@ const hasAside = Astro.slots.has('aside');
   }
 
   .gs-template__hero-copy {
+    position: relative;
+    z-index: 1;
     grid-column: 1 / span 8;
     min-width: 0;
   }
@@ -99,6 +106,8 @@ const hasAside = Astro.slots.has('aside');
   }
 
   .gs-template__aside {
+    position: relative;
+    z-index: 1;
     grid-column: 9 / -1;
     min-width: 0;
     padding: clamp(1.25rem, 3vw, 2rem);
