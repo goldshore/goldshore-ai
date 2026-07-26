@@ -7,12 +7,6 @@
   --gs-public-teal: #499488;
   --gs-public-text: #eceae4;
   --gs-public-dim: #aaa69c;
-  --gs-space-section: clamp(3.5rem, 8vw, 7.5rem);
-  --gs-space-section-compact: clamp(2.25rem, 5vw, 4.5rem);
-  --gs-radius-control: 3px;
-  --gs-radius-panel: 4px;
-  --gs-motion-fast: 180ms ease;
-  --gs-motion-fluid: 560ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .gs-shell-v284 {
@@ -54,25 +48,7 @@
 .gs-shell-v284 .gs-flow-section__inner {
   position: relative;
   z-index: 1;
-  padding-block: var(--gs-space-section);
-}
-
-.gs-shell-v284 .gs-flow-section--compact .gs-flow-section__inner {
-  padding-block: var(--gs-space-section-compact);
-}
-
-.gs-shell-v284 .gs-flow-section--full .gs-flow-section__inner {
-  min-height: calc(100svh - 5rem);
-}
-
-.gs-shell-v284 .gs-flow-section--surface {
-  background: rgba(14, 14, 20, 0.72);
-}
-
-.gs-shell-v284 .gs-flow-section--accent {
-  background:
-    linear-gradient(115deg, rgba(211, 116, 62, 0.11), transparent 42%),
-    rgba(14, 14, 20, 0.76);
+  padding-block: clamp(3.5rem, 8vw, 7.5rem);
 }
 
 .gs-shell-v284 .gs-flow-section--hero .gs-flow-section__inner,
@@ -86,126 +62,6 @@
 
 .gs-shell-v284 :is(h1, h2, h3) {
   text-wrap: balance;
-}
-
-.gs-shell-v284 :is(.gs-section__header, .gs-hero__content) {
-  display: grid;
-  align-content: center;
-  gap: clamp(0.85rem, 2vw, 1.4rem);
-}
-
-.gs-shell-v284 .gs-section__header {
-  max-width: 52rem;
-  margin-bottom: clamp(1.75rem, 4vw, 3.5rem);
-}
-
-.gs-shell-v284 :is(.gs-actions, .gs-hero__actions, .gs-cluster) {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.gs-shell-v284 .gs-stack {
-  display: grid;
-  gap: var(--gs-stack-space, 1rem);
-}
-
-.gs-shell-v284 .gs-btn {
-  min-height: 2.75rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.55rem;
-  padding: 0.72rem 1rem;
-  border: 1px solid rgba(240, 145, 84, 0.45);
-  border-radius: var(--gs-radius-control);
-  color: var(--gs-public-text);
-  background: transparent;
-  font: 600 0.76rem/1 'DM Mono', ui-monospace, monospace;
-  letter-spacing: 0.06em;
-  text-decoration: none;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition:
-    color var(--gs-motion-fast),
-    border-color var(--gs-motion-fast),
-    background var(--gs-motion-fast),
-    transform var(--gs-motion-fast);
-}
-
-.gs-shell-v284 .gs-btn:hover {
-  border-color: var(--gs-public-oxide-bright);
-  color: #fff;
-  transform: translateY(-2px);
-}
-
-.gs-shell-v284 .gs-btn:focus-visible {
-  outline: 2px solid var(--gs-public-oxide-bright);
-  outline-offset: 3px;
-}
-
-.gs-shell-v284 .gs-btn--primary {
-  border-color: var(--gs-public-oxide);
-  background: var(--gs-public-oxide);
-  color: var(--gs-public-void);
-}
-
-.gs-shell-v284 .gs-btn--secondary {
-  border-color: rgba(73, 148, 136, 0.7);
-  background: rgba(73, 148, 136, 0.12);
-}
-
-.gs-shell-v284 .gs-btn--ghost {
-  border-color: transparent;
-  color: var(--gs-public-oxide-bright);
-}
-
-.gs-shell-v284 .gs-btn--sm {
-  min-height: 2.25rem;
-  padding: 0.55rem 0.75rem;
-  font-size: 0.68rem;
-}
-
-.gs-shell-v284 .gs-btn:is(:disabled, [aria-disabled='true']) {
-  opacity: 0.48;
-  pointer-events: none;
-}
-
-.gs-shell-v284 .gs-divider {
-  width: 100%;
-  height: 1px;
-  margin-block: clamp(1.5rem, 4vw, 3rem);
-  border: 0;
-  background: linear-gradient(90deg, transparent, rgba(240, 145, 84, 0.55), transparent);
-}
-
-.gs-shell-v284 .gs-divider--signal {
-  height: 2px;
-  background:
-    linear-gradient(90deg, transparent 0 10%, var(--gs-public-oxide) 30%, var(--gs-public-teal) 70%, transparent 90% 100%);
-  background-size: 200% 100%;
-  animation: gs-signal-drift 8s linear infinite;
-}
-
-.gs-shell-v284 .gs-brand-lockup {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.7rem;
-  color: inherit;
-  text-decoration: none;
-}
-
-.gs-shell-v284 .gs-brand-lockup__mark {
-  width: var(--gs-logo-size, 2rem);
-  height: var(--gs-logo-size, 2rem);
-  object-fit: contain;
-}
-
-.gs-shell-v284 .gs-brand-lockup__wordmark {
-  font-family: 'Syne', system-ui, sans-serif;
-  font-weight: 700;
-  letter-spacing: 0.08em;
 }
 
 .gs-shell-v284 h1 {
@@ -246,7 +102,7 @@
 .gs-shell-v284 :is(.gs-card, .info-card, .service-card) {
   position: relative;
   overflow: hidden;
-  border-radius: var(--gs-radius-panel);
+  border-radius: 4px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background:
     linear-gradient(145deg, rgba(211, 116, 62, 0.055), transparent 42%),
@@ -374,7 +230,7 @@
   pointer-events: none;
   opacity: 0;
   background: radial-gradient(circle at var(--pointer-x, 50%) var(--pointer-y, 50%), rgba(240, 145, 84, 0.13), transparent 34%);
-  transition: opacity var(--gs-motion-fast);
+  transition: opacity 180ms ease;
 }
 
 .gs-shell-v284 [data-depth]:hover::after {
@@ -385,20 +241,14 @@
   opacity: 0;
   transform: translateY(1.25rem);
   transition:
-    opacity var(--gs-motion-fluid),
-    transform var(--gs-motion-fluid);
+    opacity 560ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 560ms cubic-bezier(0.22, 1, 0.36, 1);
   transition-delay: calc(var(--reveal-order, 0) * 55ms);
 }
 
 .gs-motion-ready [data-reveal][data-reveal-state='visible'] {
   opacity: 1;
   transform: translateY(0);
-}
-
-@keyframes gs-signal-drift {
-  to {
-    background-position: -200% 0;
-  }
 }
 
 @media (max-width: 900px) {
@@ -437,13 +287,5 @@
 
   .gs-shell-v284 [data-depth]::after {
     display: none;
-  }
-
-  .gs-shell-v284 .gs-divider--signal {
-    animation: none;
-  }
-
-  .gs-shell-v284 .gs-btn:hover {
-    transform: none;
   }
 }
