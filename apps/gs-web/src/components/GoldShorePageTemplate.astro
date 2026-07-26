@@ -1,0 +1,143 @@
+---
+import WebLayout from '../layouts/WebLayout.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  canonicalPath?: string;
+  eyebrow?: string;
+  heading: string;
+  intro?: string;
+}
+
+const {
+  title,
+  description,
+  canonicalPath,
+  eyebrow,
+  heading,
+  intro,
+} = Astro.props;
+
+const hasActions = Astro.slots.has('actions');
+const hasAside = Astro.slots.has('aside');
+---
+
+<WebLayout {title} {description} {canonicalPath}>
+  <article class="gs-template">
+    <header class:list={['gs-template__hero', 'gs-shell-section', 'gs-column-grid', { 'has-aside': hasAside }]}>
+      <div class="gs-template__hero-copy">
+        {eyebrow && <p class="gs-template__eyebrow">{eyebrow}</p>}
+        <h1>{heading}</h1>
+        {intro && <p class="gs-template__intro">{intro}</p>}
+        {hasActions && <div class="gs-template__actions"><slot name="actions" /></div>}
+      </div>
+
+      {hasAside && <aside class="gs-template__aside"><slot name="aside" /></aside>}
+    </header>
+
+    <div class="gs-template__body">
+      <slot />
+    </div>
+  </article>
+</WebLayout>
+
+<style>
+  .gs-template {
+    --template-rule: rgba(217, 106, 50, 0.28);
+    min-width: 0;
+    overflow: clip;
+  }
+
+  .gs-template__hero {
+    align-items: end;
+    min-height: clamp(30rem, 72vh, 48rem);
+    padding-block: clamp(6rem, 13vw, 10rem) clamp(4rem, 8vw, 7rem);
+    border-bottom: 1px solid var(--template-rule);
+  }
+
+  .gs-template__hero-copy {
+    grid-column: 1 / span 8;
+    min-width: 0;
+  }
+
+  .gs-template__eyebrow {
+    margin: 0 0 1.25rem;
+    color: var(--gs-primary);
+    font-family: 'DM Mono', ui-monospace, monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    max-width: 12ch;
+    margin: 0;
+    color: var(--gs-text);
+    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+    font-size: clamp(3.25rem, 7.8vw, 7.5rem);
+    font-weight: 700;
+    letter-spacing: -0.055em;
+    line-height: 0.9;
+    overflow-wrap: anywhere;
+    text-transform: uppercase;
+  }
+
+  .gs-template__intro {
+    max-width: 62ch;
+    margin: clamp(1.75rem, 4vw, 3rem) 0 0;
+    color: var(--gs-text-dim);
+    font-size: clamp(1rem, 1.5vw, 1.24rem);
+    line-height: 1.75;
+  }
+
+  .gs-template__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.85rem;
+    margin-top: 2rem;
+  }
+
+  .gs-template__aside {
+    grid-column: 9 / -1;
+    min-width: 0;
+    padding: clamp(1.25rem, 3vw, 2rem);
+    border: 1px solid var(--template-rule);
+    background: rgba(13, 13, 19, 0.82);
+  }
+
+  .gs-template__body {
+    display: grid;
+  }
+
+  @media (max-width: 900px) {
+    .gs-template__hero-copy,
+    .gs-template__aside {
+      grid-column: 1 / -1;
+    }
+
+    .gs-template__hero {
+      align-content: end;
+      row-gap: 2.5rem;
+    }
+
+    h1 {
+      font-size: clamp(2.75rem, 13vw, 5.5rem);
+    }
+  }
+
+  @media (max-width: 560px) {
+    .gs-template__hero {
+      min-height: auto;
+      padding-top: 5rem;
+    }
+
+    .gs-template__actions {
+      display: grid;
+    }
+
+    .gs-template__actions :global(*) {
+      width: 100%;
+    }
+  }
+</style>
