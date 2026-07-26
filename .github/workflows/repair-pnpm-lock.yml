@@ -53,7 +53,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if git diff --quiet -- pnpm-lock.yaml; then
+          if git diff --ignore-space-at-eol --quiet -- pnpm-lock.yaml; then
             echo "pnpm-lock.yaml already clean."
             exit 0
           fi
