@@ -8,6 +8,7 @@ import '../styles/global.css';
 import '../styles/goldshore-shell.css';
 import { primaryNavLinks, companyLinks } from '../config/navigation';
 import { WEB_META_CSP } from '../utils/csp';
+import { CANONICAL_ADMIN_DASHBOARD_URL } from '../utils/admin-access';
 
 const { title, description, canonicalPath } = Astro.props;
 const ogTitle = Astro.props.ogTitle ?? title;
@@ -69,7 +70,7 @@ const mobileNavId = 'mobile-navigation';
                 </a>
               ))}
             </div>
-            <a href="/admin/lead-submissions" class="header-login">Log in</a>
+            <a href={CANONICAL_ADMIN_DASHBOARD_URL} class="header-login">Log in</a>
             <a href="/contact" class="header-cta">Get a Briefing</a>
           </nav>
 
@@ -108,7 +109,7 @@ const mobileNavId = 'mobile-navigation';
 
             <div class="menu-panel__actions">
               <a href="/contact" class="header-cta header-cta--mobile">Get a Briefing</a>
-              <a href="/admin/lead-submissions" class="menu-secondary-link">Log in</a>
+              <a href={CANONICAL_ADMIN_DASHBOARD_URL} class="menu-secondary-link">Log in</a>
               <a href="/developer" class="menu-secondary-link">Open Developer Hub</a>
             </div>
           </div>

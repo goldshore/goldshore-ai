@@ -2,6 +2,8 @@ import { test } from 'node:test';
 import * as assert from 'node:assert/strict';
 
 import {
+  ALTERNATE_ADMIN_DASHBOARD_URL,
+  CANONICAL_ADMIN_DASHBOARD_URL,
   getAdminHostRewritePath,
   getAdminRouteRule,
   getCanonicalAdminUrl,
@@ -17,6 +19,8 @@ test('routes dashboard traffic to the admin host with system read access', () =>
     requiresAdminRole: true,
   });
   assert.equal(getCanonicalAdminUrl('/app/dashboard'), 'https://admin.goldshore.ai/app/dashboard');
+  assert.equal(CANONICAL_ADMIN_DASHBOARD_URL, 'https://admin.goldshore.ai/app/dashboard');
+  assert.equal(ALTERNATE_ADMIN_DASHBOARD_URL, 'https://admin.goldshore.org/app/dashboard');
 });
 
 test('requires forms write access for mutating admin APIs', () => {

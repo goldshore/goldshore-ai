@@ -1,5 +1,9 @@
 ---
 import '../styles/home-theme.css';
+import {
+  ALTERNATE_ADMIN_DASHBOARD_URL,
+  CANONICAL_ADMIN_DASHBOARD_URL,
+} from '../utils/admin-access';
 
 export const prerender = true;
 
@@ -368,12 +372,12 @@ export async function verifyAccess(req, env) {
     <h2 id="access-modal-title">Access Goldshore</h2>
     <p class="modal-lead">Select a destination to continue.</p>
     <div class="modal-grid">
-      <a href="https://admin.goldshore.ai" class="modal-card" data-admin-access-link>
+      <a href={CANONICAL_ADMIN_DASHBOARD_URL} class="modal-card" data-admin-access-link>
         <span class="modal-icon">⬡</span>
         <strong>Admin</strong>
         <span>Operator dashboard</span>
       </a>
-      <a href="https://admin.goldshore.org" class="modal-card" data-admin-alternate-link>
+      <a href={ALTERNATE_ADMIN_DASHBOARD_URL} class="modal-card" data-admin-alternate-link>
         <span class="modal-icon">◈</span>
         <strong data-admin-alternate-title>Admin .org</strong>
         <span data-admin-alternate-copy>Protected organisation alias</span>
