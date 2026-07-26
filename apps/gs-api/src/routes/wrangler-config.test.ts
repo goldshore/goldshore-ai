@@ -83,6 +83,26 @@ describe('gs-api wrangler env bindings', () => {
         new RegExp(`\\[env\\.${envName}\\.ai\\][\\s\\S]*?binding = "AI"`),
       );
     });
+
+    it(`binds the real paper-trading KV and D1 store for ${envName}`, () => {
+      // Regression guard: trading/routes/trading.ts falls back to
+      // `env.KV`/`env.PLATFORM_DB` when these are absent, which silently
+      // sends paper-trading reads/writes to a database with no matching
+      // schema. These bindings must point at the actual
+      // goldshore-paper-trading D1 + its KV namespace.
+      assert.match(
+        wranglerToml,
+        new RegExp(
+          `\\[\\[env\\.${envName}\\.kv_namespaces\\]\\][\\s\\S]*?binding = "TRADING_KV"[\\s\\S]*?id = "`,
+        ),
+      );
+      assert.match(
+        wranglerToml,
+        new RegExp(
+          `\\[\\[env\\.${envName}\\.d1_databases\\]\\][\\s\\S]*?binding = "PAPER_DB"[\\s\\S]*?database_name = "goldshore-paper-trading"`,
+        ),
+      );
+    });
   }
 
   it('keeps top-level bindings safe for Cloudflare Workers Builds version uploads', () => {
