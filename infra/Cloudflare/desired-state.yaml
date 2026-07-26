@@ -33,6 +33,12 @@ cloudflare:
       - name: "www"
         type: AAAA
         content: "100::"
+        type: CNAME
+        content: "goldshore-org.goldshore.workers.dev"
+        proxied: true
+      - name: "www.goldshore.org"
+        type: CNAME
+        content: "goldshore-org.goldshore.workers.dev"
         proxied: true
         zone: goldshore.org
 
@@ -48,8 +54,22 @@ cloudflare:
       - name: "admin-preview"
         type: CNAME
         content: "gs-web-prod.goldshore.workers.dev"
+      # apps/gs-web/wrangler.toml). admin.goldshore.org is out of scope here
+      # pending the separate goldshore.org ownership conflict
+      # (policy/ROUTE_POLICY.md vs docs/architecture/domain-ownership.md) --
+      # still points at the legacy gs-admin app until that's resolved.
+      - name: "admin"
+        type: CNAME
+        content: "gs-web-prod.goldshore.workers.dev"
         proxied: true
         zone: goldshore.ai
+      - name: "admin-preview"
+        type: CNAME
+        content: "gs-web-prod.goldshore.workers.dev"
+      # apps/gs-web/wrangler.toml). admin.goldshore.org is out of scope here
+      # pending the separate goldshore.org ownership conflict
+      # (policy/ROUTE_POLICY.md vs docs/architecture/domain-ownership.md) --
+      # still points at the legacy gs-admin app until that's resolved.
       - name: "admin"
         type: CNAME
         content: "gs-web-prod.goldshore.workers.dev"
@@ -97,6 +117,10 @@ cloudflare:
       - name: "dashboard"
         type: CNAME
         content: "gs-api-prod.goldshore.workers.dev"
+        proxied: true
+      - name: "dashboard"
+        type: CNAME
+        content: "gs-gateway-prod.goldshore.workers.dev"
         proxied: true
       - name: "dash"
         type: CNAME
@@ -183,6 +207,7 @@ cloudflare:
         rules:
           include:
             - email_domain: "goldshore.ai"
+            - email_domain: "goldshore.org"
             - email: "marstonr6@gmail.com"
           allowed_identity_providers:
             - "google_workspace"

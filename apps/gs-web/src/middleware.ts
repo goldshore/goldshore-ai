@@ -1,7 +1,11 @@
 import type { MiddlewareHandler } from 'astro';
 import { verifyAccessWithClaims } from '@goldshore/auth';
 import { HTML_CONTENT_SECURITY_POLICY } from './security/policy';
-import { isAdminHost, isStaticAssetPath } from './utils/admin-access';
+import {
+  getAdminHostRewritePath,
+  isAdminHost,
+  isStaticAssetPath,
+} from './utils/admin-access';
 
 const ADMIN_PATH_PREFIXES = ['/admin', '/api/admin'];
 
@@ -48,11 +52,20 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
     }
   }
 
+  // The admin hostname is a first-class alias for gs-web's existing admin
+  // route tree. Keep implementation paths canonical without exposing the
+  // /admin prefix in operator-facing URLs.
+  const adminRewritePath = isAdminHost(host)
+    ? getAdminHostRewritePath(context.url.pathname)
+    : null;
+
   // Response headers are authoritative for Astro-rendered HTML. Static files
   // that can bypass middleware keep their own platform config in public/_headers.
   context.locals.securityPolicySource = 'response-header';
 
-  const response = await next();
+  const response = adminRewritePath
+    ? await context.rewrite(adminRewritePath)
+    : await next();
   response.headers.set('Content-Security-Policy', HTML_CONTENT_SECURITY_POLICY);
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');
