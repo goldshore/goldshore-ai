@@ -8,6 +8,7 @@ import '../styles/global.css';
 import '../styles/goldshore-shell.css';
 import { primaryNavLinks, companyLinks } from '../config/navigation';
 import { WEB_META_CSP } from '../utils/csp';
+import { CANONICAL_ADMIN_DASHBOARD_URL } from '../utils/admin-access';
 
 const { title, description, canonicalPath } = Astro.props;
 const ogTitle = Astro.props.ogTitle ?? title;
@@ -69,7 +70,11 @@ const mobileNavId = 'mobile-navigation';
                 </a>
               ))}
             </div>
-            <a href="/admin/lead-submissions" class="header-login">Log in</a>
+            <a
+              href={CANONICAL_ADMIN_DASHBOARD_URL}
+              class="header-login"
+              id="header-login-link"
+            >Log in</a>
             <a href="/contact" class="header-cta">Get a Briefing</a>
           </nav>
 
@@ -108,7 +113,6 @@ const mobileNavId = 'mobile-navigation';
 
             <div class="menu-panel__actions">
               <a href="/contact" class="header-cta header-cta--mobile">Get a Briefing</a>
-              <a href="/admin/lead-submissions" class="menu-secondary-link">Log in</a>
               <a href="/developer" class="menu-secondary-link">Open Developer Hub</a>
             </div>
           </div>
@@ -154,14 +158,42 @@ const mobileNavId = 'mobile-navigation';
         const header = document.querySelector('.header');
         const toggle = document.querySelector('.menu-button');
         const mobileNav = document.getElementById('mobile-navigation');
+        const loginLink = document.getElementById('header-login-link');
+        const desktopNav = document.querySelector('.desktop-nav');
+        const desktopCta = desktopNav?.querySelector('.header-cta');
+        const mobileActions = mobileNav?.querySelector('.menu-panel__actions');
+        const mobileDeveloperLink = mobileActions?.querySelector('.menu-secondary-link');
+        const mobileViewport = window.matchMedia('(max-width: 960px)');
 
         if (
           !(header instanceof HTMLElement) ||
           !(toggle instanceof HTMLButtonElement) ||
-          !(mobileNav instanceof HTMLElement)
+          !(mobileNav instanceof HTMLElement) ||
+          !(loginLink instanceof HTMLAnchorElement) ||
+          !(desktopNav instanceof HTMLElement) ||
+          !(desktopCta instanceof HTMLAnchorElement) ||
+          !(mobileActions instanceof HTMLElement) ||
+          !(mobileDeveloperLink instanceof HTMLAnchorElement)
         ) {
           return;
         }
+
+        const placeLoginLink = (isMobile) => {
+          loginLink.classList.toggle('header-login', !isMobile);
+          loginLink.classList.toggle('menu-secondary-link', isMobile);
+
+          if (isMobile) {
+            mobileActions.insertBefore(loginLink, mobileDeveloperLink);
+          } else {
+            desktopNav.insertBefore(loginLink, desktopCta);
+          }
+        };
+
+        placeLoginLink(mobileViewport.matches);
+        mobileViewport.addEventListener('change', (event) => {
+          placeLoginLink(event.matches);
+          if (!event.matches) setMenu(false);
+        });
 
         const setMenu = (isOpen) => {
           header.dataset.menuOpen = String(isOpen);
