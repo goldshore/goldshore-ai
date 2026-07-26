@@ -43,15 +43,15 @@ jobs:
       - uses: ./.github/actions/normalize-cf-token
         id: cf-token
         with:
-          raw_token: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
-          token_name: 'CLOUDFLARE_BUILD_API_TOKEN'
+          raw_token: ${{ secrets.CLOUDFLARE_API_TOKEN_GS_CONTROL }}
+          token_name: 'CLOUDFLARE_API_TOKEN_GS_CONTROL'
 
       - name: Verify Cloudflare secrets
         env:
           CF_TOKEN: ${{ steps.cf-token.outputs.token }}
         run: |
           test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "::error::Missing CLOUDFLARE_ACCOUNT_ID" && exit 1)
-          test -n "$CF_TOKEN" || (echo "::error::Missing CLOUDFLARE_BUILD_API_TOKEN" && exit 1)
+          test -n "$CF_TOKEN" || (echo "::error::Missing CLOUDFLARE_API_TOKEN_GS_CONTROL" && exit 1)
           echo "CLOUDFLARE_API_TOKEN=$CF_TOKEN" >> "$GITHUB_ENV"
 
       - run: pnpm install --frozen-lockfile

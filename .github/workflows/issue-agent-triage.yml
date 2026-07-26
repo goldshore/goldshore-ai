@@ -15,6 +15,7 @@ on:
 permissions:
   contents: read
   issues: write
+  pull-requests: write
 
 jobs:
   label:
@@ -36,7 +37,10 @@ jobs:
 
             const eventText = context.payload.comment?.body ?? '';
             const text = `${issue.title}\n${issue.body ?? ''}\n${eventText}`.toLowerCase();
-            const labels = new Set(issue.labels.map((label) => typeof label === 'string' ? label : label.name));
+            const currentLabels = issue.labels
+              .map((label) => typeof label === 'string' ? label : label.name)
+              .filter(Boolean);
+            const labels = new Set(currentLabels);
 
             const rules = [
               [/(^|\s)@codex\b|\[agent:codex\]/, 'agent:codex'],
@@ -53,9 +57,16 @@ jobs:
               if (pattern.test(text)) labels.add(label);
             }
 
+            const nextLabels = [...labels].filter(Boolean).sort();
+            const previousLabels = [...currentLabels].sort();
+            if (JSON.stringify(nextLabels) === JSON.stringify(previousLabels)) {
+              core.info('No label changes required.');
+              return;
+            }
+
             await github.rest.issues.setLabels({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: issueNumber,
-              labels: [...labels].filter(Boolean),
+              labels: nextLabels,
             });
