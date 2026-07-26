@@ -207,32 +207,9 @@ new_sqlite_classes = ["AuthSession"]
 [[env.prod.triggers.crons]]
 cron = "0 2 * * *"
 
-# ── Services ────────────────────────────────────────────────────────────────────────────────────────────
-# ── Services ──────────────────────────────────────────────────────────────────────────────────────
-[[env.prod.services]]
-binding = "AGENT"
-service = "gs-agent"
-environment = "prod"
-
-[[env.prod.services]]
-binding = "GS_MAIL"
-service = "gs-mail"
-environment = "prod"
-
-[[env.prod.services]]
-binding = "GOLDSHORE_AI"
-service = "goldshore-ai"
-environment = "prod"
-
-# GS_WEB PROD service binding removed: its binding name contained a literal
-# space ("GS_WEB PROD"), making it unreachable as env.GS_WEB from any normal
-# code reference — it was silently dead. infra/Cloudflare/BINDINGS_MAP.md
-# independently lists GS_WEB / GS_WEB PROD among bindings "not part of the
-# repo-managed gs-api binding set... do not reintroduce without an ADR
-# update." AGENT/GS_MAIL/GOLDSHORE_AI are carried forward unchanged from the
-# environment that's actually live today; whether those three should also be
-# retired is a Phase 3/4 (SOP) question that needs the calling code checked
-# first, not a config-only change.
+# Legacy satellite service bindings were removed during the two-app
+# consolidation. Agent, mail, and API behavior is implemented directly by
+# gs-api routes and event handlers; no source code references these bindings.
 
 # ── Queues (producers) ───────────────────────────────────────────────────────────
 [[env.prod.queues.producers]]
