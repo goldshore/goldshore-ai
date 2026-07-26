@@ -27,6 +27,17 @@ const STATIC_PATH_PREFIXES = [
   '/sitemap',
 ];
 
+const CLEAN_ADMIN_PAGE_PREFIXES = [
+  '/api-status',
+  '/crawler',
+  '/goldclaw',
+  '/integrations',
+  '/lead-submissions',
+  '/monetization',
+  '/search-console',
+  '/workers',
+];
+
 export type AdminRouteRule = {
   canonicalPath: string;
   kind: 'page' | 'api';
@@ -56,6 +67,36 @@ export const isAdminHost = (hostname: string) => ADMIN_HOSTS.has(hostname.toLowe
 export const isStaticAssetPath = (pathname: string) => {
   const normalizedPath = normalizePathname(pathname);
   return STATIC_PATH_PREFIXES.some((prefix) => normalizedPath.startsWith(prefix));
+};
+
+export const getAdminHostRewritePath = (pathname: string) => {
+  const normalizedPath = normalizePathname(pathname);
+
+  if (isStaticAssetPath(normalizedPath)) return null;
+  if (normalizedPath === '/') return '/app/dashboard';
+
+  if (
+    normalizedPath === '/app' ||
+    normalizedPath.startsWith('/app/') ||
+    normalizedPath === '/admin' ||
+    normalizedPath.startsWith('/admin/') ||
+    normalizedPath === '/api/admin' ||
+    normalizedPath.startsWith('/api/admin/') ||
+    normalizedPath === '/api/forms' ||
+    normalizedPath.startsWith('/api/forms/')
+  ) {
+    return null;
+  }
+
+  if (
+    CLEAN_ADMIN_PAGE_PREFIXES.some(
+      (prefix) => normalizedPath === prefix || normalizedPath.startsWith(`${prefix}/`),
+    )
+  ) {
+    return `/admin${normalizedPath}`;
+  }
+
+  return '/app/dashboard';
 };
 
 const permissionForMethod = (
