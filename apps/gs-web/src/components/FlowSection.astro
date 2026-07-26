@@ -1,18 +1,10 @@
 ---
-const {
-  variant = 'section',
-  tone = 'default',
-  size = 'default',
-  class: className = '',
-  id,
-} = Astro.props;
+const { variant = 'section', class: className = '', id } = Astro.props;
 const innerClass =
   variant === 'hero' ? 'gs-hero' : 'gs-section';
 const sectionClass = [
   'gs-flow-section',
   `gs-flow-section--${variant}`,
-  `gs-flow-section--${tone}`,
-  `gs-flow-section--${size}`,
   className
 ]
   .filter(Boolean)
