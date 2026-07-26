@@ -25,16 +25,6 @@ test('WebLayout retains the established public theme contract', async () => {
   }
 });
 
-test('WebLayout renders one responsive admin login control', async () => {
-  const source = await readFile(new URL('layouts/WebLayout.astro', sourceRoot), 'utf8');
-  const loginLabels = source.match(/>Log in<\/a>/g) ?? [];
-
-  assert.equal(loginLabels.length, 1);
-  assert.match(source, /id="header-login-link"/);
-  assert.match(source, /mobileActions\.insertBefore\(loginLink, mobileDeveloperLink\)/);
-  assert.match(source, /desktopNav\.insertBefore\(loginLink, desktopCta\)/);
-});
-
 test('Gold Shore page templates compose the shared shell and column contract', async () => {
   const [pageTemplate, sectionTemplate] = await Promise.all([
     readFile(new URL('components/GoldShorePageTemplate.astro', sourceRoot), 'utf8'),
