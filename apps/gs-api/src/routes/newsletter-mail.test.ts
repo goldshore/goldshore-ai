@@ -9,7 +9,7 @@ test('newsletter confirmation includes the exact confirmation link', () => {
   const url = 'https://goldshore.ai/newsletter/confirm?token=test-token';
   const message = buildNewsletterConfirmation({ confirmationUrl: url });
   assert.match(message.subject, /confirm/i);
-  assert.match(message.text, new RegExp(url.replace(/[?]/g, '\\?')));
+  assert.match(message.text, new RegExp(url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   assert.match(message.html, /Confirm subscription/);
 });
 
