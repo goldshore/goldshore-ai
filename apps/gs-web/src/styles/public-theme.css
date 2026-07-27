@@ -15,7 +15,7 @@
 }
 
 .gs-shell-v284 .gs-page-content {
-  overflow: clip;
+  overflow-x: clip;
   isolation: isolate;
 }
 
@@ -34,6 +34,10 @@
 .gs-shell-v284 :is(.gs-hero, .gs-section, .page-shell) {
   width: min(calc(100% - 2rem), var(--gs-max-width, 1180px));
   margin-inline: auto;
+}
+
+.gs-shell-v284 :is(.gs-hero, .gs-section, .page-shell, .gs-grid, .info-grid, .service-grid) > * {
+  min-width: 0;
 }
 
 .gs-shell-v284 .gs-flow-section {
@@ -106,6 +110,119 @@
   box-shadow: 0 22px 55px rgba(0, 0, 0, 0.22);
 }
 
+.gs-shell-v284 .gs-slug-page {
+  padding-block: clamp(3.5rem, 8vw, 7rem);
+}
+
+.gs-shell-v284 .gs-slug-page__inner {
+  width: min(100%, 900px);
+  margin-inline: auto;
+}
+
+.gs-shell-v284 .gs-slug-page__header {
+  margin-bottom: clamp(2rem, 5vw, 3.5rem);
+}
+
+.gs-shell-v284 .gs-slug-page__header h1,
+.gs-shell-v284 .gs-slug-page--message h1 {
+  max-width: 18ch;
+  margin-top: 0.75rem;
+  overflow-wrap: anywhere;
+}
+
+.gs-shell-v284 .gs-slug-page--message {
+  min-height: 60vh;
+  display: grid;
+  align-items: center;
+  text-align: center;
+}
+
+.gs-shell-v284 .gs-slug-page--message :is(h1, .page-intro) {
+  margin-inline: auto;
+}
+
+.gs-shell-v284 .gs-slug-page__action {
+  display: inline-flex;
+  margin-top: 1.5rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(240, 145, 84, 0.45);
+  color: var(--gs-public-oxide-bright);
+  text-decoration: none;
+}
+
+.gs-shell-v284 .gs-rich-content {
+  max-width: 100%;
+  color: var(--gs-public-text);
+  font-size: 1rem;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+}
+
+.gs-shell-v284 .gs-rich-content > :first-child {
+  margin-top: 0;
+}
+
+.gs-shell-v284 .gs-rich-content > :last-child {
+  margin-bottom: 0;
+}
+
+.gs-shell-v284 .gs-rich-content :is(p, ul, ol, blockquote, pre, table, figure) {
+  margin-block: 1.25rem;
+}
+
+.gs-shell-v284 .gs-rich-content :is(h2, h3, h4) {
+  margin-top: 2.2rem;
+  margin-bottom: 0.75rem;
+  overflow-wrap: anywhere;
+}
+
+.gs-shell-v284 .gs-rich-content a {
+  color: var(--gs-public-oxide-bright);
+  text-underline-offset: 0.2em;
+}
+
+.gs-shell-v284 .gs-rich-content img,
+.gs-shell-v284 .gs-rich-content video,
+.gs-shell-v284 .gs-rich-content iframe,
+.gs-shell-v284 .gs-rich-content svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.gs-shell-v284 .gs-rich-content iframe {
+  width: 100%;
+  min-height: min(56vw, 32rem);
+  border: 0;
+}
+
+.gs-shell-v284 .gs-rich-content pre,
+.gs-shell-v284 .gs-rich-content table {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.gs-shell-v284 .gs-rich-content pre {
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.gs-shell-v284 .gs-rich-content code {
+  font-family: 'DM Mono', ui-monospace, monospace;
+}
+
+.gs-shell-v284 .gs-rich-content table {
+  display: block;
+  border-collapse: collapse;
+}
+
+.gs-shell-v284 .gs-rich-content :is(th, td) {
+  padding: 0.7rem 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  text-align: left;
+}
+
 .gs-shell-v284 [data-depth]::after {
   content: '';
   position: absolute;
@@ -154,6 +271,10 @@
 
   .gs-shell-v284 h1 {
     font-size: clamp(2.35rem, 14vw, 4rem);
+  }
+
+  .gs-shell-v284 .gs-rich-content :is(pre, table) {
+    margin-inline: -0.25rem;
   }
 }
 

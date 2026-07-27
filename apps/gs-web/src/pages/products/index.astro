@@ -1,0 +1,37 @@
+---
+import PublicFeaturePage from '../../components/PublicFeaturePage.astro';
+
+export const prerender = false;
+
+const cards = [
+  {
+    title: 'Risk Radar',
+    body: 'Continuous surveillance, anomaly classification, and operator review across monitored positions and workflows.',
+    href: '/risk-radar/',
+  },
+  {
+    title: 'Financial Signals',
+    body: 'Normalized market and sentiment signals delivered through an explainable, auditable operating surface.',
+    href: '/platform/financial-signals/',
+  },
+  {
+    title: 'Workflow Engine',
+    body: 'Queue-backed automation with approvals, fallback paths, ownership, and observability built in.',
+    href: '/platform/workflow-engine/',
+  },
+  {
+    title: 'Sentinel',
+    body: 'Operational monitoring and escalation designed for systems that cannot silently fail.',
+    href: '/platform/sentinel/',
+  },
+];
+---
+
+<PublicFeaturePage
+  eyebrow="Product Portfolio"
+  title="Products"
+  description="Operator-grade intelligence and automation products built on the same secure GoldShore platform."
+  canonicalPath="/products/"
+  {cards}
+  ctaLabel="Request a product briefing"
+/>
