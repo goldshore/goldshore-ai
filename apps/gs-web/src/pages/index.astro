@@ -5,7 +5,7 @@ import {
   CANONICAL_ADMIN_DASHBOARD_URL,
 } from '../utils/admin-access';
 
-export const prerender = true;
+export const prerender = false;
 
 const services  = ['Digital Strategy','AI Implementation','Systems Integration','Design & Development','Enterprise Consulting'];
 const sectors   = ['Financial Services','Operations & Logistics','Media & Communications','Healthcare Systems','Public Sector'];
@@ -25,14 +25,16 @@ const anomalies = [['ALGO-DRIFT — Position delta exceeds 3σ','High','00:42'],
 const tickers   = [['SPY','S&P 500 ETF','521.84','+1.24%'],['NVDA','Nvidia Corp','887.22','+2.87%'],['BTC','Bitcoin','68,420','−0.43%'],['GLD','Gold ETF','2,391','+0.61%'],['TLT','20Y Treasury','93.14','−0.18%'],['VIX','Volatility Idx','13.82','−3.20%']];
 const principles = [['01','Sector-Agnostic, Systems-First',"We don't specialize in one vertical — we specialize in the architecture that makes any vertical work. Finance, operations, media, healthcare: the discipline is identical."],['02','AI as Infrastructure, Not Feature','Intelligence embedded at the routing layer, not bolted on at the end. Every workflow treats AI as a first-class component with audit trails to match.'],['03','Consulting That Ships','Strategy without delivery is overhead. We provide the advisory and we build the thing — one team, one contract, full accountability from brief to production.']];
 const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Automation','AI Implementation','Digital Strategy','Systems Integration','Design & Development','Enterprise Consulting','Sentiment Analysis','Applied Intelligence','Resilient Infrastructure','Cross-Sector Deployment'];
+const canonicalUrl = new URL('/', Astro.url.origin).toString();
 ---
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="Gold Shore Labs — applied intelligence, digital systems, and consulting." />
+  <link rel="canonical" href={canonicalUrl} />
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://goldshore.ai/" />
+  <meta property="og:url" content={canonicalUrl} />
   <meta property="og:title" content="Gold Shore Labs | Applied Intelligence" />
   <meta property="og:description" content="Applied intelligence for institutions that need clarity under pressure." />
   <title>Gold Shore Labs | Applied Intelligence</title>

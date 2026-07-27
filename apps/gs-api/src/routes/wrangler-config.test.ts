@@ -154,7 +154,10 @@ describe('gs-api wrangler env bindings', () => {
       'goldshore.ai/*',
       'goldshore.org/*',
       'admin.goldshore.ai/*',
+      'admin-preview.goldshore.ai/*',
       'admin.goldshore.org/*',
+      'risk.goldshore.ai/*',
+      'risk.goldshore.org/*',
     ]);
   });
 });
