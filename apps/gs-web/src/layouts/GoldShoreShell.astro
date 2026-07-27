@@ -19,8 +19,9 @@ const {
   ogDescription = description,
 } = Astro.props;
 
-const canonicalUrl = new URL(canonicalPath, 'https://goldshore.ai').toString();
-const socialImageUrl = new URL('/logo.png', 'https://goldshore.ai').toString();
+const siteOrigin = Astro.url.origin;
+const canonicalUrl = new URL(canonicalPath, siteOrigin).toString();
+const socialImageUrl = new URL('/logo.png', siteOrigin).toString();
 const normalizePath = (path: string) => {
   const normalized = path.startsWith('/') ? path : `/${path}`;
   return normalized === '/' ? '/' : `${normalized.replace(/\/+$/, '')}/`;
@@ -65,8 +66,8 @@ const isCurrent = (href: string) => {
       '@type': 'Organization',
       name: 'Gold Shore Labs',
       alternateName: 'GoldShore',
-      url: 'https://goldshore.ai',
-      logo: 'https://goldshore.ai/logo.png',
+      url: siteOrigin,
+      logo: socialImageUrl,
       sameAs: [],
     })}></script>
   </head>

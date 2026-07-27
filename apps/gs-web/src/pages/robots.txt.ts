@@ -1,7 +1,8 @@
-export const prerender = true;
+export const prerender = false;
 
-export async function GET() {
-  const robots = `# goldshore.ai robots.txt
+export async function GET({ url }: { url: URL }) {
+  const baseUrl = url.origin;
+  const robots = `# ${url.hostname} robots.txt
 User-agent: *
 Allow: /
 Allow: /apps/
@@ -33,7 +34,7 @@ User-agent: SemrushBot
 Crawl-delay: 10
 
 # Sitemap reference
-Sitemap: https://goldshore.ai/sitemap.xml
+Sitemap: ${baseUrl}/sitemap.xml
 
 # Crawl delay in seconds for all crawlers
 Crawl-delay: 1
@@ -44,7 +45,7 @@ Request-rate: 1/1s`;
   return new Response(robots, {
     headers: {
       'Content-Type': 'text/plain',
-      'Cache-Control': 'public, max-age=604800', // 7 days
+      'Cache-Control': 'public, max-age=3600',
     },
   });
 }
