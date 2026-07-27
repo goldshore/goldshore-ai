@@ -1,36 +1,46 @@
 ---
 import MarketingLayout from '../../layouts/MarketingLayout.astro';
 
-export const prerender = false;
+export const prerender = true;
 
-const token = Astro.url.searchParams.get('token') ?? '';
-const runtimeEnv = Astro.locals.runtime?.env as { PUBLIC_API?: string } | undefined;
-const apiBase = (runtimeEnv?.PUBLIC_API || 'https://api.goldshore.ai').replace(/\/$/, '');
-let removed = false;
-let message = 'This unsubscribe link is invalid.';
-
-if (token) {
-  const target = new URL(`${apiBase}/v1/forms/newsletter/unsubscribe`);
-  target.searchParams.set('token', token);
-  try {
-    const response = await fetch(target);
-    removed = response.ok;
-    message = removed
-      ? 'You have been unsubscribed and will not receive future newsletter campaigns.'
-      : 'This unsubscribe link is invalid or already inactive.';
-  } catch {
-    message = 'The unsubscribe service is temporarily unavailable. Please try again.';
-  }
-}
+const apiBase = (import.meta.env.PUBLIC_API || 'https://api.goldshore.ai').replace(/\/$/, '');
 ---
 
 <MarketingLayout title="Newsletter preferences | GoldShore" description="Manage your GoldShore newsletter subscription.">
   <main class="gs-section" style="min-height: 60vh;">
-    <div class="gs-container gs-stack" style="max-width: 42rem;">
+    <div class="gs-container gs-stack" style="max-width: 42rem;" data-newsletter-unsubscribe data-api-base={apiBase}>
       <p class="gs-kicker">Newsletter</p>
-      <h1>{removed ? 'Unsubscribed' : 'Unable to update'}</h1>
-      <p>{message}</p>
+      <h1 data-result-title>Updating preferences</h1>
+      <p data-result-message>Please wait while we update your subscription.</p>
       <a class="gs-button" href="/">Return home</a>
     </div>
   </main>
 </MarketingLayout>
+
+<script>
+  const container = document.querySelector<HTMLElement>('[data-newsletter-unsubscribe]');
+  const title = container?.querySelector<HTMLElement>('[data-result-title]');
+  const message = container?.querySelector<HTMLElement>('[data-result-message]');
+  const token = new URLSearchParams(window.location.search).get('token');
+
+  const showResult = (heading: string, detail: string) => {
+    if (title) title.textContent = heading;
+    if (message) message.textContent = detail;
+  };
+
+  if (!container || !token) {
+    showResult('Unable to update', 'This unsubscribe link is invalid.');
+  } else {
+    const target = new URL(`${container.dataset.apiBase}/v1/forms/newsletter/unsubscribe`);
+    target.searchParams.set('token', token);
+
+    fetch(target)
+      .then((response) => {
+        if (!response.ok) throw new Error('unsubscribe rejected');
+        showResult('Unsubscribed', 'You have been unsubscribed and will not receive future newsletter campaigns.');
+      })
+      .catch(() => {
+        showResult('Unable to update', 'This unsubscribe link is invalid, already inactive, or temporarily unavailable.');
+      });
+  }
+</script>
