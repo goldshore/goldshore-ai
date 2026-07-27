@@ -57,6 +57,11 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @goldshore/gs-api build
 
+      - name: Apply newsletter subscriber schema
+        if: github.ref == 'refs/heads/main'
+        working-directory: apps/gs-api
+        run: pnpm exec wrangler d1 execute gs_platform_db --remote --file=db/migrations/0004_newsletter_subscribers.sql --env prod
+
       - name: Provision gs-api Worker secrets
         working-directory: apps/gs-api
         env:
