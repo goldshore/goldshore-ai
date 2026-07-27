@@ -8,7 +8,6 @@ import '../styles/global.css';
 import { WEB_META_CSP } from '../utils/csp';
 import '../styles/goldshore-shell.css';
 import { primaryNavLinks, companyLinks } from '../config/navigation';
-import { WEB_META_CSP } from '../utils/csp';
 import { CANONICAL_ADMIN_DASHBOARD_URL } from '../utils/admin-access';
 
 const { title, description, canonicalPath } = Astro.props;
@@ -19,8 +18,18 @@ const canonicalUrl = canonicalPath
   : Astro.url.href;
 const navLinks = primaryNavLinks;
 const footerLinks = companyLinks;
-const currentPath = Astro.url.pathname;
 const mobileNavId = 'mobile-navigation';
+const normalizePath = (path: string) => {
+  const normalized = path.startsWith('/') ? path : `/${path}`;
+  return normalized === '/' ? '/' : `${normalized.replace(/\/+$/, '')}/`;
+};
+const activePath = normalizePath(Astro.url.pathname);
+const isCurrent = (href: string) => {
+  const normalizedHref = normalizePath(href);
+  return normalizedHref === '/'
+    ? activePath === '/'
+    : activePath === normalizedHref || activePath.startsWith(normalizedHref);
+};
 ---
 
 <html lang="en">
@@ -49,6 +58,7 @@ const mobileNavId = 'mobile-navigation';
       rel="stylesheet"
     />
     <link rel="manifest" href="/site.webmanifest"/>
+    <link rel="sitemap" href="/sitemap.xml" type="application/xml" />
     <meta name="google-adsense-account" content="ca-pub-5105781580031290" />
   </head>
   <body>
@@ -66,7 +76,7 @@ const mobileNavId = 'mobile-navigation';
           <nav class="desktop-nav" aria-label="Primary navigation">
             <div class="desktop-nav__links">
               {navLinks.map((link) => (
-                <a href={link.href} aria-current={currentPath === link.href ? 'page' : undefined}>
+                <a href={link.href} aria-current={isCurrent(link.href) ? 'page' : undefined}>
                   {link.label}
                 </a>
               ))}
@@ -76,7 +86,7 @@ const mobileNavId = 'mobile-navigation';
               class="header-login"
               id="header-login-link"
             >Log in</a>
-            <a href="/contact" class="header-cta">Get a Briefing</a>
+            <a href="/contact/" class="header-cta">Get a Briefing</a>
           </nav>
 
           <button
@@ -106,15 +116,15 @@ const mobileNavId = 'mobile-navigation';
 
             <div class="menu-panel__links">
               {navLinks.map((link) => (
-                <a href={link.href} aria-current={currentPath === link.href ? 'page' : undefined}>
+                <a href={link.href} aria-current={isCurrent(link.href) ? 'page' : undefined}>
                   {link.label}
                 </a>
               ))}
             </div>
 
             <div class="menu-panel__actions">
-              <a href="/contact" class="header-cta header-cta--mobile">Get a Briefing</a>
-              <a href="/developer" class="menu-secondary-link">Open Developer Hub</a>
+              <a href="/contact/" class="header-cta header-cta--mobile">Get a Briefing</a>
+              <a href="/developer/" class="menu-secondary-link">Open Developer Hub</a>
             </div>
           </div>
         </nav>
