@@ -14,21 +14,22 @@ const systemLinks: Array<{ href: string; label: string }> = [
   { href: '/admin/system/pages', label: 'Pages' },
 ];
 
+const operationsLinks: Array<{ href: string; label: string }> = [
+  { href: '/admin/platform', label: 'Control Plane' },
+  { href: '/admin/workflows', label: 'API Workflows' },
+  { href: '/admin/customer-email', label: 'Customer Email' },
+  { href: '/admin/subscribe', label: 'Subscribe CTA' },
+  { href: '/admin/contact-forms', label: 'Contact Forms' },
+  { href: '/admin/pages', label: 'Custom Pages' },
+];
+
 const { logo, permissions = [] } = Astro.props;
 
-// Enhanced active state detection for nested routes
 const isActive = (href: string) => {
   const currentPath = Astro.url.pathname;
-
-  // Clean trailing slashes for consistent comparison
   const cleanCurrent = currentPath.endsWith('/') ? currentPath.slice(0, -1) : currentPath;
   const cleanHref = href.endsWith('/') ? href.slice(0, -1) : href;
-
-  // Exact match
   if (cleanCurrent === cleanHref) return true;
-
-  // Nested match (e.g., /admin/system/details starts with /admin/system)
-  // Ensure we don't partial match distinct roots (e.g. /admin/user vs /admin/users)
   return cleanCurrent.startsWith(cleanHref + '/');
 };
 ---
@@ -52,6 +53,17 @@ const isActive = (href: string) => {
     >
       Dashboard
     </a>
+
+    <div class="gs-nav-group-label">Operations</div>
+    {operationsLinks.map((link) => (
+      <a
+        class={`gs-nav-block gs-nav-block--sub ${isActive(link.href) ? 'active' : ''}`}
+        href={link.href}
+        aria-current={isActive(link.href) ? 'page' : undefined}
+      >
+        {link.label}
+      </a>
+    ))}
 
     <div class="gs-nav-group-label">Workers</div>
     {workerLinks.map((link) => (

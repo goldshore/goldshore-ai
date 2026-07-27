@@ -10,6 +10,9 @@ on:
       - "packages/**"
       - "package.json"
       - "pnpm-lock.yaml"
+      - ".node-version"
+      - ".nvmrc"
+      - ".github/workflows/preview-gs-api.yml"
 
 jobs:
   preview-api:
@@ -24,7 +27,7 @@ jobs:
         with:
           run_install: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: 'pnpm'

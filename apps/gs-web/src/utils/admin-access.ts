@@ -10,7 +10,12 @@ import {
 
 export const CANONICAL_ADMIN_ORIGIN = 'https://admin.goldshore.ai';
 
-const ADMIN_HOSTS = new Set(['admin.goldshore.ai', 'admin-preview.goldshore.ai']);
+const ADMIN_HOSTS = new Set([
+  'admin.goldshore.ai',
+  'admin.goldshore.org',
+  'admin-preview.goldshore.ai',
+  'admin-preview.goldshore.org',
+]);
 
 const STATIC_PATH_PREFIXES = [
   '/_astro/',
@@ -123,7 +128,9 @@ export const getAdminRouteRule = (
     normalizedPath === '/api/admin/cf/workers' ||
     normalizedPath === '/api/admin/cf/worker-detail' ||
     normalizedPath === '/admin/monetization' ||
-    normalizedPath === '/api/admin/monetization/adsense'
+    normalizedPath === '/api/admin/monetization/adsense' ||
+    normalizedPath === '/admin/search-console' ||
+    normalizedPath === '/api/admin/search-console'
   ) {
     return {
       canonicalPath: normalizedPath,

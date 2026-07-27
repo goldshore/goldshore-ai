@@ -1,6 +1,19 @@
 name: Deploy gs-web
 
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/gs-web/**'
+      - 'packages/**'
+      - 'scripts/build-openapi.mjs'
+      - 'scripts/verify-web-dist.mjs'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.node-version'
+      - '.nvmrc'
+      - '.github/workflows/deploy-gs-web.yml'
   push:
     branches: [main]
     paths:
@@ -22,7 +35,10 @@ concurrency:
 
 jobs:
   deploy:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event_name == 'pull_request' && 'preview' || 'production' }}
     permissions:
       contents: read
       deployments: write
@@ -35,7 +51,7 @@ jobs:
         with:
           version: 9.15.4
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .node-version
           cache: pnpm
@@ -67,9 +83,9 @@ jobs:
           test -n "$CLOUDFLARE_API_TOKEN"
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
-      - name: Build gs-web Pages output
+      - name: Build gs-web Worker output
         run: pnpm build:pages
 
       - name: Deploy gs-web to Cloudflare Pages
