@@ -124,3 +124,55 @@ ${DEFAULT_SIGN_OFF}
 
   return { subject, text, html };
 }
+
+export function buildNewsletterConfirmation({
+  confirmationUrl,
+}: {
+  confirmationUrl: string;
+}) {
+  const subject = 'Confirm your GoldShore newsletter subscription';
+  const text = `Confirm your subscription by opening this link:
+
+${confirmationUrl}
+
+If you did not request this, ignore this email. You will not be subscribed.
+
+${DEFAULT_SIGN_OFF}
+`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111;">
+      <h1 style="font-size: 22px;">Confirm your subscription</h1>
+      <p>Use the button below to confirm that you want GoldShore updates.</p>
+      <p><a href="${escapeHtml(confirmationUrl)}" style="display:inline-block;padding:12px 18px;background:#d3743e;color:#08080c;text-decoration:none;font-weight:700;">Confirm subscription</a></p>
+      <p>If you did not request this, ignore this email. You will not be subscribed.</p>
+      <p>${DEFAULT_SIGN_OFF}</p>
+    </div>
+  `;
+  return { subject, text, html };
+}
+
+export function buildNewsletterWelcome({
+  unsubscribeUrl,
+}: {
+  unsubscribeUrl: string;
+}) {
+  const subject = 'Your GoldShore subscription is confirmed';
+  const text = `Your subscription is confirmed.
+
+You will receive practical updates on applied intelligence, digital systems, and GoldShore projects.
+
+Unsubscribe at any time:
+${unsubscribeUrl}
+
+${DEFAULT_SIGN_OFF}
+`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111;">
+      <h1 style="font-size: 22px;">Subscription confirmed</h1>
+      <p>You will receive practical updates on applied intelligence, digital systems, and GoldShore projects.</p>
+      <p><a href="${escapeHtml(unsubscribeUrl)}">Unsubscribe at any time</a>.</p>
+      <p>${DEFAULT_SIGN_OFF}</p>
+    </div>
+  `;
+  return { subject, text, html };
+}
