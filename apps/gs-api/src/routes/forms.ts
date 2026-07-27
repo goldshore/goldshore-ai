@@ -125,7 +125,7 @@ forms.get('/newsletter/confirm', async (c) => {
   const manageTokenIsValid =
     !!manageToken && (await sha256(manageToken)) === subscriber.manage_token_hash;
   const unsubscribeUrl = manageTokenIsValid
-    ? `${publicSiteUrl(c.env)}/newsletter/unsubscribe?token=${encodeURIComponent(manageToken)}`
+    ? `${publicSiteUrl(c.env)}/newsletter/unsubscribe/?token=${encodeURIComponent(manageToken)}`
     : `${publicSiteUrl(c.env)}/contact`;
   const welcome = buildNewsletterWelcome({ unsubscribeUrl });
   const mail = await sendMail(
@@ -271,7 +271,7 @@ forms.post('/:formId/submissions', async (c) => {
       now,
     ).run();
 
-    const confirmationUrl = `${publicSiteUrl(c.env)}/newsletter/confirm?token=${encodeURIComponent(confirmationToken)}&manage=${encodeURIComponent(manageToken)}`;
+    const confirmationUrl = `${publicSiteUrl(c.env)}/newsletter/confirm/?token=${encodeURIComponent(confirmationToken)}&manage=${encodeURIComponent(manageToken)}`;
     const confirmation = buildNewsletterConfirmation({ confirmationUrl });
     const mail = await sendMail(
       c.env,
