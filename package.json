@@ -61,8 +61,8 @@
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.1.4",
-    "p-limit": "^7.3.0",
-    "turbo": "^2.10.7"
+    "p-limit": "^7.3.1",
+    "turbo": "^2.10.5"
   },
   "engines": {
     "node": ">=22.12.0"
