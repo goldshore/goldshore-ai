@@ -49,8 +49,8 @@ importers:
         specifier: ^5.0.5
         version: 5.0.5
       prettier:
-        specifier: ^3.2.5
-        version: 3.9.1
+        specifier: ^3.9.6
+        version: 3.9.6
       prettier-plugin-astro:
         specifier: ^0.14.1
         version: 0.14.1
@@ -103,12 +103,12 @@ importers:
         specifier: ^2.5.0
         version: 2.5.0
       sanitize-html:
-        specifier: ^2.17.5
-        version: 2.17.5
+        specifier: ^2.17.6
+        version: 2.17.6
     devDependencies:
       '@cloudflare/workers-types':
-        specifier: ^5.20260726.1
-        version: 5.20260726.1
+        specifier: ^5.20260719.1
+        version: 5.20260724.1
       tsx:
         specifier: ^4.7.1
         version: 4.22.4
@@ -3187,6 +3187,10 @@ packages:
     resolution: {integrity: sha512-TWrgLOFUQTH994YUyl1yT4uyavY5nNB5muff+RtWaqNVCAK408b5ZnnbNAUEWLTCpum9w6arT70i1XdQ4UeOPA==}
     engines: {node: '>=0.12'}
 
+  entities@8.0.0:
+    resolution: {integrity: sha512-zwfzJecQ/Uej6tusMqwAqU/6KL2XaB2VZ2Jg54Je6ahNBGNH6Ek6g3jjNCF0fG9EWQKGZNddNjU5F1ZQn/sBnA==}
+    engines: {node: '>=20.19.0'}
+
   env-paths@3.0.0:
     resolution: {integrity: sha512-dtJUTepzMW3Lm/NPxRf3wP4642UWhjL2sQxc+ym2YMj1m/H2zDNQOlezafzkHwn6sMstjHTwG6iQQsctDW/b1A==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
@@ -3595,6 +3599,10 @@ packages:
 
   htmlparser2@10.1.0:
     resolution: {integrity: sha512-VTZkM9GWRAtEpveh7MSF6SjjrpNVNNVJfFup7xTY3UpFtm67foy9HDVXneLtFVt4pMz5kZtgNcvCniNFb1hlEQ==}
+
+  htmlparser2@12.0.0:
+    resolution: {integrity: sha512-Tz7u1i95/g2x2jz81+x0FBVhBhY5aRTvD3tXXdFaljuNdzDLJ8UGNRrTcj2cgQvAg3iW/h77Fz15nLW0L0CrZw==}
+    engines: {node: '>=20.19.0'}
 
   http-cache-semantics@4.2.0:
     resolution: {integrity: sha512-dTxcvPXqPvXBQpq5dUr6mEMJX4oIEFv6bwom3FDwKRDsuIjjJGANqhBuoAn9c1RQJIdAKav33ED65E2ys+87QQ==}
@@ -4265,14 +4273,14 @@ packages:
     resolution: {integrity: sha512-RvwwcruNjI1ncT5xRakeyS9Lf8lcItv34KD+aif+VH9kduAyfYBipGh12274xtenIPZ119/R9BdTBa8gAwSh0A==}
     engines: {node: '>=12'}
 
-  playwright-core@1.61.1:
-    resolution: {integrity: sha512-h7Qlt6m4REp25qvIdvbDtVmD4LqVXfpRxhORv9L0jzETM05p4fuPJ3dKyuSXQxDSbXnmS79HAgi9589lGSpLkg==}
-    engines: {node: '>=18'}
+  playwright-core@1.62.0:
+    resolution: {integrity: sha512-nsNRyq0r2zsG8AcRHWknc9QRA5XCueC7gWMrs+Gx2tlZn9hcl8zudfh00lhJPY1DE7NmZ6bDsT9g2yey8mXljA==}
+    engines: {node: '>=20'}
     hasBin: true
 
-  playwright@1.61.1:
-    resolution: {integrity: sha512-DWnY5o3YbLWK4GovuAVwpqL+1VwGNdUGrRr++8j8PtQQzvAVZUIMjKQ90fY689sEJZJBbZVw1rXaOKSTitkzPQ==}
-    engines: {node: '>=18'}
+  playwright@1.62.0:
+    resolution: {integrity: sha512-Z14dG305dgaLu6foB1TXQagFiW8JfSUIUaUuPaKQ6NtBPKF1P/qXcqfh6c6K/icPqdy37JmjbiBXf6JNg6Sylw==}
+    engines: {node: '>=20'}
     hasBin: true
 
   postcss-selector-parser@7.1.4:
@@ -4281,6 +4289,10 @@ packages:
 
   postcss@8.5.22:
     resolution: {integrity: sha512-KBDEIpLrvpv16pp3K0Fw+UCoZfopFjjgeB+0tA/aaThfEE74kKDLrgg603YvOWJyg3+WYtyq3xYsQWsIyZlPqQ==}
+    engines: {node: ^10 || ^12 || >=14}
+
+  postcss@8.5.23:
+    resolution: {integrity: sha512-g50586zr4bZmwFiTlflMu8E0bDTb5I5gertgwAKmsdUlTQIhZtunzUlD1WSzwcVWPoAVpsrA6vlfCD7oXvRwgg==}
     engines: {node: ^10 || ^12 || >=14}
 
   potpack@1.0.2:
@@ -4294,8 +4306,8 @@ packages:
     resolution: {integrity: sha512-RiBETaaP9veVstE4vUwSIcdATj6dKmXljouXc/DDNwBSPTp8FRkLGDSGFClKsAFeeg+13SB0Z1JZvbD76bigJw==}
     engines: {node: ^14.15.0 || >=16.0.0}
 
-  prettier@3.9.1:
-    resolution: {integrity: sha512-ppiDo2CSwexck1eyZUwJHg/N3nf1+6IRCv7W/VJ5vaLnVCmB7+3CdRfMwoCHBBX6xTrREDTksZ4OZl5SSf4zXA==}
+  prettier@3.9.6:
+    resolution: {integrity: sha512-OpN0zzVdiaiAhxpuuj5efpIS4sY9j7bY6uR5mnj5yPzGkdkjNKSJeUThPb60Jw29QuAZgA4o+/iB49kFiaBX6g==}
     engines: {node: '>=14'}
     hasBin: true
 
@@ -4457,8 +4469,9 @@ packages:
     resolution: {integrity: sha512-b3rppTKm9T+PsVCBEOUR46GWI7fdOs00VKZ1+9c1EWDaDMvjQc6tUwuFyIprgGgTcWoVHSKrU8H31ZHA2e0RHA==}
     engines: {node: '>=10'}
 
-  sanitize-html@2.17.5:
-    resolution: {integrity: sha512-ZmU1joGRrvoyctKIiuwUxqR6moLoU2Wk+2bMccN6f7UwhAmwYDvWziqPxRDDN2Qip62NqnIrVrT9akbL6Wretg==}
+  sanitize-html@2.17.6:
+    resolution: {integrity: sha512-M4bo9tfv1yfhQZZKkc6dL07ALrGJtfvNOuhX3hU9AVPR/uPQ+nKOJBqTYc7LfMQblTW04mtSWDJWEyLvygJsLA==}
+    engines: {node: '>=22.12.0'}
 
   sass-formatter@0.7.9:
     resolution: {integrity: sha512-CWZ8XiSim+fJVG0cFLStwDvft1VI7uvXdCNJYXhDvowiv+DsbD1nXLiQ4zrE5UBvj5DWZJ93cwN0NX5PMsr1Pw==}
@@ -5253,9 +5266,9 @@ packages:
 
 snapshots:
 
-  '@astrojs/check@0.9.9(prettier-plugin-astro@0.14.1)(prettier@3.9.1)(typescript@5.9.3)':
+  '@astrojs/check@0.9.9(prettier-plugin-astro@0.14.1)(prettier@3.9.6)(typescript@5.9.3)':
     dependencies:
-      '@astrojs/language-server': 2.16.10(prettier-plugin-astro@0.14.1)(prettier@3.9.1)(typescript@5.9.3)
+      '@astrojs/language-server': 2.16.10(prettier-plugin-astro@0.14.1)(prettier@3.9.6)(typescript@5.9.3)
       chokidar: 4.0.3
       kleur: 4.1.5
       typescript: 5.9.3
@@ -5264,15 +5277,15 @@ snapshots:
       - prettier
       - prettier-plugin-astro
 
-  '@astrojs/cloudflare@14.1.4(@types/node@26.1.1)(astro@7.1.3(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@26.1.1)(rollup@4.62.2)(tsx@4.23.1)(yaml@2.9.0))(esbuild@0.28.1)(tsx@4.23.1)(wrangler@4.114.0(@cloudflare/workers-types@5.20260726.1))(yaml@2.9.0)':
+  '@astrojs/cloudflare@14.1.4(@types/node@26.1.1)(astro@7.1.3(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@26.1.1)(rollup@4.62.2)(tsx@4.23.1)(yaml@2.9.0))(esbuild@0.28.1)(tsx@4.23.1)(wrangler@4.114.0(@cloudflare/workers-types@5.20260724.1))(yaml@2.9.0)':
     dependencies:
       '@astrojs/internal-helpers': 0.10.1
       '@astrojs/underscore-redirects': 1.0.3
-      '@cloudflare/vite-plugin': 1.47.0(vite@8.1.5(@types/node@26.1.1)(esbuild@0.28.1)(tsx@4.23.1)(yaml@2.9.0))(wrangler@4.114.0(@cloudflare/workers-types@5.20260726.1))
+      '@cloudflare/vite-plugin': 1.47.0(vite@8.1.5(@types/node@26.1.1)(esbuild@0.28.1)(tsx@4.23.1)(yaml@2.9.0))(wrangler@4.114.0(@cloudflare/workers-types@5.20260724.1))
       astro: 7.1.3(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@26.1.1)(rollup@4.62.2)(tsx@4.23.1)(yaml@2.9.0)
       piccolore: 0.1.3
       vite: 8.1.5(@types/node@26.1.1)(esbuild@0.28.1)(tsx@4.23.1)(yaml@2.9.0)
-      wrangler: 4.114.0(@cloudflare/workers-types@5.20260726.1)
+      wrangler: 4.114.0(@cloudflare/workers-types@5.20260724.1)
     transitivePeerDependencies:
       - '@types/node'
       - '@vitejs/devtools'
@@ -5358,7 +5371,7 @@ snapshots:
 
   '@astrojs/internal-helpers@0.7.6': {}
 
-  '@astrojs/language-server@2.16.10(prettier-plugin-astro@0.14.1)(prettier@3.9.1)(typescript@5.9.3)':
+  '@astrojs/language-server@2.16.10(prettier-plugin-astro@0.14.1)(prettier@3.9.6)(typescript@5.9.3)':
     dependencies:
       '@astrojs/compiler': 2.13.1
       '@astrojs/yaml2ts': 0.2.4
@@ -5372,14 +5385,14 @@ snapshots:
       volar-service-css: 0.0.70(@volar/language-service@2.4.28)
       volar-service-emmet: 0.0.70(@volar/language-service@2.4.28)
       volar-service-html: 0.0.70(@volar/language-service@2.4.28)
-      volar-service-prettier: 0.0.70(@volar/language-service@2.4.28)(prettier@3.9.1)
+      volar-service-prettier: 0.0.70(@volar/language-service@2.4.28)(prettier@3.9.6)
       volar-service-typescript: 0.0.70(@volar/language-service@2.4.28)
       volar-service-typescript-twoslash-queries: 0.0.70(@volar/language-service@2.4.28)
       volar-service-yaml: 0.0.70(@volar/language-service@2.4.28)
       vscode-html-languageservice: 5.6.2
       vscode-uri: 3.1.0
     optionalDependencies:
-      prettier: 3.9.1
+      prettier: 3.9.6
       prettier-plugin-astro: 0.14.1
     transitivePeerDependencies:
       - typescript
@@ -5696,7 +5709,7 @@ snapshots:
     optionalDependencies:
       workerd: 1.20260722.1
 
-  '@cloudflare/vite-plugin@1.47.0(vite@8.1.5(@types/node@26.1.1)(esbuild@0.28.1)(tsx@4.23.1)(yaml@2.9.0))(wrangler@4.114.0(@cloudflare/workers-types@5.20260726.1))':
+  '@cloudflare/vite-plugin@1.47.0(vite@8.1.5(@types/node@26.1.1)(esbuild@0.28.1)(tsx@4.23.1)(yaml@2.9.0))(wrangler@4.114.0(@cloudflare/workers-types@5.20260724.1))':
     dependencies:
       '@cloudflare/unenv-preset': 2.16.1(unenv@2.0.0-rc.24)(workerd@1.20260722.1)
       miniflare: 4.20260722.0
@@ -6738,9 +6751,9 @@ snapshots:
 
   '@oxc-project/types@0.139.0': {}
 
-  '@playwright/test@1.61.1':
+  '@playwright/test@1.62.0':
     dependencies:
-      playwright: 1.61.1
+      playwright: 1.62.0
 
   '@poppinss/colors@4.1.6':
     dependencies:
@@ -7207,7 +7220,7 @@ snapshots:
 
   '@typescript-eslint/project-service@8.62.0(typescript@5.9.3)':
     dependencies:
-      '@typescript-eslint/tsconfig-utils': 8.62.0(typescript@5.9.3)
+      '@typescript-eslint/tsconfig-utils': 8.65.0(typescript@5.9.3)
       '@typescript-eslint/types': 8.65.0
       debug: 4.4.3
       typescript: 5.9.3
@@ -7899,17 +7912,35 @@ snapshots:
       domhandler: 5.0.3
       entities: 4.5.0
 
+  dom-serializer@3.1.1:
+    dependencies:
+      domelementtype: 3.0.0
+      domhandler: 6.0.1
+      entities: 8.0.0
+
   domelementtype@2.3.0: {}
+
+  domelementtype@3.0.0: {}
 
   domhandler@5.0.3:
     dependencies:
       domelementtype: 2.3.0
+
+  domhandler@6.0.1:
+    dependencies:
+      domelementtype: 3.0.0
 
   domutils@3.2.2:
     dependencies:
       dom-serializer: 2.0.0
       domelementtype: 2.3.0
       domhandler: 5.0.3
+
+  domutils@4.0.2:
+    dependencies:
+      dom-serializer: 3.1.1
+      domelementtype: 3.0.0
+      domhandler: 6.0.1
 
   draco3d@1.5.7: {}
 
@@ -7967,6 +7998,8 @@ snapshots:
   entities@6.0.1: {}
 
   entities@7.0.1: {}
+
+  entities@8.0.0: {}
 
   env-paths@3.0.0: {}
 
@@ -8626,6 +8659,13 @@ snapshots:
       domhandler: 5.0.3
       domutils: 3.2.2
       entities: 7.0.1
+
+  htmlparser2@12.0.0:
+    dependencies:
+      domelementtype: 3.0.0
+      domhandler: 6.0.1
+      domutils: 4.0.2
+      entities: 8.0.0
 
   http-cache-semantics@4.2.0: {}
 
@@ -9492,11 +9532,11 @@ snapshots:
 
   picomatch@4.0.5: {}
 
-  playwright-core@1.61.1: {}
+  playwright-core@1.62.0: {}
 
-  playwright@1.61.1:
+  playwright@1.62.0:
     dependencies:
-      playwright-core: 1.61.1
+      playwright-core: 1.62.0
     optionalDependencies:
       fsevents: 2.3.2
 
@@ -9511,6 +9551,12 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
+  postcss@8.5.23:
+    dependencies:
+      nanoid: 3.3.16
+      picocolors: 1.1.1
+      source-map-js: 1.2.1
+
   potpack@1.0.2: {}
 
   prelude-ls@1.2.1: {}
@@ -9518,10 +9564,10 @@ snapshots:
   prettier-plugin-astro@0.14.1:
     dependencies:
       '@astrojs/compiler': 2.13.1
-      prettier: 3.9.1
+      prettier: 3.9.6
       sass-formatter: 0.7.9
 
-  prettier@3.9.1: {}
+  prettier@3.9.6: {}
 
   prismjs@1.30.0: {}
 
@@ -9773,15 +9819,15 @@ snapshots:
 
   safe-stable-stringify@2.5.0: {}
 
-  sanitize-html@2.17.5:
+  sanitize-html@2.17.6:
     dependencies:
       deepmerge: 4.3.1
       escape-string-regexp: 4.0.0
-      htmlparser2: 10.1.0
+      htmlparser2: 12.0.0
       is-plain-object: 5.0.0
       launder: 1.7.1
       parse-srcset: 1.0.2
-      postcss: 8.5.22
+      postcss: 8.5.23
 
   sass-formatter@0.7.9:
     dependencies:
@@ -10278,7 +10324,7 @@ snapshots:
       esbuild: 0.25.12
       fdir: 6.5.0(picomatch@4.0.5)
       picomatch: 4.0.5
-      postcss: 8.5.22
+      postcss: 8.5.23
       rollup: 4.62.2
       tinyglobby: 0.2.17
     optionalDependencies:
@@ -10292,7 +10338,7 @@ snapshots:
     dependencies:
       lightningcss: 1.33.0
       picomatch: 4.0.5
-      postcss: 8.5.22
+      postcss: 8.5.23
       rolldown: 1.1.5
       tinyglobby: 0.2.17
     optionalDependencies:
@@ -10335,12 +10381,12 @@ snapshots:
     optionalDependencies:
       '@volar/language-service': 2.4.28
 
-  volar-service-prettier@0.0.70(@volar/language-service@2.4.28)(prettier@3.9.1):
+  volar-service-prettier@0.0.70(@volar/language-service@2.4.28)(prettier@3.9.6):
     dependencies:
       vscode-uri: 3.1.0
     optionalDependencies:
       '@volar/language-service': 2.4.28
-      prettier: 3.9.1
+      prettier: 3.9.6
 
   volar-service-typescript-twoslash-queries@0.0.70(@volar/language-service@2.4.28):
     dependencies:
@@ -10488,7 +10534,7 @@ snapshots:
       '@vscode/l10n': 0.0.18
       ajv: 8.20.0
       ajv-draft-04: 1.0.0(ajv@8.20.0)
-      prettier: 3.9.1
+      prettier: 3.9.6
       request-light: 0.5.8
       vscode-json-languageservice: 4.1.8
       vscode-languageserver: 9.0.1
