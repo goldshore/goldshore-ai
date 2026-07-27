@@ -51,15 +51,7 @@ binding = "SECURITY"
 service = "banproof-me"
 environment = "prod"
 
-[[env.prod.services]]
-binding = "SIGNALS"
-service = "gs-core-worker"
-environment = "prod"
 
-[[env.prod.services]]
-binding = "MAIL"
-service = "gs-mail"
-environment = "prod"
 
 # gs-core-worker is no longer proxied through gs-platform.
 # armsway-com worker binds directly to gs-core-worker for its own needs.

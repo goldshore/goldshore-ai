@@ -1,33 +1,96 @@
 name: Deploy gs-web
 
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/gs-web/**'
+      - 'packages/**'
+      - 'scripts/build-openapi.mjs'
+      - 'scripts/verify-web-dist.mjs'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.node-version'
+      - '.nvmrc'
+      - '.github/workflows/deploy-gs-web.yml'
   push:
     branches: [main]
     paths:
       - 'apps/gs-web/**'
       - 'packages/**'
+      - 'scripts/build-openapi.mjs'
+      - 'scripts/verify-web-dist.mjs'
+      - 'package.json'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
+      - '.node-version'
+      - '.nvmrc'
       - '.github/workflows/deploy-gs-web.yml'
   workflow_dispatch:
 
+concurrency:
+  group: deploy-gs-web-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   deploy:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event_name == 'pull_request' && 'preview' || 'production' }}
     permissions:
       contents: read
+      deployments: write
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@v7
+
       - uses: pnpm/action-setup@v6
         with:
           version: 9.15.4
-      - uses: actions/setup-node@v6
+
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version-file: .node-version
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @goldshore/gs-web build
-      - run: pnpm --filter @goldshore/gs-web exec wrangler deploy --env prod
+
+      - uses: ./.github/actions/normalize-cf-token
+        id: cf-token
+        with:
+          raw_token: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
+          token_name: 'CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN'
+
+      - name: Verify Cloudflare secrets
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_TOKEN: ${{ steps.cf-token.outputs.token }}
+        run: |
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "::error::Missing CLOUDFLARE_ACCOUNT_ID" && exit 1)
+          test -n "$CF_TOKEN" || (echo "::error::Missing CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN" && exit 1)
+          echo "CLOUDFLARE_API_TOKEN=$CF_TOKEN" >> "$GITHUB_ENV"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build gs-web Worker output
+        env:
+          NODE_ENV: production
+        run: pnpm build:pages
+
+      - name: Deploy gs-web Worker
+        if: github.event_name != 'pull_request'
+        working-directory: apps/gs-web
+        env:
+          WRANGLER_ENV: prod
+          WRANGLER_NAME: gs-web-prod
+        run: pnpm exec wrangler deploy --env "$WRANGLER_ENV" --name "$WRANGLER_NAME"
+
+      - name: Validate gs-web Worker bundle
+        if: github.event_name == 'pull_request'
+        working-directory: apps/gs-web
+        run: pnpm exec wrangler deploy --env preview --name gs-web-preview --dry-run --outdir .wrangler-dry-run-gs-web-preview
+
+      - name: Health check (gs-web)
+        if: github.event_name != 'pull_request'
+        run: curl -fsS https://goldshore.ai/ >/dev/null
