@@ -102,6 +102,14 @@ const withCorrelationId = (response: Response, correlationId: string): Response 
 const getHostRoutePrefix = (request: Request): string | undefined =>
   HOST_ROUTE_PREFIXES.get(new URL(request.url).hostname);
 
+const getOptionalExecutionContext = (c: { executionCtx?: ExecutionContext }) => {
+  try {
+    return c.executionCtx;
+  } catch {
+    return undefined;
+  }
+};
+
 const normalizeEmail = (value: string) => value.trim().toLowerCase();
 const parseEmailList = (value?: string) =>
   (value ?? '')
@@ -221,7 +229,11 @@ app.use('*', async (c, next) => {
   const correlationId = getCorrelationId(c.req.raw);
   const routedUrl = new URL(c.req.url);
   routedUrl.pathname = `${routePrefix}${routedUrl.pathname === '/' ? '' : routedUrl.pathname}`;
-  const response = await app.fetch(new Request(routedUrl.toString(), c.req.raw), c.env, c.executionCtx);
+  const response = await app.fetch(
+    new Request(routedUrl.toString(), c.req.raw),
+    c.env,
+    getOptionalExecutionContext(c),
+  );
   return withCorrelationId(response, correlationId);
 });
 
@@ -368,7 +380,11 @@ app.all('/api/*', async (c) => {
 
     const internalUrl = new URL(c.req.url);
     internalUrl.pathname = proxiedPath;
-    const response = await app.fetch(new Request(internalUrl.toString(), c.req.raw), c.env, c.executionCtx);
+    const response = await app.fetch(
+      new Request(internalUrl.toString(), c.req.raw),
+      c.env,
+      getOptionalExecutionContext(c),
+    );
     return withCorrelationId(response, correlationId);
   } catch (error) {
     console.error(`[api] gateway proxy failed; trace=${correlationId}`, error);
