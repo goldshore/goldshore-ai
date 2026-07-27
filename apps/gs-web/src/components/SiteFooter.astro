@@ -35,6 +35,10 @@ const legalLinks = [
               Subscribe
             </button>
           </form>
+          <p class="text-xs gs-text-dim mt-2">
+            By subscribing, you agree to receive GoldShore updates. Confirm by email and
+            unsubscribe at any time. <a href="/legal/privacy">Privacy</a>
+          </p>
           <p id="subscription-message" class="text-xs gs-text-dim mt-2"></p>
         </div>
       </div>
@@ -84,7 +88,7 @@ const legalLinks = [
             const data = await response.json();
 
             if (response.ok) {
-              if (messageEl) messageEl.textContent = 'Thanks for subscribing!';
+              if (messageEl) messageEl.textContent = data.message || 'Check your inbox to confirm.';
               if (emailInput) emailInput.value = '';
             } else {
               if (messageEl) messageEl.textContent = data.message || 'Subscription failed.';
