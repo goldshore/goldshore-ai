@@ -50,7 +50,7 @@
     "eslint-plugin-astro": "^3.0.1",
     "form-data": "^4.0.6",
     "octokit": "^5.0.5",
-    "prettier": "^3.2.5",
+    "prettier": "^3.9.6",
     "prettier-plugin-astro": "^0.14.1",
     "svgo": "^4.0.2",
     "tsx": "^4.23.1",
@@ -62,7 +62,7 @@
   "dependencies": {
     "@astrojs/cloudflare": "^14.1.4",
     "p-limit": "^7.3.0",
-    "turbo": "^2.10.5"
+    "turbo": "^2.10.7"
   },
   "engines": {
     "node": ">=22.12.0"
