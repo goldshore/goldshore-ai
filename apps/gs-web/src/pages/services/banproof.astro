@@ -1,0 +1,21 @@
+---
+import PublicFeaturePage from '../../components/PublicFeaturePage.astro';
+
+export const prerender = false;
+
+const cards = [
+  { title: 'Always-on monitoring', body: 'Track press, social, community, and platform-policy changes before they compound.' },
+  { title: 'Incident response', body: 'Use prepared statements, decision trees, and executive briefing materials to respond quickly.' },
+  { title: 'Recovery systems', body: 'Restore trust through resilient publishing, search visibility, and stakeholder communication.' },
+  { title: 'Protected operations', body: 'Keep internal coordination behind identity-aware access with auditable incident records.' },
+];
+---
+
+<PublicFeaturePage
+  eyebrow="Reputation Defense"
+  title="Banproof"
+  description="Monitoring, response playbooks, and resilient communications infrastructure for organizations operating under pressure."
+  canonicalPath="/services/banproof/"
+  {cards}
+  ctaLabel="Engage Banproof"
+/>
