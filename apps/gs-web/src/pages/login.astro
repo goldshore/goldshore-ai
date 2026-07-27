@@ -1,9 +1,17 @@
 ---
+import {
+  ALTERNATE_ADMIN_DASHBOARD_URL,
+  ALTERNATE_ADMIN_ORIGIN,
+  CANONICAL_ADMIN_DASHBOARD_URL,
+  CANONICAL_ADMIN_ORIGIN,
+} from '../utils/admin-access';
+
 const requested = Astro.url.searchParams.get('to') ?? 'dashboard';
 const destinations: Record<string, string> = {
-  dashboard: 'https://admin.goldshore.org/dashboard',
-  admin: 'https://admin.goldshore.org',
-  ai: 'https://admin.goldshore.ai',
+  dashboard: CANONICAL_ADMIN_DASHBOARD_URL,
+  admin: CANONICAL_ADMIN_DASHBOARD_URL,
+  org: ALTERNATE_ADMIN_DASHBOARD_URL,
+  ai: CANONICAL_ADMIN_DASHBOARD_URL,
 };
 const destination = destinations[requested] ?? destinations.dashboard;
 ---
@@ -25,9 +33,9 @@ const destination = destinations[requested] ?? destinations.dashboard;
       <p>Cloudflare Access will verify your identity before loading the dashboard.</p>
       <a href={destination}>Continue with Cloudflare Access</a>
       <nav aria-label="Admin destinations">
-        <a href="https://admin.goldshore.org/dashboard">Dashboard</a>
-        <a href="https://admin.goldshore.org">Admin</a>
-        <a href="https://admin.goldshore.ai">Admin AI</a>
+        <a href={CANONICAL_ADMIN_DASHBOARD_URL}>Dashboard</a>
+        <a href={CANONICAL_ADMIN_ORIGIN}>Admin AI</a>
+        <a href={ALTERNATE_ADMIN_ORIGIN}>Admin Org</a>
       </nav>
     </main>
   </body>
