@@ -85,6 +85,11 @@ describe('gs-api wrangler env bindings', () => {
     });
   }
 
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
   it('keeps top-level bindings safe for Cloudflare Workers Builds version uploads', () => {
     const topLevel = topLevelBlock(wranglerToml);
 
@@ -136,5 +141,30 @@ describe('gs-api wrangler env bindings', () => {
       'admin.goldshore.ai/*',
       'admin.goldshore.org/*',
     ]);
+=======
+  it('keeps CONTROL_SYNC_TOKEN out of plain-text environment variables', () => {
+    assert.doesNotMatch(wranglerToml, /^CONTROL_SYNC_TOKEN\s*=/m);
+    assert.doesNotMatch(wranglerToml, /__PROD_CONTROL_SYNC_TOKEN__/);
+>>>>>>> theirs
+=======
+  it('keeps CONTROL_SYNC_TOKEN out of plain-text environment variables', () => {
+    assert.doesNotMatch(wranglerToml, /^CONTROL_SYNC_TOKEN\s*=/m);
+    assert.doesNotMatch(wranglerToml, /__PROD_CONTROL_SYNC_TOKEN__/);
+>>>>>>> theirs
+=======
+  it('keeps CONTROL_SYNC_TOKEN out of plain-text environment variables', () => {
+    assert.doesNotMatch(wranglerToml, /^CONTROL_SYNC_TOKEN\s*=/m);
+    assert.doesNotMatch(wranglerToml, /__PROD_CONTROL_SYNC_TOKEN__/);
+>>>>>>> theirs
+=======
+  it('keeps CONTROL_SYNC_TOKEN out of plain-text environment variables', () => {
+    assert.doesNotMatch(wranglerToml, /^CONTROL_SYNC_TOKEN\s*=/m);
+    assert.doesNotMatch(wranglerToml, /__PROD_CONTROL_SYNC_TOKEN__/);
+>>>>>>> theirs
+=======
+  it('keeps CONTROL_SYNC_TOKEN out of plain-text environment variables', () => {
+    assert.doesNotMatch(wranglerToml, /^CONTROL_SYNC_TOKEN\s*=/m);
+    assert.doesNotMatch(wranglerToml, /__PROD_CONTROL_SYNC_TOKEN__/);
+>>>>>>> theirs
   });
 });
