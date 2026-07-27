@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import * as assert from 'node:assert/strict';
 
-import app, { isAllowedOrigin, isPreviewOrigin, isPublicPath } from './index';
+import worker, { app, isAllowedOrigin, isPreviewOrigin, isPublicPath } from './index';
 
 const requiredRuntimeEnv = {
   PLATFORM_DB: {} as any,
@@ -30,7 +30,10 @@ test('rejects unrelated origins', () => {
 test('allows only public form submission writes through API authentication', () => {
   assert.equal(isPublicPath('/v1/forms/contact/submissions', 'POST'), true);
   assert.equal(isPublicPath('/v1/forms/newsletter/submissions', 'POST'), true);
+  assert.equal(isPublicPath('/v1/forms/newsletter/confirm', 'GET'), true);
+  assert.equal(isPublicPath('/v1/forms/newsletter/unsubscribe', 'GET'), true);
   assert.equal(isPublicPath('/v1/forms/contact/submissions', 'GET'), false);
+  assert.equal(isPublicPath('/v1/forms/subscribers', 'GET'), false);
   assert.equal(isPublicPath('/v1/forms/configs', 'GET'), false);
   assert.equal(isPublicPath('/v1/forms/leads', 'GET'), false);
 });
@@ -57,6 +60,31 @@ test('exposes /version without Cloudflare Access', async () => {
   assert.equal(payload.version, '2026.05.25');
   assert.equal(payload.deploySha, 'abc1234');
 });
+
+for (const [hostname, service] of [
+  ['agent.goldshore.ai', 'gs-api-agent'],
+  ['mail.goldshore.ai', 'gs-api-mail'],
+  ['ops.goldshore.ai', 'gs-api-control'],
+  ['trading.goldshore.ai', 'gs-api-trading'],
+  ['dashboard.goldshore.ai', 'gs-api-trading'],
+  ['dash.goldshore.ai', 'gs-api-trading'],
+  ['gw.goldshore.ai', 'gs-api-core'],
+] as const) {
+  test(`routes ${hostname} health requests to ${service}`, async () => {
+    const response = await worker.fetch(
+      new Request(`https://${hostname}/health`),
+      requiredRuntimeEnv as any,
+      {
+        waitUntil() {},
+        passThroughOnException() {},
+        props: {},
+      } as ExecutionContext,
+    );
+
+    assert.equal(response.status, 200);
+    assert.equal(((await response.json()) as { service: string }).service, service);
+  });
+}
 
 test('fails closed when protected routes are missing the Access audience', async () => {
   const response = await app.request('/system/status', {}, { ...requiredRuntimeEnv } as any);
