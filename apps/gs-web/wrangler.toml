@@ -16,8 +16,29 @@ binding = "ASSETS"
 # binding at the top level so the generated deployment config reuses the
 # existing namespace instead of attempting automatic provisioning.
 [[kv_namespaces]]
+binding = "KV"
+id = "5f13370575784c9dacff522121104cb3"
+
+[[kv_namespaces]]
 binding = "SESSION"
 id = "09ae2ffbffe24e628c9538c8129dfe33"
+
+[[d1_databases]]
+binding = "PLATFORM_DB"
+database_name = "gs_platform_db"
+database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
+
+[[r2_buckets]]
+binding = "GS_ASSETS"
+bucket_name = "gs-assets"
+
+[vars]
+ENV = "production"
+PUBLIC_API = "https://api.goldshore.ai"
+CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
+CLOUDFLARE_ACCESS_AUDIENCE = "c520a7647223b49b20fbe5be240772863eb684b97b57c08955b6104c58170db9"
+CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
+MAILCHANNELS_SENDER_NAME = "GoldShore"
 
 # ── Production ──────────────────────────────────────────────────────────────────────────────────────
 
@@ -26,7 +47,10 @@ routes = [
   { pattern = "goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
   { pattern = "admin.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "admin.goldshore.org/*", zone_name = "goldshore.org" }
+  { pattern = "admin-preview.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "admin.goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "risk.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "risk.goldshore.org/*", zone_name = "goldshore.org" }
 ]
 
 [[env.prod.kv_namespaces]]
