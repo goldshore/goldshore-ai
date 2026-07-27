@@ -168,6 +168,12 @@ const isPublicPath = (path: string, method: string) => {
   ) {
     return true;
   }
+  if (
+    method === 'GET' &&
+    /^\/v1\/forms\/newsletter\/(?:confirm|unsubscribe)$/.test(path)
+  ) {
+    return true;
+  }
   return (
     path === '/' ||
     path === '/version' ||
