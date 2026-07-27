@@ -30,6 +30,8 @@ import mail from './routes/mail';
 import control from './routes/control';
 import trading from './routes/trading';
 import core from './routes/core';
+import services from './routes/services';
+import products from './routes/products';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
 import { type Env } from './types';
@@ -349,6 +351,8 @@ app.route('/mail', mail);
 app.route('/admin/control', control);
 app.route('/trading', trading);
 app.route('/core', core);
+app.route('/services', services);
+app.route('/products', products);
 
 app.all('/api/*', async (c) => {
   const correlationId = getCorrelationId(c.req.raw);
@@ -388,6 +392,8 @@ v1.route('/agent', agent);
 v1.route('/mail', mail);
 v1.route('/control', control);
 v1.route('/core', core);
+v1.route('/services', services);
+v1.route('/products', products);
 v1.get('/leads', (c) => c.json({ leads: [] }));
 
 app.route('/v1', v1);
