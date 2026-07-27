@@ -9,6 +9,12 @@ import {
 } from '@goldshore/auth';
 
 export const CANONICAL_ADMIN_ORIGIN = 'https://admin.goldshore.ai';
+export const ALTERNATE_ADMIN_ORIGIN = 'https://admin.goldshore.org';
+export const ADMIN_DASHBOARD_PATH = '/app/dashboard';
+export const CANONICAL_ADMIN_DASHBOARD_URL =
+  `${CANONICAL_ADMIN_ORIGIN}${ADMIN_DASHBOARD_PATH}`;
+export const ALTERNATE_ADMIN_DASHBOARD_URL =
+  `${ALTERNATE_ADMIN_ORIGIN}${ADMIN_DASHBOARD_PATH}`;
 
 const ADMIN_HOSTS = new Set([
   'admin.goldshore.ai',
@@ -25,6 +31,19 @@ const STATIC_PATH_PREFIXES = [
   '/logo',
   '/robots.txt',
   '/sitemap',
+];
+
+const CLEAN_ADMIN_PAGE_PREFIXES = [
+  '/api-status',
+  '/crawler',
+  '/goldclaw',
+  '/integrations',
+  '/lead-submissions',
+  '/monetization',
+  '/products',
+  '/search-console',
+  '/services',
+  '/workers',
 ];
 
 export type AdminRouteRule = {
@@ -58,6 +77,36 @@ export const isStaticAssetPath = (pathname: string) => {
   return STATIC_PATH_PREFIXES.some((prefix) => normalizedPath.startsWith(prefix));
 };
 
+export const getAdminHostRewritePath = (pathname: string) => {
+  const normalizedPath = normalizePathname(pathname);
+
+  if (isStaticAssetPath(normalizedPath)) return null;
+  if (normalizedPath === '/') return ADMIN_DASHBOARD_PATH;
+
+  if (
+    normalizedPath === '/app' ||
+    normalizedPath.startsWith('/app/') ||
+    normalizedPath === '/admin' ||
+    normalizedPath.startsWith('/admin/') ||
+    normalizedPath === '/api/admin' ||
+    normalizedPath.startsWith('/api/admin/') ||
+    normalizedPath === '/api/forms' ||
+    normalizedPath.startsWith('/api/forms/')
+  ) {
+    return null;
+  }
+
+  if (
+    CLEAN_ADMIN_PAGE_PREFIXES.some(
+      (prefix) => normalizedPath === prefix || normalizedPath.startsWith(`${prefix}/`),
+    )
+  ) {
+    return `/admin${normalizedPath}`;
+  }
+
+  return ADMIN_DASHBOARD_PATH;
+};
+
 const permissionForMethod = (
   method: string,
   readPermission: AdminPermission,
@@ -76,9 +125,9 @@ export const getAdminRouteRule = (
 ): AdminRouteRule | null => {
   const normalizedPath = normalizePathname(pathname);
 
-  if (normalizedPath === '/app' || normalizedPath === '/app/dashboard') {
+  if (normalizedPath === '/app' || normalizedPath === ADMIN_DASHBOARD_PATH) {
     return {
-      canonicalPath: '/app/dashboard',
+      canonicalPath: ADMIN_DASHBOARD_PATH,
       kind: 'page',
       permission: 'system:read',
       requiresAdminRole: true,
@@ -130,12 +179,26 @@ export const getAdminRouteRule = (
     normalizedPath === '/admin/monetization' ||
     normalizedPath === '/api/admin/monetization/adsense' ||
     normalizedPath === '/admin/search-console' ||
-    normalizedPath === '/api/admin/search-console'
+    normalizedPath === '/api/admin/search-console' ||
+    normalizedPath === '/admin/products' ||
+    normalizedPath.startsWith('/admin/products/')
   ) {
     return {
       canonicalPath: normalizedPath,
       kind: normalizedPath.startsWith('/api/') ? 'api' : 'page',
       permission: 'system:read',
+      requiresAdminRole: true,
+    };
+  }
+
+  if (
+    normalizedPath === '/api/admin/products' ||
+    normalizedPath === '/api/admin/settings'
+  ) {
+    return {
+      canonicalPath: normalizedPath,
+      kind: 'api',
+      permission: permissionForMethod(method, 'system:read', 'system:write'),
       requiresAdminRole: true,
     };
   }
@@ -173,7 +236,7 @@ export const getAdminRouteRule = (
     !isStaticAssetPath(normalizedPath)
   ) {
     return {
-      canonicalPath: '/app/dashboard',
+      canonicalPath: ADMIN_DASHBOARD_PATH,
       kind: 'page',
       permission: 'system:read',
       requiresAdminRole: true,
