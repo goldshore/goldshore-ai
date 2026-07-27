@@ -19,10 +19,11 @@ on:
 
 concurrency:
   group: repair-pnpm-lock-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   repair:
@@ -36,29 +37,44 @@ jobs:
         with:
           version: 9.15.4
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .node-version
           cache: pnpm
 
       - name: Regenerate lockfile from package manifests
-        run: |
-          rm -f pnpm-lock.yaml
-          pnpm install --lockfile-only --no-frozen-lockfile
+        run: pnpm install --lockfile-only --no-frozen-lockfile
 
       - name: Validate regenerated lockfile
         run: |
           pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Commit repaired lockfile if changed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if git diff --quiet -- pnpm-lock.yaml; then
+          if git diff --ignore-space-at-eol --quiet -- pnpm-lock.yaml; then
             echo "pnpm-lock.yaml already clean."
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          branch="automation/repair-pnpm-lock"
+          git fetch origin "$branch:refs/remotes/origin/$branch" || true
+          git switch -C "$branch"
           git add pnpm-lock.yaml
-          git commit -m "Regenerate pnpm lockfile"
-          git push
+          git commit -m "Merge strategy: squash
+
+          Regenerate pnpm lockfile"
+          git push --force-with-lease origin "$branch"
+
+          if ! gh pr view "$branch" >/dev/null 2>&1; then
+            gh pr create \
+              --base main \
+              --head "$branch" \
+              --title "Regenerate pnpm lockfile" \
+              --body "Merge strategy: squash
+
+          Automated repair of pnpm-lock.yaml after manifest drift."
+          fi

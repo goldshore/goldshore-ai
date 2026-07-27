@@ -1,0 +1,144 @@
+---
+interface Props {
+  id?: string;
+  eyebrow?: string;
+  heading?: string;
+  intro?: string;
+  columns?: 1 | 2 | 3 | 4;
+  tone?: 'default' | 'surface' | 'accent';
+  compact?: boolean;
+}
+
+const {
+  id,
+  eyebrow,
+  heading,
+  intro,
+  columns = 1,
+  tone = 'default',
+  compact = false,
+} = Astro.props;
+---
+
+<section
+  {id}
+  class:list={[
+    'gs-template-section',
+    `gs-template-section--${tone}`,
+    { 'gs-template-section--compact': compact },
+  ]}
+>
+  <div class="gs-shell-section gs-column-grid">
+    {(eyebrow || heading || intro) && (
+      <header class="gs-template-section__header">
+        {eyebrow && <p>{eyebrow}</p>}
+        {heading && <h2>{heading}</h2>}
+        {intro && <div>{intro}</div>}
+      </header>
+    )}
+
+    <div class={`gs-template-section__content columns-${columns}`}>
+      <slot />
+    </div>
+  </div>
+</section>
+
+<style>
+  .gs-template-section {
+    padding-block: clamp(4.5rem, 9vw, 8rem);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  .gs-template-section--compact {
+    padding-block: clamp(3rem, 6vw, 5rem);
+  }
+
+  .gs-template-section--surface {
+    background: rgba(13, 13, 19, 0.76);
+  }
+
+  .gs-template-section--accent {
+    background:
+      linear-gradient(110deg, rgba(217, 106, 50, 0.13), transparent 56%),
+      rgba(10, 10, 14, 0.92);
+  }
+
+  .gs-template-section__header {
+    grid-column: 1 / span 5;
+    min-width: 0;
+  }
+
+  .gs-template-section__header p {
+    margin: 0 0 1rem;
+    color: var(--gs-primary);
+    font-family: 'DM Mono', ui-monospace, monospace;
+    font-size: 0.66rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .gs-template-section__header h2 {
+    margin: 0;
+    color: var(--gs-text);
+    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+    font-size: clamp(2.25rem, 5vw, 4.7rem);
+    letter-spacing: -0.045em;
+    line-height: 0.98;
+    overflow-wrap: anywhere;
+    text-transform: uppercase;
+  }
+
+  .gs-template-section__header div {
+    max-width: 48ch;
+    margin-top: 1.5rem;
+    color: var(--gs-text-dim);
+    line-height: 1.75;
+  }
+
+  .gs-template-section__content {
+    grid-column: 6 / -1;
+    min-width: 0;
+    display: grid;
+    gap: clamp(1rem, 2vw, 1.5rem);
+  }
+
+  .columns-1 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .columns-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .columns-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .columns-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  @media (max-width: 900px) {
+    .gs-template-section__header,
+    .gs-template-section__content {
+      grid-column: 1 / -1;
+    }
+
+    .gs-template-section__content {
+      margin-top: 2.5rem;
+    }
+
+    .columns-3,
+    .columns-4 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 620px) {
+    .columns-2,
+    .columns-3,
+    .columns-4 {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

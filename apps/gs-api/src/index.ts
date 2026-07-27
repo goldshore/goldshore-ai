@@ -30,6 +30,8 @@ import mail from './routes/mail';
 import control from './routes/control';
 import trading from './routes/trading';
 import core from './routes/core';
+import services from './routes/services';
+import products from './routes/products';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
 import { type Env } from './types';
@@ -73,7 +75,15 @@ const app = new Hono<{
 }>();
 
 const TRACE_HEADER = 'X-Correlation-Id';
-const AGENT_HOSTNAME = 'agent.goldshore.ai';
+const HOST_ROUTE_PREFIXES = new Map([
+  ['agent.goldshore.ai', '/agent'],
+  ['mail.goldshore.ai', '/mail'],
+  ['ops.goldshore.ai', '/admin/control'],
+  ['trading.goldshore.ai', '/trading'],
+  ['dashboard.goldshore.ai', '/trading'],
+  ['dash.goldshore.ai', '/trading'],
+  ['gw.goldshore.ai', '/core'],
+]);
 
 const getCorrelationId = (request: Request): string =>
   request.headers.get(TRACE_HEADER) ?? crypto.randomUUID();
@@ -89,8 +99,16 @@ const withCorrelationId = (response: Response, correlationId: string): Response 
   });
 };
 
-const isAgentHostnameRequest = (request: Request): boolean =>
-  new URL(request.url).hostname === AGENT_HOSTNAME;
+const getHostRoutePrefix = (request: Request): string | undefined =>
+  HOST_ROUTE_PREFIXES.get(new URL(request.url).hostname);
+
+const getOptionalExecutionContext = (c: { executionCtx?: ExecutionContext }) => {
+  try {
+    return c.executionCtx;
+  } catch {
+    return undefined;
+  }
+};
 
 const normalizeEmail = (value: string) => value.trim().toLowerCase();
 const parseEmailList = (value?: string) =>
@@ -127,8 +145,6 @@ const requiredBindings = ['PLATFORM_DB', 'GS_ASSETS', 'AI'] as const;
 const expectedD1Binding = 'PLATFORM_DB' as const;
 const requiredSecrets = [
   'JWT_SECRET',
-  'STRIPE_API_KEY',
-  'SENDGRID_API_KEY',
   'ACCESS_CLIENT_SECRET',
 ] as const;
 
@@ -156,11 +172,24 @@ const isAllowedOrigin = (origin: string, allowedOrigins?: string) => {
 
 const isPublicPath = (path: string, method: string) => {
   if (method === 'OPTIONS') return true;
+  if (
+    method === 'POST' &&
+    /^\/v1\/forms\/[^/]+\/submissions$/.test(path)
+  ) {
+    return true;
+  }
+  if (
+    method === 'GET' &&
+    /^\/v1\/forms\/newsletter\/(?:confirm|unsubscribe)$/.test(path)
+  ) {
+    return true;
+  }
   return (
     path === '/' ||
     path === '/version' ||
     path === '/health' ||
-    path.startsWith('/health/')
+    path.startsWith('/health/') ||
+    /^\/(?:agent|mail|admin\/control|trading|core)\/health$/.test(path)
   );
 };
 
@@ -191,15 +220,20 @@ app.use(
 );
 
 app.use('*', async (c, next) => {
-  if (!isAgentHostnameRequest(c.req.raw)) {
+  const routePrefix = getHostRoutePrefix(c.req.raw);
+  if (!routePrefix || c.req.path === routePrefix || c.req.path.startsWith(`${routePrefix}/`)) {
     await next();
     return;
   }
 
   const correlationId = getCorrelationId(c.req.raw);
-  const agentUrl = new URL(c.req.url);
-  agentUrl.pathname = `/agent${agentUrl.pathname === '/' ? '' : agentUrl.pathname}`;
-  const response = await app.fetch(new Request(agentUrl.toString(), c.req.raw), c.env, c.executionCtx);
+  const routedUrl = new URL(c.req.url);
+  routedUrl.pathname = `${routePrefix}${routedUrl.pathname === '/' ? '' : routedUrl.pathname}`;
+  const response = await app.fetch(
+    new Request(routedUrl.toString(), c.req.raw),
+    c.env,
+    getOptionalExecutionContext(c),
+  );
   return withCorrelationId(response, correlationId);
 });
 
@@ -329,6 +363,8 @@ app.route('/mail', mail);
 app.route('/admin/control', control);
 app.route('/trading', trading);
 app.route('/core', core);
+app.route('/services', services);
+app.route('/products', products);
 
 app.all('/api/*', async (c) => {
   const correlationId = getCorrelationId(c.req.raw);
@@ -344,7 +380,11 @@ app.all('/api/*', async (c) => {
 
     const internalUrl = new URL(c.req.url);
     internalUrl.pathname = proxiedPath;
-    const response = await app.fetch(new Request(internalUrl.toString(), c.req.raw), c.env, c.executionCtx);
+    const response = await app.fetch(
+      new Request(internalUrl.toString(), c.req.raw),
+      c.env,
+      getOptionalExecutionContext(c),
+    );
     return withCorrelationId(response, correlationId);
   } catch (error) {
     console.error(`[api] gateway proxy failed; trace=${correlationId}`, error);
@@ -368,11 +408,13 @@ v1.route('/agent', agent);
 v1.route('/mail', mail);
 v1.route('/control', control);
 v1.route('/core', core);
+v1.route('/services', services);
+v1.route('/products', products);
 v1.get('/leads', (c) => c.json({ leads: [] }));
 
 app.route('/v1', v1);
 
-export { isAllowedOrigin, isPreviewOrigin, parseAllowedOrigins };
+export { app, isAllowedOrigin, isPreviewOrigin, isPublicPath, parseAllowedOrigins };
 
 const processQueueMessage = async (message: Message<any>, env: Env): Promise<void> => {
   const body = message.body;

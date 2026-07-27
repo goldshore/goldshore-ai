@@ -1,0 +1,115 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export const prerender = false;
+
+type Subscriber = {
+  id: string;
+  email: string;
+  name: string | null;
+  brand: string;
+  list_name: string;
+  source: string;
+  status: string;
+  consent_basis: string;
+  subscribed_at: string;
+  confirmed_at: string | null;
+  unsubscribed_at: string | null;
+  updated_at: string;
+};
+
+const url = new URL(Astro.request.url);
+const allowedStatuses = ['pending', 'confirmed', 'unsubscribed', 'suppressed', 'invalid'];
+const status = allowedStatuses.includes(url.searchParams.get('status') ?? '')
+  ? url.searchParams.get('status')
+  : null;
+const endpoint = new URL('/api/admin/subscribers', url.origin);
+if (status) endpoint.searchParams.set('status', status);
+
+let subscribers: Subscriber[] = [];
+let errorMessage = '';
+try {
+  const response = await fetch(endpoint, { headers: Astro.request.headers });
+  if (response.ok) {
+    subscribers = ((await response.json()) as { subscribers: Subscriber[] }).subscribers;
+  } else {
+    errorMessage = await response.text();
+  }
+} catch {
+  errorMessage = 'Subscriber storage is unavailable.';
+}
+
+const exportUrl = `/api/admin/subscribers?format=csv${status ? `&status=${encodeURIComponent(status)}` : ''}`;
+const formatDate = (value: string | null) => value ? new Date(value).toLocaleString() : '—';
+---
+
+<BaseLayout title="Newsletter Subscribers | GoldShore" description="Review newsletter subscriptions and consent">
+  <section class="gs-section">
+    <div class="gs-grid columns-2">
+      <div>
+        <p class="gs-kicker">Audience</p>
+        <h1>Newsletter subscribers</h1>
+        <p class="gs-text-lg">Review confirmed subscriptions, pending confirmations, suppressions, and source lineage.</p>
+      </div>
+      <div class="gs-card">
+        <h2 class="section-title"><span>◆</span>Actions</h2>
+        <ul>
+          <li><a href={exportUrl}>Export current view</a></li>
+          <li><a href="/admin/lead-submissions">Lead submissions</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="gs-card" style="margin-top: 2rem;">
+      <form method="get" class="gs-grid" style="gap: 1rem; align-items: end;">
+        <div class="gs-input-group">
+          <label for="status-filter">Subscription status</label>
+          <select id="status-filter" name="status">
+            <option value="" selected={!status}>All</option>
+            {allowedStatuses.map((option) => (
+              <option value={option} selected={status === option}>{option}</option>
+            ))}
+          </select>
+        </div>
+        <button class="gs-button" type="submit">Apply filter</button>
+      </form>
+    </div>
+
+    {errorMessage ? (
+      <div class="gs-card" style="margin-top: 2rem;"><p>{errorMessage}</p></div>
+    ) : (
+      <div class="gs-card" style="margin-top: 2rem; overflow-x: auto;">
+        <table class="gs-table">
+          <thead>
+            <tr>
+              <th>Subscriber</th>
+              <th>Status</th>
+              <th>Brand / list</th>
+              <th>Source</th>
+              <th>Subscribed</th>
+              <th>Confirmed</th>
+            </tr>
+          </thead>
+          <tbody>
+            {subscribers.length === 0 ? (
+              <tr><td colspan="6">No subscribers match this view.</td></tr>
+            ) : subscribers.map((subscriber) => (
+              <tr>
+                <td>
+                  <strong>{subscriber.name || 'Subscriber'}</strong>
+                  <div><a href={`mailto:${subscriber.email}`}>{subscriber.email}</a></div>
+                </td>
+                <td><span class="gs-badge">{subscriber.status}</span></td>
+                <td>{subscriber.brand} / {subscriber.list_name}</td>
+                <td>{subscriber.source}<div class="gs-text-sm">{subscriber.consent_basis}</div></td>
+                <td>{formatDate(subscriber.subscribed_at)}</td>
+                <td>{formatDate(subscriber.confirmed_at)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </section>
+</BaseLayout>
+
