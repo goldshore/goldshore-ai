@@ -5,6 +5,21 @@
    - edge scan + shimmer sequencing hooks
    --------------------------------------------- */
 
+@keyframes gs-vt-in {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes gs-vt-title {
+  from { transform: translateY(0px); }
+  to   { transform: translateY(-14px); }
+}
+
+@keyframes gs-vt-bg-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(0, -26px, 0); }
+}
+
 /* Progressive enhancement guard: only apply view-timeline if supported */
 @supports (animation-timeline: view()) {
 
@@ -22,11 +37,6 @@
     animation-range: entry 5% cover 25%;
   }
 
-  @keyframes gs-vt-in {
-    from { opacity: 0; transform: translateY(18px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
   /* Parallax title drift on scroll (subtle)
      Usage: .gs-vt-title on H1/H2 inside hero/page header */
   .gs-vt-title {
@@ -39,11 +49,6 @@
     animation-range: entry 0% exit 60%;
   }
 
-  @keyframes gs-vt-title {
-    from { transform: translateY(0px); }
-    to   { transform: translateY(-14px); }
-  }
-
   /* Background drift layer (scroll-driven) – optional
      Usage: apply to an absolutely positioned overlay */
   .gs-vt-bg-drift {
@@ -54,11 +59,6 @@
     animation-fill-mode: both;
     animation-timeline: view();
     animation-range: entry 0% exit 80%;
-  }
-
-  @keyframes gs-vt-bg-drift {
-    from { transform: translate3d(0, 0, 0); }
-    to   { transform: translate3d(0, -26px, 0); }
   }
 }
 

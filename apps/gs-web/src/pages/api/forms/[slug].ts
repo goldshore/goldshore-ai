@@ -7,11 +7,6 @@ import {
 } from '@goldshore/auth';
 import { parseJson } from '@goldshore/utils';
 
-/**
- * Admin UI form configuration item endpoint.
- * Requires `forms:read` for GET and `forms:write` for PUT/PATCH.
- */
-
 export const prerender = false;
 
 const normalizeRow = (row: Record<string, string>) => ({
@@ -74,9 +69,10 @@ const requirePermission = async (
   return { response: null };
 };
 
-export const GET: APIRoute = async ({ request, locals, params }) => {
-  const env = locals.runtime?.env as Env | undefined;
-  const slug = params.slug;
+const proxy = async (request: Request, env: Env | undefined, slug?: string) => {
+  if (!slug) return new Response('Form slug is required.', { status: 400 });
+
+  if (!slug) return new Response('Form slug is required.', { status: 400 });
 
   if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
@@ -85,10 +81,6 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
   const auth = await requirePermission(request, env as AccessEnv, 'forms:read');
   if (auth.response) {
     return auth.response;
-  }
-
-  if (!slug) {
-    return new Response('Form slug is required.', { status: 400 });
   }
 
   const result = await env.PLATFORM_DB.prepare(
@@ -112,10 +104,16 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
   const env = locals.runtime?.env as Env | undefined;
   const slug = params.slug;
 
+  if (!slug) return new Response('Form slug is required.', { status: 400 });
+
   if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
   }
 
+  const auth = await requirePermission(request, env as AccessEnv, 'forms:read');
+  if (auth.response) {
+    return auth.response;
+  }
   if (!isSameOriginRequest(request)) {
     return forbiddenResponse('Forbidden: CSRF check failed.');
   }
@@ -123,10 +121,6 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
   const auth = await requirePermission(request, env as AccessEnv, 'forms:write');
   if (auth.response) {
     return auth.response;
-  }
-
-  if (!slug) {
-    return new Response('Form slug is required.', { status: 400 });
   }
 
   const payload = (await request.json()) as {
@@ -190,11 +184,10 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
       updatedAt: now,
     },
   });
+
+  return new Response(response.body, { status: response.status, headers: response.headers });
 };
 
+export const GET: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
+export const PUT: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
 export const PATCH = PUT;
-
-export const __testing = {
-  isSameOriginRequest,
-  requirePermission,
-};
