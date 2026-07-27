@@ -15,6 +15,7 @@ CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
 GOOGLE_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/goldclaw/oauth/google/callback"
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
+PUBLIC_SITE_URL = "https://goldshore.ai"
 MAILCHANNELS_SENDER_NAME = "GoldShore"
 
 [[kv_namespaces]]
@@ -131,6 +132,7 @@ CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
 GOOGLE_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/goldclaw/oauth/google/callback"
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
+PUBLIC_SITE_URL = "https://goldshore.ai"
 MAILCHANNELS_SENDER_NAME = "GoldShore"
 
 # MAILCHANNELS_SENDER_EMAIL is a secret, not a var — never commit the value.
@@ -289,6 +291,7 @@ routes = [
 ENV = "preview"
 GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
+PUBLIC_SITE_URL = "https://preview.goldshore.ai"
 MAILCHANNELS_SENDER_NAME = "GoldShore"
 
 # MAILCHANNELS_SENDER_EMAIL secret — see env.prod above for the command;
