@@ -35,6 +35,14 @@ test('WebLayout renders one responsive admin login control', async () => {
   assert.match(source, /desktopNav\.insertBefore\(loginLink, desktopCta\)/);
 });
 
+test('WebLayout marks parent nav links current on nested public routes', async () => {
+  const source = await readFile(new URL('layouts/WebLayout.astro', sourceRoot), 'utf8');
+
+  assert.match(source, /const activePath = normalizePath\(Astro\.url\.pathname\)/);
+  assert.match(source, /activePath\.startsWith\(normalizedHref\)/);
+  assert.equal(source.match(/aria-current=\{isCurrent\(link\.href\)/g)?.length, 2);
+});
+
 test('Gold Shore page templates compose the shared shell and column contract', async () => {
   const [pageTemplate, sectionTemplate] = await Promise.all([
     readFile(new URL('components/GoldShorePageTemplate.astro', sourceRoot), 'utf8'),
