@@ -1,0 +1,69 @@
+{
+  "$schema": "./access-apps.schema.json",
+  "tenant": "goldshore.cloudflareaccess.com",
+  "brand": {
+    "name": "Gold Shore Labs",
+    "logoPath": "/logo.svg",
+    "loginPath": "https://admin.goldshore.ai/"
+  },
+  "defaults": {
+    "sessionDuration": "24h",
+    "denyByDefault": true,
+    "identityProviders": ["github"],
+    "policyOrder": ["managed-device", "github-team", "approved-email", "deny"]
+  },
+  "applications": [
+    {
+      "name": "Gold Shore Labs Admin",
+      "canonicalService": "gs-web",
+      "domains": ["admin.goldshore.org/*", "admin.goldshore.ai/*"],
+      "type": "self_hosted",
+      "notes": "Intentional gs-web Worker routes own these hosts. Cloudflare Access authenticates requests before Astro middleware maps clean admin-host URLs into the existing admin route tree."
+    },
+    {
+      "name": "Gold Shore Labs API",
+      "canonicalService": "gs-api-prod",
+      "domains": ["api.goldshore.org/*", "api.goldshore.ai/*"],
+      "type": "self_hosted",
+      "publicPaths": ["/health", "/status"]
+    },
+    {
+      "name": "Gold Shore Labs Gateway",
+      "canonicalService": "gs-gateway-prod",
+      "domains": ["gateway.goldshore.org/*", "gateway.goldshore.ai/*"],
+      "type": "self_hosted"
+    },
+    {
+      "name": "Gold Shore Labs MCP",
+      "canonicalService": "gs-mcp-agent-prod",
+      "domains": ["mcp.goldshore.org/*", "mcp.goldshore.ai/*"],
+      "type": "self_hosted",
+      "serviceTokenRequired": true
+    },
+    {
+      "name": "Gold Shore Labs Web Preview",
+      "canonicalService": "goldshore-web",
+      "domains": ["*.goldshore-web.pages.dev/*"],
+      "type": "self_hosted"
+    }
+  ],
+  "observedLauncherLabels": [
+    "Dashboard",
+    "Goldshore API",
+    "Goldshore API - Public",
+    "Goldshore Gateway",
+    "Goldshore Gateway - Public",
+    "GoldShore MCP",
+    "Goldshore Ops",
+    "GoldShore Web Preview",
+    "Signals",
+    "GoldShore Trading"
+  ],
+  "auditRules": [
+    "Report observed labels that differ from the canonical Gold Shore Labs title pattern.",
+    "Report duplicate applications protecting the same hostname and path.",
+    "Never delete an application during audit mode.",
+    "Verify live application URLs through the Cloudflare API before remapping.",
+    "Keep trading and signals applications outside consolidation until separately approved."
+  ]
+}

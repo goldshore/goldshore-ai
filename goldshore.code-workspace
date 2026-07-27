@@ -54,9 +54,33 @@
       {
         "label": "dev: gs-web",
         "type": "shell",
-        "command": "pnpm --filter gs-web dev",
+        "command": "pnpm --dir apps/gs-web astro dev --host 127.0.0.1 --port 4321",
         "group": "build",
         "presentation": { "panel": "dedicated" }
+      },
+      {
+        "label": "dev: gs-api",
+        "type": "shell",
+        "command": "pnpm --filter @goldshore/gs-api dev -- --port 8787",
+        "group": "build",
+        "presentation": { "panel": "dedicated" }
+      },
+      {
+        "label": "tunnel: goldshore-lacie",
+        "type": "shell",
+        "command": "cloudflared tunnel --config C:\\Users\\marst\\.cloudflared\\goldshore-lacie-local.yml run",
+        "group": "build",
+        "presentation": { "panel": "dedicated" }
+      },
+      {
+        "label": "dev: goldshore-lacie",
+        "dependsOrder": "parallel",
+        "dependsOn": [
+          "dev: gs-web",
+          "dev: gs-api",
+          "tunnel: goldshore-lacie"
+        ],
+        "problemMatcher": []
       },
       {
         "label": "build: all",
