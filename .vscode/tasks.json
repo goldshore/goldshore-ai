@@ -1,0 +1,34 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "dev:gs-web",
+      "type": "shell",
+      "command": "corepack",
+      "args": [
+        "pnpm",
+        "--filter",
+        "@goldshore/gs-web",
+        "dev",
+        "--",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "4321"
+      ],
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "goldshore-astro",
+        "fileLocation": [
+          "absolute"
+        ],
+        "pattern": [],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*",
+          "endsPattern": "Local: http://127.0.0.1:4321/"
+        }
+      }
+    }
+  ]
+}
