@@ -49,6 +49,8 @@ importers:
         specifier: ^5.0.5
         version: 5.0.5
       prettier:
+        specifier: ^3.2.5
+        version: 3.9.1
         specifier: ^3.9.6
         version: 3.9.6
       prettier-plugin-astro:
@@ -103,6 +105,8 @@ importers:
         specifier: ^2.5.0
         version: 2.5.0
       sanitize-html:
+        specifier: ^2.17.5
+        version: 2.17.5
         specifier: ^2.17.6
         version: 2.17.6
     devDependencies:
@@ -110,6 +114,8 @@ importers:
         specifier: ^5.20260726.1
         version: 5.20260727.1
       tsx:
+        specifier: ^4.23.1
+        version: 4.23.1
         specifier: ^4.7.1
         version: 4.23.1
       typescript:
@@ -4255,6 +4261,14 @@ packages:
     resolution: {integrity: sha512-RvwwcruNjI1ncT5xRakeyS9Lf8lcItv34KD+aif+VH9kduAyfYBipGh12274xtenIPZ119/R9BdTBa8gAwSh0A==}
     engines: {node: '>=12'}
 
+  playwright-core@1.61.1:
+    resolution: {integrity: sha512-h7Qlt6m4REp25qvIdvbDtVmD4LqVXfpRxhORv9L0jzETM05p4fuPJ3dKyuSXQxDSbXnmS79HAgi9589lGSpLkg==}
+    engines: {node: '>=18'}
+    hasBin: true
+
+  playwright@1.61.1:
+    resolution: {integrity: sha512-DWnY5o3YbLWK4GovuAVwpqL+1VwGNdUGrRr++8j8PtQQzvAVZUIMjKQ90fY689sEJZJBbZVw1rXaOKSTitkzPQ==}
+    engines: {node: '>=18'}
   playwright-core@1.62.0:
     resolution: {integrity: sha512-nsNRyq0r2zsG8AcRHWknc9QRA5XCueC7gWMrs+Gx2tlZn9hcl8zudfh00lhJPY1DE7NmZ6bDsT9g2yey8mXljA==}
     engines: {node: '>=20'}
@@ -4284,6 +4298,8 @@ packages:
     resolution: {integrity: sha512-RiBETaaP9veVstE4vUwSIcdATj6dKmXljouXc/DDNwBSPTp8FRkLGDSGFClKsAFeeg+13SB0Z1JZvbD76bigJw==}
     engines: {node: ^14.15.0 || >=16.0.0}
 
+  prettier@3.9.1:
+    resolution: {integrity: sha512-ppiDo2CSwexck1eyZUwJHg/N3nf1+6IRCv7W/VJ5vaLnVCmB7+3CdRfMwoCHBBX6xTrREDTksZ4OZl5SSf4zXA==}
   prettier@3.9.6:
     resolution: {integrity: sha512-OpN0zzVdiaiAhxpuuj5efpIS4sY9j7bY6uR5mnj5yPzGkdkjNKSJeUThPb60Jw29QuAZgA4o+/iB49kFiaBX6g==}
     engines: {node: '>=14'}
@@ -4443,6 +4459,8 @@ packages:
     resolution: {integrity: sha512-b3rppTKm9T+PsVCBEOUR46GWI7fdOs00VKZ1+9c1EWDaDMvjQc6tUwuFyIprgGgTcWoVHSKrU8H31ZHA2e0RHA==}
     engines: {node: '>=10'}
 
+  sanitize-html@2.17.5:
+    resolution: {integrity: sha512-ZmU1joGRrvoyctKIiuwUxqR6moLoU2Wk+2bMccN6f7UwhAmwYDvWziqPxRDDN2Qip62NqnIrVrT9akbL6Wretg==}
   sanitize-html@2.17.6:
     resolution: {integrity: sha512-M4bo9tfv1yfhQZZKkc6dL07ALrGJtfvNOuhX3hU9AVPR/uPQ+nKOJBqTYc7LfMQblTW04mtSWDJWEyLvygJsLA==}
     engines: {node: '>=22.12.0'}
@@ -5411,6 +5429,7 @@ snapshots:
       vscode-html-languageservice: 5.6.2
       vscode-uri: 3.1.0
     optionalDependencies:
+      prettier: 3.9.1
       prettier: 3.9.6
       prettier-plugin-astro: 0.14.1
     transitivePeerDependencies:
@@ -6782,6 +6801,9 @@ snapshots:
 
   '@oxc-project/types@0.139.0': {}
 
+  '@playwright/test@1.61.1':
+    dependencies:
+      playwright: 1.61.1
   '@playwright/test@1.62.0':
     dependencies:
       playwright: 1.62.0
@@ -7989,6 +8011,8 @@ snapshots:
       domelementtype: 2.3.0
       domhandler: 5.0.3
       entities: 4.5.0
+
+  domelementtype@2.3.0: {}
 
   dom-serializer@3.1.1:
     dependencies:
@@ -9608,6 +9632,11 @@ snapshots:
 
   picomatch@4.0.5: {}
 
+  playwright-core@1.61.1: {}
+
+  playwright@1.61.1:
+    dependencies:
+      playwright-core: 1.61.1
   playwright-core@1.62.0: {}
 
   playwright@1.62.0:
@@ -9634,6 +9663,10 @@ snapshots:
   prettier-plugin-astro@0.14.1:
     dependencies:
       '@astrojs/compiler': 2.13.1
+      prettier: 3.9.1
+      sass-formatter: 0.7.9
+
+  prettier@3.9.1: {}
       prettier: 3.9.6
       sass-formatter: 0.7.9
 
@@ -9887,6 +9920,15 @@ snapshots:
 
   safe-stable-stringify@2.5.0: {}
 
+  sanitize-html@2.17.5:
+    dependencies:
+      deepmerge: 4.3.1
+      escape-string-regexp: 4.0.0
+      htmlparser2: 10.1.0
+      is-plain-object: 5.0.0
+      launder: 1.7.1
+      parse-srcset: 1.0.2
+      postcss: 8.5.22
   sanitize-html@2.17.6:
     dependencies:
       deepmerge: 4.3.1
@@ -10381,6 +10423,7 @@ snapshots:
       esbuild: 0.25.12
       fdir: 6.5.0(picomatch@4.0.5)
       picomatch: 4.0.5
+      postcss: 8.5.22
       postcss: 8.5.23
       rollup: 4.62.3
       tinyglobby: 0.2.17
@@ -10395,6 +10438,7 @@ snapshots:
     dependencies:
       lightningcss: 1.33.0
       picomatch: 4.0.5
+      postcss: 8.5.22
       postcss: 8.5.23
       rolldown: 1.1.5
       tinyglobby: 0.2.17
