@@ -207,6 +207,7 @@ cloudflare:
         rules:
           include:
             - email_domain: "goldshore.ai"
+            - email_domain: "goldshore.org"
             - email: "marstonr6@gmail.com"
           allowed_identity_providers:
             - "google_workspace"
