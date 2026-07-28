@@ -1,4 +1,7 @@
 import type { APIRoute } from 'astro';
+import { buildAdminSession, type AdminPermission } from '@goldshore/auth/rbac.ts';
+import { verifyAccessWithClaims, type Env as AccessEnv } from '@goldshore/auth/verify.ts';
+import { parseJson } from '@goldshore/utils';
 
 const apiBase = (env: Env | undefined) =>
   (env?.PUBLIC_API || 'https://api.goldshore.ai').replace(/\/$/, '');

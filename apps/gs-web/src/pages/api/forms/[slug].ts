@@ -1,9 +1,37 @@
 import type { APIRoute } from 'astro';
+import { buildAdminSession, type AdminPermission } from '@goldshore/auth/rbac.ts';
+import { verifyAccessWithClaims, type Env as AccessEnv } from '@goldshore/auth/verify.ts';
+import { parseJson } from '@goldshore/utils';
 
 export const prerender = false;
 
-const apiBase = (env: Env | undefined) =>
-  (env?.PUBLIC_API || 'https://api.goldshore.ai').replace(/\/$/, '');
+const normalizeRow = (row: Record<string, string>) => ({
+  id: row.id,
+  slug: row.slug,
+  name: row.name,
+  status: row.status,
+  fields: parseJson(row.fields ?? null, [] as Record<string, unknown>[]),
+  recipients: parseJson(row.recipients ?? null, [] as Record<string, unknown>[]),
+  integrations: parseJson(row.integrations ?? null, [] as Record<string, unknown>[]),
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+});
+
+const isSameOriginRequest = (request: Request) => {
+  const expectedOrigin = new URL(request.url).origin;
+  const originHeader = request.headers.get('origin');
+  if (originHeader) {
+    return originHeader === expectedOrigin;
+  }
+
+  const refererHeader = request.headers.get('referer');
+  if (refererHeader) {
+    try {
+      return new URL(refererHeader).origin === expectedOrigin;
+    } catch {
+      return false;
+    }
+  }
 
   const fetchSite = request.headers.get('sec-fetch-site');
   if (fetchSite) {
@@ -58,7 +86,7 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
     `SELECT id, slug, name, status, fields, recipients, integrations, created_at, updated_at
      FROM form_configs
      WHERE slug = ?
-     LIMIT 1`
+     LIMIT 1`,
   )
     .bind(slug)
     .all();
@@ -104,7 +132,7 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     `SELECT id, slug, name, status, fields, recipients, integrations, created_at, updated_at
      FROM form_configs
      WHERE slug = ?
-     LIMIT 1`
+     LIMIT 1`,
   )
     .bind(slug)
     .all();
@@ -127,7 +155,7 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
   await env.PLATFORM_DB.prepare(
     `UPDATE form_configs
      SET name = ?, status = ?, fields = ?, recipients = ?, integrations = ?, updated_at = ?
-     WHERE slug = ?`
+     WHERE slug = ?`,
   )
     .bind(
       updated.name,
@@ -136,7 +164,7 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
       JSON.stringify(updated.recipients),
       JSON.stringify(updated.integrations),
       now,
-      slug
+      slug,
     )
     .run();
 
@@ -155,6 +183,4 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
   });
 };
 
-export const GET: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
-export const PUT: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
 export const PATCH = PUT;
