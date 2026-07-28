@@ -51,15 +51,22 @@ describe('gs-api wrangler env bindings', () => {
           `\\[\\[env\\.${envName}\\.kv_namespaces\\]\\][\\s\\S]*?binding = "RISK_RADAR_CACHE"[\\s\\S]*?id = "`,
         ),
       );
+      assert.match(
+        wranglerToml,
+        new RegExp(`\\[\\[env\\.${envName}\\.kv_namespaces\\]\\][\\s\\S]*?binding = "RISK_RADAR_CACHE"[\\s\\S]*?id = "`)
+      );
     });
 
     it(`defines platform, Risk Radar, and AI bindings for ${envName}`, () => {
+<<<<<<< ours
       assert.match(
         wranglerToml,
         new RegExp(
           `\\[\\[env\\.${envName}\\.r2_buckets\\]\\][\\s\\S]*?binding = "GS_ASSETS"`,
         ),
       );
+=======
+>>>>>>> theirs
       assert.match(
         wranglerToml,
         new RegExp(
@@ -68,6 +75,7 @@ describe('gs-api wrangler env bindings', () => {
       );
       assert.match(
         wranglerToml,
+<<<<<<< ours
         new RegExp(
           `\\[\\[env\\.${envName}\\.d1_databases\\]\\][\\s\\S]*?binding = "PLATFORM_DB"`,
         ),
@@ -81,10 +89,28 @@ describe('gs-api wrangler env bindings', () => {
       assert.match(
         wranglerToml,
         new RegExp(`\\[env\\.${envName}\\.ai\\][\\s\\S]*?binding = "AI"`),
+=======
+        new RegExp(`\\[\\[env\\.${envName}\\.r2_buckets\\]\\][\\s\\S]*?binding = "RISK_RADAR_R2"`)
+      );
+      assert.match(
+        wranglerToml,
+        new RegExp(`\\[\\[env\\.${envName}\\.d1_databases\\]\\][\\s\\S]*?binding = "PLATFORM_DB"`)
+      );
+      assert.match(
+        wranglerToml,
+        new RegExp(`\\[\\[env\\.${envName}\\.d1_databases\\]\\][\\s\\S]*?binding = "RISK_RADAR_DB"`)
+      );
+      assert.match(
+        wranglerToml,
+        new RegExp(`\\[env\\.${envName}\\.ai\\][\\s\\S]*?binding = "AI"`)
+>>>>>>> theirs
       );
     });
   }
 
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
   it('keeps top-level bindings safe for Cloudflare Workers Builds version uploads', () => {
     const topLevel = topLevelBlock(wranglerToml);
 
@@ -136,5 +162,20 @@ describe('gs-api wrangler env bindings', () => {
       'admin.goldshore.ai/*',
       'admin.goldshore.org/*',
     ]);
+=======
+  it('keeps CONTROL_SYNC_TOKEN out of plain-text environment variables', () => {
+    assert.doesNotMatch(wranglerToml, /^CONTROL_SYNC_TOKEN\s*=/m);
+    assert.doesNotMatch(wranglerToml, /__PROD_CONTROL_SYNC_TOKEN__/);
+>>>>>>> theirs
+=======
+  it('keeps CONTROL_SYNC_TOKEN out of plain-text environment variables', () => {
+    assert.doesNotMatch(wranglerToml, /^CONTROL_SYNC_TOKEN\s*=/m);
+    assert.doesNotMatch(wranglerToml, /__PROD_CONTROL_SYNC_TOKEN__/);
+>>>>>>> theirs
+=======
+  it('keeps CONTROL_SYNC_TOKEN out of plain-text environment variables', () => {
+    assert.doesNotMatch(wranglerToml, /^CONTROL_SYNC_TOKEN\s*=/m);
+    assert.doesNotMatch(wranglerToml, /__PROD_CONTROL_SYNC_TOKEN__/);
+>>>>>>> theirs
   });
 });

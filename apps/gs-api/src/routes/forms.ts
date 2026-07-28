@@ -2,7 +2,11 @@ import { Hono } from 'hono';
 import { buildAdminSession, verifyAccessWithClaims, type AdminPermission } from '@goldshore/auth';
 import { parseJson, isValidEmail } from '@goldshore/utils';
 import type { Env } from '../types';
-import { sendMail, parseNotificationRecipients, buildLeadAutoResponder } from '../lib/mail';
+import {
+  sendMail,
+  parseNotificationRecipients,
+  buildLeadAutoResponder,
+} from '../lib/mail';
 
 const forms = new Hono<{ Bindings: Env }>();
 const allowedStatuses = new Set(['new', 'read', 'archived']);
@@ -42,6 +46,14 @@ const buildCsv = (rows: Record<string, unknown>[]) => {
   const columns = ['id','form_type','name','email','company','role','website','team_size','industry','timeline','budget','goals','message','status','received_at','ip_address','user_agent'];
   return [columns.map(escapeCsvValue).join(','), ...rows.map((row) => columns.map((col) => escapeCsvValue(row[col])).join(','))].join('\n');
 };
+
+const sha256 = async (value: string) => {
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+};
+
+const publicSiteUrl = (env: Env) => (env.PUBLIC_SITE_URL || 'https://goldshore.ai').replace(/\/$/, '');
 
 forms.get('/leads', async (c) => {
   const denied = await requirePermission(c.req.raw, c.env, 'forms:read');
