@@ -180,7 +180,7 @@ bucket_name = "gs-telemetry-storage"
 # "gs-risk-radar-raw" name from BINDINGS_MAP.md.
 [[env.prod.r2_buckets]]
 binding = "RISK_RADAR_R2"
-bucket_name = "gs-risk-radar-raw"
+bucket_name = "risk-radar-raw"
 
 # ── D1 ───────────────────────────────────────────────────────────────────────
 [[env.prod.d1_databases]]
@@ -225,10 +225,6 @@ binding = "AI"
 binding = "PAPER_DB"
 database_name = "goldshore-paper-trading"
 database_id = "af94f483-b98b-41c5-aa23-3fbed2764b52"
-
-# ── AI ──────────────────────────────────────────────────────────────────────────────────────
-[env.prod.ai]
-binding = "AI"
 
 # ── Durable Objects ──────────────────────────────────────────────────────────────────────
 [[env.prod.durable_objects.bindings]]
@@ -326,11 +322,6 @@ id = "20d2c096b673433597d084a562993021"
 binding = "CONTROL_LOGS"
 id = "09e43cb8bd4749fdaaed0dc9d4ff2284"
 
-[[env.preview.kv_namespaces]]
-binding = "RISK_RADAR_CACHE"
-id = "a2315c0e83f27b610c3dfdd30eb0a9ea"
-
-# ── R2 ───────────────────────────────────────────────────────────────────────
 # RISK_RADAR_CACHE: same live "RR_CACHE" resource as env.prod — see the note
 # there. No dedicated preview KV exists for this yet.
 [[env.preview.kv_namespaces]]
@@ -354,7 +345,7 @@ bucket_name = "gs-telemetry-storage"
 
 [[env.preview.r2_buckets]]
 binding = "RISK_RADAR_R2"
-bucket_name = "gs-risk-radar-raw-preview"
+bucket_name = "risk-radar-raw"
 
 # ── D1 ───────────────────────────────────────────────────────────────────────
 [[env.preview.d1_databases]]
