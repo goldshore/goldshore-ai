@@ -42,6 +42,8 @@
   "devDependencies": {
     "@astrojs/mdx": "^7.0.3",
     "@astrojs/sitemap": "^3.7.2",
+    "@astrojs/tailwind": "^6.0.2",
+    "@cloudflare/workers-types": "^5.20260708.1",
     "@types/node": "^26.1.1",
     "@typescript-eslint/eslint-plugin": "^8.57.2",
     "@typescript-eslint/parser": "^8.65.0",
