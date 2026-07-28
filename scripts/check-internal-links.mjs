@@ -91,7 +91,8 @@ const failures = [];
 const serverEntry = await exists(serverEntryFile) ? await readFile(serverEntryFile, 'utf8') : '';
 
 const hasServerRoute = (route) => {
-  const escapedRoute = route.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const normalizedRoute = route === '/' ? '/' : route.replace(/\/+$/, '');
+  const escapedRoute = normalizedRoute.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   return new RegExp(`["']route["']\\s*:\\s*["']${escapedRoute}["']`).test(serverEntry);
 };
 
@@ -143,7 +144,9 @@ for (const sourceRoute of routes) {
 
     const targetFile = distFileFromPath(targetPathname);
     if (!(await exists(targetFile))) {
-      failures.push(`${sourcePath}: ${href} -> missing page ${targetPathname}`);
+      if (!hasServerRoute(targetPathname)) {
+        failures.push(`${sourcePath}: ${href} -> missing page ${targetPathname}`);
+      }
       continue;
     }
 
