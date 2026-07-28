@@ -215,6 +215,11 @@ binding = "JOBS_DB"
 database_name = "gs_jobs_db"
 database_id = "750c469c-788d-49e8-9254-77231cffd70f"
 
+# ── AI ───────────────────────────────────────────────────────────────────────
+[env.prod.ai]
+binding = "AI"
+
+# ── Durable Objects ──────────────────────────────────────────────────────────
 # PAPER_DB: see top-level default-env comment above.
 [[env.prod.d1_databases]]
 binding = "PAPER_DB"
@@ -321,6 +326,11 @@ id = "20d2c096b673433597d084a562993021"
 binding = "CONTROL_LOGS"
 id = "09e43cb8bd4749fdaaed0dc9d4ff2284"
 
+[[env.preview.kv_namespaces]]
+binding = "RISK_RADAR_CACHE"
+id = "a2315c0e83f27b610c3dfdd30eb0a9ea"
+
+# ── R2 ───────────────────────────────────────────────────────────────────────
 # RISK_RADAR_CACHE: same live "RR_CACHE" resource as env.prod — see the note
 # there. No dedicated preview KV exists for this yet.
 [[env.preview.kv_namespaces]]
