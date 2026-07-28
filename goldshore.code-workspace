@@ -1,11 +1,12 @@
 {
   "folders": [
-    { "name": "goldshore-ai (root)", "path": "." },
-    { "name": "gs-web", "path": "apps/gs-web" },
-    { "name": "gs-api", "path": "apps/gs-api" },
-    { "name": "packages/ui", "path": "packages/ui" },
-    { "name": "packages/auth", "path": "packages/auth" },
-    { "name": "packages/config", "path": "packages/config" }
+    { "name": "goldshore-ai (GitHub Desktop)", "path": "E:/GitHub/marzton/goldshore-ai" },
+    { "name": "gs-web", "path": "E:/GitHub/marzton/goldshore-ai/apps/gs-web" },
+    { "name": "gs-api", "path": "E:/GitHub/marzton/goldshore-ai/apps/gs-api" },
+    { "name": "gs-mcp", "path": "E:/GitHub/marzton/gs-mcp" },
+    { "name": "packages/ui", "path": "E:/GitHub/marzton/goldshore-ai/packages/ui" },
+    { "name": "packages/auth", "path": "E:/GitHub/marzton/goldshore-ai/packages/auth" },
+    { "name": "packages/config", "path": "E:/GitHub/marzton/goldshore-ai/packages/config" }
   ],
   "settings": {
     "typescript.tsdk": "node_modules/typescript/lib",
