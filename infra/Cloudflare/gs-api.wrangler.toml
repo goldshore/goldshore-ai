@@ -30,6 +30,8 @@ ENV = "production"
 CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 CONTROL_SYNC_TOKEN = "__PROD_CONTROL_SYNC_TOKEN__"
+# CONTROL_SYNC_TOKEN is a Worker secret. Never place a placeholder in vars:
+# Wrangler would overwrite the remote secret with that literal value.
 GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
 GOOGLE_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/goldclaw/oauth/google/callback"
 
@@ -94,6 +96,26 @@ binding = "AI"
 name = "AUTH_SESSION"
 class_name = "AuthSession"
 
+
+
+[[env.prod.services]]
+binding = "AGENT"
+service = "gs-agent"
+environment = "prod"
+
+[[env.prod.services]]
+binding = "GS_MAIL"
+service = "gs-mail"
+environment = "prod"
+
+[[env.prod.services]]
+binding = "GOLDSHORE_AI"
+service = "goldshore-ai"
+environment = "prod"
+
+# GS_WEB PROD service binding removed here too — see apps/gs-api/wrangler.toml
+# for why (dead binding name with a literal space, unreachable as env.GS_WEB).
+
 # ── Queues ───────────────────────────────────────────────────────────────────
 [[env.prod.queues.producers]]
 binding = "JOBS_QUEUE"
@@ -119,6 +141,11 @@ queue = "gs-mail-jobs"
 
 [[env.prod.queues.consumers]]
 queue = "gs-events"
+# Production queue consumers are owned outside gs-api today:
+# - goldshore-jobs and gs-events are consumed by gs-mail.
+# - gs-mail-jobs is configured as an HTTP pull consumer.
+# Keep gs-api as a producer only so deploys do not fail while attempting to
+# replace existing queue consumers.
 
 # ── Workflows ────────────────────────────────────────────────────────────────
 [[env.prod.workflows]]
@@ -134,6 +161,10 @@ script_name = "gs-signals-prod"
 binding = "INTEGRATION_MASTER_KEY"
 store_id = "b9824d3280c54573a24137c7e7143b33"
 secret_name = "INTEGRATION_MASTER_KEY"
+# ── Secrets ──────────────────────────────────────────────────────────────────
+# INTEGRATION_MASTER_KEY is provisioned as a normal Worker secret for this
+# environment. Do not re-add a Secrets Store binding until the referenced store
+# and secret exist in the Cloudflare account.
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Preview environment
@@ -234,6 +265,10 @@ queue = "gs-mail-dead-letter"
 binding = "INTEGRATION_MASTER_KEY"
 store_id = "b9824d3280c54573a24137c7e7143b33"
 secret_name = "INTEGRATION_MASTER_KEY"
+# ── Secrets ──────────────────────────────────────────────────────────────────
+# INTEGRATION_MASTER_KEY is provisioned as a normal Worker secret for this
+# environment. Do not re-add a Secrets Store binding until the referenced store
+# and secret exist in the Cloudflare account.
 
 # ── Durable Object migrations ────────────────────────────────────────────────
 [[migrations]]

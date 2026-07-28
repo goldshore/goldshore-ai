@@ -1,0 +1,33 @@
+version: 1
+status: pending_destination_verification
+zone: goldshore.ai
+mailbox_provider: hostgator_cpanel
+
+destinations:
+  - ops@rmarston.com
+  - support@rmarston.com
+  - newsletter@rmarston.com
+
+rules:
+  - custom_address: ops@goldshore.ai
+    forward_to: ops@rmarston.com
+  - custom_address: support@goldshore.ai
+    forward_to: support@rmarston.com
+  - custom_address: newsletter@goldshore.ai
+    forward_to: newsletter@rmarston.com
+  - custom_address: archive@goldshore.ai
+    forward_to: ops@rmarston.com
+  - custom_address: legal@goldshore.ai
+    forward_to: ops@rmarston.com
+  - custom_address: billing@goldshore.ai
+    forward_to: ops@rmarston.com
+
+send_only:
+  - noreply@goldshore.ai
+
+controls:
+  catch_all: disabled
+  require_verified_destination: true
+  mailbox_credentials_in_repository: false
+  newsletter_marketing_send_via_cloudflare_transactional_service: false
+

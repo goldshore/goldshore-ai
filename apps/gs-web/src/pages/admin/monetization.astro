@@ -1,0 +1,140 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { authorizeAdminRequest, getAdminRouteRule } from '../../utils/admin-access';
+
+export const prerender = false;
+
+const env = Astro.locals.runtime?.env as Env | undefined;
+const rule = getAdminRouteRule('/admin/monetization', 'GET');
+
+let authError: { status: number; message: string } | null = null;
+if (!rule) {
+  authError = { status: 404, message: 'Not found.' };
+} else {
+  const authResult = await authorizeAdminRequest(Astro.request, env as never, rule);
+  if (!authResult.ok) {
+    authError = { status: authResult.status, message: authResult.error };
+  }
+}
+---
+
+<BaseLayout title="Monetization | GoldShore Admin" description="AdSense earnings and other revenue streams">
+  <section class="gs-section">
+    <div class="gs-grid columns-2">
+      <div>
+        <h1>Monetization</h1>
+        <p class="gs-text-lg">Track earnings from Google AdSense and other revenue streams.</p>
+      </div>
+      <div class="gs-card">
+        <h2 class="section-title"><span>◆</span>Actions</h2>
+        <button id="refresh-adsense" class="gs-button" type="button">Refresh data</button>
+      </div>
+    </div>
+
+    {authError ? (
+      <div class="gs-card" style="margin-top: 2rem;">
+        <p class="gs-text-lg">{authError.message}</p>
+      </div>
+    ) : (
+      <>
+        <div class="gs-grid columns-2" style="margin-top: 2rem;">
+          <div class="gs-card">
+            <h2 class="section-title"><span>◆</span>Summary (last 30 days)</h2>
+            <ul>
+              <li>Earnings: <strong id="total-earnings">$0.00</strong></li>
+              <li>Impressions: <strong id="total-impressions">0</strong></li>
+              <li>Clicks: <strong id="total-clicks">0</strong></li>
+              <li>Avg CPM: <strong id="avg-cpm">$0.00</strong></li>
+              <li>Status: <span id="adsense-status" class="gs-badge info">Checking…</span></li>
+            </ul>
+          </div>
+          <div class="gs-card">
+            <h2 class="section-title"><span>◆</span>Other revenue streams</h2>
+            <ul>
+              <li>Meta Business API — <span class="gs-badge info">Coming soon</span></li>
+              <li>Affiliate programs — <span class="gs-badge info">Coming soon</span></li>
+              <li>Sponsorships — <span class="gs-badge info">Coming soon</span></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="gs-card" style="margin-top: 2rem; overflow-x: auto;">
+          <h2 class="section-title"><span>◆</span>Earnings over time</h2>
+          <table class="gs-table">
+            <thead>
+              <tr><th>Date</th><th>Earnings</th><th>Impressions</th><th>Clicks</th><th>CTR</th><th>CPM</th><th>RPM</th></tr>
+            </thead>
+            <tbody id="adsense-tbody">
+              <tr><td colspan="7">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </>
+    )}
+  </section>
+
+  <script>
+    async function loadAdSenseData() {
+      const tbody = document.getElementById('adsense-tbody');
+      const statusEl = document.getElementById('adsense-status');
+
+      try {
+        const res = await fetch('/api/admin/monetization/adsense');
+        const data = await res.json();
+
+        if (!data.success) {
+          if (statusEl) {
+            statusEl.textContent = data.error ?? 'Not connected';
+            statusEl.className = 'gs-badge';
+          }
+          if (tbody) tbody.innerHTML = `<tr><td colspan="7">${data.error ?? 'AdSense not configured.'}</td></tr>`;
+          return;
+        }
+
+        const { summary, reports } = data;
+
+        const set = (id: string, value: string) => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = value;
+        };
+        set('total-earnings', `$${summary.totalEarnings.toFixed(2)}`);
+        set('total-impressions', summary.totalImpressions.toLocaleString());
+        set('total-clicks', summary.totalClicks.toLocaleString());
+        set('avg-cpm', `$${summary.avgCPM.toFixed(2)}`);
+        if (statusEl) {
+          statusEl.textContent = 'Connected';
+          statusEl.className = 'gs-badge success';
+        }
+
+        if (tbody) {
+          if (!reports?.length) {
+            tbody.innerHTML = '<tr><td colspan="7">No data for this period.</td></tr>';
+          } else {
+            tbody.innerHTML = reports
+              .map(
+                (r: { date: string; earnings: number; impressions: number; clicks: number; ctr: number; cpm: number; rpm: number }) => `
+                <tr>
+                  <td>${new Date(r.date).toLocaleDateString()}</td>
+                  <td>$${r.earnings.toFixed(2)}</td>
+                  <td>${r.impressions.toLocaleString()}</td>
+                  <td>${r.clicks.toLocaleString()}</td>
+                  <td>${(r.ctr * 100).toFixed(2)}%</td>
+                  <td>$${r.cpm.toFixed(2)}</td>
+                  <td>$${r.rpm.toFixed(2)}</td>
+                </tr>`,
+              )
+              .join('');
+          }
+        }
+      } catch {
+        if (statusEl) {
+          statusEl.textContent = 'Network error';
+          statusEl.className = 'gs-badge';
+        }
+      }
+    }
+
+    document.getElementById('refresh-adsense')?.addEventListener('click', loadAdSenseData);
+    loadAdSenseData();
+  </script>
+</BaseLayout>

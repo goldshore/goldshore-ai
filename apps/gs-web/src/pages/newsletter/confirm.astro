@@ -1,0 +1,49 @@
+---
+import MarketingLayout from '../../layouts/MarketingLayout.astro';
+
+export const prerender = false;
+
+const apiBase = (import.meta.env.PUBLIC_API || 'https://api.goldshore.ai').replace(/\/$/, '');
+---
+
+<MarketingLayout title="Newsletter confirmation | GoldShore" description="Confirm your GoldShore newsletter subscription.">
+  <main class="gs-section" style="min-height: 60vh;">
+    <div class="gs-container gs-stack" style="max-width: 42rem;" data-newsletter-confirm data-api-base={apiBase}>
+      <p class="gs-kicker">Newsletter</p>
+      <h1 data-result-title>Confirming subscription</h1>
+      <p data-result-message>Please wait while we confirm your email address.</p>
+      <a class="gs-button" href="/">Return home</a>
+    </div>
+  </main>
+</MarketingLayout>
+
+<script>
+  const container = document.querySelector<HTMLElement>('[data-newsletter-confirm]');
+  const title = container?.querySelector<HTMLElement>('[data-result-title]');
+  const message = container?.querySelector<HTMLElement>('[data-result-message]');
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('token');
+  const manage = params.get('manage');
+
+  const showResult = (heading: string, detail: string) => {
+    if (title) title.textContent = heading;
+    if (message) message.textContent = detail;
+  };
+
+  if (!container || !token) {
+    showResult('Unable to confirm', 'This confirmation link is invalid.');
+  } else {
+    const target = new URL(`${container.dataset.apiBase}/v1/forms/newsletter/confirm`);
+    target.searchParams.set('token', token);
+    if (manage) target.searchParams.set('manage', manage);
+
+    fetch(target)
+      .then((response) => {
+        if (!response.ok) throw new Error('confirmation rejected');
+        showResult('Subscription confirmed', 'Your subscription is confirmed. A welcome email is on its way.');
+      })
+      .catch(() => {
+        showResult('Unable to confirm', 'This confirmation link is invalid, expired, or temporarily unavailable.');
+      });
+  }
+</script>

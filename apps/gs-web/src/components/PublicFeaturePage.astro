@@ -1,0 +1,66 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+interface Card {
+  title: string;
+  body: string;
+  href?: string;
+  linkLabel?: string;
+}
+
+interface Props {
+  eyebrow: string;
+  title: string;
+  description: string;
+  canonicalPath: string;
+  cards: Card[];
+  ctaHref?: string;
+  ctaLabel?: string;
+}
+
+const props = Astro.props as Props;
+
+const {
+  eyebrow,
+  title,
+  description,
+  canonicalPath,
+  cards,
+  ctaHref = '/contact/',
+  ctaLabel = 'Talk to GoldShore',
+} = props;
+---
+
+<BaseLayout title={`${title} | GoldShore`} description={description} canonicalPath={canonicalPath}>
+  <section class="gs-hero public-feature-hero">
+    <div>
+      <p class="gs-eyebrow">{eyebrow}</p>
+      <h1>{title}</h1>
+      <p>{description}</p>
+      <a class="gs-button" href={ctaHref}>{ctaLabel} →</a>
+    </div>
+  </section>
+
+  <section class="gs-section">
+    <div class="gs-grid columns-2 public-feature-grid">
+      {cards.map((card) => (
+        <article class="gs-card">
+          <h2>{card.title}</h2>
+          <p>{card.body}</p>
+          {card.href ? <a class="gs-inline-link" href={card.href}>{card.linkLabel ?? 'Explore'} →</a> : null}
+        </article>
+      ))}
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .public-feature-hero .gs-button {
+    display: inline-flex;
+    margin-top: 1rem;
+  }
+
+  .public-feature-grid h2 {
+    margin-top: 0;
+  }
+</style>
