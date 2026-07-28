@@ -16,9 +16,12 @@ export function createAstroConfig(overrides = {}) {
     outDir: './dist',
     output: 'server',
     prefetch: true,
-    adapter: cloudflare(),
+    adapter: cloudflare({ prerenderEnvironment: 'node' }),
     integrations: [],
     vite: {
+      build: {
+        cssMinify: 'esbuild'
+      },
       plugins: [],
       ssr: {
         noExternal: mergedNoExternal
@@ -39,6 +42,10 @@ export function createAstroConfig(overrides = {}) {
     vite: {
       ...config.vite,
       ...(overrides.vite || {}),
+      build: {
+        ...config.vite.build,
+        ...(overrides.vite?.build || {})
+      },
       plugins: [
         ...config.vite.plugins,
         ...(overrides.vite?.plugins || [])

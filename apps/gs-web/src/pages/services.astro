@@ -3,7 +3,7 @@ import { GSButton } from '@goldshore/ui';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import FlowSection from '../components/FlowSection.astro';
 
-export const prerender = true;
+export const prerender = false;
 
 const services = [
   {
@@ -100,14 +100,13 @@ const services = [
       {services.map((service) => (
         <article class="gs-card service-card">
           <h3>{service.name}</h3>
-          <p>{service.detail}</p>
-          {service.bullets ? (
-            <ul class="gs-text-sm">
-              {service.bullets.map((item) => (
+          <p>{service.overview}</p>
+          <p class="gs-text-sm"><strong>Timeline:</strong> {service.timeline}</p>
+          <ul class="gs-text-sm">
+            {service.deliverables.map((item) => (
                 <li>{item}</li>
-              ))}
-            </ul>
-          ) : null}
+            ))}
+          </ul>
           <GSButton
             href={service.cta}
             variant="secondary"

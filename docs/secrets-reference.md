@@ -11,7 +11,7 @@ Add or update these secrets at the links below. Never commit values to git.
 | Secret Name | What it is | Where to get it |
 |---|---|---|
 | `CLOUDFLARE_API_TOKEN` | Cloudflare API token (read/write Workers, D1, KV, R2) | https://dash.cloudflare.com/profile/api-tokens |
-| `CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN` | Cloudflare deploy token scoped to goldshore-ai Workers | https://dash.cloudflare.com/profile/api-tokens |
+| `CLOUDFLARE_BUILD_API_TOKEN` | Cloudflare deploy token scoped to goldshore-ai Workers and Pages | https://dash.cloudflare.com/profile/api-tokens |
 | `GOOGLE_CHAT_WEBHOOK` | Google Chat space webhook URL for CI notifications | chat.google.com → Space → Apps & integrations → Webhooks |
 | `GOOGLE_OAUTH_CLIENT_ID` | GCP OAuth 2.0 client ID — name gs-api reads for OAuth/GoldClaw routes | https://console.cloud.google.com/apis/credentials |
 | `GOOGLE_OAUTH_CLIENT_SECRET` | GCP OAuth 2.0 client secret — name gs-api reads; absent → 503 on OAuth routes | https://console.cloud.google.com/apis/credentials |
