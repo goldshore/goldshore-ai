@@ -29,12 +29,9 @@ routes = [
 ENV = "production"
 CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-<<<<<<< ours
+CONTROL_SYNC_TOKEN = "__PROD_CONTROL_SYNC_TOKEN__"
 # CONTROL_SYNC_TOKEN is a Worker secret. Never place a placeholder in vars:
 # Wrangler would overwrite the remote secret with that literal value.
-=======
-CONTROL_SYNC_TOKEN = "__PROD_CONTROL_SYNC_TOKEN__"
->>>>>>> theirs
 GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
 GOOGLE_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/goldclaw/oauth/google/callback"
 
@@ -51,14 +48,7 @@ id = "a52e94cb331c4e3db08f2aa507e6df09"
 binding = "RISK_RADAR_CACHE"
 id = "0e67c3fe3d2b3231e7d4dba704e7dcd6"
 
-<<<<<<< ours
-<<<<<<< ours
 # ── R2 ───────────────────────────────────────────────────────────────────────
-=======
->>>>>>> theirs
-=======
-# ── R2 ───────────────────────────────────────────────────────────────────────
->>>>>>> theirs
 [[env.prod.r2_buckets]]
 binding = "GS_ASSETS"
 bucket_name = "gs-assets"
@@ -71,14 +61,7 @@ bucket_name = "gs-telemetry-storage"
 binding = "RISK_RADAR_R2"
 bucket_name = "gs-risk-radar-raw"
 
-<<<<<<< ours
-<<<<<<< ours
 # ── D1 ───────────────────────────────────────────────────────────────────────
-=======
->>>>>>> theirs
-=======
-# ── D1 ───────────────────────────────────────────────────────────────────────
->>>>>>> theirs
 [[env.prod.d1_databases]]
 binding = "PLATFORM_DB"
 database_name = "gs_platform_db"
@@ -113,7 +96,6 @@ binding = "AI"
 name = "AUTH_SESSION"
 class_name = "AuthSession"
 
-<<<<<<< ours
 
 
 [[env.prod.services]]
@@ -134,8 +116,6 @@ environment = "prod"
 # GS_WEB PROD service binding removed here too — see apps/gs-api/wrangler.toml
 # for why (dead binding name with a literal space, unreachable as env.GS_WEB).
 
-=======
->>>>>>> theirs
 # ── Queues ───────────────────────────────────────────────────────────────────
 [[env.prod.queues.producers]]
 binding = "JOBS_QUEUE"
@@ -153,13 +133,6 @@ queue = "gs-mail-jobs"
 binding = "DEAD_LETTER_QUEUE"
 queue = "gs-mail-dead-letter"
 
-<<<<<<< ours
-# Production queue consumers are owned outside gs-api today:
-# - goldshore-jobs and gs-events are consumed by gs-mail.
-# - gs-mail-jobs is configured as an HTTP pull consumer.
-# Keep gs-api as a producer only so deploys do not fail while attempting to
-# replace existing queue consumers.
-=======
 [[env.prod.queues.consumers]]
 queue = "goldshore-jobs"
 
@@ -168,7 +141,11 @@ queue = "gs-mail-jobs"
 
 [[env.prod.queues.consumers]]
 queue = "gs-events"
->>>>>>> theirs
+# Production queue consumers are owned outside gs-api today:
+# - goldshore-jobs and gs-events are consumed by gs-mail.
+# - gs-mail-jobs is configured as an HTTP pull consumer.
+# Keep gs-api as a producer only so deploys do not fail while attempting to
+# replace existing queue consumers.
 
 # ── Workflows ────────────────────────────────────────────────────────────────
 [[env.prod.workflows]]
@@ -177,12 +154,6 @@ name = "signals-evaluator"
 class_name = "SignalsEvaluator"
 script_name = "gs-signals-prod"
 
-<<<<<<< ours
-# ── Secrets ──────────────────────────────────────────────────────────────────
-# INTEGRATION_MASTER_KEY is provisioned as a normal Worker secret for this
-# environment. Do not re-add a Secrets Store binding until the referenced store
-# and secret exist in the Cloudflare account.
-=======
 # ── Secrets Store ────────────────────────────────────────────────────────────
 # Secrets Store bindings are per secret, not a store object. The runtime reads
 # env.INTEGRATION_MASTER_KEY directly.
@@ -190,7 +161,10 @@ script_name = "gs-signals-prod"
 binding = "INTEGRATION_MASTER_KEY"
 store_id = "b9824d3280c54573a24137c7e7143b33"
 secret_name = "INTEGRATION_MASTER_KEY"
->>>>>>> theirs
+# ── Secrets ──────────────────────────────────────────────────────────────────
+# INTEGRATION_MASTER_KEY is provisioned as a normal Worker secret for this
+# environment. Do not re-add a Secrets Store binding until the referenced store
+# and secret exist in the Cloudflare account.
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Preview environment
@@ -212,10 +186,6 @@ binding = "KV"
 id = "d4d20cee39094b999dea3f7e5f4c533a"
 
 [[env.preview.kv_namespaces]]
-<<<<<<< ours
-<<<<<<< ours
-=======
->>>>>>> theirs
 binding = "CONTROL_LOGS"
 id = "09e43cb8bd4749fdaaed0dc9d4ff2284"
 
@@ -224,14 +194,6 @@ binding = "RISK_RADAR_CACHE"
 id = "a2315c0e83f27b610c3dfdd30eb0a9ea"
 
 # ── R2 ───────────────────────────────────────────────────────────────────────
-<<<<<<< ours
-=======
-binding = "RISK_RADAR_CACHE"
-id = "a2315c0e83f27b610c3dfdd30eb0a9ea"
-
->>>>>>> theirs
-=======
->>>>>>> theirs
 [[env.preview.r2_buckets]]
 binding = "GS_ASSETS"
 bucket_name = "gs-assets-preview"
@@ -244,14 +206,7 @@ bucket_name = "gs-telemetry-storage"
 binding = "RISK_RADAR_R2"
 bucket_name = "gs-risk-radar-raw-preview"
 
-<<<<<<< ours
-<<<<<<< ours
 # ── D1 ───────────────────────────────────────────────────────────────────────
-=======
->>>>>>> theirs
-=======
-# ── D1 ───────────────────────────────────────────────────────────────────────
->>>>>>> theirs
 [[env.preview.d1_databases]]
 binding = "PLATFORM_DB"
 database_name = "gs_platform_db"
@@ -303,12 +258,6 @@ queue = "gs-mail-jobs"
 binding = "DEAD_LETTER_QUEUE"
 queue = "gs-mail-dead-letter"
 
-<<<<<<< ours
-# ── Secrets ──────────────────────────────────────────────────────────────────
-# INTEGRATION_MASTER_KEY is provisioned as a normal Worker secret for this
-# environment. Do not re-add a Secrets Store binding until the referenced store
-# and secret exist in the Cloudflare account.
-=======
 # ── Secrets Store ────────────────────────────────────────────────────────────
 # Secrets Store bindings are per secret, not a store object. The runtime reads
 # env.INTEGRATION_MASTER_KEY directly.
@@ -316,7 +265,10 @@ queue = "gs-mail-dead-letter"
 binding = "INTEGRATION_MASTER_KEY"
 store_id = "b9824d3280c54573a24137c7e7143b33"
 secret_name = "INTEGRATION_MASTER_KEY"
->>>>>>> theirs
+# ── Secrets ──────────────────────────────────────────────────────────────────
+# INTEGRATION_MASTER_KEY is provisioned as a normal Worker secret for this
+# environment. Do not re-add a Secrets Store binding until the referenced store
+# and secret exist in the Cloudflare account.
 
 # ── Durable Object migrations ────────────────────────────────────────────────
 [[migrations]]

@@ -1,0 +1,21 @@
+---
+import PublicFeaturePage from '../../components/PublicFeaturePage.astro';
+
+export const prerender = false;
+
+const cards = [
+  { title: 'Sprint 1 · Thesis', body: 'Customer thesis, value pillars, evidence, and the decisions the launch must support.' },
+  { title: 'Sprint 2 · Narrative', body: 'Messaging arcs, product storytelling, proof points, and objection handling.' },
+  { title: 'Sprint 3 · Activation', body: 'Owned, earned, partner, and paid-channel sequencing with clear accountability.' },
+  { title: 'Sprint 4 · Launch', body: 'Rehearsal, analytics wiring, operating documents, and stakeholder collateral.' },
+];
+---
+
+<PublicFeaturePage
+  eyebrow="Launch Architecture"
+  title="Bridgekeeper"
+  description="A four-sprint launch program that aligns positioning, go-to-market sequencing, and activation assets into one operating system."
+  canonicalPath="/services/bridgekeeper/"
+  {cards}
+  ctaLabel="Book Bridgekeeper"
+/>

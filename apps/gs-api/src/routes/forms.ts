@@ -6,6 +6,8 @@ import {
   sendMail,
   parseNotificationRecipients,
   buildLeadAutoResponder,
+  buildNewsletterConfirmation,
+  buildNewsletterWelcome,
 } from '../lib/mail';
 
 const forms = new Hono<{ Bindings: Env }>();
