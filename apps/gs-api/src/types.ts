@@ -11,7 +11,7 @@ export type Env = {
   RISK_RADAR_R2?: R2Bucket;
   AUTH_SESSION?: DurableObjectNamespace;
   AI: Ai;
-  SECRETS: SecretsStore;
+  INTEGRATION_MASTER_KEY?: string;
   JOBS_QUEUE?: Queue;
   EVENTS_QUEUE?: Queue;
   MAIL_JOBS_QUEUE?: Queue;
@@ -41,8 +41,6 @@ export type Env = {
   FORWARD_TO?: string;
   MAIL_BLOCKED_SENDERS?: string;
   MAIL_ALLOWED_RECIPIENTS?: string;
-  AGENT?: Fetcher;
-  GS_WEB?: Fetcher;
   API_ORIGIN?: string;
   ADMIN_URL?: string;
   ENV?: string;
