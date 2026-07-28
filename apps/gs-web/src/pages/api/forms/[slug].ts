@@ -1,10 +1,6 @@
 import type { APIRoute } from 'astro';
-import {
-  buildAdminSession,
-  verifyAccessWithClaims,
-  type AdminPermission,
-  type Env as AccessEnv,
-} from '@goldshore/auth';
+import { buildAdminSession, type AdminPermission } from '@goldshore/auth/rbac.ts';
+import { verifyAccessWithClaims, type Env as AccessEnv } from '@goldshore/auth/verify.ts';
 import { parseJson } from '@goldshore/utils';
 
 export const prerender = false;
@@ -85,7 +81,7 @@ const proxy = async (request: Request, env: Env | undefined, slug?: string) => {
     `SELECT id, slug, name, status, fields, recipients, integrations, created_at, updated_at
      FROM form_configs
      WHERE slug = ?
-     LIMIT 1`
+     LIMIT 1`,
   )
     .bind(slug)
     .all();
@@ -129,7 +125,7 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     `SELECT id, slug, name, status, fields, recipients, integrations, created_at, updated_at
      FROM form_configs
      WHERE slug = ?
-     LIMIT 1`
+     LIMIT 1`,
   )
     .bind(slug)
     .all();
@@ -152,7 +148,7 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
   await env.PLATFORM_DB.prepare(
     `UPDATE form_configs
      SET name = ?, status = ?, fields = ?, recipients = ?, integrations = ?, updated_at = ?
-     WHERE slug = ?`
+     WHERE slug = ?`,
   )
     .bind(
       updated.name,
@@ -161,7 +157,7 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
       JSON.stringify(updated.recipients),
       JSON.stringify(updated.integrations),
       now,
-      slug
+      slug,
     )
     .run();
 

@@ -1,7 +1,7 @@
-export const prerender = true;
+export const prerender = false;
 
-export async function GET() {
-  const baseUrl = 'https://goldshore.ai';
+export async function GET({ url }: { url: URL }) {
+  const baseUrl = url.origin;
 
   const pages = [
     // Main pages
@@ -17,6 +17,8 @@ export async function GET() {
     { url: '/services/design-dev', priority: 0.8, changefreq: 'monthly' },
     { url: '/services/digital-strategy', priority: 0.8, changefreq: 'monthly' },
     { url: '/services/systems-integration', priority: 0.8, changefreq: 'monthly' },
+    { url: '/services/banproof', priority: 0.8, changefreq: 'monthly' },
+    { url: '/services/bridgekeeper', priority: 0.8, changefreq: 'monthly' },
 
     // Platform & Products
     { url: '/platform', priority: 0.9, changefreq: 'weekly' },
@@ -29,6 +31,15 @@ export async function GET() {
 
     // Solutions
     { url: '/solutions', priority: 0.8, changefreq: 'monthly' },
+    { url: '/products', priority: 0.8, changefreq: 'monthly' },
+    { url: '/pricing', priority: 0.7, changefreq: 'monthly' },
+    { url: '/blog', priority: 0.7, changefreq: 'weekly' },
+    { url: '/sectors/financial-services', priority: 0.7, changefreq: 'monthly' },
+    { url: '/sectors/operations-logistics', priority: 0.7, changefreq: 'monthly' },
+    { url: '/sectors/media-communications', priority: 0.7, changefreq: 'monthly' },
+    { url: '/sectors/healthcare-systems', priority: 0.7, changefreq: 'monthly' },
+    { url: '/sectors/public-sector', priority: 0.7, changefreq: 'monthly' },
+    { url: '/sectors/enterprise-tech', priority: 0.7, changefreq: 'monthly' },
 
     // Developer
     { url: '/developer', priority: 0.8, changefreq: 'weekly' },
@@ -63,7 +74,7 @@ ${pages
   return new Response(sitemap, {
     headers: {
       'Content-Type': 'application/xml',
-      'Cache-Control': 'public, max-age=86400', // 24 hours
+      'Cache-Control': 'public, max-age=3600',
     },
   });
 }
