@@ -25,6 +25,13 @@ import gearswipe from './routes/gearswipe';
 import crawler from './routes/crawler';
 import integrations from './routes/integrations';
 import goldclaw from './routes/goldclaw';
+import agent from './routes/agent';
+import mail from './routes/mail';
+import control from './routes/control';
+import trading from './routes/trading';
+import core from './routes/core';
+import services from './routes/services';
+import products from './routes/products';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
 import { type Env } from './types';
@@ -32,9 +39,12 @@ import { type Env } from './types';
 type Env = {
   KV: KVNamespace;
   CONTROL_LOGS?: KVNamespace;
+  RISK_RADAR_CACHE?: KVNamespace;
   PLATFORM_DB: D1Database;
+  RISK_RADAR_DB?: D1Database;
   TELEMETRY_DB?: D1Database;
   GS_ASSETS: R2Bucket;
+  RISK_RADAR_R2?: R2Bucket;
   AUTH_SESSION?: DurableObjectNamespace;
   AI: Ai;
   OPENAI_API_KEY?: string;
@@ -51,7 +61,6 @@ type Env = {
   FORWARD_TO?: string;
   MAIL_BLOCKED_SENDERS?: string;
   MAIL_ALLOWED_RECIPIENTS?: string;
-  AGENT?: Fetcher;
   API_ORIGIN?: string;
   ENV?: string;
   DEV_AUTH_BYPASS?: string;
@@ -66,7 +75,15 @@ const app = new Hono<{
 }>();
 
 const TRACE_HEADER = 'X-Correlation-Id';
-const AGENT_HOSTNAME = 'agent.goldshore.ai';
+const HOST_ROUTE_PREFIXES = new Map([
+  ['agent.goldshore.ai', '/agent'],
+  ['mail.goldshore.ai', '/mail'],
+  ['ops.goldshore.ai', '/admin/control'],
+  ['trading.goldshore.ai', '/trading'],
+  ['dashboard.goldshore.ai', '/trading'],
+  ['dash.goldshore.ai', '/trading'],
+  ['gw.goldshore.ai', '/core'],
+]);
 
 const getCorrelationId = (request: Request): string =>
   request.headers.get(TRACE_HEADER) ?? crypto.randomUUID();
@@ -82,8 +99,8 @@ const withCorrelationId = (response: Response, correlationId: string): Response 
   });
 };
 
-const isAgentHostnameRequest = (request: Request): boolean =>
-  new URL(request.url).hostname === AGENT_HOSTNAME;
+const getHostRoutePrefix = (request: Request): string | undefined =>
+  HOST_ROUTE_PREFIXES.get(new URL(request.url).hostname);
 
 const normalizeEmail = (value: string) => value.trim().toLowerCase();
 const parseEmailList = (value?: string) =>
@@ -120,8 +137,6 @@ const requiredBindings = ['PLATFORM_DB', 'GS_ASSETS', 'AI'] as const;
 const expectedD1Binding = 'PLATFORM_DB' as const;
 const requiredSecrets = [
   'JWT_SECRET',
-  'STRIPE_API_KEY',
-  'SENDGRID_API_KEY',
   'ACCESS_CLIENT_SECRET',
 ] as const;
 
@@ -149,11 +164,24 @@ const isAllowedOrigin = (origin: string, allowedOrigins?: string) => {
 
 const isPublicPath = (path: string, method: string) => {
   if (method === 'OPTIONS') return true;
+  if (
+    method === 'POST' &&
+    /^\/v1\/forms\/[^/]+\/submissions$/.test(path)
+  ) {
+    return true;
+  }
+  if (
+    method === 'GET' &&
+    /^\/v1\/forms\/newsletter\/(?:confirm|unsubscribe)$/.test(path)
+  ) {
+    return true;
+  }
   return (
     path === '/' ||
     path === '/version' ||
     path === '/health' ||
-    path.startsWith('/health/')
+    path.startsWith('/health/') ||
+    /^\/(?:agent|mail|admin\/control|trading|core)\/health$/.test(path)
   );
 };
 
@@ -184,23 +212,16 @@ app.use(
 );
 
 app.use('*', async (c, next) => {
-  if (!isAgentHostnameRequest(c.req.raw)) {
+  const routePrefix = getHostRoutePrefix(c.req.raw);
+  if (!routePrefix || c.req.path === routePrefix || c.req.path.startsWith(`${routePrefix}/`)) {
     await next();
     return;
   }
 
   const correlationId = getCorrelationId(c.req.raw);
-  if (!c.env.AGENT) {
-    return c.json({ error: 'Downstream agent not configured', traceId: correlationId }, 503, {
-      [TRACE_HEADER]: correlationId,
-    });
-  }
-
-  const downstreamRequest = new Request(c.req.raw, {
-    headers: new Headers(c.req.raw.headers),
-  });
-  downstreamRequest.headers.set(TRACE_HEADER, correlationId);
-  const response = await c.env.AGENT.fetch(downstreamRequest);
+  const routedUrl = new URL(c.req.url);
+  routedUrl.pathname = `${routePrefix}${routedUrl.pathname === '/' ? '' : routedUrl.pathname}`;
+  const response = await app.fetch(new Request(routedUrl.toString(), c.req.raw), c.env, c.executionCtx);
   return withCorrelationId(response, correlationId);
 });
 
@@ -325,6 +346,13 @@ app.route('/goldclaw', goldclaw);
 app.route('/media', media);
 app.route('/pages', pages);
 app.route('/internal', internal);
+app.route('/agent', agent);
+app.route('/mail', mail);
+app.route('/admin/control', control);
+app.route('/trading', trading);
+app.route('/core', core);
+app.route('/services', services);
+app.route('/products', products);
 
 app.all('/api/*', async (c) => {
   const correlationId = getCorrelationId(c.req.raw);
@@ -359,14 +387,54 @@ v1.route('/forms', forms);
 v1.route('/deployments', deployments);
 v1.route('/gearswipe', gearswipe);
 v1.route('/goldclaw', goldclaw);
+v1.route('/trading', trading);
+v1.route('/agent', agent);
+v1.route('/mail', mail);
+v1.route('/control', control);
+v1.route('/core', core);
+v1.route('/services', services);
+v1.route('/products', products);
 v1.get('/leads', (c) => c.json({ leads: [] }));
 
 app.route('/v1', v1);
 
-export { isAllowedOrigin, isPreviewOrigin, parseAllowedOrigins };
+export { app, isAllowedOrigin, isPreviewOrigin, isPublicPath, parseAllowedOrigins };
+
+const processQueueMessage = async (message: Message<any>, env: Env): Promise<void> => {
+  const body = message.body;
+  const type = typeof body === 'object' && body && 'type' in body ? String((body as { type?: unknown }).type) : 'unknown';
+  if (type === 'contact' || type === 'checkout') {
+    console.info({ event: 'mail_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
+    message.ack();
+    return;
+  }
+  if (type === 'trading' || type === 'trading-signal' || type === 'order') {
+    console.info({ event: 'trading_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
+    message.ack();
+    return;
+  }
+  if (type === 'signal' || type === 'atc') {
+    console.info({ event: 'core_signal_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
+    message.ack();
+    return;
+  }
+  console.info({ event: 'agent_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
+  message.ack();
+};
 
 export default {
   fetch: app.fetch,
+
+  async queue(batch: MessageBatch<any>, env: Env): Promise<void> {
+    for (const message of batch.messages) {
+      try {
+        await processQueueMessage(message, env);
+      } catch (error) {
+        console.error('gs-api queue message processing failed:', error);
+        message.retry();
+      }
+    }
+  },
 
   async email(message: ForwardableEmailMessage, env: Env, ctx: ExecutionContext): Promise<void> {
     const sender = message.from;

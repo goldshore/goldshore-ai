@@ -18,8 +18,7 @@
     "check:release": "node scripts/release-quality-gate.mjs"
   },
   "dependencies": {
-    "@astrojs/react": "^5.0.3",
-    "@astrojs/tailwind": "^6.0.2",
+    "@astrojs/react": "^6.0.1",
     "@goldshore/auth": "workspace:^",
     "@goldshore/brand": "workspace:^",
     "@goldshore/config": "workspace:^",
@@ -28,20 +27,19 @@
     "@goldshore/utils": "workspace:^",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
-    "@supabase/supabase-js": "^2.108.2",
-    "astro": "^6.4.6",
+    "@supabase/supabase-js": "^2.110.7",
+    "astro": "^7.1.0",
     "framer-motion": "^12.38.0",
-    "fuse.js": "^7.1.0",
+    "fuse.js": "^7.5.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.6",
-    "three": "^0.184.0",
+    "three": "^0.185.1",
     "vanilla-tilt": "^1.8.1"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.8",
-    "@astrojs/cloudflare": "^13.7.0",
-    "@playwright/test": "^1.59.1",
-    "tailwindcss": "^4.3.1",
+    "@astrojs/cloudflare": "^14.1.4",
+    "@playwright/test": "^1.62.0",
     "typescript": "^5.4.2"
   }
 }
