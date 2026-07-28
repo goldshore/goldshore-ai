@@ -3,7 +3,8 @@
     { "name": "goldshore-ai (GitHub Desktop)", "path": "E:/GitHub/marzton/goldshore-ai" },
     { "name": "gs-web", "path": "E:/GitHub/marzton/goldshore-ai/apps/gs-web" },
     { "name": "gs-api", "path": "E:/GitHub/marzton/goldshore-ai/apps/gs-api" },
-    { "name": "gs-mcp", "path": "E:/GitHub/marzton/gs-mcp" },
+    { "name": "goldclaw", "path": "E:/GitHub/marzton/goldclaw" },
+    { "name": "goldshore-ops", "path": "E:/GitHub/marzton/goldshore-ops" },
     { "name": "packages/ui", "path": "E:/GitHub/marzton/goldshore-ai/packages/ui" },
     { "name": "packages/auth", "path": "E:/GitHub/marzton/goldshore-ai/packages/auth" },
     { "name": "packages/config", "path": "E:/GitHub/marzton/goldshore-ai/packages/config" }
