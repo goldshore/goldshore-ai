@@ -27,6 +27,8 @@ Public marketing site, documentation hub, and customer-facing Astro app for Gold
 - Canonical Cloudflare manifest: `infra/Cloudflare/gs-web.wrangler.toml`
 - Preview and production deployments are driven by the live workflows under `.github/workflows/`.
 - Staging environments commonly point browser-visible runtime variables at preview services such as `https://api-preview.goldshore.ai` and `https://gw-preview.goldshore.ai`.
+- `gs-web` does not currently read `GS_CONFIG` directly.
+- Do not add a `GS_CONFIG` binding to the web Pages project unless a concrete `apps/gs-web` runtime consumer needs live request-time reads.
 
 ## Routes and endpoints
 

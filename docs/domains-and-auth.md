@@ -33,12 +33,14 @@ This document is the canonical reference for GoldShore domains, preview URLs, Cl
 - `goldshore.ai`
 - `api.goldshore.ai`
 - `gw.goldshore.ai` (canonical gateway hostname; not `gateway.goldshore.ai`)
+- `mcp.goldshore.ai`
 - `ops.goldshore.ai`
 
 ## Preview domains
 
 - `*-preview.goldshore.ai`
 - `{branch}.goldshore-pages.dev`
+- `mcp.goldshore.ai`
 
 ## Cloudflare Access policies
 
@@ -49,6 +51,7 @@ Cloudflare Access is enforced on internal tooling and protected previews. The ta
 | Public web         | `goldshore.ai`, `www.goldshore.ai`                                                                           | No                          | Public marketing site.                                                                                |
 | Web previews       | `preview.goldshore.ai`, `*-preview.goldshore.ai`, `{branch}.goldshore-pages.dev`                             | Yes (GoldShore-Web-Preview) | Preview builds for the marketing site should remain Access gated.                                     |
 | Admin cockpit      | `admin.goldshore.ai`, `admin-preview.goldshore.ai`, `*-preview.goldshore.ai`, `{branch}.goldshore-pages.dev` | Yes (GoldShore-Admin-ZT)    | Internal admin dashboard, email allowlist + IdP/OTP.                                                  |
+| MCP portal         | `mcp.goldshore.ai`                                                                                           | Yes (GoldShore-MCP-ZT)      | Cloudflare Zero Trust/MCP portal for internal tooling. Keep it separate from public web and API routing. |
 | Control worker     | `ops.goldshore.ai`                                                                                           | Yes                         | Internal ops workflows and automation.                                                                |
 | API worker         | `api.goldshore.ai`                                                                                           | Optional                    | Enable for private endpoints only.                                                                    |
 | Gateway worker     | `gw.goldshore.ai`                                                                                            | Optional                    | Canonical hostname is `gw.goldshore.ai` (not `gateway.goldshore.ai`); depends on routing/auth design. |
@@ -61,7 +64,7 @@ Non-interactive checks against Access-protected admin and preview hosts must use
 - GitHub Actions and local automation should provide `CF_ACCESS_CLIENT_ID` and `CF_ACCESS_CLIENT_SECRET`.
 - `.github/workflows/maintenance-gs-sync.yml` passes those secrets into `scripts/jules-sync.sh` for authenticated sync checks.
 - `infra/Cloudflare/tests.ts` automatically attaches the service-token headers for `admin.goldshore.ai` and `*.pages.dev` smoke checks when those environment variables are present.
-- Keep the Pages runtime URLs aligned with the `.ai` migration by setting explicit `public_url` values for `gs-web` and `gs-admin` in `infra/Cloudflare/config.yaml`.
+- Keep the Pages runtime URLs aligned with the `.ai` migration by setting explicit `public_url` values for `gs-web` in `infra/Cloudflare/config.yaml`.
 
 ### Mail handler configuration
 
@@ -78,6 +81,7 @@ Note: If `/health` and `/version` endpoints are used for automated monitoring, t
 - Production: `https://ops.goldshore.ai/auth/github/callback`
 - Preview (ops worker): `https://ops-preview.goldshore.ai/auth/github/callback`
 - Preview (admin cockpit): `https://admin-preview.goldshore.ai/auth/github/callback`
+- MCP portal: `https://mcp.goldshore.ai`
 - Preview (web Pages branches): `https://{branch}.goldshore-pages.dev/auth/github/callback`
 
 ### Access + edge proxy alignment

@@ -26,9 +26,9 @@
 
 ### 2. Admin (Cockpit)
 
-- Project: `astro-gs-admin`
+- Project: `astro-gs-web`
 - Repo: `astro-goldshore`
-- Root: `apps/gs-admin`
+- Root: `apps/gs-web`
 - Custom Domains:
   - `admin.goldshore.ai`
   - `admin-preview.goldshore.ai`
@@ -36,6 +36,7 @@
 **Zero Trust:**
 
 - Access policy required on `admin.goldshore.ai` (email allowlist).
+- `mcp.goldshore.ai` is a separate Cloudflare Zero Trust/MCP portal and should not be routed through Pages or Worker app code.
 
 **Environment Variables:**
 

@@ -4,7 +4,7 @@ set -euo pipefail
 TARGET_URL="${1:-https://admin.goldshore.ai/}"
 CLIENT_ID="${CF_ACCESS_CLIENT_ID:-}"
 CLIENT_SECRET="${CF_ACCESS_CLIENT_SECRET:-}"
-TRUSTED_HOSTS=("admin.goldshore.ai" "ops.goldshore.ai")
+TRUSTED_HOSTS=("admin.goldshore.ai" "mcp.goldshore.ai" "ops.goldshore.ai")
 
 if [[ -z "$CLIENT_ID" || -z "$CLIENT_SECRET" ]]; then
   echo "Missing CF_ACCESS_CLIENT_ID or CF_ACCESS_CLIENT_SECRET" >&2
