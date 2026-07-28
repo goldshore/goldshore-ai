@@ -25,8 +25,22 @@ function pagesCheckUrl(p: any): string {
 
   // Backward-compatible fallback for environments that have not yet set public_url.
   if (p.name === 'gs-web') return 'https://goldshore.ai/';
-  if (p.name === 'gs-admin') return 'https://admin.goldshore.ai/';
   return `https://${p.name}.goldshore.ai/`;
+}
+
+function pagesSmokeUrls(p: any): string[] {
+  const urls = new Set<string>();
+  urls.add(pagesCheckUrl(p));
+
+  if (Array.isArray(p.smoke_urls)) {
+    for (const url of p.smoke_urls) {
+      if (typeof url === 'string' && url.length > 0) {
+        urls.add(url);
+      }
+    }
+  }
+
+  return [...urls];
 }
 
 function resolveWorkerEntryPath(entry: string): string {
@@ -50,10 +64,10 @@ async function deployPages(p: any) {
     return;
   }
 
-  const url = pagesCheckUrl(p);
+  const urls = pagesSmokeUrls(p);
 
   if (p.require_checks?.includes('smoke')) {
-    await smoke(url, 200).catch(() => {});
+    await Promise.all(urls.map((url) => smoke(url, 200).catch(() => {})));
   }
 
   const status = await latestPagesStatus(p.name);
@@ -77,7 +91,7 @@ async function deployPages(p: any) {
   }
 
   if (p.require_checks?.includes('smoke')) {
-    await smoke(url, 200, 8000);
+    await Promise.all(urls.map((url) => smoke(url, 200, 8000)));
   }
   if (p.require_checks?.includes('lighthouse')) {
     await lighthouse(url, 0.8);

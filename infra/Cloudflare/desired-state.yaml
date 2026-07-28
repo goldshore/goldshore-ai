@@ -5,142 +5,134 @@ cloudflare:
   dns:
     records:
       # A. Web App (gs-web)
-      - name: "goldshore.ai"
+      - name: 'goldshore.ai'
         type: CNAME
-        content: "gs-web.pages.dev"
+        content: 'gs-web.pages.dev'
         proxied: true
-      - name: "www"
+      - name: 'www'
         type: CNAME
-        content: "gs-web.pages.dev"
+        content: 'gs-web.pages.dev'
         proxied: true
 
-      # B. Admin App (gs-admin)
-      - name: "admin"
+      # B. Admin surface (served by gs-web)
+      - name: 'admin'
         type: CNAME
-        content: "gs-admin.pages.dev"
+        content: 'gs-web.pages.dev'
         proxied: true
 
       # C. API Gateway Worker
-      - name: "gw"
+      - name: 'gw'
         type: CNAME
-        content: "gs-gateway.goldshore-account.workers.dev"
+        content: 'gs-gateway.goldshore-account.workers.dev'
         proxied: true
 
       # D. API Worker
-      - name: "api"
+      - name: 'api'
         type: CNAME
-        content: "gs-api.goldshore-account.workers.dev"
+        content: 'gs-api.goldshore-account.workers.dev'
         proxied: true
 
       # E. Mail Worker
-      - name: "mail"
+      - name: 'mail'
         type: CNAME
-        content: "gs-mail.goldshore-account.workers.dev"
+        content: 'gs-mail.goldshore-account.workers.dev'
         proxied: true
 
       # F. Control Worker (Internal only - no public DNS)
 
   access:
     policies:
-      - name: "GoldShore-Admin-ZT"
-        domain: "admin.goldshore.ai"
-        action: "allow"
+      - name: 'GoldShore-Admin-ZT'
+        domain: 'admin.goldshore.ai'
+        action: 'allow'
         rules:
           include:
-            - email_domain: "goldshore.ai"
-            - email: "your.personal@email.com" # Placeholder
+            - email_domain: 'goldshore.ai'
+            - email: 'your.personal@email.com' # Placeholder
           require:
-            - identity_provider: "github"
+            - identity_provider: 'github'
 
-      - name: "GoldShore-API-Bypass"
-        domain: "api.goldshore.ai"
-        action: "bypass"
+      - name: 'GoldShore-API-Bypass'
+        domain: 'api.goldshore.ai'
+        action: 'bypass'
         rules:
           include:
             - everyone: true
 
   pages:
     projects:
-      - name: "gs-web"
-        repo: "astro-goldshore"
-        root_dir: "/" # Run from repo root for monorepo support
-        production_branch: "main"
-        build_command: "pnpm --filter @goldshore/web build"
-        output_dir: "apps/gs-web/dist"
+      - name: 'gs-web'
+        repo: 'astro-goldshore'
+        root_dir: '/' # Run from repo root for monorepo support
+        production_branch: 'main'
+        build_command: 'pnpm --filter @goldshore/web build'
+        output_dir: 'apps/gs-web/dist'
         custom_domains:
-          - "goldshore.ai"
-          - "www.goldshore.ai"
-
-      - name: "gs-admin"
-        repo: "astro-goldshore"
-        root_dir: "/" # Run from repo root for monorepo support
-        production_branch: "main"
-        build_command: "pnpm --filter @goldshore/admin build"
-        output_dir: "apps/gs-admin/dist"
-        custom_domains:
-          - "admin.goldshore.ai"
+          - 'goldshore.ai'
+          - 'www.goldshore.ai'
+          - 'admin.goldshore.ai'
 
   workers:
     services:
-      - name: "gs-api"
-        script_path: "apps/gs-api/dist/index.js"
+      - name: 'gs-api'
+        script_path: 'apps/gs-api/dist/index.js'
         routes:
-          - pattern: "api.goldshore.ai/*"
+          - pattern: 'api.goldshore.ai/*'
         bindings:
           kv:
-            - name: "KV"
-              namespace: "goldshore-api-kv" # Historical resource name; gs-api canonical service prefix
+            - name: 'KV'
+              namespace: 'goldshore-api-kv' # Historical resource name; gs-api canonical service prefix
           d1:
-            - name: "DB"
-              database_name: "goldshore-api-db" # Historical resource name; gs-api canonical service prefix
+            - name: 'DB'
+              database_name: 'goldshore-api-db' # Historical resource name; gs-api canonical service prefix
           r2:
-            - name: "ASSETS"
-              bucket_name: "goldshore-api-assets" # Historical resource name; gs-api canonical service prefix
+            - name: 'ASSETS'
+              bucket_name: 'goldshore-api-assets' # Historical resource name; gs-api canonical service prefix
           ai:
-            - name: "AI"
-              gateway: "goldshore-ai-gateway"
+            - name: 'AI'
+              gateway: 'goldshore-ai-gateway'
 
-      - name: "gs-gateway"
-        script_path: "apps/gs-gateway/dist/index.js"
+      - name: 'gs-gateway'
+        script_path: 'apps/gs-gateway/dist/index.js'
         routes:
-          - pattern: "gw.goldshore.ai/*"
+          - pattern: 'gw.goldshore.ai/*'
         bindings:
           services:
-            - binding: "API"
-              service: "gs-api"
-              environment: "production"
+            - binding: 'API'
+              service: 'gs-api'
+              environment: 'production'
           kv:
-            - name: "GATEWAY_KV"
-              namespace: "goldshore-gw-kv"
+            - name: 'GATEWAY_KV'
+              namespace: 'goldshore-gw-kv'
 
-      - name: "gs-control"
-        script_path: "apps/gs-control/dist/index.js"
+      - name: 'gs-control'
+        script_path: 'apps/gs-control/dist/index.js'
         routes:
-          - pattern: "ops.goldshore.ai/*"
+          - pattern: 'ops.goldshore.ai/*'
         bindings:
           services:
-            - binding: "API"
-              service: "gs-api"
-              environment: "production"
+            - binding: 'API'
+              service: 'gs-api'
+              environment: 'production'
           env_vars:
-            CONTROL_SERVICE: "true"
+            CONTROL_SERVICE: 'true'
 
-      - name: "gs-mail"
-        script_path: "apps/gs-mail/dist/index.js"
+      - name: 'gs-mail'
+        script_path: 'apps/gs-mail/dist/index.js'
         routes:
-          - pattern: "mail.goldshore.ai/*"
+          - pattern: 'mail.goldshore.ai/*'
         bindings:
           env_vars:
-            MAIL_SERVICE: "true"
-            MAIL_ALLOWED_RECIPIENTS: "ops@goldshore.ai,inbox@goldshore.ai"
+            MAIL_SERVICE: 'true'
+            MAIL_ALLOWED_RECIPIENTS: 'ops@goldshore.ai,inbox@goldshore.ai'
 
   email:
     routing:
       catch_all:
         enabled: true
-        destination: "inbox@goldshore.ai"
+        destination: 'inbox@goldshore.ai'
       addresses:
-        - address: "ops@goldshore.ai"
-          destination: "your.personal.email@goldshore.ai"
-        - address: "support@goldshore.ai"
-          destination: "your.personal.email@goldshore.ai"
+        - address: 'ops@goldshore.ai'
+          destination: 'your.personal.email@goldshore.ai'
+        - address: 'support@goldshore.ai'
+          destination: 'your.personal.email@goldshore.ai'

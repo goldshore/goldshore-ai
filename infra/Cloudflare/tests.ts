@@ -1,7 +1,6 @@
 // infra/Cloudflare/tests.ts
 const ACCESS_PROTECTED_HOSTS = new Set([
   'admin.goldshore.ai',
-  'gs-admin.pages.dev',
   'ops.goldshore.ai',
 ]);
 
