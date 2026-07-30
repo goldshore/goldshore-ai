@@ -230,7 +230,9 @@ export async function verifyAccess(req, env) {
           <b>{state}</b>
         </div>
       ))}
-    </section>
+    </aside>
+  </div>
+</section>
 
     <section class="metrics-shell gs-shell-section" aria-label="Trust metrics">
       <div class="metrics-grid" data-metrics-grid>
@@ -354,6 +356,8 @@ export async function verifyAccess(req, env) {
       </div>
     </section>
 
+  </main>
+
 <footer class="site-footer">
   <div>
     <h2>GoldShore</h2>
@@ -406,6 +410,10 @@ export async function verifyAccess(req, env) {
     <p class="modal-lead">Select a destination to continue.</p>
     <div class="modal-grid">
       <a href="/admin/lead-submissions" class="modal-card">
+        <span class="modal-icon">▣</span>
+        <strong>Lead submissions</strong>
+        <span>Review inbox</span>
+      </a>
       <a href="https://admin.goldshore.ai" class="modal-card" data-admin-access-link>
         <span class="modal-icon">⬡</span>
         <strong>Admin</strong>
@@ -425,23 +433,27 @@ export async function verifyAccess(req, env) {
         <span class="modal-icon">◉</span>
         <strong>API</strong>
         <span>Developer access</span>
-    <section
-      class="section-block gs-shell-section contact-cta"
-      aria-labelledby="contact-cta-title"
-    >
-      <div>
-        <p class="gs-eyebrow">Contact</p>
-        <h2 id="contact-cta-title">
-          Ready to operationalize AI with trust, control, and signal clarity?
-        </h2>
-      </div>
-      <a href="/contact" class="hero-button hero-button--primary">
-        Start a conversation
       </a>
     </div>
     <p class="modal-contact">Need access? <a href="/contact/">Contact us →</a></p>
   </div>
 </dialog>
+
+<section
+  class="section-block gs-shell-section contact-cta"
+  aria-labelledby="contact-cta-title"
+>
+  <div>
+    <p class="gs-eyebrow">Contact</p>
+    <h2 id="contact-cta-title">
+      Ready to operationalize AI with trust, control, and signal clarity?
+    </h2>
+  </div>
+  <a href="/contact" class="hero-button hero-button--primary">
+    Start a conversation
+  </a>
+</section>
+
 <script is:inline>
 /* ── Critical interactivity (runs immediately after DOM parse) ─────────────────────── */
 
@@ -598,113 +610,7 @@ window.addEventListener('load', function () {
 
 </body>
 </html>
-    </section>
-  </main>
-
-  <script>
-    import { initWave } from '../scripts/init-wave';
-    import { initLogo } from '../scripts/init-logo-reactive';
-
-    let homeCleanup;
-
-    const cleanup = () => {
-      homeCleanup?.();
-      homeCleanup = undefined;
-    };
-
-    const hydrateMetrics = () => {
-      const cards = document.querySelectorAll('.signal-tile--loading');
-      const reduceMotion = window.matchMedia(
-        '(prefers-reduced-motion: reduce)',
-      ).matches;
-
-      window.setTimeout(
-        () => cards.forEach((card) => card.classList.remove('signal-tile--loading')),
-        reduceMotion ? 0 : 650,
-      );
-    };
-
-    const boot = () => {
-      cleanup();
-      hydrateMetrics();
-
-      const canvas = document.getElementById('wave-bg');
-      const logo = document.querySelector('.gs-logo-reactive');
-      const isReactiveLogo =
-        logo instanceof HTMLElement || logo instanceof SVGElement;
-
-      if (!(canvas instanceof HTMLCanvasElement) || !isReactiveLogo) return;
-
-      const wave = initWave(canvas);
-      const destroyLogo = initLogo(logo, wave);
-
-      homeCleanup = () => {
-        destroyLogo?.();
-        wave.destroy();
-      };
-    };
-
-    const root = document.documentElement;
-
-    if (root.dataset.gsHomeHeroBound !== 'true') {
-      root.dataset.gsHomeHeroBound = 'true';
-      document.addEventListener('astro:before-swap', cleanup);
-      document.addEventListener('astro:page-load', boot);
-    }
-
-    boot();
-  </script>
-
-  <style>
-    .home-page {
-      padding-bottom: 4rem;
-    }
-
-    .hero {
-      position: relative;
-      min-height: min(92vh, 960px);
-      display: grid;
-      align-items: end;
-      overflow: hidden;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    #wave-bg,
-    .hero-grid,
-    .hero::after {
-      position: absolute;
-      inset: 0;
-    }
-
-    #wave-bg {
-      width: 100%;
-      height: 100%;
-    }
-
-    .hero-grid {
-      background:
-        linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
-      background-size: 72px 72px;
-      mask-image: radial-gradient(circle at 50% 30%, black 30%, transparent 80%);
-      opacity: 0.5;
-    }
-
-    .hero::after {
-      content: '';
-      background:
-        radial-gradient(circle at 25% 20%, rgba(90, 162, 255, 0.18), transparent 28%),
-        linear-gradient(180deg, rgba(7, 11, 20, 0.18), rgba(7, 11, 20, 0.84));
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    .hero-mark {
-      position: absolute;
-      inset: 18% auto auto clamp(1rem, 7vw, 6rem);
-      z-index: 1;
-    }
-
+<!--
     .gs-logo-reactive {
       width: clamp(72px, 11vw, 120px);
       height: auto;
@@ -1115,3 +1021,4 @@ window.addEventListener('load', function () {
 
   </style>
 </WebLayout>
+-->
