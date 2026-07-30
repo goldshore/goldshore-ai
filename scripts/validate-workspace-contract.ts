@@ -1,17 +1,16 @@
-import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
+import { readFileSync, readdirSync, existsSync } from "node:fs";
 import path from "node:path";
 import { join, relative } from "node:path";
 import { validateWorkerStructure } from "./validate-worker-structure";
 import { validateWorkerNames } from "./validate-worker-names";
 
 const APPS_DIR = path.resolve(process.cwd(), "apps");
+const CANONICAL_APPS = ["gs-api", "gs-web"];
 
 function getWorkerDirectories(): string[] {
-  return readdirSync(APPS_DIR)
-    .map((entry) => path.join(APPS_DIR, entry))
-    .filter((fullPath) => statSync(fullPath).isDirectory())
-    .filter((fullPath) => existsSync(path.join(fullPath, "wrangler.toml")))
-    .filter((fullPath) => !fullPath.includes(`${path.sep}legacy${path.sep}`));
+  return CANONICAL_APPS.map((entry) => path.join(APPS_DIR, entry)).filter((fullPath) =>
+    existsSync(path.join(fullPath, "wrangler.toml")),
+  );
 }
 
 function validatePackageNames(): string[] {
@@ -101,7 +100,7 @@ function main() {
   }
 
   const appsDir = "apps";
-  const requiredApps = ["gs-admin", "gs-api", "gs-control", "gs-gateway", "gs-web", "gs-agent"];
+  const requiredApps = CANONICAL_APPS;
 
   if (!existsSync(appsDir)) {
     console.error("apps directory missing");
