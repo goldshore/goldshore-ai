@@ -226,11 +226,8 @@ const footerLinks = [
       };
 
       const bindAdminAccessLinks = () => {
-        const adminHost = window.location.hostname.endsWith('goldshore.org')
-          ? 'admin.goldshore.org'
-          : 'admin.goldshore.ai';
         document.querySelectorAll('[data-admin-access-link]').forEach((link) => {
-          link.setAttribute('href', `https://${adminHost}`);
+          link.setAttribute('href', 'https://admin.goldshore.ai/');
         });
       };
 
@@ -661,3 +658,12 @@ const footerLinks = [
     </style>
   </body>
 </html>
+<GoldShoreShell
+  title={title}
+  description={description}
+  canonicalPath={canonicalPath}
+  ogTitle={ogTitle ?? title}
+  ogDescription={ogDescription ?? description}
+>
+  <slot />
+</GoldShoreShell>

@@ -4,7 +4,7 @@
 
 CREATE TABLE IF NOT EXISTS integration_secrets (
   id TEXT PRIMARY KEY,
-  integration_id TEXT NOT NULL UNIQUE,
+  integration_id TEXT NOT NULL,
   key_type TEXT NOT NULL CHECK (key_type IN ('apiKey', 'apiSecret', 'webhook_secret', 'oauth_token')),
   key_prefix TEXT NOT NULL,
   key_hash TEXT NOT NULL,
@@ -27,12 +27,8 @@ CREATE INDEX IF NOT EXISTS idx_integration_secrets_expires_at
   ON integration_secrets(expires_at);
 
 -- Add columns to integrations table to track secret status
-ALTER TABLE integrations ADD COLUMN IF NOT EXISTS secrets_status TEXT DEFAULT 'pending' CHECK (secrets_status IN ('pending', 'configured', 'expired', 'revoked'));
-ALTER TABLE integrations ADD COLUMN IF NOT EXISTS last_secret_sync TEXT;
+ALTER TABLE integrations ADD COLUMN secrets_status TEXT DEFAULT 'pending' CHECK (secrets_status IN ('pending', 'configured', 'expired', 'revoked'));
+ALTER TABLE integrations ADD COLUMN last_secret_sync TEXT;
 
--- Enable row-level security to prevent unauthorized access
-ALTER TABLE integration_secrets ENABLE ROW LEVEL SECURITY;
-
--- Prevent encrypted values from being readable by anonymous/authenticated roles
--- This ensures secrets are only accessible via server-side API routes with proper permission checks
-REVOKE SELECT (encrypted_value) ON integration_secrets FROM anon, authenticated;
+-- D1/SQLite does not support Postgres RLS or column-level grants.
+-- Secrets are protected by API permission checks and metadata-only list/read helpers.
