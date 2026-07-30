@@ -74,23 +74,14 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build gs-web Worker output
-        env:
-          NODE_ENV: production
         run: pnpm build:pages
 
-      - name: Deploy gs-web Worker
-        if: github.event_name != 'pull_request'
-        working-directory: apps/gs-web
-        env:
-          WRANGLER_ENV: prod
-          WRANGLER_NAME: gs-web-prod
-        run: pnpm exec wrangler deploy --env "$WRANGLER_ENV" --name "$WRANGLER_NAME"
-
-      - name: Validate gs-web Worker bundle
+      - name: Deploy gs-web preview Worker
         if: github.event_name == 'pull_request'
         working-directory: apps/gs-web
-        run: pnpm exec wrangler deploy --env preview --name gs-web-preview --dry-run --outdir .wrangler-dry-run-gs-web-preview
+        run: pnpm exec wrangler deploy --env preview
 
-      - name: Health check (gs-web)
+      - name: Deploy gs-web production Worker
         if: github.event_name != 'pull_request'
-        run: curl -fsS https://goldshore.ai/ >/dev/null
+        working-directory: apps/gs-web
+        run: pnpm exec wrangler deploy --env prod

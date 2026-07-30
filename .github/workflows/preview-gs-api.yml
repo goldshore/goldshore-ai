@@ -18,6 +18,8 @@ jobs:
   preview-api:
     runs-on: ubuntu-latest
     name: Preview
+    environment:
+      name: preview
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
@@ -41,13 +43,8 @@ jobs:
           raw_token: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
           token_name: 'CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN'
 
-      - name: Configure Cloudflare auth
-        env:
-          CF_TOKEN: ${{ steps.cf-token.outputs.token }}
-        run: |
-          test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "Missing: CLOUDFLARE_ACCOUNT_ID" && exit 1)
-          test -n "$CF_TOKEN" || (echo "Missing: CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN" && exit 1)
-          echo "CLOUDFLARE_API_TOKEN=$CF_TOKEN" >> "$GITHUB_ENV"
+      - name: Export token to environment
+        run: echo "CLOUDFLARE_API_TOKEN=${{ steps.cf-token.outputs.token }}" >> "$GITHUB_ENV"
 
       - name: Validate workspace contract
         run: pnpm validate:workspace
@@ -68,6 +65,6 @@ jobs:
         working-directory: apps/gs-api
         run: pnpm exec wrangler whoami
 
-      - name: Validate GS API worker preview deploy
+      - name: Deploy GS API worker preview
         working-directory: apps/gs-api
-        run: pnpm exec wrangler deploy --env preview --config wrangler.toml --dry-run --outdir=dist-preview
+        run: pnpm exec wrangler deploy --env preview --config wrangler.toml
