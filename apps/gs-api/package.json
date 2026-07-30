@@ -14,6 +14,7 @@
   "dependencies": {
     "@goldshore/ai-providers": "workspace:^",
     "@goldshore/auth": "workspace:^",
+    "@goldshore/integrations": "workspace:^",
     "@goldshore/schema": "workspace:^",
     "@goldshore/shared": "workspace:^",
     "@goldshore/utils": "workspace:^",
