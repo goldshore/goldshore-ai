@@ -27,7 +27,7 @@ on:
         default: true
         type: boolean
       include_mcp_portal:
-        description: 'Upsert an mcp_portal-type app on mcp.goldshore.ai (conflicts with the self_hosted GoldShore MCP app — see comments)'
+        description: 'Upsert an mcp_portal-type app on mcp.goldshore.ai (conflicts with the self_hosted GoldShore-MCP-ZT app — see comments)'
         required: false
         default: false
         type: boolean
@@ -164,12 +164,12 @@ jobs:
           require_app "Goldshore API - Public Forms" "api.goldshore.ai/v1/forms/*"
           require_app "Goldshore Gateway - Public Probes" "gw.goldshore.ai/health"
           require_app "Dashboard" "goldshore.ai/app"
-          require_app "GoldShore Admin" "admin.goldshore.ai"
-          require_app "GoldShore Trading" "trading.goldshore.ai"
+          require_app "GoldShore-Admin-ZT" "admin.goldshore.ai"
+          require_app "GoldShore-Trading-ZT" "trading.goldshore.ai"
           require_app "Goldshore Ops" "ops.goldshore.ai"
           require_app "Signals" "signals.goldshore.ai"
           require_app "Goldshore API" "api.goldshore.ai"
-          require_app "GoldShore MCP" "mcp.goldshore.ai"
+          require_app "GoldShore-MCP-ZT" "mcp.goldshore.ai"
           require_app "Goldshore Gateway" "gw.goldshore.ai"
           require_app "GoldShore-Web-Preview" "preview.goldshore.ai"
 
@@ -661,7 +661,7 @@ jobs:
 
           # upsert_mcp_portal: MCP Server Portal app (type "mcp_portal") on the
           # given hostname. Gated behind include_mcp_portal because it targets
-          # the same hostname as the self_hosted "GoldShore MCP" app — enable it
+          # the same hostname as the self_hosted "GoldShore-MCP-ZT" app — enable it
           # only if you actually use the Cloudflare MCP Server Portal product,
           # and remove/re-scope the self_hosted app first to avoid two apps
           # competing for one host.
@@ -742,7 +742,7 @@ jobs:
 
           # upsert_mcp_portal: MCP Server Portal app (type "mcp_portal") on the
           # given hostname. Gated behind include_mcp_portal because it targets
-          # the same hostname as the self_hosted "GoldShore MCP" app — enable it
+          # the same hostname as the self_hosted "GoldShore-MCP-ZT" app — enable it
           # only if you actually use the Cloudflare MCP Server Portal product,
           # and remove/re-scope the self_hosted app first to avoid two apps
           # competing for one host.
@@ -820,11 +820,11 @@ jobs:
           # ------------------------------------------------------------------
 
           upsert_full_access "Dashboard"       "goldshore.ai/app"
-          # GoldShore Admin: .ai canonical + .org alias + admin-preview (Gate 5a)
+          # GoldShore-Admin-ZT: .ai canonical + .org alias + admin-preview (Gate 5a)
           # + admin.gs-admin.pages.dev (Pages custom preview host)
-          upsert_full_access "GoldShore Admin"   "admin.goldshore.ai" \
+          upsert_full_access "GoldShore-Admin-ZT" "admin.goldshore.ai" \
             '["admin.goldshore.org","admin-preview.goldshore.ai","admin.gs-admin.pages.dev"]'
-          # GoldShore Trading: canonical + dashboard/dash aliases (Gate 5b)
+          # GoldShore-Trading-ZT: canonical + dashboard/dash aliases (Gate 5b)
           upsert_full_access "GoldShore-Trading-ZT" "trading.goldshore.ai" \
             '["dashboard.goldshore.ai","dash.goldshore.ai"]' "" \
             '["GoldShore Trading","Goldshore Trading","Trading"]'
@@ -880,8 +880,8 @@ jobs:
           upsert_full_access "Goldshore API"     "api.goldshore.ai/goldclaw" "$API_PROTECTED_DOMAINS" \
             "gs-api-prod" "$GS_API_ACCESS_AUD"
           assert_full_access_policies "Goldshore API" "api.goldshore.ai/goldclaw" "$GS_API_ACCESS_AUD"
-          # GoldShore MCP: human + agent per docs ("approved human identities and agents")
-          upsert_full_access "GoldShore MCP"     "mcp.goldshore.ai" "[]" \
+          # GoldShore-MCP-ZT: human + agent per docs ("approved human identities and agents")
+          upsert_full_access "GoldShore-MCP-ZT"  "mcp.goldshore.ai" "[]" \
             "" \
             '["MCP"]'
           # Goldshore Gateway: gw + agent share app+AUD (Gate 5d); human + agent access
@@ -911,7 +911,7 @@ jobs:
           if [ "$INCLUDE_MCP_PORTAL" = "true" ]; then
             upsert_mcp_portal "Goldshore MCP Portal" "mcp.goldshore.ai"
           else
-            echo "INFO: include_mcp_portal=false — skipping mcp_portal app (self_hosted GoldShore MCP covers mcp.goldshore.ai)."
+            echo "INFO: include_mcp_portal=false — skipping mcp_portal app (self_hosted GoldShore-MCP-ZT covers mcp.goldshore.ai)."
           fi
 
       # ------------------------------------------------------------------ #
@@ -997,7 +997,7 @@ jobs:
             echo "| GitHub secrets | goldshore-ai, goldshore-gateway, goldclaw |"
             echo "| Worker secrets | gs-api-prod (bare gs-api is owned by marzton/goldshore-api) |"
             echo "| Bypass apps | Schwab Callback, Robinhood Callback, API Probes, Gateway Probes |"
-            echo "| Full-access apps | Dashboard, GoldShore Admin, GoldShore Trading, Goldshore Ops, Signals, Goldshore API, GoldShore MCP, Goldshore Gateway, GoldShore-Web-Preview |"
+            echo "| Full-access apps | Dashboard, GoldShore-Admin-ZT, GoldShore-Trading-ZT, Goldshore Ops, Signals, Goldshore API, GoldShore-MCP-ZT, Goldshore Gateway, GoldShore-Web-Preview |"
             echo "| Extra hostnames | signals.goldshore.org + gs-signals-prod.goldshore.workers.dev (Signals), gs-api.goldshore.workers.dev (API) |"
             echo "| Gated apps | Temp HP Laptop SSH (include_ssh_laptop=${{ inputs.include_ssh_laptop }}), Goldshore MCP Portal (include_mcp_portal=${{ inputs.include_mcp_portal }}) |"
             echo ""
