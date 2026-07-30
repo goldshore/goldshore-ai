@@ -113,7 +113,7 @@ queue = "gs-mail-dead-letter"
 [env.prod]
 routes = [
   { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "api.goldshore.org/*", zone_name = "goldshore.org" }
+  { pattern = "api.goldshore.org/*", zone_name = "goldshore.org" },
   { pattern = "gw.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" }
 ]
@@ -246,10 +246,6 @@ database_id = "b0bf3b0e-a7d0-49ae-ac82-4f19450b2ce2"
 binding = "JOBS_DB"
 database_name = "gs_jobs_db"
 database_id = "750c469c-788d-49e8-9254-77231cffd70f"
-
-# ── AI ───────────────────────────────────────────────────────────────────────
-[env.prod.ai]
-binding = "AI"
 
 # ── Durable Objects ──────────────────────────────────────────────────────────
 # PAPER_DB: see top-level default-env comment above.
