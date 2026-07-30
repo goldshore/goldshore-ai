@@ -101,6 +101,10 @@
 - AI:
   - Binding: `AI`
   - Gateway: `goldshore-ai-gateway`
+- Secrets Store:
+  - Binding: `INTEGRATION_MASTER_KEY`
+  - Store: `b9824d3280c54573a24137c7e7143b33`
+  - Secret: `INTEGRATION_MASTER_KEY`
 - Worker secrets:
   - Binding: `INTEGRATION_MASTER_KEY`
   - Secret: `INTEGRATION_MASTER_KEY` (normal Worker secret; do not configure `secrets_store_secrets` until the referenced Cloudflare Secrets Store exists)
