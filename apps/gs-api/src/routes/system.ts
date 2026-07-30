@@ -70,6 +70,23 @@ system.post('/sync', requirePermission('system:write'), async (c) => {
   return c.json({ success: true, syncedAt: timestamp });
 });
 
+const automationAccepted = async (c: any, action: string) => {
+  const claims = c.get('accessClaims');
+  await writeControlLog(c.env, `${action}_${Date.now()}`, {
+    action,
+    user: claims?.email,
+    timestamp: new Date().toISOString(),
+    status: 'accepted',
+  });
+
+  return c.json({ success: true, action, status: 'accepted' });
+};
+
+system.post('/dns/apply', requirePermission('system:write'), (c) => automationAccepted(c, 'dns_apply'));
+system.post('/workers/reconcile', requirePermission('system:write'), (c) => automationAccepted(c, 'workers_reconcile'));
+system.post('/pages/deploy', requirePermission('system:write'), (c) => automationAccepted(c, 'pages_deploy'));
+system.post('/access/audit', requirePermission('system:write'), (c) => automationAccepted(c, 'access_audit'));
+
 const cloudflareRequest = async (env: Env, path: string, init: RequestInit = {}) => {
   if (!env.CLOUDFLARE_API_TOKEN) {
     throw new Error('Missing CLOUDFLARE_API_TOKEN');
