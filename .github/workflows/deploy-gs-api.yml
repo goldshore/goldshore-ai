@@ -97,9 +97,7 @@ jobs:
           
           pnpm exec wrangler secret bulk worker-secrets.json --env ${{ github.ref == 'refs/heads/main' && 'prod' || 'preview' }}
 
-      - name: Deploy gs-api Worker
-        working-directory: apps/gs-api
-        run: pnpm exec wrangler deploy --env=${{ github.ref == 'refs/heads/main' && 'prod' || 'preview' }}
+      - run: pnpm --filter @goldshore/gs-api run deploy -- --env=${{ github.ref == 'refs/heads/main' && 'prod' || 'preview' }}
 
       - name: Health check (gs-api)
         if: github.ref == 'refs/heads/main'
