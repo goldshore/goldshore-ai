@@ -319,8 +319,6 @@ jobs:
           }
 
           reconcile_route goldshore.ai 'goldshore.ai/*' gs-web-prod
-          reconcile_route goldshore.ai 'admin.goldshore.ai/*' gs-web-prod
-          reconcile_route goldshore.ai 'admin-preview.goldshore.ai/*' gs-web-prod
           reconcile_route goldshore.ai 'api.goldshore.ai/*' gs-api-prod
           reconcile_route goldshore.ai 'agent.goldshore.ai/*' gs-api-prod
           reconcile_route goldshore.ai 'mail.goldshore.ai/*' gs-api-prod
@@ -330,11 +328,10 @@ jobs:
           reconcile_route goldshore.ai 'dash.goldshore.ai/*' gs-api-prod
           reconcile_route goldshore.ai 'gw.goldshore.ai/*' gs-api-prod
           reconcile_route goldshore.org 'goldshore.org/*' gs-web-prod
-          reconcile_route goldshore.org 'admin.goldshore.org/*' gs-web-prod
           reconcile_route goldshore.org 'api.goldshore.org/*' gs-api-prod
-
-          delete_route_if_present goldshore.org 'admin.goldshore.ai/*'
-          delete_route_if_present goldshore.org 'api.goldshore.ai/*'
+          delete_route_if_present goldshore.ai 'admin-preview.goldshore.ai/*'
+          reconcile_route goldshore.ai 'admin.goldshore.ai/*' gs-web-prod
+          reconcile_route goldshore.org 'admin.goldshore.org/*' gs-web-prod
 
   harden-tls:
     if: ${{ inputs.harden_tls }}
@@ -419,8 +416,6 @@ jobs:
           curl -sS "$CF_API/zones/$ZID/dns_records?name=mcp.goldshore.ai" -H "Authorization: Bearer $CF_TOKEN" | jq '.result'
 
           reconcile_route goldshore.ai 'goldshore.ai/*' gs-web-prod
-          reconcile_route goldshore.ai 'admin.goldshore.ai/*' gs-web-prod
-          reconcile_route goldshore.ai 'admin-preview.goldshore.ai/*' gs-web-prod
           reconcile_route goldshore.ai 'api.goldshore.ai/*' gs-api-prod
           reconcile_route goldshore.ai 'agent.goldshore.ai/*' gs-api-prod
           reconcile_route goldshore.ai 'mail.goldshore.ai/*' gs-api-prod
@@ -430,8 +425,10 @@ jobs:
           reconcile_route goldshore.ai 'dash.goldshore.ai/*' gs-api-prod
           reconcile_route goldshore.ai 'gw.goldshore.ai/*' gs-api-prod
           reconcile_route goldshore.org 'goldshore.org/*' gs-web-prod
-          reconcile_route goldshore.org 'admin.goldshore.org/*' gs-web-prod
           reconcile_route goldshore.org 'api.goldshore.org/*' gs-api-prod
+          delete_route_if_present goldshore.ai 'admin-preview.goldshore.ai/*'
+          reconcile_route goldshore.ai 'admin.goldshore.ai/*' gs-web-prod
+          reconcile_route goldshore.org 'admin.goldshore.org/*' gs-web-prod
           echo "== account-level Workers Custom Domains matching mcp =="
           curl -sS "$CF_API/accounts/$CF_ACCOUNT/workers/domains" -H "Authorization: Bearer $CF_TOKEN" \
             | jq '[.result[]? | select(.hostname | test("mcp"))]'

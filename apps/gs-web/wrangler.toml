@@ -3,6 +3,7 @@ compatibility_date = "2026-04-18"
 compatibility_flags = ["nodejs_compat"]
 
 workers_dev = false
+main = "./src/worker.ts"
 
 # Serve the Astro build as a Worker with Assets.
 # The Cloudflare adapter builds the configured Worker entrypoint and emits
@@ -47,6 +48,7 @@ routes = [
   { pattern = "goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
   { pattern = "admin.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "admin.goldshore.org/*", zone_name = "goldshore.org" },
   { pattern = "admin-preview.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "admin.goldshore.org/*", zone_name = "goldshore.org" },
   { pattern = "risk.goldshore.ai/*", zone_name = "goldshore.ai" },
@@ -89,7 +91,8 @@ MAILCHANNELS_SENDER_NAME = "GoldShore"
 
 [env.preview]
 routes = [
-  { pattern = "preview.goldshore.ai", custom_domain = true }
+  { pattern = "preview.goldshore.ai", custom_domain = true },
+  { pattern = "admin-preview.goldshore.ai", custom_domain = true },
 ]
 
 [[env.preview.kv_namespaces]]
