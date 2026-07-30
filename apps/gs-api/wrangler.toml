@@ -369,6 +369,15 @@ binding = "SIGNALS_DB"
 database_name = "gs_signals_db"
 database_id = "76af4653-7f44-417b-b46e-250143d906fd"
 
+# PAPER_DB: preview shares the live paper-trading ledger until a dedicated
+# preview copy is provisioned. The trading routes already guard against a
+# missing binding, but the wrangler contract test expects this preview binding
+# to exist so version uploads keep matching the runtime contract.
+[[env.preview.d1_databases]]
+binding = "PAPER_DB"
+database_name = "goldshore-paper-trading"
+database_id = "af94f483-b98b-41c5-aa23-3fbed2764b52"
+
 # RISK_RADAR_DB: same live "risk-radar-db" D1 as env.prod — see the note there.
 # No dedicated preview database exists for this yet.
 [[env.preview.d1_databases]]
