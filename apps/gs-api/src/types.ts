@@ -12,7 +12,6 @@ export type Env = {
   AUTH_SESSION?: DurableObjectNamespace;
   AI: Ai;
   INTEGRATION_MASTER_KEY?: string;
-  SECRETS: SecretsStore;
   JOBS_QUEUE?: Queue;
   EVENTS_QUEUE?: Queue;
   MAIL_JOBS_QUEUE?: Queue;
@@ -63,6 +62,7 @@ export type Env = {
   GOOGLE_OAUTH_CLIENT_SECRET?: string;
   GOOGLE_OAUTH_REDIRECT_URI?: string;
   CONTACT_NOTIFICATION_EMAILS?: string;
+  PUBLIC_SITE_URL?: string;
   MAILCHANNELS_SENDER_EMAIL?: string;
   MAILCHANNELS_SENDER_NAME?: string;
   MAILCHANNELS_API_URL?: string;

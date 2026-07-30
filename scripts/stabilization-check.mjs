@@ -52,7 +52,6 @@ const BASELINE_BUILD_SCRIPTS = [
 const KNOWN_WORKFLOWS = [
   'archive-path-guard.yml',
   'canonical-structure-check.yml',
-  'deploy-gs-admin.yml',
   'deploy-gs-agent.yml',
   'deploy-gs-api.yml',
   'deploy-gs-control.yml',
@@ -68,7 +67,6 @@ const KNOWN_WORKFLOWS = [
   'palette-manual.yml',
   'pii-scan.yml',
   'preview-gs-agent.yml',
-  'preview-gs-admin.yml',
   'preview-gs-api.yml',
   'preview-gs-gateway.yml',
   'preview-gs-web.yml',
@@ -146,8 +144,10 @@ function getBranchInfo() {
 
 function resolveCiBranch(branch) {
   if (process.env.GITHUB_HEAD_REF) return process.env.GITHUB_HEAD_REF;
-  if (process.env.GITHUB_REF?.startsWith('refs/heads/')) return process.env.GITHUB_REF.slice('refs/heads/'.length);
-  if (process.env.GITHUB_REF_NAME && process.env.GITHUB_REF_NAME !== 'merge') return process.env.GITHUB_REF_NAME;
+  if (process.env.GITHUB_REF?.startsWith('refs/heads/'))
+    return process.env.GITHUB_REF.slice('refs/heads/'.length);
+  if (process.env.GITHUB_REF_NAME && process.env.GITHUB_REF_NAME !== 'merge')
+    return process.env.GITHUB_REF_NAME;
   if (branch && branch !== 'HEAD') return branch;
 
   const baseRef = resolveBaseRef();
@@ -160,7 +160,9 @@ function getCiStatus(branch) {
   const ciBranch = resolveCiBranch(branch);
   const prNumber = process.env.GITHUB_REF?.startsWith('refs/pull/')
     ? process.env.GITHUB_REF.split('/')[2]
-    : tryRun(`gh pr list --head "${ciBranch}" --state open --limit 1 --json number --jq '.[0].number'`);
+    : tryRun(
+        `gh pr list --head "${ciBranch}" --state open --limit 1 --json number --jq '.[0].number'`,
+      );
 
   if (prNumber) {
     const prData = tryRun(
@@ -192,14 +194,20 @@ function getCiStatus(branch) {
     };
   }
 
-  const runsRaw = tryRun(`gh run list --branch "${ciBranch}" --limit 10 --json workflowName,displayTitle,status,conclusion,url`);
+  const runsRaw = tryRun(
+    `gh run list --branch "${ciBranch}" --limit 10 --json workflowName,displayTitle,status,conclusion,url`,
+  );
   if (!runsRaw) {
-    return { summary: `⚠️ No active PR found and unable to fetch recent workflow runs for branch '${ciBranch}'.` };
+    return {
+      summary: `⚠️ No active PR found and unable to fetch recent workflow runs for branch '${ciBranch}'.`,
+    };
   }
 
   const runs = JSON.parse(runsRaw);
   if (!runs.length) {
-    return { summary: `⚠️ No active PR found and no recent workflow runs detected for branch '${ciBranch}'.` };
+    return {
+      summary: `⚠️ No active PR found and no recent workflow runs detected for branch '${ciBranch}'.`,
+    };
   }
 
   const hasFailed = runs.some((r) =>
@@ -318,7 +326,7 @@ branchViolations.forEach((v) => (report += `- ${v}\n`));
 report += '## 3. CI State Snapshot\n\n' + getCiStatus(branch).summary + '\n\n';
 report +=
   '### Local Build Verification\n\n| App | Status | Notes |\n|---|---|---|\n';
-['gs-web', 'gs-admin', 'gs-api', 'gs-mail'].forEach((app) => {
+['gs-web', 'gs-api'].forEach((app) => {
   report += checkBuild(app, `pnpm --filter @goldshore/${app} build`) + '\n';
 });
 

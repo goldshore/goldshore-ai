@@ -50,7 +50,7 @@ jobs:
       #    have Service Token scope but lack Apps/Policies edit permission.
       #    A partial-permission failure here aborts BEFORE any revocation.
       # ------------------------------------------------------------------ #
-      - name: Verify CF token has Access scope
+      - name: Verify CF token can edit Access apps and policies before rotation
         env:
           CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
@@ -147,10 +147,10 @@ jobs:
             -H "Authorization: Bearer $CF_TOKEN")
 
           require_app() {
-            local name="$1" domain="${2:-}"
+            local name="$1" domain="${2:-}" aliases="${3:-[]}"
             local id
-            id=$(echo "$APPS" | jq -r --arg n "$name" --arg d "$domain" \
-              '[.result[] | select(.name == $n or ($d != "" and ((.domain == $d) or ((.self_hosted_domains // []) | index($d)))))] | first | .id // empty')
+            id=$(echo "$APPS" | jq -r --arg n "$name" --arg d "$domain" --argjson aliases "$aliases" \
+              '[.result[] | .name as $app_name | select(.name == $n or ($aliases | index($app_name)) or ($d != "" and ((.domain == $d) or ((.self_hosted_domains // []) | index($d)))))] | first | .id // empty')
             if [ -z "$id" ]; then
               echo "::error::skip_apps=true but required Access app is missing: $name ($domain)."
               return 1
@@ -163,14 +163,14 @@ jobs:
           require_app "Goldshore API - Public Probes" "api.goldshore.ai/health"
           require_app "Goldshore API - Public Forms" "api.goldshore.ai/v1/forms/*"
           require_app "Goldshore Gateway - Public Probes" "gw.goldshore.ai/health"
-          require_app "Dashboard" "goldshore.ai/app"
-          require_app "GoldShore Admin" "admin.goldshore.ai"
-          require_app "GoldShore Trading" "trading.goldshore.ai"
+          require_app "GoldShore-Dashboard" "goldshore.ai/app" '["Dashboard"]'
+          require_app "GoldShore-Admin-ZT" "admin.goldshore.ai" '["GoldShore Admin","Goldshore Admin","Admin"]'
+          require_app "GoldShore-Trading-ZT" "trading.goldshore.ai" '["GoldShore Trading","Goldshore Trading","Trading"]'
           require_app "Goldshore Ops" "ops.goldshore.ai"
           require_app "Signals" "signals.goldshore.ai"
-          require_app "Goldshore API" "api.goldshore.ai"
-          require_app "GoldShore MCP" "mcp.goldshore.ai"
-          require_app "Goldshore Gateway" "gw.goldshore.ai"
+          require_app "Goldshore API" "api.goldshore.ai" '["API"]'
+          require_app "GoldShore MCP" "mcp.goldshore.ai" '["MCP"]'
+          require_app "Goldshore Gateway" "gw.goldshore.ai" '["Gateway"]'
           require_app "GoldShore-Web-Preview" "preview.goldshore.ai"
 
           if [ "$INCLUDE_SSH_LAPTOP" = "true" ]; then
@@ -364,12 +364,13 @@ jobs:
           }
 
           find_app() {
-            local name="$1" domain="${2:-}" expected_aud="${3:-}"
+            local name="$1" domain="${2:-}" expected_aud="${3:-}" aliases="${4:-[]}"
             curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps" \
               -H "Authorization: Bearer $CF_TOKEN" | \
-            jq -r --arg n "$name" --arg d "$domain" --arg aud "$expected_aud" \
-              '[.result[] | select(
+            jq -r --arg n "$name" --arg d "$domain" --arg aud "$expected_aud" --argjson aliases "$aliases" \
+              '[.result[] | .name as $app_name | select(
                 .name == $n
+                or ($aliases | index($app_name))
                 or ($aud != "" and .aud == $aud)
                 or ($d != "" and ((.domain == $d) or ((.self_hosted_domains // []) | index($d))))
               )] | first | .id // empty'
@@ -518,8 +519,8 @@ jobs:
           # Existing apps keep the same AUD, but we still push it to Workers so a
           # recreated or repaired app cannot drift from gs-api's configured audience.
           upsert_full_access() {
-            local name="$1" domain="$2" extra_domains="${3:-[]}" aud_workers="${4:-}" expected_aud="${5:-}"
-            AID=$(find_app "$name" "$domain" "$expected_aud")
+            local name="$1" domain="$2" extra_domains="${3:-[]}" aud_workers="${4:-}" expected_aud="${5:-}" aliases="${6:-[]}"
+            AID=$(find_app "$name" "$domain" "$expected_aud" "$aliases")
             if [ -n "$AID" ]; then
               echo "Found existing app [$name]: $AID — updating domains, refreshing policies, and syncing AUD"
               update_app "$AID" "$name" "$domain" "$extra_domains"
@@ -568,8 +569,8 @@ jobs:
           # Used for public paths that must not hit the Access login wall.
           # CF Access resolves the more-specific path-scoped app before the broader allow app.
           upsert_bypass_app() {
-            local name="$1" domain="$2" extra_domains="${3:-[]}" aliases="${4:-[]}"
-            AID=$(find_app "$name" "$aliases")
+            local name="$1" domain="$2" extra_domains="${3:-[]}"
+            AID=$(find_app "$name" "$domain")
             if [ -n "$AID" ]; then
               echo "Found existing bypass app [$name]: $AID — updating domains and bypass policy"
               update_app "$AID" "$name" "$domain" "$extra_domains"
@@ -585,87 +586,6 @@ jobs:
               echo "Created bypass app [$name]: $AID"
               add_bypass_policy "$AID"
             fi
-          }
-
-          # upsert_ssh_app: browser-rendered SSH app (type "ssh"). Owner-only,
-          # short session, hidden from the App Launcher. Has its own JSON body
-          # because update_app/make_app_json hardcode type "self_hosted" and
-          # must never PUT over a non-self_hosted app (that would rewrite its type).
-          # The app alone does nothing until a cloudflared tunnel publishes the
-          # hostname with an SSH origin.
-          upsert_ssh_app() {
-            local name="$1" domain="$2"
-            local body
-            body=$(jq -nc --arg n "$name" --arg d "$domain" \
-              '{name:$n,type:"ssh",domain:$d,
-                self_hosted_domains:[$d],
-                session_duration:"4h",
-                skip_interstitial:true,
-                app_launcher_visible:false,
-                http_only_cookie_attribute:true,
-                auto_redirect_to_identity:false}')
-            AID=$(find_app "$name")
-            if [ -n "$AID" ]; then
-              echo "Found existing SSH app [$name]: $AID — updating and refreshing policies"
-              echo "$body" | curl -sf -X PUT \
-                "$CF_API/accounts/$CF_ACCOUNT/access/apps/$AID" \
-                -H "Authorization: Bearer $CF_TOKEN" \
-                -H "Content-Type: application/json" \
-                --data @- | jq -r '"  updated ssh app => \(.success)"'
-              refresh_policies "$AID"
-            elif [ "$SKIP_NEW_APPS" = "true" ]; then
-              echo "INFO: No existing [$name] app and skip_apps=true — skipped."
-              return
-            else
-              AID=$(echo "$body" | curl -sf -X POST \
-                "$CF_API/accounts/$CF_ACCOUNT/access/apps" \
-                -H "Authorization: Bearer $CF_TOKEN" \
-                -H "Content-Type: application/json" \
-                --data @- | jq -r '.result.id // empty')
-              [ -z "$AID" ] && { echo "WARNING: failed to create ssh app $name"; return; }
-              echo "Created SSH app [$name]: $AID"
-            fi
-            add_policy "$AID" "Owner access" "allow" "$OWNER_INCLUDE"
-          }
-
-          # upsert_mcp_portal: MCP Server Portal app (type "mcp_portal") on the
-          # given hostname. Gated behind include_mcp_portal because it targets
-          # the same hostname as the self_hosted "GoldShore MCP" app — enable it
-          # only if you actually use the Cloudflare MCP Server Portal product,
-          # and remove/re-scope the self_hosted app first to avoid two apps
-          # competing for one host.
-          upsert_mcp_portal() {
-            local name="$1" domain="$2"
-            local body
-            body=$(jq -nc --arg n "$name" --arg d "$domain" \
-              '{name:$n,type:"mcp_portal",domain:$d,
-                self_hosted_domains:[$d],
-                session_duration:"24h",
-                http_only_cookie_attribute:true,
-                auto_redirect_to_identity:false}')
-            AID=$(find_app "$name")
-            if [ -n "$AID" ]; then
-              echo "Found existing MCP portal app [$name]: $AID — updating and refreshing policies"
-              echo "$body" | curl -sf -X PUT \
-                "$CF_API/accounts/$CF_ACCOUNT/access/apps/$AID" \
-                -H "Authorization: Bearer $CF_TOKEN" \
-                -H "Content-Type: application/json" \
-                --data @- | jq -r '"  updated mcp_portal app => \(.success)"'
-              refresh_policies "$AID"
-            elif [ "$SKIP_NEW_APPS" = "true" ]; then
-              echo "INFO: No existing [$name] app and skip_apps=true — skipped."
-              return
-            else
-              AID=$(echo "$body" | curl -sf -X POST \
-                "$CF_API/accounts/$CF_ACCOUNT/access/apps" \
-                -H "Authorization: Bearer $CF_TOKEN" \
-                -H "Content-Type: application/json" \
-                --data @- | jq -r '.result.id // empty')
-              [ -z "$AID" ] && { echo "WARNING: failed to create mcp_portal app $name"; return; }
-              echo "Created MCP portal app [$name]: $AID"
-            fi
-            add_policy "$AID" "Goldshore agents" "non_identity" "$SERVICE_INCLUDE"
-            add_policy "$AID" "Owner access"     "allow"        "$OWNER_INCLUDE"
           }
 
           # upsert_ssh_app: browser-rendered SSH app (type "ssh"). Owner-only,
@@ -788,17 +708,25 @@ jobs:
           # and docs/domains-and-auth.md; app names match CF dashboard)
           # ------------------------------------------------------------------
 
-          upsert_full_access "Dashboard"       "goldshore.ai/app"
+          upsert_full_access "GoldShore-Dashboard" "goldshore.ai/app" "[]" "" "" \
+            '["Dashboard"]'
           # GoldShore Admin: .ai canonical + .org alias + admin-preview (Gate 5a)
           # + admin.gs-admin.pages.dev (Pages custom preview host)
-          upsert_full_access "GoldShore Admin"   "admin.goldshore.ai" \
-            '["admin.goldshore.org","admin-preview.goldshore.ai","admin.gs-admin.pages.dev"]'
+          upsert_full_access "GoldShore-Admin-ZT" "admin.goldshore.ai" \
+            '["admin.goldshore.org","admin-preview.goldshore.ai","admin.gs-admin.pages.dev"]' "" "" \
+            '["GoldShore Admin","Goldshore Admin","Admin"]'
           # GoldShore Trading: canonical + dashboard/dash aliases (Gate 5b)
           upsert_full_access "GoldShore-Trading-ZT" "trading.goldshore.ai" \
             '["dashboard.goldshore.ai","dash.goldshore.ai"]' "" \
             '["GoldShore Trading","Goldshore Trading","Trading"]'
+          # Rotation-critical surfaces: both ops automation and preview smoke
+          # checks consume the credentials propagated below. Keep these apps in
+          # the same rotation as the rest of the managed Access surfaces, then
+          # verify both human and service-token policies before publishing the
+          # replacement credentials.
           # Goldshore Ops: ops.goldshore.ai (Gate 5c)
           upsert_full_access "Goldshore Ops"     "ops.goldshore.ai"
+          assert_full_access_policies "Goldshore Ops" "ops.goldshore.ai"
           # Signals: .ai canonical + .org alias + workers.dev default host
           upsert_full_access "Signals"           "signals.goldshore.ai" \
             '["signals.goldshore.org","gs-signals-prod.goldshore.workers.dev"]'
@@ -813,33 +741,22 @@ jobs:
           # protected route family served by gs-api so Access issues one AUD for
           # browser calls to /goldclaw, /admin, /users, /ai, /v1, etc. The public
           # probes above remain path-scoped bypass apps.
-          API_PROTECTED_DOMAINS='["api.goldshore.ai/goldclaw","api.goldshore.ai/admin","api.goldshore.ai/users","api.goldshore.ai/ai","api.goldshore.ai/v1"]'
-          upsert_full_access "Goldshore API"     "api.goldshore.ai" "$API_PROTECTED_DOMAINS" \
-            "gs-api gs-api-prod" "$GS_API_ACCESS_AUD"
-          assert_full_access_policies "Goldshore API" "api.goldshore.ai" "$GS_API_ACCESS_AUD"
-          # Bare "api.goldshore.ai" dropped as its own destination: with the
-          # 5 protected paths that's 6 destinations, over Cloudflare's 5-per-app
-          # cap (access.api.error.invalid_request: too many destinations for one
-          # app). The 5 specific paths are the authoritative protected surface;
-          # the bare host was redundant with them, not additive coverage.
+          # Cloudflare limits self-hosted apps to five destinations. Use the
+          # canonical protected entry path plus four route families; the
+          # path-scoped apps above bypass public probes and form submissions.
           API_PROTECTED_DOMAINS='["api.goldshore.ai/admin","api.goldshore.ai/users","api.goldshore.ai/ai","api.goldshore.ai/v1"]'
-          # aud_workers lists only "gs-api-prod" because live
-          # api.goldshore.ai traffic is routed there from this monorepo. Bare
-          # "gs-api" is intentionally reserved for the marzton/goldshore-api
-          # rebuild Worker and should be managed by that repository's deploy
-          # flow, not this monorepo Access sync.
-          upsert_full_access "Goldshore API"     "api.goldshore.ai/goldclaw" "$API_PROTECTED_DOMAINS" \
-            "gs-api-prod" "$GS_API_ACCESS_AUD"
+          upsert_full_access "Goldshore API" "api.goldshore.ai/goldclaw" "$API_PROTECTED_DOMAINS" \
+            "gs-api-prod" "$GS_API_ACCESS_AUD" '["API"]'
           assert_full_access_policies "Goldshore API" "api.goldshore.ai/goldclaw" "$GS_API_ACCESS_AUD"
           # GoldShore MCP: human + agent per docs ("approved human identities and agents")
           upsert_full_access "GoldShore MCP"     "mcp.goldshore.ai" "[]" \
-            "" \
-            '["MCP"]'
+            "" "" '["MCP"]'
           # Goldshore Gateway: gw + agent share app+AUD (Gate 5d); human + agent access
           upsert_full_access "Goldshore Gateway" "gw.goldshore.ai" \
-            '["gateway.goldshore.ai","agent.goldshore.ai"]'
+            '["gateway.goldshore.ai","agent.goldshore.ai"]' "" "" '["Gateway"]'
           # GoldShore-Web-Preview: preview.goldshore.ai (INFRASTRUCTURE.md Gate 5)
           upsert_full_access "GoldShore-Web-Preview" "preview.goldshore.ai"
+          assert_full_access_policies "GoldShore-Web-Preview" "preview.goldshore.ai"
 
           if [ "$MISSING_REQUIRED_APPS" -ne 0 ]; then
             echo "::error::One or more required Access apps were missing while skip_apps=true. Policies were not updated for those apps, so new credentials were not propagated."
@@ -920,6 +837,9 @@ jobs:
           }
           # Only the monorepo-owned production Worker is updated here. Bare
           # gs-api is intentionally reserved for marzton/goldshore-api rebuilds.
+          # No Worker script literally named "gs-api" exists in the account --
+          # apps/gs-api/wrangler.toml only deploys via --env prod/preview,
+          # producing gs-api-prod. See the matching fix on the AUD sync above.
           for WORKER in gs-api-prod; do
             echo "Setting secrets on $WORKER:"
             put_secret "$WORKER" CF_ACCESS_CLIENT_ID     "$CLIENT_ID"

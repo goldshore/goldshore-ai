@@ -1,14 +1,14 @@
 import type { APIRoute } from 'astro';
-import {
-  buildAdminSession,
-  verifyAccessWithClaims,
-  type AdminPermission,
-  type Env as AccessEnv,
-} from '@goldshore/auth';
+import { buildAdminSession, type AdminPermission } from '@goldshore/auth/rbac.ts';
+import { verifyAccessWithClaims, type Env as AccessEnv } from '@goldshore/auth/verify.ts';
 import { parseJson } from '@goldshore/utils';
+
+type Env = AccessEnv;
 
 export const prerender = false;
 
+const apiBase = (env: Env | undefined) =>
+  (env?.PUBLIC_API || 'https://api.goldshore.ai').replace(/\/$/, '');
 const normalizeRow = (row: Record<string, string>) => ({
   id: row.id,
   slug: row.slug,
@@ -69,11 +69,9 @@ const requirePermission = async (
   return { response: null };
 };
 
-const proxy = async (request: Request, env: Env | undefined, slug?: string) => {
-  if (!slug) return new Response('Form slug is required.', { status: 400 });
-
-  if (!slug) return new Response('Form slug is required.', { status: 400 });
-
+export const GET: APIRoute = async ({ request, locals, params }) => {
+  const env = locals.runtime?.env as Env | undefined;
+  const slug = params.slug;
   if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
   }
@@ -87,19 +85,28 @@ const proxy = async (request: Request, env: Env | undefined, slug?: string) => {
     `SELECT id, slug, name, status, fields, recipients, integrations, created_at, updated_at
      FROM form_configs
      WHERE slug = ?
-     LIMIT 1`
+     LIMIT 1`,
   )
     .bind(slug)
     .all();
 
-  const row = result?.results?.[0] as Record<string, string> | undefined;
-  if (!row) {
-    return new Response('Form not found.', { status: 404 });
+const forwardedHeaders = (request: Request) => {
+  const headers = new Headers();
+  for (const name of ['accept', 'authorization', 'cookie', 'cf-connecting-ip', 'user-agent', 'content-type']) {
+    const value = request.headers.get(name);
+    if (value) headers.set(name, value);
   }
-
-  return Response.json({ config: normalizeRow(row) });
+  return headers;
 };
 
+const proxy = async (request: Request, env: Env | undefined, slug?: string) => {
+  if (!slug) return new Response('Form slug is required.', { status: 400 });
+
+  const target = new URL(`${apiBase(env)}/v1/forms/configs/${encodeURIComponent(slug)}`);
+  const response = await fetch(target, {
+    method: request.method,
+    headers: forwardedHeaders(request),
+    body: request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.text(),
 export const PUT: APIRoute = async ({ request, locals, params }) => {
   const env = locals.runtime?.env as Env | undefined;
   const slug = params.slug;
@@ -131,7 +138,7 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     `SELECT id, slug, name, status, fields, recipients, integrations, created_at, updated_at
      FROM form_configs
      WHERE slug = ?
-     LIMIT 1`
+     LIMIT 1`,
   )
     .bind(slug)
     .all();
@@ -154,7 +161,7 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
   await env.PLATFORM_DB.prepare(
     `UPDATE form_configs
      SET name = ?, status = ?, fields = ?, recipients = ?, integrations = ?, updated_at = ?
-     WHERE slug = ?`
+     WHERE slug = ?`,
   )
     .bind(
       updated.name,
@@ -163,7 +170,7 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
       JSON.stringify(updated.recipients),
       JSON.stringify(updated.integrations),
       now,
-      slug
+      slug,
     )
     .run();
 
@@ -179,6 +186,12 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
       createdAt: row.created_at,
       updatedAt: now,
     },
+
+  const target = new URL(`${apiBase(env)}/v1/forms/configs/${encodeURIComponent(slug)}`);
+  const response = await fetch(target, {
+    method: request.method,
+    headers: forwardedHeaders(request),
+    body: request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.text(),
   });
 };
 
