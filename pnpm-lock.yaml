@@ -10038,6 +10038,8 @@ snapshots:
   prettier-plugin-astro@0.14.1:
     dependencies:
       '@astrojs/compiler': 2.13.1
+      prettier: 3.9.6
+      sass-formatter: 0.7.9
       prettier: 3.9.1
       sass-formatter: 0.7.9
 
