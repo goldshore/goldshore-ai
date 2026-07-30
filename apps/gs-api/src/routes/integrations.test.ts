@@ -31,6 +31,8 @@ const createTestApp = (claims: any = null) => {
 };
 
 describe('Integration management API security', () => {
+  it('loads the integration route and registry dependency', () => {
+    assert.ok(integrations);
   it('serves integration list requests as the terminal implementation without proxying to admin', async () => {
     const fetchMock = mock.method(globalThis, 'fetch', async () => {
       throw new Error('integration route must not proxy list requests');
