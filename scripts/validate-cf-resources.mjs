@@ -137,22 +137,25 @@ for (const file of appTomls) {
     const shared = knownSharedKvIds.has(id);
     const external = knownExternalKvIds.has(id);
     const ok = existsIn(kvNamespaces, 'id', id);
-    rows.push({ type: 'KV', file, item: id, status: ok ? 'ok' : 'missing', detail: shared ? 'shared' : external ? 'external' : '' });
-    if (!ok) failed = true;
+    const status = ok ? 'ok' : external ? 'warning' : 'missing';
+    rows.push({ type: 'KV', file, item: id, status, detail: shared ? 'shared' : external ? 'external' : '' });
+    if (!ok && !external) failed = true;
   }
 
   for (const id of new Set(parsed.d1Ids)) {
     const external = knownExternalD1.has(id);
     const ok = existsIn(d1Databases, 'uuid', id) || existsIn(d1Databases, 'id', id);
-    rows.push({ type: 'D1', file, item: id, status: ok ? 'ok' : 'missing', detail: external ? 'external' : '' });
-    if (!ok) failed = true;
+    const status = ok ? 'ok' : external ? 'warning' : 'missing';
+    rows.push({ type: 'D1', file, item: id, status, detail: external ? 'external' : '' });
+    if (!ok && !external) failed = true;
   }
 
   for (const name of new Set(parsed.bucketNames)) {
     const external = knownExternalR2.has(name);
     const ok = existsIn(r2Buckets, 'name', name);
-    rows.push({ type: 'R2', file, item: name, status: ok ? 'ok' : 'missing', detail: external ? 'external' : '' });
-    if (!ok) failed = true;
+    const status = ok ? 'ok' : external ? 'warning' : 'missing';
+    rows.push({ type: 'R2', file, item: name, status, detail: external ? 'external' : '' });
+    if (!ok && !external) failed = true;
   }
 
   for (const queue of new Set(parsed.queueNames)) {
