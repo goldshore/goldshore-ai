@@ -28,7 +28,7 @@ const MASTER_CONFIG: MasterConfig = {
     'api': { role: 'backend', worker: 'gs-api', priority: 1 },
     'gateway': { role: 'ingress', worker: 'gs-gateway', priority: 1 },
     'agent': { role: 'backend', worker: 'gs-agent', priority: 1 },
-    'admin': { role: 'frontend', project: 'gs-admin', priority: 1 },
+    'admin': { role: 'frontend', project: 'gs-web', priority: 1 },
     'web': { role: 'frontend', project: 'gs-web', priority: 1 },
     'mail': { role: 'mx-only', target: 'gs-mail', priority: 1 },
     // Hostname-level keys
@@ -36,12 +36,12 @@ const MASTER_CONFIG: MasterConfig = {
     'agent.goldshore.ai': { role: 'alias', target: 'gateway', priority: 1 },
     'api.goldshore.ai': { role: 'backend', worker: 'gs-api', priority: 1 },
     'agent.internal.goldshore.ai': { role: 'backend', worker: 'gs-agent', priority: 1 },
-    'admin.goldshore.ai': { role: 'frontend', project: 'gs-admin-pages', priority: 1 },
+    'admin.goldshore.ai': { role: 'frontend', project: 'gs-web', priority: 1 },
     'mail.goldshore.ai': { role: 'mx-only', target: 'gs-mail', priority: 1 },
   },
   SERVICE_STATUS: {
     maintenance_mode: false,
-    active_services: ['gs-api', 'gs-gateway', 'gs-agent', 'gs-mail', 'gs-web', 'gs-admin'],
+    active_services: ['gs-api', 'gs-gateway', 'gs-agent', 'gs-mail', 'gs-web'],
     version: '2026-03-03',
     last_sync: new Date().toISOString(),
   },
