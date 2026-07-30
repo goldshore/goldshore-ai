@@ -25,6 +25,32 @@ const createTestApp = (claims: any = null) => {
 };
 
 describe('Integration management API security', () => {
+  it('serves integration list requests as the terminal implementation without proxying to admin', async () => {
+    const fetchMock = mock.method(globalThis, 'fetch', async () => {
+      throw new Error('integration route must not proxy list requests');
+    });
+
+    try {
+      const app = createTestApp({ roles: ['viewer'], email: 'viewer@example.com' });
+
+      const res = await app.request('/integrations?action=list');
+      const body = await res.json();
+
+      assert.equal(res.status, 200);
+      assert.equal(body.success, true);
+      assert.deepEqual(body.data, {
+        totalIntegrations: 0,
+        connected: 0,
+        disconnected: 0,
+        errors: 0,
+        integrations: {},
+      });
+      assert.equal(fetchMock.mock.callCount(), 0);
+    } finally {
+      fetchMock.mock.restore();
+    }
+  });
+
   it('rejects integration mutations without integration management permission', async () => {
     const app = createTestApp({ roles: ['viewer'], email: 'viewer@example.com' });
 
