@@ -51,23 +51,18 @@ After adding key to GitHub, test with: `ssh -T git@github.com`
 
 ## Monorepo structure
 
-pnpm 9 + Turborepo. All apps in `apps/*`, shared code in `packages/*`.
+pnpm 9 + Turborepo. This repository intentionally exposes only the two canonical apps below plus shared code in `packages/*`.
 
 ### Apps
 
-**Per AGENTS.md:** this repo is a two-app monorepo. New frontend work → `apps/gs-web`; new backend work → `apps/gs-api`. All other apps are legacy stubs retained for workspace validation only — do not route new tasks there.
+**Per AGENTS.md:** this repo is a strict two-app monorepo. New frontend work → `apps/gs-web`; new backend work, including routing, cron jobs, DB operations, AI logic, queues, email receivers, and proxy code → `apps/gs-api`. Do not route any work to unsupported legacy app names such as `gs-admin`, `gs-mcp`, `gs-gateway`, `gs-cron`, or `gs-signals` in this repository.
 
 | App | Worker name | Routes | Status |
 |-----|-------------|--------|--------|
-| `apps/gs-web` | `gs-web` | `goldshore.ai/*` | ✅ Astro + Cloudflare Workers |
-| `apps/gs-api` | `gs-api` | `api.goldshore.ai/*` | ✅ Active |
-| `apps/gs-admin` | `gs-admin` | `admin.goldshore.ai/*` | ⚠️ Legacy — do not route new work here |
-| `apps/gs-mcp` | `gs-mcp` | `mcp.goldshore.ai/*` | ⚠️ Legacy — do not route new work here |
-| `apps/gs-gateway` | `gs-platform` | `gw/gateway/ops/agent/api.goldshore.ai/*` | ⚠️ STUB — real code in `marzton/goldshore-gateway` |
-| `apps/gs-cron` | `gs-cron` | (scheduled) | ⚠️ Legacy — do not route new work here |
-| `apps/gs-signals` | `gs-signals` | internal | ⚠️ Legacy — do not route new work here |
+| `apps/gs-web` | `gs-web` | `goldshore.ai/*` | ✅ Canonical Astro frontend |
+| `apps/gs-api` | `gs-api` | `api.goldshore.ai/*` | ✅ Canonical unified API Worker |
 
-The gateway stub at `apps/gs-gateway/wrangler.toml` is intentional — it satisfies workspace validation without owning deployment.
+If a task appears to require a separate admin, gateway, MCP, cron, mail, signals, or agent worker, implement it as a sub-route, handler, queue consumer, or scheduled flow inside `apps/gs-api`, or as a page/sub-route inside `apps/gs-web`.
 
 ### Shared packages
 
@@ -76,6 +71,10 @@ The gateway stub at `apps/gs-gateway/wrangler.toml` is intentional — it satisf
 ---
 
 ## AI IDE context: Antigravity + VS Code
+
+### Shared GitHub handoffs
+
+Claude and Codex coordinate through GitHub issues rather than private local context. Use the same issue tags defined in `AGENTS.md`: `[agent:claude]`, `[agent:codex]`, `[env:local]`, `[env:preview]`, `[env:production]`, `[status:ready]`, `[status:blocked]`, and `[handoff:needed]`. Every handoff comment must include the remote branch and commit SHA, completed checks, deployment/run URLs, blockers, and the next owner/action.
 
 **Antigravity** is the primary IDE used to build parts of goldshore and banproof-me. It is a Google IDE with multiple AI agents pre-integrated: Gemini, Codex, Claude, Copilot, and others. Think of it as VS Code with a built-in multi-agent AI layer.
 
@@ -113,17 +112,24 @@ For Claude/Codex assistance with Google API integration: provide the API name, s
 | Repo | Deploys | Notes |
 |------|---------|-------|
 | `marzton/goldshore-gateway` | `gs-platform` worker | Platform front door; routes all subdomain traffic |
-| `marzton/goldshore-admin` | `admin.goldshore.org` (Pages) | Older admin, being superseded by `apps/gs-admin` |
-| `marzton/goldshore-core` → `apps/banproof-me` | `banproof-me` worker | Security/ban-check; called by gateway on every request. Built with Antigravity + Codex. |
+| `marzton/goldshore-admin` | `admin.goldshore.org` (Pages) | Older admin; any replacement UI belongs under `apps/gs-web` sub-routes |
+| `marzton/goldshore-core` | `banproof-me` worker | Security/ban-check; future integration must route through `apps/gs-api` queues/routes (or stay external) and must not create `apps/gs-security`. |
 
 ---
 
-## Key Cloudflare bindings (gs-admin)
+## Key Cloudflare bindings (gs-api)
 
-- KV: `GS_CONFIG` (`d02c0c7951a244a7987e23d8af16b7b2`), `KV_SESSIONS`
-- D1: `PLATFORM_DB` (`9703574e-adb7-481e-8d98-96f8ce5f8a90`), `GS_AUDIT_DB` (`1ae71d76-188f-481b-91d9-db2d39013f68`)
-- R2: `GS_ASSETS`
-- Services: `gs-trading-prod`, `gs-control`, `gs-api`
+`apps/gs-api/wrangler.toml` is the canonical config for `gs-api` bindings. Cross-check any future binding edits against the registry in [`infra/Cloudflare/BINDINGS_MAP.md`](infra/Cloudflare/BINDINGS_MAP.md) before changing this summary.
+
+- Environment names: `prod` and `preview`. `production` is a historical alias and should not be used in `apps/gs-api/wrangler.toml` or package scripts.
+- KV: `KV` (`e0b8b807191346c3b0afc25fe716d2cd` in `prod`; `d4d20cee39094b999dea3f7e5f4c533a` in `preview`), `CONTROL_LOGS` (`a52e94cb331c4e3db08f2aa507e6df09` in `prod`; `09e43cb8bd4749fdaaed0dc9d4ff2284` in `preview`), and `RISK_RADAR_CACHE`. Legacy historical aliases only: `GS_CONFIG`, `KV_SESSIONS`.
+- D1: `PLATFORM_DB` (`9703574e-adb7-481e-8d98-96f8ce5f8a90`), `AUDIT_DB` (`1ae71d76-188f-481b-91d9-db2d39013f68`), `SIGNALS_DB` (`76af4653-7f44-417b-b46e-250143d906fd`), `RISK_RADAR_DB`, and `JOBS_DB` (`750c469c-788d-49e8-9254-77231cffd70f`). Legacy historical aliases only: `DB` and `GS_AUDIT_DB`.
+- R2: `GS_ASSETS` (`gs-assets` in `prod`; `gs-assets-preview` in `preview`), `TELEMETRY` (`gs-telemetry-storage`), and `RISK_RADAR_R2`.
+- AI and Durable Objects: `AI`; `AUTH_SESSION` (`AuthSession`).
+- Queues: `JOBS_QUEUE` (`goldshore-jobs`), `EVENTS_QUEUE` (`gs-events`), `MAIL_JOBS_QUEUE` (`gs-mail-jobs`), `DEAD_LETTER_QUEUE` (`gs-mail-dead-letter`). `gs-api` also consumes the consolidated backend queues in `prod`.
+- Workflows: `GS_SIGNALS` → `signals-evaluator`.
+- Secrets Store: `INTEGRATION_MASTER_KEY` is bound as a per-secret Secrets Store binding from store `b9824d3280c54573a24137c7e7143b33`. Do not use the historical `SECRETS.get(...)` store-object shape in Wrangler config.
+- Unclear/live Cloudflare note: if the dashboard still shows legacy service bindings such as `AGENT`, `GS_MAIL`, `GS_WEB PROD`, `API_SERVICE`, or `GOLDSHORE_AI`, treat them as stale until a human confirms a live dependency; do not re-add them to repo-managed `gs-api` config without updating this file and `docs/WORKER_CONFIGURATION.md`.
 
 ---
 
@@ -139,7 +145,8 @@ What's on this branch:
 ## CI / deployment
 
 - GitHub Actions: Lighthouse CI threshold `LH_MIN_PERFORMANCE: 0.60`
-- Deploy token: `CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN` GitHub secret (renew via `manage-cf-tokens.yml` if expired)
+- GitHub Actions deploy token: `CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN`
+- Cloudflare Worker Builds token: `CLOUDFLARE_BUILD_API_TOKEN` (managed separately)
 - Workers deploy per-app via `wrangler deploy`
 
 ---
@@ -150,7 +157,7 @@ What's on this branch:
 pnpm install
 pnpm build
 pnpm --filter gs-web dev
-pnpm --filter gs-admin dev
+pnpm --filter gs-api dev
 pnpm turbo run build --filter=gs-web
 ```
 
@@ -162,10 +169,10 @@ pnpm turbo run build --filter=gs-web
 |----------|------|--------|
 | 1 | `goldshore-ops` | Archive — KV template stub, never built |
 | 2 | `goldshore-web` | Already deprecated — remove from CI |
-| 3 | `goldshore-core` | Route `banproof-me` security logic into `apps/gs-api` (AGENTS.md forbids new Workers under `apps/`); archive standalone |
+| 3 | `goldshore-core` | Route `banproof-me` security logic into `apps/gs-api` queues/routes (or keep it external); do **not** create `apps/gs-security` or any other new Worker under `apps/`; archive standalone |
 | 4 | `goldshore-api` | Confirm `goldshore/apps/goldshore-api` at parity → archive standalone |
-| 5 | `goldshore-admin` | Confirm `apps/gs-admin` at parity → archive standalone |
-| 6 | `goldshore-gateway` | Replace stub with real gateway code → archive standalone |
+| 5 | `goldshore-admin` | Move replacement admin UX into `apps/gs-web` sub-routes, then archive standalone |
+| 6 | `goldshore-gateway` | Route gateway responsibilities through `apps/gs-api`, then archive standalone |
 
 ---
 

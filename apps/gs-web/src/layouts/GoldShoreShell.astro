@@ -1,47 +1,14 @@
 ---
 import '../styles/global.css';
+import '../styles/public-theme.css';
+import { primaryNavLinks, platformLinks, serviceLinks, companyLinks } from '../config/navigation';
 
-const navLinks = [
-  { href: '/platform/', label: 'Platform' },
-  { href: '/risk-radar/', label: 'Risk Radar' },
-  { href: '/services/', label: 'Services' },
-  { href: '/developer/', label: 'Developer' },
-  { href: '/about/', label: 'About' },
-  { href: '/team/', label: 'Team' },
-  { href: '/contact/', label: 'Contact' },
-];
+const navLinks = primaryNavLinks;
 
 const footerColumns = [
-  {
-    title: 'Platform',
-    links: [
-      { href: '/risk-radar/', label: 'Risk Radar' },
-      { href: '/platform/financial-signals', label: 'Financial Signals' },
-      { href: '/platform/workflow-engine', label: 'Workflow Engine' },
-      { href: '/platform/sentinel', label: 'Sentinel' },
-      { href: '/platform/ai-oracle', label: 'AI Oracle' },
-    ],
-  },
-  {
-    title: 'Services',
-    links: [
-      { href: '/services/digital-strategy', label: 'Digital Strategy' },
-      { href: '/services/ai-implementation', label: 'AI Implementation' },
-      { href: '/services/systems-integration', label: 'Systems Integration' },
-      { href: '/services/design-dev', label: 'Design & Development' },
-      { href: '/services/consulting', label: 'Enterprise Consulting' },
-    ],
-  },
-  {
-    title: 'Company',
-    links: [
-      { href: '/about/', label: 'About' },
-      { href: '/team/', label: 'Team' },
-      { href: '/developer/', label: 'Developer Hub' },
-      { href: '/status/', label: 'Status' },
-      { href: '/contact/', label: 'Contact' },
-    ],
-  },
+  { title: 'Platform', links: platformLinks },
+  { title: 'Services', links: serviceLinks },
+  { title: 'Company', links: companyLinks },
 ];
 
 const {
@@ -53,8 +20,18 @@ const {
 } = Astro.props;
 
 const canonicalUrl = new URL(canonicalPath, 'https://goldshore.ai').toString();
-const activePath = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.url.pathname}/`;
-const isCurrent = (href: string) => activePath === href;
+const socialImageUrl = new URL('/logo.png', 'https://goldshore.ai').toString();
+const normalizePath = (path: string) => {
+  const normalized = path.startsWith('/') ? path : `/${path}`;
+  return normalized === '/' ? '/' : `${normalized.replace(/\/+$/, '')}/`;
+};
+const activePath = normalizePath(Astro.url.pathname);
+const isCurrent = (href: string) => {
+  const normalizedHref = normalizePath(href);
+  return normalizedHref === '/'
+    ? activePath === '/'
+    : activePath === normalizedHref || activePath.startsWith(normalizedHref);
+};
 ---
 
 <html lang="en">
@@ -68,12 +45,29 @@ const isCurrent = (href: string) => activePath === href;
     <meta property="og:url" content={canonicalUrl} />
     <meta property="og:title" content={ogTitle} />
     <meta property="og:description" content={ogDescription} />
+    <meta property="og:image" content={socialImageUrl} />
+    <meta property="og:site_name" content="GoldShore" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={ogTitle} />
+    <meta name="twitter:description" content={ogDescription} />
+    <meta name="twitter:image" content={socialImageUrl} />
+    <meta name="robots" content="index,follow,max-image-preview:large" />
+    <meta name="theme-color" content="#06060a" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon.png" type="image/png" sizes="32x32" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
     <meta name="google-adsense-account" content="ca-pub-5105781580031290" />
+    <script type="application/ld+json" set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: 'Gold Shore Labs',
+      alternateName: 'GoldShore',
+      url: 'https://goldshore.ai',
+      logo: 'https://goldshore.ai/logo.png',
+      sameAs: [],
+    })}></script>
   </head>
   <body>
     <a href="#content" class="skip-link">Skip to content</a>
@@ -84,12 +78,14 @@ const isCurrent = (href: string) => activePath === href;
           <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="mobile-navigation" aria-label="Toggle menu"><span></span><span></span><span></span></button>
           <nav class="main-nav" aria-label="Primary navigation">
             {navLinks.map((link) => <a href={link.href} aria-current={isCurrent(link.href) ? 'page' : undefined}>{link.label}</a>)}
+            <a href="https://dashboard.goldshore.ai" class="nav-login">Access →</a>
             <a href="https://admin.goldshore.ai" class="nav-login" data-admin-access-link>Access →</a>
             <a href="/contact/" class="nav-cta">Request Briefing</a>
           </nav>
         </div>
         <nav id="mobile-navigation" class="mobile-nav" aria-label="Mobile navigation">
           {navLinks.map((link) => <a href={link.href} aria-current={isCurrent(link.href) ? 'page' : undefined}>{link.label}</a>)}
+          <a href="https://dashboard.goldshore.ai">Access →</a>
           <a href="https://admin.goldshore.ai" data-admin-access-link>Access →</a>
           <a href="/contact/">Request Briefing</a>
         </nav>
@@ -139,16 +135,10 @@ const isCurrent = (href: string) => activePath === href;
           if (event.key === 'Escape') setMenu(false);
         });
       };
-      const bindAdminAccessLinks = () => {
-        const adminHost = window.location.hostname.endsWith('goldshore.org')
-          ? 'admin.goldshore.org'
-          : 'admin.goldshore.ai';
-        document.querySelectorAll('[data-admin-access-link]').forEach((link) => {
-          link.setAttribute('href', `https://${adminHost}`);
-        });
-      };
       bindMenu();
-      bindAdminAccessLinks();
+    </script>
+    <script>
+      import '../scripts/page-motion';
     </script>
   </body>
 </html>

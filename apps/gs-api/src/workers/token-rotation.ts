@@ -6,7 +6,7 @@
  */
 
 import type { Env } from '../types';
-import { findExpiringSecrets, extendSecretExpiry } from '../lib/secrets';
+import { findExpiringSecrets, rotateSecret, extendSecretExpiry } from '../lib/secrets';
 import { logAdminAction } from '../auth';
 
 /**
@@ -123,6 +123,7 @@ export async function rotateToken(
     const now = new Date();
     const newExpireDate = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000); // 60 days from now
 
+    await rotateSecret(env, secret.id, newToken, 'token-rotation-worker');
     await extendSecretExpiry(
       env,
       secret.id,
@@ -192,8 +193,6 @@ export async function handleTokenRotation(env: Env): Promise<void> {
           continue;
         }
 
-        // Note: In a real implementation, we would call rotateSecret with the newToken
-        // For now, we're just extending the expiry since we don't have the new token value
         const result = await rotateToken(env, secret, newToken);
         if (result.success) {
           console.log(`Successfully rotated token for ${secret.integration_id}`);

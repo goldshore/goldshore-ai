@@ -1,8 +1,7 @@
 import { Hono } from "hono";
 import { getIntegrationRegistry, INTEGRATION_DEFINITIONS } from "../lib/IntegrationRegistry";
 import { Env, Variables } from "../types";
-import { requirePermission, getActor } from "../auth";
-import { buildAdminSession, hasAdminPermission } from "@goldshore/auth";
+import { requirePermission } from "../auth";
 import integrationKeys from "./integration-keys";
 import whatsappCommands from "./whatsapp-commands";
 import oauth from "./oauth";
@@ -12,6 +11,8 @@ const integrations = new Hono<{
   Variables: Variables;
 }>();
 
+const requireIntegrationManagement = requirePermission("system:integrations:manage");
+
 /**
  * Integration Management API
  * Terminal endpoint for third-party integration lifecycle: CRUD, sync, status monitoring.
@@ -19,6 +20,14 @@ const integrations = new Hono<{
  */
 
 // GET /integrations?action=list|definitions|status|sync
+integrations.get("/", async (c, next) => {
+  if ((c.req.query("action") || "list") === "sync") {
+    return requireIntegrationManagement(c, next);
+  }
+
+  await next();
+});
+
 integrations.get("/", async (c) => {
   const action = c.req.query("action") || "list";
   const kv = c.env.KV;
