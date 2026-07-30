@@ -29,7 +29,6 @@ type Env = {
   PLATFORM_DB: D1Database;
   TELEMETRY_DB?: D1Database;
   GS_ASSETS: R2Bucket;
-  AUTH_SESSION?: DurableObjectNamespace;
   AI: Ai;
   OPENAI_API_KEY?: string;
   GEMINI_API_KEY?: string;
@@ -239,23 +238,4 @@ v1.get('/leads', (c) => c.json({ leads: [] }));
 app.route('/v1', v1);
 
 export { isAllowedOrigin, isPreviewOrigin, parseAllowedOrigins };
-
-export class AuthSession {
-  constructor(
-    private readonly state: DurableObjectState,
-    private readonly env: Env,
-  ) {}
-
-  async fetch(): Promise<Response> {
-    return new Response(
-      JSON.stringify({
-        ok: true,
-        id: this.state.id.toString(),
-        env: this.env.ENV ?? 'unknown',
-      }),
-      { headers: { 'content-type': 'application/json' } },
-    );
-  }
-}
-
 export default app;
