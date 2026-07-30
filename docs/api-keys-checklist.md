@@ -17,7 +17,7 @@ All keys go into GitHub Actions Secrets or Cloudflare Worker secrets — never c
 | Secret name | Repo | Status | Retrieve from |
 |------------|------|--------|---------------|
 | `CLOUDFLARE_API_TOKEN` | `goldshore-gateway` | ⚠️ Expired (blocking CI) | [dash.cloudflare.com → My Profile → API Tokens → Create Token](https://dash.cloudflare.com/profile/api-tokens) |
-| `CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN` | `goldshore-ai` | ⚠️ Needs renewal | Same as above — use `manage-cf-tokens.yml` workflow |
+| `CLOUDFLARE_BUILD_API_TOKEN` | `goldshore-ai` | ⚠️ Needs renewal | Same as above — use `manage-cf-tokens.yml` workflow |
 | `CF_ACCESS_CLIENT_ID` | all repos | ⚠️ Rotate (old token compromised) | Run `setup-cf-agent-access.yml` workflow |
 | `CF_ACCESS_CLIENT_SECRET` | all repos | ⚠️ Rotate (old token compromised) | Same workflow |
 | `CF_AUTH_EMAIL` | `goldshore-ai` | ✅ | Your Cloudflare account email |
