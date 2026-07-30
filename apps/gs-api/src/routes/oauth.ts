@@ -116,7 +116,7 @@ oauth.get('/authorize/:provider', async (c) => {
  * Handle OAuth callback from provider
  * Body: { code, state, integration_id }
  */
-oauth.post('/callback/:provider', async (c) => {
+oauth.post('/callback/:provider', requirePermission('system:integrations:manage'), async (c) => {
   try {
     const provider = c.req.param('provider').toLowerCase();
     const body = await c.req.json<{
