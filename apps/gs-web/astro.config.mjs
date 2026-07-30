@@ -15,6 +15,10 @@ export default defineConfig({
   vite: {
     ...baseConfig.vite,
     server: isLocalDev ? { allowedHosts: true } : undefined,
+    build: {
+      // Disable minification to avoid lightningcss @keyframes issues
+      minify: false
+    },
     resolve: {
       ...baseConfig.vite?.resolve,
       alias: {

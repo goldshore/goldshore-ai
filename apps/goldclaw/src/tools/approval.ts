@@ -168,6 +168,86 @@ export function assessOperationRisk(context: ApprovalContext): 'low' | 'medium' 
 }
 
 /**
+ * Assess operation risk with optional LLM analysis
+ */
+export async function assessOperationRiskWithLLM(
+  context: ApprovalContext,
+  lmmProvider?: any
+): Promise<EnhancedRiskAssessment> {
+  // Fallback: local rules engine if LLM not available
+  const baseRiskLevel = assessOperationRisk(context);
+
+  if (!lmmProvider) {
+    return {
+      riskLevel: baseRiskLevel,
+      reasoning: `Base risk assessment: ${baseRiskLevel}. ${context.recentErrorCount} errors, ${context.uptime} uptime.`,
+      recommendations: generateRiskRecommendations(baseRiskLevel, context),
+      lmmConfidence: 0.7,
+      usedLLM: false,
+    };
+  }
+
+  try {
+    const lmmResponse: any = await lmmProvider.analyzeRisk({
+      errorCount: context.recentErrorCount,
+      uptime: parseFloat(context.uptime.split('%')[0]),
+      isProduction: context.isProduction ?? false,
+      rotationCount: context.rotationCount ?? 0,
+      recentErrors: context.recentErrors ?? [],
+      operation: 'token_rotation',
+    });
+
+    return {
+      riskLevel: lmmResponse.riskLevel,
+      reasoning: lmmResponse.reasoning,
+      costImpact: lmmResponse.costImpact,
+      recommendations: lmmResponse.recommendations || generateRiskRecommendations(lmmResponse.riskLevel, context),
+      lmmConfidence: lmmResponse.confidence || 0.8,
+      usedLLM: true,
+    };
+  } catch (error) {
+    console.error('LLM risk analysis failed, falling back to local rules:', error);
+    return {
+      riskLevel: baseRiskLevel,
+      reasoning: `Local assessment (LLM failed): ${baseRiskLevel}. ${context.recentErrorCount} errors, ${context.uptime} uptime.`,
+      recommendations: generateRiskRecommendations(baseRiskLevel, context),
+      lmmConfidence: 0.5,
+      usedLLM: false,
+    };
+  }
+}
+
+/**
+ * Generate contextual recommendations based on risk level
+ */
+function generateRiskRecommendations(
+  riskLevel: 'low' | 'medium' | 'high',
+  context: ApprovalContext
+): string[] {
+  const recs: string[] = [];
+
+  if (riskLevel === 'high') {
+    recs.push('Review recent errors and resolve critical issues before rotation.');
+    if (context.recentErrorCount > 10) {
+      recs.push('Error rate is elevated. Consider scheduling rotation during low-traffic window.');
+    }
+  } else if (riskLevel === 'medium') {
+    recs.push('Rotation is safe but monitor for 24h post-completion.');
+    if (context.operationTimelineMinutes > 2) {
+      recs.push('Execution time is longer than usual. Plan for potential brief service disruption.');
+    }
+  } else {
+    recs.push('All metrics green. Safe to proceed immediately.');
+  }
+
+  if (context.isProduction && (context.rotationCount ?? 0) === 0) {
+    recs.push('This is the first rotation on a production integration. Extra caution recommended.');
+  }
+
+  return recs.slice(0, 4);
+}
+
+/**
  * Generate human-readable approval summary
  */
 export function generateApprovalSummary(
