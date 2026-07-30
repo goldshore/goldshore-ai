@@ -14,6 +14,7 @@ export interface IntegrationConfig {
   lastSync?: string;
   status: 'connected' | 'disconnected' | 'error';
   error?: string;
+  metadata?: Record<string, unknown>;
 }
 
 export interface IntegrationEvent {

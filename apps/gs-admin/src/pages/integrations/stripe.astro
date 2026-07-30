@@ -5,6 +5,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 import { GSButton } from '@goldshore/ui';
 
 const title = 'Stripe Integration';
+const integrationsApiBase = `${import.meta.env.PUBLIC_GS_API_URL || 'https://api.goldshore.ai'}/integrations`;
 ---
 
 <AdminLayout title="Stripe | GoldShore Admin">
@@ -81,7 +82,7 @@ const title = 'Stripe Integration';
     </div>
   </div>
 
-  <script is:inline>
+  <script define:vars={{ integrationsApiBase }}>
     document.addEventListener('DOMContentLoaded', async () => {
       const loadStripeData = async () => {
         const loadingEl = document.getElementById('charges-loading');
@@ -98,7 +99,7 @@ const title = 'Stripe Integration';
         if (listEl) listEl.style.display = 'none';
 
         try {
-          const response = await fetch('/api/integrations/manage?action=list');
+          const response = await fetch(`${integrationsApiBase}?action=list`, { credentials: 'include' });
           const data = await response.json();
 
           if (loadingEl) loadingEl.style.display = 'none';

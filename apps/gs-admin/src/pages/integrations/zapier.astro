@@ -5,6 +5,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 import { GSButton } from '@goldshore/ui';
 
 const title = 'Zapier Integration';
+const integrationsApiBase = `${import.meta.env.PUBLIC_GS_API_URL || 'https://api.goldshore.ai'}/integrations`;
 ---
 
 <AdminLayout title="Zapier | GoldShore Admin">
@@ -62,7 +63,7 @@ const title = 'Zapier Integration';
     </div>
   </div>
 
-  <script is:inline>
+  <script define:vars={{ integrationsApiBase }}>
     document.addEventListener('DOMContentLoaded', async () => {
       const loadZapierData = async () => {
         const loadingEl = document.getElementById('zaps-loading');
@@ -78,7 +79,7 @@ const title = 'Zapier Integration';
         if (emptyEl) emptyEl.style.display = 'none';
 
         try {
-          const response = await fetch('/api/integrations/manage?action=list');
+          const response = await fetch(`${integrationsApiBase}?action=list`, { credentials: 'include' });
           const data = await response.json();
 
           if (loadingEl) loadingEl.style.display = 'none';

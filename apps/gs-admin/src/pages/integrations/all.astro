@@ -5,6 +5,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 import { GSButton } from '@goldshore/ui';
 
 const title = 'Integrations Hub';
+const integrationsApiBase = `${import.meta.env.PUBLIC_GS_API_URL || 'https://api.goldshore.ai'}/integrations`;
 ---
 
 <AdminLayout title="Integrations | GoldShore Admin">
@@ -104,7 +105,7 @@ const title = 'Integrations Hub';
     </div>
   </div>
 
-  <script is:inline>
+  <script define:vars={{ integrationsApiBase }}>
     document.addEventListener('DOMContentLoaded', async () => {
       const loadIntegrations = async () => {
         const loadingEl = document.getElementById('integrations-loading');
@@ -121,7 +122,7 @@ const title = 'Integrations Hub';
         if (emptyEl) emptyEl.style.display = 'none';
 
         try {
-          const response = await fetch('/api/integrations/manage?action=list');
+          const response = await fetch(`${integrationsApiBase}?action=list`, { credentials: 'include' });
           const data = await response.json();
 
           if (loadingEl) loadingEl.style.display = 'none';
@@ -179,7 +180,7 @@ const title = 'Integrations Hub';
 
       const loadAvailableIntegrations = async () => {
         try {
-          const response = await fetch('/api/integrations/manage?action=definitions');
+          const response = await fetch(`${integrationsApiBase}?action=definitions`, { credentials: 'include' });
           const data = await response.json();
 
           if (data.success && data.data) {
@@ -205,7 +206,7 @@ const title = 'Integrations Hub';
 
       document.getElementById('sync-all')?.addEventListener('click', async () => {
         try {
-          const response = await fetch('/api/integrations/manage?action=sync');
+          const response = await fetch(`${integrationsApiBase}?action=sync`, { credentials: 'include' });
           const data = await response.json();
           if (data.success) {
             loadIntegrations();
@@ -230,7 +231,8 @@ const title = 'Integrations Hub';
       window.deleteIntegration = async (name) => {
         if (confirm('Delete integration: ' + name + '?')) {
           try {
-            const response = await fetch('/api/integrations/manage', {
+            const response = await fetch(integrationsApiBase, {
+              credentials: 'include',
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({

@@ -32,6 +32,7 @@ export interface IntegrationStatus {
   provider?: string;
   lastSync?: string;
   error?: string;
+  metadata?: Record<string, unknown>;
 }
 
 export const INTEGRATION_DEFINITIONS: Record<IntegrationType, IntegrationDefinition> = {
