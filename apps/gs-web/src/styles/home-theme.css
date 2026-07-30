@@ -79,6 +79,18 @@ body.gs-home code {
   overflow-x: auto;
 }
 
+body.gs-home main,
+body.gs-home main > section,
+body.gs-home main > section > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+body.gs-home code {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
 a { color: inherit; }
 
 a:focus-visible,

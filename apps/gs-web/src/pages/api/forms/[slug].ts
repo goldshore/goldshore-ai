@@ -7,6 +7,11 @@ import {
 } from '@goldshore/auth';
 import { parseJson } from '@goldshore/utils';
 
+/**
+ * Admin UI form configuration item endpoint.
+ * Requires `forms:read` for GET and `forms:write` for PUT/PATCH.
+ */
+
 export const prerender = false;
 
 const normalizeRow = (row: Record<string, string>) => ({
@@ -69,8 +74,9 @@ const requirePermission = async (
   return { response: null };
 };
 
-const proxy = async (request: Request, env: Env | undefined, slug?: string) => {
-  if (!slug) return new Response('Form slug is required.', { status: 400 });
+export const GET: APIRoute = async ({ request, locals, params }) => {
+  const env = locals.runtime?.env as Env | undefined;
+  const slug = params.slug;
 
   if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
@@ -79,6 +85,10 @@ const proxy = async (request: Request, env: Env | undefined, slug?: string) => {
   const auth = await requirePermission(request, env as AccessEnv, 'forms:read');
   if (auth.response) {
     return auth.response;
+  }
+
+  if (!slug) {
+    return new Response('Form slug is required.', { status: 400 });
   }
 
   const result = await env.PLATFORM_DB.prepare(
@@ -102,8 +112,6 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
   const env = locals.runtime?.env as Env | undefined;
   const slug = params.slug;
 
-  if (!slug) return new Response('Form slug is required.', { status: 400 });
-
   if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
   }
@@ -115,6 +123,10 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
   const auth = await requirePermission(request, env as AccessEnv, 'forms:write');
   if (auth.response) {
     return auth.response;
+  }
+
+  if (!slug) {
+    return new Response('Form slug is required.', { status: 400 });
   }
 
   const payload = (await request.json()) as {
@@ -178,8 +190,11 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
       updatedAt: now,
     },
   });
-
 };
 
-export const GET: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
 export const PATCH = PUT;
+
+export const __testing = {
+  isSameOriginRequest,
+  requirePermission,
+};
