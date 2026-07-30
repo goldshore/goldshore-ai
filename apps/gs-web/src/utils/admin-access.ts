@@ -199,8 +199,6 @@ export const getAdminRouteRule = (
   }
 
   if (
-    normalizedPath === '/admin' || normalizedPath.startsWith('/admin/')
-  ) {
     normalizedPath === '/api/admin/products' ||
     normalizedPath === '/api/admin/settings'
   ) {

@@ -227,9 +227,6 @@ app.use('*', async (c, next) => {
   }
 
   const correlationId = getCorrelationId(c.req.raw);
-  const agentUrl = new URL(c.req.url);
-  agentUrl.pathname = `/agent${agentUrl.pathname === '/' ? '' : agentUrl.pathname}`;
-  const response = await app.fetch(new Request(agentUrl.toString(), c.req.raw), c.env, c.executionCtx);
   const routedUrl = new URL(c.req.url);
   routedUrl.pathname = `${routePrefix}${routedUrl.pathname === '/' ? '' : routedUrl.pathname}`;
   const response = await app.fetch(
@@ -418,28 +415,6 @@ v1.get('/leads', (c) => c.json({ leads: [] }));
 app.route('/v1', v1);
 
 export { app, isAllowedOrigin, isPreviewOrigin, isPublicPath, parseAllowedOrigins };
-
-const processQueueMessage = async (message: Message<any>, env: Env): Promise<void> => {
-  const body = message.body;
-  const type = typeof body === 'object' && body && 'type' in body ? String((body as { type?: unknown }).type) : 'unknown';
-  if (type === 'contact' || type === 'checkout') {
-    console.info({ event: 'mail_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
-    message.ack();
-    return;
-  }
-  if (type === 'trading' || type === 'trading-signal' || type === 'order') {
-    console.info({ event: 'trading_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
-    message.ack();
-    return;
-  }
-  if (type === 'signal' || type === 'atc') {
-    console.info({ event: 'core_signal_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
-    message.ack();
-    return;
-  }
-  console.info({ event: 'agent_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
-  message.ack();
-};
 
 const processQueueMessage = async (message: Message<any>, env: Env): Promise<void> => {
   const body = message.body;
