@@ -1,8 +1,15 @@
-import { describe, it, mock } from "node:test";
-import assert from "node:assert";
-import { Hono } from "hono";
-import integrations from "./integrations";
-import { Env, Variables } from "../types";
+import { describe, it, mock, beforeEach, afterEach } from 'node:test';
+import assert from 'node:assert/strict';
+import { Hono } from 'hono';
+import integrations from './integrations';
+import type { Env, Variables } from '../types';
+
+const mockKV = {
+  put: mock.fn(async () => {}),
+  get: mock.fn(async () => null),
+  delete: mock.fn(async () => {}),
+  list: mock.fn(async () => ({ keys: [] })),
+};
 
 const createTestApp = (claims: any = null) => {
   const app = new Hono<{ Bindings: Env; Variables: Variables }>();
@@ -23,16 +30,41 @@ const createTestApp = (claims: any = null) => {
   return { app, mockKV };
 };
 
-describe("Integration Management API Security", () => {
-  it("POST /integrations requires integration management permission before KV mutation", async () => {
-    const { app, mockKV } = createTestApp({ roles: ["viewer"] });
-    const res = await app.request("/integrations", {
-      method: "POST",
-      body: JSON.stringify({
-        action: "delete",
-        config: { name: "facebook-pixel" },
-      }),
-      headers: { "Content-Type": "application/json" },
+describe('Integration management API security', () => {
+  beforeEach(() => {
+    mockKV.put.mock.resetCalls();
+    mockKV.get.mock.resetCalls();
+    mockKV.delete.mock.resetCalls();
+    mockKV.list.mock.resetCalls();
+  });
+
+  afterEach(() => {
+    mock.restoreAll();
+  });
+
+  it('serves integration lists in gs-api without proxying back to admin', async () => {
+    const fetchMock = mock.method(globalThis, 'fetch', async () => {
+      throw new Error('gs-api integrations route must not proxy to admin');
+    });
+    const app = createTestApp({ roles: ['admin'], email: 'admin@example.com' });
+
+    const res = await app.request('/integrations?action=list', { method: 'GET' });
+    const body = await res.json() as { success: boolean; data: { totalIntegrations: number } };
+
+    assert.equal(res.status, 200);
+    assert.equal(body.success, true);
+    assert.equal(body.data.totalIntegrations, 0);
+    assert.equal(mockKV.list.mock.callCount(), 1);
+    assert.equal(fetchMock.mock.callCount(), 0);
+  });
+
+  it('rejects integration mutations without integration management permission', async () => {
+    const app = createTestApp({ roles: ['viewer'], email: 'viewer@example.com' });
+
+    const res = await app.request('/integrations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', config: { name: 'facebook' } }),
     });
 
     assert.strictEqual(res.status, 403);
