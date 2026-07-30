@@ -53,4 +53,3 @@ export const GET: APIRoute = async ({ request, locals }) => {
 
   return Response.json({ subscribers: rows });
 };
-

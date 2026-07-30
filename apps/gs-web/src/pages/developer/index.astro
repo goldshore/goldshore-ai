@@ -2,6 +2,33 @@
 import MarketingLayout from '../../layouts/MarketingLayout.astro';
 
 export const prerender = false;
+
+const cards = [
+  {
+    title: 'Documentation',
+    body: 'Read the API, gateway, and worker notes that back the platform.',
+    href: '/developer/docs',
+    cta: 'Open docs',
+  },
+  {
+    title: 'Private MCP Access',
+    body: 'Learn how the GoldShore MCP surface stays locked to approved identities and service paths.',
+    href: '/developer/mcp',
+    cta: 'View MCP access',
+  },
+  {
+    title: 'System Status',
+    body: 'Check the current state of the public site and operational services.',
+    href: '/status',
+    cta: 'Open status',
+  },
+  {
+    title: 'Admin Dashboard',
+    body: 'Enter the operator workspace for internal reviews, submissions, and controls.',
+    href: 'https://admin.goldshore.ai/lead-submissions',
+    cta: 'Go to admin',
+  },
+];
 ---
 
 <MarketingLayout
