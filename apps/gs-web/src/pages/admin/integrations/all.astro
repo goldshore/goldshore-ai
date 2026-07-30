@@ -112,7 +112,6 @@ const apiBase = (import.meta.env.PUBLIC_API || 'https://api.goldshore.ai').repla
     const page = document.querySelector('.integrations-page');
     const apiBase = page?.dataset.apiBase || 'https://api.goldshore.ai';
     const endpoint = (path) => `${apiBase}${path}`;
-
     document.addEventListener('DOMContentLoaded', async () => {
       const loadIntegrations = async () => {
         const loadingEl = document.getElementById('integrations-loading');

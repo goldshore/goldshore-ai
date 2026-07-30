@@ -1,8 +1,9 @@
-import { describe, it, mock } from "node:test";
-import assert from "node:assert";
-import { Hono } from "hono";
-import integrations from "./integrations";
-import { Env, Variables } from "../types";
+import { describe, it, mock, beforeEach, afterEach } from 'node:test';
+import assert from 'node:assert/strict';
+import { Hono } from 'hono';
+
+import integrations from './integrations';
+import type { Env, Variables } from '../types';
 
 const createTestApp = (claims: any = null) => {
   const app = new Hono<{ Bindings: Env; Variables: Variables }>();
@@ -13,39 +14,71 @@ const createTestApp = (claims: any = null) => {
     delete: mock.fn(async () => {}),
   };
 
-  app.use("*", async (c, next) => {
-    c.set("accessClaims", claims);
+  app.use('*', async (c, next) => {
+    c.set('accessClaims', claims);
     c.env = { KV: mockKV } as any;
     await next();
   });
 
-  app.route("/integrations", integrations);
+  app.route('/integrations', integrations);
   return { app, mockKV };
 };
 
-describe("Integration Management API Security", () => {
-  it("POST /integrations requires integration management permission before KV mutation", async () => {
-    const { app, mockKV } = createTestApp({ roles: ["viewer"] });
-    const res = await app.request("/integrations", {
-      method: "POST",
-      body: JSON.stringify({
-        action: "delete",
-        config: { name: "facebook-pixel" },
-      }),
-      headers: { "Content-Type": "application/json" },
-    });
-
-    assert.strictEqual(res.status, 403);
-    assert.strictEqual(mockKV.delete.mock.callCount(), 0);
-    assert.strictEqual(mockKV.put.mock.callCount(), 1, "only audit denial should be written");
+describe('Integration Management API security', () => {
+  beforeEach(() => {
+    mock.restoreAll();
   });
 
-  it("GET /integrations?action=sync requires integration management permission before registry load", async () => {
-    const { app, mockKV } = createTestApp({ roles: ["viewer"] });
-    const res = await app.request("/integrations?action=sync");
+  afterEach(() => {
+    mock.restoreAll();
+  });
 
-    assert.strictEqual(res.status, 403);
-    assert.strictEqual(mockKV.list.mock.callCount(), 0);
-    assert.strictEqual(mockKV.put.mock.callCount(), 1, "only audit denial should be written");
+  it('loads the integration route', () => {
+    assert.ok(integrations);
+  });
+
+  it('serves integration list requests locally without proxying', async () => {
+    const fetchMock = mock.method(globalThis, 'fetch', async () => {
+      throw new Error('integration route must not proxy list requests');
+    });
+
+    try {
+      const { app } = createTestApp({ roles: ['viewer'], email: 'viewer@example.com' });
+      const res = await app.request('/integrations?action=list');
+      const body = await res.json() as { success: boolean; data?: { totalIntegrations?: number } };
+
+      assert.equal(res.status, 200);
+      assert.equal(body.success, true);
+      assert.equal(fetchMock.mock.callCount(), 0);
+    } finally {
+      fetchMock.mock.restore();
+    }
+  });
+
+  it('rejects integration mutations without integration management permission', async () => {
+    const { app, mockKV } = createTestApp({ roles: ['viewer'], email: 'viewer@example.com' });
+
+    const res = await app.request('/integrations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'delete',
+        config: { name: 'facebook-pixel' },
+      }),
+    });
+
+    assert.equal(res.status, 403);
+    assert.equal(mockKV.delete.mock.callCount(), 0);
+    assert.equal(mockKV.put.mock.callCount(), 1);
+  });
+
+  it('rejects sync requests without integration management permission', async () => {
+    const { app, mockKV } = createTestApp({ roles: ['viewer'], email: 'viewer@example.com' });
+
+    const res = await app.request('/integrations?action=sync');
+
+    assert.equal(res.status, 403);
+    assert.equal(mockKV.list.mock.callCount(), 0);
+    assert.equal(mockKV.put.mock.callCount(), 1);
   });
 });
