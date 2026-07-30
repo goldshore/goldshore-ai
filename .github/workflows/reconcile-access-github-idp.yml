@@ -71,7 +71,7 @@ jobs:
             name:"GoldShore Admin",
             type:"self_hosted",
             domain:"admin.goldshore.ai",
-            self_hosted_domains:["admin.goldshore.ai","admin.goldshore.org","admin-preview.goldshore.ai","admin.gs-admin.pages.dev"],
+            self_hosted_domains:["admin.goldshore.ai","admin.goldshore.org","admin-preview.goldshore.ai","admin-preview.goldshore.org"],
             session_duration:"24h",
             http_only_cookie_attribute:true,
             auto_redirect_to_identity:false,

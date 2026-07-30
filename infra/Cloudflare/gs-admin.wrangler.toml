@@ -31,9 +31,3 @@ compatibility_date = "2026-04-18"
 
 [env.prod]
 # Production bindings for Pages Functions
-
-
-# Route boundary: admin worker must own only admin hostnames
-routes = [
-  { pattern = "admin.goldshore.ai/*", zone_name = "goldshore.ai" }
-]

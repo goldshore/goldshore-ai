@@ -92,6 +92,10 @@ body.gs-home main > section > * {
   max-width: 100%;
 }
 
+body.gs-home main > section[id] {
+  scroll-margin-top: calc(var(--gs-header-height) + 1rem);
+}
+
 body.gs-home code {
   max-width: 100%;
   overflow-x: auto;

@@ -2,6 +2,8 @@ import type { MiddlewareHandler } from 'astro';
 import { verifyAccessWithClaims } from '@goldshore/auth';
 import { HTML_CONTENT_SECURITY_POLICY } from './security/policy';
 import {
+  authorizeAdminRequest,
+  getAdminRouteRule,
   getAdminHostRewritePath,
   isAdminHost,
   isStaticAssetPath,

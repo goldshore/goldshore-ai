@@ -9,7 +9,6 @@ export type Env = {
   TELEMETRY_DB?: D1Database;
   GS_ASSETS: R2Bucket;
   RISK_RADAR_R2?: R2Bucket;
-  AUTH_SESSION?: DurableObjectNamespace;
   AI: Ai;
   INTEGRATION_MASTER_KEY?: string;
   JOBS_QUEUE?: Queue;
@@ -91,7 +90,7 @@ export type Env = {
   GOLDCLAW_SANDBOX_API_URL?: string;
   GOLDCLAW_SANDBOX_API_TOKEN?: string;
   GOLDCLAW_SANDBOX_PROVIDER?: string;
-  OAUTH_TOKEN_ENCRYPTION_KEY?: string; 
+  OAUTH_TOKEN_ENCRYPTION_KEY?: string;
 };
 
 export type Variables = {
