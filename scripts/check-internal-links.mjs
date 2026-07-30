@@ -6,6 +6,7 @@ const DEFAULT_DIST_DIR = 'apps/gs-web/dist';
 const DEFAULT_ROUTES = ['/developer', '/apps/risk-radar', '/', '/platform', '/risk-radar', '/services', '/about', '/contact'];
 
 const baseDistDir = path.resolve(process.env.DIST_DIR ?? DEFAULT_DIST_DIR);
+const serverEntryFile = path.join(baseDistDir, 'server', 'entry.mjs');
 // Cloudflare Pages adapter v13+ outputs pre-rendered pages to dist/client/
 const clientDistDir = path.join(baseDistDir, 'client');
 const distDir = await access(clientDistDir).then(() => clientDistDir, () => baseDistDir);
@@ -86,14 +87,31 @@ const exists = async (filePath) => {
   }
 };
 
+const normalizeManifestRoute = (pathname) => {
+  if (!pathname || pathname === '/') {
+    return '/';
+  }
+
+  return pathname.replace(/\/+$/, '');
+};
+
 const failures = [];
+const serverEntry = await exists(serverEntryFile) ? await readFile(serverEntryFile, 'utf8') : '';
+
+const hasServerRoute = (route) => {
+  const normalizedRoute = normalizeManifestRoute(route);
+  const escapedRoute = normalizedRoute.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`["']?route["']?\\s*:\\s*["']${escapedRoute}["']`).test(serverEntry);
+};
 
 for (const sourceRoute of routes) {
   const sourcePath = sourceRoute.startsWith('/') ? sourceRoute : `/${sourceRoute}`;
   const sourceFile = distFileFromPath(sourcePath);
 
   if (!(await exists(sourceFile))) {
-    failures.push(`${sourcePath}: source page missing (${sourceFile})`);
+    if (!hasServerRoute(sourcePath)) {
+      failures.push(`${sourcePath}: source route missing from static output and server manifest`);
+    }
     continue;
   }
 
@@ -134,6 +152,9 @@ for (const sourceRoute of routes) {
 
     const targetFile = distFileFromPath(targetPathname);
     if (!(await exists(targetFile))) {
+      if (hasServerRoute(targetPathname)) {
+        continue;
+      }
       failures.push(`${sourcePath}: ${href} -> missing page ${targetPathname}`);
       continue;
     }

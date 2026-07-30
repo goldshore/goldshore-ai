@@ -40,7 +40,9 @@ const CLEAN_ADMIN_PAGE_PREFIXES = [
   '/integrations',
   '/lead-submissions',
   '/monetization',
+  '/products',
   '/search-console',
+  '/services',
   '/workers',
 ];
 
@@ -184,12 +186,26 @@ export const getAdminRouteRule = (
     normalizedPath === '/admin/monetization' ||
     normalizedPath === '/api/admin/monetization/adsense' ||
     normalizedPath === '/admin/search-console' ||
-    normalizedPath === '/api/admin/search-console'
+    normalizedPath === '/api/admin/search-console' ||
+    normalizedPath === '/admin/products' ||
+    normalizedPath.startsWith('/admin/products/')
   ) {
     return {
       canonicalPath: normalizedPath,
       kind: normalizedPath.startsWith('/api/') ? 'api' : 'page',
       permission: normalizedPath.startsWith('/admin/deploy') ? 'system:write' : 'system:read',
+      requiresAdminRole: true,
+    };
+  }
+
+  if (
+    normalizedPath === '/api/admin/products' ||
+    normalizedPath === '/api/admin/settings'
+  ) {
+    return {
+      canonicalPath: normalizedPath,
+      kind: 'api',
+      permission: permissionForMethod(method, 'system:read', 'system:write'),
       requiresAdminRole: true,
     };
   }
