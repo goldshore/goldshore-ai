@@ -7,11 +7,6 @@ import {
 } from '@goldshore/auth';
 import { parseJson } from '@goldshore/utils';
 
-/**
- * Admin UI form configuration item endpoint.
- * Requires `forms:read` for GET and `forms:write` for PUT/PATCH.
- */
-
 export const prerender = false;
 
 const normalizeRow = (row: Record<string, string>) => ({
@@ -74,11 +69,10 @@ const requirePermission = async (
   return { response: null };
 };
 
-export const GET: APIRoute = async ({ request, locals, params }) => {
-  const env = locals.runtime?.env as Env | undefined;
-  const slug = params.slug;
+const proxy = async (request: Request, env: Env | undefined, slug?: string) => {
+  if (!slug) return new Response('Form slug is required.', { status: 400 });
 
-  if (!env?.DB) {
+  if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
   }
 
@@ -87,11 +81,7 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
     return auth.response;
   }
 
-  if (!slug) {
-    return new Response('Form slug is required.', { status: 400 });
-  }
-
-  const result = await env.DB.prepare(
+  const result = await env.PLATFORM_DB.prepare(
     `SELECT id, slug, name, status, fields, recipients, integrations, created_at, updated_at
      FROM form_configs
      WHERE slug = ?
@@ -112,7 +102,9 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
   const env = locals.runtime?.env as Env | undefined;
   const slug = params.slug;
 
-  if (!env?.DB) {
+  if (!slug) return new Response('Form slug is required.', { status: 400 });
+
+  if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
   }
 
@@ -125,10 +117,6 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     return auth.response;
   }
 
-  if (!slug) {
-    return new Response('Form slug is required.', { status: 400 });
-  }
-
   const payload = (await request.json()) as {
     name?: string;
     status?: string;
@@ -137,7 +125,7 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     integrations?: Record<string, unknown>[];
   };
 
-  const existing = await env.DB.prepare(
+  const existing = await env.PLATFORM_DB.prepare(
     `SELECT id, slug, name, status, fields, recipients, integrations, created_at, updated_at
      FROM form_configs
      WHERE slug = ?
@@ -161,7 +149,7 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
 
   const now = new Date().toISOString();
 
-  await env.DB.prepare(
+  await env.PLATFORM_DB.prepare(
     `UPDATE form_configs
      SET name = ?, status = ?, fields = ?, recipients = ?, integrations = ?, updated_at = ?
      WHERE slug = ?`
@@ -190,11 +178,8 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
       updatedAt: now,
     },
   });
+
 };
 
+export const GET: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
 export const PATCH = PUT;
-
-export const __testing = {
-  isSameOriginRequest,
-  requirePermission,
-};
