@@ -113,9 +113,14 @@ queue = "gs-mail-dead-letter"
 [env.prod]
 routes = [
   { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "api.goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "mail.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "ops.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "trading.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "dashboard.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "dash.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "gw.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" }
+  { pattern = "api.goldshore.org/*", zone_name = "goldshore.org" }
 ]
 
 [env.prod.vars]
@@ -205,7 +210,6 @@ CLOUDFLARE_ACCESS_AUDIENCE = "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29
 # Sentinel: Team domain for Cloudflare Access (e.g., goldshore.cloudflareaccess.com).
 # Used to fetch JWKS for token verification.
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-CONTROL_SYNC_TOKEN = "__PROD_CONTROL_SYNC_TOKEN__"
 
 # RISK_RADAR_R2: same situation as RISK_RADAR_CACHE above — pointed at the
 # live "risk-radar-raw" bucket (risk-radar repo) rather than the undeployed
@@ -327,7 +331,13 @@ secret_name = "INTEGRATION_MASTER_KEY"
 [env.preview]
 workers_dev = true
 routes = [
-  { pattern = "api-preview.goldshore.ai/*", zone_name = "goldshore.ai" }
+  { pattern = "api-preview.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "mail.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "ops.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "trading.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "dashboard.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "dash.goldshore.ai/*", zone_name = "goldshore.ai" }
 ]
 
 [env.preview.vars]
