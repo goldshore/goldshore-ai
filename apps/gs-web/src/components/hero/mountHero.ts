@@ -38,6 +38,7 @@ export const mountHero = (root: ParentNode = document) => {
     canvas.height = Math.round(H * dpr);
     canvas.style.width  = `${W}px`;
     canvas.style.height = `${H}px`;
+    canvas.style.willChange = 'transform';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   };
 
@@ -131,15 +132,15 @@ export const mountHero = (root: ParentNode = document) => {
 
     if (mark) {
       mark.style.transform =
-        `translate(${(nx * 16).toFixed(2)}px, ${(ny * 12 + sy * -0.20).toFixed(2)}px)`;
+        `translate3d(${(nx * 16).toFixed(2)}px, ${(ny * 12 + sy * -0.20).toFixed(2)}px, 0)`;
     }
     if (copy) {
       copy.style.transform =
-        `translate(${(nx * 5).toFixed(2)}px, ${(ny * 3 + sy * -0.07).toFixed(2)}px)`;
+        `translate3d(${(nx * 5).toFixed(2)}px, ${(ny * 3 + sy * -0.07).toFixed(2)}px, 0)`;
     }
     if (gridEl) {
       gridEl.style.transform =
-        `translate(${(nx * -5).toFixed(2)}px, ${(sy * 0.06).toFixed(2)}px)`;
+        `translate3d(${(nx * -5).toFixed(2)}px, ${(sy * 0.06).toFixed(2)}px, 0)`;
     }
 
     canvas.style.transform = `

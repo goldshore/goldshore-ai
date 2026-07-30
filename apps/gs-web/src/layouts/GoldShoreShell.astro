@@ -152,13 +152,18 @@ const isCurrent = (href: string) => {
     </script>
 
     <style is:global>
+      .gs-page-content > * {
+        scroll-margin-top: calc(var(--gs-header-height) + 1rem);
+      }
+
       .topbar {
         position: sticky;
         top: 0;
         z-index: 100;
+        --gs-header-height: 72px;
         padding: 1rem clamp(1rem, 3vw, 2rem);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         background: rgba(6, 6, 10, 0.88);
         border-bottom: 1px solid rgba(255, 255, 255, 0.06);
       }
@@ -169,7 +174,7 @@ const isCurrent = (href: string) => {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 2rem;
+        gap: clamp(1rem, 2vw, 2rem);
       }
 
       .brand-text {
@@ -197,11 +202,15 @@ const isCurrent = (href: string) => {
       .main-nav {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: clamp(0.75rem, 1.5vw, 1.5rem);
         flex: 1;
       }
 
       .main-nav a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
         padding: 0.6rem 0.85rem;
         border-radius: 6px;
         color: var(--gs-text-dim);
@@ -216,6 +225,10 @@ const isCurrent = (href: string) => {
       }
 
       .nav-login {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
         padding: 0.72rem 1rem;
         border-radius: 6px;
         border: 1px solid rgba(255, 255, 255, 0.18);
@@ -231,6 +244,10 @@ const isCurrent = (href: string) => {
       }
 
       .nav-cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
         padding: 0.82rem 1.2rem;
         border-radius: 6px;
         background: linear-gradient(135deg, rgba(220, 120, 60, 0.8), rgba(200, 100, 50, 0.8));
@@ -336,7 +353,7 @@ const isCurrent = (href: string) => {
       .footer-columns {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 2rem;
+        gap: 1.5rem 2rem;
       }
 
       .footer-column h3 {
@@ -353,6 +370,10 @@ const isCurrent = (href: string) => {
       }
 
       .footer-column a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        min-width: 44px;
         color: var(--gs-text-dim);
         text-decoration: none;
         font-size: 0.85rem;
