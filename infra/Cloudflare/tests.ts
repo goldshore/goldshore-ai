@@ -3,7 +3,7 @@ const ACCESS_PROTECTED_HOSTS = new Set([
   'admin.goldshore.ai',
   'admin.goldshore.org',
   'admin-preview.goldshore.ai',
-  'gs-admin.pages.dev',
+  'admin-preview.goldshore.org',
   'mcp.goldshore.ai',
   'ops.goldshore.ai',
   'trading.goldshore.ai',

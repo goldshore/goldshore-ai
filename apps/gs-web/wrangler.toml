@@ -26,7 +26,7 @@ routes = [
   { pattern = "goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
   { pattern = "admin.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "admin.goldshore.org/*", zone_name = "goldshore.org" }
+  { pattern = "admin.goldshore.org/*", zone_name = "goldshore.org" },
 ]
 
 [[env.prod.kv_namespaces]]
@@ -65,7 +65,8 @@ MAILCHANNELS_SENDER_NAME = "GoldShore"
 
 [env.preview]
 routes = [
-  { pattern = "preview.goldshore.ai", custom_domain = true }
+  { pattern = "preview.goldshore.ai", custom_domain = true },
+  { pattern = "admin-preview.goldshore.ai", custom_domain = true },
 ]
 
 [[env.preview.kv_namespaces]]

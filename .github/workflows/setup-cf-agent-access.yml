@@ -847,10 +847,10 @@ jobs:
           # ------------------------------------------------------------------
 
           upsert_full_access "Dashboard"       "goldshore.ai/app"
-          # GoldShore Admin: .ai canonical + .org alias + admin-preview (Gate 5a)
-          # + admin.gs-admin.pages.dev (Pages custom preview host)
+          # GoldShore Admin: .ai canonical + .org alias + preview admin hosts
+          # on the canonical gs-web Worker surface (Gate 5a).
           upsert_full_access "GoldShore Admin"   "admin.goldshore.ai" \
-            '["admin.goldshore.org","admin-preview.goldshore.ai","admin.gs-admin.pages.dev"]'
+            '["admin.goldshore.org","admin-preview.goldshore.ai","admin-preview.goldshore.org"]'
           # GoldShore Trading: canonical + dashboard/dash aliases (Gate 5b)
           upsert_full_access "GoldShore-Trading-ZT" "trading.goldshore.ai" \
             '["dashboard.goldshore.ai","dash.goldshore.ai"]' "" \

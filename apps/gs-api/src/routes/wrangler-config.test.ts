@@ -129,10 +129,12 @@ describe('gs-api wrangler env bindings', () => {
     );
   });
 
-  it('keeps web and migrated admin hosts separate from API hosts', () => {
+  it('keeps web and admin hosts on the canonical gs-web Worker', () => {
     assert.deepEqual(routePatterns(environmentBlock(webWranglerToml, 'prod')), [
       'goldshore.ai/*',
       'goldshore.org/*',
+      'admin.goldshore.ai/*',
+      'admin.goldshore.org/*',
     ]);
   });
 
