@@ -78,10 +78,6 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
   const env = locals.runtime?.env as AccessEnv | undefined;
   const slug = params.slug;
 
-  if (!slug) {
-    return new Response('Form slug is required.', { status: 400 });
-  }
-
   if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
   }
@@ -91,11 +87,15 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
     return auth.response;
   }
 
+  if (!slug) {
+    return new Response('Form slug is required.', { status: 400 });
+  }
+
   const result = await env.PLATFORM_DB.prepare(
     `SELECT id, slug, name, status, fields, recipients, integrations, created_at, updated_at
      FROM form_configs
      WHERE slug = ?
-     LIMIT 1`,
+     LIMIT 1`
   )
     .bind(slug)
     .all();
@@ -112,10 +112,6 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
   const env = locals.runtime?.env as AccessEnv | undefined;
   const slug = params.slug;
 
-  if (!slug) {
-    return new Response('Form slug is required.', { status: 400 });
-  }
-
   if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
   }
@@ -127,6 +123,10 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
   const auth = await requirePermission(request, env, 'forms:write');
   if (auth.response) {
     return auth.response;
+  }
+
+  if (!slug) {
+    return new Response('Form slug is required.', { status: 400 });
   }
 
   const payload = (await request.json()) as {
@@ -141,7 +141,7 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     `SELECT id, slug, name, status, fields, recipients, integrations, created_at, updated_at
      FROM form_configs
      WHERE slug = ?
-     LIMIT 1`,
+     LIMIT 1`
   )
     .bind(slug)
     .all();
@@ -164,7 +164,7 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
   await env.PLATFORM_DB.prepare(
     `UPDATE form_configs
      SET name = ?, status = ?, fields = ?, recipients = ?, integrations = ?, updated_at = ?
-     WHERE slug = ?`,
+     WHERE slug = ?`
   )
     .bind(
       updated.name,
@@ -173,7 +173,7 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
       JSON.stringify(updated.recipients),
       JSON.stringify(updated.integrations),
       now,
-      slug,
+      slug
     )
     .run();
 
@@ -193,3 +193,8 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
 };
 
 export const PATCH = PUT;
+
+export const __testing = {
+  isSameOriginRequest,
+  requirePermission,
+};

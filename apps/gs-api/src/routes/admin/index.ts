@@ -1,6 +1,9 @@
 import { Hono } from 'hono';
 import { buildAdminSession } from '@goldshore/auth';
 import { Env, Variables } from '../../types';
+import { searchGitHubFrameworks } from '../../lib/github-framework-search';
+import { rankFrameworksWithClaude } from '../../lib/claude-framework-ranker';
+import { validateWranglerConfig } from '../../lib/wrangler-validator';
 
 const deploy = new Hono<{
   Bindings: Env;
@@ -30,28 +33,48 @@ deploy.post('/search', async (c) => {
     return c.json({ error: 'Query is required.' }, 400);
   }
 
+  const githubToken = c.env.GITHUB_API_TOKEN as string | undefined;
+  const claudeToken = c.env.ANTHROPIC_API_KEY as string | undefined;
+
+  if (!githubToken) {
+    return c.json({ error: 'GitHub API token not configured.' }, 500);
+  }
+
+  if (!claudeToken) {
+    return c.json({ error: 'Claude API key not configured.' }, 500);
+  }
+
   return c.newResponse(
     new ReadableStream({
       async start(controller) {
         try {
-          const frameworks = [
-            {
-              name: `${query}-auth`,
-              description: `Authentication framework for Cloudflare Workers (${query})`,
-              repo: `example-org/${query}-auth`,
-              securityScore: 9,
-              cloudflareScore: 9,
-            },
-            {
-              name: `${query}-routing`,
-              description: `Routing solution for Cloudflare Workers (${query})`,
-              repo: `example-org/${query}-routing`,
-              securityScore: 8,
-              cloudflareScore: 9,
-            },
-          ];
+          controller.enqueue(
+            new TextEncoder().encode(
+              `data: ${JSON.stringify({ status: 'Searching GitHub for ${query} frameworks...' })}\n`
+            )
+          );
 
-          for (const framework of frameworks) {
+          const frameworks = await searchGitHubFrameworks(query, githubToken);
+
+          if (frameworks.length === 0) {
+            controller.enqueue(
+              new TextEncoder().encode(
+                `data: ${JSON.stringify({ error: 'No Cloudflare Worker frameworks found matching your query.' })}\n`
+              )
+            );
+            controller.close();
+            return;
+          }
+
+          controller.enqueue(
+            new TextEncoder().encode(
+              `data: ${JSON.stringify({ status: `Found ${frameworks.length} frameworks. Ranking with Claude...` })}\n`
+            )
+          );
+
+          const rankedFrameworks = await rankFrameworksWithClaude(frameworks, claudeToken, query);
+
+          for (const framework of rankedFrameworks) {
             controller.enqueue(
               new TextEncoder().encode(
                 `data: ${JSON.stringify({ recommendation: framework })}\n`
@@ -62,7 +85,13 @@ deploy.post('/search', async (c) => {
 
           controller.close();
         } catch (error) {
-          controller.error(error);
+          const message = error instanceof Error ? error.message : String(error);
+          controller.enqueue(
+            new TextEncoder().encode(
+              `data: ${JSON.stringify({ error: `Search failed: ${message}` })}\n`
+            )
+          );
+          controller.close();
         }
       },
     }),
@@ -100,73 +129,114 @@ deploy.post('/dry-run', async (c) => {
     return c.json({ error: 'Framework and repo are required.' }, 400);
   }
 
+  const githubToken = c.env.GITHUB_API_TOKEN as string | undefined;
+  if (!githubToken) {
+    return c.json({ error: 'GitHub API token not configured.' }, 500);
+  }
+
   return c.newResponse(
     new ReadableStream({
       async start(controller) {
         try {
           controller.enqueue(
             new TextEncoder().encode(
-              `⛅️ wrangler 4.114.0\n────────────────────\n`
+              `⛅️ Cloudflare Workers Deployment Validator\n────────────────────────────────────────\n`
             )
           );
 
           controller.enqueue(
-            new TextEncoder().encode(
-              `📦 Framework: ${framework}\n`
-            )
+            new TextEncoder().encode(`📦 Framework: ${framework}\n`)
           );
 
           controller.enqueue(
-            new TextEncoder().encode(
-              `📍 Repository: ${repo}\n`
-            )
-          );
-
-          await new Promise(resolve => setTimeout(resolve, 200));
-
-          controller.enqueue(
-            new TextEncoder().encode(
-              `✓ Checking wrangler.toml...\n`
-            )
-          );
-
-          await new Promise(resolve => setTimeout(resolve, 200));
-
-          controller.enqueue(
-            new TextEncoder().encode(
-              `✓ Validating bindings...\n`
-            )
+            new TextEncoder().encode(`📍 Repository: ${repo}\n\n`)
           );
 
           controller.enqueue(
-            new TextEncoder().encode(
-              `✓ Checking routes...\n`
-            )
+            new TextEncoder().encode(`🔍 Validating wrangler.toml...\n`)
           );
 
-          await new Promise(resolve => setTimeout(resolve, 200));
+          const validation = await validateWranglerConfig(repo, githubToken);
+
+          if (validation.errors.length > 0) {
+            controller.enqueue(
+              new TextEncoder().encode(`\n❌ Validation errors:\n`)
+            );
+            for (const error of validation.errors) {
+              controller.enqueue(
+                new TextEncoder().encode(`  - ${error}\n`)
+              );
+            }
+            controller.enqueue(
+              new TextEncoder().encode(`\n✗ Dry-run validation failed\n`)
+            );
+            controller.close();
+            return;
+          }
 
           controller.enqueue(
-            new TextEncoder().encode(
-              `\nTotal Upload: 1024 KiB / gzip: 256 KiB\n`
-            )
+            new TextEncoder().encode(`✓ wrangler.toml valid\n`)
           );
 
-          controller.enqueue(
-            new TextEncoder().encode(
-              `--dry-run: exiting now.\n`
-            )
-          );
+          if (validation.bindings.length > 0) {
+            controller.enqueue(
+              new TextEncoder().encode(`✓ Cloudflare bindings detected:\n`)
+            );
+            for (const binding of validation.bindings) {
+              controller.enqueue(
+                new TextEncoder().encode(`  - ${binding}\n`)
+              );
+            }
+          }
+
+          if (validation.routes.length > 0) {
+            controller.enqueue(
+              new TextEncoder().encode(`✓ Routes configured:\n`)
+            );
+            for (const route of validation.routes.slice(0, 5)) {
+              controller.enqueue(
+                new TextEncoder().encode(`  - ${route}\n`)
+              );
+            }
+            if (validation.routes.length > 5) {
+              controller.enqueue(
+                new TextEncoder().encode(
+                  `  ... and ${validation.routes.length - 5} more\n`
+                )
+              );
+            }
+          }
+
+          if (validation.environments.length > 0) {
+            controller.enqueue(
+              new TextEncoder().encode(`✓ Environments: ${validation.environments.join(', ')}\n`)
+            );
+          }
+
+          if (validation.warnings.length > 0) {
+            controller.enqueue(
+              new TextEncoder().encode(`\n⚠️  Warnings:\n`)
+            );
+            for (const warning of validation.warnings) {
+              controller.enqueue(
+                new TextEncoder().encode(`  - ${warning}\n`)
+              );
+            }
+          }
 
           controller.enqueue(
-            new TextEncoder().encode(
-              `\n✅ Dry-run validation passed\n`
-            )
+            new TextEncoder().encode(`\n✅ Dry-run validation passed\n`)
           );
 
           controller.close();
         } catch (error) {
-          controller.error(error);
+          const message = error instanceof Error ? error.message : String(error);
+          controller.enqueue(
+            new TextEncoder().encode(
+              `\n❌ Validation error: ${message}\n`
+            )
+          );
+          controller.close();
         }
       },
     }),

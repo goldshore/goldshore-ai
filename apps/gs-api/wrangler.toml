@@ -142,6 +142,16 @@ MAILCHANNELS_SENDER_NAME = "GoldShore"
 # submission to D1; it just reports mail as not attempted
 # (reason: "missing_mail_configuration") instead of failing the request.
 
+# GITHUB_API_TOKEN is a secret for Phase 2 Admin Deployment Assistant.
+#   wrangler secret put GITHUB_API_TOKEN --env prod --name gs-api
+#   Value: <personal access token with public_repo scope>
+# Required for searching GitHub repositories and validating wrangler.toml files.
+
+# ANTHROPIC_API_KEY is a secret for Phase 2 Admin Deployment Assistant Claude ranking.
+#   wrangler secret put ANTHROPIC_API_KEY --env prod --name gs-api
+#   Value: <Anthropic API key>
+# Required for AI-powered framework ranking and recommendations.
+
 # ── KV ───────────────────────────────────────────────────────────────────────
 [[env.prod.kv_namespaces]]
 binding = "KV"
@@ -309,8 +319,11 @@ CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
 PUBLIC_SITE_URL = "https://preview.goldshore.ai"
 MAILCHANNELS_SENDER_NAME = "GoldShore"
 
-# ── KV ───────────────────────────────────────────────────────────────────────
+# ── Secrets ──────────────────────────────────────────────────────────────────
 # MAILCHANNELS_SENDER_EMAIL secret — see env.prod above for the command;
+# use --env preview --name gs-api instead.
+
+# GITHUB_API_TOKEN and ANTHROPIC_API_KEY secrets — see env.prod above;
 # use --env preview --name gs-api instead.
 
 # ── KV ────────────────────────────────────────────────────────────────────────────
