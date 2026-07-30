@@ -25,6 +25,10 @@ const createTestApp = (claims: any = null) => {
 };
 
 describe('Integration management API security', () => {
+  it('loads the integration route and registry dependency', () => {
+    assert.ok(integrations);
+  });
+
   it('rejects integration mutations without integration management permission', async () => {
     const app = createTestApp({ roles: ['viewer'], email: 'viewer@example.com' });
 
