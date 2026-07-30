@@ -3,6 +3,8 @@ import { buildAdminSession, type AdminPermission } from '@goldshore/auth/rbac.ts
 import { verifyAccessWithClaims, type Env as AccessEnv } from '@goldshore/auth/verify.ts';
 import { parseJson } from '@goldshore/utils';
 
+type Env = AccessEnv;
+
 export const prerender = false;
 
 const normalizeRow = (row: Record<string, string>) => ({
