@@ -90,7 +90,7 @@ export type Env = {
   GOLDCLAW_SANDBOX_API_URL?: string;
   GOLDCLAW_SANDBOX_API_TOKEN?: string;
   GOLDCLAW_SANDBOX_PROVIDER?: string;
-  OAUTH_TOKEN_ENCRYPTION_KEY?: string; 
+  OAUTH_TOKEN_ENCRYPTION_KEY?: string;
 };
 
 export type Variables = {
