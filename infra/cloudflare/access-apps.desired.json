@@ -15,10 +15,15 @@
   "applications": [
     {
       "name": "Gold Shore Labs Admin",
-      "canonicalService": "gs-web",
-      "domains": ["admin.goldshore.org/*", "admin.goldshore.ai/*"],
+      "canonicalService": "gs-web-prod",
+      "domains": [
+        "admin.goldshore.org/*",
+        "admin.goldshore.ai/*",
+        "admin-preview.goldshore.ai/*",
+        "admin-preview.goldshore.org/*"
+      ],
       "type": "self_hosted",
-      "notes": "Intentional gs-web Worker routes own these hosts. Cloudflare Access authenticates requests before Astro middleware maps clean admin-host URLs into the existing admin route tree."
+      "notes": "Cloudflare Access authenticates the admin hostnames before they reach the gs-web Worker surface. Keep the admin hosts on the canonical Worker route tree so host-level rewrites can mount the protected admin dashboard."
     },
     {
       "name": "Gold Shore Labs API",

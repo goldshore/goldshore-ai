@@ -199,8 +199,6 @@ export const getAdminRouteRule = (
   }
 
   if (
-    normalizedPath === '/admin' || normalizedPath.startsWith('/admin/')
-  ) {
     normalizedPath === '/api/admin/products' ||
     normalizedPath === '/api/admin/settings'
   ) {
@@ -260,6 +258,18 @@ export const getAdminRouteRule = (
 export const getCanonicalAdminUrl = (pathname: string) => {
   const normalizedPath = normalizePathname(pathname);
   return new URL(normalizedPath, CANONICAL_ADMIN_ORIGIN).toString();
+};
+
+export const getAdminLoginDestination = (requested?: string) => {
+  switch (requested) {
+    case 'org':
+      return ALTERNATE_ADMIN_DASHBOARD_URL;
+    case 'dashboard':
+    case 'admin':
+    case 'ai':
+    default:
+      return CANONICAL_ADMIN_DASHBOARD_URL;
+  }
 };
 
 export const authorizeAdminRequest = async (

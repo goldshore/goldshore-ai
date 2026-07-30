@@ -9,7 +9,6 @@ export type Env = {
   TELEMETRY_DB?: D1Database;
   GS_ASSETS: R2Bucket;
   RISK_RADAR_R2?: R2Bucket;
-  AUTH_SESSION?: DurableObjectNamespace;
   AI: Ai;
   INTEGRATION_MASTER_KEY?: string;
   JOBS_QUEUE?: Queue;
@@ -40,6 +39,13 @@ export type Env = {
   API_VERSION?: string;
   DEPLOY_SHA?: string;
   GIT_SHA?: string;
+  CONTROL_ADMIN_ROLES?: string;
+  MAIL_FORWARD_TO?: string;
+  FORWARD_TO?: string;
+  MAIL_BLOCKED_SENDERS?: string;
+  MAIL_ALLOWED_RECIPIENTS?: string;
+  AGENT?: Fetcher;
+  API_ORIGIN?: string;
   CONTROL_ADMIN_ROLES?: string;
   CLOUDFLARE_API_TOKEN?: string;
   GITHUB_TOKEN?: string;
