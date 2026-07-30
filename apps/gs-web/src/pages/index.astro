@@ -1,5 +1,9 @@
 ---
 import '../styles/home-theme.css';
+import {
+  ALTERNATE_ADMIN_ORIGIN,
+  CANONICAL_ADMIN_ORIGIN,
+} from '../utils/admin-access';
 
 export const prerender = true;
 
@@ -150,7 +154,7 @@ const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Aut
         <div>
           <h3>{title}<span>↗</span></h3>
           <p>{body}</p>
-          <div class="tags">{tags.map((tag) => <b>{tag}</b>)}</div>
+          <div class="tags">{(Array.isArray(tags) ? tags : [tags]).map((tag) => <b>{tag}</b>)}</div>
         </div>
       </article>
     ))}
@@ -357,12 +361,12 @@ export async function verifyAccess(req, env) {
     <h2 id="access-modal-title">Access Goldshore</h2>
     <p class="modal-lead">Select a destination to continue.</p>
     <div class="modal-grid">
-      <a href="https://admin.goldshore.ai" class="modal-card" rel="noopener noreferrer" target="_blank" data-admin-access-link>
+      <a href={CANONICAL_ADMIN_ORIGIN} class="modal-card" data-admin-access-link>
         <span class="modal-icon">⬡</span>
         <strong>Admin</strong>
         <span>Operator dashboard</span>
       </a>
-      <a href="https://admin.goldshore.org" class="modal-card" rel="noopener noreferrer" target="_blank" data-admin-alternate-link>
+      <a href={ALTERNATE_ADMIN_ORIGIN} class="modal-card" data-admin-alternate-link>
         <span class="modal-icon">◈</span>
         <strong data-admin-alternate-title>Admin .org</strong>
         <span data-admin-alternate-copy>Protected organisation alias</span>
@@ -381,6 +385,22 @@ export async function verifyAccess(req, env) {
     <p class="modal-contact">Need access? <a href="/contact/">Contact us →</a></p>
   </div>
 </dialog>
+
+<section
+  class="section-block gs-shell-section contact-cta"
+  aria-labelledby="contact-cta-title"
+>
+  <div>
+    <p class="gs-eyebrow">Contact</p>
+    <h2 id="contact-cta-title">
+      Ready to operationalize AI with trust, control, and signal clarity?
+    </h2>
+  </div>
+  <a href="/contact" class="hero-button hero-button--primary">
+    Start a conversation
+  </a>
+</section>
+
 <script is:inline>
 /* ── Critical interactivity (runs immediately after DOM parse) ─────────────────────── */
 
@@ -404,9 +424,44 @@ navToggle?.addEventListener('click', () => {
 
 /* Access modal */
 const accessModal = document.getElementById('access-modal');
-document.getElementById('open-access-modal')?.addEventListener('click', () => accessModal?.showModal());
-document.querySelector('.modal-close')?.addEventListener('click', () => accessModal?.close());
-accessModal?.addEventListener('click', e => { if (e.target === accessModal) accessModal.close(); });
+const bodyScrollState = { count: 0, overflow: '' };
+const lockBodyScroll = () => {
+  if (bodyScrollState.count === 0) {
+    bodyScrollState.overflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+  }
+  bodyScrollState.count += 1;
+};
+const unlockBodyScroll = () => {
+  if (bodyScrollState.count === 0) return;
+  bodyScrollState.count -= 1;
+  if (bodyScrollState.count === 0) {
+    document.body.style.overflow = bodyScrollState.overflow;
+    bodyScrollState.overflow = '';
+  }
+};
+const openAccessModal = () => {
+  if (!(accessModal instanceof HTMLDialogElement)) return;
+  lockBodyScroll();
+  if (typeof accessModal.showModal === 'function') {
+    accessModal.showModal();
+  } else {
+    accessModal.setAttribute('open', 'true');
+  }
+};
+const closeAccessModal = () => {
+  if (!(accessModal instanceof HTMLDialogElement)) return;
+  if (accessModal.open) {
+    accessModal.close();
+    return;
+  }
+  accessModal.removeAttribute('open');
+  unlockBodyScroll();
+};
+document.getElementById('open-access-modal')?.addEventListener('click', openAccessModal);
+document.querySelector('.modal-close')?.addEventListener('click', closeAccessModal);
+accessModal?.addEventListener('click', e => { if (e.target === accessModal) closeAccessModal(); });
+accessModal?.addEventListener('close', unlockBodyScroll);
 
 /* ── Host-aware admin links ────────────────────────────────────────────────────────────────────── */
 const adminHost = window.location.hostname.endsWith('goldshore.org') ? 'admin.goldshore.org' : 'admin.goldshore.ai';

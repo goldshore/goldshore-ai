@@ -1,19 +1,17 @@
 ---
 import {
-  ALTERNATE_ADMIN_DASHBOARD_URL,
   ALTERNATE_ADMIN_ORIGIN,
-  CANONICAL_ADMIN_DASHBOARD_URL,
   CANONICAL_ADMIN_ORIGIN,
 } from '../utils/admin-access';
 
 const requested = Astro.url.searchParams.get('to') ?? 'dashboard';
 const destinations: Record<string, string> = {
-  dashboard: CANONICAL_ADMIN_DASHBOARD_URL,
-  admin: CANONICAL_ADMIN_DASHBOARD_URL,
-  org: ALTERNATE_ADMIN_DASHBOARD_URL,
-  ai: CANONICAL_ADMIN_DASHBOARD_URL,
+  dashboard: CANONICAL_ADMIN_ORIGIN,
+  admin: CANONICAL_ADMIN_ORIGIN,
+  org: ALTERNATE_ADMIN_ORIGIN,
+  ai: CANONICAL_ADMIN_ORIGIN,
 };
-const destination = destinations[requested] ?? destinations.dashboard;
+const destination = destinations[requested] ?? CANONICAL_ADMIN_ORIGIN;
 ---
 
 <!doctype html>
@@ -33,7 +31,7 @@ const destination = destinations[requested] ?? destinations.dashboard;
       <p>Cloudflare Access will verify your identity before loading the dashboard.</p>
       <a href={destination}>Continue with Cloudflare Access</a>
       <nav aria-label="Admin destinations">
-        <a href={CANONICAL_ADMIN_DASHBOARD_URL}>Dashboard</a>
+        <a href={CANONICAL_ADMIN_ORIGIN}>Dashboard</a>
         <a href={CANONICAL_ADMIN_ORIGIN}>Admin AI</a>
         <a href={ALTERNATE_ADMIN_ORIGIN}>Admin Org</a>
       </nav>
