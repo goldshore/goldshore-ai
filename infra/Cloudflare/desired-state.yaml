@@ -171,6 +171,8 @@ cloudflare:
           - "/media/*"
           - "/pages/*"
           - "/ai/*"
+          - "/goldclaw/*"
+          - "/v1/goldclaw/*"
         public_paths:
           - "/"
           - "/health"
@@ -201,6 +203,8 @@ cloudflare:
           - "/media/*"
           - "/pages/*"
           - "/ai/*"
+          - "/goldclaw/*"
+          - "/v1/goldclaw/*"
         public_paths:
           - "/"
           - "/health"
