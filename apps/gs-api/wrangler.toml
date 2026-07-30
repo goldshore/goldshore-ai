@@ -375,6 +375,13 @@ binding = "JOBS_DB"
 database_name = "gs_jobs_db"
 database_id = "750c469c-788d-49e8-9254-77231cffd70f"
 
+# ── D1 Paper Trading Database ────────────────────────────────────────────────
+# PAPER_DB: see top-level default-env comment above.
+[[env.preview.d1_databases]]
+binding = "PAPER_DB"
+database_name = "goldshore-paper-trading"
+database_id = "af94f483-b98b-41c5-aa23-3fbed2764b52"
+
 # ── AI ───────────────────────────────────────────────────────────────────────
 [env.preview.ai]
 binding = "AI"
