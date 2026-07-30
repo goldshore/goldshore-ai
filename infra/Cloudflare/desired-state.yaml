@@ -6,6 +6,18 @@ cloudflare:
 
   dns:
     records:
+      # A. Web App (gs-web)
+      # No DNS record previously existed for the apex at all -- it is not a
+      # Workers Custom Domain (verified via the account-level Custom Domains
+      # API: goldshore.ai apex is absent from that list, unlike
+      # preview.goldshore.ai/core.goldshore.ai/agent.goldshore.ai/
+      # signals.goldshore.ai which are real Custom Domains). The zone-level
+      # Worker Route (goldshore.ai/* -> gs-web-prod) had nothing to activate
+      # it, so the hostname didn't resolve at all -- same failure mode as
+      # api.goldshore.ai above. Content points at the real live worker
+      # (gs-web-prod), and the admin hostnames are routed through the same
+      # gs-web Worker so the host-level rewrite middleware can mount the
+      # authenticated admin tree consistently in prod and preview.
       # A. Web app and browser-facing aliases.
       - name: "goldshore.ai"
         type: CNAME
@@ -33,6 +45,21 @@ cloudflare:
         content: "gs-www-redirect-prod.goldshore.workers.dev"
         proxied: true
         zone: goldshore.org
+
+      # B. Admin (mounted Worker app)
+      # Keep admin hostnames on the canonical gs-web Worker so host-level
+      # rewrite middleware can serve the protected /app dashboard and admin
+      # sub-routes without a separate legacy Pages surface.
+      - name: "admin"
+        type: CNAME
+        content: "gs-web-prod.goldshore.workers.dev"
+        proxied: true
+        zone: goldshore.ai
+      - name: "admin-preview"
+        type: CNAME
+        content: "gs-web-preview.goldshore.workers.dev"
+        proxied: true
+      - name: "admin"
       - name: "risk.goldshore.org"
         type: CNAME
         content: "gs-web-prod.goldshore.workers.dev"
@@ -158,7 +185,7 @@ cloudflare:
           - "admin.goldshore.ai"
           - "admin.goldshore.org"
           - "admin-preview.goldshore.ai"
-          - "admin.gs-admin.pages.dev"
+          - "admin-preview.goldshore.org"
         action: "allow"
         rules:
           include:
@@ -339,8 +366,9 @@ cloudflare:
             - "email_otp"
 
   pages:
-    # Production moved from Pages to Workers with Assets. Keep this explicit so
-    # automation does not recreate the retired gs-web/gs-admin Pages projects.
+    # Production moved from Pages to Workers with Assets for the web app.
+    # Keep this explicit so automation does not recreate the retired gs-web
+    # Pages project or drift the admin workspace away from its Pages boundary.
     projects: []
 
   workers:
@@ -378,7 +406,6 @@ cloudflare:
           - pattern: "goldshore.ai/*"
           - pattern: "goldshore.org/*"
           - pattern: "admin.goldshore.ai/*"
-          - pattern: "admin-preview.goldshore.ai/*"
           - pattern: "admin.goldshore.org/*"
           - pattern: "preview.goldshore.ai/*"
           - pattern: "risk.goldshore.ai/*"
