@@ -1,8 +1,7 @@
 import { Hono } from "hono";
-import { getIntegrationRegistry, INTEGRATION_DEFINITIONS } from "../lib/IntegrationRegistry";
+import { getIntegrationRegistry, INTEGRATION_DEFINITIONS } from "@goldshore/integrations";
 import { Env, Variables } from "../types";
-import { requirePermission, getActor } from "../auth";
-import { buildAdminSession, hasAdminPermission } from "@goldshore/auth";
+import { requirePermission } from "../auth";
 import integrationKeys from "./integration-keys";
 import whatsappCommands from "./whatsapp-commands";
 import oauth from "./oauth";
@@ -37,9 +36,9 @@ integrations.get("/", async (c) => {
       }
 
       case "sync": {
-        const session = buildAdminSession(c.get("accessClaims"));
-        if (!hasAdminPermission(session.permissions, "system:integrations:manage")) {
-          return c.json({ error: "Forbidden" }, 403);
+        const permission = await requirePermission("system:integrations:manage")(c, async () => undefined);
+        if (permission instanceof Response) {
+          return permission;
         }
         const results = await registry.syncAll();
         return c.json({ success: true, data: results });

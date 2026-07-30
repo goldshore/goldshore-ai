@@ -25,6 +25,16 @@ const createTestApp = (claims: any = null) => {
 };
 
 describe('Integration management API security', () => {
+
+
+  it('rejects integration sync without integration management permission', async () => {
+    const app = createTestApp({ roles: ['viewer'], email: 'viewer@example.com' });
+
+    const res = await app.request('/integrations?action=sync');
+
+    assert.equal(res.status, 403);
+  });
+
   it('rejects integration mutations without integration management permission', async () => {
     const app = createTestApp({ roles: ['viewer'], email: 'viewer@example.com' });
 
