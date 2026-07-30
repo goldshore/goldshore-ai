@@ -31,6 +31,30 @@ const createTestApp = (claims: any = null) => {
 };
 
 describe('Integration management API security', () => {
+  it('serves integration list requests as the terminal implementation without proxying to admin', async () => {
+    const fetchMock = mock.method(globalThis, 'fetch', async () => {
+      throw new Error('integration route must not proxy list requests');
+    });
+
+    try {
+      const app = createTestApp({ roles: ['viewer'], email: 'viewer@example.com' });
+
+      const res = await app.request('/integrations?action=list');
+      const body = await res.json();
+
+      assert.equal(res.status, 200);
+      assert.equal(body.success, true);
+      assert.deepEqual(body.data, {
+        totalIntegrations: 0,
+        connected: 0,
+        disconnected: 0,
+        errors: 0,
+        integrations: {},
+      });
+      assert.equal(fetchMock.mock.callCount(), 0);
+    } finally {
+      fetchMock.mock.restore();
+    }
   beforeEach(() => {
     mockKV.put.mock.resetCalls();
     mockKV.get.mock.resetCalls();
@@ -65,6 +89,16 @@ describe('Integration management API security', () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'delete', config: { name: 'facebook' } }),
+describe("Integration Management API Security", () => {
+  it("POST /integrations requires integration management permission before KV mutation", async () => {
+    const { app, mockKV } = createTestApp({ roles: ["viewer"] });
+    const res = await app.request("/integrations", {
+      method: "POST",
+      body: JSON.stringify({
+        action: "delete",
+        config: { name: "facebook-pixel" },
+      }),
+      headers: { "Content-Type": "application/json" },
     });
 
     assert.strictEqual(res.status, 403);
