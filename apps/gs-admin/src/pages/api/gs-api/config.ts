@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { normalizeApiRuntimeConfig } from '@goldshore/schema';
 import { requireAdminAccess } from '../../../lib/access';
-import { getGsApiBaseUrl, buildGsApiHeaders } from '../../../lib/gs-api';
+import { fetchGsApi } from '../../../lib/gs-api';
 import { getServerEnv } from '../../../lib/server-env';
 
 const buildErrorResponse = (status: number, message: string) =>
@@ -18,9 +18,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
     return buildErrorResponse(access.status, access.error ?? 'Unknown error');
   }
 
-  const response = await fetch(`${getGsApiBaseUrl(env as any)}/system/config`, {
-    headers: buildGsApiHeaders(env)
-  });
+  const response = await fetchGsApi(env, '/system/config');
 
   const payload = await response.json().catch(() => null);
 
@@ -46,9 +44,8 @@ export const PUT: APIRoute = async ({ request, locals }) => {
     return buildErrorResponse(400, 'Invalid configuration payload.');
   }
 
-  const response = await fetch(`${getGsApiBaseUrl(env as any)}/system/config`, {
+  const response = await fetchGsApi(env, '/system/config', {
     method: 'PUT',
-    headers: buildGsApiHeaders(env),
     body: JSON.stringify(body)
   });
 

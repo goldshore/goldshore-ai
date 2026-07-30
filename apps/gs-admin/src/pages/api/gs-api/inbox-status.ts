@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { requireAdminAccess } from '../../../lib/access';
-import { getGsApiBaseUrl, buildGsApiHeaders } from '../../../lib/gs-api';
+import { fetchGsApi } from '../../../lib/gs-api';
 import { getServerEnv } from '../../../lib/server-env';
 
 export const GET: APIRoute = async ({ request, locals }) => {
@@ -14,9 +14,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
     });
   }
 
-  const response = await fetch(`${getGsApiBaseUrl(env)}/internal/inbox-status`, {
-    headers: buildGsApiHeaders(env)
-  });
+  const response = await fetchGsApi(env, '/internal/inbox-status');
 
   const payload = await response.json().catch(() => null);
 

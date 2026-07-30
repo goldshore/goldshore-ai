@@ -214,9 +214,18 @@ importers:
       '@goldshore/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@goldshore/utils':
+        specifier: workspace:*
+        version: link:../../packages/utils
+      '@hono/zod-validator':
+        specifier: ^0.8.0
+        version: 0.8.0(hono@4.12.25)(zod@4.4.3)
       hono:
         specifier: ^4.12.16
         version: 4.12.25
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^4.20260511.1
@@ -945,6 +954,12 @@ packages:
     peerDependencies:
       hono: '>=3.9.0'
       zod: ^3.19.1
+
+  '@hono/zod-validator@0.8.0':
+    resolution: {integrity: sha512-5uS4S1/LKtZQYvD4BtpPUFkOv8d1wNxHHrChm26buMiEYc1FrHWvDUaKVBwkiVtvSExHSpLGDvcnpI2Copyj9w==}
+    peerDependencies:
+      hono: '>=4.10.0'
+      zod: ^3.25.0 || ^4.0.0
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -4991,6 +5006,11 @@ snapshots:
     dependencies:
       hono: 4.12.25
       zod: 3.25.76
+
+  '@hono/zod-validator@0.8.0(hono@4.12.25)(zod@4.4.3)':
+    dependencies:
+      hono: 4.12.25
+      zod: 4.4.3
 
   '@humanfs/core@0.19.2':
     dependencies:
