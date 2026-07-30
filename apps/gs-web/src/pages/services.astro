@@ -100,10 +100,10 @@ const services = [
       {services.map((service) => (
         <article class="gs-card service-card">
           <h3>{service.name}</h3>
-          <p>{service.detail}</p>
-          {service.bullets ? (
+          <p>{service.overview}</p>
+          {service.scope ? (
             <ul class="gs-text-sm">
-              {service.bullets.map((item) => (
+              {service.scope.map((item) => (
                 <li>{item}</li>
               ))}
             </ul>

@@ -43,6 +43,9 @@ export type Env = {
   GIT_SHA?: string;
   CONTROL_ADMIN_ROLES?: string;
   CLOUDFLARE_API_TOKEN?: string;
+  GITHUB_TOKEN?: string;
+  GITHUB_API_TOKEN?: string;
+  GH_TOKEN?: string;
   CLOUDFLARE_ACCOUNT_ID?: string;
   CLOUDFLARE_ZONE_ID?: string;
   CLOUDFLARE_ZONE_NAME?: string;
@@ -82,9 +85,6 @@ export type Env = {
   GOLDCLAW_SANDBOX_API_TOKEN?: string;
   GOLDCLAW_SANDBOX_PROVIDER?: string;
   OAUTH_TOKEN_ENCRYPTION_KEY?: string;
-  CLOUDFLARE_API_TOKEN?: string;
-  CLOUDFLARE_ACCOUNT_ID?: string;
-  CLOUDFLARE_ZONE_ID?: string;
 };
 
 export type Variables = {

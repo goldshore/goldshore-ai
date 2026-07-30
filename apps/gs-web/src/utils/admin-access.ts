@@ -63,6 +63,11 @@ export type AdminAuthorizationResult =
       error: string;
     };
 
+export type AdminAuthError = {
+  status: 401 | 403 | 503 | 404;
+  message: string;
+};
+
 const normalizePathname = (pathname: string) => {
   if (!pathname || pathname === '/') return '/';
   return pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
@@ -168,6 +173,8 @@ export const getAdminRouteRule = (
   }
 
   if (
+    normalizedPath === '/admin/deploy' ||
+    normalizedPath.startsWith('/admin/deploy/') ||
     normalizedPath === '/admin/api-status' ||
     normalizedPath === '/admin/workers/status' ||
     normalizedPath === '/admin/workers/routes' ||
@@ -182,12 +189,14 @@ export const getAdminRouteRule = (
     return {
       canonicalPath: normalizedPath,
       kind: normalizedPath.startsWith('/api/') ? 'api' : 'page',
-      permission: 'system:read',
+      permission: normalizedPath.startsWith('/admin/deploy') ? 'system:write' : 'system:read',
       requiresAdminRole: true,
     };
   }
 
-  if (normalizedPath === '/admin' || normalizedPath.startsWith('/admin/')) {
+  if (
+    normalizedPath === '/admin' || normalizedPath.startsWith('/admin/')
+  ) {
     return {
       canonicalPath: normalizedPath,
       kind: 'page',
@@ -278,5 +287,16 @@ export const authorizeAdminRequest = async (
     ok: true,
     claims,
     session,
+  };
+};
+
+export const getAdminAuthError = (
+  result: AdminAuthorizationResult | null | undefined,
+): AdminAuthError | null => {
+  if (!result || result.ok) return null;
+  const failure = result as Extract<AdminAuthorizationResult, { ok: false }>;
+  return {
+    status: failure.status,
+    message: failure.error,
   };
 };

@@ -59,7 +59,7 @@ const legalLinks = [
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const form = document.getElementById('email-subscription-form');
-      const emailInput = document.getElementById('subscription-email');
+      const emailInput = document.getElementById('subscription-email') as HTMLInputElement | null;
       const messageEl = document.getElementById('subscription-message');
 
       if (form) {

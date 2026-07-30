@@ -1,0 +1,471 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { authorizeAdminRequest, getAdminAuthError, getAdminRouteRule } from '../../utils/admin-access';
+
+const env = Astro.locals.runtime?.env as Env | undefined;
+const rule = getAdminRouteRule('/admin/deploy', 'GET');
+const apiBase = (env?.PUBLIC_API || 'https://api.goldshore.ai').replace(/\/$/, '');
+
+let authError: { status: number; message: string } | null = null;
+if (!rule) {
+  authError = { status: 404, message: 'Not found.' };
+} else {
+  const authResult = await authorizeAdminRequest(Astro.request, env as never, rule);
+  authError = getAdminAuthError(authResult);
+}
+---
+
+<BaseLayout title="Deploy Assistant | GoldShore Admin" description="Search Cloudflare-native templates, stream ranked recommendations, and stage dry-run deployments.">
+  <section class="gs-section deploy-assistant" data-api-base={apiBase}>
+    <div class="gs-grid columns-2">
+      <div>
+        <h1>Deployment assistant</h1>
+        <p class="gs-text-lg">Search for Cloudflare-native templates, rank them with Claude, run a dry run, then open a reviewable PR.</p>
+      </div>
+      <div class="gs-card">
+        <h2 class="section-title"><span>◆</span>Workflow</h2>
+        <ol class="deploy-flow">
+          <li>Search GitHub + shortlist safe templates</li>
+          <li>Stream ranked recommendations</li>
+          <li>Run `wrangler --dry-run` validation</li>
+          <li>Open a draft PR for human review</li>
+        </ol>
+      </div>
+    </div>
+
+    {authError ? (
+      <div class="gs-card" style="margin-top: 2rem;">
+        <p class="gs-text-lg">{authError.message}</p>
+        {authError.status === 401 && <p class="gs-text-sm">Sign in via Cloudflare Access to continue.</p>}
+      </div>
+    ) : (
+      <>
+        <div class="assistant-grid">
+          <div class="gs-card assistant-panel">
+            <h2 class="section-title"><span>◆</span>Search</h2>
+            <label class="gs-input-group">
+              <span>Template search</span>
+              <input id="assistant-query" type="text" value="Cloudflare-native admin dashboard workspace" />
+            </label>
+            <div class="assistant-toggles">
+              <label><input id="assistant-cloudflare-only" type="checkbox" checked /> Cloudflare-native only</label>
+              <label><input id="assistant-security-only" type="checkbox" checked /> Security-vetted only</label>
+            </div>
+            <div class="assistant-actions">
+              <button class="gs-button" id="assistant-search" type="button">Search GitHub</button>
+              <button class="gs-button gs-button--secondary" id="assistant-stream" type="button">Stream ranking</button>
+            </div>
+            <p id="assistant-summary" class="gs-text-sm gs-text-dim">Run a search to generate recommendations.</p>
+          </div>
+
+          <div class="gs-card assistant-panel">
+            <h2 class="section-title"><span>◆</span>Selected template</h2>
+            <div id="assistant-selected" class="assistant-selected gs-text-dim">No template selected.</div>
+            <div class="assistant-dry-run">
+              <label class="gs-input-group">
+                <span>Workspace</span>
+                <input id="assistant-workspace" type="text" value="apps/gs-web" />
+              </label>
+              <button class="gs-button" id="assistant-dry-run" type="button" disabled>Run dry run</button>
+            </div>
+            <pre id="assistant-dry-run-output" class="assistant-output">Awaiting dry-run input.</pre>
+          </div>
+        </div>
+
+        <div class="gs-card" style="margin-top: 2rem;">
+          <h2 class="section-title"><span>◆</span>Recommendations</h2>
+          <div id="assistant-results" class="assistant-results"></div>
+        </div>
+
+        <div class="gs-card" style="margin-top: 2rem;">
+          <h2 class="section-title"><span>◆</span>PR handoff</h2>
+          <div class="assistant-pr-grid">
+            <label class="gs-input-group">
+              <span>Repository</span>
+              <input id="assistant-repository" type="text" value="marzton/goldshore-ai" />
+            </label>
+            <label class="gs-input-group">
+              <span>Base branch</span>
+              <input id="assistant-base-branch" type="text" value="main" />
+            </label>
+            <label class="gs-input-group">
+              <span>Head branch</span>
+              <input id="assistant-head-branch" type="text" value="codex/admin-deployment-assistant" />
+            </label>
+          </div>
+          <div class="assistant-actions" style="margin-top: 1rem;">
+            <button class="gs-button" id="assistant-create-pr" type="button" disabled>Create draft PR</button>
+          </div>
+          <pre id="assistant-pr-output" class="assistant-output">No PR drafted yet.</pre>
+        </div>
+
+        <div class="gs-card" style="margin-top: 2rem;">
+          <h2 class="section-title"><span>◆</span>Stream log</h2>
+          <pre id="assistant-stream-output" class="assistant-output">No stream received yet.</pre>
+        </div>
+      </>
+    )}
+  </section>
+
+  <script is:inline>
+    const page = document.querySelector('.deploy-assistant');
+    const apiBase = page?.dataset.apiBase || 'https://api.goldshore.ai';
+    const endpoint = (path) => `${apiBase}${path}`;
+
+    const state = {
+      recommendations: [],
+      selected: null,
+      dryRun: null,
+    };
+
+    const setText = (id, text) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = text;
+    };
+
+    const renderSelected = () => {
+      const target = document.getElementById('assistant-selected');
+      const dryRunButton = document.getElementById('assistant-dry-run');
+      const prButton = document.getElementById('assistant-create-pr');
+
+      if (!target) return;
+
+      if (!state.selected) {
+        target.textContent = 'No template selected.';
+        if (dryRunButton) dryRunButton.disabled = true;
+        if (prButton) prButton.disabled = true;
+        return;
+      }
+
+      target.innerHTML = `
+        <strong>${state.selected.name}</strong>
+        <p>${state.selected.summary}</p>
+        <p><code>${state.selected.deploymentModel}</code> | cloudflare-native: ${state.selected.cloudflareNative ? 'yes' : 'no'} | security-vetted: ${state.selected.securityVetted ? 'yes' : 'no'}</p>
+        ${state.selected.docsUrl ? `<p><a href="${state.selected.docsUrl}" target="_blank" rel="noreferrer">Reference</a></p>` : ''}
+      `;
+
+      if (dryRunButton) dryRunButton.disabled = false;
+      if (prButton) prButton.disabled = !state.dryRun;
+    };
+
+    const renderResults = (items) => {
+      const target = document.getElementById('assistant-results');
+      if (!target) return;
+
+      if (!items.length) {
+        target.innerHTML = '<p class="gs-text-dim">No recommendations found.</p>';
+        return;
+      }
+
+      target.innerHTML = items.map((item) => `
+        <article class="assistant-result">
+          <div class="assistant-result__top">
+            <strong>${item.name}</strong>
+            <span>${item.deploymentModel}</span>
+          </div>
+          <p>${item.summary}</p>
+          <div class="assistant-result__meta">
+            <code>${item.source}</code>
+            <code>score ${item.score}</code>
+          </div>
+          <button class="gs-link" type="button" data-select-template="${item.id}">Select</button>
+        </article>
+      `).join('');
+
+      target.querySelectorAll('[data-select-template]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const id = button.getAttribute('data-select-template');
+          state.selected = items.find((item) => item.id === id) || null;
+          state.dryRun = null;
+          setText('assistant-dry-run-output', 'Awaiting dry-run input.');
+          setText('assistant-pr-output', 'No PR drafted yet.');
+          renderSelected();
+        });
+      });
+
+      if (!state.selected && items[0]) {
+        state.selected = items[0];
+        renderSelected();
+      }
+    };
+
+    const loadRecommendations = async () => {
+      const query = document.getElementById('assistant-query')?.value || '';
+      const cloudflareNativeOnly = document.getElementById('assistant-cloudflare-only')?.checked ?? true;
+      const securityOnly = document.getElementById('assistant-security-only')?.checked ?? true;
+      const url = new URL(endpoint('/deployments/assistant/search'));
+      url.searchParams.set('q', query);
+      url.searchParams.set('cloudflareNativeOnly', String(cloudflareNativeOnly));
+      url.searchParams.set('securityOnly', String(securityOnly));
+
+      setText('assistant-summary', 'Searching GitHub and Claude-ranked templates...');
+
+      const response = await fetch(url, {
+        credentials: 'include',
+        headers: { accept: 'application/json' },
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.error || 'Search failed');
+      }
+
+      state.recommendations = payload.data.recommendations || [];
+      state.selected = state.recommendations[0] || null;
+      state.dryRun = null;
+      renderResults(state.recommendations);
+      renderSelected();
+      setText('assistant-summary', payload.data.summary || 'Search complete.');
+    };
+
+    const streamRecommendations = async () => {
+      const query = document.getElementById('assistant-query')?.value || '';
+      const cloudflareNativeOnly = document.getElementById('assistant-cloudflare-only')?.checked ?? true;
+      const securityOnly = document.getElementById('assistant-security-only')?.checked ?? true;
+      const output = document.getElementById('assistant-stream-output');
+      if (output) output.textContent = 'Opening stream...';
+
+      const response = await fetch(endpoint('/deployments/assistant/stream'), {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json', accept: 'text/event-stream' },
+        body: JSON.stringify({ query, cloudflareNativeOnly, securityOnly }),
+      });
+
+      if (!response.ok || !response.body) {
+        throw new Error(`Stream failed with HTTP ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      const append = (line) => {
+        if (output) output.textContent += `\n${line}`;
+      };
+
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        while (buffer.includes('\n\n')) {
+          const chunkEnd = buffer.indexOf('\n\n');
+          const chunk = buffer.slice(0, chunkEnd);
+          buffer = buffer.slice(chunkEnd + 2);
+          const lines = chunk.split('\n');
+          const eventLine = lines.find((line) => line.startsWith('event: '));
+          const dataLine = lines.find((line) => line.startsWith('data: '));
+          if (!eventLine || !dataLine) continue;
+          const event = eventLine.slice(7);
+          const payload = JSON.parse(dataLine.slice(6));
+          if (event === 'recommendation') {
+            append(`Recommendation: ${payload.name} (${payload.deploymentModel})`);
+          } else if (event === 'start') {
+            append(`Started: ${payload.query}`);
+          } else if (event === 'complete') {
+            append(`Summary: ${payload.summary}`);
+          }
+        }
+      }
+    };
+
+    const runDryRun = async () => {
+      if (!state.selected) return;
+      const output = document.getElementById('assistant-dry-run-output');
+      if (output) output.textContent = 'Submitting dry-run request...';
+
+      const response = await fetch(endpoint('/deployments/assistant/dry-run'), {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json', accept: 'application/json' },
+        body: JSON.stringify({
+          templateId: state.selected.id,
+          workspace: document.getElementById('assistant-workspace')?.value || 'apps/gs-web',
+        }),
+      });
+
+      const payload = await response.json();
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.error || 'Dry run failed');
+      }
+
+      state.dryRun = payload.data;
+      if (output) output.textContent = JSON.stringify(payload.data, null, 2);
+      const prButton = document.getElementById('assistant-create-pr');
+      if (prButton) prButton.disabled = false;
+    };
+
+    const createPr = async () => {
+      if (!state.selected || !state.dryRun) return;
+      const output = document.getElementById('assistant-pr-output');
+      if (output) output.textContent = 'Creating draft PR...';
+
+      const response = await fetch(endpoint('/deployments/assistant/pr'), {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json', accept: 'application/json' },
+        body: JSON.stringify({
+          templateId: state.selected.id,
+          repository: document.getElementById('assistant-repository')?.value || 'marzton/goldshore-ai',
+          head: document.getElementById('assistant-head-branch')?.value || 'codex/admin-deployment-assistant',
+          base: document.getElementById('assistant-base-branch')?.value || 'main',
+          query: document.getElementById('assistant-query')?.value || '',
+          dryRunCommand: state.dryRun.plan.command,
+          dryRunPassed: true,
+        }),
+      });
+
+      const payload = await response.json();
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.error || 'PR creation failed');
+      }
+
+      if (output) output.textContent = JSON.stringify(payload, null, 2);
+    };
+
+    document.getElementById('assistant-search')?.addEventListener('click', () => {
+      loadRecommendations().catch((error) => setText('assistant-summary', error.message || 'Search failed'));
+    });
+
+    document.getElementById('assistant-stream')?.addEventListener('click', () => {
+      streamRecommendations().catch((error) => setText('assistant-stream-output', error.message || 'Stream failed'));
+    });
+
+    document.getElementById('assistant-dry-run')?.addEventListener('click', () => {
+      runDryRun().catch((error) => setText('assistant-dry-run-output', error.message || 'Dry run failed'));
+    });
+
+    document.getElementById('assistant-create-pr')?.addEventListener('click', () => {
+      createPr().catch((error) => setText('assistant-pr-output', error.message || 'PR creation failed'));
+    });
+
+    loadRecommendations().catch((error) => setText('assistant-summary', error.message || 'Initial search failed'));
+  </script>
+</BaseLayout>
+
+<style>
+  .deploy-flow {
+    margin: 0;
+    padding-left: 1.2rem;
+    color: #a8adba;
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .assistant-grid,
+  .assistant-pr-grid {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .assistant-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 2rem;
+  }
+
+  .assistant-panel {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .assistant-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .gs-button--secondary {
+    background: transparent;
+    border-color: rgba(245, 243, 236, 0.2);
+    color: #f5f3ec;
+  }
+
+  .assistant-toggles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    color: #a8adba;
+    font-size: 0.9rem;
+  }
+
+  .assistant-selected,
+  .assistant-output {
+    border: 1px solid rgba(245, 243, 236, 0.12);
+    border-radius: 0.9rem;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 1rem;
+  }
+
+  .assistant-output {
+    min-height: 160px;
+    white-space: pre-wrap;
+    overflow-x: auto;
+    margin: 0;
+  }
+
+  .assistant-results {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .assistant-result {
+    border: 1px solid rgba(245, 243, 236, 0.12);
+    border-radius: 0.9rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .assistant-result__top,
+  .assistant-result__meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .assistant-result p {
+    margin: 0;
+    color: #a8adba;
+  }
+
+  .assistant-dry-run {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .gs-input-group {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .gs-input-group span {
+    font-size: 0.85rem;
+    color: #a8adba;
+  }
+
+  .gs-input-group input {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid rgba(245, 243, 236, 0.18);
+    border-radius: 0.75rem;
+    background: rgba(5, 5, 7, 0.8);
+    color: #f5f3ec;
+    padding: 0.75rem 0.9rem;
+  }
+
+  .gs-grid.columns-2 {
+    gap: 1rem;
+  }
+
+  @media (max-width: 980px) {
+    .assistant-grid,
+    .assistant-results {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
