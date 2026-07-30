@@ -68,8 +68,8 @@ const getDocuments = async () => {
   }));
 };
 
-// Routes served via SSR (auth-protected portals, etc.) — not expected to be pre-rendered
-const SSR_PREFIXES = ['/app/', '/admin/'];
+// Routes served via SSR (auth-protected portals, redirect pages, etc.) — not expected to be pre-rendered
+const SSR_PREFIXES = ['/app/', '/admin/', '/login'];
 
 const getExpectedRoutes = async () => {
   const files = await walk(PAGES_DIR);
@@ -136,6 +136,9 @@ const checkRoutesAndLinks = (documents, expectedRoutes) => {
       const resolved = new URL(href, `https://goldshore.local${doc.route.endsWith('/') ? doc.route : `${doc.route}/`}`);
       // Normalize pathname: remove trailing slash (except root '/')
       const normalizedPathname = resolved.pathname === '/' ? '/' : resolved.pathname.replace(/\/$/, '');
+      // SSR-only routes (e.g. Access-gated /admin/*) aren't pre-rendered to dist/,
+      // so they never appear in `documents` even though they're real, working routes.
+      if (SSR_PREFIXES.some((prefix) => `${normalizedPathname}/`.startsWith(prefix))) continue;
       const target = byRoute.get(normalizedPathname);
       if (!target) {
         failures.push(`[links] ${doc.route}: ${href} -> missing route ${normalizedPathname}`);
@@ -224,17 +227,21 @@ const createStaticServer = async (documents) => {
       res.end(html);
       return;
     }
-    // req.url used only as Map key — absPath comes from trusted walk() scan at startup
-    const absPath = byUrlPath.get(pathname);
-    if (!absPath) {
+    // Serve static assets (CSS, JS bundles, fonts, images) from dist directory
+    const distRoot = path.resolve(DIST_DIR);
+    const filePath = path.resolve(distRoot, pathname.replace(/^\/+/, ''));
+    // Guard against path traversal: resolved path must stay inside distRoot
+    const rel = path.relative(distRoot, filePath);
+    if (rel.startsWith('..') || path.isAbsolute(rel)) {
       res.statusCode = 404;
       res.end('Not found');
       return;
     }
     try {
-      const content = await readFile(absPath);
+      const content = await readFile(filePath);
+      const mime = MIME[path.extname(filePath)] || 'application/octet-stream';
       res.statusCode = 200;
-      res.setHeader('content-type', MIME[path.extname(absPath)] || 'application/octet-stream');
+      res.setHeader('content-type', mime);
       res.setHeader('cache-control', 'no-store');
       res.end(content);
     } catch {

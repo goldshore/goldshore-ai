@@ -11,12 +11,22 @@ const integrations = new Hono<{
   Variables: Variables;
 }>();
 
+const requireIntegrationManagement = requirePermission("system:integrations:manage");
+
 /**
  * Integration Management API
  * Terminal endpoint for third-party integration lifecycle: CRUD, sync, status monitoring
  */
 
 // GET /integrations?action=list|definitions|status|sync
+integrations.get("/", async (c, next) => {
+  if ((c.req.query("action") || "list") === "sync") {
+    return requireIntegrationManagement(c, next);
+  }
+
+  await next();
+});
+
 integrations.get("/", async (c) => {
   const action = c.req.query("action") || "list";
   const kv = c.env.KV;
