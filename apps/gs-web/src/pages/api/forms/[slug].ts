@@ -3,6 +3,8 @@ import { buildAdminSession, type AdminPermission } from '@goldshore/auth/rbac.ts
 import { verifyAccessWithClaims, type Env as AccessEnv } from '@goldshore/auth/verify.ts';
 import { parseJson } from '@goldshore/utils';
 
+type Env = AccessEnv;
+
 export const prerender = false;
 
 const apiBase = (env: Env | undefined) =>
@@ -67,9 +69,9 @@ const requirePermission = async (
   return { response: null };
 };
 
-const proxy = async (request: Request, env: Env | undefined, slug?: string) => {
-  if (!slug) return new Response('Form slug is required.', { status: 400 });
-
+export const GET: APIRoute = async ({ request, locals, params }) => {
+  const env = locals.runtime?.env as Env | undefined;
+  const slug = params.slug;
   if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
   }
@@ -191,8 +193,6 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     headers: forwardedHeaders(request),
     body: request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.text(),
   });
-
 };
 
-export const GET: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
 export const PATCH = PUT;

@@ -1,0 +1,266 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { buildAdminSession, verifyAccessWithClaims, type Env as AccessEnv } from '@goldshore/auth';
+
+type Env = AccessEnv;
+
+export const prerender = false;
+
+const { request, locals } = Astro;
+const env = locals.runtime?.env as Env | undefined;
+
+if (!env?.PLATFORM_DB) {
+  return new Response('Storage unavailable.', { status: 503 });
+}
+
+const claims = await verifyAccessWithClaims(request, env);
+if (!claims) {
+  return new Response('Authentication required.', { status: 401 });
+}
+
+const session = buildAdminSession(claims);
+const hasPermission = session.permissions.includes('admin:deploy' as AdminPermission);
+
+if (!hasPermission) {
+  return new Response('Insufficient permissions.', { status: 403 });
+}
+---
+
+<BaseLayout title="Deployment Assistant | GoldShore Admin" description="Search, validate, and deploy safe Cloudflare-native frameworks">
+  <main class="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-8">
+    <div class="max-w-6xl mx-auto">
+      <div class="mb-8">
+        <h1 class="text-4xl font-bold text-white mb-2">Deployment Assistant</h1>
+        <p class="text-slate-300">Search and deploy safe Cloudflare-native frameworks</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Search & Recommendations Panel */}
+        <div class="lg:col-span-2 space-y-6">
+          {/* Search Input */}
+          <div class="bg-slate-800 rounded-lg border border-slate-700 p-6">
+            <label for="framework-search" class="block text-sm font-medium text-white mb-3">
+              Search Frameworks
+            </label>
+            <input
+              id="framework-search"
+              type="text"
+              placeholder="e.g., authentication, database, api routing..."
+              class="w-full px-4 py-2 bg-slate-700 text-white rounded border border-slate-600 focus:border-blue-500 focus:outline-none"
+            />
+            <p class="text-xs text-slate-400 mt-2">Searches GitHub for Cloudflare-compatible frameworks</p>
+          </div>
+
+          {/* Recommendations Stream */}
+          <div class="bg-slate-800 rounded-lg border border-slate-700 p-6">
+            <h2 class="text-lg font-semibold text-white mb-4">Recommendations</h2>
+            <div
+              id="recommendations-container"
+              class="space-y-3 max-h-96 overflow-y-auto"
+            >
+              <div class="text-slate-400 text-sm">
+                Enter a search term to see AI-ranked framework recommendations...
+              </div>
+            </div>
+          </div>
+
+          {/* Dry-run Output */}
+          <div class="bg-slate-800 rounded-lg border border-slate-700 p-6">
+            <h2 class="text-lg font-semibold text-white mb-4">Dry-run Output</h2>
+            <div
+              id="dryrun-output"
+              class="bg-slate-900 rounded p-4 font-mono text-sm text-slate-300 max-h-64 overflow-y-auto"
+            >
+              <div class="text-slate-500">
+                Select a framework to run dry-run deployment...
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Status & PR Panel */}
+        <div class="lg:col-span-1 space-y-6">
+          {/* Status */}
+          <div class="bg-slate-800 rounded-lg border border-slate-700 p-6">
+            <h3 class="text-sm font-semibold text-white mb-3 uppercase">Status</h3>
+            <div id="status-display" class="text-slate-400 text-sm">
+              Ready
+            </div>
+          </div>
+
+          {/* PR Creation */}
+          <div class="bg-slate-800 rounded-lg border border-slate-700 p-6">
+            <h3 class="text-sm font-semibold text-white mb-3 uppercase">Actions</h3>
+            <button
+              id="create-pr-button"
+              disabled
+              class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white rounded font-medium transition"
+            >
+              Create PR
+            </button>
+            <p class="text-xs text-slate-400 mt-2">Opens validated deployment in a PR for review</p>
+          </div>
+
+          {/* Safety Info */}
+          <div class="bg-slate-800 rounded-lg border border-slate-700 p-6">
+            <h3 class="text-sm font-semibold text-white mb-3 uppercase">Safety</h3>
+            <ul class="text-xs text-slate-400 space-y-2">
+              <li>✓ No automatic merge</li>
+              <li>✓ Dry-run validation only</li>
+              <li>✓ Human PR review required</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const searchInput = document.getElementById('framework-search') as HTMLInputElement;
+    const recommendationsContainer = document.getElementById('recommendations-container');
+    const dryrunOutput = document.getElementById('dryrun-output');
+    const statusDisplay = document.getElementById('status-display');
+    const createPrButton = document.getElementById('create-pr-button') as HTMLButtonElement;
+
+    let selectedFramework: string | null = null;
+
+    searchInput?.addEventListener('input', async (e) => {
+      const query = (e.target as HTMLInputElement).value.trim();
+      if (!query) {
+        recommendationsContainer!.innerHTML = '<div class="text-slate-400 text-sm">Enter a search term...</div>';
+        return;
+      }
+
+      statusDisplay!.textContent = 'Searching...';
+      recommendationsContainer!.innerHTML = '<div class="text-slate-400 text-sm animate-pulse">Loading recommendations...</div>';
+
+      try {
+        const response = await fetch('/api/admin/deploy/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query }),
+        });
+
+        if (!response.ok) throw new Error(`Search failed: ${response.statusText}`);
+
+        const reader = response.body?.getReader();
+        if (!reader) throw new Error('No response body');
+
+        const decoder = new TextDecoder();
+        recommendationsContainer!.innerHTML = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n').filter(l => l.trim());
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6));
+                if (data.recommendation) {
+                  const div = document.createElement('div');
+                  div.className = 'bg-slate-700 rounded p-3 cursor-pointer hover:bg-slate-600 transition';
+                  div.innerHTML = `
+                    <div class="font-medium text-white">${data.recommendation.name}</div>
+                    <div class="text-xs text-slate-300 mt-1">${data.recommendation.description}</div>
+                    <div class="text-xs text-blue-400 mt-2">Security: ${data.recommendation.securityScore}/10 | Cloudflare: ${data.recommendation.cloudflareScore}/10</div>
+                  `;
+                  div.addEventListener('click', () => selectFramework(data.recommendation.name, data.recommendation.repo));
+                  recommendationsContainer!.appendChild(div);
+                }
+              } catch (e) {
+                console.error('Parse error:', e);
+              }
+            }
+          }
+        }
+
+        statusDisplay!.textContent = 'Recommendations ready';
+      } catch (error) {
+        statusDisplay!.textContent = `Error: ${error instanceof Error ? error.message : 'Unknown error'}`;
+        recommendationsContainer!.innerHTML = '<div class="text-red-400 text-sm">Failed to load recommendations</div>';
+      }
+    });
+
+    async function selectFramework(name: string, repo: string) {
+      selectedFramework = name;
+      statusDisplay!.textContent = 'Running dry-run...';
+      dryrunOutput!.innerHTML = '<div class="text-slate-500 animate-pulse">Executing wrangler --dry-run...</div>';
+      createPrButton.disabled = false;
+
+      try {
+        const response = await fetch('/api/admin/deploy/dry-run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ framework: name, repo }),
+        });
+
+        if (!response.ok) throw new Error(`Dry-run failed: ${response.statusText}`);
+
+        const reader = response.body?.getReader();
+        if (!reader) throw new Error('No response body');
+
+        const decoder = new TextDecoder();
+        let output = '';
+        dryrunOutput!.innerHTML = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value);
+          output += chunk;
+
+          const pre = document.createElement('pre');
+          pre.textContent = output;
+          pre.className = 'whitespace-pre-wrap text-xs';
+          dryrunOutput!.innerHTML = '';
+          dryrunOutput!.appendChild(pre);
+          dryrunOutput!.scrollTop = dryrunOutput!.scrollHeight;
+        }
+
+        statusDisplay!.textContent = 'Dry-run complete - ready to create PR';
+      } catch (error) {
+        statusDisplay!.textContent = `Dry-run error: ${error instanceof Error ? error.message : 'Unknown'}`;
+        dryrunOutput!.innerHTML = `<div class="text-red-400">Error: ${error instanceof Error ? error.message : 'Unknown error'}</div>`;
+      }
+    }
+
+    createPrButton?.addEventListener('click', async () => {
+      if (!selectedFramework) return;
+
+      statusDisplay!.textContent = 'Creating PR...';
+      createPrButton.disabled = true;
+
+      try {
+        const response = await fetch('/api/admin/deploy/create-pr', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ framework: selectedFramework }),
+        });
+
+        if (!response.ok) throw new Error(`PR creation failed: ${response.statusText}`);
+
+        const data = await response.json();
+        statusDisplay!.textContent = `PR created: #${data.prNumber}`;
+
+        const link = document.createElement('a');
+        link.href = data.prUrl;
+        link.target = '_blank';
+        link.className = 'text-blue-400 hover:underline';
+        link.textContent = 'View on GitHub';
+
+        const div = document.createElement('div');
+        div.className = 'mt-2';
+        div.appendChild(link);
+        statusDisplay!.appendChild(div);
+      } catch (error) {
+        statusDisplay!.textContent = `Error creating PR: ${error instanceof Error ? error.message : 'Unknown'}`;
+        createPrButton.disabled = false;
+      }
+    });
+  </script>
+</BaseLayout>

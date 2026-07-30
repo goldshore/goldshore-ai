@@ -16,20 +16,33 @@ jobs:
         with:
           node-version: 22
 
-      - uses: ./.github/actions/normalize-cf-token
-        id: cf-token
-        with:
-          raw_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          token_name: 'CLOUDFLARE_API_TOKEN'
+      - name: Normalize Cloudflare token
+        env:
+          RAW_CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+        run: |
+          token="$(
+            node <<'NODE'
+          const raw = process.env.RAW_CLOUDFLARE_API_TOKEN || "";
+          let token = raw.replace(/[\r\n]/g, "").trim();
+          const bearer = token.match(/(?:authorization\s*:\s*)?bearer\s+([^\s"',;}]+)/i);
+          if (bearer) token = bearer[1];
+          const cfut = token.match(/cfut_[A-Za-z0-9_-]+/);
+          if (cfut) token = cfut[0];
+          token = token.replace(/^[`'"]+|[`'",;}]+$/g, "").replace(/\s/g, "");
+          process.stdout.write(token);
+          NODE
+          )"
+          test -n "$token" || (echo "Missing required secret: CLOUDFLARE_BUILD_API_TOKEN" && exit 1)
+          echo "::add-mask::$token"
+          echo "CLOUDFLARE_API_TOKEN=$token" >> "$GITHUB_ENV"
+          echo "CLOUDFLARE_BUILD_API_TOKEN=$token" >> "$GITHUB_ENV"
 
       - name: Run DNS setup script
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CF_TOKEN: ${{ steps.cf-token.outputs.token }}
         run: |
-          test -n "$CF_TOKEN" || (echo "Missing required secret: CLOUDFLARE_API_TOKEN" && exit 1)
+          test -n "$CLOUDFLARE_BUILD_API_TOKEN" || (echo "Missing required secret: CLOUDFLARE_BUILD_API_TOKEN" && exit 1)
           test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "Missing required secret: CLOUDFLARE_ACCOUNT_ID" && exit 1)
-          echo "CLOUDFLARE_API_TOKEN=$CF_TOKEN" >> "$GITHUB_ENV"
 
       - name: Configure preview DNS
         env:
