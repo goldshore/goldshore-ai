@@ -180,7 +180,7 @@ bucket_name = "gs-telemetry-storage"
 # "gs-risk-radar-raw" name from BINDINGS_MAP.md.
 [[env.prod.r2_buckets]]
 binding = "RISK_RADAR_R2"
-bucket_name = "gs-risk-radar-raw"
+bucket_name = "risk-radar-raw"
 
 # ── D1 ───────────────────────────────────────────────────────────────────────
 [[env.prod.d1_databases]]
@@ -354,7 +354,7 @@ bucket_name = "gs-telemetry-storage"
 
 [[env.preview.r2_buckets]]
 binding = "RISK_RADAR_R2"
-bucket_name = "gs-risk-radar-raw-preview"
+bucket_name = "risk-radar-raw"
 
 # ── D1 ───────────────────────────────────────────────────────────────────────
 [[env.preview.d1_databases]]
