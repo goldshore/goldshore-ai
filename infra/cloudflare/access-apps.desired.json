@@ -4,7 +4,7 @@
   "brand": {
     "name": "Gold Shore Labs",
     "logoPath": "/logo.svg",
-    "loginPath": "https://admin.goldshore.org/login"
+    "loginPath": "https://admin.goldshore.ai/"
   },
   "defaults": {
     "sessionDuration": "24h",
@@ -15,10 +15,10 @@
   "applications": [
     {
       "name": "Gold Shore Labs Admin",
-      "canonicalService": "gs-admin",
+      "canonicalService": "gs-web",
       "domains": ["admin.goldshore.org/*", "admin.goldshore.ai/*"],
       "type": "self_hosted",
-      "notes": "Pages custom domains own these hosts. Do not add a Worker route that shadows Pages."
+      "notes": "Intentional gs-web Worker routes own these hosts. Cloudflare Access authenticates requests before Astro middleware maps clean admin-host URLs into the existing admin route tree."
     },
     {
       "name": "Gold Shore Labs API",
