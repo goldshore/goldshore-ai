@@ -1,5 +1,12 @@
 module.exports = {
   root: true,
+  ignorePatterns: [
+    '**/dist/**',
+    '**/build/**',
+    '**/.astro/**',
+    '**/.turbo/**',
+    '**/node_modules/**',
+  ],
   env: {
     browser: true,
     es2022: true,

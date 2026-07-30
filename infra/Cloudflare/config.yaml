@@ -5,16 +5,9 @@ projects:
   pages:
     - name: gs-web
       public_url: https://goldshore.ai/
+      smoke_urls:
+        - https://admin.goldshore.ai/
       output_dir: apps/gs-web/dist
-      max_daily_deploys: 6
-      require_checks: ['smoke', 'lighthouse']
-      skip_if_paths_only:
-        - '^docs/.*'
-        - '^scripts/.*'
-        - '^README.md$'
-    - name: gs-admin
-      public_url: https://admin.goldshore.ai/
-      output_dir: apps/gs-admin/dist
       max_daily_deploys: 6
       require_checks: ['smoke', 'lighthouse']
       skip_if_paths_only:
