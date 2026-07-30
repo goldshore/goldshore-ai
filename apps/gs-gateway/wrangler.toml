@@ -30,7 +30,6 @@ routes = []
 # service bindings from gs-api / gs-control. Keeping routes here while gs-api
 # also claims the same patterns causes a Worker route conflict and a failed
 # gs-gateway-prod CF Workers Build.
-routes = []
 
 [env.prod.vars]
 ENV = "production"
