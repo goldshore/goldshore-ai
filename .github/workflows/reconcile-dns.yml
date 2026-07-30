@@ -1,50 +1,60 @@
 name: Reconcile DNS
 
-# Reconciles live Cloudflare DNS records against infra/Cloudflare/desired-state.yaml.
-# Creates missing records and corrects mismatched ones (content/proxied only).
-# Never deletes records -- deletion always requires a human, per
-# infra/Cloudflare/runbooks/DNS_AND_EMAIL.md ("Delete record" requires explicit
-# confirmation).
-#
-# The desired-state file is authoritative for both goldshore.ai and goldshore.org.
-# Each record is reconciled in its declared zone.
-#
-# Run manually: Actions -> Reconcile DNS -> Run workflow. dry_run defaults to true.
-
 on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: 'Show what would change without applying it'
+        description: 'Show intended Cloudflare DNS/route changes without applying them'
         required: false
         default: true
         type: boolean
       harden_tls:
-        description: 'Set Full (strict) and minimum TLS 1.2 on GoldShore/Armsway zones'
+        description: 'Set Full (strict) SSL and minimum TLS 1.2 on GoldShore/Armsway zones'
         required: false
         default: false
         type: boolean
 
 jobs:
-  harden-tls:
-    if: ${{ inputs.harden_tls }}
-    name: Harden zone TLS settings
+  reconcile:
+    name: Reconcile DNS and Worker routes
     runs-on: ubuntu-latest
-    permissions: {}
+    permissions:
+      contents: read
     env:
-      CF_API: https://api.cloudflare.com/client/v4
-      CF_AUTH_EMAIL: ${{ secrets.CF_AUTH_EMAIL }}
-      CF_AUTH_KEY: ${{ secrets.CF_AUTH_KEY }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      DRY_RUN: ${{ inputs.dry_run }}
     steps:
-      - name: Require strict origin validation and TLS 1.2
-        shell: bash
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/normalize-cf-token
+        id: cf-token
+        with:
+          raw_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          token_name: 'CLOUDFLARE_API_TOKEN'
+
+      - name: Verify Cloudflare secrets
+        env:
+          CF_TOKEN: ${{ steps.cf-token.outputs.token }}
+        run: |
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "::error::Missing CLOUDFLARE_ACCOUNT_ID" && exit 1)
+          test -n "$CF_TOKEN" || (echo "::error::Missing CLOUDFLARE_API_TOKEN" && exit 1)
+          echo "CLOUDFLARE_API_TOKEN=$CF_TOKEN" >> "$GITHUB_ENV"
+
+      - name: Reconcile DNS records and Worker routes
+        run: node scripts/setup-preview-dns.mjs
+
+      - name: Harden TLS settings
+        if: ${{ inputs.harden_tls }}
+        env:
+          CF_API: https://api.cloudflare.com/client/v4
         run: |
           set -euo pipefail
-          test -n "$CF_AUTH_EMAIL"
-          test -n "$CF_AUTH_KEY"
-          echo "::add-mask::$CF_AUTH_KEY"
-          auth=(-H "X-Auth-Email: $CF_AUTH_EMAIL" -H "X-Auth-Key: $CF_AUTH_KEY")
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "[dry-run] would harden TLS on goldshore.ai, goldshore.org, and armsway.com"
+            exit 0
+          fi
 
+          auth=(-H "Authorization: Bearer $CLOUDFLARE_API_TOKEN")
           for zone in goldshore.ai goldshore.org armsway.com; do
             zone_id=$(curl -fsS "$CF_API/zones?name=$zone" "${auth[@]}" | jq -r '.result[0].id // empty')
             test -n "$zone_id"
@@ -54,229 +64,3 @@ jobs:
               -H 'Content-Type: application/json' --data '{"value":"1.2"}' >/dev/null
             echo "Hardened TLS: $zone"
           done
-
-          # Bot Fight Mode challenges the admin login before Access can
-          # evaluate the user. Managed WAF, DDoS protection, Access, strict
-          # SSL, and TLS 1.2 remain enabled.
-          for zone in goldshore.ai goldshore.org; do
-            zone_id=$(curl -fsS "$CF_API/zones?name=$zone" "${auth[@]}" | jq -r '.result[0].id // empty')
-            curl -fsS -X PUT "$CF_API/zones/$zone_id/bot_management" "${auth[@]}" \
-              -H 'Content-Type: application/json' --data '{"fight_mode":false}' >/dev/null
-            echo "Disabled Bot Fight Mode: $zone"
-          done
-
-          reconcile_route() {
-            local zone="$1" pattern="$2" script="$3" zone_id routes route_id body
-            zone_id=$(curl -fsS "$CF_API/zones?name=$zone" "${auth[@]}" | jq -r '.result[0].id // empty')
-            routes=$(curl -fsS "$CF_API/zones/$zone_id/workers/routes" "${auth[@]}")
-            route_id=$(jq -r --arg pattern "$pattern" '.result[] | select(.pattern == $pattern) | .id' <<<"$routes")
-            body=$(jq -nc --arg pattern "$pattern" --arg script "$script" '{pattern:$pattern,script:$script}')
-            if [[ -n "$route_id" ]]; then
-              curl -fsS -X PUT "$CF_API/zones/$zone_id/workers/routes/$route_id" "${auth[@]}" \
-                -H 'Content-Type: application/json' --data "$body" >/dev/null
-            else
-              curl -fsS -X POST "$CF_API/zones/$zone_id/workers/routes" "${auth[@]}" \
-                -H 'Content-Type: application/json' --data "$body" >/dev/null
-            fi
-            echo "Reconciled route: $pattern -> $script"
-          }
-
-          reconcile_route goldshore.ai 'goldshore.ai/*' gs-web-prod
-          reconcile_route goldshore.ai 'admin.goldshore.ai/*' gs-web-prod
-          reconcile_route goldshore.ai 'api.goldshore.ai/*' gs-api-prod
-          reconcile_route goldshore.org 'goldshore.org/*' gs-web-prod
-          reconcile_route goldshore.org 'admin.goldshore.org/*' gs-web-prod
-          reconcile_route goldshore.org 'api.goldshore.org/*' gs-api-prod
-
-  reconcile:
-    name: Reconcile DNS records
-    runs-on: ubuntu-latest
-    permissions: {}
-
-    env:
-      CF_API: https://api.cloudflare.com/client/v4
-      # NOTE: policy/ROUTE_POLICY.md and infra/Cloudflare/README.md document
-      # CLOUDFLARE_BUILD_API_TOKEN as the canonical deploy token for this repo,
-      # with CLOUDFLARE_API_TOKEN called out as a legacy secret slated for
-      # removal. Using CLOUDFLARE_API_TOKEN here because that's the one that
-      # currently has Zone:DNS:Edit -- migrate this to CLOUDFLARE_BUILD_API_TOKEN
-      # once that token has the same permission added.
-      CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Extract desired DNS records
-        run: |
-          set -euo pipefail
-          python3 - <<'EOF' > desired_records.json
-          import yaml, json
-
-          with open('infra/Cloudflare/desired-state.yaml') as f:
-              cfg = yaml.safe_load(f)
-
-          out = []
-          for r in cfg['cloudflare']['dns']['records']:
-              name = r['name']
-              zone = r.get('zone', 'goldshore.ai')
-              full_name = zone if name == zone else f"{name}.{zone}"
-              out.append({
-                  'name': name,
-                  'full_name': full_name,
-                  'type': r['type'],
-                  'content': r['content'],
-                  'proxied': r.get('proxied', False),
-                  'zone': zone,
-              })
-
-          print(json.dumps(out))
-          EOF
-          echo "Extracted $(jq 'length' desired_records.json) desired records:"
-          jq -r '.[] | "  \(.full_name) (\(.type)) -> \(.content) [proxied=\(.proxied)]"' desired_records.json
-
-      - name: Verify CF token has Zone DNS scope
-        run: |
-          set -euo pipefail
-          ZID=$(curl -sS "$CF_API/zones?name=goldshore.ai" -H "Authorization: Bearer $CF_TOKEN" | jq -r '.result[0].id // empty')
-          if [ -z "$ZID" ]; then
-            echo "::error::Could not resolve zone id for goldshore.ai -- token may lack Zone:Read, or DNS:Edit was added to a different token than CLOUDFLARE_API_TOKEN."
-            exit 1
-          fi
-          STATUS=$(curl -sS -o /dev/null -w '%{http_code}' "$CF_API/zones/$ZID/dns_records" -H "Authorization: Bearer $CF_TOKEN")
-          if [ "$STATUS" != "200" ]; then
-            echo "::error::CLOUDFLARE_API_TOKEN lacks Zone:DNS permission on goldshore.ai (HTTP $STATUS). Add Zone -> DNS -> Edit at https://dash.cloudflare.com/profile/api-tokens"
-            exit 1
-          fi
-          echo "Zone goldshore.ai ($ZID): DNS scope OK"
-
-      - name: Reconcile records
-        env:
-          DRY_RUN: ${{ inputs.dry_run }}
-        run: |
-          set -euo pipefail
-
-          get_zone_id() {
-            curl -sS "$CF_API/zones?name=$1" -H "Authorization: Bearer $CF_TOKEN" | jq -r '.result[0].id // empty'
-          }
-
-          # preview.goldshore.ai reports as MISSING via a type=CNAME query
-          # despite being live and working today -- it's provisioned through
-          # a real Workers Custom Domain that doesn't show up as a plain
-          # CNAME through this API. Confirmed: Cloudflare rejected a real
-          # CREATE attempt with code 81062 ("A DNS record managed by Workers
-          # already exists on that host"). Skip CREATE rather than let every
-          # run log a false MISSING/warning pair.
-          #
-          # goldshore.ai (apex) and api.goldshore.ai are deliberately NOT in
-          # this list: verified via the raw Cloudflare API that both have
-          # zero DNS records of any kind (no CNAME, no wildcard, no Custom
-          # Domain) despite having a configured Worker Route -- the route had
-          # nothing to activate it and the hostname was down. They need a
-          # real CREATE, not a skip.
-          SKIP_CREATE_HOSTS="preview.goldshore.ai"
-
-          CHANGED=0
-
-          while read -r rec; do
-            FULL_NAME=$(echo "$rec" | jq -r '.full_name')
-            ZONE=$(echo "$rec" | jq -r '.zone')
-            TYPE=$(echo "$rec" | jq -r '.type')
-            CONTENT=$(echo "$rec" | jq -r '.content')
-            PROXIED=$(echo "$rec" | jq -r '.proxied')
-            ZID=$(get_zone_id "$ZONE")
-            if [ -z "$ZID" ]; then
-              echo "::warning::Could not resolve zone id for $ZONE -- skipping $FULL_NAME"
-              continue
-            fi
-
-            LIST_RESP=$(curl -sS -w '\n%{http_code}' \
-              "$CF_API/zones/$ZID/dns_records?name=$FULL_NAME&type=$TYPE" \
-              -H "Authorization: Bearer $CF_TOKEN")
-            LIST_STATUS="${LIST_RESP##*$'\n'}"
-            LIST_BODY="${LIST_RESP%$'\n'*}"
-            if [ "$LIST_STATUS" -lt 200 ] || [ "$LIST_STATUS" -ge 300 ]; then
-              echo "::warning::GET dns_records for $FULL_NAME ($TYPE) failed (HTTP $LIST_STATUS): $LIST_BODY -- skipping"
-              continue
-            fi
-
-            EXISTING_ID=$(echo "$LIST_BODY" | jq -r '.result[0].id // empty')
-            EXISTING_CONTENT=$(echo "$LIST_BODY" | jq -r '.result[0].content // empty')
-            # Cloudflare returns TXT record content wrapped in literal quote
-            # characters; desired-state.yaml stores the unquoted value, so strip
-            # one matching pair before comparing or every TXT record would
-            # misreport as a mismatch even when the value is identical.
-            if [ "$TYPE" = "TXT" ]; then
-              EXISTING_CONTENT="${EXISTING_CONTENT%\"}"
-              EXISTING_CONTENT="${EXISTING_CONTENT#\"}"
-            fi
-            # NOTE: do not use `// empty` for a boolean field -- jq's `//` treats
-            # `false` as falsy and would silently turn a legitimate proxied=false
-            # into "", causing every correctly-unproxied record to misreport as a
-            # mismatch against the string "false".
-            EXISTING_PROXIED=$(echo "$LIST_BODY" | jq -r 'if .result[0].proxied == null then "" else (.result[0].proxied | tostring) end')
-
-            if [ -z "$EXISTING_ID" ]; then
-              echo "MISSING: $FULL_NAME ($TYPE) -> $CONTENT [proxied=$PROXIED]"
-              case " $SKIP_CREATE_HOSTS " in
-                *" $FULL_NAME "*)
-                  echo "  [skip] $FULL_NAME is in SKIP_CREATE_HOSTS -- not auto-creating, verify manually"
-                  continue
-                  ;;
-              esac
-              CHANGED=1
-              if [ "$DRY_RUN" = "true" ]; then
-                echo "  [dry-run] would CREATE"
-                continue
-              fi
-              BODY=$(jq -nc --arg t "$TYPE" --arg n "$FULL_NAME" --arg c "$CONTENT" --argjson p "$PROXIED" \
-                '{type:$t,name:$n,content:$c,proxied:$p,ttl:1}')
-              CREATE_RESP=$(echo "$BODY" | curl -sS -w '\n%{http_code}' -X POST \
-                "$CF_API/zones/$ZID/dns_records" \
-                -H "Authorization: Bearer $CF_TOKEN" \
-                -H "Content-Type: application/json" \
-                --data @-)
-              CREATE_STATUS="${CREATE_RESP##*$'\n'}"
-              CREATE_BODY="${CREATE_RESP%$'\n'*}"
-              if [ "$CREATE_STATUS" -lt 200 ] || [ "$CREATE_STATUS" -ge 300 ]; then
-                echo "::warning::CREATE $FULL_NAME failed (HTTP $CREATE_STATUS): $CREATE_BODY"
-              else
-                echo "  Created $FULL_NAME"
-              fi
-              continue
-            fi
-
-            if [ "$EXISTING_CONTENT" = "$CONTENT" ] && [ "$EXISTING_PROXIED" = "$PROXIED" ]; then
-              echo "OK: $FULL_NAME ($TYPE) already matches desired state"
-              continue
-            fi
-
-            echo "MISMATCH: $FULL_NAME ($TYPE) live=[$EXISTING_CONTENT proxied=$EXISTING_PROXIED] desired=[$CONTENT proxied=$PROXIED]"
-            CHANGED=1
-            if [ "$DRY_RUN" = "true" ]; then
-              echo "  [dry-run] would UPDATE"
-              continue
-            fi
-            BODY=$(jq -nc --arg t "$TYPE" --arg n "$FULL_NAME" --arg c "$CONTENT" --argjson p "$PROXIED" \
-              '{type:$t,name:$n,content:$c,proxied:$p,ttl:1}')
-            UPDATE_RESP=$(echo "$BODY" | curl -sS -w '\n%{http_code}' -X PUT \
-              "$CF_API/zones/$ZID/dns_records/$EXISTING_ID" \
-              -H "Authorization: Bearer $CF_TOKEN" \
-              -H "Content-Type: application/json" \
-              --data @-)
-            UPDATE_STATUS="${UPDATE_RESP##*$'\n'}"
-            UPDATE_BODY="${UPDATE_RESP%$'\n'*}"
-            if [ "$UPDATE_STATUS" -lt 200 ] || [ "$UPDATE_STATUS" -ge 300 ]; then
-              echo "::warning::UPDATE $FULL_NAME failed (HTTP $UPDATE_STATUS): $UPDATE_BODY"
-            else
-              echo "  Updated $FULL_NAME"
-            fi
-          done < <(jq -c '.[]' desired_records.json)
-
-          if [ "$DRY_RUN" = "true" ] && [ "$CHANGED" = "1" ]; then
-            echo ""
-            echo "::notice::Dry run found differences. Re-run with dry_run=false to apply."
-          elif [ "$CHANGED" = "0" ]; then
-            echo ""
-            echo "::notice::All records already match desired state -- nothing to do."
-          fi

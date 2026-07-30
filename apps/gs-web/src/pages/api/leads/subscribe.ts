@@ -55,7 +55,18 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return jsonError(response.status, 'Subscription failed. Please try again.');
   }
 
-  return Response.json({ success: true, message: 'Successfully subscribed!' }, { status: 200 });
+  const result = await response.json<{ status?: string }>().catch(() => ({}));
+  return Response.json(
+    {
+      success: true,
+      status: result.status ?? 'pending_confirmation',
+      message:
+        result.status === 'confirmed'
+          ? 'You are already subscribed.'
+          : 'Check your inbox to confirm your subscription.',
+    },
+    { status: 200 },
+  );
 };
 
 export const GET: APIRoute = async () => jsonError(405, 'Method not allowed.');

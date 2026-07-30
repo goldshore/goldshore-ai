@@ -1,4 +1,7 @@
 import type { APIRoute } from 'astro';
+import { buildAdminSession, type AdminPermission } from '@goldshore/auth/rbac.ts';
+import { verifyAccessWithClaims, type Env as AccessEnv } from '@goldshore/auth/verify.ts';
+import { parseJson } from '@goldshore/utils';
 
 export const prerender = false;
 
@@ -33,7 +36,11 @@ const isSameOriginRequest = (request: Request) => {
   }
 
   const fetchSite = request.headers.get('sec-fetch-site');
-  return fetchSite === 'same-origin' || fetchSite === 'none';
+  if (fetchSite) {
+    return fetchSite === 'same-origin' || fetchSite === 'none';
+  }
+
+  return false;
 };
 
 const unauthorizedResponse = () =>
@@ -60,9 +67,8 @@ const requirePermission = async (
   return { response: null };
 };
 
-export const GET: APIRoute = async ({ request, locals, params }) => {
-  const env = locals.runtime?.env as Env | undefined;
-  const slug = params.slug;
+const proxy = async (request: Request, env: Env | undefined, slug?: string) => {
+  if (!slug) return new Response('Form slug is required.', { status: 400 });
 
   if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
@@ -71,10 +77,6 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
   const auth = await requirePermission(request, env as AccessEnv, 'forms:read');
   if (auth.response) {
     return auth.response;
-  }
-
-  if (!slug) {
-    return new Response('Form slug is required.', { status: 400 });
   }
 
   const result = await env.PLATFORM_DB.prepare(
@@ -107,6 +109,8 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
   const env = locals.runtime?.env as Env | undefined;
   const slug = params.slug;
 
+  if (!slug) return new Response('Form slug is required.', { status: 400 });
+
   if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
   }
@@ -118,10 +122,6 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
   const auth = await requirePermission(request, env as AccessEnv, 'forms:write');
   if (auth.response) {
     return auth.response;
-  }
-
-  if (!slug) {
-    return new Response('Form slug is required.', { status: 400 });
   }
 
   const payload = (await request.json()) as {
@@ -153,6 +153,7 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     recipients: payload.recipients ?? parseJson(row.recipients ?? null, [] as Record<string, unknown>[]),
     integrations: payload.integrations ?? parseJson(row.integrations ?? null, [] as Record<string, unknown>[]),
   };
+
   const now = new Date().toISOString();
 
   await env.PLATFORM_DB.prepare(
@@ -191,18 +192,7 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     body: request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.text(),
   });
 
-  return new Response(response.body, { status: response.status, headers: response.headers });
 };
 
 export const GET: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
-export const PUT: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
-export const PATCH = PUT;
-
-export const __testing = {
-  isSameOriginRequest,
-  requirePermission,
-};
-
-export const GET: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
-export const PUT: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
 export const PATCH = PUT;

@@ -1,392 +1,226 @@
 ---
-import '../styles/home-theme.css';
+import RiskRadar from '../components/RiskRadar.astro';
+import ParallaxHero from '../components/hero/ParallaxHero.astro';
+import WebLayout from '../layouts/WebLayout.astro';
 
 export const prerender = true;
 
-const services  = ['Digital Strategy','AI Implementation','Systems Integration','Design & Development','Enterprise Consulting'];
-const sectors   = ['Financial Services','Operations & Logistics','Media & Communications','Healthcare Systems','Public Sector'];
-const platform  = [['Risk Radar','Live'],['Financial Signals','Live'],['Workflow Engine','Live'],['Sentiment Engine','Beta'],['AI Oracle','Soon']];
-const metrics   = [['Uptime','99.98%','30-day avg'],['Signal Events','4.8B','Per month'],['Latency P99','<45ms','Gateway'],['Deploys','48/d','Verified']];
-const sectorCards = [['Financial Services','Risk · Signals · Trading'],['Operations & Logistics','Workflow · Automation'],['Media & Comms','Content · Analytics'],['Healthcare Systems','Compliance · AI'],['Public Sector','Gov · Infrastructure'],['Enterprise Tech','Dev · Design · Systems']];
-const telemetry = [['Platform Uptime','99.98%','30-day rolling'],['Signal Events/mo','4.8B','Validated telemetry'],['Operator Latency','<45ms','P99 gateway'],['Deploy Cadence','48/day','Verified releases']];
-const capabilities = [
-  ['Risk Intelligence & Financial Signals','Continuous surveillance across positions, portfolios, and market conditions. Anomaly detection, threshold alerting, operator-in-loop review — built for institutions that cannot afford surprises.',['Risk Radar','Sentiment Engine','Market Feeds','Alpaca','Bloomberg']],
-  ['AI Systems & Workflow Automation',"End-to-end workflow design and execution with AI at every node. Queue-backed, auditable, with fallback paths and operator checkpoints. We don't deploy AI that cannot explain itself.",['Gemini','GPT-4','Workflow Engine','Cloudflare AI']],
-  ['Digital Strategy & Systems Consulting','Architecture planning, vendor evaluation, capability mapping — the upstream work that makes everything downstream coherent. Strategy that ships, not slides.',['Strategy','Architecture','Due Diligence','Roadmapping']],
-  ['Design, Development & Product','Full-cycle product and software delivery. Brand identity, design systems, Astro frontends, Cloudflare Workers, React Native — shipped on time, built to last.',['Astro','React Native','CF Workers','Design Systems']],
-  ['Resilient Infrastructure & Observability','Production-grade infrastructure with full observability. Cloudflare Access, D1 databases, KV audit trails, R2 storage — secure by default, traceable at every layer.',['Cloudflare','D1','Hono','JWKS Auth']],
+const signals = [
+  { label: 'System uptime', value: '99.98%' },
+  { label: 'Operator latency', value: '< 45ms' },
+  { label: 'Decision loops', value: 'Human + AI' },
+  { label: 'Review posture', value: 'High trust' },
 ];
-const stackRows = [['gs-gateway','Ingress, CORS, auth, integration routing','Mar 29','Live'],['gs-agent','Autonomous processor, queue consumer','Mar 19','Live'],['gs-api','Core API, data access layer','Mar 22','Live'],['gs-mail','Transactional mail service','Mar 29','Live'],['gs-control','Control plane, operator interface','Mar 22','Live']];
-const anomalies = [['ALGO-DRIFT — Position delta exceeds 3σ','High','00:42'],['SENTIMENT — NVDA neg. velocity +18%','Med','01:14'],['LATENCY — GW P99 at 42ms','Low','02:07'],['CORRELATION — BTC/SPX decoupling','Med','03:55']];
-const tickers   = [['SPY','S&P 500 ETF','521.84','+1.24%'],['NVDA','Nvidia Corp','887.22','+2.87%'],['BTC','Bitcoin','68,420','−0.43%'],['GLD','Gold ETF','2,391','+0.61%'],['TLT','20Y Treasury','93.14','−0.18%'],['VIX','Volatility Idx','13.82','−3.20%']];
-const principles = [['01','Sector-Agnostic, Systems-First',"We don't specialize in one vertical — we specialize in the architecture that makes any vertical work. Finance, operations, media, healthcare: the discipline is identical."],['02','AI as Infrastructure, Not Feature','Intelligence embedded at the routing layer, not bolted on at the end. Every workflow treats AI as a first-class component with audit trails to match.'],['03','Consulting That Ships','Strategy without delivery is overhead. We provide the advisory and we build the thing — one team, one contract, full accountability from brief to production.']];
-const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Automation','AI Implementation','Digital Strategy','Systems Integration','Design & Development','Enterprise Consulting','Sentiment Analysis','Applied Intelligence','Resilient Infrastructure','Cross-Sector Deployment'];
+
+const trustMetrics = [
+  {
+    label: 'Availability',
+    value: '99.995%',
+    context: 'Last 30 days',
+    detail:
+      'Measured across managed production workloads and controlled maintenance windows.',
+  },
+  {
+    label: 'Deploy cadence',
+    value: '48 / day',
+    context: 'Delivery velocity',
+    detail:
+      'Aligned with release automation, verification steps, and rollback controls.',
+    href: '/developer',
+    hrefLabel: 'See the Developer Hub',
+  },
+  {
+    label: 'Signal integrity',
+    value: '4.8B',
+    context: 'Validated telemetry events / month',
+    detail:
+      'Data points normalized for anomaly detection, routing, and post-incident review.',
+  },
+];
+
+const capabilities = [
+  {
+    title: 'Decision systems',
+    body: 'Operator-grade AI workflows for scoring, routing, and intervention with traceable outcomes.',
+  },
+  {
+    title: 'Risk tooling',
+    body: 'Surveillance surfaces, monitoring loops, and alerting that keep uncertainty visible and actionable.',
+  },
+  {
+    title: 'Resilient infrastructure',
+    body: 'Applied platform engineering for control, observability, and dependable automation across teams.',
+  },
+];
+
+const proofPoints = [
+  {
+    title: 'Architecture',
+    body: 'Structured around auditable services, operator checkpoints, and system states that explain themselves.',
+  },
+  {
+    title: 'Proof',
+    body: 'Every workflow is designed to be demonstrable in real use: logs, thresholds, review modes, and fallback paths.',
+  },
+];
 ---
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Gold Shore Labs — applied intelligence, digital systems, and consulting." />
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://goldshore.ai/" />
-  <meta property="og:title" content="Gold Shore Labs | Applied Intelligence" />
-  <meta property="og:description" content="Applied intelligence for institutions that need clarity under pressure." />
-  <title>Gold Shore Labs | Applied Intelligence</title>
-  <meta name="google-adsense-account" content="ca-pub-5105781580031290" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@300;400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
-  <noscript><link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" /></noscript>
-</head>
-<body class="gs-home">
 
-<a class="skip-nav" href="#main-content">Skip to main content</a>
-<canvas id="starfield" aria-hidden="true"></canvas>
+<WebLayout
+  title="GoldShore | Infrastructure for High-Trust AI"
+  description="GoldShore builds resilient decision systems, risk tooling, and operator infrastructure."
+>
+  <main class="home-page">
+    <ParallaxHero
+      eyebrow="Institutional-grade Operational AI"
+      headline={"Clarity, Control, and\nTrust for Live AI Systems."}
+      sub="GoldShore builds resilient decision systems, risk tooling, and operator infrastructure for teams that need explainable performance under pressure."
+      ctaPrimary={{ label: 'Request Briefing', href: '/contact' }}
+      ctaSecondary={{ label: 'View Operating Model', href: '/about' }}
+    />
 
-<header class="topbar">
-  <a class="brand" href="/" aria-label="GoldShore home">
-    <span class="brand-wordmark">GOLDSHORE</span>
-  </a>
-  <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
-    <span></span><span></span><span></span>
-  </button>
-  <nav id="main-nav">
-    <a href="/platform/">Platform</a>
-    <a href="/risk-radar/">Risk Radar</a>
-    <a href="/services/">Services</a>
-    <a href="/developer/">Developer</a>
-    <a href="/about/">About</a>
-    <button id="open-access-modal" class="nav-login">Access →</button>
-    <a class="nav-cta" href="#engage">Request Briefing</a>
-  </nav>
-</header>
-
-<main id="main-content">
-
-<!-- ── Hero ────────────────────────────────────────────────────────────────────────── -->
-<section class="hero" id="platform">
-  <div class="hero-copy">
-    <p class="kicker">Gold Shore Labs · Est. 2022 · New York</p>
-    <h1>
-      <span class="solid">Where</span>
-      <span class="outlined">Strategy</span>
-      <span class="accent" data-text="Operates.">Operates.</span>
-    </h1>
-    <p class="lead">Applied intelligence for institutions that need clarity under pressure. We build the software, run the strategy, and deploy the AI — cross-sector, full-stack, end to end.</p>
-    <div class="actions">
-      <a class="btn primary magnetic" href="#engage">Request Briefing</a>
-      <a class="btn magnetic" href="#services">View Platform</a>
-      <a class="text-link" href="/developer">Developer Hub →</a>
-    </div>
-    <div class="metrics">
-      {metrics.map(([label,value,sub]) => (
-        <div><span>{label}</span><strong>{value}</strong><em>{sub}</em></div>
-      ))}
-    </div>
-  </div>
-  <aside class="hero-panel">
-    <p class="panel-title">Applied Intelligence · Digital Systems · Consulting</p>
-    <div class="status-list">
-      {platform.map(([name,state]) => (
-        <div><span>{name}</span><b class={state.toLowerCase()}>{state}</b></div>
-      ))}
-    </div>
-    <div class="panel-columns">
-      <div><p class="panel-col-heading">Services</p>{services.map((s) => <p>{s}</p>)}</div>
-      <div><p class="panel-col-heading">Sectors</p>{sectors.map((s) => <p>{s}</p>)}</div>
-    </div>
-    <p class="operational"><span></span>Operational</p>
-  </aside>
-</section>
-
-<!-- ── Sector surface ────────────────────────────────────────────────────────── -->
-<section class="surface" data-reveal>
-  <div class="section-head">
-    <div>
-      <p class="kicker">Cross-Sector Deployment Surface</p>
-      <h2>5 active sectors</h2>
-    </div>
-  </div>
-  <div class="sector-grid">
-    {sectorCards.map(([name,desc]) => (
-      <article><h3>{name}</h3><p>{desc}</p></article>
-    ))}
-  </div>
-</section>
-
-<!-- ── Telemetry ─────────────────────────────────────────────────────────────── -->
-<section class="telemetry" data-reveal>
-  <div class="section-head">
-    <div>
-      <p class="kicker">Platform Telemetry — Live</p>
-      <h2><span class="live-dot"></span>Live</h2>
-    </div>
-  </div>
-  <div class="telemetry-grid">
-    {telemetry.map(([label,value,sub]) => (
-      <article><span>{label}</span><strong>{value}</strong><em>{sub}</em></article>
-    ))}
-  </div>
-</section>
-
-<!-- ── Marquee ─────────────────────────────────────────────────────────────────── -->
-<div class="marquee">
-  <div>{[...marquee,...marquee].map((item) => <span>{item}</span>)}</div>
-</div>
-
-<!-- ── Capabilities ─────────────────────────────────────────────────────────────────── -->
-<section class="capabilities" data-reveal id="services">
-  <div class="section-head large">
-    <div>
-      <p class="kicker">01 — Capabilities</p>
-      <h2>Cross-<br />Sector.<br />Full-Stack.</h2>
-    </div>
-    <p class="section-desc">We operate at the intersection of digital consulting, product engineering, and applied AI — building systems that hold under pressure across every sector we touch.</p>
-  </div>
-  <div class="cap-list">
-    {capabilities.map(([title,body,tags],i) => (
-      <article>
-        <div class="cap-index">{String(i + 1).padStart(2,'0')}</div>
-        <div>
-          <h3>{title}<span>↗</span></h3>
-          <p>{body}</p>
-          <div class="tags">{tags.map((tag) => <b>{tag}</b>)}</div>
-        </div>
-      </article>
-    ))}
-  </div>
-</section>
-
-<!-- ── Under the Hood ────────────────────────────────────────────────────────────────── -->
-<section class="underhood" data-reveal id="developer">
-  <div class="section-head">
-    <div>
-      <p class="kicker">02 — Under the Hood</p>
-      <h2>Systems that<br />Explain<br />Themselves.</h2>
-    </div>
-  </div>
-  <div class="code-stack">
-    <pre><span style="font-family:var(--font-mono);font-size:0.6rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--t3);">packages/auth/verify.ts</span><code>{`
-export async function verifyAccess(req, env) {
-  const identity = await validateRequest(req, env);
-  if (!identity.authorized) return { authorized: false };
-  return { authorized: true, email: identity.email };
-}`}</code></pre>
-    <aside class="stack-card">
-      <h3>Production Stack — goldshore.ai</h3>
-      {stackRows.map(([name,desc,date,state]) => (
-        <div class="stack-row">
-          <div><strong>{name}</strong><p>{desc}</p></div>
-          <time>{date}</time>
-          <b>{state}</b>
+    <section class="signal-strip gs-shell-section" aria-label="Signal strip">
+      {signals.map((signal) => (
+        <div class="signal-tile">
+          <span>{signal.label}</span>
+          <strong>{signal.value}</strong>
         </div>
       ))}
-      <div class="infra">
-        <h4>Infrastructure Resources</h4>
-        <p><b>R2</b> gs-assets · gs-telemetry · user-uploads</p>
-        <p><b>D1</b> gs_platform_db · gs_audit_db</p>
-        <p><b>Stack</b> Hono · pnpm · wrangler</p>
+    </section>
+
+    <section class="metrics-shell gs-shell-section" aria-label="Trust metrics">
+      <div class="metrics-grid" data-metrics-grid>
+        {trustMetrics.map((metric) => (
+          <article class="signal-tile signal-tile--loading" aria-live="polite">
+            <div class="signal-tile__header">
+              <span>{metric.label}</span>
+              <small>{metric.context}</small>
+            </div>
+            <strong>{metric.value}</strong>
+            <p>{metric.detail}</p>
+            {metric.href && (
+              <a href={metric.href} class="signal-link">
+                {metric.hrefLabel} →
+              </a>
+            )}
+          </article>
+        ))}
       </div>
-    </aside>
-  </div>
-</section>
+    </section>
 
-<!-- ── Risk Radar ─────────────────────────────────────────────────────────────────── -->
-<section class="risk" data-reveal id="risk-radar">
-  <div class="risk-copy">
-    <p class="kicker">03 — Risk Radar</p>
-    <h2>Always<br />Sweeping.<br />Never Silent.</h2>
-    <p>Continuous surveillance across monitored positions and portfolios. Anomalies surface in real time — classified by severity, routed to the right operator, with a full audit trace from detection to resolution.</p>
-  </div>
-  <div class="risk-board">
-    <div class="risk-metrics">
-      <span>Sweep Interval<b>2.4s</b></span>
-      <span>Active Anomalies<b>5 Live</b></span>
-      <span>Decision Mode<b>Human+AI</b></span>
-      <span>Review Posture<b>High Trust</b></span>
-    </div>
-    {anomalies.map(([name,sev,time]) => (
-      <div class="anomaly">
-        <strong>{name}</strong>
-        <b class={sev.toLowerCase()}>{sev}</b>
-        <time>{time}</time>
+    <section
+      class="section-block gs-shell-section"
+      aria-labelledby="capabilities-title"
+    >
+      <div class="section-copy">
+        <p class="gs-eyebrow">Capabilities</p>
+        <h2 id="capabilities-title">
+          Institutional surfaces for operators, analysts, and systems teams.
+        </h2>
+        <p class="section-intro">
+          GoldShore turns volatile runtime behavior into decision-ready
+          workflows with stronger hierarchy, clearer ownership, and resilient
+          delivery patterns.
+        </p>
       </div>
-    ))}
-  </div>
-</section>
-
-<!-- ── Financial Signals ──────────────────────────────────────────────────────────────── -->
-<section class="signals" data-reveal id="signals">
-  <div class="section-head">
-    <div>
-      <p class="kicker">04 — Financial Signals</p>
-      <h2>Signal,<br />Not Noise.</h2>
-    </div>
-    <a class="text-link" href="/apps/risk-radar">Full Signal Feed →</a>
-  </div>
-  <div class="signals-body">
-    <div class="ticker-col">
-      {tickers.map(([sym,name,price,change]) => (
-        <div class="ticker-item">
-          <span class="ticker-sym">{sym}</span>
-          <span class="ticker-name">{name}</span>
-          <span class="ticker-price">{price}</span>
-          <span class={`ticker-chg ${change.startsWith('−') ? 'down' : 'up'}`}>{change}</span>
-        </div>
-      ))}
-    </div>
-    <div class="chart-panel">
-      <div class="chart-panel-head">
-        <div>
-          <h3>SPY</h3>
-          <p>SPDR S&amp;P 500 ETF · NYSE Arca · 4h</p>
-        </div>
+      <div class="capability-grid">
+        {capabilities.map((capability) => (
+          <article class="capability-card">
+            <h3>{capability.title}</h3>
+            <p>{capability.body}</p>
+          </article>
+        ))}
       </div>
-      <p class="chart-big-price">$521.84 <span>▲ +6.37 (+1.24%)</span></p>
-      <div class="chart-line"></div>
-      <div class="chart-stats">
-        <span>RSI 14<b>58.4</b></span>
-        <span>MACD<b>+2.1</b></span>
-        <span>Vol 10d<b>12.3%</b></span>
-        <span>Beta<b>1.00</b></span>
-        <span>Sentiment<b>Bullish</b></span>
-        <span>Signal<b>Watch</b></span>
+    </section>
+
+    <section
+      class="section-block gs-shell-section"
+      aria-labelledby="risk-radar-title"
+    >
+      <div class="section-copy">
+        <p class="gs-eyebrow">Risk Radar</p>
+        <h2 id="risk-radar-title">
+          High-contrast motion designed for live demonstration and executive
+          review.
+        </h2>
+        <p class="section-intro">
+          The visualization system emphasizes readability first, so every sweep,
+          pulse, and threshold communicates operational meaning.
+        </p>
       </div>
-    </div>
-  </div>
-</section>
+      <RiskRadar />
+    </section>
 
-<!-- ── Approach / Principles ──────────────────────────────────────────────────────────────── -->
-<section class="approach" id="about" data-reveal>
-  <div class="section-head">
-    <div>
-      <p class="kicker">05 — Approach</p>
-      <h2>How We Work.</h2>
-    </div>
-  </div>
-  <div class="inner">
-    {principles.map(([num,title,body]) => (
-      <div class="approach-item">
-        <div class="approach-num">{num}</div>
-        <h3>{title}</h3>
-        <p>{body}</p>
+    <section
+      class="section-block gs-shell-section architecture-section"
+      aria-labelledby="proof-title"
+    >
+      <div class="section-copy">
+        <p class="gs-eyebrow">Architecture / Proof</p>
+        <h2 id="proof-title">Systems that explain themselves under pressure.</h2>
       </div>
-    ))}
-  </div>
-</section>
+      <div class="proof-grid">
+        {proofPoints.map((point) => (
+          <article class="proof-card">
+            <h3>{point.title}</h3>
+            <p>{point.body}</p>
+          </article>
+        ))}
+        <article class="proof-card proof-card--metrics">
+          <div>
+            <span>Review posture</span>
+            <strong>Operator in loop</strong>
+          </div>
+          <div>
+            <span>Observability</span>
+            <strong>Logs + thresholds</strong>
+          </div>
+          <div>
+            <span>Deployment tone</span>
+            <strong>Measured, auditable</strong>
+          </div>
+        </article>
+      </div>
+    </section>
 
-<!-- ── Engage ───────────────────────────────────────────────────────────────────────────── -->
-<section class="engage" data-reveal id="engage">
-  <div>
-    <p class="kicker">06 — Engage</p>
-    <h2>Ready to<br />Operationalize.</h2>
-    <p>Whether you need a strategic briefing, a technical audit, a delivered product, or an embedded AI system — the conversation starts here.</p>
-    <div class="actions">
-      <a class="btn primary magnetic" href="mailto:hello@goldshore.ai?subject=Gold%20Shore%20Briefing%20Request">Request Briefing →</a>
-      <a class="btn magnetic" href="/developer">Developer Hub →</a>
-    </div>
-  </div>
-  <form class="quick-form" id="quick-form" method="POST" action="/api/contact">
-    <h3>Quick Inquiry</h3>
-    <input type="hidden" name="formType" value="homepage-inquiry" />
-    <input type="hidden" name="redirectTo" value="/thank-you" />
-    <input type="hidden" name="formStartedAt" id="qs-form-started" value="" />
-    <input type="hidden" name="dedupeKey" id="qs-dedupe-key" value="" />
-    <div class="gs-honeypot"><input name="companyWebsite" tabindex="-1" autocomplete="off" /></div>
-    <div class="form-row">
-      <label>Name<input name="name" required placeholder="Your name" /></label>
-      <label>Organisation<input name="company" placeholder="Firm or company" /></label>
-    </div>
-    <label>Work Email<input name="email" type="email" required placeholder="you@firm.com" /></label>
-    <label>Interest
-      <select name="inquiry" required>
-        <option value="">Select area of interest</option>
-        <option value="general">General Enquiry</option>
-        <option value="strategy-call">Strategy Call</option>
-        <option value="project-scope">Project Scope</option>
-        <option value="support">Support</option>
-      </select>
-    </label>
-    <label>Message
-      <textarea name="message" id="qs-message" required rows="4" placeholder="Tell us about your inquiry (20+ characters)…"></textarea>
-    </label>
-    <div id="qs-form-status" class="form-status" aria-live="polite"></div>
-    <button type="submit" class="btn-form" id="qs-submit">Submit Request →</button>
-  </form>
-</section>
+    <section
+      class="section-block gs-shell-section compact-team"
+      aria-labelledby="team-title"
+    >
+      <div class="section-copy">
+        <p class="gs-eyebrow">Team</p>
+        <h2 id="team-title">
+          Built by operators focused on resilient systems and applied
+          intelligence.
+        </h2>
+      </div>
+      <div class="team-row">
+        <article class="team-card team-card--founder">
+          <h3>Robert M.</h3>
+          <p>Leads product direction, systems strategy, and applied intelligence.</p>
+        </article>
+        <article class="team-card">
+          <h3>Systems</h3>
+          <p>Infrastructure, execution, observability.</p>
+        </article>
+        <article class="team-card">
+          <h3>Risk</h3>
+          <p>Monitoring, analytics, decision systems.</p>
+        </article>
+      </div>
+    </section>
 
-</main>
-
-<footer class="site-footer">
-  <div>
-    <h2>GoldShore</h2>
-    <p>Applied Intelligence · Digital Systems · Consulting</p>
-    <p>Institutional AI systems, risk tooling, and resilient operator infrastructure. Cross-sector. Full-stack. Built to last.</p>
-  </div>
-  <div>
-    <h3>Platform</h3>
-    <p><a href="/platform/">Overview</a></p>
-    <p><a href="/risk-radar/">Risk Radar</a></p>
-    <p><a href="/platform/financial-signals">Financial Signals</a></p>
-    <p><a href="/platform/workflow-engine">Workflow Engine</a></p>
-    <p><a href="/platform/sentinel">Sentinel</a></p>
-    <p><a href="/platform/ai-oracle">AI Oracle</a></p>
-  </div>
-  <div>
-    <h3>Services</h3>
-    <p><a href="/services/">Overview</a></p>
-    <p><a href="/services/digital-strategy">Digital Strategy</a></p>
-    <p><a href="/services/ai-implementation">AI Implementation</a></p>
-    <p><a href="/services/systems-integration">Systems Integration</a></p>
-    <p><a href="/services/design-dev">Design &amp; Development</a></p>
-    <p><a href="/services/consulting">Enterprise Consulting</a></p>
-  </div>
-  <div>
-    <h3>Developer</h3>
-    <p><a href="/developer/">Hub</a></p>
-    <p><a href="/developer/api/">API</a></p>
-    <p><a href="/developer/docs/">Docs</a></p>
-    <p><a href="/developer/sdk">SDK</a></p>
-    <p><a href="/developer/mcp">MCP</a></p>
-  </div>
-  <div>
-    <h3>Company</h3>
-    <p><a href="/about/">About</a></p>
-    <p><a href="/team/">Team</a></p>
-    <p><a href="/status/">Status</a></p>
-    <p><a href="/contact/">Contact</a></p>
-    <p><a href="/legal/privacy">Privacy</a></p>
-    <p><a href="/legal/terms">Terms</a></p>
-  </div>
-  <small>© 2026 Gold Shore Labs. All rights reserved. 40°42′N · 074°00′W · goldshore.ai · <a href="/legal/privacy">Privacy</a> · <a href="/legal/">Security</a> · <a href="/legal/terms">Terms</a></small>
-</footer>
-
-<!-- ── Access Modal ────────────────────────────────────────────────────────────────── -->
-<dialog id="access-modal" class="access-modal" aria-labelledby="access-modal-title">
-  <div class="modal-inner">
-    <button class="modal-close" aria-label="Close">✕</button>
-    <h2 id="access-modal-title">Access Goldshore</h2>
-    <p class="modal-lead">Select a destination to continue.</p>
-    <div class="modal-grid">
-      <a href="https://admin.goldshore.ai" class="modal-card" rel="noopener noreferrer" target="_blank" data-admin-access-link>
-        <span class="modal-icon">⬡</span>
-        <strong>Admin</strong>
-        <span>Operator dashboard</span>
-      </a>
-      <a href="https://admin.goldshore.org" class="modal-card" rel="noopener noreferrer" target="_blank" data-admin-alternate-link>
-        <span class="modal-icon">◈</span>
-        <strong data-admin-alternate-title>Admin .org</strong>
-        <span data-admin-alternate-copy>Protected organisation alias</span>
-      </a>
-      <a href="/developer/mcp" class="modal-card">
-        <span class="modal-icon">⬢</span>
-        <strong>MCP</strong>
-        <span>Model Context Protocol</span>
-      </a>
-      <a href="https://api.goldshore.ai" class="modal-card" rel="noopener noreferrer" target="_blank">
-        <span class="modal-icon">◉</span>
-        <strong>API</strong>
-        <span>Developer access</span>
+    <section
+      class="section-block gs-shell-section contact-cta"
+      aria-labelledby="contact-cta-title"
+    >
+      <div>
+        <p class="gs-eyebrow">Contact</p>
+        <h2 id="contact-cta-title">
+          Ready to operationalize AI with trust, control, and signal clarity?
+        </h2>
+      </div>
+      <a href="/contact" class="hero-button hero-button--primary">
+        Start a conversation
       </a>
     </div>
     <p class="modal-contact">Need access? <a href="/contact/">Contact us →</a></p>
@@ -548,3 +382,520 @@ window.addEventListener('load', function () {
 
 </body>
 </html>
+    </section>
+  </main>
+
+  <script>
+    import { initWave } from '../scripts/init-wave';
+    import { initLogo } from '../scripts/init-logo-reactive';
+
+    let homeCleanup;
+
+    const cleanup = () => {
+      homeCleanup?.();
+      homeCleanup = undefined;
+    };
+
+    const hydrateMetrics = () => {
+      const cards = document.querySelectorAll('.signal-tile--loading');
+      const reduceMotion = window.matchMedia(
+        '(prefers-reduced-motion: reduce)',
+      ).matches;
+
+      window.setTimeout(
+        () => cards.forEach((card) => card.classList.remove('signal-tile--loading')),
+        reduceMotion ? 0 : 650,
+      );
+    };
+
+    const boot = () => {
+      cleanup();
+      hydrateMetrics();
+
+      const canvas = document.getElementById('wave-bg');
+      const logo = document.querySelector('.gs-logo-reactive');
+      const isReactiveLogo =
+        logo instanceof HTMLElement || logo instanceof SVGElement;
+
+      if (!(canvas instanceof HTMLCanvasElement) || !isReactiveLogo) return;
+
+      const wave = initWave(canvas);
+      const destroyLogo = initLogo(logo, wave);
+
+      homeCleanup = () => {
+        destroyLogo?.();
+        wave.destroy();
+      };
+    };
+
+    const root = document.documentElement;
+
+    if (root.dataset.gsHomeHeroBound !== 'true') {
+      root.dataset.gsHomeHeroBound = 'true';
+      document.addEventListener('astro:before-swap', cleanup);
+      document.addEventListener('astro:page-load', boot);
+    }
+
+    boot();
+  </script>
+
+  <style>
+    .home-page {
+      padding-bottom: 4rem;
+    }
+
+    .hero {
+      position: relative;
+      min-height: min(92vh, 960px);
+      display: grid;
+      align-items: end;
+      overflow: hidden;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    #wave-bg,
+    .hero-grid,
+    .hero::after {
+      position: absolute;
+      inset: 0;
+    }
+
+    #wave-bg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .hero-grid {
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+      background-size: 72px 72px;
+      mask-image: radial-gradient(circle at 50% 30%, black 30%, transparent 80%);
+      opacity: 0.5;
+    }
+
+    .hero::after {
+      content: '';
+      background:
+        radial-gradient(circle at 25% 20%, rgba(90, 162, 255, 0.18), transparent 28%),
+        linear-gradient(180deg, rgba(7, 11, 20, 0.18), rgba(7, 11, 20, 0.84));
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .hero-mark {
+      position: absolute;
+      inset: 18% auto auto clamp(1rem, 7vw, 6rem);
+      z-index: 1;
+    }
+
+    .gs-logo-reactive {
+      width: clamp(72px, 11vw, 120px);
+      height: auto;
+      color: #8ec1ff;
+      will-change: transform, filter;
+    }
+
+    .hero-shell,
+    .section-block,
+    .metrics-shell,
+    .signal-strip {
+      width: min(100% - 2rem, var(--gs-max-width));
+      margin: 0 auto;
+    }
+
+    .hero-shell {
+      position: relative;
+      z-index: 2;
+      padding: clamp(7rem, 12vh, 10rem) 0 1.75rem;
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr);
+      gap: clamp(1.5rem, 4vw, 4rem);
+      align-items: end;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.85rem;
+      border: 1px solid rgba(90, 162, 255, 0.22);
+      border-radius: 999px;
+      background: rgba(90, 162, 255, 0.1);
+      color: #dcedff;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .hero-content h1,
+    .section-copy h2,
+    .contact-cta h2 {
+      margin: 1rem 0;
+      font-size: clamp(2.7rem, 7vw, 5.4rem);
+      line-height: 0.98;
+      letter-spacing: -0.045em;
+      color: #fff;
+      text-wrap: balance;
+    }
+
+    .hero-content p,
+    .section-copy p,
+    .hero-panel li,
+    .proof-card p,
+    .team-card p,
+    .contact-cta p,
+    .signal-tile p {
+      color: rgba(233, 238, 252, 0.82);
+      line-height: 1.72;
+      font-size: 1rem;
+    }
+
+    .hero-lead {
+      max-width: 34rem;
+      font-size: clamp(1.08rem, 0.98rem + 0.45vw, 1.3rem);
+      color: rgba(248, 251, 255, 0.95);
+    }
+
+    .hero-supporting-copy,
+    .section-intro {
+      max-width: 42rem;
+      color: rgba(233, 238, 252, 0.72);
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 0.9rem;
+      flex-wrap: wrap;
+      margin-top: 1.5rem;
+    }
+
+    .hero-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.9rem 1.6rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+      text-decoration: none;
+      font-weight: 500;
+      backdrop-filter: blur(10px);
+      transition:
+        transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1),
+        border-color 0.25s ease,
+        background 0.25s ease,
+        box-shadow 0.25s ease;
+    }
+
+    .hero-button:hover,
+    .hero-button:focus-visible {
+      transform: translateY(-2px);
+      border-color: rgba(108, 158, 255, 0.5);
+      background: rgba(108, 158, 255, 0.15);
+      box-shadow: 0 10px 30px rgba(108, 158, 255, 0.2);
+    }
+
+    .hero-button--primary {
+      border-color: rgba(108, 158, 255, 0.4);
+      background: linear-gradient(135deg, rgba(108, 158, 255, 0.2), rgba(178, 95, 255, 0.2));
+      box-shadow: 0 16px 32px rgba(108, 158, 255, 0.2);
+    }
+
+    .hero-panel,
+    .signal-tile,
+    .capability-card,
+    .proof-card,
+    .team-card,
+    .contact-cta {
+      padding: 1.5rem;
+      border-radius: 20px;
+      border: 1px solid var(--gs-border);
+      background: var(--gs-surface);
+      box-shadow: var(--gs-shadow);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .signal-tile:hover,
+    .capability-card:hover,
+    .proof-card:hover,
+    .team-card:hover {
+      transform: translateY(-4px) scale(1.01);
+      border-color: rgba(108, 158, 255, 0.35);
+      background: var(--gs-surface-strong);
+      box-shadow: 0 32px 64px rgba(0, 0, 0, 0.5), 0 0 30px rgba(108, 158, 255, 0.15);
+    }
+
+    .hero-panel {
+      border-color: var(--gs-border);
+      background: var(--gs-surface-strong);
+      backdrop-filter: blur(24px);
+    }
+
+    .hero-panel__heading h2 {
+      margin: 0.45rem 0 0.85rem;
+      font-size: clamp(1.65rem, 2.6vw, 2.1rem);
+      line-height: 1.1;
+      color: #fff;
+    }
+
+    .status-banner {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.95rem 1rem;
+      margin-bottom: 1rem;
+      border-radius: 18px;
+      border: 1px solid rgba(90, 162, 255, 0.18);
+      background: rgba(90, 162, 255, 0.08);
+    }
+
+    .status-banner strong {
+      display: block;
+      margin-bottom: 0.2rem;
+      color: #fff;
+    }
+
+    .status-banner p {
+      margin: 0;
+      color: rgba(233, 238, 252, 0.76);
+      font-size: 0.95rem;
+    }
+
+    .status-dot {
+      width: 0.72rem;
+      height: 0.72rem;
+      border-radius: 999px;
+      background: #47e3a7;
+      box-shadow: 0 0 0 rgba(71, 227, 167, 0.5);
+      animation: statusPulse 1.9s ease-out infinite;
+      flex-shrink: 0;
+      margin-top: 0.28rem;
+    }
+
+    .hero-panel ul {
+      margin: 0;
+      padding-left: 1.1rem;
+      display: grid;
+      gap: 0.85rem;
+    }
+
+    .signal-strip,
+    .metrics-grid,
+    .capability-grid,
+    .proof-grid,
+    .team-row {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .signal-strip {
+      margin-top: 1.25rem;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .metrics-shell {
+      position: relative;
+      z-index: 2;
+      padding-top: 1rem;
+      padding-bottom: 2rem;
+    }
+
+    .metrics-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .signal-tile {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .signal-tile__header,
+    .proof-card span {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .signal-tile span,
+    .proof-card span {
+      display: block;
+      color: rgba(233, 238, 252, 0.62);
+      font-size: 0.82rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .signal-tile small {
+      color: rgba(255, 255, 255, 0.78);
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .signal-tile strong,
+    .proof-card strong {
+      font-size: clamp(1.35rem, 1.05rem + 1vw, 2rem);
+      color: #fff;
+    }
+
+    .signal-tile p {
+      margin: 0.65rem 0 0;
+      color: rgba(233, 238, 252, 0.75);
+    }
+
+    .signal-link {
+      display: inline-flex;
+      margin-top: 0.85rem;
+      color: #b2d7ff;
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .signal-link:hover,
+    .signal-link:focus-visible {
+      color: #fff;
+    }
+
+    .signal-tile--loading > * {
+      opacity: 0.2;
+    }
+
+    .signal-tile--loading::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        110deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.08) 40%,
+        transparent 82%
+      );
+      transform: translateX(-100%);
+      animation: skeletonSweep 1.2s ease-in-out infinite;
+    }
+
+    .section-block {
+      padding-top: 4.5rem;
+    }
+
+    .section-copy {
+      margin-bottom: 1.5rem;
+      max-width: 60rem;
+    }
+
+    .section-copy h2 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      margin-top: 0.65rem;
+    }
+
+    .capability-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .proof-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .proof-card--metrics {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .team-row {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .team-card--founder {
+      border-color: rgba(90, 162, 255, 0.2);
+      background: rgba(90, 162, 255, 0.08);
+    }
+
+    .contact-cta {
+      display: flex;
+      justify-content: space-between;
+      gap: 1.5rem;
+      align-items: center;
+    }
+
+    @keyframes skeletonSweep {
+      to {
+        transform: translateX(100%);
+      }
+    }
+
+    @keyframes statusPulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(71, 227, 167, 0.48);
+      }
+
+      70% {
+        box-shadow: 0 0 0 12px rgba(71, 227, 167, 0);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(71, 227, 167, 0);
+      }
+    }
+
+    @media (max-width: 960px) {
+      .hero-shell,
+      .signal-strip,
+      .metrics-grid,
+      .capability-grid,
+      .proof-grid,
+      .team-row {
+        grid-template-columns: 1fr;
+      }
+
+      .contact-cta {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .hero-shell,
+      .signal-strip,
+      .metrics-shell,
+      .section-block {
+        width: min(100% - 1.5rem, var(--gs-max-width));
+      }
+
+      .hero-shell {
+        padding-top: 6rem;
+      }
+
+      .hero-mark {
+        inset: 12% auto auto 1rem;
+      }
+
+      .hero-actions,
+      .hero-button {
+        width: 100%;
+      }
+
+      .signal-tile__header,
+      .proof-card span {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hero-button,
+      .status-dot,
+      .signal-tile--loading::after {
+        animation: none;
+        transition: none;
+      }
+    }
+
+  </style>
+</WebLayout>
