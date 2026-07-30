@@ -160,4 +160,9 @@ describe('gs-api wrangler env bindings', () => {
       'risk.goldshore.org/*',
     ]);
   });
+
+  it('keeps CONTROL_SYNC_TOKEN out of plain-text environment variables', () => {
+    assert.doesNotMatch(wranglerToml, /^CONTROL_SYNC_TOKEN\s*=/m);
+    assert.doesNotMatch(wranglerToml, /__PROD_CONTROL_SYNC_TOKEN__/);
+  });
 });

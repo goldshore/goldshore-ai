@@ -103,10 +103,6 @@ binding = "AGENT"
 service = "gs-agent"
 environment = "prod"
 
-[[env.prod.services]]
-binding = "GS_MAIL"
-service = "gs-mail"
-environment = "prod"
 
 [[env.prod.services]]
 binding = "GOLDSHORE_AI"

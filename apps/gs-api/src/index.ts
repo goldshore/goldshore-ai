@@ -227,6 +227,9 @@ app.use('*', async (c, next) => {
   }
 
   const correlationId = getCorrelationId(c.req.raw);
+  const agentUrl = new URL(c.req.url);
+  agentUrl.pathname = `/agent${agentUrl.pathname === '/' ? '' : agentUrl.pathname}`;
+  const response = await app.fetch(new Request(agentUrl.toString(), c.req.raw), c.env, c.executionCtx);
   const routedUrl = new URL(c.req.url);
   routedUrl.pathname = `${routePrefix}${routedUrl.pathname === '/' ? '' : routedUrl.pathname}`;
   const response = await app.fetch(
