@@ -421,9 +421,10 @@ jobs:
             '["dashboard.goldshore.ai/oauth/robinhood/callback","dash.goldshore.ai/oauth/robinhood/callback"]'
 
           # API: /health, /status, /version must be reachable by monitoring
+          # on every hostname covered by the broader Goldshore API Access app.
           upsert_bypass_app "Goldshore API - Public Probes" \
             "api.goldshore.ai/health" \
-            '["api.goldshore.ai/status","api.goldshore.ai/version"]'
+            '["api.goldshore.ai/status","api.goldshore.ai/version","api.goldshore.org/health","api.goldshore.org/status","api.goldshore.org/version"]'
 
           # Gateway: /health, /status, /version must be reachable by monitoring
           upsert_bypass_app "Goldshore Gateway - Public Probes" \
@@ -448,13 +449,17 @@ jobs:
           # Signals: .ai canonical + .org alias + workers.dev default host
           upsert_full_access "Signals"           "signals.goldshore.ai" \
             '["signals.goldshore.org","gs-signals-prod.goldshore.workers.dev"]'
-          # Goldshore API: uses documented name to match existing AUD in wrangler.toml;
-          # pushes AUD to api workers on first-run creation (Gate 5e). Keep this
-          # host on upsert_full_access (owner/user allow + service-token policy)
-          # because browser-based admin routes call api.goldshore.ai with
-          # credentials: 'include' and need a human Cloudflare Access session.
-          # Service-token-only access is limited to machine-only/path-scoped apps.
-          upsert_full_access "Goldshore API"     "api.goldshore.ai" "[]" \
+          # Goldshore API: uses documented name to match the existing AUD in
+          # wrangler.toml, covers the actual gs-api host roots (not /app), and
+          # pushes that AUD to api Workers so /goldclaw, /admin, /users, /ai,
+          # and other non-public prefixes receive JWTs valid for gs-api. Keep
+          # this host on upsert_full_access (owner/user allow + service-token
+          # policy) because browser-based admin routes call api.goldshore.ai
+          # with credentials: 'include' and need a human Cloudflare Access
+          # session. Service-token-only access is limited to machine-only/path-
+          # scoped apps.
+          upsert_full_access "Goldshore API"     "api.goldshore.ai" \
+            '["api.goldshore.org"]' \
             "gs-api gs-api-prod"
           # GoldShore MCP: human + agent per docs ("approved human identities and agents")
           upsert_full_access "GoldShore MCP"     "mcp.goldshore.ai" "[]" \
@@ -469,6 +474,8 @@ jobs:
           if [ "$MISSING_REQUIRED_APPS" -ne 0 ]; then
             echo "::error::One or more required Access apps were missing while skip_apps=true. Policies were not updated for those apps, so new credentials were not propagated."
             exit 1
+          fi
+
           # ------------------------------------------------------------------
           # Gated apps (workflow_dispatch inputs)
           # ------------------------------------------------------------------
