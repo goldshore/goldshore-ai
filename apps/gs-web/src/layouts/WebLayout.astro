@@ -8,7 +8,8 @@ import '../styles/global.css';
 import { WEB_META_CSP } from '../utils/csp';
 import '../styles/goldshore-shell.css';
 import { primaryNavLinks, companyLinks } from '../config/navigation';
-import { CANONICAL_ADMIN_DASHBOARD_URL } from '../utils/admin-access';
+import { WEB_META_CSP } from '../utils/csp';
+import { CANONICAL_ADMIN_ORIGIN } from '../utils/admin-access';
 
 const { title, description, canonicalPath } = Astro.props;
 const ogTitle = Astro.props.ogTitle ?? title;
@@ -82,7 +83,7 @@ const isCurrent = (href: string) => {
               ))}
             </div>
             <a
-              href={CANONICAL_ADMIN_DASHBOARD_URL}
+              href={CANONICAL_ADMIN_ORIGIN}
               class="header-login"
               id="header-login-link"
             >Log in</a>
@@ -287,13 +288,19 @@ const isCurrent = (href: string) => {
 
       .gs-page-shell {
         min-height: 100vh;
+        --gs-header-height: 72px;
         --gs-site-width: 1440px;
         --gs-site-gutter: clamp(1rem, 4vw, 4rem);
         --gs-site-columns: repeat(12, minmax(0, 1fr));
+        scroll-padding-top: var(--gs-header-height);
       }
 
       .gs-page-content {
         min-height: calc(100vh - 220px);
+      }
+
+      .gs-page-content > * {
+        scroll-margin-top: calc(var(--gs-header-height) + 1rem);
       }
 
       .header {
@@ -301,8 +308,8 @@ const isCurrent = (href: string) => {
         top: 0;
         z-index: 1100;
         padding: 1rem clamp(1rem, 3vw, 3rem);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         background: rgba(6, 6, 10, 0.88);
         border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         transition:
@@ -323,7 +330,7 @@ const isCurrent = (href: string) => {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 2rem;
+        gap: clamp(1rem, 2vw, 2rem);
       }
 
       .header-brand {
@@ -432,7 +439,7 @@ const isCurrent = (href: string) => {
         display: flex;
         align-items: center;
         justify-content: flex-end;
-        gap: 1rem;
+        gap: clamp(0.75rem, 1.5vw, 1.5rem);
         flex: 1;
       }
 
@@ -440,7 +447,7 @@ const isCurrent = (href: string) => {
         display: flex;
         align-items: center;
         justify-content: flex-end;
-        gap: 0.25rem;
+        gap: clamp(0.25rem, 0.8vw, 0.75rem);
         flex-wrap: wrap;
       }
 
@@ -455,6 +462,10 @@ const isCurrent = (href: string) => {
       }
 
       .desktop-nav__links a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
         padding: 0.6rem 0.85rem;
         border-radius: 6px;
         color: var(--gs-text);
@@ -471,6 +482,7 @@ const isCurrent = (href: string) => {
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        min-height: 44px;
         padding: 0.72rem 1rem;
         border-radius: 6px;
         text-decoration: none;
@@ -492,6 +504,7 @@ const isCurrent = (href: string) => {
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        min-height: 44px;
         padding: 0.82rem 1.2rem;
         border-radius: 6px;
         text-decoration: none;
@@ -617,6 +630,9 @@ const isCurrent = (href: string) => {
       }
 
       .menu-panel__links a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
         padding: 0.95rem 1rem;
         border-radius: 6px;
         color: var(--gs-text-dim);
@@ -723,11 +739,17 @@ const isCurrent = (href: string) => {
       }
 
       .gs-footer__links {
-        display: grid;
-        gap: 0.65rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem 1.5rem;
+        align-content: flex-start;
       }
 
       .gs-footer__links a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        min-width: 44px;
         color: var(--gs-text-dim);
         text-decoration: none;
       }

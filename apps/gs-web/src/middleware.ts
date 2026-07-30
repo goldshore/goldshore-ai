@@ -19,6 +19,11 @@ const isProtectedAdminRequest = (request: Request, url: URL) =>
   isAdminPath(url.pathname) ||
   (isAdminHost(getRequestHostname(request, url)) && !isStaticAssetPath(url.pathname));
 
+const ADMIN_PATH_PREFIXES = ['/admin', '/api/admin'];
+
+const isAdminPath = (pathname: string) =>
+  ADMIN_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+
 export const onRequest: MiddlewareHandler = async (context, next) => {
   // Redirect risk.goldshore.ai root → /risk-radar (subdomain alias for the product page).
   const host = getRequestHostname(context.request, context.url);

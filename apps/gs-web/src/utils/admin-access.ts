@@ -212,7 +212,9 @@ export const getAdminRouteRule = (
     };
   }
 
-  if (normalizedPath === '/admin' || normalizedPath.startsWith('/admin/')) {
+  if (
+    normalizedPath === '/admin' || normalizedPath.startsWith('/admin/')
+  ) {
     return {
       canonicalPath: normalizedPath,
       kind: 'page',
