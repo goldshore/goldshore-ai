@@ -46,7 +46,7 @@
     "@typescript-eslint/eslint-plugin": "^8.57.2",
     "@typescript-eslint/parser": "^8.65.0",
     "astro": "^7.1.0",
-    "eslint": "^10.5.0",
+    "eslint": "^10.8.0",
     "eslint-plugin-astro": "^3.0.1",
     "form-data": "^4.0.6",
     "octokit": "^5.0.5",
@@ -61,7 +61,7 @@
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.1.4",
-    "p-limit": "^7.3.0",
+    "p-limit": "^7.3.1",
     "turbo": "^2.10.5"
   },
   "engines": {
