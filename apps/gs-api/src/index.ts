@@ -30,6 +30,8 @@ import mail from './routes/mail';
 import control from './routes/control';
 import trading from './routes/trading';
 import core from './routes/core';
+import services from './routes/services';
+import products from './routes/products';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
 import { type Env } from './types';
@@ -100,6 +102,14 @@ const withCorrelationId = (response: Response, correlationId: string): Response 
 const getHostRoutePrefix = (request: Request): string | undefined =>
   HOST_ROUTE_PREFIXES.get(new URL(request.url).hostname);
 
+const getOptionalExecutionContext = (c: { executionCtx?: ExecutionContext }) => {
+  try {
+    return c.executionCtx;
+  } catch {
+    return undefined;
+  }
+};
+
 const normalizeEmail = (value: string) => value.trim().toLowerCase();
 const parseEmailList = (value?: string) =>
   (value ?? '')
@@ -168,6 +178,12 @@ const isPublicPath = (path: string, method: string) => {
   ) {
     return true;
   }
+  if (
+    method === 'GET' &&
+    /^\/v1\/forms\/newsletter\/(?:confirm|unsubscribe)$/.test(path)
+  ) {
+    return true;
+  }
   return (
     path === '/' ||
     path === '/version' ||
@@ -211,9 +227,16 @@ app.use('*', async (c, next) => {
   }
 
   const correlationId = getCorrelationId(c.req.raw);
+  const agentUrl = new URL(c.req.url);
+  agentUrl.pathname = `/agent${agentUrl.pathname === '/' ? '' : agentUrl.pathname}`;
+  const response = await app.fetch(new Request(agentUrl.toString(), c.req.raw), c.env, c.executionCtx);
   const routedUrl = new URL(c.req.url);
   routedUrl.pathname = `${routePrefix}${routedUrl.pathname === '/' ? '' : routedUrl.pathname}`;
-  const response = await app.fetch(new Request(routedUrl.toString(), c.req.raw), c.env, c.executionCtx);
+  const response = await app.fetch(
+    new Request(routedUrl.toString(), c.req.raw),
+    c.env,
+    getOptionalExecutionContext(c),
+  );
   return withCorrelationId(response, correlationId);
 });
 
@@ -343,6 +366,8 @@ app.route('/mail', mail);
 app.route('/admin/control', control);
 app.route('/trading', trading);
 app.route('/core', core);
+app.route('/services', services);
+app.route('/products', products);
 
 app.all('/api/*', async (c) => {
   const correlationId = getCorrelationId(c.req.raw);
@@ -358,7 +383,11 @@ app.all('/api/*', async (c) => {
 
     const internalUrl = new URL(c.req.url);
     internalUrl.pathname = proxiedPath;
-    const response = await app.fetch(new Request(internalUrl.toString(), c.req.raw), c.env, c.executionCtx);
+    const response = await app.fetch(
+      new Request(internalUrl.toString(), c.req.raw),
+      c.env,
+      getOptionalExecutionContext(c),
+    );
     return withCorrelationId(response, correlationId);
   } catch (error) {
     console.error(`[api] gateway proxy failed; trace=${correlationId}`, error);
@@ -382,11 +411,35 @@ v1.route('/agent', agent);
 v1.route('/mail', mail);
 v1.route('/control', control);
 v1.route('/core', core);
+v1.route('/services', services);
+v1.route('/products', products);
 v1.get('/leads', (c) => c.json({ leads: [] }));
 
 app.route('/v1', v1);
 
 export { app, isAllowedOrigin, isPreviewOrigin, isPublicPath, parseAllowedOrigins };
+
+const processQueueMessage = async (message: Message<any>, env: Env): Promise<void> => {
+  const body = message.body;
+  const type = typeof body === 'object' && body && 'type' in body ? String((body as { type?: unknown }).type) : 'unknown';
+  if (type === 'contact' || type === 'checkout') {
+    console.info({ event: 'mail_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
+    message.ack();
+    return;
+  }
+  if (type === 'trading' || type === 'trading-signal' || type === 'order') {
+    console.info({ event: 'trading_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
+    message.ack();
+    return;
+  }
+  if (type === 'signal' || type === 'atc') {
+    console.info({ event: 'core_signal_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
+    message.ack();
+    return;
+  }
+  console.info({ event: 'agent_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
+  message.ack();
+};
 
 const processQueueMessage = async (message: Message<any>, env: Env): Promise<void> => {
   const body = message.body;

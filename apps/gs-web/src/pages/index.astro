@@ -49,7 +49,7 @@ const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Aut
 
 <header class="topbar">
   <a class="brand" href="/" aria-label="GoldShore home">
-    <span class="brand-wordmark"><span>GOLD</span><span class="brand-shore">SHORE</span></span>
+    <span class="brand-wordmark">GOLDSHORE</span>
   </a>
   <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
     <span></span><span></span><span></span>
@@ -60,7 +60,7 @@ const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Aut
     <a href="/services/">Services</a>
     <a href="/developer/">Developer</a>
     <a href="/about/">About</a>
-    <button type="button" id="open-access-modal" class="nav-login">Log in</button>
+    <button id="open-access-modal" class="nav-login">Access →</button>
     <a class="nav-cta" href="#engage">Request Briefing</a>
   </nav>
 </header>
@@ -292,7 +292,7 @@ export async function verifyAccess(req, env) {
   </div>
   <form class="quick-form" id="quick-form" method="POST" action="/api/contact">
     <h3>Quick Inquiry</h3>
-    <input type="hidden" name="formType" value="general-inquiry" />
+    <input type="hidden" name="formType" value="homepage-inquiry" />
     <input type="hidden" name="redirectTo" value="/thank-you" />
     <input type="hidden" name="formStartedAt" id="qs-form-started" value="" />
     <input type="hidden" name="dedupeKey" id="qs-dedupe-key" value="" />
@@ -305,14 +305,14 @@ export async function verifyAccess(req, env) {
     <label>Interest
       <select name="inquiry" required>
         <option value="">Select area of interest</option>
-        <option value="general-inquiry">General inquiry</option>
+        <option value="general">General Enquiry</option>
         <option value="strategy-call">Strategy Call</option>
-        <option value="project-scope">Project scoping</option>
+        <option value="project-scope">Project Scope</option>
         <option value="support">Support</option>
       </select>
     </label>
     <label>Message
-      <textarea name="message" id="qs-message" required rows="4" placeholder="Tell us about your inquiry..."></textarea>
+      <textarea name="message" id="qs-message" required rows="4" placeholder="Tell us about your inquiry (20+ characters)…"></textarea>
     </label>
     <div id="qs-form-status" class="form-status" aria-live="polite"></div>
     <button type="submit" class="btn-form" id="qs-submit">Submit Request →</button>
@@ -320,6 +320,8 @@ export async function verifyAccess(req, env) {
 </section>
 
 </main>
+
+  </main>
 
 <footer class="site-footer">
   <div>
@@ -329,7 +331,6 @@ export async function verifyAccess(req, env) {
   </div>
   <div>
     <h3>Platform</h3>
-    <p><a href="/platform/">Overview</a></p>
     <p><a href="/risk-radar/">Risk Radar</a></p>
     <p><a href="/platform/financial-signals">Financial Signals</a></p>
     <p><a href="/platform/workflow-engine">Workflow Engine</a></p>
@@ -338,7 +339,6 @@ export async function verifyAccess(req, env) {
   </div>
   <div>
     <h3>Services</h3>
-    <p><a href="/services/">Overview</a></p>
     <p><a href="/services/digital-strategy">Digital Strategy</a></p>
     <p><a href="/services/ai-implementation">AI Implementation</a></p>
     <p><a href="/services/systems-integration">Systems Integration</a></p>
@@ -346,21 +346,12 @@ export async function verifyAccess(req, env) {
     <p><a href="/services/consulting">Enterprise Consulting</a></p>
   </div>
   <div>
-    <h3>Developer</h3>
-    <p><a href="/developer/">Hub</a></p>
-    <p><a href="/developer/api/">API</a></p>
-    <p><a href="/developer/docs/">Docs</a></p>
-    <p><a href="/developer/sdk">SDK</a></p>
-    <p><a href="/developer/mcp">MCP</a></p>
-  </div>
-  <div>
     <h3>Company</h3>
     <p><a href="/about/">About</a></p>
     <p><a href="/team/">Team</a></p>
+    <p><a href="/developer/">Developer Hub</a></p>
     <p><a href="/status/">Status</a></p>
     <p><a href="/contact/">Contact</a></p>
-    <p><a href="/legal/privacy">Privacy</a></p>
-    <p><a href="/legal/terms">Terms</a></p>
   </div>
   <small>© 2026 Gold Shore Labs. All rights reserved. 40°42′N · 074°00′W · goldshore.ai · <a href="/legal/privacy">Privacy</a> · <a href="/legal/">Security</a> · <a href="/legal/terms">Terms</a></small>
 </footer>
@@ -387,7 +378,7 @@ export async function verifyAccess(req, env) {
         <strong>MCP</strong>
         <span>Model Context Protocol</span>
       </a>
-      <a href="https://api.goldshore.ai" class="modal-card">
+      <a href="https://api.goldshore.ai" class="modal-card" rel="noopener noreferrer" target="_blank">
         <span class="modal-icon">◉</span>
         <strong>API</strong>
         <span>Developer access</span>
@@ -396,16 +387,27 @@ export async function verifyAccess(req, env) {
     <p class="modal-contact">Need access? <a href="/contact/">Contact us →</a></p>
   </div>
 </dialog>
+
+<section
+  class="section-block gs-shell-section contact-cta"
+  aria-labelledby="contact-cta-title"
+>
+  <div>
+    <p class="gs-eyebrow">Contact</p>
+    <h2 id="contact-cta-title">
+      Ready to operationalize AI with trust, control, and signal clarity?
+    </h2>
+  </div>
+  <a href="/contact" class="hero-button hero-button--primary">
+    Start a conversation
+  </a>
+</section>
+
 <script is:inline>
 /* ── Critical interactivity (runs immediately after DOM parse) ─────────────────────── */
 
 /* Scroll reveal */
 document.documentElement.classList.add('js-ready');
-const topbar = document.querySelector('.topbar');
-const syncHeaderState = () => topbar?.classList.toggle('is-scrolled', window.scrollY > 28);
-syncHeaderState();
-window.addEventListener('scroll', syncHeaderState, { passive: true });
-
 const io = new IntersectionObserver(entries => {
   entries.forEach(e => {
     if (e.isIntersecting) { e.target.classList.add('is-visible'); io.unobserve(e.target); }
@@ -462,6 +464,22 @@ document.getElementById('open-access-modal')?.addEventListener('click', openAcce
 document.querySelector('.modal-close')?.addEventListener('click', closeAccessModal);
 accessModal?.addEventListener('click', e => { if (e.target === accessModal) closeAccessModal(); });
 accessModal?.addEventListener('close', unlockBodyScroll);
+
+/* ── Host-aware admin links ────────────────────────────────────────────────────────────────────── */
+const adminHost = window.location.hostname.endsWith('goldshore.org') ? 'admin.goldshore.org' : 'admin.goldshore.ai';
+const alternateAdminHost = adminHost === 'admin.goldshore.org' ? 'admin.goldshore.ai' : 'admin.goldshore.org';
+document.querySelectorAll('[data-admin-access-link]').forEach(link => {
+  link.setAttribute('href', `https://${adminHost}`);
+});
+document.querySelectorAll('[data-admin-alternate-link]').forEach(link => {
+  link.setAttribute('href', `https://${alternateAdminHost}`);
+});
+document.querySelectorAll('[data-admin-alternate-title]').forEach(el => {
+  el.textContent = alternateAdminHost === 'admin.goldshore.org' ? 'Admin .org' : 'Admin .ai';
+});
+document.querySelectorAll('[data-admin-alternate-copy]').forEach(el => {
+  el.textContent = alternateAdminHost === 'admin.goldshore.org' ? 'Protected organisation alias' : 'Protected AI alias';
+});
 
 /* ── Quick engage form ───────────────────────────────────────────────────────────────────────── */
 const qsForm    = document.getElementById('quick-form');
@@ -561,6 +579,15 @@ window.addEventListener('load', function () {
       });
     });
   }
+
+  /* Ping on click */
+  document.querySelectorAll('.ticker-item, .anomaly, .metrics div').forEach(el => {
+    el.addEventListener('click', () => {
+      el.classList.remove('is-pinged');
+      void el.offsetWidth;
+      el.classList.add('is-pinged');
+    });
+  });
 
 }, { once: true, passive: true });
 </script>
