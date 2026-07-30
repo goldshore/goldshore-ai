@@ -45,6 +45,15 @@ Cloudflare applications (Pages / Workers / KV / R2 / D1 / AI / Queues).
 10. Worker Builds token policy:
 
 - For `gs-web`, `gs-admin`, and `gs-api`, use the `gs-control` build token in Cloudflare Worker Builds.
+- For GitHub Actions deploy jobs in `deploy-gs-api.yml` and `deploy-gs-web.yml`, use only:
+  - `CLOUDFLARE_BUILD_API_TOKEN` (canonical build token secret)
+  - `CLOUDFLARE_ACCOUNT_ID` (Cloudflare account secret)
+- Secret ownership:
+  - `CLOUDFLARE_BUILD_API_TOKEN`: owned/rotated by the `gs-control` service owner (platform ops).
+  - `CLOUDFLARE_ACCOUNT_ID`: owned by Cloudflare account admins (platform ops).
+- Pre-deploy policy:
+  - Deploy jobs must fail fast when either required secret is unset.
+  - No fallback to ambiguous token sources (for example `CLOUDFLARE_BUILD_API_TOKEN || CLOUDFLARE_API_TOKEN`) is allowed unless explicitly documented as an exception in this runbook.
 - Current repo wrangler files live at:
   - `infra/Cloudflare/gs-web.wrangler.toml`
   - `infra/Cloudflare/gs-admin.wrangler.toml`
@@ -82,3 +91,17 @@ scripts/jules-sync.sh https://gs-admin.pages.dev/
 
 The command must return an HTTP 2xx status to pass.
 The script only sends service-token headers to trusted hosts (`gs-admin.pages.dev`, `admin.goldshore.ai`, `ops.goldshore.ai`).
+
+
+## 13. Banproof worker inventory
+
+`banproof-me` is a canonical monorepo worker and must be deployed from `apps/banproof-me/wrangler.toml` only.
+
+Required repo-managed bindings by environment (`dev`, `preview`, `prod`):
+
+- KV: `BANPROOF_CONFIG`
+- D1: `BANPROOF_DB` (`banproof_platform`)
+- R2: `ASSETS` (`gs-assets`)
+- Queue: `POA_EVENTS_QUEUE` (producer + consumer)
+- Service bindings: `GS_API` (`gs-api`) and `GS_CONTROL` (`gs-control`)
+- Workflow binding: `ContentProcessingWorkflow`

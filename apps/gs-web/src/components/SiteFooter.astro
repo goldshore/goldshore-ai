@@ -1,0 +1,201 @@
+---
+const {
+  currentPath = '',
+  logoSrc = '/logo.svg'
+} = Astro.props;
+
+const legalLinks = [
+  { href: '/legal/privacy', label: 'Privacy' },
+  { href: '/legal/terms', label: 'Terms' }
+];
+---
+
+<footer class="gs-footer">
+  <div class="gs-section gs-section--padded">
+    <div class="gs-grid columns-2">
+      <div>
+        <div class="gs-logo" style="gap: var(--gs-space-2);">
+          <img src={logoSrc} alt="GoldShore logo" width="24" height="32" loading="lazy" decoding="async" />
+        </div>
+        <p>Applied intelligence, resilient infrastructure, and responsive operations.</p>
+        <div class="gs-email-subscription mt-4">
+          <p class="text-sm gs-text-dim mb-2">Get updates on platform releases and insights</p>
+          <form id="email-subscription-form" class="flex gap-2">
+            <input
+              type="email"
+              id="subscription-email"
+              placeholder="Enter your email"
+              required
+              class="gs-input flex-1 text-sm py-2 px-3"
+            />
+            <button
+              type="submit"
+              class="gs-btn gs-btn-primary text-sm px-4 py-2"
+            >
+              Subscribe
+            </button>
+          </form>
+          <p class="text-xs gs-text-dim mt-2">
+            By subscribing, you agree to receive GoldShore updates. Confirm by email and
+            unsubscribe at any time. <a href="/legal/privacy">Privacy</a>
+          </p>
+          <p id="subscription-message" class="text-xs gs-text-dim mt-2"></p>
+        </div>
+      </div>
+      <div class="gs-grid columns-2" style="gap: var(--gs-space-2);">
+        <div class="gs-nav gs-nav--vertical">
+          <strong><span class="aria-icon aria-icon-orbit" aria-hidden="true"></span>Company</strong>
+          <a href="/about" aria-current={currentPath === '/about' ? 'page' : undefined}>About</a>
+          <a href="/team" aria-current={currentPath === '/team' ? 'page' : undefined}>Team</a>
+          <a href="/services" aria-current={currentPath === '/services' ? 'page' : undefined}>Services</a>
+        </div>
+        <div class="gs-nav gs-nav--vertical-support">
+          <strong><span class="aria-icon aria-icon-signal" aria-hidden="true"></span>Support</strong>
+          <a href="/contact" aria-current={currentPath === '/contact' ? 'page' : undefined}>Contact</a>
+          {legalLinks.map((link) => (
+            <a href={link.href} aria-current={currentPath === link.href ? 'page' : undefined}>{link.label}</a>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const form = document.getElementById('email-subscription-form');
+      const emailInput = document.getElementById('subscription-email');
+      const messageEl = document.getElementById('subscription-message');
+
+      if (form) {
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const email = emailInput?.value;
+
+          if (!email) {
+            if (messageEl) messageEl.textContent = 'Please enter an email.';
+            return;
+          }
+
+          if (messageEl) messageEl.textContent = 'Subscribing...';
+
+          try {
+            const response = await fetch('/api/leads/subscribe', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+              if (messageEl) messageEl.textContent = data.message || 'Check your inbox to confirm.';
+              if (emailInput) emailInput.value = '';
+            } else {
+              if (messageEl) messageEl.textContent = data.message || 'Subscription failed.';
+            }
+          } catch (error) {
+            if (messageEl) messageEl.textContent = 'Network error. Please try again.';
+          }
+        });
+      }
+    });
+  </script>
+
+  <style>
+    .gs-email-subscription {
+      max-width: 300px;
+    }
+
+    .gs-input {
+      background: rgba(var(--surface), 0.6);
+      border: 1px solid rgba(var(--border), 0.3);
+      border-radius: 2px;
+      color: rgb(var(--black));
+      font-size: 0.875rem;
+    }
+
+    .gs-input::placeholder {
+      color: rgba(var(--gray), 0.6);
+    }
+
+    .gs-input:focus {
+      outline: none;
+      border-color: rgba(var(--accent), 0.5);
+      box-shadow: 0 0 0 2px rgba(var(--accent), 0.1);
+    }
+
+    .gs-btn {
+      background: rgba(var(--accent), 0.2);
+      border: 1px solid rgba(var(--accent), 0.4);
+      border-radius: 2px;
+      color: rgb(var(--black));
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 120ms ease;
+    }
+
+    .gs-btn:hover {
+      background: rgba(var(--accent), 0.3);
+    }
+
+    .gs-btn-primary {
+      background: rgba(var(--accent), 0.3);
+      border-color: rgba(var(--accent), 0.5);
+    }
+
+    .gs-btn-primary:hover {
+      background: rgba(var(--accent), 0.4);
+    }
+
+    .mt-4 {
+      margin-top: 1rem;
+    }
+
+    .mb-2 {
+      margin-bottom: 0.5rem;
+    }
+
+    .mt-2 {
+      margin-top: 0.5rem;
+    }
+
+    .flex {
+      display: flex;
+    }
+
+    .gap-2 {
+      gap: 0.5rem;
+    }
+
+    .flex-1 {
+      flex: 1;
+    }
+
+    .text-sm {
+      font-size: 0.875rem;
+    }
+
+    .text-xs {
+      font-size: 0.75rem;
+    }
+
+    .py-2 {
+      padding-top: 0.5rem;
+      padding-bottom: 0.5rem;
+    }
+
+    .px-3 {
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+    }
+
+    .px-4 {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+
+    .gs-text-dim {
+      color: rgba(var(--gray), 0.8);
+    }
+  </style>
+</footer>

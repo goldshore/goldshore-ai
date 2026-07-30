@@ -52,6 +52,6 @@ jobs:
       - name: Deploy Control worker (preview)
         working-directory: apps/gs-control
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN || secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_WORKERS_BUILDS || secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: pnpm exec wrangler deploy --env preview --config wrangler.toml
+        run: pnpm exec wrangler deploy --env preview --config ../../infra/cloudflare/gs-control.wrangler.toml

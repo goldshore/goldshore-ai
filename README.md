@@ -1,302 +1,448 @@
-# 🟦 GoldShore Monorepo
+# Gold Shore AI — Repository Operations Map
 
-Unified monorepo for the GoldShore platform. This repository contains the live `gs-*` applications, shared packages, infrastructure configuration, and GitHub Actions workflows used to build and deploy the workspace.
-
-## Where to find things
-
-- **Current workspace snapshot:** [`CURRENT_MONOREPO_STATE.md`](./CURRENT_MONOREPO_STATE.md)
-- **Architecture diagram source:** [`docs/architecture/diagram.mmd`](./docs/architecture/diagram.mmd)
-- **Cloudflare infrastructure docs:** [`infra/Cloudflare/README.md`](./infra/Cloudflare/README.md)
-- **Deprecated package tracking:** [`DEPRECATED_PACKAGES.md`](./DEPRECATED_PACKAGES.md)
-- **Developer rollout docs:** [`docs/developer-briefing.md`](./docs/developer-briefing.md)
-
-## Tech stack
-
-- **Workspace orchestration:** pnpm + Turborepo
-- **Frontend:** Astro
-- **Edge/backend:** Cloudflare Workers + Hono
-- **Shared libraries:** internal `@goldshore/*` packages under `packages/`
-- **CI/CD:** GitHub Actions under `.github/workflows`
-
-## Applications
-
-The canonical application directories are the `gs-*` folders under `apps/`:
-
-| Path | Package name | Type | Current state | Notes |
-| :--- | :--- | :--- | :--- | :--- |
-| `apps/gs-web` | `@goldshore/gs-web` | Astro app | Active | Public website workspace |
-| `apps/gs-admin` | `@goldshore/gs-admin` | Astro app | Active | Admin workspace |
-| `apps/gs-api` | `@goldshore/gs-api` | Cloudflare Worker | Active | API service |
-| `apps/gs-gateway` | `@goldshore/gs-gateway` | Cloudflare Worker | Active | Gateway / router service |
-| `apps/gs-control` | `@goldshore/gs-control` | Cloudflare Worker | Active | Control-plane worker |
-| `apps/gs-agent` | `@goldshore/gs-agent` | Cloudflare Worker | Active | Agent worker |
-| `apps/gs-mail` | `@goldshore/gs-mail` | Cloudflare Worker | Active | Mail worker |
-
-### Compatibility and stale paths
-
-The repository still contains two compatibility workspaces that should **not** be treated as the canonical app locations:
-
-- `apps/web` (`@goldshore/web-compat`) → use `apps/gs-web` instead.
-- `apps/admin` (`@goldshore/admin-compat`) → use `apps/gs-admin` instead.
-
-The following older references are stale and are **not** live top-level app directories in the current workspace:
-
-- `apps/api-worker`
-- `apps/control-worker`
-- `apps/goldshore-agent`
-- `apps/jules-bot`
-- `apps/legacy/goldshore-api`
-
-## Repository structure
+[![Verify workflow mirrors](https://github.com/marzton/goldshore/actions/workflows/workflow-mirror-check.yml/badge.svg)](https://github.com/marzton/goldshore/actions/workflows/workflow-mirror-check.yml)
 
 ```text
-.
-├── apps/
-│   ├── admin/                # compatibility workspace (stale alias)
-│   ├── gs-admin/             # @goldshore/gs-admin
-│   ├── gs-agent/             # @goldshore/gs-agent
-│   ├── gs-api/               # @goldshore/gs-api
-│   ├── gs-control/           # @goldshore/gs-control
-│   ├── gs-gateway/           # @goldshore/gs-gateway
-│   ├── gs-mail/              # @goldshore/gs-mail
-│   ├── gs-web/               # @goldshore/gs-web
-│   └── web/                  # compatibility workspace (stale alias)
-├── packages/
-│   ├── ai-providers/         # @goldshore/ai-providers
-│   ├── auth/                 # @goldshore/auth
-│   ├── brand/                # @goldshore/brand
-│   ├── broker-adapters/      # @goldshore/broker-adapters
-│   ├── config/               # @goldshore/config
-│   ├── core-schema/          # @goldshore/core-schema
-│   ├── integrations/         # @goldshore/integrations
-│   ├── schema/               # @goldshore/schema
-│   ├── theme/                # @goldshore/theme
-│   ├── ui/                   # @goldshore/ui
-│   └── utils/                # @goldshore/utils
-├── infra/
-│   ├── AGENT_CANONICAL_STATE.json
-│   ├── AI/
-│   ├── Cloudflare/
-│   ├── cron/
-│   ├── github/
-│   └── scripts/
-└── .github/
-    └── workflows/
+             /\
+            /__\        GOLD SHORE LABS
+           /\  /\       Applied intelligence · digital systems · consulting
+          /__\/__\      Penrose direction: impossible geometry, real routes
+
+          GS·LAB·v2.84  40°42′N · 074°00′W · goldshore.ai
 ```
 
-## Shared packages
+This README is the root map for humans, agents, and future Codex sessions working in `marzton/goldshore-ai`.
 
-Current package directories under `packages/`:
+It should explain what is true in the repository today: where domains are routed, where Cloudflare Workers live, what deploys them, where visual styles are sourced, and which static files can silently override Astro pages.
 
-- `packages/ai-providers`
-- `packages/auth`
-- `packages/brand`
-- `packages/broker-adapters`
-- `packages/config`
-- `packages/core-schema`
-- `packages/integrations`
-- `packages/schema`
-- `packages/theme`
-- `packages/ui`
-- `packages/utils`
+## First rule
 
-## Infrastructure
+Do not guess the runtime owner of a domain. Check these sources in order:
 
-Current top-level infrastructure layout under `infra/`:
+1. `apps/*/wrangler.toml`
+2. `.github/workflows/*`
+3. `infra/INFRASTRUCTURE.md`
+4. Cloudflare DNS and Worker routes
+5. Deployed `curl -I` / `curl -sL` evidence
 
-- `infra/AGENT_CANONICAL_STATE.json`
-- `infra/AI`
-- `infra/Cloudflare`
-- `infra/cron`
-- `infra/github`
-- `infra/scripts`
+Secrets, API tokens, dashboard credentials, R2 keys, Access JWTs, and OpenAI keys do **not** belong in this repository.
 
-Notable live Cloudflare files include:
+## System sketch
 
-- `infra/Cloudflare/gs-admin.wrangler.toml`
-- `infra/Cloudflare/gs-agent.wrangler.toml`
-- `infra/Cloudflare/gs-api.wrangler.toml`
-- `infra/Cloudflare/gs-web.wrangler.toml`
-- `infra/Cloudflare/config.yaml`
-- `infra/Cloudflare/desired-state.yaml`
+```text
+                               GitHub Actions
+                                    │
+                                    ▼
+                            Cloudflare Deploys
+                                    │
+          ┌─────────────────────────┼─────────────────────────┐
+          │                         │                         │
+          ▼                         ▼                         ▼
+   gs-web-app                gs-www-redirect             service Workers
+   Astro + Worker Assets     canonical www redirects     api / gateway / mail / ops
+          │                         │                         │
+          ▼                         ▼                         ▼
+ goldshore.ai              www.goldshore.ai             api.goldshore.ai
+ goldshore.org             www.goldshore.org            gw.goldshore.ai
+                                                     agent.goldshore.ai
+                                                     trading.goldshore.ai
+                                                     mail.goldshore.ai
+                                                     ops.goldshore.ai
+                                                     mcp.goldshore.ai
+```
 
-## GitHub Actions workflows
+## Production surface overview
 
-The active root workflow directory is `.github/workflows/`. Current files there are:
+| Surface | Source location | Runtime | Purpose |
+| --- | --- | --- | --- |
+| Public web app | `apps/gs-web` | Cloudflare Worker with Assets | Main Astro website for `goldshore.ai` and `goldshore.org` |
+| WWW redirect | `apps/gs-www-redirect` | Cloudflare Worker | Canonical `www` redirect handling |
+| Admin app | `apps/gs-admin` | Cloudflare Pages / Worker-adjacent app | Protected operator UI |
+| API | `apps/gs-api` | Cloudflare Worker | Core API surface |
+| Gateway | `apps/gs-gateway` | Cloudflare Worker | Gateway, agent ingress, bindings |
+| Agent | `apps/gs-api/src/routes/agent.ts` + `gs-api` queue handler | Consolidated API route/queue consumer | Legacy `gs-agent` behavior now runs inside `gs-api`. |
+| Trading | `apps/gs-api/src/routes/trading.ts` | Consolidated API route | Trading / OAuth / paper trading surface now runs inside `gs-api`. |
+| Mail | `apps/gs-api/src/routes/mail.ts` + `gs-api` email/queue handlers | Consolidated API route/email handler | Mail/event handling now runs inside `gs-api`. |
+| Ops / control | `apps/gs-api/src/routes/control.ts` | Protected API admin/control route | Operator control plane now runs inside `gs-api`. |
+| Shared packages | `packages/*` | Workspace packages | Shared auth, engine, brand, and theme code |
+| Infrastructure docs | `infra/*`, `docs/*` | Documentation | Desired state, domain/auth notes, operational gates |
+| GitHub Actions | `.github/workflows/*` | GitHub CI/CD | Build and deploy automation |
 
-### Validation and repository health
+## Canonical domain ownership
 
-- `archive-path-guard.yml`
-- `canonical-structure-check.yml`
-- `ci.yml`
-- `lockfile-guard.yml`
-- `naming-guard.yml`
-- `naming-lint.yml`
-- `pii-scan.yml`
-- `repo-health.yml`
-- `route-collision-check.yml`
-- `signed-commit-guard.yml`
-- `sonarcloud.yml`
-- `summary.yml`
-- `tfsec.yml`
+Current verified target model:
 
-### Deployment and preview workflows
+```text
+goldshore.ai                 -> gs-web-app
+goldshore.org                -> gs-web-app
+www.goldshore.ai             -> gs-www-redirect-prod -> goldshore.ai
+www.goldshore.org            -> gs-www-redirect-prod -> goldshore.ai
 
-- `deploy-gs-admin.yml`
-- `deploy-gs-agent.yml`
-- `deploy-gs-api.yml`
-- `deploy-gs-control.yml.disabled`
-- `deploy-gs-gateway.yml.disabled`
-- `deploy-gs-mail.yml`
-- `deploy-gs-web.yml`
-- `preview-gs-admin.yml`
-- `preview-gs-agent.yml`
-- `preview-gs-api.yml`
-- `preview-gs-gateway.yml`
-- `preview-gs-web.yml`
+preview.goldshore.ai         -> gs-web preview / preview route as configured
+admin.goldshore.ai           -> gs-admin / protected operator UI
+admin-preview.goldshore.ai   -> gs-admin preview
+api.goldshore.ai             -> gs-api
+api-preview.goldshore.ai     -> gs-api preview
+gw.goldshore.ai              -> gs-gateway-prod
+agent.goldshore.ai           -> gs-api /agent route
+mcp.goldshore.ai             -> gs-mcp / MCP surface
+trading.goldshore.ai         -> gs-api /trading route
+mail.goldshore.ai            -> gs-api mail route/email handler
+ops.goldshore.ai             -> gs-api /admin/control route
+dashboard.goldshore.ai       -> intended dashboard/admin redirect surface
+```
 
-### Maintenance and automation
+When this table disagrees with live Cloudflare, Cloudflare is the current truth and the repo is drifted. Fix the repo after confirming live state.
 
-- `cleanup-cache.yml`
-- `cleanup-workflow-runs.yml`
-- `close-stale-prs.yml`
-- `jules-nightly.yml`
-- `maintenance-gs-sync.yml`
-- `maintenance.yml`
-- `neuralegion.yml`
-- `palette-manual.yml`
-- `stabilization-task.yml`
+## Cloudflare Worker apps
 
-## Development
+### `apps/gs-web`
 
-Install dependencies:
+Primary Astro web app deployed as a Cloudflare Worker with Assets.
+
+Important files:
+
+- `apps/gs-web/src/pages/index.astro` — current homepage source.
+- `apps/gs-web/src/styles/home-theme.css` — current GS LAB homepage visual system.
+- `apps/gs-web/src/layouts/WebLayout.astro` — current subpage layout.
+- `apps/gs-web/src/styles/global.css` — current subpage/global style stack.
+- `apps/gs-web/public/_headers` — static route security headers.
+- `apps/gs-web/public/_routes.json` — static routing hints.
+- `apps/gs-web/wrangler.toml` — Worker name, routes, KV, D1, R2, and environment variables.
+- `.github/workflows/deploy-gs-web.yml` — production deploy workflow.
+
+The production Worker route configuration is stored in `apps/gs-web/wrangler.toml` under the production environment.
+
+Bindings to check in `wrangler.toml`:
+
+- Worker assets binding.
+- KV namespace binding.
+- D1 database binding.
+- R2 bucket binding.
+- Environment variables.
+
+Secrets must never be committed. Keep tokens, API keys, R2 credentials, dashboard secrets, and OpenAI keys only in Cloudflare secrets, GitHub Actions secrets, or the appropriate platform secret manager.
+Expected production deploy command:
 
 ```bash
-pnpm install
+pnpm --filter @goldshore/gs-web build
+pnpm --filter @goldshore/gs-web exec wrangler deploy --env prod
 ```
 
-Run the workspace in development mode:
+The production environment is `env.prod`. Do not accidentally deploy a route-free or differently named environment and then assume the public route changed.
+
+### `apps/gs-www-redirect`
+
+Small redirect Worker for canonical `www` traffic.
+
+Important files:
+
+- `apps/gs-www-redirect/src/index.ts`
+- `apps/gs-www-redirect/wrangler.toml`
+- `.github/workflows/deploy-gs-www-redirect.yml`
+
+Expected behavior:
+
+```text
+www.goldshore.ai   -> https://goldshore.ai/
+www.goldshore.org  -> https://goldshore.ai/   after explicit route/custom-domain binding
+```
+
+## Bindings and runtime resources
+
+Check bindings in each app's `wrangler.toml`, not from memory.
+
+Typical resources in this repo include:
+
+```text
+KV     -> namespace bindings for app/cache/control state
+D1     -> gs_platform_db, gs_audit_db, gs_signals_db, gs_jobs_db, trading DBs
+R2     -> gs-assets, gs-assets-preview, telemetry/user upload buckets
+DO     -> AuthSession and app-specific Durable Objects where configured
+Queues -> app-specific event and signal processing queues where configured
+```
+
+Do not rename a binding casually. Application code expects exact binding names.
+
+## Homepage visual identity
+
+The preferred homepage direction is the GS LAB / Applied Intelligence page:
+
+```text
+GS·LAB·v2.84
+Gold Shore Labs
+Where
+Strategy
+Operates.
+Applied intelligence for institutions that need clarity under pressure.
+```
+
+The homepage currently owns a standalone visual system:
+
+```text
+apps/gs-web/src/pages/index.astro
+apps/gs-web/src/styles/home-theme.css
+```
+
+This is where the orange/gold and white hero typography, coordinates mark, GS LAB panel language, telemetry cards, marquee, cursor orb, reveal animations, magnetic CTA behavior, and Risk Radar / Financial Signals previews live.
+
+## Penrose / brand asset direction
+
+The historical brand direction includes Penrose-style impossible geometry. Repository history includes references such as:
+
+```text
+public/logo/gs-penrose.svg
+public/assets/ui/penrose.svg
+packages/theme/README.md
+packages/theme/src/assets.js
+docs/brand-asset-plan.md
+```
+
+Planning guidance found in repo history says the canonical brand asset source should be `packages/theme/assets`, with web consuming the asset by URL and admin preferring inline SVG for styling control.
+
+That does **not** mean every current page already consumes the package correctly. Treat this as the intended migration direction until verified in current files.
+
+## Homepage vs subpage styling
+
+The homepage and subpages currently use different layout systems.
+
+### Homepage system
+
+The homepage is a standalone Astro document:
+
+```text
+apps/gs-web/src/pages/index.astro
+```
+
+It imports:
+
+```astro
+import '../styles/home-theme.css';
+```
+
+This file owns the current GS LAB homepage experience:
+
+- coordinates header
+- GS LAB brand mark
+- Applied Intelligence homepage hero
+- homepage cards and telemetry
+- marquee
+- Risk Radar preview
+- financial signals preview
+- contact form
+- homepage-specific CSS and JavaScript behavior
+
+### Subpage system
+
+Most subpages use `WebLayout.astro`.
+
+Examples:
+
+```astro
+import WebLayout from '../layouts/WebLayout.astro';
+```
+
+or:
+
+```astro
+import WebLayout from '../../layouts/WebLayout.astro';
+```
+
+`WebLayout.astro` imports:
+
+```astro
+import '../styles/global.css';
+```
+
+This means subpages do not automatically inherit the homepage stylesheet, homepage nav, homepage footer, modals, starfield/cursor effects, or homepage interaction JavaScript.
+
+Known areas to inspect:
+
+- `apps/gs-web/src/pages/risk-radar.astro`
+- `apps/gs-web/src/pages/platform/*.astro`
+- `apps/gs-web/src/pages/services/*.astro`
+- `apps/gs-web/src/layouts/BaseLayout.astro`
+- `apps/gs-web/src/layouts/DocsLayout.astro`
+- `apps/gs-web/src/layouts/MarketingLayout.astro`
+
+## Static public-file override warning
+
+Astro will skip a source page when a file with the same output path exists in `public/`.
+
+Collision patterns to avoid:
+
+```text
+apps/gs-web/public/index.html
+apps/gs-web/public/apps/risk-radar/index.html
+```
+
+These can override Astro routes and cause the deployed site to serve stale static HTML instead of current Astro pages.
+
+Archive old static files under a non-colliding location such as:
+
+```text
+apps/gs-web/public/_archived-static/
+```
+
+Before every web deploy, run or confirm equivalent checks:
 
 ```bash
-pnpm dev
+find apps/gs-web/public -type f | sort
+gh run view <run-id> --log | grep -Ei 'Skipping src/pages|public folder|index.html'
 ```
 
-## Shared Packages
+## Recommended UI architecture
 
-### `packages/theme`
+Create a shared shell for all public pages:
 
-Design tokens:
+```text
+apps/gs-web/src/layouts/GoldShoreShell.astro
+apps/gs-web/src/styles/gs-shell.css
+apps/gs-web/src/scripts/gs-shell.ts
+apps/gs-web/src/config/navigation.ts
+```
 
-- `tokens.css`
-- Colors / radii / spacing
-- Astro CSS variables
-- Shared across web + admin
+Move shared UI into that shell:
 
-### `packages/ui`
+- coordinates header
+- brand mark
+- primary nav
+- Access menu or modal
+- Request Briefing CTA
+- shared footer
+- reveal animation
+- magnetic hover
+- starfield or cursor behavior
+- modal open and close behavior
 
-Component library:
+Then migrate subpages from `WebLayout` to `GoldShoreShell` gradually.
 
-- Typography
-- Buttons, Inputs
-- Cards, Tables
-- Navbars, Sidebars
-- Tailwind/Vanilla CSS compatible
+Recommended first migration target:
 
----
+```text
+apps/gs-web/src/pages/risk-radar.astro
+```
 
-# 🧩 Template Pages & Modules
+## Audit commands
 
-Template pages are kept alongside each app so navigation, menus, containers, and search remain pluggable.
-
-| App        | Template Location                            | Notes                           |
-| ---------- | -------------------------------------------- | ------------------------------- |
-| Web        | `apps/gs-web/src/pages/templates/index.astro`   | Marketing + search composition  |
-| Admin      | `apps/gs-admin/src/pages/templates/index.astro` | Dashboard shell + table samples |
-| API Worker | `apps/gs-api/src/routes/templates.ts`    | Module checklist for API growth |
-| Gateway    | `apps/gs-gateway/src/index.ts` (`/templates`)   | Routing + AI dispatch template  |
-| Agent      | `apps/gs-agent/src/index.ts` (`/templates`)  | HITL orchestration template     |
-
----
-
-# 🔗 Integration Matrix (Current + Planned)
-
-GoldShore templates are designed to integrate with:
-
-- **AI Providers**: Google Gemini, OpenAI ChatGPT, Anthropic Claude (via AI Gateway).
-- **Operational Assistants**: Jules, GitHub Copilot, and custom HITL review workflows.
-- **Cloudflare**: Workers, Pages, Queues, D1, R2, and AI Gateway.
-- **DevOps**: GitHub Actions, GitHub Issues/Projects, and deploy previews.
-- **Market Data + Trading**: Alpaca, Thinkorswim, Polygon, Tradier, and FIX gateways.
-- **Ecommerce + CRM**: Stripe, Shopify, HubSpot, Salesforce, and outbound messaging.
-
-Use these integrations to expand website management, SEO automation, admin analytics,
-AI agent tooling, and market data services without rebuilding existing modules.
-
----
-
-# 🧭 Continuity Tracking
-
-To keep issues, workflows, PRs, branches, and components aligned:
-
-- Track work in **GitHub Issues/Projects** and the templates in `.github/ISSUE_TEMPLATE/`.
-- Review deployment flow in `.github/workflows/`.
-- Use `ops/pr-playbook.md` and `ops/maintenance-playbook.md` for release continuity.
-- Document component ownership in the admin dashboard templates and UI kit README.
-
-### Contributing Naming Rules
-
-- Read `docs/conventions/naming.md` before opening a PR.
-- Prefer `feat/add-new-worker-healthcheck` over mixed-case or space-separated branch names.
-- Prefer package names like `@goldshore/api-worker` and workflow file names like `deploy-gs-api.yml`.
-- Anti-patterns to avoid: `Feature/AddThing`, `gs_api`, `Deploy API Worker.yml`, and job keys like `deploy_api`.
-- Use helper scripts:
-  - `pnpm branch:bootstrap -- <type> <slug>`
-  - `pnpm scaffold:worker -- <worker-name>`
-
-## **packages/utils**
-### `packages/utils`
-
-TypeScript utilities:
-
-- fetch wrapper
-- env loader
-- request helpers
-- error handling
-
-### `packages/auth`
-[![CodeQL](https://github.com/goldshore/goldshore-ai/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/goldshore/goldshore-ai/actions/workflows/github-code-scanning/codeql)
-
-Unified platform for the **GoldShore** ecosystem, built with **Astro**, **Cloudflare**, and shared UI/theme packages.
-
-> Looking for the full operational handbook? See [README-v2.md](./README-v2.md).
-
-## Quick links
-
-- Architecture + repo state: [`CURRENT_MONOREPO_STATE.md`](./CURRENT_MONOREPO_STATE.md)
-- Domains + auth policies: [`docs/domains-and-auth.md`](./docs/domains-and-auth.md)
-- Branch and release operations: [`docs/ops/mergeable-branches.md`](./docs/ops/mergeable-branches.md)
-- Contributor standards: [`docs/contributing.md`](./docs/contributing.md)
-
-## Core apps
-
-- `apps/gs-web` — Public website (Astro + Cloudflare Pages)
-- `apps/gs-admin` — Admin cockpit (Astro + Cloudflare Pages)
-- `apps/gs-api` — API worker (Hono + Cloudflare Workers)
-- `apps/gs-gateway` — Gateway/edge routing worker
-- `apps/gs-agent` — Background agent worker
-- `apps/gs-control` — Infra automation worker
-- `apps/gs-mail` — Mail worker
-
-## Development
-Run top-level validation checks:
+Find subpages still using the old layout:
 
 ```bash
-pnpm validate
-pnpm check:docs-consistency
+grep -R "import WebLayout" -n apps/gs-web/src/pages apps/gs-web/src/layouts
 ```
 
-## Notes
+Find public files that may override Astro routes:
 
-- Canonical app paths use the `gs-*` naming convention.
-- Root GitHub Actions definitions live in `.github/workflows`, not `infra/github/workflows`.
-- When updating Cloudflare Worker build-token settings, services/workers should use the `gs-control` build token.
+```bash
+find apps/gs-web/public -type f | sort
+```
+
+Check build logs for route collisions:
+
+```bash
+gh run view <RUN_ID> --log | grep -Ei 'Skipping src/pages|public folder|index.html|risk-radar'
+```
+
+Compare homepage and subpage imports:
+
+```bash
+grep -nE "import .*css|import .*Layout|WebLayout|home-theme" \
+  apps/gs-web/src/pages/index.astro \
+  apps/gs-web/src/pages/risk-radar.astro \
+  apps/gs-web/src/layouts/WebLayout.astro
+- cursor/starfield behavior
+- consistent CTA link handling
+
+Then migrate subpages from `WebLayout.astro` to `GoldShoreShell.astro` gradually. Do not rewrite every content page in one uncontrolled commit.
+
+## Deployment commands
+
+### Deploy `gs-web`
+
+```bash
+gh workflow run deploy-gs-web.yml --ref main
+WEB=$(gh run list --workflow "Deploy gs-web" --branch main --limit 1 --json databaseId -q '.[0].databaseId')
+gh run watch "$WEB"
+```
+
+### Deploy `gs-www-redirect`
+
+```bash
+gh workflow run deploy-gs-www-redirect.yml --ref main
+WWW=$(gh run list --workflow "Deploy gs-www-redirect" --branch main --limit 1 --json databaseId -q '.[0].databaseId')
+gh run watch "$WWW"
+```
+
+## Live verification commands
+
+```bash
+for u in \
+  https://goldshore.ai/ \
+  https://goldshore.org/ \
+  https://www.goldshore.ai/ \
+  https://www.goldshore.org/ \
+  https://goldshore.ai/developer/mcp/
+do
+  echo "$u"
+  curl -I -A "Mozilla/5.0 GoldShoreAudit" "$u" | grep -Ei 'HTTP/|location:|server:|cf-ray|content-type'
+  echo
+done
+```
+
+## OpenAI Platform guidance
+
+No browser page should expose an OpenAI API key.
+
+If AI Oracle, MCP, admin, dashboard, or other features call OpenAI-backed systems, route those calls through server-side Workers or API endpoints and store secrets only in:
+
+- Cloudflare Worker secrets.
+- GitHub Actions secrets.
+- OpenAI Platform key management.
+
+Never commit API tokens, R2 access keys, dashboard/admin secrets, or OpenAI keys.
+
+## Immediate next PRs
+
+1. Add a CI guard for public/Astro route collisions.
+2. Create `GoldShoreShell.astro` from the homepage shell.
+3. Move shared homepage effects into `gs-shell.css` and `gs-shell.js`.
+4. Migrate `risk-radar.astro` to `GoldShoreShell`.
+5. Normalize admin, dashboard, API, MCP, and core link targets.
+6. Review CSP for static routes and modal/API behavior.
+Content verification:
+
+```bash
+curl -sL "https://goldshore.ai/?v=$(date +%s)" \
+  | grep -Ei 'Applied Intelligence|Where|Strategy|GS·LAB|Gold Shore Labs' \
+  | head -40
+```
+
+If `curl` returns a Cloudflare challenge page, that is not proof the site is blank. Check from a browser session and check Cloudflare security rules separately.
+
+## Agent handoff notes
+
+When taking over this repository:
+
+1. Read this README.
+2. Check `git status --short`.
+3. Check open PRs and active branches.
+4. Check `apps/gs-web/public` for route collisions.
+5. Check whether the homepage is generated from Astro or overridden by `public/index.html`.
+6. Check whether subpages still import `WebLayout.astro`.
+7. Check Cloudflare route ownership before changing DNS or Worker routes.
+8. Never commit secrets.
+
+## Merge safety checklist
+
+Before merging UI or routing changes:
+
+- [ ] `apps/gs-web/public/index.html` does not override `src/pages/index.astro`.
+- [ ] Build logs show no unexpected `Skipping src/pages/... because public folder...` warnings.
+- [ ] `deploy-gs-web.yml` deploys the routed production environment.
+- [ ] `goldshore.ai` returns `HTTP/2 200`.
+- [ ] `goldshore.org` returns expected canonical behavior.
+- [ ] `www.goldshore.ai` redirects to canonical apex.
+- [ ] `www.goldshore.org` redirects to canonical apex.
+- [ ] Homepage content contains `Applied Intelligence`, `Where`, `Strategy`, and `GS·LAB`.
+- [ ] Subpage layout migration is deliberate and not an accidental partial theme mix.
+- [ ] Access-protected surfaces remain protected.

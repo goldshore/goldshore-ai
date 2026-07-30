@@ -4,16 +4,21 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const isDevelopment = process.env.NODE_ENV !== 'production';
 const isPlaywright = process.env.PLAYWRIGHT_TEST === '1';
-const useCloudflareAdapter = !isDevelopment && !isPlaywright;
+const isLocalDev = process.env.NODE_ENV !== 'production';
 
 export default defineConfig({
   ...baseConfig,
-  // Local dev and Playwright should use the lightweight Vite server; production still uses Cloudflare.
-  adapter: useCloudflareAdapter ? baseConfig.adapter : undefined,
+  // Keep the Cloudflare adapter for production builds, but disable it for local
+  // dev and Playwright runs so Astro can boot without the Workers runtime.
+  adapter: isPlaywright || isLocalDev ? undefined : baseConfig.adapter,
   vite: {
     ...baseConfig.vite,
+    server: isLocalDev ? { allowedHosts: true } : undefined,
+    build: {
+      // Disable minification to avoid lightningcss @keyframes issues
+      minify: false
+    },
     resolve: {
       ...baseConfig.vite?.resolve,
       alias: {

@@ -1,6 +1,6 @@
 # Manual operations guide:
-# - Use this workflow to verify that pnpm-lock.yaml changes only when the dependency graph changed.
-# - Routine feature PRs should not regenerate pnpm-lock.yaml.
+# - Use this workflow to verify that a branch or ad-hoc change set does not modify pnpm-lock.yaml outside the approved process.
+# - This is an operator guardrail, not a dependency-update workflow.
 name: "Manual Guard: Lockfile Policy Check"
 run-name: "Lockfile policy check • @${{ github.actor }}"
 
@@ -16,31 +16,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Guard pnpm lockfile
-        shell: bash
         run: |
           set -euo pipefail
           git fetch origin main
 
-          changed_files="$(git diff --name-only origin/main...HEAD)"
-
-          lockfile_changed=0
-          manifest_changed=0
-
-          if grep -qx 'pnpm-lock.yaml' <<<"$changed_files"; then
-            lockfile_changed=1
+          # Allow adding pnpm-lock.yaml when main doesn't have one (restoration after deletion).
+          # Only block modifications to an existing lockfile.
+          if git show origin/main:pnpm-lock.yaml > /dev/null 2>&1; then
+            if git diff --name-only origin/main...HEAD | grep -q '^pnpm-lock.yaml$'; then
+              echo "❌ Detected changes to pnpm-lock.yaml in this pull request."
+              echo "Lockfile updates must go through the designated lockfile update branch/process."
+              exit 1
+            fi
+          else
+            echo "ℹ️  pnpm-lock.yaml does not exist on origin/main — allowing addition."
           fi
 
-          if grep -Eq '(^package\.json$|^pnpm-workspace\.yaml$|/package\.json$)' <<<"$changed_files"; then
-            manifest_changed=1
-          fi
-
-          if [[ "$lockfile_changed" == "1" && "$manifest_changed" == "0" ]]; then
-            echo "❌ pnpm-lock.yaml changed without package manifest changes."
-            echo "Restore pnpm-lock.yaml from main. Do not regenerate it for ordinary conflict repair."
-            exit 1
-          fi
-
-          echo "✅ pnpm lockfile policy passed."
+          echo "✅ Lockfile policy check passed."

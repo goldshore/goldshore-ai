@@ -1,0 +1,38 @@
+name: Setup Preview DNS
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup-dns:
+    name: Configure preview.goldshore.ai DNS
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - uses: ./.github/actions/normalize-cf-token
+        id: cf-token
+        with:
+          raw_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          token_name: 'CLOUDFLARE_API_TOKEN'
+
+      - name: Run DNS setup script
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_TOKEN: ${{ steps.cf-token.outputs.token }}
+        run: |
+          test -n "$CF_TOKEN" || (echo "Missing required secret: CLOUDFLARE_API_TOKEN" && exit 1)
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "Missing required secret: CLOUDFLARE_ACCOUNT_ID" && exit 1)
+          echo "CLOUDFLARE_API_TOKEN=$CF_TOKEN" >> "$GITHUB_ENV"
+
+      - name: Configure preview DNS
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+        run: node scripts/setup-preview-dns.mjs

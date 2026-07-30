@@ -1,0 +1,380 @@
+---
+/**
+ * TickerFeed — scrolling market ticker strip with click-to-expand detail panel.
+ *
+ * Data: fetches from a public quote proxy on mount, falls back to seed values.
+ * Interaction: click any ticker chip → expanded panel slides in with key metrics.
+ */
+
+export interface TickerSymbol {
+  symbol: string;
+  name: string;
+  seed: { price: number; change: number; pct: number };
+}
+
+const defaultSymbols: TickerSymbol[] = [
+  { symbol: 'AAPL',  name: 'Apple',      seed: { price: 211.43, change: 1.24,  pct: 0.59  } },
+  { symbol: 'MSFT',  name: 'Microsoft',  seed: { price: 449.82, change: -2.11, pct: -0.47 } },
+  { symbol: 'NVDA',  name: 'NVIDIA',     seed: { price: 137.68, change: 4.33,  pct: 3.25  } },
+  { symbol: 'TSLA',  name: 'Tesla',      seed: { price: 179.14, change: -3.82, pct: -2.09 } },
+  { symbol: 'SPY',   name: 'S&P 500',    seed: { price: 584.31, change: 0.88,  pct: 0.15  } },
+  { symbol: 'QQQ',   name: 'Nasdaq-100', seed: { price: 503.47, change: 1.92,  pct: 0.38  } },
+  { symbol: 'META',  name: 'Meta',       seed: { price: 601.22, change: 7.44,  pct: 1.25  } },
+  { symbol: 'AMZN',  name: 'Amazon',     seed: { price: 219.80, change: -0.63, pct: -0.29 } },
+  { symbol: 'GOOGL', name: 'Alphabet',   seed: { price: 179.55, change: 0.41,  pct: 0.23  } },
+  { symbol: 'BRK.B', name: 'Berkshire',  seed: { price: 516.60, change: 1.10,  pct: 0.21  } },
+];
+
+const { symbols = defaultSymbols, id = 'ticker-feed' } = Astro.props;
+---
+
+<div class="tf-root" id={id} data-symbols={JSON.stringify(symbols)}>
+
+  <!-- ── Scrolling strip ─────────────────────────────────────── -->
+  <div class="tf-strip-wrap" aria-label="Market ticker">
+    <div class="tf-strip" role="list">
+      <!-- JS fills this; noscript fallback below -->
+      <noscript>
+        {symbols.map((s: TickerSymbol) => (
+          <span class="tf-chip" role="listitem">
+            <span class="tf-sym">{s.symbol}</span>
+            <span class="tf-price">${s.seed.price.toFixed(2)}</span>
+            <span class={`tf-chg ${s.seed.change >= 0 ? 'up' : 'dn'}`}>
+              {s.seed.change >= 0 ? '+' : ''}{s.seed.pct.toFixed(2)}%
+            </span>
+          </span>
+        ))}
+      </noscript>
+    </div>
+    <div class="tf-fade tf-fade--l" aria-hidden="true"></div>
+    <div class="tf-fade tf-fade--r" aria-hidden="true"></div>
+  </div>
+
+  <!-- ── Expanded detail panel ──────────────────────────────── -->
+  <div class="tf-panel" id={`${id}-panel`} hidden aria-live="polite">
+    <button class="tf-panel-close" id={`${id}-close`} aria-label="Close ticker detail">✕</button>
+    <div class="tf-panel-inner">
+      <div class="tf-panel-header">
+        <span class="tf-panel-sym"></span>
+        <span class="tf-panel-name"></span>
+        <span class="tf-panel-badge"></span>
+      </div>
+      <div class="tf-panel-metrics">
+        <div class="tf-metric"><span>Price</span><strong class="tf-m-price">—</strong></div>
+        <div class="tf-metric"><span>Change</span><strong class="tf-m-chg">—</strong></div>
+        <div class="tf-metric"><span>% Change</span><strong class="tf-m-pct">—</strong></div>
+        <div class="tf-metric"><span>Source</span><strong class="tf-m-src">Seed data</strong></div>
+      </div>
+      <p class="tf-panel-note">
+        Prices shown are seed values. Live data requires broker OAuth.
+        Paper-trading signals run on <a href="https://trading.goldshore.ai">trading.goldshore.ai</a>.
+      </p>
+    </div>
+  </div>
+</div>
+
+<style>
+  .tf-root {
+    --tf-bg: rgba(255,255,255,0.02);
+    --tf-border: rgba(255,255,255,0.07);
+    --tf-up: #22c55e;
+    --tf-dn: #ef4444;
+    --tf-accent: #22d3ee;
+    width: 100%;
+  }
+
+  /* ── Strip ── */
+  .tf-strip-wrap {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--tf-border);
+    border-radius: 10px;
+    background: var(--tf-bg);
+  }
+
+  .tf-strip {
+    display: flex;
+    gap: 0;
+    width: max-content;
+    will-change: transform;
+  }
+
+  .tf-strip.paused { animation-play-state: paused !important; }
+
+  .tf-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.55rem 1.1rem;
+    cursor: pointer;
+    border-right: 1px solid var(--tf-border);
+    white-space: nowrap;
+    transition: background 0.15s;
+    font-family: var(--font-family-mono, monospace);
+    font-size: 0.8rem;
+  }
+
+  .tf-chip:hover,
+  .tf-chip.active {
+    background: rgba(34, 211, 238, 0.07);
+  }
+
+  .tf-chip.active .tf-sym {
+    color: var(--tf-accent);
+  }
+
+  .tf-sym {
+    font-weight: 700;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    color: #e5e7eb;
+  }
+
+  .tf-price {
+    color: #9ca3af;
+    font-size: 0.76rem;
+  }
+
+  .tf-chg {
+    font-size: 0.73rem;
+    font-weight: 600;
+  }
+
+  .tf-chg.up  { color: var(--tf-up);  }
+  .tf-chg.dn  { color: var(--tf-dn);  }
+
+  .tf-fade {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 48px;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .tf-fade--l { left: 0;  background: linear-gradient(to right, rgba(0,0,0,0.5), transparent); }
+  .tf-fade--r { right: 0; background: linear-gradient(to left,  rgba(0,0,0,0.5), transparent); }
+
+  /* ── Panel ── */
+  .tf-panel {
+    margin-top: 0.5rem;
+    border: 1px solid var(--tf-border);
+    border-radius: 10px;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(12px);
+    padding: 1.25rem 1.5rem;
+    position: relative;
+    animation: tf-slide-in 0.2s ease;
+  }
+
+  .tf-panel[hidden] { display: none; }
+
+  .tf-panel-close {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.9rem;
+    background: none;
+    border: none;
+    color: #6b7280;
+    cursor: pointer;
+    font-size: 0.9rem;
+    line-height: 1;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    transition: color 0.15s;
+  }
+
+  .tf-panel-close:hover { color: #e5e7eb; }
+
+  .tf-panel-header {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+  }
+
+  .tf-panel-sym {
+    font-family: var(--font-family-mono, monospace);
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--tf-accent);
+  }
+
+  .tf-panel-name {
+    color: #9ca3af;
+    font-size: 0.9rem;
+  }
+
+  .tf-panel-badge {
+    font-family: var(--font-family-mono, monospace);
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    margin-left: auto;
+  }
+
+  .tf-panel-badge.up { background: rgba(34,197,94,0.15); color: var(--tf-up); }
+  .tf-panel-badge.dn { background: rgba(239,68,68,0.15);  color: var(--tf-dn); }
+
+  .tf-panel-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 0.9rem;
+  }
+
+  .tf-metric {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.6rem 0.75rem;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--tf-border);
+    border-radius: 8px;
+  }
+
+  .tf-metric span {
+    font-size: 0.68rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .tf-metric strong {
+    font-family: var(--font-family-mono, monospace);
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .tf-panel-note {
+    font-size: 0.75rem;
+    color: #4b5563;
+    margin: 0;
+  }
+
+  .tf-panel-note a {
+    color: var(--tf-accent);
+    text-decoration: none;
+  }
+
+  @keyframes tf-slide-in {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+
+<script>
+  (() => {
+    document.querySelectorAll<HTMLElement>('.tf-root').forEach((root) => {
+      const id     = root.id;
+      const strip  = root.querySelector<HTMLElement>('.tf-strip')!;
+      const panel  = root.querySelector<HTMLElement>('.tf-panel')!;
+      const closeBtn = root.querySelector<HTMLButtonElement>('.tf-panel-close')!;
+      const rawSymbols = root.dataset.symbols ?? '[]';
+
+      type Sym = { symbol: string; name: string; seed: { price: number; change: number; pct: number } };
+      const symbols: Sym[] = JSON.parse(rawSymbols);
+
+      // ── Build quotes map from seed data ──────────────────────
+      const quotes: Record<string, Sym['seed']> = {};
+      symbols.forEach((s) => { quotes[s.symbol] = { ...s.seed }; });
+
+      // ── Render chips (duplicated for seamless loop) ───────────
+      const buildChips = (dupe = false) =>
+        symbols.map((s) => {
+          const q    = quotes[s.symbol];
+          const up   = q.change >= 0;
+          const chip = document.createElement('button');
+          chip.type  = 'button';
+          chip.className = 'tf-chip';
+          chip.setAttribute('role', 'listitem');
+          chip.dataset.symbol = s.symbol;
+          if (dupe) chip.setAttribute('aria-hidden', 'true');
+          chip.innerHTML = `
+            <span class="tf-sym">${s.symbol}</span>
+            <span class="tf-price">$${q.price.toFixed(2)}</span>
+            <span class="tf-chg ${up ? 'up' : 'dn'}">${up ? '+' : ''}${q.pct.toFixed(2)}%</span>`;
+          return chip;
+        });
+
+      strip.replaceChildren(...buildChips(false), ...buildChips(true));
+
+      // ── Continuous scroll animation ───────────────────────────
+      let offset = 0;
+      let raf: number;
+      let paused = false;
+
+      const halfWidth = () => strip.scrollWidth / 2;
+
+      const tick = () => {
+        if (!paused) {
+          offset += 0.5;
+          if (offset >= halfWidth()) offset = 0;
+          strip.style.transform = `translateX(-${offset}px)`;
+        }
+        raf = requestAnimationFrame(tick);
+      };
+
+      raf = requestAnimationFrame(tick);
+
+      root.querySelector('.tf-strip-wrap')!.addEventListener('mouseenter', () => { paused = true; });
+      root.querySelector('.tf-strip-wrap')!.addEventListener('mouseleave', () => { paused = false; });
+
+      // ── Panel toggle ──────────────────────────────────────────
+      let activeSymbol = '';
+
+      const openPanel = (sym: string) => {
+        const s = symbols.find((x) => x.symbol === sym);
+        if (!s) return;
+        const q = quotes[sym];
+        const up = q.change >= 0;
+
+        panel.querySelector<HTMLElement>('.tf-panel-sym')!.textContent  = s.symbol;
+        panel.querySelector<HTMLElement>('.tf-panel-name')!.textContent = s.name;
+
+        const badge = panel.querySelector<HTMLElement>('.tf-panel-badge')!;
+        badge.textContent  = `${up ? '+' : ''}${q.pct.toFixed(2)}%`;
+        badge.className    = `tf-panel-badge ${up ? 'up' : 'dn'}`;
+
+        panel.querySelector<HTMLElement>('.tf-m-price')!.textContent = `$${q.price.toFixed(2)}`;
+        panel.querySelector<HTMLElement>('.tf-m-chg')!.textContent   = `${up ? '+' : ''}$${Math.abs(q.change).toFixed(2)}`;
+        panel.querySelector<HTMLElement>('.tf-m-pct')!.textContent   = `${up ? '+' : ''}${q.pct.toFixed(2)}%`;
+
+        const chgEl = panel.querySelector<HTMLElement>('.tf-m-chg')!;
+        const pctEl = panel.querySelector<HTMLElement>('.tf-m-pct')!;
+        chgEl.style.color = up ? 'var(--tf-up)' : 'var(--tf-dn)';
+        pctEl.style.color = up ? 'var(--tf-up)' : 'var(--tf-dn)';
+
+        panel.removeAttribute('hidden');
+        activeSymbol = sym;
+
+        // Mark active chip in first set only
+        strip.querySelectorAll<HTMLElement>('.tf-chip').forEach((c) => {
+          c.classList.toggle('active', c.dataset.symbol === sym && !c.getAttribute('aria-hidden'));
+        });
+
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      };
+
+      const closePanel = () => {
+        panel.setAttribute('hidden', '');
+        activeSymbol = '';
+        strip.querySelectorAll('.tf-chip').forEach((c) => c.classList.remove('active'));
+      };
+
+      strip.addEventListener('click', (e) => {
+        const chip = (e.target as HTMLElement).closest<HTMLElement>('.tf-chip');
+        if (!chip) return;
+        const sym = chip.dataset.symbol ?? '';
+        if (sym === activeSymbol) { closePanel(); return; }
+        openPanel(sym);
+      });
+
+      closeBtn.addEventListener('click', closePanel);
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && activeSymbol) closePanel();
+      });
+    });
+  })();
+</script>

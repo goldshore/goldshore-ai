@@ -1,0 +1,1219 @@
+---
+import WebLayout from '../layouts/WebLayout.astro';
+import RiskRadarVisual from '../components/RiskRadar.astro';
+
+export const prerender = false;
+
+const heroStats = [
+  { label: 'Signal latency', value: '< 28ms' },
+  { label: 'Volatility bands', value: '96' },
+  { label: 'Risk dimensions', value: '5 + ONI' },
+  { label: 'Classifications', value: '4 levels' },
+];
+
+const modules = [
+  {
+    tag: 'Core Engine',
+    name: 'Multi-Asset Exposure Engine',
+    description:
+      'Aggregates position data across sports, TCG, and equity asset classes. Computes total exposure, liquidity scores via exponential decay, and blends external threat signals into a composite 360° snapshot updated on every cycle.',
+    chips: ['Sports · TCG · Equities', 'Liquidity decay scoring', 'External threat level', 'LOW → CRITICAL'],
+  },
+  {
+    tag: 'Pol-Quant',
+    name: 'Political Quantification Engine',
+    description:
+      'Classifies political text — legislative filings, social media, and polling summaries — using ProsusAI/FinBERT. Emits normalised Volatility Scores and Policy Shift Alerts when political instability crosses the defined threshold.',
+    chips: ['Volatility score 0–100', 'Policy Shift Alert ≥65', 'Sector classification', 'FinBERT confidence'],
+  },
+  {
+    tag: 'FRA',
+    name: 'Financial Risk Assessment',
+    description:
+      'Scores five independent dimensions of financial uncertainty — interest-rate duration, credit default probability, FX exposure, bid-ask liquidity risk, and HHI sector concentration — then blends them into a composite classification with per-dimension rationale strings.',
+    chips: ['Interest rate & credit', 'Currency & liquidity', 'Concentration (HHI)', 'BENIGN → ACUTE'],
+  },
+  {
+    tag: 'EPO',
+    name: 'Economic Psychological Oscillator',
+    description:
+      'Connects NOAA Oceanic Niño Index climate data (El Niño / La Niña phase detection) with VIX, commodity price pressure, consumer confidence, and optional FinBERT economic narrative sentiment into a single −100 to +100 oscillator that reveals when climate cycles and financial psychology are reinforcing or divergent.',
+    chips: ['ONI climate phase', 'VIX inversion signal', 'Commodity & consumer bias', '−100 → +100 oscillator'],
+  },
+];
+
+const fraDimensions = [
+  {
+    id: '01',
+    label: 'Interest Rate',
+    weight: '25%',
+    description:
+      'Weighted-average modified duration across all bond holdings. A 10-year portfolio duration maps to a score of approximately 80 out of 100.',
+  },
+  {
+    id: '02',
+    label: 'Credit',
+    weight: '25%',
+    description:
+      'S&P-style rating → default risk map (AAA = 2, D = 100), weighted by mark-to-market value. Investment-grade assumed when rating is absent.',
+  },
+  {
+    id: '03',
+    label: 'Currency',
+    weight: '15%',
+    description:
+      'Non-USD portfolio share. Every currency position is identified by ISO 4217 code; 83%+ foreign denomination saturates the score at 100.',
+  },
+  {
+    id: '04',
+    label: 'Liquidity',
+    weight: '20%',
+    description:
+      'Weighted-average bid-ask spread across all positions. A 5% average spread maps to a score of 100. Asset-class defaults are applied when live spread data is absent.',
+  },
+  {
+    id: '05',
+    label: 'Concentration',
+    weight: '15%',
+    description:
+      'Herfindahl-Hirschman Index computed on sector weights. Perfectly diversified converges to near zero; single-sector books score 100.',
+  },
+];
+
+const epoComponents = [
+  {
+    label: 'Climate Signal',
+    weight: '30%',
+    widthPct: 30,
+    source: 'NOAA ONI SST anomaly → El Niño / La Niña phase detection',
+  },
+  {
+    label: 'Market Sentiment',
+    weight: '25%',
+    widthPct: 25,
+    source: 'Normalised VIX inverted: 0 VIX → +100, 100 VIX → −100',
+  },
+  {
+    label: 'Commodity Pressure',
+    weight: '20%',
+    widthPct: 20,
+    source: 'Food & energy price pressure index (0–100)',
+  },
+  {
+    label: 'Consumer Psychology',
+    weight: '15%',
+    widthPct: 15,
+    source: 'Consumer confidence index (0–100), centred at 50',
+  },
+  {
+    label: 'Economic Sentiment',
+    weight: '10%',
+    widthPct: 10,
+    source: 'ProsusAI/FinBERT via HuggingFace Inference API — enriches the signal when provided',
+  },
+];
+
+const personas = [
+  {
+    role: 'Portfolio Operators',
+    icon: '◎',
+    description:
+      'Continuous 360° risk snapshots across multi-asset books. Composite threat levels update in real time as market volatility and political instability shift — so operators always know the current posture without manual reconciliation.',
+    features: [
+      'Live exposure breakdown by asset class',
+      'Liquidity decay scoring across instruments',
+      'Real-time external threat monitoring',
+      'LOW / ELEVATED / HIGH / CRITICAL labels',
+    ],
+  },
+  {
+    role: 'Risk Managers',
+    icon: '⬡',
+    description:
+      'Five-dimensional Financial Risk Assessment gives structured, auditable visibility into interest rate, credit, currency, liquidity, and concentration risk in a single API call — each dimension accompanied by a rationale string and contributing-factor map.',
+    features: [
+      'BENIGN / MODERATE / STRESSED / ACUTE classification',
+      'Per-dimension rationale strings',
+      'Weighted HHI sector concentration tracking',
+      'Audit-ready signal metadata on every result',
+    ],
+  },
+  {
+    role: 'Quant Developers',
+    icon: '⌬',
+    description:
+      'Consume FRA results and EPO readings directly from the engine-durable TypeScript package. Pure functions, no runtime side effects, and both async and sync variants mean Risk Radar composites into any downstream signal bus without friction.',
+    features: [
+      'TypeScript-native, fully tree-shakeable',
+      'Async computeEPO + sync computeEPOSync',
+      'FinBERT enrichment is strictly optional',
+      'Published as @goldshore/engine-durable',
+    ],
+  },
+];
+
+const tiers = [
+  {
+    name: 'Observer',
+    price: 'Free',
+    priceNote: 'rate-limited',
+    description:
+      'Static Risk Radar snapshot via the public API. Read-only, rate-limited access ideal for evaluation and prototyping.',
+    features: [
+      'Single-account snapshot per request',
+      'External threat level + liquidity score',
+      'Risk level classification label',
+      'Public REST endpoint',
+    ],
+    cta: { label: 'Start Free', href: '/developer' },
+    highlight: false,
+  },
+  {
+    name: 'Operator',
+    price: '$299',
+    priceNote: '/ month',
+    description:
+      'Full Risk Radar engine with FRA, Pol-Quant, and real-time signal delivery — built for production deployments.',
+    features: [
+      'Everything in Observer',
+      'FRA — all 5 dimensions + composite score',
+      'Pol-Quant political volatility scoring',
+      'Webhook signal delivery < 28ms',
+      'Multi-account aggregation',
+      'Audit log with full signal metadata',
+    ],
+    cta: { label: 'Get a Briefing', href: '/contact?inquiry=operator' },
+    highlight: true,
+  },
+  {
+    name: 'Institutional',
+    price: 'Custom',
+    priceNote: 'contact us',
+    description:
+      'EPO climate-finance coupling, custom model weighting, white-label deployment, and an SLA-backed support relationship.',
+    features: [
+      'Everything in Operator',
+      'EPO — Economic Psychological Oscillator',
+      'Custom ONI + VIX + commodity feed integration',
+      'White-label API and dashboard',
+      'Dedicated SLA + support engineer',
+      'On-prem or private cloud deployment',
+    ],
+    cta: { label: 'Request Access', href: '/contact?inquiry=institutional' },
+    highlight: false,
+  },
+];
+
+const faqs = [
+  {
+    q: 'How does Risk Radar connect to my existing data?',
+    a: 'Risk Radar ingests position data, market volatility readings, and political text through a structured API. The engine-durable package accepts typed TypeScript inputs so integration is straightforward from any data pipeline.',
+  },
+  {
+    q: 'What does the EPO actually predict?',
+    a: 'EPO does not make predictions — it produces an oscillator reading that reflects the current alignment between macro-climate signals (NOAA ONI) and financial-market psychology (VIX, commodity pressure, consumer confidence). A divergent reading flags when these domains are moving in opposite directions, which historically precedes regime shifts.',
+  },
+  {
+    q: 'Is FinBERT scoring required for the FRA or EPO?',
+    a: 'No. FinBERT scoring is an optional enrichment layer. The FRA runs entirely on quantitative position inputs. The EPO runs on ONI + market data; FinBERT economic-narrative sentiment is additive when an HuggingFace token is supplied.',
+  },
+  {
+    q: 'Can Risk Radar operate on non-financial assets?',
+    a: 'Yes. The core engine natively supports sports cards, trading card game (TCG) collections, and equity positions alongside standard financial instruments. Asset classes are typed and extensible.',
+  },
+  {
+    q: 'What is the sub-28ms latency figure based on?',
+    a: 'The < 28ms figure reflects p95 signal pipeline latency from position data ingestion to composite snapshot delivery, measured on the Cloudflare Workers edge infrastructure that powers the GoldShore API.',
+  },
+];
+---
+
+<WebLayout
+  title="Risk Radar | GoldShore"
+  description="360° multi-asset risk intelligence — Financial Risk Assessment, Economic Psychological Oscillator, and political volatility scoring in one continuously updated engine."
+  canonicalPath="/risk-radar"
+>
+
+  <!-- ═══════════════════════════════════════════════ HERO -->
+  <section class="rr-hero gs-shell-section">
+    <div class="rr-hero__copy">
+      <p class="gs-eyebrow">Risk Radar · GoldShore</p>
+      <h1>360° risk intelligence.<br />Continuous. Institutional.</h1>
+      <p class="rr-hero__sub">
+        Risk Radar aggregates position exposure, political volatility, financial uncertainty, and
+        macro-climate signals into a single, continuously updated risk picture — built for operators
+        who cannot afford blind spots.
+      </p>
+      <div class="rr-hero__actions">
+        <a href="/contact?inquiry=risk-radar" class="rr-btn rr-btn--primary">Get a Briefing</a>
+        <a href="/developer" class="rr-btn rr-btn--ghost">View API Docs</a>
+      </div>
+    </div>
+
+    <div class="rr-hero__stats" aria-label="Risk Radar key metrics">
+      {heroStats.map((s) => (
+        <article>
+          <strong>{s.value}</strong>
+          <span>{s.label}</span>
+        </article>
+      ))}
+    </div>
+
+    <div class="rr-hero__visual">
+      <RiskRadarVisual
+        title="GoldShore Risk Radar"
+        subtitle="Live signal sweep across 96 volatility bands, anomaly queues, and directional bias layers — refreshed every 2.4 seconds."
+      />
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════ MODULES -->
+  <section class="rr-section rr-modules gs-shell-section" aria-labelledby="rr-modules-heading">
+    <header class="rr-section__head">
+      <p class="gs-eyebrow">Architecture</p>
+      <h2 id="rr-modules-heading">Four engines. One risk picture.</h2>
+      <p>
+        Risk Radar is a layered engine stack. Each module scores a different domain of risk
+        independently, and the composite snapshot gives operators a unified threat surface they can
+        act on — from individual position liquidity to macro climate-finance coupling.
+      </p>
+    </header>
+
+    <div class="rr-modules__grid">
+      {modules.map((mod) => (
+        <article class="rr-module-card">
+          <p class="rr-module-card__tag">{mod.tag}</p>
+          <h3>{mod.name}</h3>
+          <p>{mod.description}</p>
+          <div class="rr-chips">
+            {mod.chips.map((chip) => (
+              <span class="rr-chip">{chip}</span>
+            ))}
+          </div>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════ FRA -->
+  <section class="rr-section rr-fra gs-shell-section" aria-labelledby="rr-fra-heading">
+    <header class="rr-section__head">
+      <p class="gs-eyebrow">FRA · Financial Risk Assessment</p>
+      <h2 id="rr-fra-heading">Five dimensions of financial uncertainty, scored simultaneously.</h2>
+      <p>
+        Each dimension produces an independent 0–100 score with a machine-readable rationale string
+        and a contributing-factor breakdown. The weighted composite maps to one of four
+        classifications your downstream systems can act on directly.
+      </p>
+    </header>
+
+    <div class="rr-fra__dimensions">
+      {fraDimensions.map((dim) => (
+        <article class="rr-dim-card">
+          <div class="rr-dim-card__head">
+            <span class="rr-dim-card__id" aria-hidden="true">{dim.id}</span>
+            <div>
+              <h3>{dim.label}</h3>
+              <span class="rr-dim-card__weight">{dim.weight} composite weight</span>
+            </div>
+          </div>
+          <p>{dim.description}</p>
+        </article>
+      ))}
+    </div>
+
+    <div class="rr-fra__ladder" aria-label="FRA classification scale">
+      {[
+        { label: 'BENIGN',   range: 'Score 0–24',   color: 'var(--rr-green)'  },
+        { label: 'MODERATE', range: 'Score 25–49',  color: 'var(--rr-yellow)' },
+        { label: 'STRESSED', range: 'Score 50–74',  color: 'var(--rr-orange)' },
+        { label: 'ACUTE',    range: 'Score 75–100', color: 'var(--rr-red)'    },
+      ].map((step) => (
+        <div class="rr-ladder-step" style={`--step-color: ${step.color}`}>
+          <strong>{step.label}</strong>
+          <span>{step.range}</span>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════ EPO -->
+  <section class="rr-section rr-epo gs-shell-section" aria-labelledby="rr-epo-heading">
+    <header class="rr-section__head">
+      <p class="gs-eyebrow">EPO · Economic Psychological Oscillator</p>
+      <h2 id="rr-epo-heading">Where El Niño meets the VIX.</h2>
+      <p>
+        EPO is the only module in the market that systematically connects NOAA Oceanic Niño Index
+        data with VIX, commodity price pressure, and consumer confidence — detecting when climate
+        cycles and financial psychology are reinforcing each other or pulling in opposite directions.
+      </p>
+    </header>
+
+    <div class="rr-epo__layout">
+      <div class="rr-epo__components">
+        {epoComponents.map((comp) => (
+          <article class="rr-epo-comp">
+            <div class="rr-epo-comp__head">
+              <span class="rr-epo-comp__label">{comp.label}</span>
+              <span class="rr-epo-comp__weight">{comp.weight}</span>
+            </div>
+            <div class="rr-epo-comp__bar" role="presentation">
+              <div class="rr-epo-comp__fill" style={`width: ${comp.widthPct * 3.3}%`}></div>
+            </div>
+            <p>{comp.source}</p>
+          </article>
+        ))}
+      </div>
+
+      <aside class="rr-epo__panel">
+        <div class="rr-epo__phase">
+          <p class="gs-eyebrow">Climate phases detected</p>
+          <div class="rr-phase-tags">
+            <span class="rr-phase rr-phase--el-nino">El Niño</span>
+            <span class="rr-phase rr-phase--neutral">Neutral</span>
+            <span class="rr-phase rr-phase--la-nina">La Niña</span>
+          </div>
+        </div>
+
+        <div class="rr-epo__alignment">
+          <p class="gs-eyebrow">Signal alignment output</p>
+          <ul>
+            <li><strong>Reinforcing</strong> — Climate and economic signals point the same direction</li>
+            <li><strong>Divergent</strong> — Climate and economic signals are in conflict</li>
+            <li><strong>Neutral</strong> — Insufficient signal magnitude in both domains</li>
+          </ul>
+        </div>
+
+        <div class="rr-oscillator" aria-label="EPO oscillator range: negative 100 to positive 100">
+          <span class="rr-oscillator__label rr-oscillator__label--neg">−100</span>
+          <div class="rr-oscillator__track">
+            <div class="rr-oscillator__indicator" aria-hidden="true"></div>
+          </div>
+          <span class="rr-oscillator__label rr-oscillator__label--pos">+100</span>
+        </div>
+        <p class="rr-oscillator__caption">Negative = climate-economic stress &nbsp;·&nbsp; Positive = constructive coupling</p>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════ WHO IT'S FOR -->
+  <section class="rr-section rr-personas gs-shell-section" aria-labelledby="rr-personas-heading">
+    <header class="rr-section__head">
+      <p class="gs-eyebrow">Who it's for</p>
+      <h2 id="rr-personas-heading">Built for teams operating at the edge of market complexity.</h2>
+    </header>
+
+    <div class="rr-personas__grid">
+      {personas.map((p) => (
+        <article class="rr-persona-card">
+          <div class="rr-persona-card__icon" aria-hidden="true">{p.icon}</div>
+          <h3>{p.role}</h3>
+          <p>{p.description}</p>
+          <ul>
+            {p.features.map((f) => (
+              <li>{f}</li>
+            ))}
+          </ul>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════ PRICING -->
+  <section class="rr-section rr-pricing gs-shell-section" aria-labelledby="rr-pricing-heading">
+    <header class="rr-section__head">
+      <p class="gs-eyebrow">Access tiers</p>
+      <h2 id="rr-pricing-heading">Start evaluating. Scale when you're ready.</h2>
+      <p>
+        All tiers share the same engine infrastructure. Capabilities unlock as your operational
+        requirements grow — there is no rebuild required when moving between tiers.
+      </p>
+    </header>
+
+    <div class="rr-pricing__grid">
+      {tiers.map((tier) => (
+        <article class:list={['rr-tier', tier.highlight && 'rr-tier--highlight']}>
+          {tier.highlight && <p class="rr-tier__badge">Most popular</p>}
+          <div class="rr-tier__head">
+            <h3>{tier.name}</h3>
+            <div class="rr-tier__price">
+              <strong>{tier.price}</strong>
+              <span>{tier.priceNote}</span>
+            </div>
+          </div>
+          <p class="rr-tier__desc">{tier.description}</p>
+          <ul class="rr-tier__features">
+            {tier.features.map((f) => (
+              <li>{f}</li>
+            ))}
+          </ul>
+          <a
+            href={tier.cta.href}
+            class:list={['rr-btn', tier.highlight ? 'rr-btn--primary' : 'rr-btn--ghost', 'rr-tier__cta']}
+          >
+            {tier.cta.label}
+          </a>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════ FAQ -->
+  <section class="rr-section rr-faq gs-shell-section" aria-labelledby="rr-faq-heading">
+    <header class="rr-section__head">
+      <p class="gs-eyebrow">Common questions</p>
+      <h2 id="rr-faq-heading">Answers before the briefing.</h2>
+    </header>
+
+    <dl class="rr-faq__list">
+      {faqs.map((faq) => (
+        <div class="rr-faq-item">
+          <dt>{faq.q}</dt>
+          <dd>{faq.a}</dd>
+        </div>
+      ))}
+    </dl>
+  </section>
+
+  <!-- ════════════════════════════════════════════ CTA -->
+  <section class="rr-section rr-cta gs-shell-section">
+    <div class="rr-cta__inner">
+      <p class="gs-eyebrow">Next step</p>
+      <h2>Get a Risk Radar briefing.</h2>
+      <p>
+        We scope every engagement to your actual data environment, latency requirements, and
+        downstream decision systems. No generic demos — only what applies to your operation.
+      </p>
+      <div class="rr-cta__actions">
+        <a href="/contact?inquiry=risk-radar" class="rr-btn rr-btn--primary">Book a Briefing</a>
+        <a href="/apps/risk-radar" class="rr-btn rr-btn--ghost">See the Live Demo</a>
+      </div>
+    </div>
+  </section>
+
+  <style>
+    /* ── Custom tokens ──────────────────────────────────── */
+    :root {
+      --rr-green:  rgba(76, 217, 134, 0.9);
+      --rr-yellow: rgba(240, 196, 52, 0.9);
+      --rr-orange: rgba(217, 106, 50, 0.9);
+      --rr-red:    rgba(230, 68, 68, 0.9);
+    }
+
+    /* ── Shared layout ──────────────────────────────────── */
+    .rr-section {
+      padding: 4.5rem 0;
+    }
+
+    .rr-section__head {
+      display: grid;
+      gap: 0.8rem;
+      max-width: 68ch;
+      margin-bottom: 2rem;
+    }
+
+    .rr-section__head h2 {
+      margin: 0;
+      font-size: clamp(1.9rem, 4.2vw, 3rem);
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+    }
+
+    .rr-section__head p:last-child {
+      color: var(--gs-text-dim);
+      line-height: 1.75;
+      margin: 0;
+    }
+
+    /* ── Buttons ────────────────────────────────────────── */
+    .rr-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.8rem 1.35rem;
+      border-radius: 999px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: transform 120ms ease, background 120ms ease, box-shadow 120ms ease;
+      white-space: nowrap;
+    }
+
+    .rr-btn--primary {
+      background: linear-gradient(135deg, rgba(217, 106, 50, 0.55), rgba(217, 106, 50, 0.32));
+      border: 1px solid rgba(217, 106, 50, 0.55);
+      color: var(--gs-text);
+      box-shadow: 0 12px 32px rgba(217, 106, 50, 0.18);
+    }
+
+    .rr-btn--primary:hover,
+    .rr-btn--primary:focus-visible {
+      transform: translateY(-2px);
+      background: linear-gradient(135deg, rgba(217, 106, 50, 0.68), rgba(217, 106, 50, 0.44));
+      box-shadow: 0 18px 40px rgba(217, 106, 50, 0.28);
+    }
+
+    .rr-btn--ghost {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.11);
+      color: var(--gs-text);
+    }
+
+    .rr-btn--ghost:hover,
+    .rr-btn--ghost:focus-visible {
+      transform: translateY(-2px);
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.18);
+    }
+
+    /* ── Hero ───────────────────────────────────────────── */
+    .rr-hero {
+      padding: 4rem 0 2.5rem;
+      display: grid;
+      gap: 2rem;
+    }
+
+    .rr-hero__copy {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .rr-hero__copy h1 {
+      margin: 0;
+      font-size: clamp(2.6rem, 6.5vw, 5.2rem);
+      line-height: 0.96;
+      letter-spacing: -0.04em;
+    }
+
+    .rr-hero__sub {
+      max-width: 60ch;
+      color: var(--gs-text-dim);
+      line-height: 1.75;
+      margin: 0;
+    }
+
+    .rr-hero__actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      padding-top: 0.5rem;
+    }
+
+    .rr-hero__stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.75rem;
+    }
+
+    .rr-hero__stats article {
+      display: grid;
+      gap: 0.3rem;
+      padding: 1rem 1.15rem;
+      border-radius: 16px;
+      border: 1px solid var(--gs-border);
+      background: rgba(10, 18, 36, 0.7);
+      backdrop-filter: blur(12px);
+    }
+
+    .rr-hero__stats strong {
+      font-size: 1.35rem;
+      letter-spacing: -0.02em;
+    }
+
+    .rr-hero__stats span {
+      color: var(--gs-text-dim);
+      font-size: 0.77rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .rr-hero__visual {
+      margin-top: 0.5rem;
+    }
+
+    /* ── Modules ────────────────────────────────────────── */
+    .rr-modules__grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    .rr-module-card {
+      padding: 1.5rem;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(10, 18, 36, 0.72);
+      box-shadow: var(--gs-shadow);
+      display: grid;
+      gap: 0.8rem;
+      align-content: start;
+    }
+
+    .rr-module-card__tag {
+      margin: 0;
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--gs-primary);
+    }
+
+    .rr-module-card h3 {
+      margin: 0;
+      font-size: 1.12rem;
+      line-height: 1.35;
+    }
+
+    .rr-module-card > p {
+      margin: 0;
+      color: var(--gs-text-dim);
+      line-height: 1.7;
+      font-size: 0.93rem;
+    }
+
+    .rr-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      padding-top: 0.2rem;
+    }
+
+    .rr-chip {
+      padding: 0.28rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.73rem;
+      letter-spacing: 0.04em;
+      border: 1px solid rgba(217, 106, 50, 0.2);
+      background: rgba(217, 106, 50, 0.07);
+      color: var(--gs-text-dim);
+    }
+
+    /* ── FRA ────────────────────────────────────────────── */
+    .rr-fra__dimensions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.85rem;
+    }
+
+    .rr-fra__dimensions > :nth-child(4),
+    .rr-fra__dimensions > :nth-child(5) {
+      grid-column: span 1;
+    }
+
+    .rr-dim-card {
+      padding: 1.25rem;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(8, 16, 32, 0.82);
+      display: grid;
+      gap: 0.7rem;
+      align-content: start;
+    }
+
+    .rr-dim-card__head {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .rr-dim-card__id {
+      font-size: 0.7rem;
+      color: var(--gs-text-dim);
+      opacity: 0.45;
+      letter-spacing: 0.08em;
+      padding-top: 0.18rem;
+      flex-shrink: 0;
+    }
+
+    .rr-dim-card__head h3 {
+      margin: 0;
+      font-size: 1rem;
+      line-height: 1.35;
+    }
+
+    .rr-dim-card__weight {
+      display: block;
+      font-size: 0.71rem;
+      color: var(--gs-primary);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-top: 0.1rem;
+    }
+
+    .rr-dim-card > p {
+      margin: 0;
+      color: var(--gs-text-dim);
+      font-size: 0.87rem;
+      line-height: 1.65;
+    }
+
+    .rr-fra__ladder {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.65rem;
+      margin-top: 1.25rem;
+    }
+
+    .rr-ladder-step {
+      display: grid;
+      gap: 0.28rem;
+      padding: 0.95rem 1rem;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(8, 14, 26, 0.82);
+      border-left: 3px solid var(--step-color);
+    }
+
+    .rr-ladder-step strong {
+      font-size: 0.77rem;
+      letter-spacing: 0.12em;
+      color: var(--step-color);
+    }
+
+    .rr-ladder-step span {
+      font-size: 0.78rem;
+      color: var(--gs-text-dim);
+    }
+
+    /* ── EPO ────────────────────────────────────────────── */
+    .rr-epo__layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+      gap: 2rem;
+      align-items: start;
+    }
+
+    .rr-epo__components {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .rr-epo-comp {
+      padding: 1rem 1.1rem;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(8, 16, 32, 0.72);
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .rr-epo-comp__head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .rr-epo-comp__label {
+      font-size: 0.87rem;
+      font-weight: 600;
+    }
+
+    .rr-epo-comp__weight {
+      font-size: 0.77rem;
+      color: var(--gs-primary);
+      letter-spacing: 0.08em;
+      font-weight: 600;
+    }
+
+    .rr-epo-comp__bar {
+      height: 2px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.07);
+      overflow: hidden;
+    }
+
+    .rr-epo-comp__fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(217, 106, 50, 0.8), rgba(217, 106, 50, 0.25));
+      max-width: 100%;
+    }
+
+    .rr-epo-comp > p {
+      margin: 0;
+      font-size: 0.82rem;
+      color: var(--gs-text-dim);
+      line-height: 1.55;
+    }
+
+    .rr-epo__panel {
+      display: grid;
+      gap: 1.4rem;
+      padding: 1.4rem;
+      border-radius: 20px;
+      border: 1px solid rgba(217, 106, 50, 0.16);
+      background: rgba(9, 16, 30, 0.9);
+    }
+
+    .rr-phase-tags {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.45rem;
+    }
+
+    .rr-phase {
+      padding: 0.28rem 0.7rem;
+      border-radius: 999px;
+      font-size: 0.77rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+
+    .rr-phase--el-nino {
+      background: rgba(240, 100, 40, 0.16);
+      border: 1px solid rgba(240, 100, 40, 0.38);
+      color: rgba(255, 148, 86, 1);
+    }
+
+    .rr-phase--neutral {
+      background: rgba(100, 140, 200, 0.11);
+      border: 1px solid rgba(100, 140, 200, 0.28);
+      color: rgba(138, 178, 240, 1);
+    }
+
+    .rr-phase--la-nina {
+      background: rgba(56, 138, 230, 0.13);
+      border: 1px solid rgba(56, 138, 230, 0.32);
+      color: rgba(96, 178, 255, 1);
+    }
+
+    .rr-epo__alignment ul {
+      margin: 0.45rem 0 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 0.55rem;
+    }
+
+    .rr-epo__alignment li {
+      font-size: 0.84rem;
+      color: var(--gs-text-dim);
+      line-height: 1.55;
+      padding-left: 0.9rem;
+      position: relative;
+    }
+
+    .rr-epo__alignment li::before {
+      content: '–';
+      position: absolute;
+      left: 0;
+      color: var(--gs-primary);
+    }
+
+    .rr-epo__alignment strong {
+      color: var(--gs-text);
+    }
+
+    .rr-oscillator {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .rr-oscillator__track {
+      flex: 1;
+      height: 4px;
+      border-radius: 999px;
+      background: linear-gradient(
+        90deg,
+        rgba(56, 138, 230, 0.65),
+        rgba(255, 255, 255, 0.08) 50%,
+        rgba(217, 106, 50, 0.65)
+      );
+      position: relative;
+    }
+
+    .rr-oscillator__indicator {
+      position: absolute;
+      left: calc(50% - 4px);
+      top: -4px;
+      width: 8px;
+      height: 12px;
+      border-radius: 999px;
+      background: var(--gs-text);
+      opacity: 0.5;
+    }
+
+    .rr-oscillator__label {
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+    }
+
+    .rr-oscillator__label--neg { color: rgba(96, 178, 255, 0.9); }
+    .rr-oscillator__label--pos { color: rgba(255, 148, 86, 0.9); }
+
+    .rr-oscillator__caption {
+      font-size: 0.76rem;
+      color: var(--gs-text-dim);
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    /* ── Personas ───────────────────────────────────────── */
+    .rr-personas__grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    .rr-persona-card {
+      padding: 1.5rem;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(9, 16, 30, 0.78);
+      display: grid;
+      gap: 0.8rem;
+      align-content: start;
+    }
+
+    .rr-persona-card__icon {
+      font-size: 1.45rem;
+      color: var(--gs-primary);
+      line-height: 1;
+    }
+
+    .rr-persona-card h3 {
+      margin: 0;
+      font-size: 1.05rem;
+    }
+
+    .rr-persona-card > p {
+      margin: 0;
+      color: var(--gs-text-dim);
+      font-size: 0.9rem;
+      line-height: 1.7;
+    }
+
+    .rr-persona-card ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 0.48rem;
+    }
+
+    .rr-persona-card li {
+      font-size: 0.84rem;
+      color: var(--gs-text-dim);
+      padding-left: 1rem;
+      position: relative;
+      line-height: 1.5;
+    }
+
+    .rr-persona-card li::before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      color: var(--gs-primary);
+      font-size: 0.73rem;
+      top: 0.1rem;
+    }
+
+    /* ── Pricing ────────────────────────────────────────── */
+    .rr-pricing__grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .rr-tier {
+      padding: 1.5rem;
+      border-radius: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      background: rgba(9, 16, 30, 0.78);
+      display: grid;
+      gap: 1rem;
+      align-content: start;
+    }
+
+    .rr-tier--highlight {
+      border-color: rgba(217, 106, 50, 0.36);
+      background: rgba(12, 20, 38, 0.92);
+      box-shadow:
+        0 0 0 1px rgba(217, 106, 50, 0.12),
+        0 28px 64px rgba(0, 0, 0, 0.3);
+    }
+
+    .rr-tier__badge {
+      margin: 0;
+      font-size: 0.7rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--gs-primary);
+      padding: 0.28rem 0.7rem;
+      border-radius: 999px;
+      background: rgba(217, 106, 50, 0.1);
+      border: 1px solid rgba(217, 106, 50, 0.25);
+      display: inline-block;
+    }
+
+    .rr-tier__head {
+      display: grid;
+      gap: 0.35rem;
+    }
+
+    .rr-tier__head h3 {
+      margin: 0;
+      font-size: 1.08rem;
+    }
+
+    .rr-tier__price {
+      display: flex;
+      align-items: baseline;
+      gap: 0.35rem;
+    }
+
+    .rr-tier__price strong {
+      font-size: 1.7rem;
+      letter-spacing: -0.03em;
+    }
+
+    .rr-tier__price span {
+      font-size: 0.82rem;
+      color: var(--gs-text-dim);
+    }
+
+    .rr-tier__desc {
+      margin: 0;
+      color: var(--gs-text-dim);
+      font-size: 0.89rem;
+      line-height: 1.65;
+    }
+
+    .rr-tier__features {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    .rr-tier__features li {
+      font-size: 0.86rem;
+      color: var(--gs-text-dim);
+      padding-left: 1.1rem;
+      position: relative;
+      line-height: 1.5;
+    }
+
+    .rr-tier__features li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: var(--gs-primary);
+      font-size: 0.76rem;
+      top: 0.08rem;
+    }
+
+    .rr-tier__cta {
+      width: 100%;
+    }
+
+    /* ── FAQ ────────────────────────────────────────────── */
+    .rr-faq__list {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .rr-faq-item {
+      padding: 1.25rem;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(8, 14, 26, 0.72);
+      display: grid;
+      gap: 0.55rem;
+    }
+
+    .rr-faq-item dt {
+      font-size: 0.97rem;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+
+    .rr-faq-item dd {
+      margin: 0;
+      color: var(--gs-text-dim);
+      font-size: 0.9rem;
+      line-height: 1.7;
+    }
+
+    /* ── CTA ────────────────────────────────────────────── */
+    .rr-cta {
+      padding-bottom: 6rem;
+    }
+
+    .rr-cta__inner {
+      padding: 2.25rem;
+      border-radius: 24px;
+      border: 1px solid rgba(217, 106, 50, 0.22);
+      background: linear-gradient(145deg, rgba(12, 22, 44, 0.9), rgba(7, 14, 26, 0.96));
+      box-shadow: var(--gs-shadow);
+      display: grid;
+      gap: 0.85rem;
+    }
+
+    .rr-cta__inner h2 {
+      margin: 0;
+      font-size: clamp(1.55rem, 3.2vw, 2.3rem);
+      line-height: 1.1;
+    }
+
+    .rr-cta__inner > p {
+      margin: 0;
+      max-width: 64ch;
+      color: var(--gs-text-dim);
+      line-height: 1.75;
+    }
+
+    .rr-cta__actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      padding-top: 0.5rem;
+    }
+
+    /* ── Responsive ─────────────────────────────────────── */
+    @media (max-width: 1050px) {
+      .rr-epo__layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .rr-hero__stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .rr-modules__grid,
+      .rr-personas__grid,
+      .rr-pricing__grid {
+        grid-template-columns: 1fr;
+      }
+
+      .rr-fra__dimensions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .rr-fra__ladder {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 560px) {
+      .rr-hero__copy h1 {
+        font-size: 2.4rem;
+      }
+
+      .rr-fra__dimensions,
+      .rr-fra__ladder {
+        grid-template-columns: 1fr;
+      }
+
+      .rr-hero__stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+  </style>
+</WebLayout>

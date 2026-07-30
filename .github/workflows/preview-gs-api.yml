@@ -5,38 +5,49 @@ permissions:
 
 on:
   pull_request:
-    types:
-      - opened
-      - synchronize
-      - reopened
-      - labeled
-      - unlabeled
-      - ready_for_review
     paths:
       - "apps/gs-api/**"
       - "packages/**"
       - "package.json"
       - "pnpm-lock.yaml"
+      - ".node-version"
+      - ".nvmrc"
+      - ".github/workflows/preview-gs-api.yml"
 
 jobs:
   preview-api:
     runs-on: ubuntu-latest
-    if: |
-      contains(github.event.pull_request.labels.*.name, 'preview') ||
-      (github.event.action == 'ready_for_review' && github.event.pull_request.base.ref == 'main')
+    name: Preview
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/checkout@v7
 
-      - name: Install pnpm
-        run: npm install -g pnpm@9
+      - uses: pnpm/action-setup@v6
+        with:
+          run_install: false
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
-          cache: pnpm
+          cache: 'pnpm'
 
-      - name: Install dependencies
+      - name: Install Dependencies
         run: pnpm install --frozen-lockfile
+
+      - uses: ./.github/actions/normalize-cf-token
+        id: cf-token
+        with:
+          raw_token: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
+          token_name: 'CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN'
+
+      - name: Configure Cloudflare auth
+        env:
+          CF_TOKEN: ${{ steps.cf-token.outputs.token }}
+        run: |
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "Missing: CLOUDFLARE_ACCOUNT_ID" && exit 1)
+          test -n "$CF_TOKEN" || (echo "Missing: CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN" && exit 1)
+          echo "CLOUDFLARE_API_TOKEN=$CF_TOKEN" >> "$GITHUB_ENV"
 
       - name: Validate workspace contract
         run: pnpm validate:workspace
@@ -47,9 +58,16 @@ jobs:
       - name: Validate canonical worker names
         run: pnpm validate:names
 
-      - name: Deploy GS API worker (preview)
+      - name: Validate preview gs-api bindings config
+        run: |
+          test -f apps/gs-api/wrangler.toml
+          grep -Eq '^\[env\.preview\]' apps/gs-api/wrangler.toml
+          grep -Eq '^\s*\[\[env\.preview\.queues\.(producers|consumers)\]\]' apps/gs-api/wrangler.toml
+
+      - name: Verify Cloudflare auth
         working-directory: apps/gs-api
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN || secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: pnpm exec wrangler deploy --env preview
+        run: pnpm exec wrangler whoami
+
+      - name: Validate GS API worker preview deploy
+        working-directory: apps/gs-api
+        run: pnpm exec wrangler deploy --env preview --config wrangler.toml --dry-run --outdir=dist-preview

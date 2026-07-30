@@ -1,0 +1,218 @@
+{
+  "_comment": "Gold Shore Labs — GitHub repo settings reference. Apply via GitHub API or manually in repo Settings.",
+  "_account": "marzton",
+
+  "repos": {
+    "goldshore-ai": {
+      "settings": {
+        "has_issues": true,
+        "has_projects": true,
+        "has_wiki": false,
+        "delete_branch_on_merge": true,
+        "allow_squash_merge": true,
+        "allow_merge_commit": false,
+        "allow_rebase_merge": false,
+        "allow_auto_merge": false,
+        "squash_merge_commit_title": "PR_TITLE",
+        "squash_merge_commit_message": "PR_BODY"
+      },
+      "branch_protection": {
+        "branch": "main",
+        "required_status_checks": {
+          "strict": true,
+          "contexts": ["build", "type-check", "lint"]
+        },
+        "enforce_admins": true,
+        "required_pull_request_reviews": null,
+        "restrictions": null,
+        "allow_force_pushes": false,
+        "allow_deletions": false,
+        "required_linear_history": true,
+        "required_conversation_resolution": true
+      }
+    },
+
+    "goldshore-gateway": {
+      "settings": {
+        "has_issues": true,
+        "has_wiki": false,
+        "delete_branch_on_merge": true,
+        "allow_squash_merge": true,
+        "allow_merge_commit": false,
+        "allow_rebase_merge": false
+      },
+      "branch_protection": {
+        "branch": "main",
+        "required_pull_request_reviews": {
+          "required_approving_review_count": 1,
+          "dismiss_stale_reviews": true
+        },
+        "allow_force_pushes": false,
+        "allow_deletions": false,
+        "required_linear_history": true,
+        "required_conversation_resolution": true
+      },
+      "secrets": [
+        "CLOUDFLARE_API_TOKEN",
+        "CLOUDFLARE_ACCOUNT_ID",
+        "CLOUDFLARE_ACCESS_AUDIENCE",
+        "GATEWAY_AUTH_TOKEN"
+      ],
+      "environments": {
+        "production": {
+          "required_reviewers": 1,
+          "deployment_branch_policy": { "protected_branches": true }
+        }
+      }
+    },
+
+    "goldshore-api": {
+      "settings": {
+        "has_issues": true,
+        "has_wiki": false,
+        "delete_branch_on_merge": true,
+        "allow_squash_merge": true,
+        "allow_merge_commit": false,
+        "allow_rebase_merge": false
+      },
+      "branch_protection": {
+        "branch": "main",
+        "required_pull_request_reviews": {
+          "required_approving_review_count": 1,
+          "dismiss_stale_reviews": true
+        },
+        "allow_force_pushes": false,
+        "allow_deletions": false,
+        "required_linear_history": true
+      },
+      "secrets": [
+        "CLOUDFLARE_API_TOKEN",
+        "CLOUDFLARE_ACCOUNT_ID",
+        "OPENAI_API_KEY",
+        "GEMINI_API_KEY",
+        "CONTROL_SYNC_TOKEN",
+        "AGENT_TOKEN"
+      ]
+    },
+
+    "goldshore-admin": {
+      "settings": {
+        "has_issues": true,
+        "has_wiki": false,
+        "delete_branch_on_merge": true,
+        "allow_squash_merge": true,
+        "allow_merge_commit": false,
+        "allow_rebase_merge": false
+      },
+      "branch_protection": {
+        "branch": "main",
+        "required_pull_request_reviews": {
+          "required_approving_review_count": 1,
+          "dismiss_stale_reviews": true
+        },
+        "allow_force_pushes": false,
+        "allow_deletions": false
+      },
+      "secrets": [
+        "CLOUDFLARE_API_TOKEN",
+        "CLOUDFLARE_ACCOUNT_ID",
+        "CLOUDFLARE_ACCESS_AUDIENCE",
+        "ADMIN_API_KEY"
+      ]
+    },
+
+    "banproof.me": {
+      "settings": {
+        "has_issues": true,
+        "has_wiki": false,
+        "delete_branch_on_merge": true,
+        "allow_squash_merge": true,
+        "allow_merge_commit": false,
+        "allow_rebase_merge": false
+      },
+      "branch_protection": {
+        "branch": "main",
+        "required_pull_request_reviews": {
+          "required_approving_review_count": 1,
+          "dismiss_stale_reviews": true
+        },
+        "allow_force_pushes": false,
+        "allow_deletions": false,
+        "required_conversation_resolution": true
+      },
+      "secrets": [
+        "CLOUDFLARE_API_TOKEN",
+        "CLOUDFLARE_ACCOUNT_ID",
+        "POA_TOKEN",
+        "AUDIT_TOKEN",
+        "OPENAI_API_KEY"
+      ]
+    },
+
+    "armsway.com": {
+      "settings": {
+        "has_issues": false,
+        "has_wiki": false,
+        "has_projects": false,
+        "delete_branch_on_merge": true,
+        "allow_squash_merge": true,
+        "allow_merge_commit": false,
+        "allow_rebase_merge": false
+      },
+      "branch_protection": {
+        "branch": "main",
+        "required_pull_request_reviews": {
+          "required_approving_review_count": 1,
+          "dismiss_stale_reviews": true
+        },
+        "allow_force_pushes": false,
+        "allow_deletions": false
+      },
+      "secrets": [
+        "CLOUDFLARE_API_TOKEN",
+        "CLOUDFLARE_ACCOUNT_ID",
+        "INTAKE_WEBHOOK_SECRET"
+      ]
+    },
+
+    "rmarston.github.io": {
+      "settings": {
+        "has_issues": false,
+        "has_wiki": false,
+        "has_projects": false,
+        "delete_branch_on_merge": true,
+        "allow_squash_merge": true,
+        "allow_merge_commit": false,
+        "allow_rebase_merge": false
+      },
+      "branch_protection": {
+        "branch": "main",
+        "required_pull_request_reviews": {
+          "required_approving_review_count": 1,
+          "dismiss_stale_reviews": true
+        },
+        "allow_force_pushes": false,
+        "allow_deletions": false
+      },
+      "secrets": [
+        "CLOUDFLARE_API_TOKEN",
+        "CLOUDFLARE_ACCOUNT_ID"
+      ]
+    }
+  },
+
+  "apply_commands": {
+    "_comment": "Apply branch protection via GitHub API for each repo",
+    "example": "curl -X PUT https://api.github.com/repos/marzton/{repo}/branches/main/protection -H 'Authorization: Bearer TOKEN' -H 'Accept: application/vnd.github+json' -d @branch-protection.json",
+
+    "delete_branch_on_merge": {
+      "_comment": "Apply via PATCH /repos/{owner}/{repo}",
+      "body": { "delete_branch_on_merge": true, "allow_squash_merge": true, "allow_merge_commit": false, "allow_rebase_merge": false }
+    },
+
+    "secrets_to_add_per_repo": {
+      "_comment": "All repos need at minimum CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID for wrangler deploy in CI",
+      "shared": ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID"]
+    }
+  }
+}

@@ -1,0 +1,161 @@
+---
+import WebLayout from '../../layouts/WebLayout.astro';
+
+export const prerender = false;
+
+const features = [
+  {
+    title: 'Model Selection',
+    description: 'Evaluate and select the right models for your task profile — balancing accuracy, latency, cost, and operational risk.',
+  },
+  {
+    title: 'Production Integration',
+    description: 'End-to-end deployment from prototype to production-grade infrastructure with observability, fallback paths, and rollback controls.',
+  },
+  {
+    title: 'Data Pipeline Architecture',
+    description: 'Design and implement data ingestion, transformation, and feature pipelines that feed reliable, low-latency model inputs.',
+  },
+  {
+    title: 'Validation and Testing',
+    description: 'Rigorous pre-production validation covering model performance, edge cases, latency budgets, and policy compliance.',
+  },
+  {
+    title: 'Governance Integration',
+    description: 'Embed policy controls, access management, and audit logging directly into the AI deployment — not bolted on after the fact.',
+  },
+  {
+    title: 'Team Enablement',
+    description: 'Structured handoff with documentation, runbooks, and enablement sessions so your team can operate and extend what was built.',
+  },
+];
+---
+
+<WebLayout
+  title="AI Implementation | GoldShore"
+  description="End-to-end AI deployment — from model selection to production-grade integration."
+  canonicalPath="/services/ai-implementation"
+>
+  <section class="page-shell gs-shell-section feature-page">
+    <p class="gs-eyebrow">Services &rsaquo; AI Implementation</p>
+    <h1>AI Implementation</h1>
+    <p class="page-intro">
+      End-to-end AI deployment from model selection through production-grade integration. GoldShore
+      handles the full implementation stack — architecture, pipelines, validation, and governance —
+      so your team inherits a system that is ready to operate, not just run.
+    </p>
+
+    <div class="feature-grid">
+      {features.map((f) => (
+        <article class="feature-card">
+          <h2>{f.title}</h2>
+          <p>{f.description}</p>
+        </article>
+      ))}
+    </div>
+
+    <aside class="page-cta">
+      <p class="gs-eyebrow">Next step</p>
+      <h2>Move from AI prototype to production with confidence.</h2>
+      <p>
+        GoldShore scopes AI implementation to your model requirements, infrastructure constraints,
+        and delivery timeline with clear checkpoints throughout.
+      </p>
+      <a href="/contact" class="cta-btn">Contact GoldShore</a>
+    </aside>
+  </section>
+
+  <style>
+    .feature-page {
+      padding: var(--gs-space-9) 0 calc(var(--gs-space-10) + var(--gs-space-1));
+    }
+
+    .feature-page h1 {
+      max-width: 16ch;
+      margin: 0.75rem 0 1rem;
+      font-size: clamp(2.3rem, 5.6vw, 4.2rem);
+      line-height: 1;
+      letter-spacing: -0.035em;
+    }
+
+    .page-intro {
+      max-width: 64ch;
+      color: var(--gs-text-dim);
+      line-height: 1.7;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .feature-card {
+      padding: 1.3rem;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(10, 18, 36, 0.72);
+      box-shadow: var(--gs-shadow);
+    }
+
+    .feature-card h2 {
+      margin: 0 0 0.6rem;
+      font-size: 1.1rem;
+    }
+
+    .feature-card p {
+      margin: 0;
+      color: var(--gs-text-dim);
+      line-height: 1.65;
+      font-size: 0.95rem;
+    }
+
+    .page-cta {
+      margin-top: 1.4rem;
+      padding: 1.35rem;
+      border-radius: 22px;
+      border: 1px solid rgba(131, 197, 255, 0.28);
+      background: linear-gradient(145deg, rgba(12, 28, 56, 0.85), rgba(8, 17, 33, 0.95));
+      box-shadow: var(--gs-shadow);
+    }
+
+    .page-cta h2 {
+      margin: 0.45rem 0 0.7rem;
+      font-size: clamp(1.2rem, 2.2vw, 1.55rem);
+    }
+
+    .page-cta p {
+      margin: 0;
+      max-width: 66ch;
+      color: var(--gs-text-dim);
+      line-height: 1.65;
+    }
+
+    .cta-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 0.95rem;
+      padding: 0.7rem 1.05rem;
+      border-radius: 999px;
+      background: rgba(0, 193, 255, 0.16);
+      border: 1px solid rgba(145, 222, 255, 0.45);
+      color: var(--gs-text);
+      font-weight: 600;
+      text-decoration: none;
+      transition: transform 120ms ease, background 120ms ease;
+    }
+
+    .cta-btn:hover {
+      transform: translateY(-1px);
+      background: rgba(0, 193, 255, 0.24);
+    }
+
+    @media (max-width: 900px) {
+      .feature-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</WebLayout>

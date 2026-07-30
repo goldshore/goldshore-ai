@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-import { readFileSync } from 'node:fs';
-import { basename, dirname, resolve } from 'node:path';
+import { readdirSync, readFileSync } from 'node:fs';
+import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { execFileSync } from 'node:child_process';
+import YAML from 'yaml';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, '..');
@@ -12,22 +12,30 @@ const aliases = JSON.parse(readFileSync(resolve(__dirname, 'name-aliases.json'),
 
 const fail = [];
 
-function run(file, args) {
-  const output = execFileSync(file, args, { cwd: repoRoot, encoding: 'utf8' }).trim();
-  return output ? output.split('\n').filter(Boolean) : [];
+function findFiles(root, matches) {
+  const files = [];
+
+  function walk(directory) {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      if (entry.name === 'node_modules') continue;
+
+      const absolutePath = resolve(directory, entry.name);
+      if (entry.isDirectory()) {
+        walk(absolutePath);
+      } else if (entry.isFile() && matches(entry.name)) {
+        files.push(relative(repoRoot, absolutePath).replaceAll('\\', '/'));
+      }
+    }
+  }
+
+  walk(resolve(repoRoot, root));
+  return files;
 }
 
 function lintPackages() {
-  const packageFiles = run('rg', [
-    '--files',
-    'apps',
-    'packages',
-    'infra',
-    '-g',
-    'package.json',
-    '-g',
-    '!**/node_modules/**',
-  ]);
+  const packageFiles = ['apps', 'packages', 'infra'].flatMap((root) =>
+    findFiles(root, (name) => name === 'package.json'),
+  );
 
   for (const packageFile of packageFiles) {
     const packageJson = JSON.parse(readFileSync(resolve(repoRoot, packageFile), 'utf8'));
@@ -51,50 +59,22 @@ function lintPackages() {
 }
 
 function lintWorkflows() {
-  const workflowFiles = run('rg', ['--files', '.github/workflows', '-g', '*.yml']);
+  const workflowFiles = findFiles('.github/workflows', (name) => name.endsWith('.yml'));
 
   for (const workflowFile of workflowFiles) {
-    const workflowBasename = basename(workflowFile).replace(/\.yml$/, '');
+    const workflowBasename = workflowFile.split('/').pop().replace(/\.yml$/, '');
     if (!kebabCasePattern.test(workflowBasename)) {
       fail.push(`${workflowFile}: workflow file name must be kebab-case`);
     }
 
-    const workflow = readFileSync(resolve(repoRoot, workflowFile), 'utf8');
-    const jobNames = extractJobNames(workflow);
-    for (const jobName of jobNames) {
+    const workflow = YAML.parse(readFileSync(resolve(repoRoot, workflowFile), 'utf8'));
+    const jobs = workflow?.jobs ?? {};
+    for (const jobName of Object.keys(jobs)) {
       if (!kebabCasePattern.test(jobName)) {
         fail.push(`${workflowFile}: job key "${jobName}" must be kebab-case`);
       }
     }
   }
-}
-
-function extractJobNames(workflow) {
-  const lines = workflow.split(/\r?\n/);
-  const jobs = [];
-  let inJobs = false;
-
-  for (const line of lines) {
-    if (/^jobs:\s*$/.test(line)) {
-      inJobs = true;
-      continue;
-    }
-
-    if (!inJobs) {
-      continue;
-    }
-
-    if (/^\S/.test(line) && !/^jobs:\s*$/.test(line)) {
-      break;
-    }
-
-    const match = line.match(/^  ([A-Za-z0-9_-]+):\s*(?:#.*)?$/);
-    if (match) {
-      jobs.push(match[1]);
-    }
-  }
-
-  return jobs;
 }
 
 lintPackages();

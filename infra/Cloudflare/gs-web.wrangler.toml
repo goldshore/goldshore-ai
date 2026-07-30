@@ -1,36 +1,42 @@
-# Worker Builds token for this service must be the gs-control build token.
-# wrangler.toml for the gs-web Astro Pages app (for Pages Functions; formerly goldshore-web)
+# Reference wrangler.toml for gs-web (Workers Static Assets).
+# The deployable config lives at apps/gs-web/wrangler.toml; keep route ownership aligned.
+# Note: gs-web is a Workers Static Assets deployment (main + [assets] binding), not Cloudflare Pages.
+# The Cloudflare Astro adapter emits apps/gs-web/dist; wrangler deploy --env prod creates gs-web-prod.
 
-name = "gs-web" # Base name for Pages project
+name = "gs-web"
+compatibility_date = "2026-04-18"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = false
+main = "../../apps/gs-web/src/worker.ts"
 
-# This file is primarily for configuring bindings for Cloudflare Pages Functions.
-# The actual deployment will be handled by the GitHub Action connecting to the Pages project.
+[assets]
+directory = "../../apps/gs-web/dist"
+binding = "ASSETS"
 
 [vars]
-# Shared environment variables can go here.
 # Runtime configuration note:
 # - `GS_CONFIG` is intentionally *not* bound to gs-web today.
 # - Current gs-web runtime consumers read mutable config indirectly via
 #   `PUBLIC_API`/content fetches or admin-generated content, not from the
 #   shared gs-control/gs-admin KV namespace.
-# - If a future Pages Function needs live runtime config, add a concrete
-#   read-only consumer in `apps/gs-web` first, then declare a `GS_CONFIG`
-#   binding in the target environment blocks below.
 
 [env.dev]
-# Dev bindings for Pages Functions
-# [[d1_databases]]
-# binding = "D1_DATABASE"
-# database_name = "goldshore_cms_dev"
-# database_id = "..."
-#
-# [[kv_namespaces]]
-# binding = "KV_SITE"
-# id = "..."
-# preview_id = "..."
+# Dev bindings for local development.
 
 [env.preview]
-# Preview bindings for Pages Functions
+routes = [
+  { pattern = "preview.goldshore.ai", custom_domain = true }
+]
 
 [env.prod]
-# Production bindings for Pages Functions
+# Serving goldshore.ai and goldshore.org apex via Worker route.
+# www.goldshore.ai is owned by gs-www-redirect-prod (308 → goldshore.ai).
+# www.goldshore.org is owned by gs-www-redirect-prod (308 → goldshore.ai).
+routes = [
+  { pattern = "goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "goldshore.org/*", zone_name = "goldshore.org" }
+]
+
+# Secrets (set via wrangler secret put — never commit):
+#   wrangler secret put MAILCHANNELS_SENDER_EMAIL --env prod --name gs-web
+#   Value: hello@goldshore.ai

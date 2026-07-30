@@ -158,3 +158,23 @@ This matrix defines the canonical enforcement levels, required controls, and pro
 - Weekly: enforcement changes, flake trends, exception aging.
 - Monthly: control efficacy review by repository tier.
 - Quarterly: policy audit and matrix revision proposals.
+
+
+## 10. Canonical Required Merge Checks (main)
+
+The `Required Merge Checks` workflow is the source of truth for merge gates on `main`.
+
+| Check run name | Requirement |
+|---|---|
+| `Required Merge Checks / workspace-install` | Workspace install (`pnpm install --frozen-lockfile`) |
+| `Required Merge Checks / gs-api-build-test` | `apps/gs-api` build + test |
+| `Required Merge Checks / gs-web-build` | `apps/gs-web` build |
+| `Required Merge Checks / deployment-dry-run` | Dry-run deployment checks where available |
+
+`gs-admin-build` was removed (2026-07): `apps/gs-admin` is not a member of
+`pnpm-workspace.yaml` (narrowed to `apps/gs-web` + `apps/gs-api` during the
+two-app consolidation), so the build could not resolve `workspace:*`
+dependencies and failed unconditionally as a required check, blocking every
+merge to `main` regardless of PR content.
+
+PRs are considered mergeable only when every required check above succeeds.

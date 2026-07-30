@@ -1,138 +1,417 @@
 cloudflare:
   account_name: goldshore-account
   zone: goldshore.ai
+  secondary_zones:
+    - goldshore.org
 
   dns:
     records:
-      # A. Web App (gs-web)
-      - name: 'goldshore.ai'
+      # A. Web app and browser-facing aliases.
+      - name: "goldshore.ai"
         type: CNAME
-        content: 'gs-web.pages.dev'
+        content: "gs-web-prod.goldshore.workers.dev"
         proxied: true
-      - name: 'www'
+      - name: "www.goldshore.ai"
         type: CNAME
-        content: 'gs-web.pages.dev'
+        content: "gs-www-redirect-prod.goldshore.workers.dev"
+        proxied: true
+      - name: "preview.goldshore.ai"
+        type: CNAME
+        content: "gs-web-preview.goldshore.workers.dev"
+        proxied: true
+      - name: "risk.goldshore.ai"
+        type: CNAME
+        content: "gs-web-prod.goldshore.workers.dev"
+        proxied: true
+      - name: "goldshore.org"
+        type: AAAA
+        content: "100::"
+        proxied: true
+        zone: goldshore.org
+      - name: "www.goldshore.org"
+        type: CNAME
+        content: "gs-www-redirect-prod.goldshore.workers.dev"
+        proxied: true
+        zone: goldshore.org
+      - name: "risk.goldshore.org"
+        type: CNAME
+        content: "gs-web-prod.goldshore.workers.dev"
+        proxied: true
+        zone: goldshore.org
+
+      # B. Admin browser surfaces owned by gs-web.
+      - name: "admin.goldshore.ai"
+        type: CNAME
+        content: "gs-web-prod.goldshore.workers.dev"
+        proxied: true
+      - name: "admin-preview.goldshore.ai"
+        type: CNAME
+        content: "gs-web-prod.goldshore.workers.dev"
+        proxied: true
+      - name: "admin.goldshore.org"
+        type: CNAME
+        content: "gs-web-prod.goldshore.workers.dev"
+        proxied: true
+        zone: goldshore.org
+
+      # C. Consolidated API Worker and backend aliases.
+      - name: "api.goldshore.ai"
+        type: CNAME
+        content: "gs-api-prod.goldshore.workers.dev"
+        proxied: true
+      - name: "api-preview.goldshore.ai"
+        type: CNAME
+        content: "gs-api-preview.goldshore.workers.dev"
+        proxied: true
+      - name: "api.goldshore.org"
+        type: AAAA
+        content: "100::"
+        proxied: true
+        zone: goldshore.org
+      - name: "gw.goldshore.ai"
+        type: CNAME
+        content: "gs-api-prod.goldshore.workers.dev"
+        proxied: true
+      - name: "agent.goldshore.ai"
+        type: CNAME
+        content: "gs-api-prod.goldshore.workers.dev"
+        proxied: true
+      - name: "mail.goldshore.ai"
+        type: CNAME
+        content: "gs-api-prod.goldshore.workers.dev"
+        proxied: true
+      - name: "ops.goldshore.ai"
+        type: CNAME
+        content: "gs-api-prod.goldshore.workers.dev"
+        proxied: true
+      - name: "trading.goldshore.ai"
+        type: CNAME
+        content: "gs-api-prod.goldshore.workers.dev"
+        proxied: true
+      - name: "dashboard.goldshore.ai"
+        type: CNAME
+        content: "gs-api-prod.goldshore.workers.dev"
+        proxied: true
+      - name: "dash.goldshore.ai"
+        type: CNAME
+        content: "gs-api-prod.goldshore.workers.dev"
         proxied: true
 
-      # B. Admin surface (served by gs-web)
-      - name: 'admin'
+      # D. External or separately deployed platform surfaces.
+      - name: "mcp.goldshore.ai"
         type: CNAME
-        content: 'gs-web.pages.dev'
+        content: "goldshore-mcp-prod.goldshore.workers.dev"
+        proxied: true
+      - name: "signals.goldshore.ai"
+        type: CNAME
+        content: "gs-signals-prod.goldshore.workers.dev"
         proxied: true
 
-      # C. API Gateway Worker
-      - name: 'gw'
+      # E. SendGrid domain authentication and DMARC.
+      - name: "em5094.goldshore.ai"
         type: CNAME
-        content: 'gs-gateway.goldshore-account.workers.dev'
-        proxied: true
-
-      # D. API Worker
-      - name: 'api'
+        content: "u106406774.wl025.sendgrid.net"
+        proxied: false
+      - name: "s1._domainkey.goldshore.ai"
         type: CNAME
-        content: 'gs-api.goldshore-account.workers.dev'
-        proxied: true
-
-      # E. Mail Worker
-      - name: 'mail'
+        content: "s1.domainkey.u106406774.wl025.sendgrid.net"
+        proxied: false
+      - name: "s2._domainkey.goldshore.ai"
         type: CNAME
-        content: 'gs-mail.goldshore-account.workers.dev'
-        proxied: true
-
-      # F. Control Worker (Internal only - no public DNS)
+        content: "s2.domainkey.u106406774.wl025.sendgrid.net"
+        proxied: false
+      - name: "_dmarc.goldshore.ai"
+        type: TXT
+        content: "v=DMARC1; p=reject; sp=reject; adkim=s; aspf=s; rua=mailto:1e5ceffc36ce4cc09f1bb2281b5344ae@dmarc-reports.cloudflare.net;"
 
   access:
+    # Canonical human-readable IdP matrix: docs/domains-and-auth.md.
+    # Keep Access application login methods aligned with that table, but do
+    # not encode alternative IdPs as multiple Require selectors because
+    # Cloudflare evaluates Require selectors conjunctively.
     policies:
-      - name: 'GoldShore-Admin-ZT'
-        domain: 'admin.goldshore.ai'
-        action: 'allow'
+      # Dashboard: goldshore.ai/app — the main authenticated entry point served
+      # by gs-web. This is the app shown in the CF Access App Launcher as
+      # "Dashboard". Protects /app and all sub-paths; /health is public.
+      - name: "GoldShore-Dashboard"
+        domains:
+          - "goldshore.ai"
+        action: "allow"
+        paths:
+          - "/app*"
+        public_paths:
+          - "/health"
+          - "/version"
         rules:
           include:
-            - email_domain: 'goldshore.ai'
-            - email: 'your.personal@email.com' # Placeholder
-          require:
-            - identity_provider: 'github'
+            - email_domain: "goldshore.ai"
+            - email: "marstonr6@gmail.com"
+            - email: "goldshorelabs@gmail.com"
+          allowed_identity_providers:
+            - "google_workspace"
+            - "github_goldshore_deploy"
+            - "github"
+            - "email_otp"
 
-      - name: 'GoldShore-API-Bypass'
-        domain: 'api.goldshore.ai'
-        action: 'bypass'
+      - name: "GoldShore-Admin-ZT"
+        domains:
+          - "admin.goldshore.ai"
+          - "admin.goldshore.org"
+          - "admin-preview.goldshore.ai"
+          - "admin.gs-admin.pages.dev"
+        action: "allow"
         rules:
           include:
-            - everyone: true
+            - email_domain: "goldshore.ai"
+            - email_domain: "goldshore.org"
+            - email: "marstonr6@gmail.com"
+          allowed_identity_providers:
+            - "google_workspace"
+            - "github_goldshore_deploy"
+            - "github"
+            - "email_otp"
+
+      - name: "Goldshore Ops"
+        domains:
+          - "ops.goldshore.ai"
+        action: "allow"
+        rules:
+          include:
+            - email_domain: "goldshore.ai"
+            - email: "marstonr6@gmail.com"
+          allowed_identity_providers:
+            - "google_workspace"
+            - "github_goldshore_deploy"
+            - "github"
+            - "email_otp"
+
+      - name: "GoldShore-Trading-ZT"
+        domains:
+          - "trading.goldshore.ai"
+          - "dashboard.goldshore.ai"
+          - "dash.goldshore.ai"
+        action: "allow"
+        paths:
+          - "/*"
+        public_paths:
+          - "/health"
+          - "/version"
+          - "/oauth/schwab/callback"
+          - "/oauth/robinhood/callback"
+        rules:
+          include:
+            - email_domain: "goldshore.ai"
+            - email: "marstonr6@gmail.com"
+          allowed_identity_providers:
+            - "google_workspace"
+            - "github_goldshore_deploy"
+            - "github"
+            - "email_otp"
+
+      - name: "Goldshore Gateway"
+        domains:
+          - "gw.goldshore.ai"
+          - "agent.goldshore.ai"
+          - "gs-agent.goldshore.workers.dev"
+        action: "allow"
+        paths:
+          - "/admin/*"
+          - "/internal/*"
+          - "/system/*"
+          - "/users/*"
+          - "/user/*"
+          - "/templates/*"
+          - "/media/*"
+          - "/pages/*"
+          - "/ai/*"
+        public_paths:
+          - "/"
+          - "/health"
+          - "/status"
+          - "/version"
+        rules:
+          include:
+            - email_domain: "goldshore.ai"
+            - email: "marstonr6@gmail.com"
+          allowed_identity_providers:
+            - "github_goldshore_deploy"
+            - "github"
+            - "email_otp"
+
+      - name: "Goldshore API"
+        domains:
+          - "api.goldshore.ai"
+          - "gs-api.goldshore.workers.dev"
+        action: "allow"
+        audience: "8510d42c31fc791e295427031ffeef7c7ebc0f1b62d8634fbb284bf82562f528"
+        paths:
+          - "/admin/*"
+          - "/internal/*"
+          - "/system/*"
+          - "/users/*"
+          - "/user/*"
+          - "/templates/*"
+          - "/media/*"
+          - "/pages/*"
+          - "/ai/*"
+        public_paths:
+          - "/"
+          - "/health"
+          - "/status"
+          - "/version"
+        rules:
+          include:
+            - email_domain: "goldshore.ai"
+            - email: "marstonr6@gmail.com"
+          allowed_identity_providers:
+            - "github_goldshore_deploy"
+            - "github"
+            - "email_otp"
+
+      - name: "GoldShore-Web-Preview"
+        domain: "preview.goldshore.ai"
+        action: "allow"
+        rules:
+          include:
+            - email_domain: "goldshore.ai"
+            - email: "marstonr6@gmail.com"
+          allowed_identity_providers:
+            - "google_workspace"
+            - "github_goldshore_deploy"
+            - "github"
+            - "email_otp"
+
+      # Previously only defined in setup-cf-agent-access.yml; mirrored here so
+      # this file stays the single declarative source of Access intent.
+      - name: "Signals"
+        domains:
+          - "signals.goldshore.ai"
+          - "signals.goldshore.org"
+          - "gs-signals-prod.goldshore.workers.dev"
+        action: "allow"
+        rules:
+          include:
+            - email_domain: "goldshore.ai"
+            - email: "marstonr6@gmail.com"
+          allowed_identity_providers:
+            - "google_workspace"
+            - "github_goldshore_deploy"
+            - "github"
+            - "email_otp"
+
+      - name: "GoldShore MCP"
+        domains:
+          - "mcp.goldshore.ai"
+        action: "allow"
+        rules:
+          include:
+            - email_domain: "goldshore.ai"
+            - email: "marstonr6@gmail.com"
+            - email: "goldshorelabs@gmail.com"
+          allowed_identity_providers:
+            - "github_goldshore_deploy"
+            - "github"
+            - "email_otp"
+
+      # Browser SSH to the HP laptop (type "ssh" app; gated by the
+      # include_ssh_laptop input of setup-cf-agent-access.yml). Requires a
+      # cloudflared tunnel on the laptop publishing this hostname with an SSH
+      # origin — the Access app alone serves nothing.
+      - name: "Temp HP Laptop SSH"
+        type: "ssh"
+        domains:
+          - "ssh-laptop.goldshore.ai"
+        action: "allow"
+        session_duration: "4h"
+        app_launcher_visible: false
+        rules:
+          include:
+            - email_domain: "goldshore.ai"
+            - email: "marstonr6@gmail.com"
+          allowed_identity_providers:
+            - "google_workspace"
+            - "github_goldshore_deploy"
+            - "github"
+            - "email_otp"
 
   pages:
-    projects:
-      - name: 'gs-web'
-        repo: 'astro-goldshore'
-        root_dir: '/' # Run from repo root for monorepo support
-        production_branch: 'main'
-        build_command: 'pnpm --filter @goldshore/web build'
-        output_dir: 'apps/gs-web/dist'
-        custom_domains:
-          - 'goldshore.ai'
-          - 'www.goldshore.ai'
-          - 'admin.goldshore.ai'
+    # Production moved from Pages to Workers with Assets. Keep this explicit so
+    # automation does not recreate the retired gs-web/gs-admin Pages projects.
+    projects: []
 
   workers:
     services:
-      - name: 'gs-api'
-        script_path: 'apps/gs-api/dist/index.js'
+      - name: "gs-api"
+        script_path: "apps/gs-api/dist/index.js"
         routes:
-          - pattern: 'api.goldshore.ai/*'
+          - pattern: "api.goldshore.ai/*"
+          - pattern: "api-preview.goldshore.ai/*"
+          - pattern: "agent.goldshore.ai/*"
+          - pattern: "mail.goldshore.ai/*"
+          - pattern: "ops.goldshore.ai/*"
+          - pattern: "trading.goldshore.ai/*"
+          - pattern: "dashboard.goldshore.ai/*"
+          - pattern: "dash.goldshore.ai/*"
+          - pattern: "gw.goldshore.ai/*"
+          - pattern: "api.goldshore.org/*"
         bindings:
           kv:
-            - name: 'KV'
-              namespace: 'goldshore-api-kv' # Historical resource name; gs-api canonical service prefix
+            - name: "KV"
+              namespace: "GS_API_KV"
           d1:
-            - name: 'DB'
-              database_name: 'goldshore-api-db' # Historical resource name; gs-api canonical service prefix
+            - name: "PLATFORM_DB"
+              database_name: "gs_platform_db"
           r2:
-            - name: 'ASSETS'
-              bucket_name: 'goldshore-api-assets' # Historical resource name; gs-api canonical service prefix
+            - name: "GS_ASSETS"
+              bucket_name: "gs-assets"
           ai:
-            - name: 'AI'
-              gateway: 'goldshore-ai-gateway'
+            - name: "AI"
+              gateway: "goldshore-ai-gateway"
 
-      - name: 'gs-gateway'
-        script_path: 'apps/gs-gateway/dist/index.js'
+      - name: "gs-web"
+        script_path: "apps/gs-web/dist/_worker.js/index.js"
         routes:
-          - pattern: 'gw.goldshore.ai/*'
+          - pattern: "goldshore.ai/*"
+          - pattern: "goldshore.org/*"
+          - pattern: "admin.goldshore.ai/*"
+          - pattern: "admin-preview.goldshore.ai/*"
+          - pattern: "admin.goldshore.org/*"
+          - pattern: "preview.goldshore.ai/*"
+          - pattern: "risk.goldshore.ai/*"
+          - pattern: "risk.goldshore.org/*"
         bindings:
-          services:
-            - binding: 'API'
-              service: 'gs-api'
-              environment: 'production'
           kv:
-            - name: 'GATEWAY_KV'
-              namespace: 'goldshore-gw-kv'
-
-      - name: 'gs-control'
-        script_path: 'apps/gs-control/dist/index.js'
-        routes:
-          - pattern: 'ops.goldshore.ai/*'
-        bindings:
-          services:
-            - binding: 'API'
-              service: 'gs-api'
-              environment: 'production'
-          env_vars:
-            CONTROL_SERVICE: 'true'
-
-      - name: 'gs-mail'
-        script_path: 'apps/gs-mail/dist/index.js'
-        routes:
-          - pattern: 'mail.goldshore.ai/*'
-        bindings:
-          env_vars:
-            MAIL_SERVICE: 'true'
-            MAIL_ALLOWED_RECIPIENTS: 'ops@goldshore.ai,inbox@goldshore.ai'
+            - name: "KV"
+              namespace: "GOLDSHORE-AI"
+            - name: "SESSION"
+              namespace: "KV_SESSIONS"
+          d1:
+            - name: "PLATFORM_DB"
+              database_name: "gs_platform_db"
+          r2:
+            - name: "GS_ASSETS"
+              bucket_name: "gs-assets"
 
   email:
     routing:
       catch_all:
         enabled: true
-        destination: 'inbox@goldshore.ai'
+        destination: "inbox@goldshore.ai"
       addresses:
-        - address: 'ops@goldshore.ai'
-          destination: 'your.personal.email@goldshore.ai'
-        - address: 'support@goldshore.ai'
-          destination: 'your.personal.email@goldshore.ai'
+        - address: "ops@goldshore.ai"
+          destination: "your.personal.email@goldshore.ai"
+        - address: "support@goldshore.ai"
+          destination: "your.personal.email@goldshore.ai"
+
+  redirects:
+    canonical_host: "goldshore.ai"
+    rules:
+      - from: "www.goldshore.ai/*"
+        to: "https://goldshore.ai/$1"
+        status: 308
+      - from: "goldshore.org/*"
+        to: "https://goldshore.ai/$1"
+        status: 308
+      - from: "www.goldshore.org/*"
+        to: "https://goldshore.ai/$1"
+        status: 308

@@ -2,9 +2,14 @@ import { access, readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const DEFAULT_DIST_DIR = 'apps/gs-web/dist';
-const DEFAULT_ROUTES = ['/developer', '/risk-radar', '/workflows'];
+// Keep the legacy app entry plus the primary homepage-linked routes in CI coverage.
+const DEFAULT_ROUTES = ['/developer', '/apps/risk-radar', '/', '/platform', '/risk-radar', '/services', '/about', '/contact'];
 
-const distDir = path.resolve(process.env.DIST_DIR ?? DEFAULT_DIST_DIR);
+const baseDistDir = path.resolve(process.env.DIST_DIR ?? DEFAULT_DIST_DIR);
+const serverEntryFile = path.join(baseDistDir, 'server', 'entry.mjs');
+// Cloudflare Pages adapter v13+ outputs pre-rendered pages to dist/client/
+const clientDistDir = path.join(baseDistDir, 'client');
+const distDir = await access(clientDistDir).then(() => clientDistDir, () => baseDistDir);
 const routes = (process.env.LINK_CHECK_ROUTES ?? DEFAULT_ROUTES.join(','))
   .split(',')
   .map((route) => route.trim())
@@ -14,6 +19,12 @@ const htmlCache = new Map();
 const idsCache = new Map();
 
 const isExternal = (href) => /^(?:[a-zA-Z][a-zA-Z\d+.-]*:|\/\/)/.test(href);
+
+// Server-rendered-only routes (Cloudflare Access-gated admin/app pages, login)
+// are never pre-rendered into dist/, so they can't be verified against the
+// static output even though they're real, working routes.
+const SSR_PREFIXES = ['/app/', '/admin/', '/login'];
+const isSsrOnlyPath = (pathname) => SSR_PREFIXES.some((prefix) => `${pathname}/`.startsWith(prefix));
 
 const normalizeRoutePath = (pathname) => {
   if (!pathname || pathname === '/') {
@@ -77,13 +88,21 @@ const exists = async (filePath) => {
 };
 
 const failures = [];
+const serverEntry = await exists(serverEntryFile) ? await readFile(serverEntryFile, 'utf8') : '';
+
+const hasServerRoute = (route) => {
+  const escapedRoute = route.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`["']route["']\\s*:\\s*["']${escapedRoute}["']`).test(serverEntry);
+};
 
 for (const sourceRoute of routes) {
   const sourcePath = sourceRoute.startsWith('/') ? sourceRoute : `/${sourceRoute}`;
   const sourceFile = distFileFromPath(sourcePath);
 
   if (!(await exists(sourceFile))) {
-    failures.push(`${sourcePath}: source page missing (${sourceFile})`);
+    if (!hasServerRoute(sourcePath)) {
+      failures.push(`${sourcePath}: source route missing from static output and server manifest`);
+    }
     continue;
   }
 
@@ -116,6 +135,10 @@ for (const sourceRoute of routes) {
       const resolved = new URL(href, `https://goldshore.local${sourcePath.endsWith('/') ? sourcePath : `${sourcePath}/`}`);
       targetPathname = resolved.pathname;
       targetHash = resolved.hash.replace(/^#/, '');
+    }
+
+    if (isSsrOnlyPath(targetPathname)) {
+      continue;
     }
 
     const targetFile = distFileFromPath(targetPathname);

@@ -1,0 +1,177 @@
+---
+import WebLayout from '../../layouts/WebLayout.astro';
+
+export const prerender = false;
+
+const modules = [
+  {
+    title: 'Risk Radar',
+    description: 'Continuous operational risk visualization with sweep-based signal detection and real-time anomaly flagging.',
+      href: '/risk-radar',
+  },
+  {
+    title: 'Financial Signals',
+    description: 'Real-time market intelligence — volatility sweeps, directional bias detection, and regime classification.',
+    href: '/platform/financial-signals',
+  },
+  {
+    title: 'Workflow Engine',
+    description: 'Governed automation with role-based approvals, audit trails, and resilient fallback handling.',
+    href: '/platform/workflow-engine',
+  },
+  {
+    title: 'Sentinel',
+    description: 'Operational monitoring and alerting for AI pipelines — anomaly detection and incident response playbooks.',
+    href: '/platform/sentinel',
+  },
+  {
+    title: 'AI Oracle',
+    description: 'Model-assisted decision layer with policy-governed inference, observability, and production validation.',
+    href: '/platform/ai-oracle',
+  },
+];
+---
+
+<WebLayout
+  title="Platform | GoldShore"
+  description="Integrated AI operations, risk intelligence, and workflow control — the GoldShore platform."
+  canonicalPath="/platform"
+>
+  <section class="page-shell gs-shell-section platform-page">
+    <p class="gs-eyebrow">Platform</p>
+    <h1>The GoldShore Platform</h1>
+    <p class="page-intro">
+      Integrated AI operations, risk intelligence, and workflow control built for institutional-grade environments.
+      Each module is designed to run independently or as part of a unified operational stack.
+    </p>
+
+    <div class="module-grid">
+      {modules.map((mod) => (
+        <a href={mod.href} class="module-card">
+          <h2>{mod.title}</h2>
+          <p>{mod.description}</p>
+          <span class="module-link">Learn more &rarr;</span>
+        </a>
+      ))}
+    </div>
+
+    <aside class="platform-cta">
+      <p class="gs-eyebrow">Get started</p>
+      <h2>Ready to deploy the platform in your environment?</h2>
+      <p>
+        GoldShore engagements are scoped to your operational constraints with clear milestones and measurable outcomes.
+      </p>
+      <a href="/contact" class="cta-btn">Contact GoldShore</a>
+    </aside>
+  </section>
+
+  <style>
+    .platform-page {
+      padding: var(--gs-space-9) 0 calc(var(--gs-space-10) + var(--gs-space-1));
+    }
+
+    .platform-page h1 {
+      max-width: 16ch;
+      margin: 0.75rem 0 1rem;
+      font-size: clamp(2.3rem, 5.6vw, 4.2rem);
+      line-height: 1;
+      letter-spacing: -0.035em;
+    }
+
+    .page-intro {
+      max-width: 64ch;
+      color: var(--gs-text-dim);
+      line-height: 1.7;
+    }
+
+    .module-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .module-card {
+      display: grid;
+      gap: 0.5rem;
+      padding: 1.3rem;
+      border-radius: 2px;
+      border: 1px solid var(--gs-primary);
+      background: rgba(10, 18, 36, 0.72);
+      box-shadow: var(--gs-shadow);
+      text-decoration: none;
+      color: var(--gs-text);
+      transition: border-color 150ms ease, background 150ms ease;
+    }
+
+    .module-card:hover {
+      border-color: rgba(131, 197, 255, 0.28);
+      background: rgba(12, 28, 56, 0.85);
+    }
+
+    .module-card h2 {
+      margin: 0;
+      font-size: 1.2rem;
+    }
+
+    .module-card p {
+      margin: 0;
+      color: var(--gs-text-dim);
+      line-height: 1.6;
+      font-size: 0.95rem;
+    }
+
+    .module-link {
+      font-size: 0.85rem;
+      color: rgba(131, 197, 255, 0.8);
+      font-weight: 600;
+    }
+
+    .platform-cta {
+      margin-top: 1.4rem;
+      padding: 1.35rem;
+      border-radius: 22px;
+      border: 1px solid rgba(131, 197, 255, 0.28);
+      background: linear-gradient(145deg, rgba(12, 28, 56, 0.85), rgba(8, 17, 33, 0.95));
+      box-shadow: var(--gs-shadow);
+    }
+
+    .platform-cta h2 {
+      margin: 0.45rem 0 0.7rem;
+      font-size: clamp(1.2rem, 2.2vw, 1.55rem);
+    }
+
+    .platform-cta p {
+      margin: 0;
+      max-width: 66ch;
+      color: var(--gs-text-dim);
+      line-height: 1.65;
+    }
+
+    .cta-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 0.95rem;
+      padding: 0.7rem 1.05rem;
+      border-radius: 999px;
+      background: rgba(0, 193, 255, 0.16);
+      border: 1px solid rgba(145, 222, 255, 0.45);
+      color: var(--gs-text);
+      font-weight: 600;
+      text-decoration: none;
+      transition: transform 120ms ease, background 120ms ease;
+    }
+
+    .cta-btn:hover {
+      transform: translateY(-1px);
+      background: rgba(0, 193, 255, 0.24);
+    }
+
+    @media (max-width: 900px) {
+      .module-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</WebLayout>

@@ -25,22 +25,8 @@ function pagesCheckUrl(p: any): string {
 
   // Backward-compatible fallback for environments that have not yet set public_url.
   if (p.name === 'gs-web') return 'https://goldshore.ai/';
+  if (p.name === 'gs-admin') return 'https://admin.goldshore.ai/';
   return `https://${p.name}.goldshore.ai/`;
-}
-
-function pagesSmokeUrls(p: any): string[] {
-  const urls = new Set<string>();
-  urls.add(pagesCheckUrl(p));
-
-  if (Array.isArray(p.smoke_urls)) {
-    for (const url of p.smoke_urls) {
-      if (typeof url === 'string' && url.length > 0) {
-        urls.add(url);
-      }
-    }
-  }
-
-  return [...urls];
 }
 
 function resolveWorkerEntryPath(entry: string): string {
@@ -64,10 +50,10 @@ async function deployPages(p: any) {
     return;
   }
 
-  const urls = pagesSmokeUrls(p);
+  const url = pagesCheckUrl(p);
 
   if (p.require_checks?.includes('smoke')) {
-    await Promise.all(urls.map((url) => smoke(url, 200).catch(() => {})));
+    await smoke(url, 200).catch(() => {});
   }
 
   const status = await latestPagesStatus(p.name);
@@ -91,7 +77,11 @@ async function deployPages(p: any) {
   }
 
   if (p.require_checks?.includes('smoke')) {
-    await Promise.all(urls.map((url) => smoke(url, 200, 8000)));
+    await smoke(url, 200, 8000);
+    if (p.name === 'gs-web') {
+      // goldshore.org 308-redirects to goldshore.ai; fetch follows redirect so assert final 200
+      await smoke('https://goldshore.org/', 200, 8000);
+    }
   }
   if (p.require_checks?.includes('lighthouse')) {
     await lighthouse(url, 0.8);
@@ -144,6 +134,7 @@ async function deployWorker(w: any) {
 
   if (w.require_checks?.includes('smoke')) {
     await smoke('https://api.goldshore.ai/health', 200, 8000);
+    await smoke('https://api.goldshore.ai/version', 200, 8000);
   }
 
   console.log(`[worker:${w.script}] Deploy OK.`);

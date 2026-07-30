@@ -1,0 +1,46 @@
+---
+interface Props {
+  label: string;
+  value: string;
+  help?: string;
+}
+
+const { label, value, help } = Astro.props;
+---
+<article class="stat-card">
+  <span class="stat-label">{label}</span>
+  <strong class="stat-value">{value}</strong>
+  {help && <p class="stat-help">{help}</p>}
+</article>
+
+<style>
+  .stat-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 1rem 1.25rem;
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .stat-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-text-secondary, rgba(255, 255, 255, 0.5));
+  }
+
+  .stat-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--color-text-primary, #fff);
+    font-family: var(--font-family-mono, monospace);
+  }
+
+  .stat-help {
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--color-text-muted, rgba(255, 255, 255, 0.4));
+  }
+</style>

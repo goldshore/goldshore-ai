@@ -1,0 +1,74 @@
+---
+import PublicFeaturePage from '../../components/PublicFeaturePage.astro';
+
+export const prerender = false;
+
+const sectors: Record<string, { title: string; description: string; cards: Array<{ title: string; body: string; href?: string }> }> = {
+  'financial-services': {
+    title: 'Financial Services',
+    description: 'Risk, signals, trading-adjacent workflows, and operator dashboards for finance-facing systems.',
+    cards: [
+      { title: 'Continuous risk', body: 'Threshold monitoring, anomaly detection, and review queues.', href: '/risk-radar/' },
+      { title: 'Signal operations', body: 'Normalized market and sentiment telemetry with traceable decisions.', href: '/platform/financial-signals/' },
+    ],
+  },
+  'operations-logistics': {
+    title: 'Operations & Logistics',
+    description: 'Workflow automation, routing clarity, vendor coordination, and resilient operational documentation.',
+    cards: [
+      { title: 'Workflow control', body: 'Approvals, escalation paths, queue processing, and observable ownership.', href: '/platform/workflow-engine/' },
+      { title: 'Resilient delivery', body: 'Systems integration that remains understandable during incidents.', href: '/services/systems-integration/' },
+    ],
+  },
+  'media-communications': {
+    title: 'Media & Communications',
+    description: 'Publishing systems, content workflows, analytics, subscriber infrastructure, and reputation monitoring.',
+    cards: [
+      { title: 'Publishing operations', body: 'Reliable content delivery and measurable subscriber journeys.' },
+      { title: 'Reputation defense', body: 'Monitoring and response playbooks for high-pressure communications.', href: '/services/banproof/' },
+    ],
+  },
+  'healthcare-systems': {
+    title: 'Healthcare Systems',
+    description: 'Compliance-aware infrastructure, documentation, and controlled AI workflows for health-adjacent operations.',
+    cards: [
+      { title: 'Governed automation', body: 'Human review, audit trails, and bounded model behavior.', href: '/services/ai-implementation/' },
+      { title: 'Operational clarity', body: 'Architecture and documentation designed for accountable delivery.' },
+    ],
+  },
+  'public-sector': {
+    title: 'Public Sector',
+    description: 'Infrastructure, security posture, documentation, and reliability workflows for government-adjacent environments.',
+    cards: [
+      { title: 'Secure foundations', body: 'Identity-aware access, auditable routing, and resilient service boundaries.' },
+      { title: 'Implementation support', body: 'Strategy and delivery that work inside real operational constraints.', href: '/services/consulting/' },
+    ],
+  },
+  'enterprise-tech': {
+    title: 'Enterprise Technology',
+    description: 'Product engineering, design systems, platform integration, and AI operations for scaling technology teams.',
+    cards: [
+      { title: 'Product systems', body: 'Design and development aligned to durable platform architecture.', href: '/services/design-dev/' },
+      { title: 'AI operations', body: 'Production model workflows with controls and measurable outcomes.', href: '/services/ai-implementation/' },
+    ],
+  },
+};
+
+const slug = Astro.params.slug ?? '';
+const sector = sectors[slug];
+
+if (!sector) {
+  Astro.response.status = 404;
+}
+---
+
+{sector ? (
+  <PublicFeaturePage
+    eyebrow="Sector"
+    title={sector.title}
+    description={sector.description}
+    canonicalPath={`/sectors/${slug}/`}
+    cards={sector.cards}
+    ctaLabel={`Discuss ${sector.title}`}
+  />
+) : null}
