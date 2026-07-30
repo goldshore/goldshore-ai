@@ -14,7 +14,8 @@ const integrations = new Hono<{
 
 /**
  * Integration Management API
- * Terminal endpoint for third-party integration lifecycle: CRUD, sync, status monitoring
+ * Terminal endpoint for third-party integration lifecycle: CRUD, sync, status monitoring.
+ * This route must handle requests directly in gs-api and must never proxy back to an admin/frontend route.
  */
 
 // GET /integrations?action=list|definitions|status|sync
