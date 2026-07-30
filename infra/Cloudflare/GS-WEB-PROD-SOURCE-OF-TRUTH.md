@@ -153,7 +153,7 @@ Recommended sender identity:
 | `ops.goldshore.ai` | `gs-api-prod` | control plane APIs |
 | `trading.goldshore.ai` | `gs-api-prod` and/or web routes by path | trading integration |
 | `dashboard.goldshore.ai` | canonical web/API pair by path | protected dashboard alias |
-| `mcp.goldshore.ai` | explicit external MCP service until folded into `gs-api` | agent tooling |
+| `mcp.goldshore.ai` | explicit external MCP service until folded into `gs-api`; the live worker must be bound on `mcp.goldshore.ai/*` so OAuthProvider-owned paths like `/authorize`, `/token`, `/register`, and `/callback` reach the worker | agent tooling |
 
 A hostname is a route, not proof that a separate Worker should exist.
 
