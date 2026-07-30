@@ -89,7 +89,11 @@ export const mountHero = (root: ParentNode = document) => {
       ctx.beginPath();
       for (let c = 0; c <= COLS; c++) {
         const { sx, sy } = pts[idx(r, c)];
-        c === 0 ? ctx.moveTo(sx, sy) : ctx.lineTo(sx, sy);
+        if (c === 0) {
+          ctx.moveTo(sx, sy);
+        } else {
+          ctx.lineTo(sx, sy);
+        }
       }
       const depth = r / ROWS;
       const alpha = prefersReduced ? 0.10 : 0.04 + depth * 0.20;
@@ -103,7 +107,11 @@ export const mountHero = (root: ParentNode = document) => {
       ctx.beginPath();
       for (let r = 0; r <= ROWS; r++) {
         const { sx, sy } = pts[idx(r, c)];
-        r === 0 ? ctx.moveTo(sx, sy) : ctx.lineTo(sx, sy);
+        if (r === 0) {
+          ctx.moveTo(sx, sy);
+        } else {
+          ctx.lineTo(sx, sy);
+        }
       }
       ctx.strokeStyle = `rgba(120,170,255,${(0.02 + (c / COLS) * 0.05).toFixed(3)})`;
       ctx.lineWidth   = 0.55;
@@ -114,7 +122,11 @@ export const mountHero = (root: ParentNode = document) => {
     ctx.beginPath();
     for (let c = 0; c <= COLS; c++) {
       const { sx, sy } = pts[idx(ROWS, c)];
-      c === 0 ? ctx.moveTo(sx, sy) : ctx.lineTo(sx, sy);
+      if (c === 0) {
+        ctx.moveTo(sx, sy);
+      } else {
+        ctx.lineTo(sx, sy);
+      }
     }
     ctx.strokeStyle = 'rgba(90,162,255,0.42)';
     ctx.lineWidth   = 1.6;

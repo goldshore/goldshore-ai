@@ -27,16 +27,18 @@
 
 ### 2. Admin (Cockpit)
 
-- Project: `gs-admin`
+`admin.goldshore.ai` was migrated off the standalone `gs-admin` Pages project onto `gs-web` (route `admin.goldshore.ai/*` in `apps/gs-web/wrangler.toml`), per CLAUDE.md's repo migration plan. The DNS/routing cutover is done; the actual admin page/route content under `apps/gs-admin/src` has not been ported into `apps/gs-web` yet — that migration is in progress.
+
+- Project (legacy, not yet retired): `gs-admin`
 - Repo: `goldshore-ai`
 - Root: `apps/gs-admin`
-- Custom Domains:
-  - `admin.goldshore.ai`
+- Custom Domains still on the legacy project:
   - `admin-preview.goldshore.ai`
+  - `admin.goldshore.org` (pending the separate `goldshore.org` ownership conflict — see `policy/ROUTE_POLICY.md` vs `docs/architecture/domain-ownership.md`)
 
 **Zero Trust:**
 
-- Access policy required on `admin.goldshore.ai` (email allowlist).
+- Access policy required on `admin.goldshore.ai` (email allowlist) — unchanged by the cutover, still applies to the same hostname regardless of which Worker/Pages project serves it.
 
 **Environment Variables:**
 
@@ -94,13 +96,6 @@
 - R2:
   - Binding: `GS_ASSETS`
   - Bucket: `gs-assets` _(historical alias only: `ASSETS`)_
-  - Binding: `DB`
-  - Database: `goldshore` / `gs_db_001` _(historical alias: `goldshore-api-db`)_
-  - Binding: `RISK_RADAR_DB`
-  - Database: `gs_risk_radar_db` _(Risk Radar canonical structured storage; API-only)_
-- R2:
-  - Binding: `ASSETS`
-  - Bucket: `gs-assets` _(historical alias: `goldshore-api-assets`)_
   - Binding: `RISK_RADAR_R2`
   - Bucket: `gs-risk-radar-raw` / `gs-risk-radar-raw-preview` _(Risk Radar raw source object storage; API-only)_
 - AI:
@@ -110,12 +105,13 @@
   - Binding: `INTEGRATION_MASTER_KEY`
   - Store: `b9824d3280c54573a24137c7e7143b33`
   - Secret: `INTEGRATION_MASTER_KEY`
+- Worker secrets:
+  - Binding: `INTEGRATION_MASTER_KEY`
+  - Secret: `INTEGRATION_MASTER_KEY` (normal Worker secret; do not configure `secrets_store_secrets` until the referenced Cloudflare Secrets Store exists)
 
 **Risk Radar storage policy:** bind Risk Radar storage only to `gs-api`; `gs-web` must call API endpoints rather than receiving `RISK_RADAR_DB`, `RISK_RADAR_CACHE`, or `RISK_RADAR_R2` directly.
 
 **Unclear live-state note:** legacy dashboard service bindings such as `AGENT`, `GS_MAIL`, `GS_WEB`, `GS_WEB PROD`, `API_SERVICE`, `GOLDSHORE_AI`, and historical store-object binding `SECRETS` are not part of the repo-managed `gs-api` binding set. If present in Cloudflare, validate traffic before deleting, but do not reintroduce them into Wrangler config without an ADR update.
-
-**Risk Radar storage policy:** bind Risk Radar storage only to `gs-api`; `gs-web` must call API endpoints rather than receiving `RISK_RADAR_DB`, `RISK_RADAR_CACHE`, or `RISK_RADAR_R2` directly.
 
 ---
 

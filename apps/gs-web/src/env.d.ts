@@ -16,6 +16,12 @@ interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
 
+interface KVNamespace {
+  get(key: string): Promise<string | null>;
+  put(key: string, value: string): Promise<void>;
+  delete(key: string): Promise<void>;
+}
+
 interface D1Result<Row> {
   results?: Row[];
 }
@@ -25,6 +31,10 @@ interface D1PreparedStatement<Row = Record<string, unknown>> {
   all(): Promise<D1Result<Row>>;
   first<T = Row>(): Promise<T | null>;
   run(): Promise<unknown>;
+}
+
+interface D1Database {
+  prepare(query: string): D1PreparedStatement;
 }
 
 // Global Cloudflare Env types
@@ -38,7 +48,16 @@ interface Env {
   MAILCHANNELS_API_URL?: string;
   CLOUDFLARE_TEAM_DOMAIN?: string;
   CLOUDFLARE_ACCESS_AUDIENCE?: string;
+  DEV_AUTH_BYPASS?: string;
   PUBLIC_API?: string;
+  GOOGLE_ADSENSE_CLIENT_ID?: string;
+  GOOGLE_ADSENSE_CLIENT_SECRET?: string;
+  GOOGLE_ADSENSE_REFRESH_TOKEN?: string;
+  GOOGLE_ADSENSE_ACCOUNT_ID?: string;
+  GOOGLE_GSC_CLIENT_ID?: string;
+  GOOGLE_GSC_CLIENT_SECRET?: string;
+  GOOGLE_GSC_REFRESH_TOKEN?: string;
+  GOOGLE_GSC_SITE_URL?: string;
 }
 
 declare namespace App {

@@ -72,6 +72,10 @@ If a task appears to require a separate admin, gateway, MCP, cron, mail, signals
 
 ## AI IDE context: Antigravity + VS Code
 
+### Shared GitHub handoffs
+
+Claude and Codex coordinate through GitHub issues rather than private local context. Use the same issue tags defined in `AGENTS.md`: `[agent:claude]`, `[agent:codex]`, `[env:local]`, `[env:preview]`, `[env:production]`, `[status:ready]`, `[status:blocked]`, and `[handoff:needed]`. Every handoff comment must include the remote branch and commit SHA, completed checks, deployment/run URLs, blockers, and the next owner/action.
+
 **Antigravity** is the primary IDE used to build parts of goldshore and banproof-me. It is a Google IDE with multiple AI agents pre-integrated: Gemini, Codex, Claude, Copilot, and others. Think of it as VS Code with a built-in multi-agent AI layer.
 
 When working in Antigravity or VS Code on this codebase:
@@ -126,10 +130,6 @@ For Claude/Codex assistance with Google API integration: provide the API name, s
 - Workflows: `GS_SIGNALS` → `signals-evaluator`.
 - Secrets Store: `INTEGRATION_MASTER_KEY` is bound as a per-secret Secrets Store binding from store `b9824d3280c54573a24137c7e7143b33`. Do not use the historical `SECRETS.get(...)` store-object shape in Wrangler config.
 - Unclear/live Cloudflare note: if the dashboard still shows legacy service bindings such as `AGENT`, `GS_MAIL`, `GS_WEB PROD`, `API_SERVICE`, or `GOLDSHORE_AI`, treat them as stale until a human confirms a live dependency; do not re-add them to repo-managed `gs-api` config without updating this file and `docs/WORKER_CONFIGURATION.md`.
-- KV: `GS_CONFIG` (`d02c0c7951a244a7987e23d8af16b7b2`), `KV_SESSIONS`
-- D1: `PLATFORM_DB` (`9703574e-adb7-481e-8d98-96f8ce5f8a90`), `GS_AUDIT_DB` (`1ae71d76-188f-481b-91d9-db2d39013f68`)
-- R2: `GS_ASSETS`
-- Services: `gs-trading-prod`, `gs-control`, `gs-api`
 
 ---
 
@@ -145,7 +145,8 @@ What's on this branch:
 ## CI / deployment
 
 - GitHub Actions: Lighthouse CI threshold `LH_MIN_PERFORMANCE: 0.60`
-- Deploy token: `CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN` GitHub secret (renew via `manage-cf-tokens.yml` if expired)
+- GitHub Actions deploy token: `CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN`
+- Cloudflare Worker Builds token: `CLOUDFLARE_BUILD_API_TOKEN` (managed separately)
 - Workers deploy per-app via `wrangler deploy`
 
 ---

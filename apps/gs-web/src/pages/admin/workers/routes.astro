@@ -1,0 +1,149 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { authorizeAdminRequest, getAdminAuthError, getAdminRouteRule } from '../../../utils/admin-access';
+
+export const prerender = false;
+
+const env = Astro.locals.runtime?.env as Env | undefined;
+const rule = getAdminRouteRule('/admin/workers/routes', 'GET');
+
+let authError: { status: number; message: string } | null = null;
+if (!rule) {
+  authError = { status: 404, message: 'Not found.' };
+} else {
+  const authResult = await authorizeAdminRequest(Astro.request, env as never, rule);
+  authError = getAdminAuthError(authResult);
+}
+---
+
+<BaseLayout title="Worker Routes | GoldShore Admin" description="Route tables for each deployed Worker">
+  <section class="gs-section">
+    <div class="gs-grid columns-2">
+      <div>
+        <h1>Worker routes</h1>
+        <p class="gs-text-lg">Route patterns for each deployed Worker.</p>
+      </div>
+      <div class="gs-card">
+        <h2 class="section-title"><span>◆</span>Actions</h2>
+        <ul>
+          <li><a href="/admin/workers/status">Worker status</a></li>
+          <li><a href="/admin/workers/bindings">Worker bindings</a></li>
+        </ul>
+      </div>
+    </div>
+
+    {authError ? (
+      <div class="gs-card" style="margin-top: 2rem;">
+        <p class="gs-text-lg">{authError.message}</p>
+      </div>
+    ) : (
+      <>
+        <div class="gs-card" style="margin-top: 2rem;">
+          <div class="gs-input-group">
+            <label for="worker-select">Select worker</label>
+            <select id="worker-select">
+              <option value="">Loading workers…</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="routes-section" class="gs-card" style="margin-top: 2rem; display: none; overflow-x: auto;">
+          <table class="gs-table">
+            <thead>
+              <tr><th>Pattern</th></tr>
+            </thead>
+            <tbody id="routes-table-body">
+              <tr><td>Select a worker to view routes.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div id="routes-error" class="gs-card" style="margin-top: 2rem; display: none;">
+          <p id="routes-error-msg" class="gs-text-lg"></p>
+        </div>
+      </>
+    )}
+  </section>
+
+  <script>
+    const workerSelect = document.getElementById('worker-select') as HTMLSelectElement | null;
+    const routesSection = document.getElementById('routes-section');
+    const routesTableBody = document.getElementById('routes-table-body');
+    const routesError = document.getElementById('routes-error');
+    const routesErrorMsg = document.getElementById('routes-error-msg');
+
+    function showError(msg: string) {
+      if (routesSection) routesSection.style.display = 'none';
+      if (routesError) routesError.style.display = 'block';
+      if (routesErrorMsg) routesErrorMsg.textContent = msg;
+    }
+
+    function hideError() {
+      if (routesError) routesError.style.display = 'none';
+    }
+
+    async function loadWorkerList() {
+      try {
+        const res = await fetch('/api/admin/cf/workers');
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          if (workerSelect) workerSelect.innerHTML = '<option value="">Failed to load workers</option>';
+          showError(data.error ?? 'Could not load worker list.');
+          return;
+        }
+
+        const workers: Array<{ id: string }> = data.workers ?? [];
+        if (workerSelect) {
+          workerSelect.innerHTML =
+            '<option value="">— choose a worker —</option>' +
+            workers.map((w) => `<option value="${w.id}">${w.id}</option>`).join('');
+        }
+      } catch {
+        if (workerSelect) workerSelect.innerHTML = '<option value="">Network error</option>';
+        showError('Network error — could not reach /api/admin/cf/workers.');
+      }
+    }
+
+    async function loadRoutes(name: string) {
+      hideError();
+      if (routesSection) routesSection.style.display = 'none';
+      if (!name) return;
+
+      if (routesTableBody) {
+        routesTableBody.innerHTML = '<tr><td>Loading routes…</td></tr>';
+      }
+      if (routesSection) routesSection.style.display = 'block';
+
+      try {
+        const res = await fetch(`/api/admin/cf/worker-detail?name=${encodeURIComponent(name)}`);
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          showError(data.error ?? 'Failed to load worker detail.');
+          if (routesSection) routesSection.style.display = 'none';
+          return;
+        }
+
+        const routes: Array<{ pattern: string }> = data.routes ?? [];
+
+        if (!routes.length) {
+          if (routesTableBody) {
+            routesTableBody.innerHTML = '<tr><td>No routes found for this worker.</td></tr>';
+          }
+          return;
+        }
+
+        if (routesTableBody) {
+          routesTableBody.innerHTML = routes.map((r) => `<tr><td>${r.pattern}</td></tr>`).join('');
+        }
+      } catch {
+        showError('Network error — could not reach /api/admin/cf/worker-detail.');
+        if (routesSection) routesSection.style.display = 'none';
+      }
+    }
+
+    workerSelect?.addEventListener('change', () => loadRoutes(workerSelect.value));
+    loadWorkerList();
+  </script>
+</BaseLayout>
