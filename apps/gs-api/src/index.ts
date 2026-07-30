@@ -61,6 +61,7 @@ type Env = {
   FORWARD_TO?: string;
   MAIL_BLOCKED_SENDERS?: string;
   MAIL_ALLOWED_RECIPIENTS?: string;
+  AGENT?: Fetcher;
   API_ORIGIN?: string;
   ENV?: string;
   DEV_AUTH_BYPASS?: string;
@@ -149,6 +150,67 @@ const requiredSecrets = [
 ] as const;
 
 const DEFAULT_ALLOWED_ORIGINS = [...APPROVED_API_ORIGINS];
+const TRACE_HEADER = 'X-Correlation-Id';
+const AGENT_HOSTNAME = 'agent.goldshore.ai';
+
+const getCorrelationId = (request: Request): string =>
+  request.headers.get(TRACE_HEADER) ?? crypto.randomUUID();
+
+const withCorrelationId = (response: Response, correlationId: string): Response => {
+  const headers = new Headers(response.headers);
+  headers.set(TRACE_HEADER, correlationId);
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+};
+
+const isAgentHostnameRequest = (request: Request): boolean =>
+  new URL(request.url).hostname === AGENT_HOSTNAME;
+
+const normalizeEmail = (value: string) => value.trim().toLowerCase();
+const parseEmailList = (value?: string) =>
+  (value ?? '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map(normalizeEmail);
+
+const isEmailLike = (value: string) => {
+  const normalized = normalizeEmail(value);
+  const atIndex = normalized.indexOf('@');
+  const lastDotIndex = normalized.lastIndexOf('.');
+
+  return atIndex > 0 && lastDotIndex > atIndex + 1 && lastDotIndex < normalized.length - 1;
+};
+
+const readInboxLogs = async (kv: KVNamespace): Promise<EmailLog[]> => {
+  const rawLogs = await kv.get('EMAIL_INBOX_LOGS', 'text');
+  if (!rawLogs) return [];
+
+  try {
+    const parsedLogs = JSON.parse(rawLogs);
+    const parseResult = EmailInboxLogsSchema.safeParse(parsedLogs);
+    return parseResult.success ? parseResult.data : [];
+  } catch (error) {
+    console.error('Failed to parse EMAIL_INBOX_LOGS payload:', error);
+    return [];
+  }
+};
+
+
+const DEFAULT_ALLOWED_ORIGINS = [
+  'https://goldshore.ai',
+  'https://www.goldshore.ai',
+  'https://admin.goldshore.ai',
+  'https://ops.goldshore.ai',
+  'https://gw.goldshore.ai',
+  'https://agent.goldshore.ai',
+  'https://admin-preview.goldshore.ai',
+  'https://preview.goldshore.ai',
+];
 
 const PREVIEW_ORIGIN_PATTERNS = [
   /^https:\/\/[a-z0-9-]+-preview\.goldshore\.ai$/i,
@@ -219,6 +281,28 @@ app.use(
   }),
 );
 
+app.use('*', async (c, next) => {
+  if (!isAgentHostnameRequest(c.req.raw)) {
+    await next();
+    return;
+  }
+
+  const correlationId = getCorrelationId(c.req.raw);
+  if (!c.env.AGENT) {
+    return c.json({ error: 'Downstream agent not configured', traceId: correlationId }, 503, {
+      [TRACE_HEADER]: correlationId,
+    });
+  }
+
+  const downstreamRequest = new Request(c.req.raw, {
+    headers: new Headers(c.req.raw.headers),
+  });
+  downstreamRequest.headers.set(TRACE_HEADER, correlationId);
+  const response = await c.env.AGENT.fetch(downstreamRequest);
+  return withCorrelationId(response, correlationId);
+});
+
+// Enforce Authentication (Defense in Depth)
 app.use('*', async (c, next) => {
   const routePrefix = getHostRoutePrefix(c.req.raw);
   if (!routePrefix || c.req.path === routePrefix || c.req.path.startsWith(`${routePrefix}/`)) {
@@ -394,6 +478,30 @@ app.all('/api/*', async (c) => {
   }
 });
 
+app.all('/api/*', async (c) => {
+  const correlationId = getCorrelationId(c.req.raw);
+  const url = new URL(c.req.url);
+  const proxiedPath = url.pathname.replace(/^\/api/, '') || '/';
+
+  try {
+    if (c.env.API_ORIGIN) {
+      const targetUrl = new URL(proxiedPath + url.search, c.env.API_ORIGIN);
+      const response = await fetch(targetUrl.toString(), c.req.raw);
+      return withCorrelationId(response, correlationId);
+    }
+
+    const internalUrl = new URL(c.req.url);
+    internalUrl.pathname = proxiedPath;
+    const response = await app.fetch(new Request(internalUrl.toString(), c.req.raw), c.env, c.executionCtx);
+    return withCorrelationId(response, correlationId);
+  } catch (error) {
+    console.error(`[api] gateway proxy failed; trace=${correlationId}`, error);
+    return c.json({ error: 'Upstream request failed', traceId: correlationId }, 502, {
+      [TRACE_HEADER]: correlationId,
+    });
+  }
+});
+
 // V1 Routes
 const v1 = new Hono<{ Bindings: Env }>();
 v1.route('/users', users);
@@ -513,3 +621,50 @@ export class AuthSession {
     );
   }
 }
+export default {
+  fetch: app.fetch,
+
+  async email(message: ForwardableEmailMessage, env: Env, ctx: ExecutionContext): Promise<void> {
+    const sender = message.from;
+    const recipient = message.to;
+    const subject = (message.headers.get('subject') || 'No Subject').slice(0, 50);
+
+    const normalizedSender = normalizeEmail(sender);
+    const normalizedRecipient = normalizeEmail(recipient);
+    const blocked = parseEmailList(env.MAIL_BLOCKED_SENDERS);
+    if (blocked.includes(normalizedSender)) {
+      message.setReject(`Sender ${sender} is blocked.`);
+      return;
+    }
+
+    const allowed = parseEmailList(env.MAIL_ALLOWED_RECIPIENTS);
+    if (allowed.length > 0 && !allowed.includes(normalizedRecipient)) {
+      message.setReject(`Recipient ${recipient} is not allowlisted.`);
+      return;
+    }
+
+    const parsedEntry = EmailLogSchema.safeParse({
+      id: crypto.randomUUID(),
+      from: sender,
+      to: recipient,
+      subject,
+      timestamp: new Date().toISOString(),
+    });
+
+    if (parsedEntry.success) {
+      ctx.waitUntil((async () => {
+        const existingLogs = await readInboxLogs(env.KV);
+        const updatedLogs = [parsedEntry.data, ...existingLogs].slice(0, 100);
+        await env.KV.put('EMAIL_INBOX_LOGS', JSON.stringify(updatedLogs));
+      })());
+    }
+
+    const forwardTo = (env.MAIL_FORWARD_TO || env.FORWARD_TO)?.trim();
+    if (!forwardTo || !isEmailLike(forwardTo)) {
+      message.setReject('Mail forwarding is not configured.');
+      return;
+    }
+
+    await message.forward(normalizeEmail(forwardTo));
+  },
+};
