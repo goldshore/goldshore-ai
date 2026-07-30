@@ -41,6 +41,13 @@ export type Env = {
   DEPLOY_SHA?: string;
   GIT_SHA?: string;
   CONTROL_ADMIN_ROLES?: string;
+  MAIL_FORWARD_TO?: string;
+  FORWARD_TO?: string;
+  MAIL_BLOCKED_SENDERS?: string;
+  MAIL_ALLOWED_RECIPIENTS?: string;
+  AGENT?: Fetcher;
+  API_ORIGIN?: string;
+  CONTROL_ADMIN_ROLES?: string;
   CLOUDFLARE_API_TOKEN?: string;
   GITHUB_TOKEN?: string;
   GITHUB_API_TOKEN?: string;
@@ -84,7 +91,7 @@ export type Env = {
   GOLDCLAW_SANDBOX_API_URL?: string;
   GOLDCLAW_SANDBOX_API_TOKEN?: string;
   GOLDCLAW_SANDBOX_PROVIDER?: string;
-  OAUTH_TOKEN_ENCRYPTION_KEY?: string;
+  OAUTH_TOKEN_ENCRYPTION_KEY?: string; 
 };
 
 export type Variables = {

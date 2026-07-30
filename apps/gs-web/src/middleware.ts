@@ -19,11 +19,6 @@ const isProtectedAdminRequest = (request: Request, url: URL) =>
   isAdminPath(url.pathname) ||
   (isAdminHost(getRequestHostname(request, url)) && !isStaticAssetPath(url.pathname));
 
-const ADMIN_PATH_PREFIXES = ['/admin', '/api/admin'];
-
-const isAdminPath = (pathname: string) =>
-  ADMIN_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
-
 export const onRequest: MiddlewareHandler = async (context, next) => {
   // Redirect risk.goldshore.ai root → /risk-radar (subdomain alias for the product page).
   const host = getRequestHostname(context.request, context.url);
@@ -68,9 +63,46 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   // that can bypass middleware keep their own platform config in public/_headers.
   context.locals.securityPolicySource = 'response-header';
 
-  const response = adminRewritePath
-    ? await context.rewrite(adminRewritePath)
-    : await next();
+  const url = new URL(context.request.url);
+  const adminRule = getAdminRouteRule(
+    url.pathname,
+    context.request.method,
+    url.hostname,
+  );
+
+  if (adminRule) {
+    const authResult = await authorizeAdminRequest(
+      context.request,
+      context.locals.runtime?.env as Parameters<typeof authorizeAdminRequest>[1],
+      adminRule,
+    );
+
+    if (authResult.ok === false) {
+      const isApiRoute = adminRule.kind === 'api';
+      const body = isApiRoute
+        ? JSON.stringify({ ok: false, error: authResult.error })
+        : authResult.error;
+
+      return new Response(body, {
+        status: authResult.status,
+        headers: {
+          'content-type': isApiRoute
+            ? 'application/json; charset=utf-8'
+            : 'text/plain; charset=utf-8',
+        },
+      });
+    }
+
+    if (
+      adminRule.kind === 'page' &&
+      isAdminHost(url.hostname) &&
+      url.pathname !== adminRule.canonicalPath
+    ) {
+      return Response.redirect(new URL(adminRule.canonicalPath, url.origin), 302);
+    }
+  }
+
+  const response = await next();
   response.headers.set('Content-Security-Policy', HTML_CONTENT_SECURITY_POLICY);
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');
