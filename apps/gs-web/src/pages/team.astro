@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 
-export const prerender = true;
+export const prerender = false;
 ---
 
 <BaseLayout title="Team | GoldShore" description="Meet the GoldShore team.">
@@ -15,14 +15,19 @@ export const prerender = true;
         <h3>Robert M.</h3>
         <p>Leads product direction, systems strategy, and applied intelligence.</p>
         <div class="social-links">
-          <a href="#" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-          <a href="#" target="_blank" rel="noopener noreferrer">GitHub</a>
+          <a href="https://www.linkedin.com/in/r-marston" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+          <a href="https://github.com/marzton" target="_blank" rel="noopener noreferrer">GitHub</a>
+          <a href="https://rmarston.com" target="_blank" rel="noopener noreferrer">Website</a>
         </div>
       </div>
 
       <div class="card">
-        <h3>Systems</h3>
-        <p>Infrastructure, execution, observability.</p>
+        <h3>Nicholas B.</h3>
+        <p>Systems architecture, infrastructure engineering, and operational reliability.</p>
+        <div class="social-links">
+          <a href="#" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+          <a href="#" target="_blank" rel="noopener noreferrer">GitHub</a>
+        </div>
       </div>
 
       <div class="card">
@@ -87,6 +92,7 @@ export const prerender = true;
       display: flex;
       gap: 0.75rem;
       margin-top: 1rem;
+      flex-wrap: wrap;
     }
 
     .social-links a {

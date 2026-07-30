@@ -1,0 +1,64 @@
+name: 'Normalize Cloudflare Token'
+description: 'Normalize and validate a Cloudflare API token from various input formats'
+
+inputs:
+  raw_token:
+    description: 'Raw Cloudflare token (may include Bearer prefix, newlines, whitespace, backticks)'
+    required: true
+  token_name:
+    description: 'Name of the token for error messages (e.g., CLOUDFLARE_BUILD_API_TOKEN)'
+    required: false
+    default: 'CLOUDFLARE_API_TOKEN'
+
+outputs:
+  token:
+    description: 'Normalized and validated token value'
+    value: ${{ steps.normalize.outputs.token }}
+
+runs:
+  using: 'composite'
+  steps:
+    - id: normalize
+      name: Normalize Cloudflare token
+      shell: bash
+      env:
+        RAW_TOKEN: ${{ inputs.raw_token }}
+        TOKEN_NAME: ${{ inputs.token_name }}
+      run: |
+        token="$(node <<'NODE'
+        const raw = process.env.RAW_TOKEN || "";
+        let token = raw.replace(/[\r\n]/g, "").trim();
+        
+        // Extract Bearer token if present
+        const bearer = token.match(/(?:authorization\s*:\s*)?bearer\s+([^\s"',;}]+)/i);
+        if (bearer) token = bearer[1];
+        
+        // Extract cfut_* token format
+        const cfut = token.match(/cfut_[A-Za-z0-9_-]+/);
+        if (cfut) token = cfut[0];
+        
+        // Remove quotes and whitespace
+        token = token.replace(/^[`'"]+|[`'",;}]+$/g, "").replace(/\s/g, "");
+        
+        if (!token) {
+          console.error(`::error::Missing or invalid token: ${process.env.TOKEN_NAME}`);
+          process.exit(1);
+        }
+        
+        // Validate token format (basic check)
+        if (!/^[a-z0-9_-]+$/i.test(token)) {
+          console.error(`::error::Invalid token format for ${process.env.TOKEN_NAME}`);
+          process.exit(1);
+        }
+        
+        process.stdout.write(token);
+        NODE
+        )"
+        
+        if [ -z "$token" ]; then
+          echo "::error::Token normalization failed"
+          exit 1
+        fi
+        
+        echo "::add-mask::$token"
+        echo "token=$token" >> "$GITHUB_OUTPUT"

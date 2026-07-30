@@ -1,87 +1,190 @@
 ---
-import MarketingLayout from '../../layouts/MarketingLayout.astro';
-import DocsSearch from '../../components/DocsSearch.astro';
-import { GSButton } from '@goldshore/ui';
+import GoldShorePageTemplate from '../../components/GoldShorePageTemplate.astro';
+import GoldShoreSection from '../../components/GoldShoreSection.astro';
 
-const featureBlocks = [
-  {
-    title: 'Navigation + Menus',
-    description: 'Primary navigation and menus stay in the shared layout, so content pages focus on storytelling.'
-  },
-  {
-    title: 'Responsive Layouts',
-    description: 'Use grid utilities and section spacing to keep desktop, tablet, and mobile layouts consistent.'
-  },
-  {
-    title: 'Search Module',
-    description: 'Drop in the DocsSearch component anywhere you need a site-level search experience.'
-  },
-  {
-    title: 'CTA + Marketing',
-    description: 'Reusable buttons and cards keep conversion flows consistent for marketing and ecommerce.'
-  }
+export const prerender = false;
+
+const primitives = [
+  ['01', 'Page shell', 'Metadata, sticky navigation, footer, hero hierarchy, actions, and an optional supporting panel.'],
+  ['02', 'Column system', 'One shared 12-column axis controls widths and alignment from the header through every section.'],
+  ['03', 'Section rhythm', 'Default, surface, accent, and compact variants create hierarchy without one-off page CSS.'],
+  ['04', 'Responsive rules', 'Column counts collapse predictably while typography and controls remain readable.'],
 ];
 ---
 
-<MarketingLayout
-  title="Web Template"
-  description="Template layout that keeps navigation, menus, and search modular for GoldShore web pages."
+<GoldShorePageTemplate
+  title="Astro Page Template | Gold Shore"
+  description="The reusable Gold Shore Astro page and section primitives."
+  canonicalPath="/templates/"
+  eyebrow="Gold Shore · Astro system"
+  heading="Build once. Extend everywhere."
+  intro="A composable page contract for new platform, service, editorial, and campaign routes—using the established black, white, and copper Vibrant visual system."
+  heroMotion="parallax"
 >
-  <section class="gs-hero gs-hero--center">
-    <div class="gs-hero__inner">
-      <p class="gs-eyebrow">Template Page</p>
-      <h1>Composable marketing layout</h1>
-      <p class="gs-lead">
-        This page demonstrates how the GoldShore web templates keep navbars, menus, containers, and search
-        components modular so they can plug into any marketing or documentation page.
-      </p>
-      <div class="gs-button-row">
-        <GSButton href="/" variant="primary">Return to Home</GSButton>
-        <GSButton href="/developer" variant="secondary">Developer Hub</GSButton>
-      </div>
-    </div>
-  </section>
+  <div slot="actions" class="template-actions">
+    <a href="/contact/" class="template-button template-button--primary">Start a page</a>
+    <a href="/developer/" class="template-button">Developer hub</a>
+  </div>
 
-  <section class="gs-section gs-section--padded">
-    <div class="gs-grid columns-2">
-      {featureBlocks.map((block) => (
-        <article class="gs-card">
-          <h3>{block.title}</h3>
-          <p>{block.description}</p>
-        </article>
-      ))}
-    </div>
-  </section>
+  <div slot="aside" class="template-aside">
+    <span>Template contract</span>
+    <strong>12 columns</strong>
+    <p>Shared shell, responsive sections, explicit variants, and named content slots.</p>
+  </div>
 
-  <section class="gs-section gs-section--padded">
-    <div class="gs-grid columns-2">
-      <div>
-        <h2>Search stays independent</h2>
-        <p>
-          Keep the search component in <code>src/components</code> so it can be embedded in marketing pages,
-          documentation, or logged-in portals without rewriting the UI.
-        </p>
-      </div>
-      <div class="gs-card gs-card--surface">
-        <DocsSearch />
-      </div>
-    </div>
-  </section>
+  <GoldShoreSection
+    eyebrow="Core primitives"
+    heading="A stable page-building method"
+    intro="Use the page template once, then compose content with section variants. New routes inherit navigation, width, spacing, responsive behavior, and visual tokens."
+    columns={2}
+  >
+    {primitives.map(([number, title, description]) => (
+      <article class="template-card">
+        <span>{number}</span>
+        <h3>{title}</h3>
+        <p>{description}</p>
+      </article>
+    ))}
+  </GoldShoreSection>
 
-  <section class="gs-section gs-section--padded">
-    <div class="gs-grid columns-2">
-      <div>
-        <h2>Template slots for campaigns</h2>
-        <p>
-          Use the marketing layout for campaigns, partner launches, and pricing updates. Components from the
-          UI kit keep CTA blocks and content containers consistent across campaigns.
-        </p>
-      </div>
-      <div class="gs-card">
-        <h3>Example CTA</h3>
-        <p>Launch a new AI service or stock market data integration with a consistent call to action.</p>
-        <GSButton href="/contact" variant="primary">Talk to GoldShore</GSButton>
-      </div>
+  <GoldShoreSection
+    eyebrow="Composition"
+    heading="Slots where content belongs"
+    intro="The template controls structure without constraining each page’s story. Astro content and components remain code-native."
+    tone="surface"
+  >
+    <pre class="template-code"><code>{`<GoldShorePageTemplate
+  title="Page title"
+  description="Search description"
+  heading="Visible page heading"
+>
+  <GoldShoreSection
+    heading="Section heading"
+    columns={2}
+  >
+    <!-- Astro components or content -->
+  </GoldShoreSection>
+</GoldShorePageTemplate>`}</code></pre>
+  </GoldShoreSection>
+
+  <GoldShoreSection
+    heading="Ready for the next route"
+    intro="Start with the shared template and spend implementation time on the page’s actual content—not rebuilding its shell."
+    tone="accent"
+    compact
+  >
+    <div class="template-final">
+      <p>Page-specific CSS should describe the content module only. The template owns the site geometry.</p>
+      <a href="/contact/" class="template-button template-button--primary">Request briefing</a>
     </div>
-  </section>
-</MarketingLayout>
+  </GoldShoreSection>
+</GoldShorePageTemplate>
+
+<style>
+  .template-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.85rem;
+  }
+
+  .template-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 3.25rem;
+    padding: 0.8rem 1.25rem;
+    border: 1px solid rgba(217, 106, 50, 0.42);
+    color: var(--gs-text);
+    font-family: 'DM Mono', ui-monospace, monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.11em;
+    text-decoration: none;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .template-button--primary {
+    background: #d96a32;
+    color: #08080b;
+  }
+
+  .template-aside span,
+  .template-card > span {
+    color: var(--gs-primary);
+    font-family: 'DM Mono', ui-monospace, monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+  }
+
+  .template-aside strong {
+    display: block;
+    margin-top: 1rem;
+    color: var(--gs-text);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(2rem, 4vw, 3.6rem);
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .template-aside p,
+  .template-card p,
+  .template-final p {
+    color: var(--gs-text-dim);
+    line-height: 1.7;
+  }
+
+  .template-card {
+    min-width: 0;
+    padding: 1.4rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.018);
+  }
+
+  .template-card h3 {
+    margin: 1.5rem 0 0.6rem;
+    color: var(--gs-text);
+    font-size: 1.15rem;
+  }
+
+  .template-card p {
+    margin: 0;
+  }
+
+  .template-code {
+    min-width: 0;
+    max-width: 100%;
+    margin: 0;
+    padding: clamp(1rem, 3vw, 2rem);
+    overflow: auto;
+    border: 1px solid rgba(217, 106, 50, 0.28);
+    color: var(--gs-text);
+    background: #08080b;
+    font-family: 'DM Mono', ui-monospace, monospace;
+    font-size: clamp(0.72rem, 1.3vw, 0.9rem);
+    line-height: 1.75;
+  }
+
+  .template-final {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+  }
+
+  .template-final p {
+    max-width: 48ch;
+    margin: 0;
+  }
+
+  @media (max-width: 620px) {
+    .template-actions,
+    .template-final {
+      display: grid;
+    }
+
+    .template-button {
+      width: 100%;
+    }
+  }
+</style>

@@ -1,6 +1,8 @@
 ---
 import MarketingLayout from '../../layouts/MarketingLayout.astro';
 
+export const prerender = false;
+
 const cards = [
   {
     title: 'Documentation',
@@ -23,8 +25,14 @@ const cards = [
   {
     title: 'Admin Dashboard',
     body: 'Enter the operator workspace for internal reviews, submissions, and controls.',
-    href: 'https://admin.goldshore.ai',
+    href: 'https://admin.goldshore.ai/leads',
     cta: 'Go to admin',
+  },
+  {
+    title: 'Deploy Assistant',
+    body: 'Search Cloudflare-native templates, stream ranked recommendations, and stage dry-run deployments.',
+    href: '/admin/deploy',
+    cta: 'Open assistant',
   },
 ];
 ---
@@ -38,8 +46,8 @@ const cards = [
       <p class="gs-eyebrow">Developer Hub</p>
       <h1>Tools, routing, and private surfaces for the GoldShore stack.</h1>
       <p class="developer-lead">
-        This hub collects the public-facing parts of the platform and the entry points that
-        stay behind Cloudflare Access. It is the right place to learn how the MCP offering works
+        This hub collects the public-facing parts of the platform and the entry points that stay
+        behind Cloudflare Access. It is the right place to learn how the MCP offering works
         without exposing a public prompt surface.
       </p>
       <div class="developer-actions">
@@ -60,15 +68,29 @@ const cards = [
 
   <section class="gs-section gs-section--padded">
     <div class="developer-grid">
-      {cards.map((card) => (
-        <article class="developer-card">
-          <h2>{card.title}</h2>
-          <p>{card.body}</p>
-          <a href={card.href} class="developer-card__link">
-            {card.cta} →
-          </a>
-        </article>
-      ))}
+      <article class="developer-card">
+        <h2>Documentation</h2>
+        <p>Read the API, gateway, and worker notes that back the platform.</p>
+        <a href="/developer/docs" class="developer-card__link">Open docs &rarr;</a>
+      </article>
+
+      <article class="developer-card">
+        <h2>Private MCP Access</h2>
+        <p>Learn how the GoldShore MCP surface stays locked to approved identities and service paths.</p>
+        <a href="/developer/mcp" class="developer-card__link">View MCP access &rarr;</a>
+      </article>
+
+      <article class="developer-card">
+        <h2>System Status</h2>
+        <p>Check the current state of the public site and operational services.</p>
+        <a href="/status" class="developer-card__link">Open status &rarr;</a>
+      </article>
+
+      <article class="developer-card">
+        <h2>Admin Dashboard</h2>
+        <p>Enter the operator workspace for internal reviews, submissions, and controls.</p>
+        <a href="https://admin.goldshore.ai/lead-submissions" class="developer-card__link">Go to admin &rarr;</a>
+      </article>
     </div>
   </section>
 
@@ -116,49 +138,46 @@ const cards = [
 
     .hero-button--primary {
       background: linear-gradient(135deg, #7dd3fc, #2dd4bf);
-      color: #04111f;
+      color: #05212b;
     }
 
     .hero-button--secondary {
-      border-color: rgba(255, 255, 255, 0.12);
-      color: #f4f7fb;
-      background: rgba(255, 255, 255, 0.03);
+      border-color: rgba(148, 163, 184, 0.28);
+      color: #e2e8f0;
+      background: rgba(15, 23, 42, 0.35);
     }
 
     .developer-hero__panel {
-      padding: 1.5rem;
       border-radius: 24px;
-      border: 1px solid rgba(159, 220, 255, 0.12);
-      background:
-        radial-gradient(circle at top left, rgba(66, 153, 225, 0.18), transparent 38%),
-        rgba(10, 18, 36, 0.78);
-      box-shadow: var(--gs-shadow);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      background: rgba(15, 23, 42, 0.72);
+      padding: 1.5rem;
+      box-shadow: 0 32px 60px rgba(0, 0, 0, 0.24);
     }
 
     .developer-hero__panel ul {
-      margin: 0;
-      padding-left: 1.15rem;
+      margin: 0.9rem 0 0;
+      padding-left: 1.2rem;
       color: var(--gs-text-dim);
-      line-height: 1.75;
-      display: grid;
-      gap: 0.7rem;
+      line-height: 1.7;
     }
 
     .developer-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 1rem;
+      gap: 1.1rem;
     }
 
     .developer-card {
-      padding: 1.4rem;
-      border-radius: 22px;
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      background: rgba(10, 18, 36, 0.72);
-      box-shadow: var(--gs-shadow);
-      min-height: 220px;
       display: flex;
       flex-direction: column;
+      gap: 0.5rem;
+      min-height: 100%;
+      padding: 1.25rem;
+      border-radius: 22px;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      background: rgba(15, 23, 42, 0.58);
+      box-shadow: 0 22px 40px rgba(0, 0, 0, 0.18);
     }
 
     .developer-card h2 {

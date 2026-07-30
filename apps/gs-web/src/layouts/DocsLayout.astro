@@ -4,7 +4,9 @@ import DocsSidebar from '../components/DocsSidebar.astro';
 import DocsSearch from '../components/DocsSearch.astro';
 
 const { title, page, canonicalPath, ogTitle, ogDescription } = Astro.props;
-const currentSlug = page ? page.id.replace(/\.(md|mdx)$/, '') : undefined;
+const currentSlug = page
+  ? ((page.slug as string | undefined) ?? (page.id as string | undefined)?.replace(/\.(md|mdx)$/, ''))
+  : undefined;
 ---
 
 <WebLayout
@@ -17,7 +19,7 @@ const currentSlug = page ? page.id.replace(/\.(md|mdx)$/, '') : undefined;
   <section class="gs-section docs-shell">
     <aside class="gs-card docs-sidebar" aria-label="Documentation navigation">
       <DocsSearch />
-      <h3 class="section-title"><span>◎</span>Documentation</h3>
+      <h3 class="section-title"><span>&#9675;</span>Documentation</h3>
       <ul class="docs-nav">
         <li><a href="/developer/docs/intro">Introduction</a></li>
         <li><a href="/developer/docs/getting-started">Getting Started</a></li>

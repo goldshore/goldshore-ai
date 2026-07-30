@@ -1,0 +1,258 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { GSButton } from '@goldshore/ui';
+
+const title = 'Cloudflare Infrastructure';
+---
+
+<AdminLayout title="Cloudflare | GoldShore Admin">
+  <div class="max-w-7xl mx-auto p-8 space-y-8">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-4xl gs-heading gs-text-accent">Cloudflare Infrastructure</h1>
+        <p class="text-lg gs-text-subtle mt-2">Monitor and validate Cloudflare bindings and services</p>
+      </div>
+      <div class="flex gap-3">
+        <GSButton variant="primary" id="validate-now">Validate Now</GSButton>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-4 gap-6">
+      <div class="gs-card space-y-3">
+        <h2 class="text-sm font-semibold gs-text-subtle">Total Bindings</h2>
+        <p id="total-bindings" class="text-3xl font-bold gs-text-info">0</p>
+        <p class="text-xs gs-text-subtle">Configured resources</p>
+      </div>
+      <div class="gs-card space-y-3">
+        <h2 class="text-sm font-semibold gs-text-subtle">Bound</h2>
+        <p id="bound-bindings" class="text-3xl font-bold gs-text-success">0</p>
+        <p class="text-xs gs-text-subtle">Active connections</p>
+      </div>
+      <div class="gs-card space-y-3">
+        <h2 class="text-sm font-semibold gs-text-subtle">Errors</h2>
+        <p id="error-bindings" class="text-3xl font-bold gs-text-danger">0</p>
+        <p class="text-xs gs-text-subtle">Connection issues</p>
+      </div>
+      <div class="gs-card space-y-3">
+        <h2 class="text-sm font-semibold gs-text-subtle">Health</h2>
+        <p id="health-status" class="text-3xl font-bold gs-text-success">100%</p>
+        <p class="text-xs gs-text-subtle">System status</p>
+      </div>
+    </div>
+
+    <div class="gs-card space-y-4">
+      <div>
+        <h2 class="text-2xl font-semibold">Bindings Status</h2>
+        <p class="text-sm gs-text-subtle mt-1">Real-time validation of Cloudflare service bindings</p>
+      </div>
+
+      <div id="bindings-loading" class="py-8 text-center">
+        <p class="gs-text-subtle">Validating bindings...</p>
+      </div>
+
+      <table id="bindings-table" class="gs-admin-table" style="display: none;">
+        <thead>
+          <tr>
+            <th>Binding Name</th>
+            <th>Type</th>
+            <th>Resource</th>
+            <th>Status</th>
+            <th>Last Checked</th>
+          </tr>
+        </thead>
+        <tbody id="bindings-tbody">
+        </tbody>
+      </table>
+
+      <div id="bindings-error" class="py-8 text-center gs-empty-state" style="display: none;">
+        <p>Unable to validate bindings. Please check infrastructure configuration.</p>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6">
+      <div class="gs-card space-y-4">
+        <h2 class="text-2xl font-semibold">KV Storage (Cache)</h2>
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-sm">Namespace</span>
+            <code class="text-xs bg-slate-900 px-2 py-1 rounded">gs_admin_kv_001</code>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-sm">Purpose</span>
+            <span class="text-xs gs-text-dim">Caching, sessions, temporary data</span>
+          </div>
+          <div id="kv-status" class="text-sm font-semibold">
+            <span class="gs-status--info">Checking...</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="gs-card space-y-4">
+        <h2 class="text-2xl font-semibold">D1 Database</h2>
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-sm">Database</span>
+            <code class="text-xs bg-slate-900 px-2 py-1 rounded">gs_db_001</code>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-sm">Type</span>
+            <span class="text-xs gs-text-dim">SQLite (Durability)</span>
+          </div>
+          <div id="d1-status" class="text-sm font-semibold">
+            <span class="gs-status--info">Checking...</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="gs-card space-y-4">
+        <h2 class="text-2xl font-semibold">R2 Storage</h2>
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-sm">Bucket</span>
+            <code class="text-xs bg-slate-900 px-2 py-1 rounded">gs-assets</code>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-sm">Purpose</span>
+            <span class="text-xs gs-text-dim">File storage, assets, backups</span>
+          </div>
+          <div id="r2-status" class="text-sm font-semibold">
+            <span class="gs-status--info">Checking...</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="gs-card space-y-4">
+        <h2 class="text-2xl font-semibold">Workers</h2>
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-sm">Service Binding</span>
+            <code class="text-xs bg-slate-900 px-2 py-1 rounded">gs-api</code>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-sm">Environment</span>
+            <span class="text-xs gs-text-dim">Production</span>
+          </div>
+          <div id="service-status" class="text-sm font-semibold">
+            <span class="gs-status--info">Checking...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="gs-card space-y-4">
+      <h2 class="text-2xl font-semibold">Validation & Sync</h2>
+      <div class="space-y-4">
+        <div>
+          <p class="text-sm gs-text-subtle">Last validation: <span id="last-validation">Never</span></p>
+          <p class="text-sm gs-text-subtle">Account ID: <code id="account-id" class="text-xs">—</code></p>
+        </div>
+        <div class="flex gap-3">
+          <GSButton variant="primary" id="full-sync">Full Infrastructure Sync</GSButton>
+          <GSButton variant="secondary" id="docs-link">View Documentation</GSButton>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const validateBindings = async () => {
+        const loadingEl = document.getElementById('bindings-loading');
+        const tableEl = document.getElementById('bindings-table');
+        const errorEl = document.getElementById('bindings-error');
+        const tbodyEl = document.getElementById('bindings-tbody');
+
+        const totalEl = document.getElementById('total-bindings');
+        const boundEl = document.getElementById('bound-bindings');
+        const errorCountEl = document.getElementById('error-bindings');
+        const healthEl = document.getElementById('health-status');
+        const lastValidationEl = document.getElementById('last-validation');
+
+        if (loadingEl) loadingEl.style.display = 'block';
+        if (tableEl) tableEl.style.display = 'none';
+        if (errorEl) errorEl.style.display = 'none';
+
+        try {
+          const response = await fetch('/api/cloudflare/validate');
+          const data = await response.json();
+
+          if (loadingEl) loadingEl.style.display = 'none';
+
+          if (!data.bindings) {
+            if (errorEl) errorEl.style.display = 'block';
+            return;
+          }
+
+          const { bindings, summary, lastSync } = data;
+
+          // Update summary
+          if (totalEl) totalEl.textContent = summary.totalBindings.toString();
+          if (boundEl) boundEl.textContent = summary.boundBindings.toString();
+          if (errorCountEl) errorCountEl.textContent = summary.errorBindings.toString();
+
+          const healthPercent = summary.totalBindings > 0
+            ? ((summary.boundBindings / summary.totalBindings) * 100).toFixed(0)
+            : 0;
+          if (healthEl) healthEl.textContent = healthPercent + '%';
+
+          const date = new Date(lastSync).toLocaleTimeString();
+          if (lastValidationEl) lastValidationEl.textContent = date;
+
+          // Populate bindings table
+          if (tbodyEl && bindings.length > 0) {
+            tbodyEl.innerHTML = bindings.map((binding) => {
+              const statusClass = {
+                bound: 'gs-status--ok',
+                not_bound: 'gs-status--warn',
+                error: 'gs-status--err',
+                not_configured: 'gs-status--info',
+              }[binding.status] || 'gs-status--info';
+
+              const lastChecked = new Date(binding.lastChecked).toLocaleTimeString();
+
+              return `
+                <tr>
+                  <td class="font-semibold">${binding.name}</td>
+                  <td class="text-sm">${binding.type}</td>
+                  <td class="text-sm">${binding.resource}</td>
+                  <td><span class="${statusClass}">${binding.status}</span></td>
+                  <td class="text-sm">${lastChecked}</td>
+                </tr>
+              `;
+            }).join('');
+          }
+
+          if (tableEl) tableEl.style.display = 'table';
+
+          // Update individual status indicators
+          bindings.forEach((binding) => {
+            const statusEl = document.getElementById(binding.name.toLowerCase() + '-status');
+            if (statusEl) {
+              const statusClass = {
+                bound: 'gs-status--ok',
+                not_bound: 'gs-status--warn',
+                error: 'gs-status--err',
+                not_configured: 'gs-status--info',
+              }[binding.status] || 'gs-status--info';
+              statusEl.innerHTML = `<span class="${statusClass}">${binding.status}</span>`;
+            }
+          });
+        } catch (error) {
+          console.error('Error validating bindings:', error);
+          if (errorEl) errorEl.style.display = 'block';
+        }
+      };
+
+      document.getElementById('validate-now')?.addEventListener('click', validateBindings);
+      document.getElementById('full-sync')?.addEventListener('click', async () => {
+        alert('Full infrastructure sync will be triggered. This may take a few minutes.');
+        validateBindings();
+      });
+
+      validateBindings();
+      setInterval(validateBindings, 60000); // Refresh every minute
+    });
+  </script>
+</AdminLayout>

@@ -37,14 +37,11 @@ const WEB_HEADER_DIRECTIVES = {
   'frame-ancestors': [NONE],
 } as const satisfies ContentSecurityPolicyDirectives;
 
-<<<<<<< ours
-=======
 export const serializeCsp = (directives: ContentSecurityPolicyDirectives): string =>
   Object.entries(directives)
     .map(([directive, values]) => `${directive} ${values.join(' ')}`)
     .join('; ');
 
->>>>>>> theirs
 export function buildContentSecurityPolicy(
   directives: ContentSecurityPolicyDirectives = WEB_CSP_DIRECTIVES,
 ): string {

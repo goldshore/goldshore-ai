@@ -11,6 +11,7 @@ const execFileAsync = promisify(execFile);
 
 const _distRoot = path.resolve(process.cwd(), 'dist');
 const _distClient = path.join(_distRoot, 'client');
+const _serverEntry = path.join(_distRoot, 'server', 'entry.mjs');
 // Cloudflare Pages adapter v13+ outputs pre-rendered pages to dist/client/
 const DIST_DIR = await (async () => {
   try { await access(_distClient); return _distClient; } catch { return _distRoot; }
@@ -68,8 +69,8 @@ const getDocuments = async () => {
   }));
 };
 
-// Routes served via SSR (auth-protected portals, etc.) — not expected to be pre-rendered
-const SSR_PREFIXES = ['/app/', '/admin/'];
+// Routes served via SSR (auth-protected portals, redirect pages, etc.) — not expected to be pre-rendered
+const SSR_PREFIXES = ['/app/', '/admin/', '/login', '/newsletter/'];
 
 const getExpectedRoutes = async () => {
   const files = await walk(PAGES_DIR);
@@ -117,11 +118,12 @@ const getLinks = (html) => Array.from(html.matchAll(/<a[^>]+href=["']([^"']+)["'
 
 const hasLabelFor = (html, id) => new RegExp(`<label[^>]+for=["']${id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["']`, 'i').test(html);
 
-const checkRoutesAndLinks = (documents, expectedRoutes) => {
+const checkRoutesAndLinks = (documents, expectedRoutes, hasServerEntry) => {
   const byRoute = new Map(documents.map((doc) => [doc.route, doc]));
+  const expectedRouteSet = new Set(expectedRoutes);
 
   for (const route of expectedRoutes) {
-    if (!byRoute.has(route)) {
+    if (!byRoute.has(route) && !hasServerEntry) {
       failures.push(`[routes] missing built route: ${route} (${toDistHtmlPath(route)})`);
     }
   }
@@ -136,8 +138,11 @@ const checkRoutesAndLinks = (documents, expectedRoutes) => {
       const resolved = new URL(href, `https://goldshore.local${doc.route.endsWith('/') ? doc.route : `${doc.route}/`}`);
       // Normalize pathname: remove trailing slash (except root '/')
       const normalizedPathname = resolved.pathname === '/' ? '/' : resolved.pathname.replace(/\/$/, '');
+      // SSR-only routes (e.g. Access-gated /admin/*) aren't pre-rendered to dist/,
+      // so they never appear in `documents` even though they're real, working routes.
+      if (SSR_PREFIXES.some((prefix) => `${normalizedPathname}/`.startsWith(prefix))) continue;
       const target = byRoute.get(normalizedPathname);
-      if (!target) {
+      if (!target && !expectedRouteSet.has(normalizedPathname)) {
         failures.push(`[links] ${doc.route}: ${href} -> missing route ${normalizedPathname}`);
         continue;
       }
@@ -179,20 +184,72 @@ const checkFormLabels = (documents) => {
   }
 };
 
-const createStaticServer = (documents) => {
-  const byPath = new Map(documents.map((doc) => [doc.relativePath, doc.html]));
-  return createServer((req, res) => {
-    const pathname = (req.url || '/').split('?')[0];
-    const key = pathname === '/' ? 'index.html' : `${pathname.replace(/^\//, '').replace(/\/$/, '')}/index.html`;
-    const html = byPath.get(key);
-    if (!html) {
+const MIME = {
+  '.js': 'application/javascript', '.mjs': 'application/javascript',
+  '.css': 'text/css', '.json': 'application/json',
+  '.svg': 'image/svg+xml', '.png': 'image/png',
+  '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp',
+  '.woff': 'font/woff', '.woff2': 'font/woff2', '.ico': 'image/x-icon',
+  '.txt': 'text/plain', '.xml': 'application/xml',
+};
+
+const buildAssetIndex = async () => {
+  const index = new Map();
+  try {
+    const all = await walk(DIST_DIR);
+    for (const absPath of all) {
+      if (!absPath.endsWith('.html')) {
+        const rel = path.relative(DIST_DIR, absPath).replace(/\\/g, '/');
+        index.set('/' + rel, absPath);
+      }
+    }
+  } catch { /* dist may not contain non-HTML assets */ }
+  return index;
+};
+
+const createStaticServer = async (documents) => {
+  const byHtmlPath = new Map(documents.map((doc) => [doc.relativePath, doc.html]));
+  const byUrlPath = await buildAssetIndex();
+
+  return createServer(async (req, res) => {
+    const rawPathname = (req.url || '/').split('?')[0];
+    let pathname;
+    try {
+      pathname = decodeURIComponent(rawPathname);
+    } catch {
+      pathname = rawPathname;
+    }
+    const htmlKey = pathname === '/'
+      ? 'index.html'
+      : `${pathname.replace(/^\//, '').replace(/\/$/, '')}/index.html`;
+    const html = byHtmlPath.get(htmlKey);
+    if (html) {
+      res.statusCode = 200;
+      res.setHeader('content-type', 'text/html; charset=utf-8');
+      res.end(html);
+      return;
+    }
+    // Serve static assets (CSS, JS bundles, fonts, images) from dist directory
+    const distRoot = path.resolve(DIST_DIR);
+    const filePath = path.resolve(distRoot, pathname.replace(/^\/+/, ''));
+    // Guard against path traversal: resolved path must stay inside distRoot
+    const rel = path.relative(distRoot, filePath);
+    if (rel.startsWith('..') || path.isAbsolute(rel)) {
       res.statusCode = 404;
       res.end('Not found');
       return;
     }
-    res.statusCode = 200;
-    res.setHeader('content-type', 'text/html; charset=utf-8');
-    res.end(html);
+    try {
+      const content = await readFile(filePath);
+      const mime = MIME[path.extname(filePath)] || 'application/octet-stream';
+      res.statusCode = 200;
+      res.setHeader('content-type', mime);
+      res.setHeader('cache-control', 'no-store');
+      res.end(content);
+    } catch {
+      res.statusCode = 404;
+      res.end('Not found');
+    }
   });
 };
 
@@ -265,10 +322,10 @@ const main = async () => {
   const expectedRoutes = await getExpectedRoutes();
 
   checkMetadata(documents);
-  checkRoutesAndLinks(documents, expectedRoutes);
+  checkRoutesAndLinks(documents, expectedRoutes, await exists(_serverEntry));
   checkFormLabels(documents);
 
-  const server = createStaticServer(documents);
+  const server = await createStaticServer(documents);
   await new Promise((resolve) => server.listen(PORT, HOST, resolve));
 
   const checksRoutes = ['/', '/about', '/contact', '/developer'].filter((route) =>

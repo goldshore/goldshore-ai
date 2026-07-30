@@ -3,7 +3,7 @@ import { GSButton } from '@goldshore/ui';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import FlowSection from '../components/FlowSection.astro';
 
-export const prerender = true;
+export const prerender = false;
 ---
 
 <BaseLayout
@@ -88,15 +88,6 @@ export const prerender = true;
         </select>
       </div>
 
-      <div class="gs-input-group">
-        <label for="inquiry">Inquiry type</label>
-        <select id="inquiry" name="inquiry" autocomplete="off">
-          <option value="general">General inquiry</option>
-          <option value="strategy-call">Strategy call</option>
-          <option value="project-scope">Project scoping</option>
-          <option value="support">Support</option>
-        </select>
-      </div>
       <div class="gs-input-group">
         <label for="message">Project brief</label>
         <p id="message-help" class="field-help">

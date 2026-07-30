@@ -1,0 +1,90 @@
+name: Repair pnpm lockfile
+
+# Repairs invalid or drifted pnpm-lock.yaml files from package manifests.
+# This workflow is intentionally idempotent: if the regenerated lockfile matches,
+# it exits without committing.
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch to repair (defaults to main)
+        required: false
+        type: string
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/repair-pnpm-lock.yml'
+      - 'package.json'
+      - 'pnpm-workspace.yaml'
+      - 'apps/**/package.json'
+      - 'packages/**/package.json'
+      - 'infra/**/package.json'
+      - 'pnpm-lock.yaml'
+  workflow_run:
+    workflows: ['workspace-install']
+    types: [failed]
+    branches: [main]
+
+concurrency:
+  group: repair-pnpm-lock-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.branch || 'main' }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 9.15.4
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Regenerate lockfile from package manifests
+        run: pnpm install --lockfile-only --no-frozen-lockfile
+
+      - name: Validate regenerated lockfile
+        run: |
+          pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Commit repaired lockfile if changed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if git diff --ignore-space-at-eol --quiet -- pnpm-lock.yaml; then
+            echo "pnpm-lock.yaml already clean."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          branch="automation/repair-pnpm-lock"
+          git fetch origin "$branch:refs/remotes/origin/$branch" || true
+          git switch -C "$branch"
+          git add pnpm-lock.yaml
+          git commit -m "Merge strategy: squash
+
+          Regenerate pnpm lockfile"
+          git push --force-with-lease origin "$branch"
+
+          if ! gh pr view "$branch" >/dev/null 2>&1; then
+            gh pr create \
+              --base main \
+              --head "$branch" \
+              --title "Regenerate pnpm lockfile" \
+              --body "Merge strategy: squash
+
+          Automated repair of pnpm-lock.yaml after manifest drift."
+          fi

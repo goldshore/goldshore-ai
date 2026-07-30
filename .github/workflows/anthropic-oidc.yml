@@ -129,13 +129,8 @@ jobs:
             echo "::error::Neither Cloudflare AI Gateway OIDC nor ANTHROPIC_API_KEY is configured."
             exit 1
           fi
-<<<<<<< ours
-          # Do not mask values promoted to reusable-workflow outputs: GitHub
-          # suppresses masked job outputs as unsafe for downstream jobs.
-=======
 
           echo "::add-mask::$ANTHROPIC_API_KEY_FALLBACK"
->>>>>>> theirs
           echo "api_key=$ANTHROPIC_API_KEY_FALLBACK" >> "$GITHUB_OUTPUT"
           echo "base_url=https://api.anthropic.com" >> "$GITHUB_OUTPUT"
           echo "Using fallback direct key (base_url=api.anthropic.com)."

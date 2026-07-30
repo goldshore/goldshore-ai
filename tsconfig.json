@@ -1,11 +1,21 @@
 {
   "compilerOptions": {
     "paths": {
-      "@goldshore/ui/*": ["packages/ui/*"],
-      "@goldshore/config/*": ["packages/config/*"],
-      "@goldshore/utils/*": ["packages/utils/*"],
-      "@goldshore/auth/*": ["packages/auth/*"],
-      "@goldshore/theme/*": ["packages/theme/*"]
+      "@goldshore/ui/*": [
+        "./packages/ui/*"
+      ],
+      "@goldshore/config/*": [
+        "./packages/config/*"
+      ],
+      "@goldshore/utils/*": [
+        "./packages/utils/*"
+      ],
+      "@goldshore/auth/*": [
+        "./packages/auth/*"
+      ],
+      "@goldshore/theme/*": [
+        "./packages/theme/*"
+      ]
     }
   }
 }
