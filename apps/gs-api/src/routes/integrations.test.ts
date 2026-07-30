@@ -1,8 +1,15 @@
-import { describe, it, mock } from "node:test";
-import assert from "node:assert";
-import { Hono } from "hono";
-import integrations from "./integrations";
-import { Env, Variables } from "../types";
+import { describe, it, mock, beforeEach, afterEach } from 'node:test';
+import assert from 'node:assert/strict';
+import { Hono } from 'hono';
+import integrations from './integrations';
+import type { Env, Variables } from '../types';
+
+const mockKV = {
+  put: mock.fn(async () => {}),
+  get: mock.fn(async () => null),
+  delete: mock.fn(async () => {}),
+  list: mock.fn(async () => ({ keys: [] })),
+};
 
 const createTestApp = (claims: any = null) => {
   const app = new Hono<{ Bindings: Env; Variables: Variables }>();
@@ -48,6 +55,31 @@ describe('Integration management API security', () => {
     } finally {
       fetchMock.mock.restore();
     }
+  beforeEach(() => {
+    mockKV.put.mock.resetCalls();
+    mockKV.get.mock.resetCalls();
+    mockKV.delete.mock.resetCalls();
+    mockKV.list.mock.resetCalls();
+  });
+
+  afterEach(() => {
+    mock.restoreAll();
+  });
+
+  it('serves integration lists in gs-api without proxying back to admin', async () => {
+    const fetchMock = mock.method(globalThis, 'fetch', async () => {
+      throw new Error('gs-api integrations route must not proxy to admin');
+    });
+    const app = createTestApp({ roles: ['admin'], email: 'admin@example.com' });
+
+    const res = await app.request('/integrations?action=list', { method: 'GET' });
+    const body = await res.json() as { success: boolean; data: { totalIntegrations: number } };
+
+    assert.equal(res.status, 200);
+    assert.equal(body.success, true);
+    assert.equal(body.data.totalIntegrations, 0);
+    assert.equal(mockKV.list.mock.callCount(), 1);
+    assert.equal(fetchMock.mock.callCount(), 0);
   });
 
   it('rejects integration mutations without integration management permission', async () => {
