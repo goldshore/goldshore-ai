@@ -1,266 +1,471 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
-import { buildAdminSession, verifyAccessWithClaims, type Env as AccessEnv } from '@goldshore/auth';
-
-type Env = AccessEnv;
-
 export const prerender = false;
 
-const { request, locals } = Astro;
-const env = locals.runtime?.env as Env | undefined;
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { authorizeAdminRequest, getAdminAuthError, getAdminRouteRule } from '../../utils/admin-access';
 
-if (!env?.PLATFORM_DB) {
-  return new Response('Storage unavailable.', { status: 503 });
-}
+const env = Astro.locals.runtime?.env as Env | undefined;
+const rule = getAdminRouteRule('/admin/deploy', 'GET');
+const apiBase = (env?.PUBLIC_API || 'https://api.goldshore.ai').replace(/\/$/, '');
 
-const claims = await verifyAccessWithClaims(request, env);
-if (!claims) {
-  return new Response('Authentication required.', { status: 401 });
-}
-
-const session = buildAdminSession(claims);
-const hasPermission = session.permissions.includes('admin:deploy' as AdminPermission);
-
-if (!hasPermission) {
-  return new Response('Insufficient permissions.', { status: 403 });
+let authError: { status: number; message: string } | null = null;
+if (!rule) {
+  authError = { status: 404, message: 'Not found.' };
+} else {
+  const authResult = await authorizeAdminRequest(Astro.request, env as never, rule);
+  authError = getAdminAuthError(authResult);
 }
 ---
 
-<BaseLayout title="Deployment Assistant | GoldShore Admin" description="Search, validate, and deploy safe Cloudflare-native frameworks">
-  <main class="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-8">
-    <div class="max-w-6xl mx-auto">
-      <div class="mb-8">
-        <h1 class="text-4xl font-bold text-white mb-2">Deployment Assistant</h1>
-        <p class="text-slate-300">Search and deploy safe Cloudflare-native frameworks</p>
+<BaseLayout title="Deploy Assistant | GoldShore Admin" description="Search Cloudflare-native templates, stream ranked recommendations, and stage dry-run deployments.">
+  <section class="gs-section deploy-assistant" data-api-base={apiBase}>
+    <div class="gs-grid columns-2">
+      <div>
+        <h1>Deployment assistant</h1>
+        <p class="gs-text-lg">Search for Cloudflare-native templates, rank them with Claude, run a dry run, then open a reviewable PR.</p>
       </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Search & Recommendations Panel */}
-        <div class="lg:col-span-2 space-y-6">
-          {/* Search Input */}
-          <div class="bg-slate-800 rounded-lg border border-slate-700 p-6">
-            <label for="framework-search" class="block text-sm font-medium text-white mb-3">
-              Search Frameworks
-            </label>
-            <input
-              id="framework-search"
-              type="text"
-              placeholder="e.g., authentication, database, api routing..."
-              class="w-full px-4 py-2 bg-slate-700 text-white rounded border border-slate-600 focus:border-blue-500 focus:outline-none"
-            />
-            <p class="text-xs text-slate-400 mt-2">Searches GitHub for Cloudflare-compatible frameworks</p>
-          </div>
-
-          {/* Recommendations Stream */}
-          <div class="bg-slate-800 rounded-lg border border-slate-700 p-6">
-            <h2 class="text-lg font-semibold text-white mb-4">Recommendations</h2>
-            <div
-              id="recommendations-container"
-              class="space-y-3 max-h-96 overflow-y-auto"
-            >
-              <div class="text-slate-400 text-sm">
-                Enter a search term to see AI-ranked framework recommendations...
-              </div>
-            </div>
-          </div>
-
-          {/* Dry-run Output */}
-          <div class="bg-slate-800 rounded-lg border border-slate-700 p-6">
-            <h2 class="text-lg font-semibold text-white mb-4">Dry-run Output</h2>
-            <div
-              id="dryrun-output"
-              class="bg-slate-900 rounded p-4 font-mono text-sm text-slate-300 max-h-64 overflow-y-auto"
-            >
-              <div class="text-slate-500">
-                Select a framework to run dry-run deployment...
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Status & PR Panel */}
-        <div class="lg:col-span-1 space-y-6">
-          {/* Status */}
-          <div class="bg-slate-800 rounded-lg border border-slate-700 p-6">
-            <h3 class="text-sm font-semibold text-white mb-3 uppercase">Status</h3>
-            <div id="status-display" class="text-slate-400 text-sm">
-              Ready
-            </div>
-          </div>
-
-          {/* PR Creation */}
-          <div class="bg-slate-800 rounded-lg border border-slate-700 p-6">
-            <h3 class="text-sm font-semibold text-white mb-3 uppercase">Actions</h3>
-            <button
-              id="create-pr-button"
-              disabled
-              class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white rounded font-medium transition"
-            >
-              Create PR
-            </button>
-            <p class="text-xs text-slate-400 mt-2">Opens validated deployment in a PR for review</p>
-          </div>
-
-          {/* Safety Info */}
-          <div class="bg-slate-800 rounded-lg border border-slate-700 p-6">
-            <h3 class="text-sm font-semibold text-white mb-3 uppercase">Safety</h3>
-            <ul class="text-xs text-slate-400 space-y-2">
-              <li>✓ No automatic merge</li>
-              <li>✓ Dry-run validation only</li>
-              <li>✓ Human PR review required</li>
-            </ul>
-          </div>
-        </div>
+      <div class="gs-card">
+        <h2 class="section-title"><span>◆</span>Workflow</h2>
+        <ol class="deploy-flow">
+          <li>Search GitHub + shortlist safe templates</li>
+          <li>Stream ranked recommendations</li>
+          <li>Run `wrangler --dry-run` validation</li>
+          <li>Open a draft PR for human review</li>
+        </ol>
       </div>
     </div>
-  </main>
 
-  <script>
-    const searchInput = document.getElementById('framework-search') as HTMLInputElement;
-    const recommendationsContainer = document.getElementById('recommendations-container');
-    const dryrunOutput = document.getElementById('dryrun-output');
-    const statusDisplay = document.getElementById('status-display');
-    const createPrButton = document.getElementById('create-pr-button') as HTMLButtonElement;
+    {authError ? (
+      <div class="gs-card" style="margin-top: 2rem;">
+        <p class="gs-text-lg">{authError.message}</p>
+        {authError.status === 401 && <p class="gs-text-sm">Sign in via Cloudflare Access to continue.</p>}
+      </div>
+    ) : (
+      <>
+        <div class="assistant-grid">
+          <div class="gs-card assistant-panel">
+            <h2 class="section-title"><span>◆</span>Search</h2>
+            <label class="gs-input-group">
+              <span>Template search</span>
+              <input id="assistant-query" type="text" value="Cloudflare-native admin dashboard workspace" />
+            </label>
+            <div class="assistant-toggles">
+              <label><input id="assistant-cloudflare-only" type="checkbox" checked /> Cloudflare-native only</label>
+              <label><input id="assistant-security-only" type="checkbox" checked /> Security-vetted only</label>
+            </div>
+            <div class="assistant-actions">
+              <button class="gs-button" id="assistant-search" type="button">Search GitHub</button>
+              <button class="gs-button gs-button--secondary" id="assistant-stream" type="button">Stream ranking</button>
+            </div>
+            <p id="assistant-summary" class="gs-text-sm gs-text-dim">Run a search to generate recommendations.</p>
+          </div>
 
-    let selectedFramework: string | null = null;
+          <div class="gs-card assistant-panel">
+            <h2 class="section-title"><span>◆</span>Selected template</h2>
+            <div id="assistant-selected" class="assistant-selected gs-text-dim">No template selected.</div>
+            <div class="assistant-dry-run">
+              <label class="gs-input-group">
+                <span>Workspace</span>
+                <input id="assistant-workspace" type="text" value="apps/gs-web" />
+              </label>
+              <button class="gs-button" id="assistant-dry-run" type="button" disabled>Run dry run</button>
+            </div>
+            <pre id="assistant-dry-run-output" class="assistant-output">Awaiting dry-run input.</pre>
+          </div>
+        </div>
 
-    searchInput?.addEventListener('input', async (e) => {
-      const query = (e.target as HTMLInputElement).value.trim();
-      if (!query) {
-        recommendationsContainer!.innerHTML = '<div class="text-slate-400 text-sm">Enter a search term...</div>';
+        <div class="gs-card" style="margin-top: 2rem;">
+          <h2 class="section-title"><span>◆</span>Recommendations</h2>
+          <div id="assistant-results" class="assistant-results"></div>
+        </div>
+
+        <div class="gs-card" style="margin-top: 2rem;">
+          <h2 class="section-title"><span>◆</span>PR handoff</h2>
+          <div class="assistant-pr-grid">
+            <label class="gs-input-group">
+              <span>Repository</span>
+              <input id="assistant-repository" type="text" value="marzton/goldshore-ai" />
+            </label>
+            <label class="gs-input-group">
+              <span>Base branch</span>
+              <input id="assistant-base-branch" type="text" value="main" />
+            </label>
+            <label class="gs-input-group">
+              <span>Head branch</span>
+              <input id="assistant-head-branch" type="text" value="codex/admin-deployment-assistant" />
+            </label>
+          </div>
+          <div class="assistant-actions" style="margin-top: 1rem;">
+            <button class="gs-button" id="assistant-create-pr" type="button" disabled>Create draft PR</button>
+          </div>
+          <pre id="assistant-pr-output" class="assistant-output">No PR drafted yet.</pre>
+        </div>
+
+        <div class="gs-card" style="margin-top: 2rem;">
+          <h2 class="section-title"><span>◆</span>Stream log</h2>
+          <pre id="assistant-stream-output" class="assistant-output">No stream received yet.</pre>
+        </div>
+      </>
+    )}
+  </section>
+
+  <script is:inline>
+    const page = document.querySelector('.deploy-assistant');
+    const apiBase = page?.dataset.apiBase || 'https://api.goldshore.ai';
+    const endpoint = (path) => `${apiBase}${path}`;
+
+    const state = {
+      recommendations: [],
+      selected: null,
+      dryRun: null,
+    };
+
+    const setText = (id, text) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = text;
+    };
+
+    const renderSelected = () => {
+      const target = document.getElementById('assistant-selected');
+      const dryRunButton = document.getElementById('assistant-dry-run');
+      const prButton = document.getElementById('assistant-create-pr');
+
+      if (!target) return;
+
+      if (!state.selected) {
+        target.textContent = 'No template selected.';
+        if (dryRunButton) dryRunButton.disabled = true;
+        if (prButton) prButton.disabled = true;
         return;
       }
 
-      statusDisplay!.textContent = 'Searching...';
-      recommendationsContainer!.innerHTML = '<div class="text-slate-400 text-sm animate-pulse">Loading recommendations...</div>';
+      target.innerHTML = `
+        <strong>${state.selected.name}</strong>
+        <p>${state.selected.summary}</p>
+        <p><code>${state.selected.deploymentModel}</code> | cloudflare-native: ${state.selected.cloudflareNative ? 'yes' : 'no'} | security-vetted: ${state.selected.securityVetted ? 'yes' : 'no'}</p>
+        ${state.selected.docsUrl ? `<p><a href="${state.selected.docsUrl}" target="_blank" rel="noreferrer">Reference</a></p>` : ''}
+      `;
 
-      try {
-        const response = await fetch('/api/admin/deploy/search', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query }),
+      if (dryRunButton) dryRunButton.disabled = false;
+      if (prButton) prButton.disabled = !state.dryRun;
+    };
+
+    const renderResults = (items) => {
+      const target = document.getElementById('assistant-results');
+      if (!target) return;
+
+      if (!items.length) {
+        target.innerHTML = '<p class="gs-text-dim">No recommendations found.</p>';
+        return;
+      }
+
+      target.innerHTML = items.map((item) => `
+        <article class="assistant-result">
+          <div class="assistant-result__top">
+            <strong>${item.name}</strong>
+            <span>${item.deploymentModel}</span>
+          </div>
+          <p>${item.summary}</p>
+          <div class="assistant-result__meta">
+            <code>${item.source}</code>
+            <code>score ${item.score}</code>
+          </div>
+          <button class="gs-link" type="button" data-select-template="${item.id}">Select</button>
+        </article>
+      `).join('');
+
+      target.querySelectorAll('[data-select-template]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const id = button.getAttribute('data-select-template');
+          state.selected = items.find((item) => item.id === id) || null;
+          state.dryRun = null;
+          setText('assistant-dry-run-output', 'Awaiting dry-run input.');
+          setText('assistant-pr-output', 'No PR drafted yet.');
+          renderSelected();
         });
+      });
 
-        if (!response.ok) throw new Error(`Search failed: ${response.statusText}`);
+      if (!state.selected && items[0]) {
+        state.selected = items[0];
+        renderSelected();
+      }
+    };
 
-        const reader = response.body?.getReader();
-        if (!reader) throw new Error('No response body');
+    const loadRecommendations = async () => {
+      const query = document.getElementById('assistant-query')?.value || '';
+      const cloudflareNativeOnly = document.getElementById('assistant-cloudflare-only')?.checked ?? true;
+      const securityOnly = document.getElementById('assistant-security-only')?.checked ?? true;
+      const url = new URL(endpoint('/deployments/assistant/search'));
+      url.searchParams.set('q', query);
+      url.searchParams.set('cloudflareNativeOnly', String(cloudflareNativeOnly));
+      url.searchParams.set('securityOnly', String(securityOnly));
 
-        const decoder = new TextDecoder();
-        recommendationsContainer!.innerHTML = '';
+      setText('assistant-summary', 'Searching GitHub and Claude-ranked templates...');
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+      const response = await fetch(url, {
+        credentials: 'include',
+        headers: { accept: 'application/json' },
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.error || 'Search failed');
+      }
 
-          const chunk = decoder.decode(value);
-          const lines = chunk.split('\n').filter(l => l.trim());
+      state.recommendations = payload.data.recommendations || [];
+      state.selected = state.recommendations[0] || null;
+      state.dryRun = null;
+      renderResults(state.recommendations);
+      renderSelected();
+      setText('assistant-summary', payload.data.summary || 'Search complete.');
+    };
 
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              try {
-                const data = JSON.parse(line.slice(6));
-                if (data.recommendation) {
-                  const div = document.createElement('div');
-                  div.className = 'bg-slate-700 rounded p-3 cursor-pointer hover:bg-slate-600 transition';
-                  div.innerHTML = `
-                    <div class="font-medium text-white">${data.recommendation.name}</div>
-                    <div class="text-xs text-slate-300 mt-1">${data.recommendation.description}</div>
-                    <div class="text-xs text-blue-400 mt-2">Security: ${data.recommendation.securityScore}/10 | Cloudflare: ${data.recommendation.cloudflareScore}/10</div>
-                  `;
-                  div.addEventListener('click', () => selectFramework(data.recommendation.name, data.recommendation.repo));
-                  recommendationsContainer!.appendChild(div);
-                }
-              } catch (e) {
-                console.error('Parse error:', e);
-              }
-            }
+    const streamRecommendations = async () => {
+      const query = document.getElementById('assistant-query')?.value || '';
+      const cloudflareNativeOnly = document.getElementById('assistant-cloudflare-only')?.checked ?? true;
+      const securityOnly = document.getElementById('assistant-security-only')?.checked ?? true;
+      const output = document.getElementById('assistant-stream-output');
+      if (output) output.textContent = 'Opening stream...';
+
+      const response = await fetch(endpoint('/deployments/assistant/stream'), {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json', accept: 'text/event-stream' },
+        body: JSON.stringify({ query, cloudflareNativeOnly, securityOnly }),
+      });
+
+      if (!response.ok || !response.body) {
+        throw new Error(`Stream failed with HTTP ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      const append = (line) => {
+        if (output) output.textContent += `\n${line}`;
+      };
+
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        while (buffer.includes('\n\n')) {
+          const chunkEnd = buffer.indexOf('\n\n');
+          const chunk = buffer.slice(0, chunkEnd);
+          buffer = buffer.slice(chunkEnd + 2);
+          const lines = chunk.split('\n');
+          const eventLine = lines.find((line) => line.startsWith('event: '));
+          const dataLine = lines.find((line) => line.startsWith('data: '));
+          if (!eventLine || !dataLine) continue;
+          const event = eventLine.slice(7);
+          const payload = JSON.parse(dataLine.slice(6));
+          if (event === 'recommendation') {
+            append(`Recommendation: ${payload.name} (${payload.deploymentModel})`);
+          } else if (event === 'start') {
+            append(`Started: ${payload.query}`);
+          } else if (event === 'complete') {
+            append(`Summary: ${payload.summary}`);
           }
         }
-
-        statusDisplay!.textContent = 'Recommendations ready';
-      } catch (error) {
-        statusDisplay!.textContent = `Error: ${error instanceof Error ? error.message : 'Unknown error'}`;
-        recommendationsContainer!.innerHTML = '<div class="text-red-400 text-sm">Failed to load recommendations</div>';
       }
+    };
+
+    const runDryRun = async () => {
+      if (!state.selected) return;
+      const output = document.getElementById('assistant-dry-run-output');
+      if (output) output.textContent = 'Submitting dry-run request...';
+
+      const response = await fetch(endpoint('/deployments/assistant/dry-run'), {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json', accept: 'application/json' },
+        body: JSON.stringify({
+          templateId: state.selected.id,
+          workspace: document.getElementById('assistant-workspace')?.value || 'apps/gs-web',
+        }),
+      });
+
+      const payload = await response.json();
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.error || 'Dry run failed');
+      }
+
+      state.dryRun = payload.data;
+      if (output) output.textContent = JSON.stringify(payload.data, null, 2);
+      const prButton = document.getElementById('assistant-create-pr');
+      if (prButton) prButton.disabled = false;
+    };
+
+    const createPr = async () => {
+      if (!state.selected || !state.dryRun) return;
+      const output = document.getElementById('assistant-pr-output');
+      if (output) output.textContent = 'Creating draft PR...';
+
+      const response = await fetch(endpoint('/deployments/assistant/pr'), {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json', accept: 'application/json' },
+        body: JSON.stringify({
+          templateId: state.selected.id,
+          repository: document.getElementById('assistant-repository')?.value || 'marzton/goldshore-ai',
+          head: document.getElementById('assistant-head-branch')?.value || 'codex/admin-deployment-assistant',
+          base: document.getElementById('assistant-base-branch')?.value || 'main',
+          query: document.getElementById('assistant-query')?.value || '',
+          dryRunCommand: state.dryRun.plan.command,
+          dryRunPassed: true,
+        }),
+      });
+
+      const payload = await response.json();
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.error || 'PR creation failed');
+      }
+
+      if (output) output.textContent = JSON.stringify(payload, null, 2);
+    };
+
+    document.getElementById('assistant-search')?.addEventListener('click', () => {
+      loadRecommendations().catch((error) => setText('assistant-summary', error.message || 'Search failed'));
     });
 
-    async function selectFramework(name: string, repo: string) {
-      selectedFramework = name;
-      statusDisplay!.textContent = 'Running dry-run...';
-      dryrunOutput!.innerHTML = '<div class="text-slate-500 animate-pulse">Executing wrangler --dry-run...</div>';
-      createPrButton.disabled = false;
-
-      try {
-        const response = await fetch('/api/admin/deploy/dry-run', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ framework: name, repo }),
-        });
-
-        if (!response.ok) throw new Error(`Dry-run failed: ${response.statusText}`);
-
-        const reader = response.body?.getReader();
-        if (!reader) throw new Error('No response body');
-
-        const decoder = new TextDecoder();
-        let output = '';
-        dryrunOutput!.innerHTML = '';
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          const chunk = decoder.decode(value);
-          output += chunk;
-
-          const pre = document.createElement('pre');
-          pre.textContent = output;
-          pre.className = 'whitespace-pre-wrap text-xs';
-          dryrunOutput!.innerHTML = '';
-          dryrunOutput!.appendChild(pre);
-          dryrunOutput!.scrollTop = dryrunOutput!.scrollHeight;
-        }
-
-        statusDisplay!.textContent = 'Dry-run complete - ready to create PR';
-      } catch (error) {
-        statusDisplay!.textContent = `Dry-run error: ${error instanceof Error ? error.message : 'Unknown'}`;
-        dryrunOutput!.innerHTML = `<div class="text-red-400">Error: ${error instanceof Error ? error.message : 'Unknown error'}</div>`;
-      }
-    }
-
-    createPrButton?.addEventListener('click', async () => {
-      if (!selectedFramework) return;
-
-      statusDisplay!.textContent = 'Creating PR...';
-      createPrButton.disabled = true;
-
-      try {
-        const response = await fetch('/api/admin/deploy/create-pr', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ framework: selectedFramework }),
-        });
-
-        if (!response.ok) throw new Error(`PR creation failed: ${response.statusText}`);
-
-        const data = await response.json();
-        statusDisplay!.textContent = `PR created: #${data.prNumber}`;
-
-        const link = document.createElement('a');
-        link.href = data.prUrl;
-        link.target = '_blank';
-        link.className = 'text-blue-400 hover:underline';
-        link.textContent = 'View on GitHub';
-
-        const div = document.createElement('div');
-        div.className = 'mt-2';
-        div.appendChild(link);
-        statusDisplay!.appendChild(div);
-      } catch (error) {
-        statusDisplay!.textContent = `Error creating PR: ${error instanceof Error ? error.message : 'Unknown'}`;
-        createPrButton.disabled = false;
-      }
+    document.getElementById('assistant-stream')?.addEventListener('click', () => {
+      streamRecommendations().catch((error) => setText('assistant-stream-output', error.message || 'Stream failed'));
     });
+
+    document.getElementById('assistant-dry-run')?.addEventListener('click', () => {
+      runDryRun().catch((error) => setText('assistant-dry-run-output', error.message || 'Dry run failed'));
+    });
+
+    document.getElementById('assistant-create-pr')?.addEventListener('click', () => {
+      createPr().catch((error) => setText('assistant-pr-output', error.message || 'PR creation failed'));
+    });
+
+    loadRecommendations().catch((error) => setText('assistant-summary', error.message || 'Initial search failed'));
   </script>
 </BaseLayout>
+
+<style>
+  .deploy-flow {
+    margin: 0;
+    padding-left: 1.2rem;
+    color: #a8adba;
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .assistant-grid,
+  .assistant-pr-grid {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .assistant-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 2rem;
+  }
+
+  .assistant-panel {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .assistant-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .gs-button--secondary {
+    background: transparent;
+    border-color: rgba(245, 243, 236, 0.2);
+    color: #f5f3ec;
+  }
+
+  .assistant-toggles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    color: #a8adba;
+    font-size: 0.9rem;
+  }
+
+  .assistant-selected,
+  .assistant-output {
+    border: 1px solid rgba(245, 243, 236, 0.12);
+    border-radius: 0.9rem;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 1rem;
+  }
+
+  .assistant-output {
+    min-height: 160px;
+    white-space: pre-wrap;
+    overflow-x: auto;
+    margin: 0;
+  }
+
+  .assistant-results {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .assistant-result {
+    border: 1px solid rgba(245, 243, 236, 0.12);
+    border-radius: 0.9rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .assistant-result__top,
+  .assistant-result__meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .assistant-result p {
+    margin: 0;
+    color: #a8adba;
+  }
+
+  .assistant-dry-run {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .gs-input-group {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .gs-input-group span {
+    font-size: 0.85rem;
+    color: #a8adba;
+  }
+
+  .gs-input-group input {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid rgba(245, 243, 236, 0.18);
+    border-radius: 0.75rem;
+    background: rgba(5, 5, 7, 0.8);
+    color: #f5f3ec;
+    padding: 0.75rem 0.9rem;
+  }
+
+  .gs-grid.columns-2 {
+    gap: 1rem;
+  }
+
+  @media (max-width: 980px) {
+    .assistant-grid,
+    .assistant-results {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
