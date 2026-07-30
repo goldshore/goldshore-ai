@@ -444,11 +444,6 @@ jobs:
               exit 1
             fi
             echo "$body"
-            access_app_payload "$name" "$domain" "$extra_domains" | \
-            curl -sf -X POST "$CF_API/accounts/$CF_ACCOUNT/access/apps" \
-              -H "Authorization: Bearer $CF_TOKEN" \
-              -H "Content-Type: application/json" \
-              --data @-
           }
 
           add_policy() {
@@ -525,8 +520,6 @@ jobs:
           upsert_full_access() {
             local name="$1" domain="$2" extra_domains="${3:-[]}" aud_workers="${4:-}" expected_aud="${5:-}"
             AID=$(find_app "$name" "$domain" "$expected_aud")
-            local name="$1" domain="$2" extra_domains="${3:-[]}" aud_workers="${4:-}"
-            AID=$(find_app "$name" "$domain")
             if [ -n "$AID" ]; then
               echo "Found existing app [$name]: $AID — updating domains, refreshing policies, and syncing AUD"
               update_app "$AID" "$name" "$domain" "$extra_domains"
@@ -548,29 +541,6 @@ jobs:
               sync_aud_workers "$AUD" "$aud_workers"
             fi
           }
-
-
-          assert_full_access_policies() {
-            local app_name="$1" domain="$2"
-            local app_id policies
-            app_id=$(find_app "$app_name" "$domain")
-            if [ -z "$app_id" ]; then
-              echo "::error::Cannot verify Access policies for [$app_name]; app was not found."
-              MISSING_REQUIRED_APPS=1
-              return
-            fi
-            policies=$(curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id/policies" \
-              -H "Authorization: Bearer $CF_TOKEN")
-            echo "$policies" | jq -e '.result[] | select(.decision == "allow" and .name == "Owner access")' > /dev/null || {
-              echo "::error::[$app_name] is missing the Owner access allow policy required for browser Cloudflare Access sessions."
-              MISSING_REQUIRED_APPS=1
-            }
-            echo "$policies" | jq -e '.result[] | select(.decision == "non_identity" and .name == "Goldshore agents")' > /dev/null || {
-              echo "::error::[$app_name] is missing the Goldshore agents service-token policy required for machine access."
-              MISSING_REQUIRED_APPS=1
-            }
-          }
-
 
           assert_full_access_policies() {
             local app_name="$1" domain="$2" expected_aud="${3:-}"
@@ -599,8 +569,6 @@ jobs:
           upsert_bypass_app() {
             local name="$1" domain="$2" extra_domains="${3:-[]}" aliases="${4:-[]}"
             AID=$(find_app "$name" "$aliases")
-            local name="$1" domain="$2" extra_domains="${3:-[]}"
-            AID=$(find_app "$name" "$domain")
             if [ -n "$AID" ]; then
               echo "Found existing bypass app [$name]: $AID — updating domains and bypass policy"
               update_app "$AID" "$name" "$domain" "$extra_domains"
