@@ -373,11 +373,6 @@ jobs:
                 or ($aud != "" and .aud == $aud)
                 or ($d != "" and ((.domain == $d) or ((.self_hosted_domains // []) | index($d))))
               )] | first | .id // empty'
-            local name="$1" domain="${2:-}"
-            curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps" \
-              -H "Authorization: Bearer $CF_TOKEN" | \
-            jq -r --arg n "$name" --arg d "$domain" \
-              '[.result[] | select(.name == $n or ($d != "" and ((.domain == $d) or ((.self_hosted_domains // []) | index($d)))))] | first | .id // empty'
           }
 
           access_app_payload() {
@@ -413,28 +408,6 @@ jobs:
               exit 1
             fi
             echo "$body" | jq -r '"  updated app => \(.success)"'
-          }
-
-          get_app_aud() {
-            local app_id="$1"
-            curl -sf "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id" \
-              -H "Authorization: Bearer $CF_TOKEN" | \
-            jq -r '.result.aud // empty'
-          }
-
-          sync_aud_workers() {
-            local aud="$1" aud_workers="${2:-}"
-            if [ -n "$aud_workers" ] && [ -n "$aud" ]; then
-              echo "  Propagating CLOUDFLARE_ACCESS_AUDIENCE to: $aud_workers"
-              for w in $aud_workers; do
-                push_worker_secret "$w" CLOUDFLARE_ACCESS_AUDIENCE "$aud"
-              done
-            fi
-            access_app_payload "$name" "$domain" "$extra_domains" | \
-            curl -sf -X PUT "$CF_API/accounts/$CF_ACCOUNT/access/apps/$app_id" \
-              -H "Authorization: Bearer $CF_TOKEN" \
-              -H "Content-Type: application/json" \
-              --data @- | jq -r '"  updated app => \(.success)"'
           }
 
           get_app_aud() {
