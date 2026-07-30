@@ -121,6 +121,8 @@ describe('gs-api wrangler env bindings', () => {
       topLevel,
       /\[\[d1_databases\]\][\s\S]*?binding\s*=\s*"PLATFORM_DB"/,
     );
+    assert.doesNotMatch(topLevel, /\[\[d1_databases\]\][\s\S]*?binding\s*=\s*"DB"/);
+    assert.doesNotMatch(topLevel, /database_id\s*=\s*"gs_db_001"/);
     assert.match(
       topLevel,
       /\[\[r2_buckets\]\][\s\S]*?binding\s*=\s*"GS_ASSETS"/,

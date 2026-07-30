@@ -184,10 +184,6 @@ bucket_name = "gs-assets"
 [[env.prod.r2_buckets]]
 binding = "TELEMETRY"
 bucket_name = "gs-telemetry-storage"
-[[env.prod.d1_databases]]
-binding = "DB"
-database_name = "goldshore"
-database_id = "gs_db_001"
 
 [env.prod.ai]
 binding = "AI"
