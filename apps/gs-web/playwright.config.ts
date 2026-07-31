@@ -9,7 +9,7 @@ const executablePath =
   (process.platform === 'linux'
     ? browserName === 'firefox'
       ? '/usr/bin/firefox-esr'
-      : '/usr/bin/chromium'
+      : '/opt/pw-browsers/chromium'
     : undefined);
 const launchOptions =
   browserName === 'firefox'
