@@ -8,6 +8,7 @@
     "dev:wrangler": "wrangler dev src/index.ts --ip 0.0.0.0",
     "deploy": "wrangler deploy --env prod",
     "build": "wrangler deploy --env prod --dry-run --outdir=dist",
+    "lint": "eslint .",
     "test": "tsx --test src/routes/*.test.ts",
     "test:gateway": "node test-gateway.js"
   },

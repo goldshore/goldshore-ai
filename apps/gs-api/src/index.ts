@@ -5,6 +5,7 @@ import {
   type AccessTokenPayload,
 } from '@goldshore/auth';
 import { createCorsMiddleware, APPROVED_API_ORIGINS } from '@goldshore/shared';
+import { EmailLogSchema } from '@goldshore/schema';
 import users from './routes/users';
 import health from './routes/health';
 import ai from './routes/ai';
@@ -44,6 +45,22 @@ type Env = {
   API_VERSION?: string;
   DEPLOY_SHA?: string;
   GIT_SHA?: string;
+  MAIL_BLOCKED_SENDERS?: string;
+  MAIL_ALLOWED_RECIPIENTS?: string;
+  MAIL_FORWARD_TO?: string;
+  FORWARD_TO?: string;
+};
+
+interface ForwardableEmailMessage {
+  from: string;
+  to: string;
+  headers: Headers;
+  setReject(reason: string): void;
+  forward(to: string): Promise<void>;
+}
+
+type ExecutionContext = {
+  waitUntil(promise: Promise<void>): void;
 };
 
 const app = new Hono<{
@@ -238,6 +255,53 @@ v1.get('/leads', (c) => c.json({ leads: [] }));
 app.route('/v1', v1);
 
 export { isAllowedOrigin, isPreviewOrigin, isPublicPath, parseAllowedOrigins };
+
+interface Message<T> {
+  id: string;
+  body: T;
+  ack(): void;
+  retry(): void;
+}
+
+interface MessageBatch<T> {
+  messages: Array<Message<T>>;
+}
+
+type DurableObjectState = {
+  id: { toString(): string };
+};
+
+const normalizeEmail = (email: string): string => {
+  return email.toLowerCase().trim();
+};
+
+const parseEmailList = (list?: string): string[] => {
+  if (!list) return [];
+  return list
+    .split(/[,;\s]+/)
+    .map((email) => normalizeEmail(email))
+    .filter((email) => email.length > 0);
+};
+
+const isEmailLike = (email: string): boolean => {
+  // Simple email validation: must contain @ and at least one dot after @
+  // Avoids ReDoS vulnerability from backtracking in complex quantifier patterns
+  const atIndex = email.indexOf('@');
+  if (atIndex <= 0 || atIndex === email.length - 1) return false;
+  const afterAt = email.substring(atIndex + 1);
+  return afterAt.includes('.') && !afterAt.endsWith('.');
+};
+
+const readInboxLogs = async (kv: KVNamespace) => {
+  try {
+    const stored = await kv.get('EMAIL_INBOX_LOGS');
+    if (!stored) return [];
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
 
 const processQueueMessage = async (message: Message<any>, env: Env): Promise<void> => {
   const body = message.body;
