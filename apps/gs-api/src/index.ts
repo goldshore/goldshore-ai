@@ -284,7 +284,12 @@ const parseEmailList = (list?: string): string[] => {
 };
 
 const isEmailLike = (email: string): boolean => {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  // Simple email validation: must contain @ and at least one dot after @
+  // Avoids ReDoS vulnerability from backtracking in complex quantifier patterns
+  const atIndex = email.indexOf('@');
+  if (atIndex <= 0 || atIndex === email.length - 1) return false;
+  const afterAt = email.substring(atIndex + 1);
+  return afterAt.includes('.') && !afterAt.endsWith('.');
 };
 
 const readInboxLogs = async (kv: KVNamespace) => {
