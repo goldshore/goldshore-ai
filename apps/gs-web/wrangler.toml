@@ -47,7 +47,6 @@ MAILCHANNELS_SENDER_NAME = "GoldShore"
 routes = [
   { pattern = "goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
-  { pattern = "admin.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "admin-preview.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "admin.goldshore.org/*", zone_name = "goldshore.org" },
   { pattern = "risk.goldshore.ai/*", zone_name = "goldshore.ai" },
