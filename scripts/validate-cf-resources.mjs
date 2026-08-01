@@ -112,7 +112,7 @@ const knownSharedKvIds = new Set([
   '09e43cb8bd4749fdaaed0dc9d4ff2284',
 ]);
 const knownExternalKvIds = new Set(['0b56873b6d7b451f9279481920a15447']);
-const knownExternalR2 = new Set(['risk-radar-raw', 'gs-risk-radar-raw']);
+const knownExternalR2 = new Set(['risk-radar-raw', 'gs-risk-radar-raw', 'gs-risk-radar-raw-preview']);
 const knownExternalD1 = new Set(['b0bf3b0e-a7d0-49ae-ac82-4f19450b2ce2']);
 const knownExternalAudience = new Set();
 

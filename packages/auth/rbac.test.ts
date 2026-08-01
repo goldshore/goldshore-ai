@@ -85,7 +85,7 @@ describe('RBAC Helpers', () => {
 
     test('unions permissions for multiple roles without duplicates', () => {
       const result = getAdminPermissions(['editor', 'viewer']);
-      // editor has content:read/write, system:read, system:integrations:manage, media:read/write, forms:read/write, ai:analyze
+      // editor has content:read/write, system:read, system:integrations:manage, media:read/write, forms:read/write, ai:analyze (9 total)
       // viewer has content:read, media:read, forms:read
       // union should be same as editor
       assert.ok(result.includes('content:write'));
