@@ -136,6 +136,25 @@ app.use(
 );
 
 app.use('*', async (c, next) => {
+  const routePrefix = getHostRoutePrefix(c.req.raw);
+  if (!routePrefix || c.req.path === routePrefix || c.req.path.startsWith(`${routePrefix}/`)) {
+    await next();
+    return;
+  }
+
+  const correlationId = getCorrelationId(c.req.raw);
+  const routedUrl = new URL(c.req.url);
+  routedUrl.pathname = `${routePrefix}${routedUrl.pathname === '/' ? '' : routedUrl.pathname}`;
+  const response = await app.fetch(
+    new Request(routedUrl.toString(), c.req.raw),
+    c.env,
+    getOptionalExecutionContext(c),
+  );
+  return withCorrelationId(response, correlationId);
+});
+
+// Enforce Authentication (Defense in Depth)
+app.use('*', async (c, next) => {
   if (isPublicPath(c.req.path, c.req.method)) {
     c.set('accessClaims', null);
     await next();
