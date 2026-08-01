@@ -49,18 +49,6 @@ projects:
         - pattern: 'mail.goldshore.ai/*'
           zone: goldshore.ai
       max_daily_deploys: 10
-    - script: gs-trading-prod
-      entry: apps/gs-trading/dist/index.js
-      routes:
-        - pattern: 'trading.goldshore.ai/*'
-          zone: goldshore.ai
-        - pattern: 'dashboard.goldshore.ai/*'
-          zone: goldshore.ai
-        - pattern: 'dash.goldshore.ai/*'
-          zone: goldshore.ai
-      max_daily_deploys: 6
-      require_checks: ['smoke']
-
 guards:
   dedupe_concurrency_key: 'cf-deploy'
   cool_down_minutes: 15
