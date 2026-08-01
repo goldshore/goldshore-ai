@@ -34,6 +34,8 @@ test('platform and Risk Radar retain the established theme without source leakag
 
   await page.getByRole('link', { name: /Risk Radar/ }).first().click();
   await expect(page).toHaveURL(/\/risk-radar\/?$/);
+  // Wait for heading to be visible before asserting content
+  await page.getByRole('heading', { level: 1 }).waitFor({ state: 'visible' });
   await expect(page.getByRole('heading', { level: 1 })).toContainText('360° risk intelligence');
   await expect(page.locator('body')).not.toContainText(leakedSourcePattern);
   expect(errors).toEqual([]);
