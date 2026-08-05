@@ -136,6 +136,25 @@ app.use(
 );
 
 app.use('*', async (c, next) => {
+  const routePrefix = getHostRoutePrefix(c.req.raw);
+  if (!routePrefix || c.req.path === routePrefix || c.req.path.startsWith(`${routePrefix}/`)) {
+    await next();
+    return;
+  }
+
+  const correlationId = getCorrelationId(c.req.raw);
+  const routedUrl = new URL(c.req.url);
+  routedUrl.pathname = `${routePrefix}${routedUrl.pathname === '/' ? '' : routedUrl.pathname}`;
+  const response = await app.fetch(
+    new Request(routedUrl.toString(), c.req.raw),
+    c.env,
+    getOptionalExecutionContext(c),
+  );
+  return withCorrelationId(response, correlationId);
+});
+
+// Enforce Authentication (Defense in Depth)
+app.use('*', async (c, next) => {
   if (isPublicPath(c.req.path, c.req.method)) {
     c.set('accessClaims', null);
     await next();
@@ -325,6 +344,28 @@ const processQueueMessage = async (message: Message<any>, env: Env): Promise<voi
   message.ack();
 };
 
+const processQueueMessage = async (message: Message<any>, env: Env): Promise<void> => {
+  const body = message.body;
+  const type = typeof body === 'object' && body && 'type' in body ? String((body as { type?: unknown }).type) : 'unknown';
+  if (type === 'contact' || type === 'checkout') {
+    console.info({ event: 'mail_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
+    message.ack();
+    return;
+  }
+  if (type === 'trading' || type === 'trading-signal' || type === 'order') {
+    console.info({ event: 'trading_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
+    message.ack();
+    return;
+  }
+  if (type === 'signal' || type === 'atc') {
+    console.info({ event: 'core_signal_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
+    message.ack();
+    return;
+  }
+  console.info({ event: 'agent_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
+  message.ack();
+};
+
 export default {
   fetch: app.fetch,
 
@@ -400,3 +441,5 @@ export class AuthSession {
     );
   }
 }
+export { isAllowedOrigin, isPreviewOrigin, parseAllowedOrigins };
+export default app;
