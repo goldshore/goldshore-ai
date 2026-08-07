@@ -18,7 +18,7 @@ jobs:
     name: Manifest integrity check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
 
       - name: Verify INFRASTRUCTURE.md exists
         run: |
@@ -147,7 +147,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'workflow_dispatch'
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
 
       - name: Normalize Cloudflare token
         env:
