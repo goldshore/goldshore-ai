@@ -7,89 +7,18 @@ import {
 
 export const prerender = false;
 
-type ProductStatus = 'active' | 'beta' | 'coming_soon' | 'deprecated';
+/**
+ * Admin UI product catalog endpoint.
+ *
+ * This route is a thin authenticated proxy in front of gs-api's `/products`
+ * routes, which are the sole owner of the PRODUCT_CATALOG key. It deliberately
+ * does NOT touch `env.KV`: gs-web's `KV` binding resolves to the GOLDSHORE-AI
+ * namespace while gs-api's resolves to GS_API_KV, so reading or writing the
+ * catalog here would fork it into two stores that diverge silently.
+ */
 
-type ProductPlan = {
-  id: string;
-  name: string;
-  price: number;
-  currency: string;
-  interval: 'month' | 'year' | 'one_time';
-  features: string[];
-};
-
-type Product = {
-  id: string;
-  name: string;
-  slug: string;
-  status: ProductStatus;
-  description: string;
-  features: string[];
-  plans: ProductPlan[];
-  settings: Record<string, unknown>;
-  updatedAt: string;
-};
-
-const DEFAULT_PRODUCTS: Product[] = [
-  {
-    id: 'risk-radar',
-    name: 'Risk Radar',
-    slug: 'risk-radar',
-    status: 'beta',
-    description: 'Real-time risk assessment and alerting for portfolio positions.',
-    features: [
-      'Sub-28ms signal latency',
-      'Composite risk scoring',
-      'Multi-asset support',
-      'TCG and equity positions',
-    ],
-    plans: [
-      {
-        id: 'risk-radar-basic',
-        name: 'Basic',
-        price: 0,
-        currency: 'USD',
-        interval: 'month',
-        features: ['5 assets monitored', 'Daily reports', 'Email alerts'],
-      },
-      {
-        id: 'risk-radar-pro',
-        name: 'Pro',
-        price: 99,
-        currency: 'USD',
-        interval: 'month',
-        features: ['Unlimited assets', 'Real-time alerts', 'API access'],
-      },
-    ],
-    settings: { signalLatencyTarget: 28, compositeScoringEnabled: true, briefingEnabled: true },
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'platform',
-    name: 'Platform',
-    slug: 'platform',
-    status: 'active',
-    description: 'Goldshore AI Platform — operational intelligence and automation.',
-    features: ['AI Oracle', 'Financial Signals', 'Workflow Engine', 'Sentinel'],
-    plans: [
-      {
-        id: 'platform-enterprise',
-        name: 'Enterprise',
-        price: 0,
-        currency: 'USD',
-        interval: 'month',
-        features: ['Contact for pricing', 'Custom SLA'],
-      },
-    ],
-    settings: { aiOracleEnabled: true, workflowEngineEnabled: true },
-    updatedAt: new Date().toISOString(),
-  },
-];
-
-const getCatalog = async (env: Env): Promise<{ products: Product[] }> => {
-  const stored = await env.KV?.get('PRODUCT_CATALOG', 'json');
-  return (stored as { products: Product[] } | null) ?? { products: DEFAULT_PRODUCTS };
-};
+const apiBase = (env: Env | undefined) =>
+  (env?.PUBLIC_API || 'https://api.goldshore.ai').replace(/\/$/, '');
 
 const hasPermission = async (
   request: Request,
@@ -115,57 +44,76 @@ const isSameOriginRequest = (request: Request) => {
   return false;
 };
 
+/** Forward only the headers gs-api needs to re-authenticate the caller. */
+const forwardedHeaders = (request: Request) => {
+  const headers = new Headers();
+  for (const name of ['accept', 'authorization', 'cookie', 'cf-access-jwt-assertion']) {
+    const value = request.headers.get(name);
+    if (value) headers.set(name, value);
+  }
+  return headers;
+};
+
+const upstream = async (
+  request: Request,
+  env: Env | undefined,
+  path: string,
+  init?: { method?: string; body?: string },
+) => {
+  const headers = forwardedHeaders(request);
+  if (init?.body !== undefined) headers.set('content-type', 'application/json');
+
+  try {
+    const response = await fetch(`${apiBase(env)}${path}`, {
+      method: init?.method ?? 'GET',
+      headers,
+      body: init?.body,
+    });
+
+    const contentType = response.headers.get('content-type') ?? 'application/json';
+    return new Response(response.body, {
+      status: response.status,
+      headers: { 'content-type': contentType },
+    });
+  } catch {
+    return new Response('Unable to reach the product catalog service.', { status: 502 });
+  }
+};
+
 export const GET: APIRoute = async ({ request, locals }) => {
   const env = locals.runtime?.env as Env | undefined;
-  if (!env?.KV) return new Response('Storage unavailable.', { status: 503 });
 
   const ok = await hasPermission(request, env as never, 'system:read');
   if (!ok) return new Response('Unauthorized', { status: 401 });
 
-  const url = new URL(request.url);
-  const id = url.searchParams.get('id');
+  const id = new URL(request.url).searchParams.get('id');
+  const path = id ? `/products/${encodeURIComponent(id)}` : '/products';
 
-  const catalog = await getCatalog(env);
-  if (id) {
-    const product = catalog.products.find((p) => p.id === id || p.slug === id);
-    if (!product) return new Response('Product not found.', { status: 404 });
-    return Response.json({ success: true, product });
-  }
-
-  return Response.json({ success: true, ...catalog });
+  return upstream(request, env, path);
 };
 
 export const PUT: APIRoute = async ({ request, locals }) => {
   const env = locals.runtime?.env as Env | undefined;
-  if (!env?.KV) return new Response('Storage unavailable.', { status: 503 });
 
   if (!isSameOriginRequest(request)) return new Response('Forbidden: CSRF check failed.', { status: 403 });
 
   const ok = await hasPermission(request, env as never, 'system:write');
   if (!ok) return new Response('Unauthorized', { status: 401 });
 
-  const url = new URL(request.url);
-  const id = url.searchParams.get('id');
+  const id = new URL(request.url).searchParams.get('id');
   if (!id) return new Response('id query param required.', { status: 400 });
 
-  const body = await request.json() as Partial<Product>;
-  if (!body) return new Response('Invalid payload.', { status: 400 });
+  const body = await request.text();
 
-  const catalog = await getCatalog(env);
-  const idx = catalog.products.findIndex((p) => p.id === id || p.slug === id);
-  if (idx === -1) return new Response('Product not found.', { status: 404 });
-
-  const updated: Product = {
-    ...catalog.products[idx],
-    ...body,
-    id: catalog.products[idx].id,
-    slug: catalog.products[idx].slug,
-    updatedAt: new Date().toISOString(),
-  };
-  catalog.products[idx] = updated;
-
-  await env.KV.put('PRODUCT_CATALOG', JSON.stringify(catalog));
-  return Response.json({ success: true, product: updated });
+  return upstream(request, env, `/products/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    body,
+  });
 };
 
 export const PATCH = PUT;
+
+export const __testing = {
+  isSameOriginRequest,
+  forwardedHeaders,
+};

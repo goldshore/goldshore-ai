@@ -16,6 +16,7 @@ import admin from './routes/admin';
 import media from './routes/media';
 import pages from './routes/pages';
 import internal from './routes/internal';
+import products from './routes/products';
 import domains from './routes/domains';
 import sites from './routes/sites';
 import forms from './routes/forms';
@@ -261,6 +262,11 @@ app.route('/admin', admin);
 app.route('/media', media);
 app.route('/pages', pages);
 app.route('/internal', internal);
+// Sole owner of the PRODUCT_CATALOG key. gs-web's /api/admin/products proxies
+// here rather than reading KV directly — its `KV` binding resolves to a
+// different namespace (GOLDSHORE-AI), so a direct read/write there would
+// silently fork the catalog.
+app.route('/products', products);
 
 const v1 = new Hono<{ Bindings: Env }>();
 v1.route('/users', users);
@@ -320,28 +326,6 @@ const readInboxLogs = async (kv: KVNamespace) => {
   } catch {
     return [];
   }
-};
-
-const processQueueMessage = async (message: Message<any>, env: Env): Promise<void> => {
-  const body = message.body;
-  const type = typeof body === 'object' && body && 'type' in body ? String((body as { type?: unknown }).type) : 'unknown';
-  if (type === 'contact' || type === 'checkout') {
-    console.info({ event: 'mail_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
-    message.ack();
-    return;
-  }
-  if (type === 'trading' || type === 'trading-signal' || type === 'order') {
-    console.info({ event: 'trading_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
-    message.ack();
-    return;
-  }
-  if (type === 'signal' || type === 'atc') {
-    console.info({ event: 'core_signal_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
-    message.ack();
-    return;
-  }
-  console.info({ event: 'agent_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
-  message.ack();
 };
 
 const processQueueMessage = async (message: Message<any>, env: Env): Promise<void> => {
@@ -441,5 +425,3 @@ export class AuthSession {
     );
   }
 }
-export { isAllowedOrigin, isPreviewOrigin, parseAllowedOrigins };
-export default app;
