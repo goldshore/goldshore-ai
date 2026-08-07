@@ -13,7 +13,8 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
 
   const authResult = await authorizeAdminRequest(request, env as never, rule);
   if (!authResult.ok) {
-    return new Response(authResult.error, { status: authResult.status });
+    const failure = authResult as Extract<typeof authResult, { ok: false }>;
+    return new Response(failure.error, { status: failure.status });
   }
 
   const name = url.searchParams.get('name');

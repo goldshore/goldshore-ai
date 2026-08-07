@@ -10,7 +10,7 @@ This document captures the Cloudflare Access applications and policies that prot
 | ----------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | GoldShore Admin         | GoldShore-Admin-ZT    | `admin.goldshore.ai`, `admin.goldshore.org`, `admin-preview.goldshore.ai`, `*-preview.goldshore.ai` (admin preview branches), `{branch}.goldshore-pages.dev` (admin preview pages) | Admin cockpit is protected by Access with an email allowlist + identity provider requirement. Preview domains should be attached to the same application to match production enforcement. |
 | GoldShore Trading       | GoldShore-Trading-ZT  | `trading.goldshore.ai`, `dashboard.goldshore.ai`, `dash.goldshore.ai`                                                                                       | Trading/dashboard surfaces are protected by Access. Broker OAuth callback paths are explicitly bypassed so providers can complete redirects without an Access session.                    |
-| GoldShore MCP           | GoldShore-MCP-ZT      | `mcp.goldshore.ai`                                                                                                                                                                  | Private MCP surface. Allow only approved human identities and a dedicated service identity path for approved agents.                                                                      |
+| GoldShore MCP           | GoldShore-MCP-ZT      | `mcp.goldshore.ai`                                                                                                                                                                  | Private MCP surface. The underlying worker must be routed on `mcp.goldshore.ai/*` so OAuthProvider endpoints such as `/authorize`, `/token`, `/register`, and `/callback` reach the worker. Allow only approved human identities and a dedicated service identity path for approved agents. |
 | GoldShore Web (Preview) | GoldShore-Web-Preview | `preview.goldshore.ai`, `*-preview.goldshore.ai` (web preview branches), `{branch}.goldshore-pages.dev` (web preview pages)                                 | Web production (`goldshore.ai`, `www.goldshore.ai`) is public, but preview domains must be gated behind Access.                                                                           |
 
 ## Identity providers and session policy alignment
@@ -148,5 +148,9 @@ When adding preview callback URLs in GitHub App settings, ensure the same hostna
 ### Cloudflare Access OIDC callback (GitHub IdP)
 
 - `https://goldshore.cloudflareaccess.com/cdn-cgi/access/callback`
+- Canonical OAuth app: `Gold Shore Cloudflare Access`
+- Canonical OAuth client ID: `Ov23liQ0fWArxJvZL7A5`
+- Store its client secret only in the repository Actions secret
+  `GOLDSHORE_ACCESS_GITHUB_CLIENT_SECRET`.
 
 Use this exact callback URL in the GitHub OAuth app configuration used by Cloudflare Access. The GitHub OAuth app homepage should be `https://goldshore.cloudflareaccess.com`; Cloudflare Access stores the GitHub OAuth client ID and client secret in the Zero Trust identity provider configuration. If this endpoint changes, update both the GitHub OAuth app and Cloudflare Access IdP configuration together to avoid login failures.
