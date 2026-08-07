@@ -35,6 +35,7 @@ bucket_name = "gs-assets"
 
 [vars]
 ENV = "production"
+PUBLIC_ENV = "production"
 PUBLIC_API = "https://api.goldshore.ai"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 CLOUDFLARE_ACCESS_AUDIENCE = "c520a7647223b49b20fbe5be240772863eb684b97b57c08955b6104c58170db9"
@@ -79,6 +80,7 @@ binding = "IMAGES"
 
 [env.prod.vars]
 ENV = "production"
+PUBLIC_ENV = "production"
 PUBLIC_API = "https://api.goldshore.ai"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 CLOUDFLARE_ACCESS_AUDIENCE = "c520a7647223b49b20fbe5be240772863eb684b97b57c08955b6104c58170db9"
@@ -127,6 +129,7 @@ binding = "IMAGES"
 
 [env.preview.vars]
 ENV = "preview"
+PUBLIC_ENV = "preview"
 PUBLIC_API = "https://api-preview.goldshore.ai"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 CLOUDFLARE_ACCESS_AUDIENCE = "5227a14ad2cd2f59e56c8c65161c29bb2f9787b5b8be37a631c60f4d07b33214"
