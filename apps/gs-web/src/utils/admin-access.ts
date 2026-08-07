@@ -8,9 +8,20 @@ import {
   type Env as AccessEnv,
 } from '@goldshore/auth';
 
-export const CANONICAL_ADMIN_ORIGIN = 'https://admin.goldshore.ai';
-export const ALTERNATE_ADMIN_ORIGIN = 'https://admin.goldshore.org';
 export const ADMIN_DASHBOARD_PATH = '/app/dashboard';
+
+export const getAdminOrigin = (env?: string): string => {
+  const environment = env || (typeof import.meta !== 'undefined' && (import.meta as any).env?.PUBLIC_ENV) || 'production';
+  return environment === 'preview' ? 'https://admin-preview.goldshore.ai' : 'https://admin.goldshore.ai';
+};
+
+export const getAlternateAdminOrigin = (env?: string): string => {
+  const environment = env || (typeof import.meta !== 'undefined' && (import.meta as any).env?.PUBLIC_ENV) || 'production';
+  return environment === 'preview' ? 'https://admin-preview.goldshore.org' : 'https://admin.goldshore.org';
+};
+
+export const CANONICAL_ADMIN_ORIGIN = getAdminOrigin();
+export const ALTERNATE_ADMIN_ORIGIN = getAlternateAdminOrigin();
 export const CANONICAL_ADMIN_DASHBOARD_URL =
   `${CANONICAL_ADMIN_ORIGIN}${ADMIN_DASHBOARD_PATH}`;
 export const ALTERNATE_ADMIN_DASHBOARD_URL =
