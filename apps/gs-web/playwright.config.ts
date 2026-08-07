@@ -9,7 +9,7 @@ const executablePath =
   (process.platform === 'linux'
     ? browserName === 'firefox'
       ? '/usr/bin/firefox-esr'
-      : '/usr/bin/chromium'
+      : '/opt/pw-browsers/chromium'
     : undefined);
 const launchOptions =
   browserName === 'firefox'
@@ -31,7 +31,7 @@ export default defineConfig({
     launchOptions,
   },
   webServer: {
-    command: 'pnpm dev -- --host 127.0.0.1 --port 4321',
+    command: 'pnpm dev --host 127.0.0.1 --port 4321',
     env: {
       PLAYWRIGHT_TEST: '1',
     },

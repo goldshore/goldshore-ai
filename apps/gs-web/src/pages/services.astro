@@ -100,22 +100,21 @@ const services = [
       {services.map((service) => (
         <article class="gs-card service-card">
           <h3>{service.name}</h3>
-          <p>{service.overview}</p>
-          {service.scope ? (
-            <ul class="gs-text-sm">
           <p class="service-card__overview">{service.overview}</p>
           <div class="service-card__meta" aria-label={`${service.name} delivery details`}>
             <p><strong>Timeline:</strong> {service.timeline}</p>
             <p><strong>Best fit:</strong> {service.bestFit}</p>
           </div>
-          <div class="service-card__section">
-            <h4>Scope</h4>
-            <ul class="service-card__list">
+          {service.scope ? (
+            <div class="service-card__section">
+              <h4>Scope</h4>
+              <ul class="service-card__list">
               {service.scope.map((item) => (
                 <li>{item}</li>
               ))}
             </ul>
-          </div>
+            </div>
+          ) : null}
           <div class="service-card__section">
             <h4>Deliverables</h4>
             <ul class="service-card__list">

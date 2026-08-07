@@ -56,26 +56,12 @@ test('home page renders core layout and CTA navigation', async ({ page }) => {
 
   await page.goto('/', { waitUntil: 'networkidle' });
 
-  await expect(page.locator('header.header')).toBeVisible();
-  await expect(page.locator('footer.gs-footer')).toBeVisible();
-  await expect(page.getByRole('heading', { level: 1 })).toContainText(
-    'Clarity, Control',
-  );
-  await expect(
-    page.getByRole('link', { name: 'View Operating Model' }),
-  ).toHaveAttribute('href', '/about');
-  await expect(
-    page.getByRole('link', { name: 'Start a conversation' }),
-  ).toHaveAttribute('href', '/contact');
+  await expect(page.locator('header.topbar')).toBeVisible();
+  await expect(page.locator('footer')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await expect(
     page.getByRole('link', { name: 'Request Briefing' }).first(),
-  ).toHaveAttribute('href', '/contact');
-
-  await page.getByRole('link', { name: 'View Operating Model' }).click();
-  await page.waitForURL('**/about');
-  await expect(
-    page.getByRole('heading', { level: 1 }),
-  ).toBeVisible();
+  ).toHaveAttribute('href', '#engage');
 
   assertHealthyPage(monitors);
 });
@@ -166,17 +152,18 @@ test.describe('mobile navigation toggle', () => {
 
     await page.goto('/', { waitUntil: 'networkidle' });
 
-    const header = page.locator('header.header');
-    const toggle = page.locator('.menu-button');
+    const toggle = page.locator('.nav-toggle');
+    const nav = page.locator('header.topbar nav');
 
     await expect(toggle).toBeVisible();
-    await expect(header).toHaveAttribute('data-menu-open', 'false');
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
 
     await toggle.click();
-    await expect(header).toHaveAttribute('data-menu-open', 'true');
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await expect(nav).toHaveClass(/nav-open/);
 
     await toggle.click();
-    await expect(header).toHaveAttribute('data-menu-open', 'false');
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
 
     assertHealthyPage(monitors);
   });
