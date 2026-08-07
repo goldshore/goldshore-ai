@@ -16,6 +16,7 @@ import admin from './routes/admin';
 import media from './routes/media';
 import pages from './routes/pages';
 import internal from './routes/internal';
+import products from './routes/products';
 import domains from './routes/domains';
 import sites from './routes/sites';
 import forms from './routes/forms';

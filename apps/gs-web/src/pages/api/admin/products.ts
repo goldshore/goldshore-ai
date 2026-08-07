@@ -113,3 +113,8 @@ export const PUT: APIRoute = async ({ request, locals }) => {
 };
 
 export const PATCH = PUT;
+
+export const __testing = {
+  isSameOriginRequest,
+  forwardedHeaders,
+};
