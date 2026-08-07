@@ -19,8 +19,9 @@ const {
   ogDescription = description,
 } = Astro.props;
 
-const canonicalUrl = new URL(canonicalPath, 'https://goldshore.ai').toString();
-const socialImageUrl = new URL('/logo.png', 'https://goldshore.ai').toString();
+const siteOrigin = Astro.url.origin;
+const canonicalUrl = new URL(canonicalPath, siteOrigin).toString();
+const socialImageUrl = new URL('/logo.png', siteOrigin).toString();
 const normalizePath = (path: string) => {
   const normalized = path.startsWith('/') ? path : `/${path}`;
   return normalized === '/' ? '/' : `${normalized.replace(/\/+$/, '')}/`;
@@ -58,14 +59,15 @@ const isCurrent = (href: string) => {
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+    <link rel="sitemap" href="/sitemap.xml" type="application/xml" />
     <meta name="google-adsense-account" content="ca-pub-5105781580031290" />
     <script type="application/ld+json" set:html={JSON.stringify({
       '@context': 'https://schema.org',
       '@type': 'Organization',
       name: 'Gold Shore Labs',
       alternateName: 'GoldShore',
-      url: 'https://goldshore.ai',
-      logo: 'https://goldshore.ai/logo.png',
+      url: siteOrigin,
+      logo: socialImageUrl,
       sameAs: [],
     })}></script>
   </head>
@@ -81,15 +83,15 @@ const isCurrent = (href: string) => {
           <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="mobile-navigation" aria-label="Toggle menu"><span></span><span></span><span></span></button>
           <nav class="main-nav" aria-label="Primary navigation">
             {navLinks.map((link) => <a href={link.href} aria-current={isCurrent(link.href) ? 'page' : undefined}>{link.label}</a>)}
-            <a href="https://dashboard.goldshore.ai" class="nav-login">Access →</a>
-            <a href="https://admin.goldshore.ai" class="nav-login" data-admin-access-link>Access →</a>
+            <a href="https://dashboard.goldshore.ai" class="nav-login">Dashboard →</a>
+            <a href="https://admin.goldshore.ai" class="nav-login" data-admin-access-link>Admin →</a>
             <a href="/contact/" class="nav-cta">Request Briefing</a>
           </nav>
         </div>
         <nav id="mobile-navigation" class="mobile-nav" aria-label="Mobile navigation">
           {navLinks.map((link) => <a href={link.href} aria-current={isCurrent(link.href) ? 'page' : undefined}>{link.label}</a>)}
-          <a href="https://dashboard.goldshore.ai">Access →</a>
-          <a href="https://admin.goldshore.ai" data-admin-access-link>Access →</a>
+          <a href="https://dashboard.goldshore.ai">Dashboard →</a>
+          <a href="https://admin.goldshore.ai" data-admin-access-link>Admin →</a>
           <a href="/contact/">Request Briefing</a>
         </nav>
       </header>
@@ -152,13 +154,18 @@ const isCurrent = (href: string) => {
     </script>
 
     <style is:global>
+      .gs-page-content > * {
+        scroll-margin-top: calc(var(--gs-header-height) + 1rem);
+      }
+
       .topbar {
         position: sticky;
         top: 0;
         z-index: 100;
+        --gs-header-height: 72px;
         padding: 1rem clamp(1rem, 3vw, 2rem);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         background: rgba(6, 6, 10, 0.88);
         border-bottom: 1px solid rgba(255, 255, 255, 0.06);
       }
@@ -169,7 +176,7 @@ const isCurrent = (href: string) => {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 2rem;
+        gap: clamp(1rem, 2vw, 2rem);
       }
 
       .brand-text {
@@ -197,11 +204,15 @@ const isCurrent = (href: string) => {
       .main-nav {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: clamp(0.75rem, 1.5vw, 1.5rem);
         flex: 1;
       }
 
       .main-nav a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
         padding: 0.6rem 0.85rem;
         border-radius: 6px;
         color: var(--gs-text-dim);
@@ -216,6 +227,10 @@ const isCurrent = (href: string) => {
       }
 
       .nav-login {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
         padding: 0.72rem 1rem;
         border-radius: 6px;
         border: 1px solid rgba(255, 255, 255, 0.18);
@@ -231,6 +246,10 @@ const isCurrent = (href: string) => {
       }
 
       .nav-cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
         padding: 0.82rem 1.2rem;
         border-radius: 6px;
         background: linear-gradient(135deg, rgba(220, 120, 60, 0.8), rgba(200, 100, 50, 0.8));
@@ -336,7 +355,7 @@ const isCurrent = (href: string) => {
       .footer-columns {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 2rem;
+        gap: 1.5rem 2rem;
       }
 
       .footer-column h3 {
@@ -353,6 +372,10 @@ const isCurrent = (href: string) => {
       }
 
       .footer-column a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        min-width: 44px;
         color: var(--gs-text-dim);
         text-decoration: none;
         font-size: 0.85rem;

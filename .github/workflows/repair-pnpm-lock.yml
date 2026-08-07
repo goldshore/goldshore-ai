@@ -6,6 +6,11 @@ name: Repair pnpm lockfile
 
 on:
   workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch to repair (defaults to main)
+        required: false
+        type: string
   push:
     branches: [main]
     paths:
@@ -16,6 +21,10 @@ on:
       - 'packages/**/package.json'
       - 'infra/**/package.json'
       - 'pnpm-lock.yaml'
+  workflow_run:
+    workflows: ['workspace-install']
+    types: [failed]
+    branches: [main]
 
 concurrency:
   group: repair-pnpm-lock-${{ github.ref }}
@@ -31,6 +40,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: ${{ inputs.branch || 'main' }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: pnpm/action-setup@v6

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Hono } from 'hono';
 import { secureHeaders } from 'hono/secure-headers';
 import {
@@ -6,6 +5,7 @@ import {
   type AccessTokenPayload,
 } from '@goldshore/auth';
 import { createCorsMiddleware, APPROVED_API_ORIGINS } from '@goldshore/shared';
+import { EmailLogSchema } from '@goldshore/schema';
 import users from './routes/users';
 import health from './routes/health';
 import ai from './routes/ai';
@@ -16,34 +16,20 @@ import admin from './routes/admin';
 import media from './routes/media';
 import pages from './routes/pages';
 import internal from './routes/internal';
-import { EmailInboxLogsSchema, EmailLogSchema, type EmailLog } from '@goldshore/schema';
 import domains from './routes/domains';
 import sites from './routes/sites';
 import forms from './routes/forms';
 import deployments from './routes/deployments';
 import gearswipe from './routes/gearswipe';
-import crawler from './routes/crawler';
-import integrations from './routes/integrations';
-import goldclaw from './routes/goldclaw';
-import agent from './routes/agent';
-import mail from './routes/mail';
-import control from './routes/control';
-import trading from './routes/trading';
-import core from './routes/core';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
-import { type Env } from './types';
 
 type Env = {
   KV: KVNamespace;
   CONTROL_LOGS?: KVNamespace;
-  RISK_RADAR_CACHE?: KVNamespace;
   PLATFORM_DB: D1Database;
-  RISK_RADAR_DB?: D1Database;
   TELEMETRY_DB?: D1Database;
   GS_ASSETS: R2Bucket;
-  RISK_RADAR_R2?: R2Bucket;
-  AUTH_SESSION?: DurableObjectNamespace;
   AI: Ai;
   OPENAI_API_KEY?: string;
   GEMINI_API_KEY?: string;
@@ -55,16 +41,26 @@ type Env = {
   CLOUDFLARE_TEAM_DOMAIN?: string;
   CONTROL_SYNC_TOKEN?: string;
   ALLOWED_ORIGINS?: string;
-  MAIL_FORWARD_TO?: string;
-  FORWARD_TO?: string;
-  MAIL_BLOCKED_SENDERS?: string;
-  MAIL_ALLOWED_RECIPIENTS?: string;
-  API_ORIGIN?: string;
   ENV?: string;
-  DEV_AUTH_BYPASS?: string;
   API_VERSION?: string;
   DEPLOY_SHA?: string;
   GIT_SHA?: string;
+  MAIL_BLOCKED_SENDERS?: string;
+  MAIL_ALLOWED_RECIPIENTS?: string;
+  MAIL_FORWARD_TO?: string;
+  FORWARD_TO?: string;
+};
+
+interface ForwardableEmailMessage {
+  from: string;
+  to: string;
+  headers: Headers;
+  setReject(reason: string): void;
+  forward(to: string): Promise<void>;
+}
+
+type ExecutionContext = {
+  waitUntil(promise: Promise<void>): void;
 };
 
 const app = new Hono<{
@@ -72,77 +68,12 @@ const app = new Hono<{
   Variables: { accessClaims: AccessTokenPayload | null };
 }>();
 
-const TRACE_HEADER = 'X-Correlation-Id';
-const HOST_ROUTE_PREFIXES = new Map([
-  ['agent.goldshore.ai', '/agent'],
-  ['mail.goldshore.ai', '/mail'],
-  ['ops.goldshore.ai', '/admin/control'],
-  ['trading.goldshore.ai', '/trading'],
-  ['dashboard.goldshore.ai', '/trading'],
-  ['dash.goldshore.ai', '/trading'],
-  ['gw.goldshore.ai', '/core'],
-]);
-
-const getCorrelationId = (request: Request): string =>
-  request.headers.get(TRACE_HEADER) ?? crypto.randomUUID();
-
-const withCorrelationId = (response: Response, correlationId: string): Response => {
-  const headers = new Headers(response.headers);
-  headers.set(TRACE_HEADER, correlationId);
-
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers,
-  });
-};
-
-const getHostRoutePrefix = (request: Request): string | undefined =>
-  HOST_ROUTE_PREFIXES.get(new URL(request.url).hostname);
-
-const getOptionalExecutionContext = (c: { executionCtx?: ExecutionContext }) => {
-  try {
-    return c.executionCtx;
-  } catch {
-    return undefined;
-  }
-};
-
-const normalizeEmail = (value: string) => value.trim().toLowerCase();
-const parseEmailList = (value?: string) =>
-  (value ?? '')
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean)
-    .map(normalizeEmail);
-
-const isEmailLike = (value: string) => {
-  const normalized = normalizeEmail(value);
-  const atIndex = normalized.indexOf('@');
-  const lastDotIndex = normalized.lastIndexOf('.');
-
-  return atIndex > 0 && lastDotIndex > atIndex + 1 && lastDotIndex < normalized.length - 1;
-};
-
-const readInboxLogs = async (kv: KVNamespace): Promise<EmailLog[]> => {
-  const rawLogs = await kv.get('EMAIL_INBOX_LOGS', 'text');
-  if (!rawLogs) return [];
-
-  try {
-    const parsedLogs = JSON.parse(rawLogs);
-    const parseResult = EmailInboxLogsSchema.safeParse(parsedLogs);
-    return parseResult.success ? parseResult.data : [];
-  } catch (error) {
-    console.error('Failed to parse EMAIL_INBOX_LOGS payload:', error);
-    return [];
-  }
-};
-
-
 const requiredBindings = ['PLATFORM_DB', 'GS_ASSETS', 'AI'] as const;
 const expectedD1Binding = 'PLATFORM_DB' as const;
 const requiredSecrets = [
   'JWT_SECRET',
+  'STRIPE_API_KEY',
+  'SENDGRID_API_KEY',
   'ACCESS_CLIENT_SECRET',
 ] as const;
 
@@ -170,24 +101,11 @@ const isAllowedOrigin = (origin: string, allowedOrigins?: string) => {
 
 const isPublicPath = (path: string, method: string) => {
   if (method === 'OPTIONS') return true;
-  if (
-    method === 'POST' &&
-    /^\/v1\/forms\/[^/]+\/submissions$/.test(path)
-  ) {
-    return true;
-  }
-  if (
-    method === 'GET' &&
-    /^\/v1\/forms\/newsletter\/(?:confirm|unsubscribe)$/.test(path)
-  ) {
-    return true;
-  }
   return (
     path === '/' ||
     path === '/version' ||
     path === '/health' ||
-    path.startsWith('/health/') ||
-    /^\/(?:agent|mail|admin\/control|trading|core)\/health$/.test(path)
+    path.startsWith('/health/')
   );
 };
 
@@ -256,22 +174,12 @@ app.use('*', async (c, next) => {
     }
   }
 
-  if (c.env.DEV_AUTH_BYPASS === '1') {
-    c.set('accessClaims', {
-      email: 'developer@goldshore.ai',
-      roles: ['admin'],
-    } as AccessTokenPayload);
-    await next();
-    return;
-  }
-
   if (!c.env.CLOUDFLARE_ACCESS_AUDIENCE) {
     return c.json(
       { error: 'Cloudflare Access audience is not configured for protected routes.' },
       503,
     );
   }
-
 
   const claims = await verifyAccessWithClaims(c.req.raw, c.env);
   if (!claims) {
@@ -350,47 +258,10 @@ app.route('/user', user);
 app.route('/system', system);
 app.route('/templates', templates);
 app.route('/admin', admin);
-app.route('/admin/crawler', crawler);
-app.route('/integrations', integrations);
-app.route('/goldclaw', goldclaw);
 app.route('/media', media);
 app.route('/pages', pages);
 app.route('/internal', internal);
-app.route('/agent', agent);
-app.route('/mail', mail);
-app.route('/admin/control', control);
-app.route('/trading', trading);
-app.route('/core', core);
 
-app.all('/api/*', async (c) => {
-  const correlationId = getCorrelationId(c.req.raw);
-  const url = new URL(c.req.url);
-  const proxiedPath = url.pathname.replace(/^\/api/, '') || '/';
-
-  try {
-    if (c.env.API_ORIGIN) {
-      const targetUrl = new URL(proxiedPath + url.search, c.env.API_ORIGIN);
-      const response = await fetch(targetUrl.toString(), c.req.raw);
-      return withCorrelationId(response, correlationId);
-    }
-
-    const internalUrl = new URL(c.req.url);
-    internalUrl.pathname = proxiedPath;
-    const response = await app.fetch(
-      new Request(internalUrl.toString(), c.req.raw),
-      c.env,
-      getOptionalExecutionContext(c),
-    );
-    return withCorrelationId(response, correlationId);
-  } catch (error) {
-    console.error(`[api] gateway proxy failed; trace=${correlationId}`, error);
-    return c.json({ error: 'Upstream request failed', traceId: correlationId }, 502, {
-      [TRACE_HEADER]: correlationId,
-    });
-  }
-});
-
-// V1 Routes
 const v1 = new Hono<{ Bindings: Env }>();
 v1.route('/users', users);
 v1.route('/domains', domains);
@@ -398,17 +269,80 @@ v1.route('/sites', sites);
 v1.route('/forms', forms);
 v1.route('/deployments', deployments);
 v1.route('/gearswipe', gearswipe);
-v1.route('/goldclaw', goldclaw);
-v1.route('/trading', trading);
-v1.route('/agent', agent);
-v1.route('/mail', mail);
-v1.route('/control', control);
-v1.route('/core', core);
 v1.get('/leads', (c) => c.json({ leads: [] }));
 
 app.route('/v1', v1);
 
-export { app, isAllowedOrigin, isPreviewOrigin, isPublicPath, parseAllowedOrigins };
+export { isAllowedOrigin, isPreviewOrigin, isPublicPath, parseAllowedOrigins };
+
+interface Message<T> {
+  id: string;
+  body: T;
+  ack(): void;
+  retry(): void;
+}
+
+interface MessageBatch<T> {
+  messages: Array<Message<T>>;
+}
+
+type DurableObjectState = {
+  id: { toString(): string };
+};
+
+const normalizeEmail = (email: string): string => {
+  return email.toLowerCase().trim();
+};
+
+const parseEmailList = (list?: string): string[] => {
+  if (!list) return [];
+  return list
+    .split(/[,;\s]+/)
+    .map((email) => normalizeEmail(email))
+    .filter((email) => email.length > 0);
+};
+
+const isEmailLike = (email: string): boolean => {
+  // Simple email validation: must contain @ and at least one dot after @
+  // Avoids ReDoS vulnerability from backtracking in complex quantifier patterns
+  const atIndex = email.indexOf('@');
+  if (atIndex <= 0 || atIndex === email.length - 1) return false;
+  const afterAt = email.substring(atIndex + 1);
+  return afterAt.includes('.') && !afterAt.endsWith('.');
+};
+
+const readInboxLogs = async (kv: KVNamespace) => {
+  try {
+    const stored = await kv.get('EMAIL_INBOX_LOGS');
+    if (!stored) return [];
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const processQueueMessage = async (message: Message<any>, env: Env): Promise<void> => {
+  const body = message.body;
+  const type = typeof body === 'object' && body && 'type' in body ? String((body as { type?: unknown }).type) : 'unknown';
+  if (type === 'contact' || type === 'checkout') {
+    console.info({ event: 'mail_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
+    message.ack();
+    return;
+  }
+  if (type === 'trading' || type === 'trading-signal' || type === 'order') {
+    console.info({ event: 'trading_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
+    message.ack();
+    return;
+  }
+  if (type === 'signal' || type === 'atc') {
+    console.info({ event: 'core_signal_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
+    message.ack();
+    return;
+  }
+  console.info({ event: 'agent_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
+  message.ack();
+};
 
 const processQueueMessage = async (message: Message<any>, env: Env): Promise<void> => {
   const body = message.body;
@@ -507,3 +441,5 @@ export class AuthSession {
     );
   }
 }
+export { isAllowedOrigin, isPreviewOrigin, parseAllowedOrigins };
+export default app;

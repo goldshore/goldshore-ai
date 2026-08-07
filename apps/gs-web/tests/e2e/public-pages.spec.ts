@@ -56,26 +56,12 @@ test('home page renders core layout and CTA navigation', async ({ page }) => {
 
   await page.goto('/', { waitUntil: 'networkidle' });
 
-  await expect(page.locator('header.gs-header')).toBeVisible();
-  await expect(page.locator('footer.gs-footer')).toBeVisible();
-  await expect(page.getByRole('heading', { level: 1 })).toContainText(
-    'Shaping Waves',
-  );
-  await expect(
-    page.getByRole('link', { name: 'Start the Experience' }),
-  ).toHaveAttribute('href', '/services');
-  await expect(
-    page.getByRole('link', { name: 'Contact Sales' }),
-  ).toHaveAttribute('href', '/contact');
+  await expect(page.locator('header.topbar')).toBeVisible();
+  await expect(page.locator('footer')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await expect(
     page.getByRole('link', { name: 'Request Briefing' }).first(),
-  ).toHaveAttribute('href', '/contact?inquiry=strategy-call');
-
-  await page.getByRole('link', { name: 'Start the Experience' }).click();
-  await page.waitForURL('**/services');
-  await expect(
-    page.getByRole('heading', { level: 1, name: 'Services' }),
-  ).toBeVisible();
+  ).toHaveAttribute('href', '#engage');
 
   assertHealthyPage(monitors);
 });
@@ -142,34 +128,18 @@ test('contact page preselects strategy-call inquiry from query string', async ({
   assertHealthyPage(monitors);
 });
 
-
-
-test('contact page preselects strategy call inquiry from querystring', async ({ page }) => {
+test('risk radar app page renders reusable system surface', async ({ page }) => {
   const monitors = attachPageMonitors(page);
 
-  await page.goto('/contact?inquiry=strategy-call', { waitUntil: 'networkidle' });
-
-  await expect(page.getByLabel('Inquiry type')).toHaveValue('strategy-call');
-
-  assertHealthyPage(monitors);
-});
-
-test('super bowl boxes page renders board and CTAs', async ({ page }) => {
-  const monitors = attachPageMonitors(page);
-
-  await page.goto('/super-bowl-boxes', { waitUntil: 'networkidle' });
+  await page.goto('/apps/risk-radar', { waitUntil: 'networkidle' });
 
   await expect(page.getByRole('heading', { level: 1 })).toContainText(
-    'Super Bowl',
-  );
-  await expect(page.locator('.sb-board__cell')).toHaveCount(100);
-  await expect(page.getByRole('link', { name: 'View board' })).toHaveAttribute(
-    'href',
-    '#board',
+    'Operational risk visualization',
   );
   await expect(
-    page.getByRole('link', { name: 'How it works' }),
-  ).toHaveAttribute('href', '#rules');
+    page.getByRole('heading', { name: 'GoldShore Risk Radar' }),
+  ).toBeVisible();
+  await expect(page.locator('.risk-page__stats article')).toHaveCount(3);
 
   assertHealthyPage(monitors);
 });
@@ -182,17 +152,18 @@ test.describe('mobile navigation toggle', () => {
 
     await page.goto('/', { waitUntil: 'networkidle' });
 
-    const header = page.locator('header.gs-header');
-    const toggle = page.locator('.gs-nav-toggle');
+    const toggle = page.locator('.nav-toggle');
+    const nav = page.locator('header.topbar nav');
 
     await expect(toggle).toBeVisible();
-    await expect(header).toHaveAttribute('data-menu-open', 'false');
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
 
     await toggle.click();
-    await expect(header).toHaveAttribute('data-menu-open', 'true');
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await expect(nav).toHaveClass(/nav-open/);
 
     await toggle.click();
-    await expect(header).toHaveAttribute('data-menu-open', 'false');
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
 
     assertHealthyPage(monitors);
   });

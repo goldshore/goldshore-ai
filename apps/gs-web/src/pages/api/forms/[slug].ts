@@ -7,8 +7,15 @@ import {
 } from '@goldshore/auth';
 import { parseJson } from '@goldshore/utils';
 
+/**
+ * Admin UI form configuration item endpoint.
+ * Requires `forms:read` for GET and `forms:write` for PUT/PATCH.
+ */
+
 export const prerender = false;
 
+const apiBase = (env: Env | undefined) =>
+  (env?.PUBLIC_API || 'https://api.goldshore.ai').replace(/\/$/, '');
 const normalizeRow = (row: Record<string, string>) => ({
   id: row.id,
   slug: row.slug,
@@ -69,16 +76,21 @@ const requirePermission = async (
   return { response: null };
 };
 
-const proxy = async (request: Request, env: Env | undefined, slug?: string) => {
-  if (!slug) return new Response('Form slug is required.', { status: 400 });
+export const GET: APIRoute = async ({ request, locals, params }) => {
+  const env = locals.runtime?.env as AccessEnv | undefined;
+  const slug = params.slug;
 
   if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
   }
 
-  const auth = await requirePermission(request, env as AccessEnv, 'forms:read');
+  const auth = await requirePermission(request, env, 'forms:read');
   if (auth.response) {
     return auth.response;
+  }
+
+  if (!slug) {
+    return new Response('Form slug is required.', { status: 400 });
   }
 
   const result = await env.PLATFORM_DB.prepare(
@@ -90,19 +102,26 @@ const proxy = async (request: Request, env: Env | undefined, slug?: string) => {
     .bind(slug)
     .all();
 
-  const row = result?.results?.[0] as Record<string, string> | undefined;
-  if (!row) {
-    return new Response('Form not found.', { status: 404 });
+const forwardedHeaders = (request: Request) => {
+  const headers = new Headers();
+  for (const name of ['accept', 'authorization', 'cookie', 'cf-connecting-ip', 'user-agent', 'content-type']) {
+    const value = request.headers.get(name);
+    if (value) headers.set(name, value);
   }
-
-  return Response.json({ config: normalizeRow(row) });
+  return headers;
 };
 
-export const PUT: APIRoute = async ({ request, locals, params }) => {
-  const env = locals.runtime?.env as Env | undefined;
-  const slug = params.slug;
-
+const proxy = async (request: Request, env: Env | undefined, slug?: string) => {
   if (!slug) return new Response('Form slug is required.', { status: 400 });
+
+  const target = new URL(`${apiBase(env)}/v1/forms/configs/${encodeURIComponent(slug)}`);
+  const response = await fetch(target, {
+    method: request.method,
+    headers: forwardedHeaders(request),
+    body: request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.text(),
+export const PUT: APIRoute = async ({ request, locals, params }) => {
+  const env = locals.runtime?.env as AccessEnv | undefined;
+  const slug = params.slug;
 
   if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
@@ -112,9 +131,13 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     return forbiddenResponse('Forbidden: CSRF check failed.');
   }
 
-  const auth = await requirePermission(request, env as AccessEnv, 'forms:write');
+  const auth = await requirePermission(request, env, 'forms:write');
   if (auth.response) {
     return auth.response;
+  }
+
+  if (!slug) {
+    return new Response('Form slug is required.', { status: 400 });
   }
 
   const payload = (await request.json()) as {
@@ -177,9 +200,18 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
       createdAt: row.created_at,
       updatedAt: now,
     },
-  });
 
+  const target = new URL(`${apiBase(env)}/v1/forms/configs/${encodeURIComponent(slug)}`);
+  const response = await fetch(target, {
+    method: request.method,
+    headers: forwardedHeaders(request),
+    body: request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.text(),
+  });
 };
 
-export const GET: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
 export const PATCH = PUT;
+
+export const __testing = {
+  isSameOriginRequest,
+  requirePermission,
+};

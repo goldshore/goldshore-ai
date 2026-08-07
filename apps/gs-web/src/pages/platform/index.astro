@@ -1,7 +1,7 @@
 ---
 import WebLayout from '../../layouts/WebLayout.astro';
 
-export const prerender = true;
+export const prerender = false;
 
 const modules = [
   {
@@ -86,7 +86,7 @@ const modules = [
 
     .module-grid {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 1rem;
       margin-top: 2rem;
     }
