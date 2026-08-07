@@ -26,6 +26,9 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      - name: Lint
+        run: pnpm lint
+
       - name: Enforce banproof production bindings
         if: ${{ vars.ENABLE_BANPROOF_BINDINGS_CHECK == 'true' }}
         run: pnpm check:banproof-bindings
