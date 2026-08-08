@@ -17,6 +17,8 @@ GOOGLE_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/goldclaw/oauth/google/call
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
 PUBLIC_SITE_URL = "https://goldshore.ai"
 MAILCHANNELS_SENDER_NAME = "GoldShore"
+GITHUB_CLIENT_ID = "YOUR_GITHUB_CLIENT_ID_PROD"
+TURNSTILE_SITE_KEY = "YOUR_TURNSTILE_SITE_KEY_PROD"
 
 [[kv_namespaces]]
 binding = "KV"
@@ -131,6 +133,9 @@ CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 # preserve the remote secret instead of replacing it with a placeholder.
 GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
 GOOGLE_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/goldclaw/oauth/google/callback"
+GITHUB_CLIENT_ID = "YOUR_GITHUB_CLIENT_ID_PROD"
+GITHUB_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/auth/github/callback"
+TURNSTILE_SITE_KEY = "YOUR_TURNSTILE_SITE_KEY_PROD"
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
 PUBLIC_SITE_URL = "https://goldshore.ai"
 MAILCHANNELS_SENDER_NAME = "GoldShore"
@@ -142,7 +147,27 @@ MAILCHANNELS_SENDER_NAME = "GoldShore"
 # submission to D1; it just reports mail as not attempted
 # (reason: "missing_mail_configuration") instead of failing the request.
 
-# ── KV ──────────────────────────────────────────────────────────────────────────────────────
+# GITHUB_API_TOKEN is a secret for Phase 2 Admin Deployment Assistant.
+#   wrangler secret put GITHUB_API_TOKEN --env prod --name gs-api
+#   Value: <personal access token with public_repo scope>
+# Required for searching GitHub repositories and validating wrangler.toml files.
+
+# ANTHROPIC_API_KEY is a secret for Phase 2 Admin Deployment Assistant Claude ranking.
+#   wrangler secret put ANTHROPIC_API_KEY --env prod --name gs-api
+#   Value: <Anthropic API key>
+# Required for AI-powered framework ranking and recommendations.
+
+# GITHUB_CLIENT_SECRET is a secret for GitHub OAuth authentication.
+#   wrangler secret put GITHUB_CLIENT_SECRET --env prod --name gs-api
+#   Value: <GitHub OAuth app client secret from https://github.com/settings/developers>
+# Required for /auth/github/callback and session creation.
+
+# TURNSTILE_SECRET_KEY is a secret for Cloudflare Turnstile bot protection validation.
+#   wrangler secret put TURNSTILE_SECRET_KEY --env prod --name gs-api
+#   Value: <Turnstile secret key from https://dash.cloudflare.com/>
+# Required for validating Turnstile responses on form submissions.
+
+# ── KV ───────────────────────────────────────────────────────────────────────
 [[env.prod.kv_namespaces]]
 binding = "KV"
 id = "e0b8b807191346c3b0afc25fe716d2cd"
@@ -166,7 +191,7 @@ id = "0b56873b6d7b451f9279481920a15447"
 binding = "TRADING_KV"
 id = "9b3314c3b7af40a284a8c9b6e2990709"
 
-# ── R2 ────────────────────────────────────────────────────────────────────────────
+# ── R2 ───────────────────────────────────────────────────────────────────────
 [[env.prod.r2_buckets]]
 binding = "GS_ASSETS"
 bucket_name = "gs-assets"
@@ -175,14 +200,17 @@ bucket_name = "gs-assets"
 binding = "TELEMETRY"
 bucket_name = "gs-telemetry-storage"
 
+[env.prod.ai]
+binding = "AI"
+
 # RISK_RADAR_R2: same situation as RISK_RADAR_CACHE above — pointed at the
 # live "risk-radar-raw" bucket (risk-radar repo) rather than the undeployed
 # "gs-risk-radar-raw" name from BINDINGS_MAP.md.
 [[env.prod.r2_buckets]]
 binding = "RISK_RADAR_R2"
-bucket_name = "risk-radar-raw"
+bucket_name = "gs-risk-radar-raw"
 
-# ── D1 ────────────────────────────────────────────────────────────────────────────
+# ── D1 ───────────────────────────────────────────────────────────────────────
 [[env.prod.d1_databases]]
 binding = "PLATFORM_DB"
 database_name = "gs_platform_db"
@@ -215,24 +243,12 @@ binding = "JOBS_DB"
 database_name = "gs_jobs_db"
 database_id = "750c469c-788d-49e8-9254-77231cffd70f"
 
+# ── Durable Objects ──────────────────────────────────────────────────────────
 # PAPER_DB: see top-level default-env comment above.
 [[env.prod.d1_databases]]
 binding = "PAPER_DB"
 database_name = "goldshore-paper-trading"
 database_id = "af94f483-b98b-41c5-aa23-3fbed2764b52"
-
-# ── AI ──────────────────────────────────────────────────────────────────────────────────────
-[env.prod.ai]
-binding = "AI"
-
-# ── Durable Objects ──────────────────────────────────────────────────────────────────────
-[[env.prod.durable_objects.bindings]]
-name = "AUTH_SESSION"
-class_name = "AuthSession"
-
-[[env.prod.migrations]]
-tag = "v1-auth-session"
-new_sqlite_classes = ["AuthSession"]
 
 # ── Cron Triggers (Scheduled Jobs) ──────────────────────────────────────────────────────────────
 # Token rotation job: Runs daily at 2 AM UTC to refresh expiring OAuth tokens
@@ -266,13 +282,22 @@ queue = "gs-mail-dead-letter"
 # Keep gs-api as a producer only so deploys do not fail while attempting to
 # replace existing queue consumers.
 
-# ── Workflows ──────────────────────────────────────────────────────────────────────────
+[[env.prod.queues.consumers]]
+queue = "gs-events"
+
+# ── Workflows ────────────────────────────────────────────────────────────────
 [[env.prod.workflows]]
 binding = "GS_SIGNALS"
 name = "signals-evaluator"
 class_name = "SignalsEvaluator"
 script_name = "gs-signals-prod"
 
+# ── Secrets Store ────────────────────────────────────────────────────────────
+# Secrets Store bindings are per secret, not a store object. The runtime reads
+# env.INTEGRATION_MASTER_KEY directly.
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Preview environment
 # INTEGRATION_MASTER_KEY remains a normal Worker secret until a real Cloudflare
 # Secrets Store and secret are provisioned. Do not add a secrets_store_secrets
 # binding that points at a nonexistent store; that blocks every deployment.
@@ -284,23 +309,36 @@ script_name = "gs-signals-prod"
 [env.preview]
 workers_dev = true
 routes = [
-  { pattern = "api-preview.goldshore.ai/*", zone_name = "goldshore.ai" }
+  { pattern = "api-preview.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "mail.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "ops.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "trading.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "dashboard.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "dash.goldshore.ai/*", zone_name = "goldshore.ai" }
 ]
 
 [env.preview.vars]
 ENV = "preview"
 GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
+GITHUB_CLIENT_ID = "YOUR_GITHUB_CLIENT_ID_PREVIEW"
+GITHUB_OAUTH_REDIRECT_URI = "https://api-preview.goldshore.ai/auth/github/callback"
+TURNSTILE_SITE_KEY = "YOUR_TURNSTILE_SITE_KEY_PREVIEW"
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
 PUBLIC_SITE_URL = "https://preview.goldshore.ai"
 MAILCHANNELS_SENDER_NAME = "GoldShore"
 
+# ── Secrets ──────────────────────────────────────────────────────────────────
 # MAILCHANNELS_SENDER_EMAIL secret — see env.prod above for the command;
+# use --env preview --name gs-api instead.
+
+# GITHUB_API_TOKEN and ANTHROPIC_API_KEY secrets — see env.prod above;
 # use --env preview --name gs-api instead.
 
 # ── KV ────────────────────────────────────────────────────────────────────────────
 [[env.preview.kv_namespaces]]
 binding = "KV"
-id = "20d2c096b673433597d084a562993021"
+id = "d4d20cee39094b999dea3f7e5f4c533a"
 
 [[env.preview.kv_namespaces]]
 binding = "CONTROL_LOGS"
@@ -327,13 +365,11 @@ bucket_name = "gs-assets-preview"
 binding = "TELEMETRY"
 bucket_name = "gs-telemetry-storage"
 
-# RISK_RADAR_R2: same live "risk-radar-raw" bucket as env.prod — see the note
-# there. No dedicated preview bucket exists for this yet.
 [[env.preview.r2_buckets]]
 binding = "RISK_RADAR_R2"
-bucket_name = "risk-radar-raw"
+bucket_name = "gs-risk-radar-raw-preview"
 
-# ── D1 ────────────────────────────────────────────────────────────────────────────
+# ── D1 ───────────────────────────────────────────────────────────────────────
 [[env.preview.d1_databases]]
 binding = "PLATFORM_DB"
 database_name = "gs_platform_db"
@@ -361,27 +397,20 @@ binding = "JOBS_DB"
 database_name = "gs_jobs_db"
 database_id = "750c469c-788d-49e8-9254-77231cffd70f"
 
-# PAPER_DB: no dedicated preview copy of goldshore-paper-trading exists yet
-# (same situation as RISK_RADAR_DB/RISK_RADAR_CACHE/RISK_RADAR_R2 above), so
-# preview reuses the live prod database. Acceptable for now since paper
-# trading is not a customer-money-moving system; revisit if preview writes
-# should stop touching production paper-trading data.
+# PAPER_DB: preview shares the live paper-trading ledger until a dedicated
+# preview copy is provisioned. The trading routes already guard against a
+# missing binding, but the wrangler contract test expects this preview binding
+# to exist so version uploads keep matching the runtime contract.
 [[env.preview.d1_databases]]
 binding = "PAPER_DB"
 database_name = "goldshore-paper-trading"
 database_id = "af94f483-b98b-41c5-aa23-3fbed2764b52"
 
-# ── AI ──────────────────────────────────────────────────────────────────────────────────────
+# ── AI ───────────────────────────────────────────────────────────────────────
 [env.preview.ai]
 binding = "AI"
 
-# ── Durable Objects ──────────────────────────────────────────────────────────────────────────────
-[[env.preview.durable_objects.bindings]]
-name = "AUTH_SESSION"
-class_name = "AuthSession"
-script_name = "gs-api-prod"
-
-# ── Queues ───────────────────────────────────────────────────────────────────────────────────
+# ── Queues ───────────────────────────────────────────────────────────────────
 [[env.preview.queues.producers]]
 binding = "JOBS_QUEUE"
 queue = "goldshore-jobs"
@@ -398,10 +427,7 @@ queue = "gs-mail-jobs"
 binding = "DEAD_LETTER_QUEUE"
 queue = "gs-mail-dead-letter"
 
-# ── Secrets ──────────────────────────────────────────────────────────────────
-# INTEGRATION_MASTER_KEY is provisioned as a normal Worker secret for this
-# environment. Do not re-add a Secrets Store binding until the referenced store
-# and secret exist in the Cloudflare account.
+# ── Secrets Store ────────────────────────────────────────────────────────────
+# Secrets Store bindings are per secret, not a store object. The runtime reads
+# env.INTEGRATION_MASTER_KEY directly.
 
-# AUTH_SESSION is owned and migrated by gs-api-prod. Preview binds to that
-# existing namespace above and intentionally declares no migration of its own.

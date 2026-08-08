@@ -6,11 +6,6 @@
 > Last certified: 2026-04-29 | Certified by: Rob Marston (@marzton)
 > Repo alignment pass: 2026-06-30 | `goldshore.org` apex ownership moved to `gs-web-prod`; `www.goldshore.org` ownership moved to `gs-www-redirect-prod`.
 > Redirect cleanup pass: 2026-07-11 | `gs-www-redirect-prod` is the sole canonical www redirect Worker for `www.goldshore.ai/*` and `www.goldshore.org/*`; the stale alternate production deployment is no longer part of the canonical set.
-<<<<<<< ours
-> Live audit reconciliation pass: 2026-07-15 | Recorded observed `gs-api-prod`, `gs-api-staging`, and legacy `gs-agent-preview` workers so live-state audit reflects Cloudflare reality without expanding the in-repo app set.
-> Goldshore API rebuild note: 2026-07-21 | Bare `gs-api` is intentionally retained as the `marzton/goldshore-api` rebuild Worker. Canonical live API routes remain on `gs-api-prod` from this monorepo.
-=======
->>>>>>> theirs
 
 ---
 
@@ -24,8 +19,6 @@
 
 ---
 
-<<<<<<< ours
-<<<<<<< ours
 ## Current live Cloudflare worker inventory (observed — not all canonical)
 
 This section records the **current live Cloudflare inventory** so audit tooling and operators can reconcile what exists in the Cloudflare account. It is intentionally broader than the target in-repo architecture. A worker appearing here does **not** make it canonical for this repository.
@@ -74,7 +67,6 @@ This section records the **current live Cloudflare inventory** so audit tooling 
 **Inventory rule:** Workers not listed above must not exist without updating this live inventory.
 
 **Architecture rule:** Only `apps/gs-web` and `apps/gs-api` are canonical deploy targets for this repository. Legacy workers in this table are inventory records and migration work items, not approved in-repo architecture.
-=======
 ## Workers (canonical set — 33 active)
 
 | Worker name | Purpose | Domains served | Fail policy |
@@ -114,7 +106,6 @@ This section records the **current live Cloudflare inventory** so audit tooling 
 | `goldclaw` | Goldclaw auth/monetization integration worker; handles auth sessions and monetization flows | — | Fail closed |
 
 **Workers NOT on this list must not exist. Any live worker absent from this table will fail the CI audit. See Gate 1 below.**
->>>>>>> theirs
 
 ---
 
@@ -138,7 +129,6 @@ The following live workers are specifically **non-canonical** for this repositor
 
 ---
 
-=======
 ## Current live Cloudflare worker inventory (observed — not all canonical)
 
 This section records the **current live Cloudflare inventory** so audit tooling and operators can reconcile what exists in the Cloudflare account. It is intentionally broader than the target in-repo architecture. A worker appearing here does **not** make it canonical for this repository.
@@ -206,7 +196,6 @@ The following live workers are specifically **non-canonical** for this repositor
 
 ---
 
->>>>>>> theirs
 ## Target in-repo deploy architecture
 
 This repository's target architecture is a strict two-app monorepo:
@@ -346,10 +335,6 @@ Two workers in your account have unknown origin. You must decide to keep or dele
 | 1a | `partners-in-pools` — Matteo's pool business client site. Recorded in live inventory. | — | ✅ DONE |
 | 1b | Same for `goldshore-ai` worker — determine if it is a stub/duplicate or actively used. Delete or document. | [CF Dashboard](https://dash.cloudflare.com/f77de112d2019e5456a3198a8bb50bd2/workers-and-pages) | ⬜ TODO |
 | 1c | Same for `gs-todo` — keep or delete. | [CF Dashboard](https://dash.cloudflare.com/f77de112d2019e5456a3198a8bb50bd2/workers-and-pages) | ⬜ TODO |
-<<<<<<< ours
-<<<<<<< ours
-=======
->>>>>>> theirs
 | 1d | `gs-mcp` — MCP server for AI agent tooling. Recorded in live inventory. | — | ✅ DONE |
 | 1e | `gs-web-prod` — web application worker variant. Recorded in live inventory. | — | ✅ DONE |
 | 1f | `gs-agent-prod` — prod-env deployment of gs-agent. Recorded in live inventory. | — | ✅ DONE |
@@ -361,8 +346,6 @@ Two workers in your account have unknown origin. You must decide to keep or dele
 | 1l | `gs-web-preview` — preview-env deployment of gs-web (`wrangler --env preview`). Recorded in live inventory; serves preview.goldshore.ai. | — | ✅ DONE |
 | 1m | `goldclaw` — goldclaw auth/monetization integration worker. Recorded in live inventory. | — | ✅ DONE |
 | 1n | `gs-www-redirect-production` — stale alternate production deployment of gs-www-redirect created by `wrangler --env production` without a `name` override; duplicate of `gs-www-redirect-prod`. Recorded in live inventory. Delete from CF dashboard once `gs-www-redirect-prod` is confirmed handling all www traffic. | [CF Dashboard](https://dash.cloudflare.com/f77de112d2019e5456a3198a8bb50bd2/workers-and-pages) | ⬜ TODO (delete from CF) |
-<<<<<<< ours
-=======
 | 1d | `gs-mcp` — MCP server for AI agent tooling. Added to canonical table. | — | ✅ DONE |
 | 1e | `gs-web-prod` — web application worker variant. Added to canonical table. | — | ✅ DONE |
 | 1f | `gs-agent-prod` — prod-env deployment of gs-agent. Added to canonical table. | — | ✅ DONE |
@@ -374,28 +357,17 @@ Two workers in your account have unknown origin. You must decide to keep or dele
 | 1l | `gs-web-preview` — preview-env deployment of gs-web (`wrangler --env preview`). Added to canonical table; serves preview.goldshore.ai. | — | ✅ DONE |
 | 1m | `goldclaw` — goldclaw auth/monetization integration worker. Added to canonical table. | — | ✅ DONE |
 | 1n | Remove/disable any stale alternate production deployment after confirming `gs-www-redirect-prod` owns `www.goldshore.ai/*` and `www.goldshore.org/*`. Keep only `gs-www-redirect-prod` in live Cloudflare routing and dashboard references. | CF Dashboard | ⚠️ External confirmation required |
->>>>>>> theirs
-=======
->>>>>>> theirs
 
 ---
 
 ### GATE 2 — Align `.org` apex and `www` ownership (BLOCKS: goldshore.org routing)
 
-<<<<<<< ours
-`apps/gs-web/wrangler.toml` owns `goldshore.org/*` through `gs-web-prod`. `apps/gs-www-redirect/wrangler.toml` owns `www.goldshore.org/*` and `www.goldshore.ai/*` through `gs-www-redirect-prod` (note: this app's environment is named `production`, not `prod` — `wrangler deploy --env production` is correct for it specifically, unlike `gs-api`/`gs-web`). The old `goldshore-org` redirect path is superseded unless live Cloudflare still shows an explicit dashboard route that needs removal.
-=======
 `apps/gs-web` is the canonical owner for the Goldshore public web app. `gs-www-redirect-prod` is a temporary live redirect Worker and is not canonical in-repo architecture; migrate Goldshore redirect behavior into canonical app routing, then delete legacy redirect workers after traffic verification. The old `goldshore-org` redirect path is superseded unless live Cloudflare still shows an explicit dashboard route that needs removal.
->>>>>>> theirs
 
 | # | Action | Where | Status |
 |---|--------|--------|--------|
 | 2a | Deploy `gs-web-prod` with `wrangler deploy --env prod` so `goldshore.org/*` is attached to the main web app. | GitHub Actions / CF Dashboard | ⬜ TODO |
-<<<<<<< ours
-| 2b | Deploy `gs-www-redirect-prod` with `wrangler deploy --env production` so `www.goldshore.org/*` and `www.goldshore.ai/*` stay attached to the redirect Worker until canonical redirect routing is verified in `apps/gs-web` or `apps/gs-api`. | GitHub Actions / CF Dashboard | ⬜ TODO |
-=======
 | 2b | Keep `gs-www-redirect-prod` serving `www.goldshore.org/*` and `www.goldshore.ai/*` only until canonical redirect routing is verified in `apps/gs-web` or `apps/gs-api`. | GitHub Actions / CF Dashboard | ⬜ TODO |
->>>>>>> theirs
 | 2c | Verify: `curl -I https://goldshore.org` → public web app response, not a legacy redirect worker. | Browser or curl | ⬜ TODO |
 | 2d | Verify: `curl -I https://www.goldshore.org` → `308` to `https://goldshore.ai`. | Browser or curl | ⬜ TODO |
 | 2e | If Cloudflare still lists a `goldshore-org` route for `goldshore.org` or `www.goldshore.org`, remove it after the two Workers above are confirmed. | CF Dashboard | ⬜ TODO |
@@ -405,7 +377,6 @@ Two workers in your account have unknown origin. You must decide to keep or dele
 ### GATE 3 — Migrate gateway and trading subdomain routes (BLOCKS: dashboard, status subdomains)
 
 `dashboard.goldshore.ai` and `dash.goldshore.ai` are protected aliases for the trading dashboard and should be covered by the same Cloudflare Access application as `trading.goldshore.ai`. `gs-gateway`, `gs-agent`, and `gs-trading` are legacy live workers; migrate gateway/agent/trading backend behavior into `apps/gs-api` and dashboard UI into `apps/gs-web` before deleting the legacy workers. `status.goldshore.ai` is reserved for the `gs-status` Pages project (see MODULE_B2_RUNTIME_WIRING.md) and is not a reason to keep `gs-gateway` canonical.
-<<<<<<< ours
 
 | # | Action | Where | Status |
 |---|--------|--------|--------|
@@ -414,8 +385,7 @@ Two workers in your account have unknown origin. You must decide to keep or dele
 | 3c | Verify: `curl -I https://www.goldshore.ai` → `308` to `https://goldshore.ai` (handled by gs-www-redirect) | Browser or curl | ⬜ TODO |
 | 3d | Verify: `curl -I https://dashboard.goldshore.ai` reaches the `GoldShore-Trading-ZT` Access wall, or returns 200 when valid CF Access service-token headers are supplied, with target routing planned for `apps/gs-web` + `apps/gs-api` | Browser or curl | ⬜ TODO |
 Merge PR #5117. `dashboard.goldshore.ai` and `dash.goldshore.ai` are protected aliases for the trading dashboard and should be covered by the same Cloudflare Access application as `trading.goldshore.ai`. `www.goldshore.ai` is owned by `gs-www-redirect` Worker (308 redirect there). `agent.goldshore.ai/*` is owned by `gs-gateway` and forwards to `gs-agent` through the AGENT service binding; do not attach a direct custom domain to `gs-agent`. `status.goldshore.ai` is reserved for the `gs-status` Pages project (see MODULE_B2_RUNTIME_WIRING.md) — not claimed by gs-gateway.
-=======
->>>>>>> theirs
+
 
 | # | Action | Where | Status |
 |---|--------|--------|--------|
@@ -441,7 +411,6 @@ Configure the identity providers required by the canonical Cloudflare Access IdP
 ### GATE 5 — CF Access applications (BLOCKS: protected subdomains accepting logins)
 
 Create one Access application per protected subdomain group. All require Gate 4 to be complete. Keep Access audience tags aligned with the Worker that validates them during migration: `api.goldshore.ai` is already validated by canonical `gs-api`, while `gw.goldshore.ai`, `agent.goldshore.ai`, `trading.goldshore.ai`, `dashboard.goldshore.ai`, `dash.goldshore.ai`, `ops.goldshore.ai`, and admin hosts may still be protected in front of legacy workers until their traffic is cut over to `apps/gs-api` / `apps/gs-web`. Public probes (`/health`, `/status`, `/version`) must be excluded via bypass policies so monitoring scripts do not hit the login wall. Configure allowed login methods or OR policies from the canonical Cloudflare Access IdP matrix in `docs/domains-and-auth.md`; do not encode alternative IdPs as multiple conjunctive Require selectors.
-<<<<<<< ours
 
 | # | Subdomain(s) | Application name | Policy | Where | Status |
 |---|---|---|---|---|---|
@@ -457,7 +426,6 @@ Create one Access application per protected subdomain group. All require Gate 4 
 **Important:** `api.goldshore.ai` is owned directly by the `gs-api` Worker route, while `agent.goldshore.ai` routes through the `gs-gateway` Worker. Configure Cloudflare Access audiences per owning Worker, and exclude public probes (`/health`, `/status`) via bypass policy so monitoring scripts do not hit the login wall.
 **Important:** `api.goldshore.ai` and `agent.goldshore.ai` both route to the same `gs-gateway` Worker, which holds a single `CLOUDFLARE_ACCESS_AUDIENCE` binding. They **must share one Access application** so the same AUD tag validates tokens from either subdomain. Public probes (`/health`, `/status`) must be excluded via a bypass policy so monitoring scripts do not hit the login wall. Set all policy **Require** rules from the canonical Cloudflare Access IdP matrix in `docs/domains-and-auth.md`.
 
-=======
 
 | # | Subdomain(s) | Application name | Policy | Where | Status |
 |---|---|---|---|---|---|
@@ -468,7 +436,7 @@ Create one Access application per protected subdomain group. All require Gate 4 
 | 5e | `api.goldshore.ai` | Goldshore API | Preserve the API Access app and AUD tag expected by canonical `gs-api` (`d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b`). Email = marstonr6@gmail.com (allow). Add **bypass policy** for paths `/`, `/health`, `/status`, and `/version` (everyone). | CF Access Apps | ⬜ TODO |
 | 5f | Copy the **Audience (AUD) tag** for each app and store it as GitHub Actions secrets (`CLOUDFLARE_ACCESS_AUDIENCE_ADMIN`, `CLOUDFLARE_ACCESS_AUDIENCE_TRADING`, `CLOUDFLARE_ACCESS_AUDIENCE_GATEWAY`, `CLOUDFLARE_ACCESS_AUDIENCE_API`) and as wrangler secrets only where the target canonical app still validates the token. | CF Access App → Overview tab | ⬜ TODO |
 
->>>>>>> theirs
+
 ---
 
 ### GATE 6 — Admin custom domain migration for .org (BLOCKS: admin.goldshore.org)

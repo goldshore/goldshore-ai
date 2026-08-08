@@ -6,7 +6,10 @@ import {
   sendMail,
   parseNotificationRecipients,
   buildLeadAutoResponder,
+  buildNewsletterConfirmation,
+  buildNewsletterWelcome,
 } from '../lib/mail';
+import { validateFormTurnstile } from '../lib/turnstile';
 
 const forms = new Hono<{ Bindings: Env }>();
 const allowedStatuses = new Set(['new', 'read', 'archived']);
@@ -140,6 +143,20 @@ forms.post('/:formId/submissions', async (c) => {
   const name = typeof body.name === 'string' ? body.name : undefined;
   const email = typeof body.email === 'string' ? body.email : undefined;
   const message = typeof body.message === 'string' ? body.message : undefined;
+
+  // Validate Turnstile token if configured
+  const turnstileValidation = await validateFormTurnstile(
+    body instanceof FormData ? body : new FormData(new URLSearchParams(body as Record<string, string>)),
+    c.env.TURNSTILE_SECRET_KEY,
+    c.req.raw,
+  );
+
+  if (!turnstileValidation.valid) {
+    return c.json(
+      { ok: false, error: { message: turnstileValidation.error || 'Turnstile validation failed' } },
+      400,
+    );
+  }
 
   await c.env.PLATFORM_DB.prepare(`INSERT INTO lead_submissions (id, form_type, name, email, company, role, website, team_size, industry, timeline, budget, goals, message, status, received_at, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, ?, ?)`)
     .bind(id, formId, body.name ?? null, body.email ?? null, body.company ?? null, body.role ?? null, body.website ?? null, body.teamSize ?? null, body.industry ?? null, body.timeline ?? null, body.budget ?? null, body.goals ?? null, body.message ?? null, now, c.req.header('CF-Connecting-IP') ?? null, c.req.header('User-Agent') ?? null).run();
