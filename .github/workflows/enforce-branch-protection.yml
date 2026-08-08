@@ -11,19 +11,27 @@ on:
 
 permissions:
   contents: read
-  administration: write
 
 jobs:
   protect-main:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
+      - name: Skip when GH_PAT is missing
+        if: ${{ secrets.GH_PAT == '' }}
+        run: echo "::warning::GH_PAT is missing; skipping branch protection reconciliation."
       - name: Apply branch protection
+        if: ${{ secrets.GH_PAT != '' }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           PROTECTED_BRANCH: main
-        run: node scripts/configure-branch-protection.mjs
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::warning::GH_PAT is not configured; skipping branch protection enforcement."
+            exit 0
+          fi
+          node scripts/configure-branch-protection.mjs

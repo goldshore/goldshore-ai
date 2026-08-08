@@ -1,0 +1,101 @@
+{
+  "folders": [
+    { "name": "goldshore-ai (GitHub Desktop)", "path": "E:/GitHub/marzton/goldshore-ai" },
+    { "name": "gs-web", "path": "E:/GitHub/marzton/goldshore-ai/apps/gs-web" },
+    { "name": "gs-api", "path": "E:/GitHub/marzton/goldshore-ai/apps/gs-api" },
+    { "name": "goldclaw", "path": "E:/GitHub/marzton/goldclaw" },
+    { "name": "goldshore-ops", "path": "E:/GitHub/marzton/goldshore-ops" },
+    { "name": "packages/ui", "path": "E:/GitHub/marzton/goldshore-ai/packages/ui" },
+    { "name": "packages/auth", "path": "E:/GitHub/marzton/goldshore-ai/packages/auth" },
+    { "name": "packages/config", "path": "E:/GitHub/marzton/goldshore-ai/packages/config" }
+  ],
+  "settings": {
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    },
+    "tailwindCSS.experimental.classRegex": [
+      ["clsx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"],
+      ["cn\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
+    ],
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/.wrangler": true,
+      "**/dist": true,
+      "**/.astro": true
+    },
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/dist": true,
+      "**/.wrangler": true
+    },
+    "[astro]": {
+      "editor.defaultFormatter": "astro-build.astro-vscode"
+    },
+    "cloudflare-workers-bindings.wranglerConfigPath": "apps/gs-web/wrangler.toml",
+    "terminal.integrated.defaultProfile.linux": "bash",
+    "git.autofetch": true
+  },
+  "extensions": {
+    "recommendations": [
+      "astro-build.astro-vscode",
+      "cloudflare.cloudflare-workers-bindings-vscode",
+      "esbenp.prettier-vscode",
+      "bradlc.vscode-tailwindcss",
+      "dbaeumer.vscode-eslint",
+      "eamodio.gitlens",
+      "ms-vscode.vscode-typescript-next",
+      "WallabyJs.console-ninja"
+    ]
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "dev: gs-web",
+        "type": "shell",
+        "command": "pnpm --dir apps/gs-web astro dev --host 127.0.0.1 --port 4321",
+        "group": "build",
+        "presentation": { "panel": "dedicated" }
+      },
+      {
+        "label": "dev: gs-api",
+        "type": "shell",
+        "command": "pnpm --filter @goldshore/gs-api dev -- --port 8787",
+        "group": "build",
+        "presentation": { "panel": "dedicated" }
+      },
+      {
+        "label": "tunnel: goldshore-lacie",
+        "type": "shell",
+        "command": "cloudflared tunnel --config C:\\Users\\marst\\.cloudflared\\goldshore-lacie-local.yml run",
+        "group": "build",
+        "presentation": { "panel": "dedicated" }
+      },
+      {
+        "label": "dev: goldshore-lacie",
+        "dependsOrder": "parallel",
+        "dependsOn": [
+          "dev: gs-web",
+          "dev: gs-api",
+          "tunnel: goldshore-lacie"
+        ],
+        "problemMatcher": []
+      },
+      {
+        "label": "build: all",
+        "type": "shell",
+        "command": "pnpm turbo run build",
+        "group": { "kind": "build", "isDefault": true }
+      },
+      {
+        "label": "typecheck: all",
+        "type": "shell",
+        "command": "pnpm turbo run typecheck",
+        "group": "test"
+      }
+    ]
+  }
+}
