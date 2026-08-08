@@ -1,10 +1,12 @@
-import { createRemoteJWKSet, jwtVerify, type JWTPayload } from "jose";
+import { createRemoteJWKSet, jwtVerify, type JWTPayload, SignJWT, importSPKI } from "jose";
 
 export interface Env {
     // Sentinel: Added support for Audience verification to prevent auth bypass
     CLOUDFLARE_ACCESS_AUDIENCE?: string;
     // Sentinel: Added support for dynamic team domain
     CLOUDFLARE_TEAM_DOMAIN?: string;
+    // JWT secret for cookie-based authentication
+    JWT_SECRET?: string;
 }
 
 // Sentinel: Default to existing hardcoded values if not provided in Env
@@ -80,4 +82,25 @@ export async function verifyAccessWithClaims(req: Request, env: Env) {
 export async function verifyAccess(req: Request, env: Env) {
   const claims = await verifyAccessWithClaims(req, env);
   return claims !== null;
+}
+
+export async function verifyJWTCookie(req: Request, env: Env, cookieName = 'auth'): Promise<AccessTokenPayload | null> {
+  if (!env?.JWT_SECRET) return null;
+
+  const cookies = req.headers.get('cookie');
+  if (!cookies) return null;
+
+  const cookieMatch = cookies.split(';').find(c => c.trim().startsWith(`${cookieName}=`));
+  if (!cookieMatch) return null;
+
+  const token = cookieMatch.split('=')[1];
+  if (!token) return null;
+
+  try {
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(env.JWT_SECRET));
+    return payload as AccessTokenPayload;
+  } catch (e) {
+    console.error("JWT cookie verification failed", e);
+    return null;
+  }
 }
