@@ -18,7 +18,7 @@ jobs:
 
       - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@v7.0.0
         with:
           node-version: 22
           cache: "pnpm"
@@ -61,7 +61,7 @@ jobs:
             RANGE="${{ github.event.before }}...${{ github.sha }}"
           fi
 
-          if git diff --name-only "$RANGE" | grep -Eq '^(apps/(gs-web|gs-admin)/|packages/|package.json|pnpm-lock.yaml|pnpm-workspace.yaml|turbo.json)$'; then
+          if git diff --name-only "$RANGE" | grep -Eq '^(apps/gs-web/|packages/|package.json|pnpm-lock.yaml|pnpm-workspace.yaml|turbo.json)$'; then
             echo "release_impact=true" >> "$GITHUB_OUTPUT"
           else
             echo "release_impact=false" >> "$GITHUB_OUTPUT"
