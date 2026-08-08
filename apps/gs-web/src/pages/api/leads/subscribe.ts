@@ -1,72 +1,114 @@
 import type { APIRoute } from 'astro';
 
-export const prerender = false;
+interface SubscriptionRequest {
+  email?: string;
+}
 
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+interface Lead {
+  id: string;
+  email: string;
+  subscribed_at: string;
+  source: string;
+  status: 'active' | 'pending' | 'unsubscribed';
+}
 
-const apiBase = (env: Env | undefined) =>
-  (env?.PUBLIC_API || 'https://api.goldshore.ai').replace(/\/$/, '');
-
-const jsonError = (status: number, message: string) => Response.json({ message }, { status });
-
-const forwardedHeaders = (request: Request) => {
-  const headers = new Headers();
-  for (const name of ['cf-connecting-ip', 'user-agent', 'x-forwarded-for']) {
-    const value = request.headers.get(name);
-    if (value) headers.set(name, value);
-  }
-  return headers;
+const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
 };
 
 export const POST: APIRoute = async ({ request, locals }) => {
-  if (!request.headers.get('content-type')?.includes('application/json')) {
-    return jsonError(415, 'Unsupported payload.');
-  }
-
-  let email: unknown;
-  try {
-    ({ email } = await request.json());
-  } catch {
-    return jsonError(400, 'Invalid request body.');
-  }
-
-  if (typeof email !== 'string' || !emailPattern.test(email.trim())) {
-    return jsonError(400, 'Please enter a valid email address.');
-  }
-
-  const env = locals.runtime?.env as Env | undefined;
-  const target = new URL(`${apiBase(env)}/v1/forms/newsletter/submissions`);
-  const formData = new FormData();
-  formData.set('email', email.trim().toLowerCase());
-  formData.set('redirectTo', '/');
-
-  let response: Response;
-  try {
-    response = await fetch(target, {
-      method: 'POST',
-      headers: forwardedHeaders(request),
-      body: formData,
+  if (request.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json' },
     });
-  } catch {
-    return jsonError(503, 'Subscription service unavailable. Please try again later.');
   }
 
-  if (!response.ok) {
-    return jsonError(response.status, 'Subscription failed. Please try again.');
-  }
+  try {
+    const body: SubscriptionRequest = await request.json();
+    const { email } = body;
 
-  const result = await response.json<{ status?: string }>().catch(() => ({}));
-  return Response.json(
-    {
-      success: true,
-      status: result.status ?? 'pending_confirmation',
-      message:
-        result.status === 'confirmed'
-          ? 'You are already subscribed.'
-          : 'Check your inbox to confirm your subscription.',
-    },
-    { status: 200 },
-  );
+    if (!email || typeof email !== 'string') {
+      return new Response(
+        JSON.stringify({ message: 'Email is required.' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!validateEmail(email.trim())) {
+      return new Response(
+        JSON.stringify({ message: 'Please enter a valid email address.' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const trimmedEmail = email.trim().toLowerCase();
+
+    // Get KV namespace from runtime
+    const runtime = locals['runtime'] as Record<string, unknown> | undefined;
+    const kv = runtime?.env?.['KV'] as Record<string, unknown> | undefined;
+
+    if (!kv || typeof kv.get !== 'function' || typeof kv.put !== 'function') {
+      console.error('KV namespace not available');
+      return new Response(
+        JSON.stringify({ message: 'Storage unavailable. Please try again later.' }),
+        { status: 503, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check if email already exists
+    const existingKey = `lead:${trimmedEmail}`;
+    const existing = await (kv.get as Function)(existingKey, 'json');
+
+    if (existing) {
+      return new Response(
+        JSON.stringify({ message: 'This email is already subscribed.' }),
+        { status: 409, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Create new lead record
+    const lead: Lead = {
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      email: trimmedEmail,
+      subscribed_at: new Date().toISOString(),
+      source: 'website-footer',
+      status: 'active',
+    };
+
+    // Store in KV
+    await (kv.put as Function)(existingKey, JSON.stringify(lead), {
+      expirationTtl: 365 * 24 * 60 * 60, // 1 year
+    });
+
+    // Also add to a list for easy retrieval
+    const listKey = 'leads:all';
+    const leadsList = (await (kv.get as Function)(listKey, 'json')) || [];
+    if (Array.isArray(leadsList)) {
+      leadsList.push(lead.id);
+      await (kv.put as Function)(listKey, JSON.stringify(leadsList));
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'Successfully subscribed!',
+        leadId: lead.id,
+      }),
+      {
+        status: 201,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  } catch (error) {
+    console.error('Subscription error:', error);
+    return new Response(
+      JSON.stringify({ message: 'An error occurred. Please try again.' }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  }
 };
-
-export const GET: APIRoute = async () => jsonError(405, 'Method not allowed.');
