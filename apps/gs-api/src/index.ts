@@ -329,6 +329,17 @@ const readInboxLogs = async (kv: KVNamespace) => {
   }
 };
 
+interface Message<T> {
+  id: string;
+  body: T;
+  ack(): void;
+  retry(): void;
+}
+
+interface MessageBatch<T> {
+  messages: Array<Message<T>>;
+}
+
 const processQueueMessage = async (message: Message<any>, env: Env): Promise<void> => {
   const body = message.body;
   const type = typeof body === 'object' && body && 'type' in body ? String((body as { type?: unknown }).type) : 'unknown';
