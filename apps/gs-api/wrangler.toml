@@ -17,6 +17,8 @@ GOOGLE_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/goldclaw/oauth/google/call
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
 PUBLIC_SITE_URL = "https://goldshore.ai"
 MAILCHANNELS_SENDER_NAME = "GoldShore"
+GITHUB_CLIENT_ID = "YOUR_GITHUB_CLIENT_ID_PROD"
+TURNSTILE_SITE_KEY = "YOUR_TURNSTILE_SITE_KEY_PROD"
 
 [[kv_namespaces]]
 binding = "KV"
@@ -131,6 +133,9 @@ CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 # preserve the remote secret instead of replacing it with a placeholder.
 GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
 GOOGLE_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/goldclaw/oauth/google/callback"
+GITHUB_CLIENT_ID = "YOUR_GITHUB_CLIENT_ID_PROD"
+GITHUB_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/auth/github/callback"
+TURNSTILE_SITE_KEY = "YOUR_TURNSTILE_SITE_KEY_PROD"
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
 PUBLIC_SITE_URL = "https://goldshore.ai"
 MAILCHANNELS_SENDER_NAME = "GoldShore"
@@ -151,6 +156,16 @@ MAILCHANNELS_SENDER_NAME = "GoldShore"
 #   wrangler secret put ANTHROPIC_API_KEY --env prod --name gs-api
 #   Value: <Anthropic API key>
 # Required for AI-powered framework ranking and recommendations.
+
+# GITHUB_CLIENT_SECRET is a secret for GitHub OAuth authentication.
+#   wrangler secret put GITHUB_CLIENT_SECRET --env prod --name gs-api
+#   Value: <GitHub OAuth app client secret from https://github.com/settings/developers>
+# Required for /auth/github/callback and session creation.
+
+# TURNSTILE_SECRET_KEY is a secret for Cloudflare Turnstile bot protection validation.
+#   wrangler secret put TURNSTILE_SECRET_KEY --env prod --name gs-api
+#   Value: <Turnstile secret key from https://dash.cloudflare.com/>
+# Required for validating Turnstile responses on form submissions.
 
 # ── KV ───────────────────────────────────────────────────────────────────────
 [[env.prod.kv_namespaces]]
@@ -306,6 +321,9 @@ routes = [
 [env.preview.vars]
 ENV = "preview"
 GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
+GITHUB_CLIENT_ID = "YOUR_GITHUB_CLIENT_ID_PREVIEW"
+GITHUB_OAUTH_REDIRECT_URI = "https://api-preview.goldshore.ai/auth/github/callback"
+TURNSTILE_SITE_KEY = "YOUR_TURNSTILE_SITE_KEY_PREVIEW"
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
 PUBLIC_SITE_URL = "https://preview.goldshore.ai"
 MAILCHANNELS_SENDER_NAME = "GoldShore"
@@ -320,13 +338,12 @@ MAILCHANNELS_SENDER_NAME = "GoldShore"
 # ── KV ────────────────────────────────────────────────────────────────────────────
 [[env.preview.kv_namespaces]]
 binding = "KV"
-id = "20d2c096b673433597d084a562993021"
+id = "d4d20cee39094b999dea3f7e5f4c533a"
 
 [[env.preview.kv_namespaces]]
 binding = "CONTROL_LOGS"
 id = "09e43cb8bd4749fdaaed0dc9d4ff2284"
 
-# ── R2 ───────────────────────────────────────────────────────────────────────
 # RISK_RADAR_CACHE: same live "RR_CACHE" resource as env.prod — see the note
 # there. No dedicated preview KV exists for this yet.
 [[env.preview.kv_namespaces]]
