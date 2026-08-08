@@ -1,5 +1,7 @@
 ---
-import { redirect } from 'astro';
+const { redirect } = Astro;
 
-redirect('/admin/overview');
+if (Astro.url.pathname === '/admin/' || Astro.url.pathname === '/admin') {
+  redirect('/admin/overview');
+}
 ---
