@@ -14,6 +14,7 @@ import templates from './templates';
 import deployments from './deployments';
 import user from './user';
 import users from './users';
+import oauth from './oauth';
 
 import { Env, Variables } from './types';
 
@@ -45,5 +46,7 @@ app.route('/admin', admin);       // User management & Audit
 app.route('/deployments', deployments); // Deployment assistant and dry-run orchestration
 app.route('/users', users);       // Session-aware user data
 app.route('/user', user);         // Legacy redirect to /users
+app.route('/auth', oauth);        // OAuth login & integration flows
+app.route('/oauth', oauth);       // OAuth (legacy integration path)
 
 export default app;
