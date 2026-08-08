@@ -1,0 +1,119 @@
+cat > .github/workflows/lockfile-maintenance.yml << 'EOF'
+name: Lockfile Maintenance
+
+# Consolidated workflow for all pnpm lockfile operations:
+# - Manual regeneration (broken lockfile recovery)
+# - Standard repair (manifest drift detection)
+# - Duplicated lockfile edge case fix
+# 
+# Triggered by:
+# - Manual dispatch with operation selection
+# - Auto-repair on manifest changes or CI failures
+# - Duplicated lockfile detection on workflow changes
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: 'Operation to perform'
+        required: true
+        default: 'regenerate'
+        type: choice
+        options:
+          - regenerate
+          - repair
+          - repair-duplicated
+      branch:
+        description: 'Branch to operate on (for regenerate/repair)'
+        required: false
+        default: 'main'
+        type: string
+      base_branch:
+        description: 'Base branch for lockfile refresh (for regenerate with PR)'
+        required: false
+        default: 'main'
+        type: string
+      update_branch:
+        description: 'Update branch for PR creation'
+        required: false
+        default: 'automation/pnpm-lockfile-refresh'
+        type: string
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/lockfile-maintenance.yml'
+      - 'package.json'
+      - 'pnpm-workspace.yaml'
+      - 'apps/**/package.json'
+      - 'packages/**/package.json'
+      - 'infra/**/package.json'
+      - 'pnpm-lock.yaml'
+  workflow_run:
+    workflows: ['workspace-install']
+    types: [failed]
+    branches: [main]
+
+concurrency:
+  group: lockfile-maintenance-${{ github.ref }}-${{ github.event.inputs.operation || 'auto' }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  # Regenerate lockfile from scratch (broken lockfile recovery)
+  regenerate:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.operation == 'regenerate'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.inputs.branch || 'main' }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Regenerate lockfile
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Commit updated lockfile
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet pnpm-lock.yaml; then
+            echo "pnpm-lock.yaml unchanged — nothing to commit."
+          else
+            git add pnpm-lock.yaml
+            git commit -m "chore(ci): regenerate pnpm-lock.yaml [skip ci]"
+            git push origin HEAD:${{ github.event.inputs.branch || 'main' }}
+            echo "Lockfile regenerated and pushed to ${{ github.event.inputs.branch || 'main' }}."
+          fi
+
+  # Regenerate with PR creation for tracked updates
+  regenerate-with-pr:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.operation == 'regenerate' && github.event.inputs.update_branch != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout base branch
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.event.inputs.base_branch || 'main' }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v4.0.2
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Enable pinned p
+
