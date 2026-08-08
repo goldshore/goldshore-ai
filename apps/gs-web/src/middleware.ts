@@ -82,7 +82,8 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
           'audit:read',
           'ai:analyze',
           'system:integrations:manage'
-        ]
+        ],
+        isAuthenticated: true
       };
     } else {
       const authResult = await authorizeAdminRequest(
@@ -107,7 +108,10 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
         });
       }
 
-      context.locals.adminSession = authResult.session;
+      context.locals.adminSession = {
+        ...authResult.session,
+        isAuthenticated: true
+      };
     }
 
     if (
