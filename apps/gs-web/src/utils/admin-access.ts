@@ -22,6 +22,10 @@ const ADMIN_HOSTS = new Set([
   'admin.goldshore.org',
   'admin-preview.goldshore.ai',
   'admin-preview.goldshore.org',
+  'dashboard.goldshore.ai',
+  'dashboard.goldshore.org',
+  'dashboard-preview.goldshore.ai',
+  'dashboard-preview.goldshore.org',
 ]);
 
 const STATIC_PATH_PREFIXES = [
