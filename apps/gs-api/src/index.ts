@@ -22,6 +22,8 @@ import sites from './routes/sites';
 import forms from './routes/forms';
 import deployments from './routes/deployments';
 import gearswipe from './routes/gearswipe';
+import products from './routes/products';
+import services from './routes/services';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
 
@@ -262,11 +264,8 @@ app.route('/admin', admin);
 app.route('/media', media);
 app.route('/pages', pages);
 app.route('/internal', internal);
-// Sole owner of the PRODUCT_CATALOG key. gs-web's /api/admin/products proxies
-// here rather than reading KV directly — its `KV` binding resolves to a
-// different namespace (GOLDSHORE-AI), so a direct read/write there would
-// silently fork the catalog.
 app.route('/products', products);
+app.route('/services', services);
 
 const v1 = new Hono<{ Bindings: Env }>();
 v1.route('/users', users);
@@ -275,11 +274,60 @@ v1.route('/sites', sites);
 v1.route('/forms', forms);
 v1.route('/deployments', deployments);
 v1.route('/gearswipe', gearswipe);
+v1.route('/products', products);
+v1.route('/services', services);
 v1.get('/leads', (c) => c.json({ leads: [] }));
 
 app.route('/v1', v1);
 
 export { isAllowedOrigin, isPreviewOrigin, isPublicPath, parseAllowedOrigins };
+
+interface Message<T> {
+  id: string;
+  body: T;
+  ack(): void;
+  retry(): void;
+}
+
+interface MessageBatch<T> {
+  messages: Array<Message<T>>;
+}
+
+type DurableObjectState = {
+  id: { toString(): string };
+};
+
+const normalizeEmail = (email: string): string => {
+  return email.toLowerCase().trim();
+};
+
+const parseEmailList = (list?: string): string[] => {
+  if (!list) return [];
+  return list
+    .split(/[,;\s]+/)
+    .map((email) => normalizeEmail(email))
+    .filter((email) => email.length > 0);
+};
+
+const isEmailLike = (email: string): boolean => {
+  // Simple email validation: must contain @ and at least one dot after @
+  // Avoids ReDoS vulnerability from backtracking in complex quantifier patterns
+  const atIndex = email.indexOf('@');
+  if (atIndex <= 0 || atIndex === email.length - 1) return false;
+  const afterAt = email.substring(atIndex + 1);
+  return afterAt.includes('.') && !afterAt.endsWith('.');
+};
+
+const readInboxLogs = async (kv: KVNamespace) => {
+  try {
+    const stored = await kv.get('EMAIL_INBOX_LOGS');
+    if (!stored) return [];
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
 
 interface Message<T> {
   id: string;

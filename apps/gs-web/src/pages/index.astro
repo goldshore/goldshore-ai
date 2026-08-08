@@ -399,17 +399,14 @@ document.getElementById('open-access-modal')?.addEventListener('click', () => ac
 document.querySelector('.modal-close')?.addEventListener('click', () => accessModal?.close());
 accessModal?.addEventListener('click', e => { if (e.target === accessModal) accessModal.close(); });
 
-/* ── Host-aware admin links (environment-aware routing) ──────────────────────────────────────── */
-const env = (import.meta as any).env?.PUBLIC_ENV || 'production';
-const adminHost = env === 'preview' ? 'admin-preview.goldshore.ai' : 'admin.goldshore.ai';
-const alternateAdminHost = env === 'preview' ? 'admin-preview.goldshore.org' : 'admin.goldshore.org';
+/* ── Host-aware admin links ────────────────────────────────────────────────────────────────────── */
+const adminHost = 'admin.goldshore.ai';
+const alternateAdminHost = 'admin.goldshore.org';
 document.querySelectorAll('[data-admin-access-link]').forEach(link => {
-  const path = link.getAttribute('data-admin-path') || '';
-  link.setAttribute('href', `https://${adminHost}${path}/`);
+  link.setAttribute('href', `https://${adminHost}/`);
 });
 document.querySelectorAll('[data-admin-alternate-link]').forEach(link => {
-  const path = link.getAttribute('data-admin-path') || '';
-  link.setAttribute('href', `https://${alternateAdminHost}${path}/`);
+  link.setAttribute('href', `https://${alternateAdminHost}/`);
 });
 document.querySelectorAll('[data-admin-alternate-title]').forEach(el => {
   el.textContent = 'Admin .org';
