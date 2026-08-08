@@ -1,5 +1,5 @@
 import type { MiddlewareHandler } from 'astro';
-import { verifyAccessWithClaims } from '@goldshore/auth';
+import { verifyJWTCookie } from '@goldshore/auth';
 import { HTML_CONTENT_SECURITY_POLICY } from './security/policy';
 import {
   authorizeAdminRequest,
@@ -31,20 +31,14 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
     return context.redirect('/risk-radar', 301);
   }
 
-  // Cloudflare Access (Zero Trust) gate for the admin surface. The canonical
-  // gate is a Self-hosted Access Application on goldshore.ai/admin/* in
-  // Zero Trust → Access → Applications (see
-  // goldclaw/docs/cf-infrastructure.md) — that must still be created in the
-  // dashboard, nothing here can provision it. Until it exists, this check is
-  // the only thing standing between the public internet and these pages,
-  // since the apps/gs-web/src/pages/admin/*.astro page shells otherwise have
-  // no server-side auth of their own.
+  // JWT cookie-based authentication gate for the admin surface.
+  // Verifies JWT from 'auth' cookie to allow admin access.
   if (isProtectedAdminRequest(context.request, context.url)) {
     const runtimeEnv = context.locals.runtime?.env as Env | undefined;
     const allowLocalAdminBypass = import.meta.env.DEV || runtimeEnv?.DEV_AUTH_BYPASS === '1';
 
     if (!allowLocalAdminBypass) {
-      const claims = await verifyAccessWithClaims(context.request, runtimeEnv ?? {});
+      const claims = await verifyJWTCookie(context.request, runtimeEnv ?? {});
       if (!claims) {
         return new Response('Unauthorized', {
           status: 401,
