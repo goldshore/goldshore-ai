@@ -16,6 +16,12 @@ interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
 
+interface KVNamespace {
+  get(key: string): Promise<string | null>;
+  put(key: string, value: string): Promise<void>;
+  delete(key: string): Promise<void>;
+}
+
 interface D1Result<Row> {
   results?: Row[];
 }
@@ -25,6 +31,10 @@ interface D1PreparedStatement<Row = Record<string, unknown>> {
   all(): Promise<D1Result<Row>>;
   first<T = Row>(): Promise<T | null>;
   run(): Promise<unknown>;
+}
+
+interface D1Database {
+  prepare(query: string): D1PreparedStatement;
 }
 
 // Global Cloudflare Env types
@@ -52,9 +62,17 @@ interface Env {
 
 declare namespace App {
   interface Locals {
-    runtime: {
-      env: Env;
+    runtime?: {
+      env?: Env;
     };
     securityPolicySource?: 'response-header' | 'platform-config';
+    adminSession?: {
+      roles: string[];
+      permissions: string[];
+      actor?: string;
+      isAuthenticated?: boolean;
+    };
+    TURNSTILE_SITE_KEY?: string;
+    PUBLIC_API?: string;
   }
 }

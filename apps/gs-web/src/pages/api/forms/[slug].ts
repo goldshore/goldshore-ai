@@ -7,8 +7,15 @@ import {
 } from '@goldshore/auth';
 import { parseJson } from '@goldshore/utils';
 
+/**
+ * Admin UI form configuration item endpoint.
+ * Requires `forms:read` for GET and `forms:write` for PUT/PATCH.
+ */
+
 export const prerender = false;
 
+const apiBase = (env: Env | undefined) =>
+  (env?.PUBLIC_API || 'https://api.goldshore.ai').replace(/\/$/, '');
 const normalizeRow = (row: Record<string, string>) => ({
   id: row.id,
   slug: row.slug,
@@ -70,18 +77,20 @@ const requirePermission = async (
 };
 
 export const GET: APIRoute = async ({ request, locals, params }) => {
-  const env = locals.runtime?.env as Env | undefined;
+  const env = locals.runtime?.env as AccessEnv | undefined;
   const slug = params.slug;
-
-  if (!slug) return new Response('Form slug is required.', { status: 400 });
 
   if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
   }
 
-  const auth = await requirePermission(request, env as AccessEnv, 'forms:read');
+  const auth = await requirePermission(request, env, 'forms:read');
   if (auth.response) {
     return auth.response;
+  }
+
+  if (!slug) {
+    return new Response('Form slug is required.', { status: 400 });
   }
 
   const result = await env.PLATFORM_DB.prepare(
@@ -102,10 +111,8 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
 };
 
 export const PUT: APIRoute = async ({ request, locals, params }) => {
-  const env = locals.runtime?.env as Env | undefined;
+  const env = locals.runtime?.env as AccessEnv | undefined;
   const slug = params.slug;
-
-  if (!slug) return new Response('Form slug is required.', { status: 400 });
 
   if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
@@ -115,9 +122,13 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     return forbiddenResponse('Forbidden: CSRF check failed.');
   }
 
-  const auth = await requirePermission(request, env as AccessEnv, 'forms:write');
+  const auth = await requirePermission(request, env, 'forms:write');
   if (auth.response) {
     return auth.response;
+  }
+
+  if (!slug) {
+    return new Response('Form slug is required.', { status: 400 });
   }
 
   const payload = (await request.json()) as {
@@ -184,3 +195,8 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
 };
 
 export const PATCH = PUT;
+
+export const __testing = {
+  isSameOriginRequest,
+  requirePermission,
+};
