@@ -12,10 +12,9 @@
     "dev": "echo 'ui package: no dev step required'"
   },
   "peerDependencies": {
-    "astro": "^7.1.0"
+    "astro": "^7.1.4"
   },
   "devDependencies": {
-    "astro": "^7.1.0"
+    "astro": "^7.2.0"
   }
 }
-
