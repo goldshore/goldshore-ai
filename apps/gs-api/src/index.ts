@@ -340,22 +340,6 @@ interface MessageBatch<T> {
   messages: Array<Message<T>>;
 }
 
-type DurableObjectState = {
-  id: { toString(): string };
-};
-
-const normalizeEmail = (email: string): string => {
-  return email.toLowerCase().trim();
-};
-
-const parseEmailList = (list?: string): string[] => {
-  if (!list) return [];
-  return list
-    .split(/[,;\s]+/)
-    .map((email) => normalizeEmail(email))
-    .filter((email) => email.length > 0);
-};
-
 const processQueueMessage = async (message: Message<any>, env: Env): Promise<void> => {
   const body = message.body;
   const type = typeof body === 'object' && body && 'type' in body ? String((body as { type?: unknown }).type) : 'unknown';
