@@ -36,9 +36,7 @@ const isActive = (href: string) => {
 <aside class="gs-admin-sidebar" id="admin-sidebar" aria-label="Admin navigation">
   <SharedHeader
     class="sidebar-header"
-    href="https://goldshore.ai"
-    target="_blank"
-    rel="noopener noreferrer"
+    href="/"
     logoSrc={logo?.src || logo || '/logo/gs-penrose.svg'}
     logoAlt="GoldShore logo"
   >
@@ -108,5 +106,11 @@ const isActive = (href: string) => {
     >
       Settings
     </a>
+
+    <div class="gs-sidebar-footer">
+      <a href="/logout" class="gs-nav-block gs-logout-btn">
+        Logout
+      </a>
+    </div>
   </nav>
 </aside>
