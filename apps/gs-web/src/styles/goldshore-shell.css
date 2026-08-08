@@ -165,159 +165,19 @@
   text-transform: uppercase;
 }
 
-.gs-shell-v284 .site-footer {
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(220px, 1.35fr) repeat(3, minmax(150px, 0.8fr));
-  gap: clamp(1.4rem, 3vw, 2.4rem);
-  padding: clamp(2.2rem, 6vw, 4rem) clamp(1rem, 5vw, 4rem);
-  border-top: 1px solid rgba(255,255,255,0.08);
-  background: rgba(5,5,7,0.78);
-  grid-template-columns: minmax(260px, 1.15fr) repeat(3, minmax(145px, 0.72fr));
-  align-items: start;
-  gap: clamp(1.35rem, 2.6vw, 2.25rem);
-  padding: clamp(2.2rem, 6vw, 4rem) clamp(1rem, 5vw, 4rem);
-  border-top: 1px solid rgba(255,255,255,0.08);
-  background:
-    linear-gradient(135deg, rgba(217, 106, 50, 0.11), transparent 34%),
-    linear-gradient(315deg, rgba(73, 148, 136, 0.08), transparent 28%),
-    rgba(5,5,7,0.86);
-  overflow: hidden;
-  isolation: isolate;
-}
-
-.gs-shell-v284 .site-footer::before,
-.gs-shell-v284 .site-footer::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: -1;
-}
-
-.gs-shell-v284 .site-footer::before {
-  background:
-    linear-gradient(90deg, rgba(217, 106, 50, 0.45), transparent 32%, rgba(73, 148, 136, 0.3) 72%, transparent),
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 5.25rem);
-  height: 1px;
-  bottom: auto;
-  animation: footer-scan 10s linear infinite;
-}
-
-.gs-shell-v284 .site-footer::after {
-  background-image:
-    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.026) 1px, transparent 1px);
-  background-size: 42px 42px;
-  mask-image: linear-gradient(90deg, transparent, #000 16%, #000 84%, transparent);
-  opacity: 0.55;
-}
-
-.gs-shell-v284 .footer-brand {
-  min-width: 0;
-  max-width: 38rem;
-}
-
-.gs-shell-v284 .site-footer > div:not(.footer-brand):not(.footer-meta-block) {
-  min-width: 0;
-  padding-left: clamp(0.75rem, 1.4vw, 1.1rem);
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.gs-shell-v284 .site-footer h2 {
-  margin: 0 0 0.4rem;
-  color: #fff;
-  font-family: 'Syne', var(--font-display, system-ui), sans-serif;
-  font-size: clamp(1.8rem, 4vw, 3.4rem);
-  letter-spacing: -0.075em;
-  line-height: 0.95;
-}
-
-.gs-shell-v284 .site-footer h3 {
-  margin: 0 0 0.75rem;
-  color: var(--shell-text);
-  font-size: 0.82rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.gs-shell-v284 .site-footer p,
-.gs-shell-v284 .site-footer a,
-.gs-shell-v284 .site-footer small {
-  color: var(--shell-dim);
-}
-
-.gs-shell-v284 .site-footer p {
-  margin: 0 0 0.45rem;
-  line-height: 1.55;
-}
-
-.gs-shell-v284 .site-footer a {
-  display: inline-flex;
-  max-width: 100%;
-  text-decoration: none;
-  transition: color 160ms ease, transform 160ms ease;
-}
-
-.gs-shell-v284 .site-footer a:hover {
-  color: var(--gs-primary, #d96a32);
-  transform: translateX(0.18rem);
-}
-
-.gs-shell-v284 .footer-meta-block {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.45rem 0.85rem;
-  padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  color: rgba(255,255,255,0.54);
-  font-family: 'DM Mono', var(--font-mono, ui-monospace), monospace;
-  font-size: 0.68rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.gs-shell-v284 .site-footer small {
-  grid-column: 1 / -1;
-  padding-right: min(34vw, 20rem);
-  font-size: 0.78rem;
-  padding-right: 0;
-  font-size: 0.78rem;
-  line-height: 1.65;
-}
-
-@keyframes footer-scan {
-  from { background-position: 0 0, 0 0; }
-  to { background-position: 180px 0, 420px 0; }
-}
+/* Footer layout/typography is owned entirely by GoldShoreShell.astro's own
+   embedded <style is:global> block (.site-footer/.footer-main/.footer-brand/
+   .footer-columns/.footer-meta-block/.footer-credits). The rules that used to
+   live here targeted an older footer DOM (before the .footer-main wrapper
+   div existed) — .gs-shell-v284 .site-footer h2/h3 matched via descendant
+   selector regardless of that refactor and, at higher specificity than
+   GoldShoreShell's own .footer-brand h2 rule, blew the "GOLDSHORE" wordmark
+   up to clamp(1.8rem, 4vw, 3.4rem) and overlapped it with the footer nav
+   columns on every page using BaseLayout/MarketingLayout. Removed rather than
+   fixed in place since none of it matches current markup. */
 
 @media (max-width: 960px) {
   .gs-shell-v284 .main-nav { display: none; }
   .gs-shell-v284 .nav-toggle { display: inline-flex; }
   .gs-shell-v284 .topbar[data-menu-open='true'] .mobile-nav { display: grid; }
-  .gs-shell-v284 .site-footer { grid-template-columns: 1fr 1fr; }
-  .gs-shell-v284 .footer-brand { grid-column: 1 / -1; }
-  .gs-shell-v284 .site-footer small { padding-right: 0; margin-top: 3rem; }
-  .gs-shell-v284 .site-footer { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  .gs-shell-v284 .footer-brand { grid-column: 1 / -1; }
-  .gs-shell-v284 .footer-meta-block { justify-content: flex-start; }
-}
-
-@media (max-width: 640px) {
-  .gs-shell-v284 .site-footer { grid-template-columns: 1fr; }
-  .gs-shell-v284 .footer-meta-block { position: static; justify-items: start; margin-top: 1rem; }
-  .gs-shell-v284 .site-footer small { margin-top: 0; }
-  .gs-shell-v284 .site-footer > div:not(.footer-brand):not(.footer-meta-block) {
-    padding-left: 0;
-    border-left: 0;
-  }
-  .gs-shell-v284 .footer-meta-block { justify-content: flex-start; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .gs-shell-v284 .site-footer::before { animation: none; }
-  .gs-shell-v284 .site-footer a { transition: color 160ms ease; }
-  .gs-shell-v284 .site-footer a:hover { transform: none; }
 }

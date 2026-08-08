@@ -6,6 +6,7 @@ const distDir = path.resolve('dist');
 const clientDir = path.join(distDir, 'client');
 const astroDir = path.join(clientDir, '_astro');
 const indexPath = path.join(clientDir, 'index.html');
+const serverEntryPath = path.join(distDir, 'server', 'entry.mjs');
 const webAppRoot = path.resolve('.');
 const canonicalLayoutPath = path.join(webAppRoot, 'src', 'layouts', 'GoldShoreShell.astro');
 const publicDir = path.join(webAppRoot, 'public');
@@ -16,8 +17,8 @@ if (!existsSync(distDir)) {
   errors.push(`Missing dist directory: ${distDir}`);
 }
 
-if (!existsSync(indexPath)) {
-  errors.push(`Missing index.html: ${indexPath}`);
+if (!existsSync(indexPath) && !existsSync(serverEntryPath)) {
+  errors.push(`Missing both static index and server entrypoint: ${indexPath}, ${serverEntryPath}`);
 }
 
 const astroFiles = existsSync(astroDir) ? readdirSync(astroDir) : [];
@@ -87,5 +88,6 @@ if (errors.length > 0) {
 }
 
 console.log('✅ gs-web dist integrity check passed');
+console.log(`- Rendering: ${existsSync(indexPath) ? 'prerendered index' : 'server-rendered index'}`);
 console.log(`- CSS bundles: ${cssFiles.length}`);
 console.log(`- JS bundles: ${jsFiles.length}`);
