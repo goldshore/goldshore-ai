@@ -1,0 +1,22 @@
+{
+  "name": "goldclaw",
+  "version": "1.0.0",
+  "description": "Autonomous integration intelligence agent for GoldShore",
+  "type": "module",
+  "main": "dist/agent.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "node --loader ts-node/esm src/agent.ts",
+    "start": "node dist/agent.js",
+    "docker:build": "docker build -t goldclaw:latest .",
+    "docker:run": "docker-compose up"
+  },
+  "dependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.3.0",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.1"
+  }
+}
