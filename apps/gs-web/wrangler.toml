@@ -5,10 +5,10 @@ compatibility_flags = ["nodejs_compat"]
 workers_dev = false
 main = "./src/worker.ts"
 
-# Serve the Astro build as a Worker with Assets.
-# The Cloudflare adapter builds the configured Worker entrypoint and emits
-# static assets into dist. Keeping both `main` and an assets binding avoids
-# Wrangler treating the project as an assets-only Worker.
+# Deploy the Astro SSR entry point and its static bundle as one Worker release.
+# `astro build` emits the server manifest and assets under dist; Wrangler
+# bundles src/worker.ts as the Worker entry and uploads dist as its assets.
+# This is intentionally not a Cloudflare Pages project.
 [assets]
 directory = "./dist"
 binding = "ASSETS"
@@ -48,6 +48,8 @@ MAILCHANNELS_SENDER_NAME = "GoldShore"
 # ── Production ──────────────────────────────────────────────────────────────────────────────────────
 
 [env.prod]
+# Wrangler suffixes the top-level name, so this environment is the single
+# `gs-web-prod` release serving all four canonical production UI hosts.
 routes = [
   { pattern = "goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
