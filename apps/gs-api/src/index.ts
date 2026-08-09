@@ -513,3 +513,5 @@ export class AuthSession {
     );
   }
 }
+export { isAllowedOrigin, isPreviewOrigin, parseAllowedOrigins };
+export default app;
