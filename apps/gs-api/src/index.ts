@@ -19,6 +19,8 @@ import sites from './routes/sites';
 import forms from './routes/forms';
 import deployments from './routes/deployments';
 import gearswipe from './routes/gearswipe';
+import mail from './routes/mail';
+import products from './routes/products';
 import services from './routes/services';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
@@ -78,7 +80,9 @@ const isPublicPath = (path: string, method: string) => {
     path === '/' ||
     path === '/version' ||
     path === '/health' ||
-    path.startsWith('/health/')
+    path.startsWith('/health/') ||
+    path === '/mail/contact' ||
+    (method === 'POST' && path === '/mail/contact')
   );
 };
 
@@ -235,6 +239,7 @@ app.route('/media', media);
 app.route('/pages', pages);
 app.route('/internal', internal);
 app.route('/products', products);
+app.route('/mail', mail);
 app.route('/services', services);
 
 const v1 = new Hono<{ Bindings: Env }>();
@@ -297,6 +302,17 @@ const readInboxLogs = async (kv: KVNamespace) => {
     return [];
   }
 };
+
+interface Message<T> {
+  id: string;
+  body: T;
+  ack(): void;
+  retry(): void;
+}
+
+interface MessageBatch<T> {
+  messages: Array<Message<T>>;
+}
 
 const processQueueMessage = async (message: Message<any>, env: Env): Promise<void> => {
   const body = message.body;
