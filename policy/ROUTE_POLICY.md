@@ -80,6 +80,7 @@ ops.goldshore.ai/*
 ```
 admin.goldshore.org
 ├── gs-web worker (migrated admin UI; same route owner as admin.goldshore.ai)
+├── gs-admin Pages project (not yet migrated -- see admin.goldshore.ai above)
 ├── Owner: gs-admin
 ├── Hosting: Cloudflare Pages
 └── Cloudflare Access application/policy: GoldShore Admin / GoldShore-Admin-ZT
@@ -131,6 +132,7 @@ www.banproof.me/*
    - `api.*` → gs-api only
    - `gw.*` → gs-platform only
    - `admin.goldshore.ai`, `admin.goldshore.org` → gs-web only (migrated)
+   - `admin.goldshore.ai` → gs-web only (migrated); `admin.goldshore.org` → gs-admin Pages (not yet migrated)
    - etc.
 
 3. **Custom domains vs. routes.** 

@@ -64,14 +64,15 @@ const requirePermission = async (
   return { response: null };
 };
 
-const proxy = async (request: Request, env: Env | undefined, slug?: string) => {
-  if (!slug) return new Response('Form slug is required.', { status: 400 });
+export const GET: APIRoute = async ({ request, locals, params }) => {
+  const env = locals.runtime?.env as AccessEnv | undefined;
+  const slug = params.slug;
 
   if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
   }
 
-  const auth = await requirePermission(request, env as AccessEnv, 'forms:read');
+  const auth = await requirePermission(request, env, 'forms:read');
   if (auth.response) {
     return auth.response;
   }
@@ -107,7 +108,7 @@ const proxy = async (request: Request, env: Env | undefined, slug?: string) => {
     headers: forwardedHeaders(request),
     body: request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.text(),
 export const PUT: APIRoute = async ({ request, locals, params }) => {
-  const env = locals.runtime?.env as Env | undefined;
+  const env = locals.runtime?.env as AccessEnv | undefined;
   const slug = params.slug;
 
   if (!env?.PLATFORM_DB) {
@@ -118,7 +119,7 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     return forbiddenResponse('Forbidden: CSRF check failed.');
   }
 
-  const auth = await requirePermission(request, env as AccessEnv, 'forms:write');
+  const auth = await requirePermission(request, env, 'forms:write');
   if (auth.response) {
     return auth.response;
   }

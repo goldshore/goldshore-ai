@@ -6,17 +6,28 @@
 
 ---
 
-## Pages Projects
+## Web / Admin front end
 
 ### 1. Web (Public)
 
-- Project: `gs-web`
+`apps/gs-web` is **not** a Pages project. It is an SSR Astro app served by the
+`gs-web-prod` Worker, deployed by the Cloudflare Workers Build git integration.
+Hostnames are attached via the `routes` list in `apps/gs-web/wrangler.toml`, not
+via Pages custom domains.
+
+- Worker: `gs-web-prod`
 - Repo: `goldshore-ai`
 - Root: `apps/gs-web`
-- Custom Domains:
-  - `goldshore.ai`
-  - `www.goldshore.ai`
-  - `preview.goldshore.ai`
+- Routes (see `[env.prod]` in `apps/gs-web/wrangler.toml` for the authoritative list):
+  - `goldshore.ai/*`, `goldshore.org/*`
+  - `admin.goldshore.ai/*`, `admin-preview.goldshore.ai/*`, `admin.goldshore.org/*`
+  - `risk.goldshore.ai/*`, `risk.goldshore.org/*`
+
+A second deploy path — `wrangler pages deploy apps/gs-web/dist/client
+--project-name=gs-web-pages` in `.github/workflows/deploy-gs-web.yml` — was
+removed. It shipped only the static client assets (dist/client has no
+`_worker.js`), so it published a static shell that 404'd every SSR route while
+competing with the Worker for the same hostnames.
 
 **Environment Variables:**
 
@@ -101,6 +112,10 @@
 - AI:
   - Binding: `AI`
   - Gateway: `goldshore-ai-gateway`
+- Secrets Store:
+  - Binding: `INTEGRATION_MASTER_KEY`
+  - Store: `b9824d3280c54573a24137c7e7143b33`
+  - Secret: `INTEGRATION_MASTER_KEY`
 - Worker secrets:
   - Binding: `INTEGRATION_MASTER_KEY`
   - Secret: `INTEGRATION_MASTER_KEY` (normal Worker secret; do not configure `secrets_store_secrets` until the referenced Cloudflare Secrets Store exists)

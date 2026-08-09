@@ -25,7 +25,8 @@ binding = "ASSETS"
 
 [env.preview]
 routes = [
-  { pattern = "preview.goldshore.ai", custom_domain = true }
+  { pattern = "preview.goldshore.ai", custom_domain = true },
+  { pattern = "admin-preview.goldshore.ai", custom_domain = true }
 ]
 
 [env.prod]
@@ -34,7 +35,9 @@ routes = [
 # www.goldshore.org is owned by gs-www-redirect-prod (308 → goldshore.ai).
 routes = [
   { pattern = "goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "goldshore.org/*", zone_name = "goldshore.org" }
+  { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "admin.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "admin.goldshore.org/*", zone_name = "goldshore.org" }
 ]
 
 # Secrets (set via wrangler secret put — never commit):
