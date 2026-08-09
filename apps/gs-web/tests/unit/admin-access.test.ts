@@ -99,3 +99,14 @@ test('does not rewrite canonical admin, API, or static asset paths', () => {
 test('falls unknown admin-host pages back to the dashboard', () => {
   assert.equal(getAdminHostRewritePath('/about'), '/app/dashboard');
 });
+
+test('middleware routes the admin hostname through its resolved dashboard path', async () => {
+  const source = await import('node:fs/promises').then(({ readFile }) =>
+    readFile(new URL('../../src/middleware.ts', import.meta.url), 'utf8'),
+  );
+
+  assert.match(source, /const routedPath = adminRewritePath \?\? url\.pathname/);
+  assert.match(source, /getAdminRouteRule\(\s*routedPath,\s*context\.request\.method,\s*host/);
+  assert.match(source, /Response\.redirect\(new URL\(ADMIN_DASHBOARD_PATH, url\.origin\), 302\)/);
+  assert.match(source, /await context\.rewrite\(adminRewritePath\)/);
+});
