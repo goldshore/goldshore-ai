@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: preview-database
     steps: &migration_steps
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
         with:
           version: 9.15.4
