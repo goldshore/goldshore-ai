@@ -3,6 +3,7 @@ import {
   hasAdminPermission,
   ROLE_PERMISSIONS,
   verifyAccessWithClaims,
+  authorizeAccessClaims,
   verifyJWTCookie,
   type AccessTokenPayload,
   type AdminPermission,
@@ -313,6 +314,12 @@ export const authorizeAdminRequest = async (
   const cookieClaims = await verifyJWTCookie(request, env);
   const accessClaims = cookieClaims ? null : await verifyAccessWithClaims(request, env);
   const claims = cookieClaims ?? accessClaims;
+  const verifiedClaims =
+    await verifyJWTCookie(request, env) ??
+    await verifyAccessWithClaims(request, env);
+  const claims = verifiedClaims
+    ? await authorizeAccessClaims(verifiedClaims, env)
+    : null;
   if (!claims) {
     return {
       ok: false,

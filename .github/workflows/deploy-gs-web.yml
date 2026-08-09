@@ -1,4 +1,4 @@
-name: Inventory gs-web configuration
+name: Verify gs-web build
 
 # Read-only drift inventory. Cloudflare production configuration is changed only
 # by an approved human in the dashboard; this workflow has no Cloudflare credentials.
@@ -18,8 +18,9 @@ on:
       - '.github/workflows/deploy-gs-web.yml'
   workflow_dispatch:
 
-permissions:
-  contents: read
+concurrency:
+  group: verify-gs-web-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   # Build verification only — this job does NOT deploy.
@@ -34,15 +35,37 @@ jobs:
   deploy:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      RELEASE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@v7.0.1
-      - name: Export binding names, routes, Access IDs, and secret names
-        run: python3 scripts/export-cloudflare-inventory.py cloudflare-inventory.json
-      - name: Display redacted inventory
-        run: jq . cloudflare-inventory.json
-      - name: Upload drift-review artifact
-        uses: actions/upload-artifact@v6
         with:
-          name: cloudflare-inventory-${{ github.run_id }}-deploy-gs-web
-          path: cloudflare-inventory.json
+          ref: ${{ env.RELEASE_SHA }}
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 9.15.4
+
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build gs-web Worker output once
+        run: pnpm build:pages
+
+      - name: Preserve release SHA with build output
+        run: printf '%s\n' "$RELEASE_SHA" > apps/gs-web/dist/release.sha
+
+      - name: Preserve immutable gs-web build
+        uses: actions/upload-artifact@v7
+        with:
+          name: gs-web-${{ env.RELEASE_SHA }}
+          path: apps/gs-web/dist
+          if-no-files-found: error
           retention-days: 30

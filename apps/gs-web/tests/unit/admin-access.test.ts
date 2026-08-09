@@ -99,6 +99,14 @@ test('preserves an explicit supported role from Cloudflare Access claims', () =>
 
   assert.deepEqual(session.roles, ['viewer']);
   assert.deepEqual(session.permissions, ['content:read', 'media:read', 'forms:read']);
+test('login page uses dashboard destinations instead of admin host roots', async () => {
+  const source = await import('node:fs/promises').then(({ readFile }) =>
+    readFile(new URL('../../src/pages/login.astro', import.meta.url), 'utf8'),
+  );
+
+  assert.match(source, /const destination = getAdminLoginDestination\(requested\)/);
+  assert.match(source, /href=\{CANONICAL_ADMIN_DASHBOARD_URL\}/);
+  assert.match(source, /href=\{ALTERNATE_ADMIN_DASHBOARD_URL\}/);
 });
 
 test('maps clean admin hostname URLs into the Astro admin route tree', () => {
