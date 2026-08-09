@@ -6,6 +6,7 @@ export type Env = {
   CONTROL_LOGS?: KVNamespace;
   RISK_RADAR_CACHE?: KVNamespace;
   PLATFORM_DB: D1Database;
+  AUDIT_DB: D1Database;
   RISK_RADAR_DB?: D1Database;
   TELEMETRY_DB?: D1Database;
   GS_ASSETS: R2Bucket;
@@ -38,6 +39,8 @@ export type Env = {
   ACCESS_CLIENT_SECRET?: string;
   CLOUDFLARE_ACCESS_AUDIENCE?: string;
   CLOUDFLARE_TEAM_DOMAIN?: string;
+  CLOUDFLARE_ACCESS_APPLICATION?: string;
+  CLOUDFLARE_SERVICE_ACCESS_AUDIENCE?: string;
   CONTROL_SYNC_TOKEN?: string;
   ALLOWED_ORIGINS?: string;
   API_VERSION?: string;
@@ -74,6 +77,7 @@ export type Env = {
   GOOGLE_OAUTH_CLIENT_ID?: string;
   GOOGLE_OAUTH_CLIENT_SECRET?: string;
   GOOGLE_OAUTH_REDIRECT_URI?: string;
+  GOOGLE_BUSINESS_OAUTH_REDIRECT_URI?: string;
   GITHUB_CLIENT_ID?: string;
   GITHUB_CLIENT_SECRET?: string;
   GITHUB_OAUTH_REDIRECT_URI?: string;
@@ -100,6 +104,10 @@ export type Env = {
   GOLDCLAW_SANDBOX_API_TOKEN?: string;
   GOLDCLAW_SANDBOX_PROVIDER?: string;
   OAUTH_TOKEN_ENCRYPTION_KEY?: string;
+  GOOGLE_BUSINESS_OWNERSHIP_VERIFIED?: string;
+  GOOGLE_OAUTH_PRODUCTION_APPROVED?: string;
+  GOOGLE_BUSINESS_ACCOUNT_IDS?: string;
+  GOOGLE_BUSINESS_LOCATION_IDS?: string;
 };
 
 export type Variables = {

@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { secureHeaders } from 'hono/secure-headers';
 import {
   verifyAccessWithClaims,
+  authorizeAccessClaims,
   type AccessTokenPayload,
 } from '@goldshore/auth';
 import { createCorsMiddleware, APPROVED_API_ORIGINS } from '@goldshore/shared';
@@ -25,6 +26,7 @@ import gearswipe from './routes/gearswipe';
 import mail from './routes/mail';
 import products from './routes/products';
 import services from './routes/services';
+import googleBusiness from './routes/google-business';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
 
@@ -33,6 +35,7 @@ type Env = {
   CONTROL_LOGS?: KVNamespace;
   RISK_RADAR_CACHE?: KVNamespace;
   PLATFORM_DB: D1Database;
+  AUDIT_DB: D1Database;
   RISK_RADAR_DB?: D1Database;
   TELEMETRY_DB?: D1Database;
   GS_ASSETS: R2Bucket;
@@ -47,6 +50,8 @@ type Env = {
   ACCESS_CLIENT_SECRET?: string;
   CLOUDFLARE_ACCESS_AUDIENCE?: string;
   CLOUDFLARE_TEAM_DOMAIN?: string;
+  CLOUDFLARE_ACCESS_APPLICATION?: string;
+  CLOUDFLARE_SERVICE_ACCESS_AUDIENCE?: string;
   CONTROL_SYNC_TOKEN?: string;
   ALLOWED_ORIGINS?: string;
   ENV?: string;
@@ -109,11 +114,13 @@ const isAllowedOrigin = (origin: string, allowedOrigins?: string) => {
 
 const isPublicPath = (path: string, method: string) => {
   if (method === 'OPTIONS') return true;
+  if (method === 'POST' && /^\/v1\/forms\/[a-z0-9-]+\/submissions$/i.test(path)) return true;
   return (
     path === '/' ||
     path === '/version' ||
     path === '/health' ||
     path.startsWith('/health/') ||
+    (method === 'GET' && path === '/admin/google/oauth/callback') ||
     path === '/mail/contact' ||
     (method === 'POST' && path === '/mail/contact')
   );
@@ -171,27 +178,25 @@ app.use('*', async (c, next) => {
     return;
   }
 
-  if (c.req.path === '/internal/sync-runs' && c.req.method === 'POST') {
-    const controlToken = c.req.header('x-control-sync-token');
-    if (
-      controlToken &&
-      c.env.CONTROL_SYNC_TOKEN &&
-      controlToken === c.env.CONTROL_SYNC_TOKEN
-    ) {
-      c.set('accessClaims', null);
-      await next();
-      return;
-    }
-  }
-
-  if (!c.env.CLOUDFLARE_ACCESS_AUDIENCE) {
+  const serviceRequest = c.req.path === '/internal' || c.req.path.startsWith('/internal/');
+  const accessEnv = serviceRequest
+    ? {
+        ...c.env,
+        CLOUDFLARE_ACCESS_AUDIENCE: c.env.CLOUDFLARE_SERVICE_ACCESS_AUDIENCE,
+        CLOUDFLARE_ACCESS_APPLICATION: 'service-production',
+      }
+    : c.env;
+  if (!accessEnv.CLOUDFLARE_ACCESS_AUDIENCE) {
     return c.json(
       { error: 'Cloudflare Access audience is not configured for protected routes.' },
       503,
     );
   }
 
-  const claims = await verifyAccessWithClaims(c.req.raw, c.env);
+  const verifiedClaims = await verifyAccessWithClaims(c.req.raw, accessEnv);
+  const claims = verifiedClaims
+    ? await authorizeAccessClaims(verifiedClaims, accessEnv)
+    : null;
   if (!claims) {
     return c.json({ error: 'Unauthorized' }, 401);
   }
@@ -268,6 +273,7 @@ app.route('/user', user);
 app.route('/system', system);
 app.route('/templates', templates);
 app.route('/admin', admin);
+app.route('/admin/google', googleBusiness);
 app.route('/media', media);
 app.route('/pages', pages);
 app.route('/internal', internal);
