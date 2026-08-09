@@ -156,6 +156,7 @@ test('admin pages use the admin layout rather than the public site chrome', asyn
   // admin hostname they resolve against that host and are then folded back to
   // the dashboard, leaving no route to the public site.
   const { readdir, readFile } = await import('node:fs/promises');
+  const { join } = await import('node:path');
   const roots = ['../../src/pages/admin', '../../src/pages/app'];
   const offenders: string[] = [];
 
@@ -163,7 +164,7 @@ test('admin pages use the admin layout rather than the public site chrome', asyn
     const dir = new URL(`${root}/`, import.meta.url);
     for (const entry of await readdir(dir, { recursive: true, withFileTypes: true })) {
       if (!entry.isFile() || !entry.name.endsWith('.astro')) continue;
-      const file = new URL(`${entry.parentPath ?? dir.pathname}/${entry.name}`.replace(/\/+/g, '/'), 'file:');
+      const file = join(entry.parentPath, entry.name);
       const source = await readFile(file, 'utf8');
       if (/BaseLayout/.test(source)) offenders.push(entry.name);
     }

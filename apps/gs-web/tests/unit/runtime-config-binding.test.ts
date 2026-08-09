@@ -25,7 +25,7 @@ test('gs-web README documents indirect runtime configuration until a concrete co
 });
 
 test('gs-web README documents one Worker release and gates a future Pages migration', () => {
-  assert.match(webReadme, /exactly one deployment model: an Astro SSR Cloudflare Worker with\nAssets/);
+  assert.match(webReadme, /exactly one deployment model: an Astro SSR Cloudflare Worker with\r?\nAssets/);
   assert.match(webReadme, /Every dynamic web endpoint/);
   assert.match(webReadme, /must first move into `apps\/gs-api`/);
 });
