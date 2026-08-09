@@ -20,7 +20,13 @@
 
 .skip-link:focus { top: 1rem; }
 
-.gs-shell-v284 .gs-page-content { min-height: calc(100vh - 220px); }
+.gs-shell-v284 .gs-page-content {
+  min-height: calc(100vh - 220px);
+  position: relative;
+  background:
+    linear-gradient(115deg, rgba(217, 106, 50, 0.055), transparent 24%, rgba(72, 148, 136, 0.04) 78%, transparent),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 7.5rem);
+}
 
 .gs-shell-v284 .topbar {
   position: sticky;
@@ -46,6 +52,9 @@
 .gs-shell-v284 .brand-text {
   color: #fff;
   font-family: 'Syne', var(--font-display, system-ui), sans-serif;
+  font-size: clamp(1.55rem, 3vw, 2.35rem);
+  font-weight: 800;
+  letter-spacing: -0.075em;
   font-size: 1.15rem;
   font-weight: 800;
   letter-spacing: 0.14em;
@@ -69,6 +78,9 @@
 }
 
 .gs-shell-v284 .main-nav a {
+  padding: 0.6rem 0.85rem;
+  border-radius: 999px;
+  color: var(--shell-dim);
   padding: 0.65rem 0.8rem;
   border-radius: 2px;
   color: var(--shell-dim);
@@ -80,6 +92,12 @@
 
 .gs-shell-v284 .main-nav a:hover,
 .gs-shell-v284 .main-nav a[aria-current='page'] {
+  color: var(--shell-text);
+  background: rgba(217, 106, 50, 0.09);
+}
+
+.gs-shell-v284 .main-nav .nav-login {
+  border: 1px solid rgba(255,255,255,0.14);
   color: var(--gs-primary, #d96a32);
   background: rgba(217, 106, 50, 0.12);
 }
@@ -92,6 +110,10 @@
 
 .gs-shell-v284 .main-nav .nav-cta,
 .gs-shell-v284 .mobile-nav a:last-child {
+  color: #050507;
+  background: linear-gradient(135deg, #fff, #b9d8ff);
+  border: 1px solid rgba(255,255,255,0.55);
+  box-shadow: 0 18px 42px rgba(115,171,255,0.2);
   color: var(--gs-bg, #06060a);
   background: var(--gs-primary, #d96a32);
   border: 1px solid rgba(217, 106, 50, 0.55);
@@ -104,6 +126,7 @@
   display: none;
   width: 2.7rem;
   height: 2.7rem;
+  border-radius: 999px;
   border-radius: 2px;
   border: 1px solid rgba(255,255,255,0.14);
   background: rgba(255,255,255,0.04);
@@ -117,6 +140,7 @@
 .gs-shell-v284 .nav-toggle span {
   width: 1rem;
   height: 2px;
+  border-radius: 999px;
   border-radius: 2px;
   background: currentColor;
 }
@@ -141,77 +165,11 @@
   text-transform: uppercase;
 }
 
-.gs-shell-v284 .site-footer {
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(220px, 1.35fr) repeat(3, minmax(150px, 0.8fr));
-  gap: clamp(1.4rem, 3vw, 2.4rem);
-  padding: clamp(2.2rem, 6vw, 4rem) clamp(1rem, 5vw, 4rem);
-  border-top: 1px solid rgba(255,255,255,0.08);
-  background: rgba(5,5,7,0.78);
-}
-
-.gs-shell-v284 .site-footer h2 {
-  margin: 0 0 0.4rem;
-  color: #fff;
-  font-family: 'Syne', var(--font-display, system-ui), sans-serif;
-  font-size: clamp(1.8rem, 4vw, 3.4rem);
-  letter-spacing: -0.075em;
-  line-height: 0.95;
-}
-
-.gs-shell-v284 .site-footer h3 {
-  margin: 0 0 0.75rem;
-  color: var(--shell-text);
-  font-size: 0.82rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.gs-shell-v284 .site-footer p,
-.gs-shell-v284 .site-footer a,
-.gs-shell-v284 .site-footer small {
-  color: var(--shell-dim);
-}
-
-.gs-shell-v284 .site-footer p {
-  margin: 0 0 0.45rem;
-  line-height: 1.55;
-}
-
-.gs-shell-v284 .site-footer a { text-decoration: none; }
-
-.gs-shell-v284 .footer-meta-block {
-  position: absolute;
-  right: clamp(1rem, 5vw, 4rem);
-  bottom: clamp(1rem, 3vw, 2rem);
-  display: grid;
-  justify-items: end;
-  gap: 0.18rem;
-  color: rgba(255,255,255,0.54);
-  font-family: 'DM Mono', var(--font-mono, ui-monospace), monospace;
-  font-size: 0.68rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.gs-shell-v284 .site-footer small {
-  grid-column: 1 / -1;
-  padding-right: min(34vw, 20rem);
-  font-size: 0.78rem;
-}
+/* Shared header/footer chrome lives in theme-chrome.css and is composed by
+   PublicHeader/PublicFooter. Avoid competing chrome selectors in this file. */
 
 @media (max-width: 960px) {
   .gs-shell-v284 .main-nav { display: none; }
   .gs-shell-v284 .nav-toggle { display: inline-flex; }
   .gs-shell-v284 .topbar[data-menu-open='true'] .mobile-nav { display: grid; }
-  .gs-shell-v284 .site-footer { grid-template-columns: 1fr 1fr; }
-  .gs-shell-v284 .footer-brand { grid-column: 1 / -1; }
-  .gs-shell-v284 .site-footer small { padding-right: 0; margin-top: 3rem; }
-}
-
-@media (max-width: 640px) {
-  .gs-shell-v284 .site-footer { grid-template-columns: 1fr; }
-  .gs-shell-v284 .footer-meta-block { position: static; justify-items: start; margin-top: 1rem; }
-  .gs-shell-v284 .site-footer small { margin-top: 0; }
 }

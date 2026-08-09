@@ -3,7 +3,7 @@ import { GSButton } from '@goldshore/ui';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import FlowSection from '../components/FlowSection.astro';
 
-export const prerender = true;
+export const prerender = false;
 ---
 
 <BaseLayout
@@ -27,7 +27,7 @@ export const prerender = true;
       </p>
     </div>
 
-    <form id="contact-form" class="gs-card" action="/api/contact" method="post">
+    <form id="contact-form" class="gs-card" method="post">
       <input type="hidden" name="formType" value="contact" />
       <input type="hidden" name="redirectTo" value="/thank-you" />
       <input type="hidden" name="formStartedAt" value="" />
@@ -115,6 +115,29 @@ export const prerender = true;
         <span id="submit-text">Send message</span>
       </GSButton>
     </form>
+
+    <script>
+      {
+        // Set form action dynamically based on current deployment
+        const form = document.getElementById('contact-form');
+        if (form) {
+          const host = window.location.host;
+          let apiHost = host;
+
+          // Replace goldshore.ai with api.goldshore.ai
+          if (host.includes('goldshore.ai')) {
+            apiHost = host.replace(/^([^.]+\.)?goldshore\.ai$/, 'api.goldshore.ai');
+          }
+          // Replace goldshore-pages.dev preview with corresponding api preview
+          else if (host.includes('goldshore-pages.dev')) {
+            apiHost = host.replace(/\.goldshore-pages\.dev$/, '-api.goldshore-pages.dev');
+          }
+
+          const protocol = window.location.protocol;
+          form.action = `${protocol}//${apiHost}/mail/contact`;
+        }
+      }
+    </script>
   </FlowSection>
 
   <FlowSection>

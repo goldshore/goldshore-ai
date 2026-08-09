@@ -10,6 +10,7 @@ const webWrangler = readFileSync(
   repoRelative('../../../../infra/Cloudflare/gs-web.wrangler.toml'),
   'utf8',
 );
+const deployedWebWrangler = readFileSync(repoRelative('../../wrangler.toml'), 'utf8');
 
 const webReadme = readFileSync(repoRelative('../../README.md'), 'utf8');
 
@@ -25,4 +26,17 @@ test('gs-web README documents indirect runtime configuration until a concrete co
       'Do not add a `GS_CONFIG` binding to the web Pages project unless a concrete `apps/gs-web` runtime consumer needs live request-time reads.',
     ),
   );
+});
+
+test('gs-web deploy environments reuse the provisioned session namespace', () => {
+  const sessionNamespaceId = '09ae2ffbffe24e628c9538c8129dfe33';
+
+  for (const envName of ['prod', 'preview']) {
+    assert.match(
+      deployedWebWrangler,
+      new RegExp(
+        `\\[\\[env\\.${envName}\\.kv_namespaces\\]\\][\\s\\S]*?binding = "SESSION"[\\s\\S]*?id = "${sessionNamespaceId}"`,
+      ),
+    );
+  }
 });

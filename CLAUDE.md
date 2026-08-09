@@ -72,6 +72,10 @@ If a task appears to require a separate admin, gateway, MCP, cron, mail, signals
 
 ## AI IDE context: Antigravity + VS Code
 
+### Shared GitHub handoffs
+
+Claude and Codex coordinate through GitHub issues rather than private local context. Use the same issue tags defined in `AGENTS.md`: `[agent:claude]`, `[agent:codex]`, `[env:local]`, `[env:preview]`, `[env:production]`, `[status:ready]`, `[status:blocked]`, and `[handoff:needed]`. Every handoff comment must include the remote branch and commit SHA, completed checks, deployment/run URLs, blockers, and the next owner/action.
+
 **Antigravity** is the primary IDE used to build parts of goldshore and banproof-me. It is a Google IDE with multiple AI agents pre-integrated: Gemini, Codex, Claude, Copilot, and others. Think of it as VS Code with a built-in multi-agent AI layer.
 
 When working in Antigravity or VS Code on this codebase:
@@ -127,6 +131,14 @@ For Claude/Codex assistance with Google API integration: provide the API name, s
 - Secrets Store: `INTEGRATION_MASTER_KEY` is bound as a per-secret Secrets Store binding from store `b9824d3280c54573a24137c7e7143b33`. Do not use the historical `SECRETS.get(...)` store-object shape in Wrangler config.
 - Unclear/live Cloudflare note: if the dashboard still shows legacy service bindings such as `AGENT`, `GS_MAIL`, `GS_WEB PROD`, `API_SERVICE`, or `GOLDSHORE_AI`, treat them as stale until a human confirms a live dependency; do not re-add them to repo-managed `gs-api` config without updating this file and `docs/WORKER_CONFIGURATION.md`.
 
+> **`KV` means a different namespace in each app.** In `gs-api` the `KV` binding
+> resolves to `GS_API_KV` (`e0b8b807…`); in `gs-web` it resolves to
+> `GOLDSHORE-AI` (`5f133705…`). The binding name is identical, the store is not.
+> Any key that both apps need — `PRODUCT_CATALOG` is the one that got this wrong —
+> must have exactly one owning app, with the other reaching it over HTTP. Reading
+> or writing the same key from `env.KV` in both apps forks it into two stores that
+> diverge silently, with no error at build or deploy time.
+
 ---
 
 ## Active branch: `claude/risk-radar-fra-epo-2wk5mk`
@@ -141,7 +153,8 @@ What's on this branch:
 ## CI / deployment
 
 - GitHub Actions: Lighthouse CI threshold `LH_MIN_PERFORMANCE: 0.60`
-- Deploy token: `CLOUDFLARE_BUILD_API_TOKEN` GitHub secret (renew via `manage-cf-tokens.yml` if expired)
+- GitHub Actions deploy token: `CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN`
+- Cloudflare Worker Builds token: `CLOUDFLARE_BUILD_API_TOKEN` (managed separately)
 - Workers deploy per-app via `wrangler deploy`
 
 ---

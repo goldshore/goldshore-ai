@@ -1,64 +1,145 @@
-# Agent Instructions
+# AGENTS.md — goldshore-ai
 
-This file contains instructions for AI agents working in this repository.
+This repository is the active Gold Shore AI production monorepo. Agents should treat repository state, workspace configuration, Wrangler manifests, and CI as authoritative over stale planning notes.
 
-## 🚨 CRITICAL ARCHITECTURE RULE (For Jules, Claude, Codex, etc.)
+## Architecture contract
 
-**THE GREAT CONSOLIDATION (2026-03-29) HAS OCCURRED.**
-This repository is strictly a **TWO-APP MONOREPO**:
-1. `apps/gs-web` (Astro Frontend)
-2. `apps/gs-api` (Unified API Worker)
+This is intentionally a two-app deployable monorepo:
 
-**DO NOT** create any new Cloudflare workers inside `apps/`.
-**DO NOT** create any new `deploy-*.yml` workflow files in `.github/workflows`.
-All routing, cron jobs, DB operations, AI logic, and queues MUST be piped into the singular `gs-api` flow. All frontend pages MUST be placed in `gs-web`. Any pull request attempting to re-introduce `gs-agent`, `gs-gateway`, `gs-mail`, `gs-control`, etc., will be rejected.
+- `apps/gs-web` — Astro frontend and public/admin/docs UI routes.
+- `apps/gs-api` — unified Cloudflare Worker backend for API routes, auth, scheduled work, queues, email handlers, AI/server logic, control-plane routes, and integrations.
+- `packages/*` — shared libraries and contracts.
+- `infra/*` — retained infrastructure workspaces and deployment/operations support; they are not additional product apps.
 
-### Rules
-1. **Frontend Only in gs-web**: All visual components, pages, Astro routes, and client-side logic must reside inside `apps/gs-web`. No separate admin or documentation frontend apps are permitted. Use sub-routes (e.g., `/admin`, `/docs`).
-2. **Backend Only in gs-api**: All server-side logic, scheduled crons, email receivers, queues, auth middleware, and proxy code must be inside `apps/gs-api`. Do not construct satellite workers.
-3. **No Deploy Sprawl**: The `.github/workflows` folder is locked to two production deploy files: `deploy-gs-web.yml` and `deploy-gs-api.yml`.
+Do not create new deployable apps or satellite Workers such as `gs-agent`, `gs-gateway`, `gs-mail`, `gs-control`, `gs-cron`, `gs-signals`, or a separate admin frontend. Extend `gs-web` or `gs-api` instead unless a human explicitly changes this architecture contract.
 
-### Edge Cases
-1. **Third-party integrations requiring unique entry points (e.g., Mail Webhooks):** Handle these via dedicated sub-routers under `apps/gs-api/src/routes/` and export specific event handlers (like Cloudflare `email()` bounds) directly from `gs-api/src/index.ts`. Do not spin up a separate "mail worker".
-2. **Heavy AI workloads exceeding Cloudflare Worker time limits:** Implement Cloudflare Queues connected to `gs-api`, where the `queue()` handler in `gs-api/src/index.ts` processes payloads asynchronously. Do not start a "long-running instance worker".
+`pnpm-workspace.yaml` is the definitive workspace boundary. If this file changes, update this document in the same PR.
 
-### Guards
-1. **Workspace Guard:** `pnpm-workspace.yaml` only identifies `apps/gs-web` and `apps/gs-api`. If you attempt to use any other `apps/` directory, Turborepo will ignore it.
-2. **Workflow Guard:** If you create a `.github/workflows/deploy-XYZ.yml` file, the CI platform checks will aggressively fail the PR. You are strongly guarded against deployment fragmentation.
+## Source-of-truth order
 
-## Commit / PR Description Requirement
+When documentation disagrees, verify in this order:
 
-At the top of every commit description (and corresponding PR description), include a short line that explicitly states whether the PR branch should be **merged** or **squashed**.
+1. Current code and `pnpm-workspace.yaml`.
+2. `apps/gs-web/wrangler.toml` and `apps/gs-api/wrangler.toml`, the sole
+   reviewable Cloudflare binding and route contracts for product Workers.
+3. `.github/workflows/*`.
+4. `infra/Cloudflare/*` and infrastructure docs.
+5. Live Cloudflare configuration and deployed HTTP behavior.
+6. README, `CLAUDE.md`, handoff notes, reports, and historical planning documents.
 
-Example format:
+Do not restore a removed service, binding, route, workflow, or package solely because an older document names it.
 
-* `Merge strategy: merge`
-* `Merge strategy: squash`
+## Package and build rules
 
-## Build Configuration
+Use pnpm from the repository root. Do not use npm or yarn for workspace operations.
 
-All API services and workers must use the `gs-control` build token for Cloudflare Worker Builds. When updating build settings in the Cloudflare Dashboard, ensure that the token used corresponds to the `gs-control` service.
+Baseline commands:
 
-## Tagging for Review
+```bash
+pnpm install --frozen-lockfile
+pnpm validate
+pnpm lint
+pnpm test
+pnpm build
+pnpm repo:health
+```
 
-To request a review of an error or issue, please use the following tags in your comments or pull request descriptions:
+For focused work, prefer filters rather than building unrelated workspaces:
 
-*   **@Jules-Bot `[review-request]`**: For a general code review.
-*   **@Jules-Bot `[error-analysis]`**: For help in diagnosing and fixing a specific error.
-*   **@Jules-Bot `[issue-repro]`**: For assistance in reproducing a reported issue.
+```bash
+pnpm --filter @goldshore/gs-web build
+pnpm --filter @goldshore/gs-api build
+```
 
-Please provide as much context as possible when using these tags, including:
+Do not hand-edit `pnpm-lock.yaml` to resolve dependency drift. Regenerate it with pnpm and verify `pnpm install --frozen-lockfile` succeeds before proposing a merge.
 
-*   A clear description of the issue or the code to be reviewed.
-*   Steps to reproduce the error or issue.
-*   Any relevant logs or error messages.
-*   The expected outcome.
+## Cloudflare and deployment safety
 
-## Commit / PR Description Header
+- **Configuration authority:** treat `apps/gs-web/wrangler.toml` and
+  `apps/gs-api/wrangler.toml` as the repository's canonical, reviewable Worker
+  binding, route, migration, and trigger contracts. Cloudflare's dashboard is
+  the execution authority and live-state authority. Other Cloudflare files are
+  expected-state documentation or redacted inventory, never deploy inputs.
+- A human must apply every production mutation in the Cloudflare dashboard
+  through the GitHub `production` environment approval gate. CI must not mutate
+  bindings, routes, secrets, migrations, triggers, DNS, Access, or email routing.
+- Secret **values**, IdP client secrets, Access policies, and email routing are
+  dashboard-only. Store neither their values nor Cloudflare credentials in
+  GitHub Actions secrets, repository files, Wrangler TOML, or artifacts. Secret
+  names may be documented and inventoried.
+- Do not rename bindings, environments, Worker names, routes, queues, D1 databases, KV namespaces, R2 bindings, Durable Objects, or Secrets Store bindings without tracing every consumer first.
+- Production environment naming must match the current manifest; do not substitute historical aliases from old docs.
+- Do not add deployment workflows simply to work around an existing workflow. Fix the canonical workflow.
+- Never change DNS, Worker routes, custom domains, Access policies, or production bindings based on memory alone. Verify the live owner first.
 
-At the top of every commit description or PR description, include a one-line merge strategy note that clearly states whether the branch should be merged with a standard merge commit or squashed.
+## Web routing safety
 
-Example:
+Astro source routes can be silently overridden by colliding files under `apps/gs-web/public`. Before changing or debugging a public route, inspect both `src/pages` and `public` for the same output path.
 
-*   `Merge Strategy: Squash`
-*   `Merge Strategy: Merge Commit`
+Avoid reintroducing stale static `index.html` files that shadow Astro pages.
+
+## Security and secrets
+
+Never commit:
+
+- OpenAI or other provider API keys.
+- Cloudflare API tokens, account credentials, Access secrets, or signing keys.
+- GitHub tokens or deploy credentials.
+- OAuth client secrets, service-account keys, database credentials, or private keys.
+- Real `.env` / `.dev.vars` values, auth headers, session dumps, or production logs containing secrets.
+
+Enter Cloudflare Worker secret values directly in the Cloudflare dashboard. Use
+the relevant provider's secret store for provider-owned secrets; never copy
+Cloudflare secret values or credentials into GitHub.
+
+Do not expose server-side AI credentials in browser code. Browser AI features must call a server-side route or Worker.
+
+## Change discipline
+
+Before editing:
+
+1. Read the latest issue/PR context and open branches affecting the same subsystem.
+2. Read `README.md`, this file, and the relevant app-level configuration.
+3. Check whether the requested behavior already exists elsewhere in the two-app architecture.
+4. Keep changes scoped; do not mix unrelated migrations, UI redesigns, lockfile repairs, and infrastructure edits in one PR.
+
+Before handoff or merge:
+
+- Run the smallest relevant validation plus the repository-level checks affected by the change.
+- Record the remote branch and commit SHA.
+- State what was tested and what was not.
+- Include preview/deployment URLs when applicable.
+- Document any manual Cloudflare, GitHub, OpenAI, or other HITL step still required.
+
+## GitHub / multi-agent handoff
+
+GitHub issues and PRs are the shared state between Codex, Claude, Jules, Copilot, Gemini, and human operators. Never assume another agent can see unpushed local work.
+
+Useful issue markers:
+
+- `[agent:codex]`, `[agent:claude]`
+- `[env:local]`, `[env:preview]`, `[env:production]`
+- `[status:ready]`, `[status:blocked]`
+- `[handoff:needed]`
+
+A handoff should include branch, commit SHA, checks run, deployment/run URLs, blockers, and the next owner/action.
+
+## Merge policy
+
+Use a PR for production-impacting changes. At the top of the PR description, state the intended strategy:
+
+- `Merge strategy: squash`
+- `Merge strategy: merge`
+
+Do not force-push shared branches or bypass failing required checks merely to complete an agent task.
+
+## Related guidance
+
+Read these when relevant:
+
+- `README.md` — current repository/runtime map.
+- `AGENT_HANDOFF.md` — continuity notes and operational handoffs.
+- `CLAUDE.md` — additional historical and agent-specific context; verify against current code before relying on it.
+- `docs/workspace-package-inventory.md` and architecture docs for migrations.
+
+If any of those conflict with current workspace or runtime configuration, fix the documentation after verifying the live state rather than changing production to match stale text.

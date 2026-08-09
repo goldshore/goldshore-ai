@@ -37,22 +37,6 @@ const isSameOriginRequest = (request: Request) => {
     return fetchSite === 'same-origin' || fetchSite === 'none';
   }
 
-  const refererHeader = request.headers.get('referer');
-  if (refererHeader) {
-    try {
-      return new URL(refererHeader).origin === expectedOrigin;
-    } catch {
-      return false;
-    }
-  }
-
-const forwardedHeaders = (request: Request) => {
-  const headers = new Headers();
-  for (const name of ['accept', 'authorization', 'cookie', 'cf-connecting-ip', 'user-agent', 'content-type']) {
-    const value = request.headers.get(name);
-    if (value) headers.set(name, value);
-  }
-
   return false;
 };
 
@@ -80,15 +64,24 @@ const requirePermission = async (
   return { response: null };
 };
 
+const forwardedHeaders = (request: Request) => {
+  const headers = new Headers();
+  for (const name of ['accept', 'authorization', 'cookie', 'cf-connecting-ip', 'user-agent', 'content-type']) {
+    const value = request.headers.get(name);
+    if (value) headers.set(name, value);
+  }
+  return headers;
+};
+
 export const GET: APIRoute = async ({ request, locals, params }) => {
-  const env = locals.runtime?.env as Env | undefined;
+  const env = locals.runtime?.env as AccessEnv | undefined;
   const slug = params.slug;
 
   if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
   }
 
-  const auth = await requirePermission(request, env as AccessEnv, 'forms:read');
+  const auth = await requirePermission(request, env, 'forms:read');
   if (auth.response) {
     return auth.response;
   }
@@ -124,7 +117,7 @@ const proxy = async (request: Request, env: Env | undefined, slug?: string) => {
     headers: forwardedHeaders(request),
     body: request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.text(),
 export const PUT: APIRoute = async ({ request, locals, params }) => {
-  const env = locals.runtime?.env as Env | undefined;
+  const env = locals.runtime?.env as AccessEnv | undefined;
   const slug = params.slug;
 
   if (!env?.PLATFORM_DB) {
@@ -135,7 +128,7 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     return forbiddenResponse('Forbidden: CSRF check failed.');
   }
 
-  const auth = await requirePermission(request, env as AccessEnv, 'forms:write');
+  const auth = await requirePermission(request, env, 'forms:write');
   if (auth.response) {
     return auth.response;
   }
@@ -217,13 +210,6 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
 
 export const GET: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
 export const PUT: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
-export const PATCH = PUT;
-
-export const __testing = {
-  isSameOriginRequest,
-  requirePermission,
-};
-
 export const PATCH = PUT;
 
 export const __testing = {
