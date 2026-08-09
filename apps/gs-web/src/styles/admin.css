@@ -212,3 +212,20 @@
   padding-left: calc(var(--gs-space-4, 1rem) + 0.75rem);
   font-size: 0.82rem;
 }
+
+/* ── Sidebar footer ── */
+.gs-sidebar-footer {
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(90, 162, 255, 0.1);
+}
+
+.gs-logout-btn {
+  color: rgba(148, 163, 184, 0.8) !important;
+  font-size: 0.85rem;
+}
+
+.gs-logout-btn:hover {
+  color: rgba(239, 68, 68, 0.9) !important;
+  background: rgba(239, 68, 68, 0.05) !important;
+}

@@ -2,6 +2,7 @@ import {
   buildAdminSession,
   hasAdminPermission,
   verifyAccessWithClaims,
+  verifyJWTCookie,
   type AccessTokenPayload,
   type AdminPermission,
   type AdminSession,
@@ -21,6 +22,10 @@ const ADMIN_HOSTS = new Set([
   'admin.goldshore.org',
   'admin-preview.goldshore.ai',
   'admin-preview.goldshore.org',
+  'dashboard.goldshore.ai',
+  'dashboard.goldshore.org',
+  'dashboard-preview.goldshore.ai',
+  'dashboard-preview.goldshore.org',
 ]);
 
 const STATIC_PATH_PREFIXES = [
@@ -277,20 +282,22 @@ export const authorizeAdminRequest = async (
   env: AccessEnv | undefined,
   rule: AdminRouteRule,
 ): Promise<AdminAuthorizationResult> => {
-  if (!env?.CLOUDFLARE_ACCESS_AUDIENCE) {
+  if (!env?.JWT_SECRET && !env?.CLOUDFLARE_TEAM_DOMAIN) {
     return {
       ok: false,
       status: 503,
-      error: 'Admin access is misconfigured: CLOUDFLARE_ACCESS_AUDIENCE is missing.',
+      error: 'Admin access is misconfigured: no JWT verifier is configured.',
     };
   }
 
-  const claims = await verifyAccessWithClaims(request, env);
+  const claims =
+    await verifyJWTCookie(request, env) ??
+    await verifyAccessWithClaims(request, env);
   if (!claims) {
     return {
       ok: false,
       status: 401,
-      error: 'Cloudflare Access authentication is required.',
+      error: 'JWT authentication is required.',
     };
   }
 
@@ -299,7 +306,7 @@ export const authorizeAdminRequest = async (
     return {
       ok: false,
       status: 403,
-      error: 'Cloudflare Access authenticated, but no admin role was granted.',
+      error: 'JWT authenticated, but no admin role was granted.',
     };
   }
 
