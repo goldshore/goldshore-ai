@@ -1,7 +1,9 @@
 import {
   buildAdminSession,
   hasAdminPermission,
+  ROLE_PERMISSIONS,
   verifyAccessWithClaims,
+  authorizeAccessClaims,
   verifyJWTCookie,
   type AccessTokenPayload,
   type AdminPermission,
@@ -277,6 +279,25 @@ export const getAdminLoginDestination = (requested?: string) => {
   }
 };
 
+/**
+ * A successfully verified Cloudflare Access assertion has already passed the
+ * dedicated Access application's identity policy. Access assertions do not
+ * normally contain the application-specific `admin` role used by cookie JWTs,
+ * so give that edge-authenticated identity the admin session expected by the
+ * protected dashboard. Explicit supported roles still take precedence.
+ */
+export const buildCloudflareAccessAdminSession = (
+  claims: AccessTokenPayload,
+): AdminSession => {
+  const session = buildAdminSession(claims);
+  if (session.roles.length > 0) return session;
+
+  return {
+    roles: ['admin'],
+    permissions: [...ROLE_PERMISSIONS.admin],
+  };
+};
+
 export const authorizeAdminRequest = async (
   request: Request,
   env: AccessEnv | undefined,
@@ -290,9 +311,15 @@ export const authorizeAdminRequest = async (
     };
   }
 
-  const claims =
+  const cookieClaims = await verifyJWTCookie(request, env);
+  const accessClaims = cookieClaims ? null : await verifyAccessWithClaims(request, env);
+  const claims = cookieClaims ?? accessClaims;
+  const verifiedClaims =
     await verifyJWTCookie(request, env) ??
     await verifyAccessWithClaims(request, env);
+  const claims = verifiedClaims
+    ? await authorizeAccessClaims(verifiedClaims, env)
+    : null;
   if (!claims) {
     return {
       ok: false,
@@ -301,7 +328,9 @@ export const authorizeAdminRequest = async (
     };
   }
 
-  const session = buildAdminSession(claims);
+  const session = accessClaims
+    ? buildCloudflareAccessAdminSession(accessClaims)
+    : buildAdminSession(claims);
   if (rule.requiresAdminRole && session.roles.length === 0) {
     return {
       ok: false,
