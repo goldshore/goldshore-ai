@@ -1,7 +1,10 @@
 ---
 import MarketingLayout from '../../layouts/MarketingLayout.astro';
+import { getAdminOriginsForHostname } from '../../utils/admin-access';
 
 export const prerender = false;
+
+const { canonical: adminOrigin } = getAdminOriginsForHostname(Astro.url.hostname);
 
 const cards = [
   {
@@ -25,7 +28,7 @@ const cards = [
   {
     title: 'Admin Dashboard',
     body: 'Enter the operator workspace for internal reviews, submissions, and controls.',
-    href: 'https://admin.goldshore.ai/leads',
+    href: `${adminOrigin}/leads`,
     cta: 'Go to admin',
   },
   {
@@ -89,7 +92,7 @@ const cards = [
       <article class="developer-card">
         <h2>Admin Dashboard</h2>
         <p>Enter the operator workspace for internal reviews, submissions, and controls.</p>
-        <a href="https://admin.goldshore.ai/lead-submissions" class="developer-card__link">Go to admin &rarr;</a>
+        <a href={`${adminOrigin}/lead-submissions`} class="developer-card__link">Go to admin &rarr;</a>
       </article>
     </div>
   </section>

@@ -1,4 +1,4 @@
-import { describe, it } from 'node:test';
+import { describe, it, mock } from 'node:test';
 import assert from 'node:assert';
 import { Hono } from 'hono';
 import health from './health.ts';
@@ -36,6 +36,27 @@ describe('API contract/versioning', () => {
     assert.strictEqual(data.version, 'abc123');
     assert.strictEqual(data.deploySha, 'abc123');
     assert.strictEqual(data.service, 'gs-api');
+  });
+
+  it('does not expose Cloudflare configuration mutation endpoints', async () => {
+    const app = new Hono<{ Variables: { accessClaims: any } }>();
+    app.use('*', async (c, next) => {
+      c.set('accessClaims', { roles: ['owner'], email: 'marstonr6@gmail.com' });
+      await next();
+    });
+    app.route('/system', system);
+    const fetchMock = mock.method(globalThis, 'fetch', async () => {
+      throw new Error('Cloudflare API must not be called by disabled mutation routes');
+    });
+    try {
+      for (const path of ('dns/apply workers/reconcile pages/deploy access/audit').split(' ')) {
+        const res = await app.request(`/system/${path}`, { method: 'POST' });
+        assert.strictEqual(res.status, 404);
+      }
+      assert.strictEqual(fetchMock.mock.callCount(), 0);
+    } finally {
+      fetchMock.mock.restore();
+    }
   });
 
   it('legacy /user/:id endpoint redirects to /users/:id', async () => {

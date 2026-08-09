@@ -1,5 +1,5 @@
 import type { MiddlewareHandler } from 'astro';
-import { verifyJWTCookie } from '@goldshore/auth';
+import { ADMIN_PERMISSIONS } from '@goldshore/auth';
 import { HTML_CONTENT_SECURITY_POLICY } from './security/policy';
 import {
   authorizeAdminRequest,
@@ -48,16 +48,7 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
     if (allowLocalAdminBypass) {
       context.locals.adminSession = {
         roles: ['admin'],
-        permissions: [
-          'content:read', 'content:write',
-          'system:read', 'system:write',
-          'media:read', 'media:write',
-          'forms:read', 'forms:write',
-          'users:manage',
-          'audit:read',
-          'ai:analyze',
-          'system:integrations:manage'
-        ],
+        permissions: [...ADMIN_PERMISSIONS],
         isAuthenticated: true
       };
     } else {
