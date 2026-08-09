@@ -1,0 +1,14 @@
+{
+  "access_applications": [
+    {
+      "name": "GoldShore Admin",
+      "application_id": "DASHBOARD_EXPORT_REQUIRED"
+    },
+    { "name": "GoldShore API", "application_id": "DASHBOARD_EXPORT_REQUIRED" },
+    { "name": "GoldShore MCP", "application_id": "DASHBOARD_EXPORT_REQUIRED" }
+  ],
+  "email_routing": "DASHBOARD_ONLY",
+  "idp_client_secrets": "DASHBOARD_ONLY",
+  "access_policies": "DASHBOARD_ONLY",
+  "secret_values": "DASHBOARD_ONLY"
+}

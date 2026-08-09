@@ -20,7 +20,8 @@ Do not create new deployable apps or satellite Workers such as `gs-agent`, `gs-g
 When documentation disagrees, verify in this order:
 
 1. Current code and `pnpm-workspace.yaml`.
-2. App-level `wrangler.toml` files.
+2. `apps/gs-web/wrangler.toml` and `apps/gs-api/wrangler.toml`, the sole
+   reviewable Cloudflare binding and route contracts for product Workers.
 3. `.github/workflows/*`.
 4. `infra/Cloudflare/*` and infrastructure docs.
 5. Live Cloudflare configuration and deployed HTTP behavior.
@@ -54,7 +55,18 @@ Do not hand-edit `pnpm-lock.yaml` to resolve dependency drift. Regenerate it wit
 
 ## Cloudflare and deployment safety
 
-- Treat each app's `wrangler.toml` as the canonical runtime binding declaration.
+- **Configuration authority:** treat `apps/gs-web/wrangler.toml` and
+  `apps/gs-api/wrangler.toml` as the repository's canonical, reviewable Worker
+  binding, route, migration, and trigger contracts. Cloudflare's dashboard is
+  the execution authority and live-state authority. Other Cloudflare files are
+  expected-state documentation or redacted inventory, never deploy inputs.
+- A human must apply every production mutation in the Cloudflare dashboard
+  through the GitHub `production` environment approval gate. CI must not mutate
+  bindings, routes, secrets, migrations, triggers, DNS, Access, or email routing.
+- Secret **values**, IdP client secrets, Access policies, and email routing are
+  dashboard-only. Store neither their values nor Cloudflare credentials in
+  GitHub Actions secrets, repository files, Wrangler TOML, or artifacts. Secret
+  names may be documented and inventoried.
 - Do not rename bindings, environments, Worker names, routes, queues, D1 databases, KV namespaces, R2 bindings, Durable Objects, or Secrets Store bindings without tracing every consumer first.
 - Production environment naming must match the current manifest; do not substitute historical aliases from old docs.
 - Do not add deployment workflows simply to work around an existing workflow. Fix the canonical workflow.
@@ -76,7 +88,9 @@ Never commit:
 - OAuth client secrets, service-account keys, database credentials, or private keys.
 - Real `.env` / `.dev.vars` values, auth headers, session dumps, or production logs containing secrets.
 
-Use Cloudflare secrets, GitHub Actions secrets/environments, OpenAI Platform key management, or the relevant provider secret store.
+Enter Cloudflare Worker secret values directly in the Cloudflare dashboard. Use
+the relevant provider's secret store for provider-owned secrets; never copy
+Cloudflare secret values or credentials into GitHub.
 
 Do not expose server-side AI credentials in browser code. Browser AI features must call a server-side route or Worker.
 
