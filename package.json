@@ -33,6 +33,7 @@
     "sync:cf": "echo 'Run codex sync script here' && tsx scripts/sync-gateway.ts",
     "repo:clean": "git clean -xfd -e .env -e env.secrets.runtime.json",
     "repo:install": "pnpm install --no-frozen-lockfile",
+    "lockfile:resolve": "bash scripts/resolve-pnpm-lockfile-conflict.sh",
     "repo:health": "node scripts/repo-health.mjs",
     "audit": "pnpm run repo:health",
     "build:api": "turbo run build --filter=@goldshore/gs-api",

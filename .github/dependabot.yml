@@ -22,6 +22,12 @@ updates:
     # ensures Dependabot follows workspace links
     versioning-strategy: increase
     open-pull-requests-limit: 10
+    # One scheduled dependency branch means one lockfile update instead of a
+    # fleet of branches repeatedly conflicting with the same generated file.
+    groups:
+      weekly-pnpm-updates:
+        patterns:
+          - "*"
     allow:
       - dependency-type: "all"
 
