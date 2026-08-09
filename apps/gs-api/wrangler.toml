@@ -254,6 +254,10 @@ cron = "0 2 * * *"
 # consolidation. Agent, mail, and API behavior is implemented directly by
 # gs-api routes and event handlers; no source code references these bindings.
 
+# ── AI Gateway binding ──────────────────────────────────────────────────────
+[env.prod.ai]
+binding = "AI"
+
 # ── Queues (producers) ───────────────────────────────────────────────────────────
 [[env.prod.queues.producers]]
 binding = "JOBS_QUEUE"
