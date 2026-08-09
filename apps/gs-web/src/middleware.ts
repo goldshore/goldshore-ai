@@ -1,15 +1,29 @@
 import type { MiddlewareHandler } from 'astro';
 import { verifyAccessWithClaims } from '@goldshore/auth';
 import { HTML_CONTENT_SECURITY_POLICY } from './security/policy';
+import {
+  authorizeAdminRequest,
+  getAdminRouteRule,
+  getAdminHostRewritePath,
+  isAdminHost,
+  isStaticAssetPath,
+} from './utils/admin-access';
 
 const ADMIN_PATH_PREFIXES = ['/admin', '/api/admin'];
 
 const isAdminPath = (pathname: string) =>
   ADMIN_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 
+const getRequestHostname = (request: Request, url: URL) =>
+  (request.headers.get('host') ?? url.hostname).split(':')[0].toLowerCase();
+
+const isProtectedAdminRequest = (request: Request, url: URL) =>
+  isAdminPath(url.pathname) ||
+  (isAdminHost(getRequestHostname(request, url)) && !isStaticAssetPath(url.pathname));
+
 export const onRequest: MiddlewareHandler = async (context, next) => {
   // Redirect risk.goldshore.ai root → /risk-radar (subdomain alias for the product page).
-  const host = context.request.headers.get('host') ?? '';
+  const host = getRequestHostname(context.request, context.url);
   if (
     (host === 'risk.goldshore.ai' || host === 'risk.goldshore.org') &&
     context.url.pathname === '/'
@@ -25,7 +39,7 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   // the only thing standing between the public internet and these pages,
   // since the apps/gs-web/src/pages/admin/*.astro page shells otherwise have
   // no server-side auth of their own.
-  if (isAdminPath(context.url.pathname)) {
+  if (isProtectedAdminRequest(context.request, context.url)) {
     const runtimeEnv = context.locals.runtime?.env as Env | undefined;
     const allowLocalAdminBypass = import.meta.env.DEV || runtimeEnv?.DEV_AUTH_BYPASS === '1';
 
@@ -40,9 +54,76 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
     }
   }
 
+  // The admin hostname is a first-class alias for gs-web's existing admin
+  // route tree. Keep implementation paths canonical without exposing the
+  // /admin prefix in operator-facing URLs.
+  const adminRewritePath = isAdminHost(host)
+    ? getAdminHostRewritePath(context.url.pathname)
+    : null;
+
   // Response headers are authoritative for Astro-rendered HTML. Static files
   // that can bypass middleware keep their own platform config in public/_headers.
   context.locals.securityPolicySource = 'response-header';
+
+  const url = new URL(context.request.url);
+  const adminRule = getAdminRouteRule(
+    url.pathname,
+    context.request.method,
+    url.hostname,
+  );
+
+  if (adminRule) {
+    const runtimeEnv = context.locals.runtime?.env as Env | undefined;
+    const allowLocalAdminBypass = import.meta.env.DEV || runtimeEnv?.DEV_AUTH_BYPASS === '1';
+
+    if (allowLocalAdminBypass) {
+      context.locals.adminSession = {
+        roles: ['admin'],
+        permissions: [
+          'content:read', 'content:write',
+          'system:read', 'system:write',
+          'media:read', 'media:write',
+          'forms:read', 'forms:write',
+          'users:manage',
+          'audit:read',
+          'ai:analyze',
+          'system:integrations:manage'
+        ]
+      };
+    } else {
+      const authResult = await authorizeAdminRequest(
+        context.request,
+        runtimeEnv ?? {},
+        adminRule,
+      );
+
+      if (authResult.ok === false) {
+        const isApiRoute = adminRule.kind === 'api';
+        const body = isApiRoute
+          ? JSON.stringify({ ok: false, error: authResult.error })
+          : authResult.error;
+
+        return new Response(body, {
+          status: authResult.status,
+          headers: {
+            'content-type': isApiRoute
+              ? 'application/json; charset=utf-8'
+              : 'text/plain; charset=utf-8',
+          },
+        });
+      }
+
+      context.locals.adminSession = authResult.session;
+    }
+
+    if (
+      adminRule.kind === 'page' &&
+      isAdminHost(url.hostname) &&
+      url.pathname !== adminRule.canonicalPath
+    ) {
+      return Response.redirect(new URL(adminRule.canonicalPath, url.origin), 302);
+    }
+  }
 
   const response = await next();
   response.headers.set('Content-Security-Policy', HTML_CONTENT_SECURITY_POLICY);
