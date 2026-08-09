@@ -3,7 +3,7 @@ import { GSButton } from '@goldshore/ui';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import FlowSection from '../components/FlowSection.astro';
 
-export const prerender = true;
+export const prerender = false;
 ---
 
 <BaseLayout
@@ -27,7 +27,7 @@ export const prerender = true;
       </p>
     </div>
 
-    <form id="contact-form" class="gs-card" action="/api/contact" method="post">
+    <form id="contact-form" class="gs-card" method="post">
       <input type="hidden" name="formType" value="contact" />
       <input type="hidden" name="redirectTo" value="/thank-you" />
       <input type="hidden" name="formStartedAt" value="" />
@@ -115,6 +115,7 @@ export const prerender = true;
         <span id="submit-text">Send message</span>
       </GSButton>
     </form>
+
   </FlowSection>
 
   <FlowSection>

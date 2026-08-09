@@ -1,0 +1,77 @@
+name: Issue Agent Triage
+
+on:
+  issues:
+    types: [opened, edited, reopened]
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: Issue number to triage
+        required: true
+        type: number
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: issue-agent-triage-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Apply shared agent and environment labels
+        uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
+        with:
+          script: |
+            const issueNumber = context.eventName === 'workflow_dispatch'
+              ? Number(context.payload.inputs.issue_number)
+              : context.issue.number;
+
+            const { data: issue } = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+            });
+
+            const eventText = context.payload.comment?.body ?? '';
+            const text = `${issue.title}\n${issue.body ?? ''}\n${eventText}`.toLowerCase();
+            const currentLabels = issue.labels
+              .map((label) => typeof label === 'string' ? label : label.name)
+              .filter(Boolean);
+            const labels = new Set(currentLabels);
+
+            const rules = [
+              [/(^|\s)@codex\b|\[agent:codex\]/, 'agent:codex'],
+              [/(^|\s)@claude\b|\[agent:claude\]/, 'agent:claude'],
+              [/\[env:local\]|\blocal environment\b/, 'env:local'],
+              [/\[env:preview\]|\bpreview environment\b|\bpreview deploy/, 'env:preview'],
+              [/\[env:production\]|\[env:prod\]|\bproduction environment\b|\bprod deploy/, 'env:production'],
+              [/\[status:blocked\]|\bblocked by\b/, 'status:blocked'],
+              [/\[status:ready\]|\bready for (work|review|deploy)/, 'status:ready'],
+              [/\[handoff:needed\]|\bhandoff needed\b/, 'handoff:needed'],
+            ];
+
+            for (const [pattern, label] of rules) {
+              if (pattern.test(text)) labels.add(label);
+            }
+
+            const nextLabels = [...labels].filter(Boolean).sort();
+            const previousLabels = [...currentLabels].sort();
+            if (JSON.stringify(nextLabels) === JSON.stringify(previousLabels)) {
+              core.info('No label changes required.');
+              return;
+            }
+
+            await github.rest.issues.setLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              labels: nextLabels,
+            });

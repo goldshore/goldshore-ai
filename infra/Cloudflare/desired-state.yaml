@@ -15,106 +15,147 @@ cloudflare:
       # Worker Route (goldshore.ai/* -> gs-web-prod) had nothing to activate
       # it, so the hostname didn't resolve at all -- same failure mode as
       # api.goldshore.ai above. Content points at the real live worker
-      # (gs-web-prod), matching the pattern already used for
-      # admin.goldshore.ai below, rather than the stale gs-web.pages.dev
-      # Pages target from before the Pages-to-Worker migration.
+      # (gs-web-prod), and the admin hostnames are routed through the same
+      # gs-web Worker so the host-level rewrite middleware can mount the
+      # authenticated admin tree consistently in prod and preview.
+      # A. Web app and browser-facing aliases.
       - name: "goldshore.ai"
         type: CNAME
         content: "gs-web-prod.goldshore.workers.dev"
         proxied: true
-      # www.goldshore.ai — DNS auto-provisioned by gs-www-redirect Worker custom_domain; do NOT add a manual CNAME here
-      # goldshore.org + www.goldshore.org — owned by goldshore-org Worker (route-based, needs proxied DNS)
-      - name: "goldshore.org"
+      - name: "www.goldshore.ai"
         type: CNAME
-        content: "goldshore-org.goldshore.workers.dev"
+        content: "gs-www-redirect-prod.goldshore.workers.dev"
         proxied: true
+      - name: "preview.goldshore.ai"
+        type: CNAME
+        content: "gs-web-preview.goldshore.workers.dev"
+        proxied: true
+      - name: "risk.goldshore.ai"
+        type: CNAME
+        content: "gs-web-prod.goldshore.workers.dev"
+        proxied: true
+      - name: "goldshore.org"
+        type: AAAA
+        content: "100::"
+        proxied: true
+        zone: goldshore.org
       - name: "www.goldshore.org"
         type: CNAME
-        content: "goldshore-org.goldshore.workers.dev"
+        content: "gs-www-redirect-prod.goldshore.workers.dev"
         proxied: true
+        zone: goldshore.org
 
-      # B. Admin (migrated from the standalone gs-admin Pages app into gs-web
-      # sub-routes per CLAUDE.md's repo migration plan; gs-web owns
-      # admin.goldshore.ai now via the admin.goldshore.ai/* route in
-      # apps/gs-web/wrangler.toml). admin.goldshore.org is out of scope here
-      # pending the separate goldshore.org ownership conflict
-      # (policy/ROUTE_POLICY.md vs docs/architecture/domain-ownership.md) --
-      # still points at the legacy gs-admin app until that's resolved.
+      # B. Admin (mounted Worker app)
+      # Keep admin hostnames on the canonical gs-web Worker so host-level
+      # rewrite middleware can serve the protected /app dashboard and admin
+      # sub-routes without a separate legacy Pages surface.
       - name: "admin"
         type: CNAME
         content: "gs-web-prod.goldshore.workers.dev"
         proxied: true
         zone: goldshore.ai
-      - name: "admin"
+      - name: "admin-preview"
         type: CNAME
-        content: "gs-admin.pages.dev"
+        content: "gs-web-preview.goldshore.workers.dev"
+        proxied: true
+        zone: goldshore.ai
+      - name: "admin-preview"
+        type: CNAME
+        content: "gs-web-prod.goldshore.workers.dev"
+      # apps/gs-web/wrangler.toml). admin.goldshore.org is out of scope here
+      # pending the separate goldshore.org ownership conflict
+      # (policy/ROUTE_POLICY.md vs docs/architecture/domain-ownership.md) --
+      # still points at the legacy gs-admin app until that's resolved.
+      - name: "admin"
+      - name: "risk.goldshore.org"
+        type: CNAME
+        content: "gs-web-prod.goldshore.workers.dev"
         proxied: true
         zone: goldshore.org
 
-      # C. API Gateway Worker
-      - name: "gw"
+      # B. Admin browser surfaces owned by gs-web.
+      - name: "admin.goldshore.ai"
         type: CNAME
-        content: "gs-gateway-prod.goldshore.workers.dev"
+        content: "gs-web-prod.goldshore.workers.dev"
         proxied: true
+      - name: "admin-preview.goldshore.ai"
+        type: CNAME
+        content: "gs-web-prod.goldshore.workers.dev"
+        proxied: true
+      - name: "admin.goldshore.org"
+        type: CNAME
+        content: "gs-web-prod.goldshore.workers.dev"
+        proxied: true
+        zone: goldshore.org
 
-      # D. API Worker
-      # No DNS record previously existed for api.goldshore.ai at all -- the
-      # zone-level Worker Route (api.goldshore.ai/* -> gs-api-prod) had
-      # nothing to activate it, so the hostname was down. Content value is
-      # mostly cosmetic (the Route intercepts before CNAME resolution
-      # matters) but points at the real live worker, gs-api-prod, matching
-      # the Route target rather than the nonexistent "gs-api".
-      - name: "api"
+      # C. Consolidated API Worker and backend aliases.
+      - name: "api.goldshore.ai"
+        type: CNAME
+        content: "gs-api-prod.goldshore.workers.dev"
+        proxied: true
+      - name: "api-preview.goldshore.ai"
+        type: CNAME
+        content: "gs-api-preview.goldshore.workers.dev"
+        proxied: true
+      - name: "api.goldshore.org"
+        type: AAAA
+        content: "100::"
+        proxied: true
+        zone: goldshore.org
+      - name: "gw.goldshore.ai"
+        type: CNAME
+        content: "gs-api-prod.goldshore.workers.dev"
+        proxied: true
+      - name: "agent.goldshore.ai"
+        type: CNAME
+        content: "gs-api-prod.goldshore.workers.dev"
+        proxied: true
+      - name: "mail.goldshore.ai"
+        type: CNAME
+        content: "gs-api-prod.goldshore.workers.dev"
+        proxied: true
+      - name: "ops.goldshore.ai"
+        type: CNAME
+        content: "gs-api-prod.goldshore.workers.dev"
+        proxied: true
+      - name: "trading.goldshore.ai"
+        type: CNAME
+        content: "gs-api-prod.goldshore.workers.dev"
+        proxied: true
+      - name: "dashboard.goldshore.ai"
+        type: CNAME
+        content: "gs-api-prod.goldshore.workers.dev"
+        proxied: true
+      - name: "dash.goldshore.ai"
         type: CNAME
         content: "gs-api-prod.goldshore.workers.dev"
         proxied: true
 
-      # E. Mail Worker
-      - name: "mail"
+      # D. External or separately deployed platform surfaces.
+      - name: "mcp.goldshore.ai"
         type: CNAME
-        content: "gs-mail.goldshore.workers.dev"
+        content: "goldshore-mcp-prod.goldshore.workers.dev"
+        proxied: true
+      - name: "signals.goldshore.ai"
+        type: CNAME
+        content: "gs-signals-prod.goldshore.workers.dev"
         proxied: true
 
-      # F. Trading dashboard aliases — route-based, protected by GoldShore-Trading-ZT
-      - name: "trading"
-        type: CNAME
-        content: "gs-trading-prod.goldshore.workers.dev"
-        proxied: true
-      - name: "dashboard"
-        type: CNAME
-        content: "gs-gateway-prod.goldshore.workers.dev"
-        proxied: true
-      - name: "dash"
-        type: CNAME
-        content: "gs-trading-prod.goldshore.workers.dev"
-        proxied: true
-
-      # G. Control Worker (ops.goldshore.ai)
-      - name: "ops"
-        type: CNAME
-        content: "gs-core-worker-prod.goldshore.workers.dev"
-        proxied: true
-
-      # G. Preview deployments (claude/** branches)
-      - name: "preview"
-        type: CNAME
-        content: "preview-web.pages.dev"
-        proxied: true
-
-      # H. SendGrid domain authentication + DMARC
-      - name: "em5094"
+      # E. SendGrid domain authentication and DMARC.
+      - name: "em5094.goldshore.ai"
         type: CNAME
         content: "u106406774.wl025.sendgrid.net"
         proxied: false
-      - name: "s1._domainkey"
+      - name: "s1._domainkey.goldshore.ai"
         type: CNAME
         content: "s1.domainkey.u106406774.wl025.sendgrid.net"
         proxied: false
-      - name: "s2._domainkey"
+      - name: "s2._domainkey.goldshore.ai"
         type: CNAME
         content: "s2.domainkey.u106406774.wl025.sendgrid.net"
         proxied: false
-      - name: "_dmarc"
+      - name: "_dmarc.goldshore.ai"
         type: TXT
         content: "v=DMARC1; p=reject; sp=reject; adkim=s; aspf=s; rua=mailto:1e5ceffc36ce4cc09f1bb2281b5344ae@dmarc-reports.cloudflare.net;"
 
@@ -124,16 +165,40 @@ cloudflare:
     # not encode alternative IdPs as multiple Require selectors because
     # Cloudflare evaluates Require selectors conjunctively.
     policies:
+      # Dashboard: goldshore.ai/app — the main authenticated entry point served
+      # by gs-web. This is the app shown in the CF Access App Launcher as
+      # "Dashboard". Protects /app and all sub-paths; /health is public.
+      - name: "GoldShore-Dashboard"
+        domains:
+          - "goldshore.ai"
+        action: "allow"
+        paths:
+          - "/app*"
+        public_paths:
+          - "/health"
+          - "/version"
+        rules:
+          include:
+            - email_domain: "goldshore.ai"
+            - email: "marstonr6@gmail.com"
+            - email: "goldshorelabs@gmail.com"
+          allowed_identity_providers:
+            - "google_workspace"
+            - "github_goldshore_deploy"
+            - "github"
+            - "email_otp"
+
       - name: "GoldShore-Admin-ZT"
         domains:
           - "admin.goldshore.ai"
           - "admin.goldshore.org"
           - "admin-preview.goldshore.ai"
-          - "admin.gs-admin.pages.dev"
+          - "admin-preview.goldshore.org"
         action: "allow"
         rules:
           include:
             - email_domain: "goldshore.ai"
+            - email_domain: "goldshore.org"
             - email: "marstonr6@gmail.com"
           allowed_identity_providers:
             - "google_workspace"
@@ -194,6 +259,8 @@ cloudflare:
           - "/media/*"
           - "/pages/*"
           - "/ai/*"
+          - "/goldclaw/*"
+          - "/v1/goldclaw/*"
         public_paths:
           - "/"
           - "/health"
@@ -213,7 +280,7 @@ cloudflare:
           - "api.goldshore.ai"
           - "gs-api.goldshore.workers.dev"
         action: "allow"
-        audience: "d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b"
+        audience: "8510d42c31fc791e295427031ffeef7c7ebc0f1b62d8634fbb284bf82562f528"
         paths:
           - "/admin/*"
           - "/internal/*"
@@ -224,6 +291,8 @@ cloudflare:
           - "/media/*"
           - "/pages/*"
           - "/ai/*"
+          - "/goldclaw/*"
+          - "/v1/goldclaw/*"
         public_paths:
           - "/"
           - "/health"
@@ -277,6 +346,7 @@ cloudflare:
           include:
             - email_domain: "goldshore.ai"
             - email: "marstonr6@gmail.com"
+            - email: "goldshorelabs@gmail.com"
           allowed_identity_providers:
             - "github_goldshore_deploy"
             - "github"
@@ -304,45 +374,10 @@ cloudflare:
             - "email_otp"
 
   pages:
-    projects:
-      - name: "gs-web"
-        repo: "goldshore-ai"
-        root_dir: "/" # Run from repo root for monorepo support
-        production_branch: "main"
-        build_command: "pnpm --filter @goldshore/gs-web build"
-        output_dir: "apps/gs-web/dist"
-        # www.goldshore.ai owned by gs-www-redirect Worker (308 → goldshore.ai)
-        # goldshore.org + www.goldshore.org owned by goldshore-org Worker (308 → goldshore.ai)
-        custom_domains:
-          - "goldshore.ai"
-
-      - name: "gs-admin"
-        repo: "goldshore-ai"
-        root_dir: "/" # Run from repo root for monorepo support
-        production_branch: "main"
-        build_command: "pnpm --filter @goldshore/gs-admin build"
-        output_dir: "apps/gs-admin/dist"
-        custom_domains:
-          - "admin.goldshore.ai"
-          - "admin.goldshore.org"
-        bindings:
-          kv:
-            - name: "KV"
-              namespace: "gs_admin_kv_001"
-          d1:
-            - name: "DB"
-              database_name: "goldshore"
-              database_id: "gs_db_001"
-          r2:
-            - name: "ASSETS"
-              bucket_name: "gs-assets"
-          services:
-            - binding: "API_SERVICE"
-              service: "gs-api"
-              environment: "prod"
-          secrets:
-            - CLOUDFLARE_ACCESS_AUDIENCE  # set via: wrangler pages secret put
-            - ADMIN_API_KEY               # set via: wrangler pages secret put
+    # Production moved from Pages to Workers with Assets for the web app.
+    # Keep this explicit so automation does not recreate the retired gs-web
+    # Pages project or drift the admin workspace away from its Pages boundary.
+    projects: []
 
   workers:
     services:
@@ -350,53 +385,51 @@ cloudflare:
         script_path: "apps/gs-api/dist/index.js"
         routes:
           - pattern: "api.goldshore.ai/*"
+          - pattern: "api-preview.goldshore.ai/*"
+          - pattern: "agent.goldshore.ai/*"
+          - pattern: "mail.goldshore.ai/*"
+          - pattern: "ops.goldshore.ai/*"
+          - pattern: "trading.goldshore.ai/*"
+          - pattern: "dashboard.goldshore.ai/*"
+          - pattern: "dash.goldshore.ai/*"
+          - pattern: "gw.goldshore.ai/*"
+          - pattern: "api.goldshore.org/*"
         bindings:
           kv:
             - name: "KV"
-              namespace: "goldshore-api-kv" # Historical resource name; gs-api canonical service prefix
+              namespace: "GS_API_KV"
           d1:
-            - name: "DB"
-              database_name: "goldshore-api-db" # Historical resource name; gs-api canonical service prefix
+            - name: "PLATFORM_DB"
+              database_name: "gs_platform_db"
           r2:
-            - name: "ASSETS"
-              bucket_name: "goldshore-api-assets" # Historical resource name; gs-api canonical service prefix
+            - name: "GS_ASSETS"
+              bucket_name: "gs-assets"
           ai:
             - name: "AI"
               gateway: "goldshore-ai-gateway"
 
-      - name: "gs-gateway"
-        script_path: "apps/gs-gateway/dist/index.js"
+      - name: "gs-web"
+        script_path: "apps/gs-web/dist/_worker.js/index.js"
         routes:
-          - pattern: "gw.goldshore.ai/*"
+          - pattern: "goldshore.ai/*"
+          - pattern: "goldshore.org/*"
+          - pattern: "admin.goldshore.ai/*"
+          - pattern: "admin.goldshore.org/*"
+          - pattern: "preview.goldshore.ai/*"
+          - pattern: "risk.goldshore.ai/*"
+          - pattern: "risk.goldshore.org/*"
         bindings:
-          services:
-            - binding: "API"
-              service: "gs-api"
-              environment: "prod"
           kv:
-            - name: "GATEWAY_KV"
-              namespace: "goldshore-gw-kv"
-
-      - name: "gs-control"
-        script_path: "apps/gs-control/dist/index.js"
-        routes:
-          - pattern: "ops.goldshore.ai/*"
-        bindings:
-          services:
-            - binding: "API"
-              service: "gs-api"
-              environment: "prod"
-          env_vars:
-            CONTROL_SERVICE: "true"
-
-      - name: "gs-mail"
-        script_path: "apps/gs-mail/dist/index.js"
-        routes:
-          - pattern: "mail.goldshore.ai/*"
-        bindings:
-          env_vars:
-            MAIL_SERVICE: "true"
-            MAIL_ALLOWED_RECIPIENTS: "ops@goldshore.ai,inbox@goldshore.ai"
+            - name: "KV"
+              namespace: "GOLDSHORE-AI"
+            - name: "SESSION"
+              namespace: "KV_SESSIONS"
+          d1:
+            - name: "PLATFORM_DB"
+              database_name: "gs_platform_db"
+          r2:
+            - name: "GS_ASSETS"
+              bucket_name: "gs-assets"
 
   email:
     routing:
