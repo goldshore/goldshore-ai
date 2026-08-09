@@ -72,7 +72,7 @@ deploy.post('/search', async (c) => {
             )
           );
 
-          const rankedFrameworks = await rankFrameworksWithClaude(frameworks, claudeToken, query);
+          const rankedFrameworks = await rankFrameworksWithClaude(frameworks, c.env, query);
 
           for (const framework of rankedFrameworks) {
             controller.enqueue(

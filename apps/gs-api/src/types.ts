@@ -20,6 +20,8 @@ export type Env = {
   OPENAI_API_KEY?: string;
   GEMINI_API_KEY?: string;
   ANTHROPIC_API_KEY?: string;
+  ANTHROPIC_GATEWAY_ID?: string;
+  ANTHROPIC_GATEWAY_VERIFIED?: string;
   LLM_API_KEY?: string;
   LLM_PROVIDER?: string;
   LLM_MODEL?: string;
