@@ -1,6 +1,7 @@
 import { describe, it, mock, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { Hono } from 'hono';
+import { IntegrationRegistry } from '../lib/IntegrationRegistry';
 import integrations from './integrations';
 import type { Env, Variables } from '../types';
 
@@ -54,6 +55,30 @@ describe('Integration Management API security', () => {
     } finally {
       fetchMock.mock.restore();
     }
+  });
+
+  it('redacts stored credentials from status and dashboard payloads', async () => {
+    const registry = new IntegrationRegistry();
+    registry.createIntegration({
+      name: 'stripe-prod',
+      type: 'stripe',
+      provider: 'stripe',
+      apiKey: 'pk_live_secret',
+      apiSecret: 'sk_live_secret',
+      webhookSecret: 'whsec_secret',
+      enabled: true,
+      status: 'connected',
+      metadata: { safeMetric: 1 },
+    });
+
+    const statuses = await registry.getRedactedStatuses();
+    const dashboard = await registry.getDashboardMetrics();
+    const serialized = JSON.stringify({ statuses, dashboard });
+
+    assert.equal(statuses['stripe-prod']?.provider, 'stripe');
+    assert.deepEqual(statuses['stripe-prod']?.metadata, { safeMetric: 1 });
+    assert.doesNotMatch(serialized, /pk_live_secret|sk_live_secret|whsec_secret/);
+    assert.doesNotMatch(serialized, /apiKey|apiSecret|webhookSecret/);
   });
 
   it('rejects integration mutations without integration management permission', async () => {
