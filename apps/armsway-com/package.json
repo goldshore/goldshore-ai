@@ -1,0 +1,16 @@
+{
+  "name": "@goldshore/armsway-com",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev src/index.ts --bundle --config wrangler.toml",
+    "deploy": "wrangler deploy --env prod --bundle --config wrangler.toml",
+    "build": "wrangler deploy --env prod --dry-run --outdir=dist --bundle --config wrangler.toml"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260708.1",
+    "typescript": "^5.4.2",
+    "wrangler": "^4.63.0"
+  }
+}

@@ -47,6 +47,38 @@ jobs:
 
           echo "All wrangler configs reference canonical workers."
 
+      - name: Verify dashboard-only inventories cannot mutate Cloudflare
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          inventory_workflows = (
+              Path('.github/workflows/setup-cf-agent-access.yml'),
+              Path('.github/workflows/reconcile-dns.yml'),
+          )
+          forbidden = re.compile(
+              r'CLOUDFLARE_(?:API_TOKEN|API_KEY)|'
+              r'\bCF_API\b|'
+              r'\bcurl\b|'
+              r'^\s*(?:run:\s*)?[^#\n]*\bwrangler\s+'
+              r'(?:deploy|delete|secret|kv|d1|r2|queue|workflow)\b',
+              re.IGNORECASE | re.MULTILINE,
+          )
+          offenders = [
+              f'{path}: {match.group(0)}'
+              for path in inventory_workflows
+              if (match := forbidden.search(path.read_text(encoding='utf-8')))
+          ]
+          if offenders:
+              raise SystemExit(
+                  'FAIL: dashboard-only inventory workflows contain a Cloudflare '
+                  'credential or mutation path: ' + ', '.join(offenders)
+              )
+
+          print('Cloudflare inventory workflows are credential-free and read-only.')
+          PY
+
       - name: Verify gs-web is one SSR Worker-with-Assets release
         run: |
           python3 - <<'PY'

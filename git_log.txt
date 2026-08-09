@@ -1,0 +1,790 @@
+commit f604f4bd27fb480f609f7e3796c15e3a614e0377
+Author: Bobby Rosenberg <marstonr6@gmail.com>
+Date:   Sun Mar 29 14:46:27 2026 -0400
+
+    feat: implement comprehensive CI/CD infrastructure, automated repository maintenance scripts, and Jules-based project verification tooling
+
+commit 429c0cea0bd4b08231c066ad574735cd5b482b08
+Author: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+Date:   Sat Mar 28 01:49:13 2026 -0400
+
+    chore(deps): bump the npm_and_yarn group across 1 directory with 2 updates (#4413)
+    
+    Bumps the npm_and_yarn group with 1 update in the / directory:
+    [yaml](https://github.com/eemeli/yaml).
+    
+    Updates `yaml` from 2.8.2 to 2.8.3
+    <details>
+    <summary>Release notes</summary>
+    <p><em>Sourced from <a
+    href="https://github.com/eemeli/yaml/releases">yaml's
+    releases</a>.</em></p>
+    <blockquote>
+    <h2>v2.8.3</h2>
+    <ul>
+    <li>Add <code>trailingComma</code> ToString option for multiline flow
+    formatting (<a
+    href="https://redirect.github.com/eemeli/yaml/issues/670">#670</a>)</li>
+    <li>Catch stack overflow during node composition (1e84ebb)</li>
+    </ul>
+    </blockquote>
+    </details>
+    <details>
+    <summary>Commits</summary>
+    <ul>
+    <li><a
+    href="https://github.com/eemeli/yaml/commit/ce14587484822bffb0f7d31aefedcaf2dc0d0387"><code>ce14587</code></a>
+    2.8.3</li>
+    <li><a
+    href="https://github.com/eemeli/yaml/commit/1e84ebbea7ec35011a4c61bbb820a529ee4f359b"><code>1e84ebb</code></a>
+    fix: Catch stack overflow during node composition</li>
+    <li><a
+    href="https://github.com/eemeli/yaml/commit/6b24090280eaaab5040112bba41ccef57f39c2d5"><code>6b24090</code></a>
+    ci: Include Prettier check in lint action</li>
+    <li><a
+    href="https://github.com/eemeli/yaml/commit/9424dee38c85163fad53ac27533c7c4bdaf7495d"><code>9424dee</code></a>
+    chore: Refresh lockfile</li>
+    <li><a
+    href="https://github.com/eemeli/yaml/commit/d1aca82bc15a4c261bdc58561d32189a5d3a45ef"><code>d1aca82</code></a>
+    Add trailingComma ToString option for multiline flow formatting (<a
+    href="https://redirect.github.com/eemeli/yaml/issues/670">#670</a>)</li>
+    <li><a
+    href="https://github.com/eemeli/yaml/commit/43215099f7fcdac422d778c15e70d83c691b0e41"><code>4321509</code></a>
+    ci: Drop the branch filter from GitHub PR actions</li>
+    <li><a
+    href="https://github.com/eemeli/yaml/commit/47207d0fc7d4f863cd5fbdcff1378637bd93e847"><code>47207d0</code></a>
+    chore: Update docs-slate</li>
+    <li><a
+    href="https://github.com/eemeli/yaml/commit/5212faeed5936d1fa291d2f28672e4a96e2c2c5d"><code>5212fae</code></a>
+    chore: Update docs-slate</li>
+    <li>See full diff in <a
+    href="https://github.com/eemeli/yaml/compare/v2.8.2...v2.8.3">compare
+    view</a></li>
+    </ul>
+    </details>
+    <br />
+    
+    Updates `picomatch` from 2.3.1 to 2.3.2
+    <details>
+    <summary>Release notes</summary>
+    <p><em>Sourced from <a
+    href="https://github.com/micromatch/picomatch/releases">picomatch's
+    releases</a>.</em></p>
+    <blockquote>
+    <h2>2.3.2</h2>
+    <p>This is a security release fixing several security relevant
+    issues.</p>
+    <h2>What's Changed</h2>
+    <ul>
+    <li>fix: exception when glob pattern contains constructor by <a
+    href="https://github.com/Jason3S"><code>@​Jason3S</code></a> in <a
+    href="https://redirect.github.com/micromatch/picomatch/pull/144">micromatch/picomatch#144</a></li>
+    <li>Fix for <a
+    href="https://github.com/micromatch/picomatch/security/advisories/GHSA-c2c7-rcm5-vvqj">CVE-2026-33671</a></li>
+    <li>Fix for <a
+    href="https://github.com/micromatch/picomatch/security/advisories/GHSA-3v7f-55p6-f55p">CVE-2026-33672</a></li>
+    </ul>
+    <p><strong>Full Changelog</strong>: <a
+    href="https://github.com/micromatch/picomatch/compare/2.3.1...2.3.2">https://github.com/micromatch/picomatch/compare/2.3.1...2.3.2</a></p>
+    </blockquote>
+    </details>
+    <details>
+    <summary>Changelog</summary>
+    <p><em>Sourced from <a
+    href="https://github.com/micromatch/picomatch/blob/master/CHANGELOG.md">picomatch's
+    changelog</a>.</em></p>
+    <blockquote>
+    <h1>Release history</h1>
+    <p><strong>All notable changes to this project will be documented in
+    this file.</strong></p>
+    <p>The format is based on <a
+    href="http://keepachangelog.com/en/1.0.0/">Keep a Changelog</a>
+    and this project adheres to <a
+    href="http://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
+    <!-- raw HTML omitted -->
+    <ul>
+    <li>Changelogs are for humans, not machines.</li>
+    <li>There should be an entry for every single version.</li>
+    <li>The same types of changes should be grouped.</li>
+    <li>Versions and sections should be linkable.</li>
+    <li>The latest version comes first.</li>
+    <li>The release date of each versions is displayed.</li>
+    <li>Mention whether you follow Semantic Versioning.</li>
+    </ul>
+    <!-- raw HTML omitted -->
+    <!-- raw HTML omitted -->
+    <p>Changelog entries are classified using the following labels <em>(from
+    <a href="http://keepachangelog.com/">keep-a-changelog</a></em>):</p>
+    <ul>
+    <li><code>Added</code> for new features.</li>
+    <li><code>Changed</code> for changes in existing functionality.</li>
+    <li><code>Deprecated</code> for soon-to-be removed features.</li>
+    <li><code>Removed</code> for now removed features.</li>
+    <li><code>Fixed</code> for any bug fixes.</li>
+    <li><code>Security</code> in case of vulnerabilities.</li>
+    </ul>
+    <!-- raw HTML omitted -->
+    <h2>4.0.0 (2024-02-07)</h2>
+    <h3>Fixes</h3>
+    <ul>
+    <li>Fix bad text values in parse <a
+    href="https://redirect.github.com/micromatch/picomatch/issues/126">#126</a>,
+    thanks to <a
+    href="https://github.com/connor4312"><code>@​connor4312</code></a></li>
+    </ul>
+    <h3>Changed</h3>
+    <ul>
+    <li>Remove process global to work outside of node <a
+    href="https://redirect.github.com/micromatch/picomatch/issues/129">#129</a>,
+    thanks to <a
+    href="https://github.com/styfle"><code>@​styfle</code></a></li>
+    <li>Add sideEffects to package.json <a
+    href="https://redirect.github.com/micromatch/picomatch/issues/128">#128</a>,
+    thanks to <a
+    href="https://github.com/frandiox"><code>@​frandiox</code></a></li>
+    <li>Removed <code>os</code>, make compatible browser environment. See <a
+    href="https://redirect.github.com/micromatch/picomatch/issues/124">#124</a>,
+    thanks to <a
+    href="https://github.com/gwsbhqt"><code>@​gwsbhqt</code></a></li>
+    </ul>
+    <h2>3.0.1</h2>
+    <h3>Fixes</h3>
+    <!-- raw HTML omitted -->
+    </blockquote>
+    <p>... (truncated)</p>
+    </details>
+    <details>
+    <summary>Commits</summary>
+    <ul>
+    <li><a
+    href="https://github.com/micromatch/picomatch/commit/81cba8d4b767cab3cb29d26eb4f691eed75b73b2"><code>81cba8d</code></a>
+    Publish 2.3.2</li>
+    <li><a
+    href="https://github.com/micromatch/picomatch/commit/fc1f6b69006e9435caf8fb40d8aff378bc0b7bce"><code>fc1f6b6</code></a>
+    Merge commit from fork</li>
+    <li><a
+    href="https://github.com/micromatch/picomatch/commit/eec17aee5428a7249e9ca5adbb8a0d28fa29619b"><code>eec17ae</code></a>
+    Merge commit from fork</li>
+    <li><a
+    href="https://github.com/micromatch/picomatch/commit/78f8ca4362d9e66cadea97b93e292f10096452ed"><code>78f8ca4</code></a>
+    Merge pull request <a
+    href="https://redirect.github.com/micromatch/picomatch/issues/156">#156</a>
+    from micromatch/backport-144</li>
+    <li><a
+    href="https://github.com/micromatch/picomatch/commit/3f4f10eaa65bf3a52e8f2999674cd27e11fa3c9b"><code>3f4f10e</code></a>
+    Merge pull request <a
+    href="https://redirect.github.com/micromatch/picomatch/issues/144">#144</a>
+    from Jason3S/jdent-object-properties</li>
+    <li>See full diff in <a
+    href="https://github.com/micromatch/picomatch/compare/2.3.1...2.3.2">compare
+    view</a></li>
+    </ul>
+    </details>
+    <br />
+    
+    
+    Dependabot will resolve any conflicts with this PR as long as you don't
+    alter it yourself. You can also trigger a rebase manually by commenting
+    `@dependabot rebase`.
+    
+    [//]: # (dependabot-automerge-start)
+    [//]: # (dependabot-automerge-end)
+    
+    ---
+    
+    <details>
+    <summary>Dependabot commands and options</summary>
+    <br />
+    
+    You can trigger Dependabot actions by commenting on this PR:
+    - `@dependabot rebase` will rebase this PR
+    - `@dependabot recreate` will recreate this PR, overwriting any edits
+    that have been made to it
+    - `@dependabot show <dependency name> ignore conditions` will show all
+    of the ignore conditions of the specified dependency
+    - `@dependabot ignore <dependency name> major version` will close this
+    group update PR and stop Dependabot creating any more for the specific
+    dependency's major version (unless you unignore this specific
+    dependency's major version or upgrade to it yourself)
+    - `@dependabot ignore <dependency name> minor version` will close this
+    group update PR and stop Dependabot creating any more for the specific
+    dependency's minor version (unless you unignore this specific
+    dependency's minor version or upgrade to it yourself)
+    - `@dependabot ignore <dependency name>` will close this group update PR
+    and stop Dependabot creating any more for the specific dependency
+    (unless you unignore this specific dependency or upgrade to it yourself)
+    - `@dependabot unignore <dependency name>` will remove all of the ignore
+    conditions of the specified dependency
+    - `@dependabot unignore <dependency name> <ignore condition>` will
+    remove the ignore condition of the specified dependency and ignore
+    conditions
+    You can disable automated security fix PRs for this repo from the
+    [Security Alerts
+    page](https://github.com/goldshore/goldshore-ai/network/alerts).
+    
+    </details>
+    
+    Signed-off-by: dependabot[bot] <support@github.com>
+    Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+
+commit 88f738b336a8c9902bf78ee4be406f93eb844f88
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Fri Mar 27 21:16:10 2026 -0400
+
+    fix(ui): remove duplicate JSON object in packages/ui/package.json (#4412)
+    
+    Merge strategy: squash
+    
+    ### Motivation
+    - Fix the `ERR_PNPM_JSON_PARSE` error seen in CI and local installs by
+    restoring a single valid JSON manifest in `packages/ui/package.json`.
+    
+    ### Description
+    - Removed the accidentally appended second JSON document from
+    `packages/ui/package.json`, leaving the intended workspace manifest with
+    `main`/`exports` pointing to `index.ts`.
+    
+    ### Testing
+    - Ran `pnpm install --frozen-lockfile` and the install completed
+    successfully after the fix.
+    
+    ------
+    [Codex
+    Task](https://chatgpt.com/codex/tasks/task_e_69c729bd89fc833192c7ef68679362f3)
+
+commit 0462e6bd675363b9ec4ade8b342219dc612a6702
+Merge: fc50e293 e9fda98a
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Fri Mar 27 02:25:29 2026 -0400
+
+    Claude/clean integration bjd0q (#4409)
+
+commit e9fda98ab32cb8252eeb5089412dfcd57de4f5e7
+Merge: 48dd0cb7 fc50e293
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Fri Mar 27 02:25:13 2026 -0400
+
+    Merge branch 'main' into claude/clean-integration-BJD0q
+    
+    Signed-off-by: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+
+commit fc50e293a3e577c2124aab25ef2526a9936d288f
+Merge: 6fcf26af 5af6ff92
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Fri Mar 27 02:23:48 2026 -0400
+
+    Revert "Expand design tokens and infrastructure for preview deployments" (#4408)
+    
+    Reverts goldshore/goldshore-ai#4403
+
+commit 48dd0cb7ff02b7635eb7b27089cd6c66dced86e4
+Author: Claude <noreply@anthropic.com>
+Date:   Fri Mar 27 05:59:38 2026 +0000
+
+    feat(hero): 3D perspective wave field, Penrose mark, parallax hero
+    
+    - mountHero: replaces flat 2D wave with a perspective-projected 3D mesh
+      (40×22 grid, X-axis camera tilt, multi-frequency sine interference)
+      Mouse movement tilts the canvas in 3D; scroll drives depth parallax
+      across three independent layers (mark, copy, grid) at different rates.
+      Respects prefers-reduced-motion throughout.
+    
+    - ParallaxHero: clean centered layout — eyebrow pill, display headline
+      with staggered fade-up lines, sub-copy, primary + ghost CTAs with arrow.
+      Penrose mark (no wordmark) floats behind copy at its own parallax depth
+      with metallic glow on hover.
+    
+    - index.astro: swaps old split hero section for <ParallaxHero> component.
+    
+    https://claude.ai/code/session_018yNMt84JR5a8p8TJpzBEwT
+
+commit b12f842d87318f894597915946c225f56dfc21b0
+Author: Claude <noreply@anthropic.com>
+Date:   Fri Mar 27 05:52:12 2026 +0000
+
+    feat(brand): replace inline Logo.astro with animated metallic Penrose SVG
+    
+    Replaces the flat currentColor inline SVG with the animated metallic
+    Penrose logo: metallic blue gradient, sweeping shine animation, and
+    'GOLD SHORE' wordmark (lockup variant). Gradient IDs namespaced to
+    avoid conflicts when multiple instances render on one page.
+    
+    https://claude.ai/code/session_018yNMt84JR5a8p8TJpzBEwT
+
+commit fd579ec477d5ccafa5c665626cb6e5461e7931fb
+Author: Claude <noreply@anthropic.com>
+Date:   Fri Mar 27 05:50:09 2026 +0000
+
+    fix: correct malformed gitignore entry for .claude/settings.local.json
+    
+    https://claude.ai/code/session_018yNMt84JR5a8p8TJpzBEwT
+
+commit 5af6ff921bf13c0e48c4498b82b1867fafa9e652
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Fri Mar 27 01:42:12 2026 -0400
+
+    Revert "Expand design tokens and infrastructure for preview deployments"
+
+commit 6fcf26afdd1597f3e8ccf601bf4bbfc073b6846d
+Merge: d822677e 96c43f78
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Fri Mar 27 00:57:47 2026 -0400
+
+    Revert "feat: add Setup Preview DNS workflow (workflow_dispatch)" (#4406)
+    
+    Reverts goldshore/goldshore-ai#4405
+
+commit 96c43f7882ff81bf6a14e46c54e7fd732267df1e
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Fri Mar 27 00:55:05 2026 -0400
+
+    Revert "feat: add Setup Preview DNS workflow (workflow_dispatch) (#4405)"
+    
+    This reverts commit d822677ea82499f64f5bb8892f4374acb3248c1a.
+
+commit d822677ea82499f64f5bb8892f4374acb3248c1a
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Fri Mar 27 00:52:00 2026 -0400
+
+    feat: add Setup Preview DNS workflow (workflow_dispatch) (#4405)
+    
+    https://claude.ai/code/session_018yNMt84JR5a8p8TJpzBEwT
+    
+    Co-authored-by: Claude <noreply@anthropic.com>
+
+commit f0b51d58d81173eac1dbbdfd7472515760a3d34e
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Fri Mar 27 00:38:22 2026 -0400
+
+    Codespace bug free space chainsaw 544gxjjvvw72766q (#4404)
+    
+    Signed-off-by: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+    Co-authored-by: Copilot Autofix powered by AI <223894421+github-code-quality[bot]@users.noreply.github.com>
+    Co-authored-by: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>
+
+commit 4df0672d3671075cce983f6906f3ae821bcc7338
+Merge: 00ed39ad 4e6ef535
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Fri Mar 27 00:37:55 2026 -0400
+
+    Merge branch 'main' into codespace-bug-free-space-chainsaw-544gxjjvvw72766q
+
+commit 00ed39ada107eda98baa7d64f4c7f3221fe38f2d
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Fri Mar 27 04:28:29 2026 +0000
+
+    Pending changes exported from your codespace
+
+commit 4e6ef53555c15fc228267a947839967894ee9b00
+Merge: 6106e9de b9d3e29f
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Thu Mar 26 10:25:45 2026 -0400
+
+    Expand design tokens and infrastructure for preview deployments (#4403)
+    
+    ## Summary
+    This PR significantly expands the design token system, adds preview
+    deployment infrastructure, and improves accessibility and motion
+    handling across the theme package.
+    
+    ## Key Changes
+    
+    ### Design Tokens (`packages/theme/src/styles/tokens.css`)
+    - **Reorganized and documented** all tokens with section headers for
+    clarity
+    - **Updated color values**: primary background (#0b0f18), accent blue
+    (#5aa2ff), text (#e9eefc), and border colors now use blue-tinted rgba
+    - **Added comprehensive spacing scale** (--gs-space-1 through
+    --gs-space-10) with 4px base unit
+    - **Expanded typography tokens**: font families (Inter, Fraunces),
+    responsive heading sizes with clamp(), line-height, and letter-spacing
+    - **Added status colors**: success, warning, danger, info
+    - **Added derived tokens**: soft accent, contrast, faint colors, shadows
+    (soft/hard), and transitions
+    - **Added layout helpers**: section padding/gap, grid minimum widths,
+    max-width tokens
+    - **Added app-level shorthands** (--gs-bg, --gs-text, --gs-primary,
+    etc.) for convenience
+    - **Removed duplicate definitions** from
+    `apps/gs-web/src/styles/global.css` (now sourced from canonical tokens)
+    
+    ### Preview Deployment Infrastructure
+    - **Added preview DNS setup script** (`scripts/setup-preview-dns.mjs`):
+    One-shot Cloudflare API automation for CNAME and custom domain
+    configuration
+    - **Updated Cloudflare desired state**
+    (`infra/Cloudflare/desired-state.yaml`):
+    - Added preview CNAME record (preview.goldshore.ai →
+    preview-web.pages.dev)
+      - Added preview-web Pages project configuration
+      - Fixed package filter names (@goldshore/gs-web, @goldshore/gs-admin)
+      - Added gs-agent Worker with queue bindings
+      - Updated email forwarding placeholders with TODO comments
+    - **Updated GitHub Actions workflows** (preview-gs-web.yml,
+    preview-gs-admin.yml):
+      - Added push trigger for claude/* branches with path filters
+    - Dynamic release_label generation (pr-N for PRs, branch-name for
+    pushes)
+      - Conditional job execution for both push and PR events
+    
+    ### Accessibility & Motion Improvements
+    - **Enhanced focus handling** (`packages/theme/src/styles/base.css`):
+    - Changed input focus from `:focus` to `:focus-visible` (keyboard-only)
+      - Added global `:focus-visible` ring with 2px outline and 3px offset
+    - **Improved prefers-reduced-motion**
+    (`packages/theme/src/styles/motion.css`):
+      - Added html scroll-behavior reset
+    - Extended reduced-motion rules to cover view-timeline and 3d-tilt
+    animations
+    
+    ### Configuration & Documentation
+    - **Added Claude Code project config** (`.claude/README.md`):
+    Instructions for local Cloudflare credentials setup
+    - **Updated .gitignore**: Added .claude/settings.local.json to prevent
+    secret leakage
+    - **Updated Wrangler compatibility dates**: gs-agent and gs-api now
+    target 2025-01-10
+    
+    ## Notable Implementation Details
+    - Design tokens now follow a hierarchical structure with semantic
+    grouping and clear section boundaries
+    - Preview deployments support both PR and branch-based workflows via
+    dynamic release labeling
+    - Accessibility improvements prioritize keyboard navigation without
+    affecting mouse users
+    - All color and spacing values are now centralized in the canonical
+    tokens file, eliminating duplication
+    
+    https://claude.ai/code/session_018yNMt84JR5a8p8TJpzBEwT
+
+commit b9d3e29fe1f6b6c9d9593e5ef8c3c6ef9b1f5f68
+Author: Claude <noreply@anthropic.com>
+Date:   Thu Mar 26 14:17:35 2026 +0000
+
+    chore: add .claude/README.md so directory is tracked (settings.local.json stays gitignored)
+    
+    https://claude.ai/code/session_018yNMt84JR5a8p8TJpzBEwT
+
+commit 53f3e9a6927e6cd322dd2b28ca9a8e77daf4a1ec
+Author: Claude <noreply@anthropic.com>
+Date:   Thu Mar 26 14:13:21 2026 +0000
+
+    chore: add .claude/settings.local.json to gitignore
+    
+    Prevents accidental commit of local Claude settings which may
+    contain secrets (CF_API_TOKEN, CF_ACCOUNT_ID, CF_ZONE_ID).
+    
+    https://claude.ai/code/session_018yNMt84JR5a8p8TJpzBEwT
+
+commit 530eb15f9178865e590fd05a52269e911bcc9c16
+Author: Claude <noreply@anthropic.com>
+Date:   Thu Mar 26 14:09:57 2026 +0000
+
+    chore(scripts): add setup-preview-dns.mjs
+    
+    One-shot script to configure preview.goldshore.ai:
+    - Creates CNAME record in goldshore.ai zone
+    - Adds custom domain to preview-web Cloudflare Pages project
+    
+    Run from Codespace:
+      CF_API_TOKEN=x CF_ACCOUNT_ID=y CF_ZONE_ID=z node scripts/setup-preview-dns.mjs
+    
+    https://claude.ai/code/session_018yNMt84JR5a8p8TJpzBEwT
+
+commit 3fda02d0d9f71f832951e463651de21eea8833f0
+Author: Claude <noreply@anthropic.com>
+Date:   Thu Mar 26 14:08:04 2026 +0000
+
+    fix(infra): add preview.goldshore.ai DNS + Pages project
+    
+    - DNS: add CNAME preview → preview-web.pages.dev
+    - Pages: add preview-web project with preview.goldshore.ai custom domain
+    
+    Requires manual step in Cloudflare dashboard:
+    1. Add CNAME record: preview.goldshore.ai → preview-web.pages.dev
+    2. Add custom domain preview.goldshore.ai to the preview-web Pages project
+    
+    https://claude.ai/code/session_018yNMt84JR5a8p8TJpzBEwT
+
+commit 01e261eda8f86fc24c8f3af9e02bc35b3e2153fc
+Author: Claude <noreply@anthropic.com>
+Date:   Thu Mar 26 14:05:18 2026 +0000
+
+    chore(theme): add file header comment to tokens.css
+    
+    Trivial touch to packages/** to fire preview-gs-web and
+    preview-gs-admin workflows on claude/document-repo-config-BJD0q.
+    
+    https://claude.ai/code/session_018yNMt84JR5a8p8TJpzBEwT
+
+commit f42ac5f117ab43b1dd80abad8e8e231f1ab5a3dc
+Author: Claude <noreply@anthropic.com>
+Date:   Thu Mar 26 14:03:39 2026 +0000
+
+    ci: trigger preview deploy for claude/document-repo-config-BJD0q
+    
+    Empty commit to fire preview-gs-web and preview-gs-admin workflows
+    after adding push trigger for claude/** branches.
+    
+    https://claude.ai/code/session_018yNMt84JR5a8p8TJpzBEwT
+
+commit 6317c2763e2ad1c86880e3795f6f01da0faadc0c
+Author: Claude <noreply@anthropic.com>
+Date:   Thu Mar 26 14:00:57 2026 +0000
+
+    ci(preview): auto-deploy previews on push to claude/** branches
+    
+    Both preview-gs-web and preview-gs-admin now trigger on:
+    - push to any claude/** branch (new) — deploys immediately on push,
+      no PR or label required
+    - pull_request with 'preview' label or ready_for_review (unchanged)
+    
+    Metadata step updated to set release_label conditionally:
+    - push events: sanitized branch name (slashes → dashes)
+    - PR events: pr-{number} as before
+    
+    The cloudflare/pages-action branch input already handles both event
+    types correctly via github.head_ref || github.ref_name.
+    
+    https://claude.ai/code/session_018yNMt84JR5a8p8TJpzBEwT
+
+commit 1d063c03dabaaba3b1a7e91b0e063d53bc5b8828
+Author: Claude <noreply@anthropic.com>
+Date:   Thu Mar 26 13:51:54 2026 +0000
+
+    fix(infra): harden desired-state, add gs-agent, align compat dates
+    
+    desired-state.yaml:
+    - Fix Pages build commands: @goldshore/web → @goldshore/gs-web,
+      @goldshore/admin → @goldshore/gs-admin (compat alias → canonical)
+    - Add missing gs-agent worker entry (queue-driven, no public route,
+      binds to goldshore-jobs queue + gs-api service)
+    - Mark placeholder email addresses with TODO comments
+    
+    Wrangler configs:
+    - gs-api: compatibility_date 2024-03-20 → 2025-01-10
+    - gs-agent: compatibility_date 2024-11-01 → 2025-01-10
+    - All workers now on same compatibility baseline as gs-gateway
+    
+    CI workflows already use canonical paths (apps/gs-web, apps/gs-admin) —
+    no changes needed there.
+    
+    https://claude.ai/code/session_018yNMt84JR5a8p8TJpzBEwT
+
+commit 1da7e87f3fa2760a8a7b4ccbbd6b3d64f6590f52
+Author: Claude <noreply@anthropic.com>
+Date:   Thu Mar 26 13:50:20 2026 +0000
+
+    fix(theme): add missing tokens, resolve web/theme conflicts, harden a11y
+    
+    - tokens.css: add full spacing scale (--gs-space-1→10), radii (sm, pill),
+      typography (font-body/display, sizes h1-h6, line-heights), letter-spacing,
+      status colours (success/warning/danger/info), accent-soft/contrast,
+      shadows, transition shorthand, section layout tokens, grid helpers.
+      Update bg-primary to #0b0f18, accent-blue to #5aa2ff, border-subtle to
+      blue-tinted rgba, radius-lg to 24px, content-width to 1200px — all
+      matching the live web app values. Add compat shorthands (--gs-bg,
+      --gs-text, --gs-border, --gs-primary, --gs-max-width, --gs-radius, etc.)
+      so apps don't need to redefine them.
+    
+    - global.css (gs-web): remove all :root overrides now supplied by theme.
+      Eliminates 5 token conflicts (radius-lg, primary blue, bg, max-width,
+      border) that were silently shadowing canonical values.
+    
+    - base.css: upgrade input/select/textarea focus to :focus-visible; add
+      global :focus-visible ring for keyboard navigation (WCAG Wave 0.2).
+    
+    - motion.css: add html scroll-behavior:auto + .gs-view-timeline +
+      .gs-3d-tilt reset inside prefers-reduced-motion block (Wave 0.3).
+    
+    https://claude.ai/code/session_018yNMt84JR5a8p8TJpzBEwT
+
+commit c0583da5e7d52df505a121a42cd99a30508cd04a
+Merge: e87c2175 ced05dc1
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Wed Mar 25 17:49:20 2026 +0000
+
+    Merge remote-tracking branch 'origin/codex/update-package.json-build-scripts-2026-03-23'
+
+commit e87c2175e84aec42388d01d8b33ac4fc62f78ed0
+Merge: 0360ba24 d18d3961
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Wed Mar 25 17:49:20 2026 +0000
+
+    Merge remote-tracking branch 'origin/codex/update-maintenance.yml-for-ci-compliance-2026-03-22'
+
+commit 0360ba2479807f41638b6710ab0fc01b39bca3a1
+Merge: cd811720 24c3851a
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Wed Mar 25 17:49:19 2026 +0000
+
+    Merge remote-tracking branch 'origin/codex/update-jules-nightly.yml-for-missing-workflows-2026-03-23'
+
+commit cd811720f940b4017113e40c6a6da356f113b614
+Merge: 74cc40af 1ccde92e
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Wed Mar 25 17:49:19 2026 +0000
+
+    Merge remote-tracking branch 'origin/codex/inventory-routes-and-service-bindings-across-apps-2026-03-22'
+
+commit 74cc40afca87b2207a6c992f5ed8954447bf8dab
+Merge: 62ee97fd fc838b0a
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Wed Mar 25 17:49:18 2026 +0000
+
+    Merge remote-tracking branch 'origin/codex/document-service-binding-flows-and-update-readmes-2026-03-22'
+
+commit 62ee97fd3358a55951d1dcde49737242b5eb9d14
+Merge: a6b71c36 e18d9841
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Wed Mar 25 17:49:18 2026 +0000
+
+    Merge remote-tracking branch 'origin/codex/create-a-new-clean-branch-with-selected-commits-2026-03-22'
+
+commit a6b71c363fcafb7e67dff433b1036d9300431b2f
+Merge: 04cece32 2b4f2720
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Wed Mar 25 17:49:17 2026 +0000
+
+    Merge remote-tracking branch 'origin/codex/add-unit-tests-for-workers-lib-2026-03-23'
+
+commit 04cece320021f807ed3d2a7a03e169407ca8f11a
+Merge: d2c66c15 70fca818
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Wed Mar 25 17:49:17 2026 +0000
+
+    Merge remote-tracking branch 'origin/codex/add-svg-upload-sanitization-tests-2026-03-22'
+
+commit d2c66c1566fc640279f6a987bcb77ea3f43f6026
+Merge: 28f5239b fdbae3b9
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Wed Mar 25 17:49:17 2026 +0000
+
+    Merge remote-tracking branch 'origin/codex/add-status-management-functionality-2026-03-23'
+
+commit 28f5239b89d04724ac2a12ae8ad273ebc16502d5
+Merge: 8e9490e8 ded96b0e
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Wed Mar 25 17:49:16 2026 +0000
+
+    Merge remote-tracking branch 'origin/ai-findings-autofix/scripts-stabilization-check.mjs'
+
+commit 8e9490e8975ec8f11ed7b1b0d11e6b23821392eb
+Merge: 6106e9de d6c0d138
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Wed Mar 25 17:49:08 2026 +0000
+
+    Merge remote-tracking branch 'origin/add-security-unit-tests-2158240247643728257'
+
+commit d6c0d13829c7de6405d19d684ef432718799bb3e
+Merge: 4691ea5a 6106e9de
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Wed Mar 25 03:58:48 2026 -0400
+
+    main (#3850)
+
+commit 6106e9ded11fc07e42b6077845257bbcfb90fd97
+Merge: 5e31325c ad9febbe
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Tue Mar 24 16:35:50 2026 -0400
+
+    Merge branch 'testing-json-utils-9285790993336685030' into feat/theme… (#4388)
+    
+    …-integration-web-admin
+
+commit ad9febbeb6abf87ee0ea0b689fb552c42c1fd7f7
+Merge: 3fca5632 5e31325c
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Tue Mar 24 16:35:34 2026 -0400
+
+    Merge branch 'main' into feat/theme-integration-web-admin
+    
+    Signed-off-by: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+
+commit 5e31325c113a51a57e4c9f86be16effc1642137e
+Merge: fe9a8b3f f6622353
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Tue Mar 24 16:30:30 2026 -0400
+
+    Fix service status request serialization (#4386)
+    
+    Merge strategy: squash
+    
+    Serialize ServiceStatus health checks so the initial shallow load and
+    later deep validations cannot overlap and overwrite each other out of
+    order.
+    
+    - queue follow-up checks instead of running them concurrently
+    - keep the action button disabled while any check is in flight
+    - normalize rendered status text and preserve loading feedback for both
+    shallow and deep runs
+
+commit f66223530caba04b7537856dc8400b48c91d6d7f
+Merge: 6133f4af fe9a8b3f
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Tue Mar 24 16:30:22 2026 -0400
+
+    Merge branch 'main' into codex/add-unit-tests-for-workers-library-2026-03-23
+
+commit fe9a8b3f4752e2557a6999f716816fd1f46972b7
+Merge: cf1c985b 4b826c47
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Tue Mar 24 16:29:34 2026 -0400
+
+    Ai findings autofix/apps gs api test gateway.js (#4385)
+
+commit 4b826c471248b4cd9a97c06160fc90ea860cb8c7
+Merge: 30a35a2d cf1c985b
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Tue Mar 24 16:28:54 2026 -0400
+
+    Merge branch 'main' into ai-findings-autofix/apps-gs-api-test-gateway.js
+
+commit cf1c985b0978e436ae270693a27aac7f07404318
+Merge: de71112f f1f6081c
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Tue Mar 24 16:26:59 2026 -0400
+
+    Ai findings autofix/scripts maintenance branch report.sh (#4383)
+
+commit 30a35a2dc6fa08aeb2eec421acfa0a4c320f2232
+Merge: 8fd6055e 70c49d5f
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Tue Mar 24 12:19:52 2026 -0400
+
+    Finding autofix 8facaa53 (#4384)
+
+commit f1f6081c36b9bf304950c4d3f83f6d6365814d79
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Sun Mar 22 13:20:28 2026 -0400
+
+    Apply suggested fix to scripts/maintenance/branch-report.sh from Copilot Autofix
+    
+    Co-authored-by: Copilot Autofix powered by AI <223894421+github-code-quality[bot]@users.noreply.github.com>
+    Signed-off-by: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+
+commit 676901932b2462dfd919c79b3f446c6b975c0c17
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Sun Mar 22 13:20:28 2026 -0400
+
+    Apply suggested fix to scripts/maintenance/branch-report.sh from Copilot Autofix
+    
+    Co-authored-by: Copilot Autofix powered by AI <223894421+github-code-quality[bot]@users.noreply.github.com>
+    Signed-off-by: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+
+commit cb4ed94acf538b28d889a6263b39244bd6580aab
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Sun Mar 22 13:20:28 2026 -0400
+
+    Apply suggested fix to scripts/maintenance/branch-report.sh from Copilot Autofix
+    
+    Co-authored-by: Copilot Autofix powered by AI <223894421+github-code-quality[bot]@users.noreply.github.com>
+    Signed-off-by: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+
+commit de71112f717a5fdd69127844ce0cf242c14f5682
+Author: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>
+Date:   Mon Mar 23 18:25:14 2026 -0400
+
+    Codex/update package.json build scripts 2026 03 23 (#4381)
+    
+    Signed-off-by: Bobby Rosenberg <34346749+marzton@users.noreply.github.com>

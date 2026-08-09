@@ -1,0 +1,27 @@
+{
+  "name": "@goldshore/gs-admin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "lint": "eslint .",
+    "test": "echo 'No tests configured for @goldshore/gs-admin'"
+  },
+  "dependencies": {
+    "@goldshore/auth": "workspace:*",
+    "@goldshore/config": "workspace:^",
+    "@goldshore/integrations": "workspace:*",
+    "@goldshore/theme": "workspace:*",
+    "@goldshore/ui": "workspace:*",
+    "astro": "^7.1.0"
+  },
+  "devDependencies": {
+    "@astrojs/cloudflare": "^13.1.10",
+    "@types/node": "^25.0.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
