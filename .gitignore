@@ -60,6 +60,7 @@ Thumbs.db
 !.vscode/extensions.json
 !.vscode/settings.json
 !.vscode/launch.json
+!.vscode/tasks.json
 .idea
 *.swp
 *.swo
@@ -96,3 +97,16 @@ reports/*.txt
 .codex-remote-attachments/
 .codex/
 .mcp.json
+
+# Generated files (should be created at build time, not committed)
+**/worker-configuration.d.ts
+git_log.txt
+*_log.txt
+
+# One-off scripts (use scripts/ directory instead)
+verify_*.py
+update_*.js
+fix_*.js
+
+# Temporary directories
+tmp-chrome-profile/

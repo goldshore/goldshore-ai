@@ -1,51 +1,50 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
       "@goldshore/ui": [
-        "packages/ui/index.ts"
+        "./packages/ui/index.ts"
       ],
       "@goldshore/ui/*": [
-        "packages/ui/*"
+        "./packages/ui/*"
       ],
       "@goldshore/config/*": [
-        "packages/config/*"
+        "./packages/config/*"
       ],
       "@goldshore/utils/*": [
-        "packages/utils/*"
+        "./packages/utils/*"
       ],
       "@goldshore/auth/*": [
-        "packages/auth/*"
+        "./packages/auth/*"
       ],
       "@goldshore/theme": [
-        "packages/theme/index.css"
+        "./packages/theme/index.css"
       ],
       "@goldshore/theme/*": [
-        "packages/theme/*"
+        "./packages/theme/*"
       ],
       "@goldshore/ai-providers/*": [
-        "packages/ai-providers/*"
+        "./packages/ai-providers/*"
       ],
       "@packages/*": [
-        "packages/*"
+        "./packages/*"
       ],
       "@apps/*": [
-        "apps/*"
+        "./apps/*"
       ],
       "@goldshore/ai-providers": [
-        "packages/ai-providers/index.ts"
+        "./packages/ai-providers/index.ts"
       ],
       "@goldshore/schema": [
-        "packages/schema/src/index.ts"
+        "./packages/schema/src/index.ts"
       ],
       "@goldshore/schema/*": [
-        "packages/schema/src/*"
+        "./packages/schema/src/*"
       ],
       "@goldshore/integrations": [
-        "packages/integrations/index.ts"
+        "./packages/integrations/index.ts"
       ],
       "@goldshore/integrations/*": [
-        "packages/integrations/*"
+        "./packages/integrations/*"
       ]
     }
   }

@@ -1,0 +1,174 @@
+---
+interface Props {
+  mode?: 'starfield' | 'parallax';
+}
+
+const { mode = 'starfield' } = Astro.props;
+---
+
+<div class="vibrant-field" data-vibrant-field={mode} aria-hidden="true">
+  <canvas></canvas>
+  <div class="vibrant-field__grid"></div>
+  <div class="vibrant-field__glow"></div>
+</div>
+
+<script>
+  type Particle = {
+    x: number;
+    y: number;
+    radius: number;
+    alpha: number;
+    depth: number;
+    copper: boolean;
+  };
+
+  const instances = new WeakMap<Element, () => void>();
+
+  const mountField = (root: HTMLElement) => {
+    if (instances.has(root)) return;
+
+    const canvas = root.querySelector('canvas');
+    const context = canvas?.getContext('2d');
+    if (!canvas || !context) return;
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const parallax = root.dataset.vibrantField === 'parallax' && !reducedMotion;
+    const pointer = { x: 0, y: 0 };
+    const smooth = { x: 0, y: 0 };
+    let particles: Particle[] = [];
+    let width = 0;
+    let height = 0;
+    let frame = 0;
+    let scroll = window.scrollY;
+
+    const createParticles = () => {
+      const count = Math.max(54, Math.min(150, Math.round((width * height) / 10500)));
+      particles = Array.from({ length: count }, (_, index) => ({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        radius: 0.45 + Math.random() * 1.35,
+        alpha: 0.12 + Math.random() * 0.5,
+        depth: 0.25 + Math.random() * 0.75,
+        copper: index % 7 === 0,
+      }));
+    };
+
+    const resize = () => {
+      const rect = root.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      width = rect.width;
+      height = rect.height;
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      context.setTransform(dpr, 0, 0, dpr, 0, 0);
+      createParticles();
+    };
+
+    const draw = (time = 0) => {
+      context.clearRect(0, 0, width, height);
+
+      smooth.x += (pointer.x - smooth.x) * 0.04;
+      smooth.y += (pointer.y - smooth.y) * 0.04;
+
+      for (const particle of particles) {
+        const drift = reducedMotion ? 0 : Math.sin(time * 0.00022 + particle.x) * 5 * particle.depth;
+        const offsetX = parallax ? smooth.x * 18 * particle.depth : 0;
+        const offsetY = parallax ? (smooth.y * 12 - scroll * 0.035) * particle.depth : drift;
+        const x = (particle.x + offsetX + width) % width;
+        const y = (particle.y + offsetY + height) % height;
+
+        context.beginPath();
+        context.arc(x, y, particle.radius, 0, Math.PI * 2);
+        context.fillStyle = particle.copper
+          ? `rgba(217, 106, 50, ${particle.alpha})`
+          : `rgba(236, 234, 228, ${particle.alpha})`;
+        context.fill();
+      }
+
+      if (!reducedMotion) frame = window.requestAnimationFrame(draw);
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
+      const rect = root.getBoundingClientRect();
+      pointer.x = ((event.clientX - rect.left) / Math.max(rect.width, 1) - 0.5) * 2;
+      pointer.y = ((event.clientY - rect.top) / Math.max(rect.height, 1) - 0.5) * 2;
+    };
+    const onScroll = () => { scroll = window.scrollY; };
+    const observer = new ResizeObserver(resize);
+
+    observer.observe(root);
+    window.addEventListener('pointermove', onPointerMove, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true });
+    resize();
+    draw();
+
+    const cleanup = () => {
+      window.cancelAnimationFrame(frame);
+      observer.disconnect();
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('scroll', onScroll);
+      instances.delete(root);
+    };
+
+    instances.set(root, cleanup);
+  };
+
+  const mountFields = () => {
+    document.querySelectorAll<HTMLElement>('[data-vibrant-field]').forEach(mountField);
+  };
+
+  const cleanupFields = () => {
+    document.querySelectorAll('[data-vibrant-field]').forEach((root) => instances.get(root)?.());
+  };
+
+  document.addEventListener('astro:page-load', mountFields);
+  document.addEventListener('astro:before-swap', cleanupFields);
+  document.readyState === 'loading'
+    ? document.addEventListener('DOMContentLoaded', mountFields, { once: true })
+    : mountFields();
+</script>
+
+<style>
+  .vibrant-field,
+  .vibrant-field canvas,
+  .vibrant-field__grid,
+  .vibrant-field__glow {
+    position: absolute;
+    inset: 0;
+  }
+
+  .vibrant-field {
+    overflow: hidden;
+    pointer-events: none;
+    contain: layout style paint;
+  }
+
+  .vibrant-field canvas {
+    width: 100%;
+    height: 100%;
+    will-change: transform;
+  }
+
+  .vibrant-field__grid {
+    opacity: 0.16;
+    background:
+      linear-gradient(rgba(217, 106, 50, 0.16) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(217, 106, 50, 0.16) 1px, transparent 1px);
+    background-size: 84px 84px;
+    mask-image: linear-gradient(to bottom, transparent, black 38%, transparent);
+  }
+
+  .vibrant-field__glow {
+    background:
+      radial-gradient(circle at 18% 50%, rgba(217, 106, 50, 0.12), transparent 34%),
+      radial-gradient(circle at 82% 62%, rgba(217, 106, 50, 0.07), transparent 30%);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .vibrant-field canvas {
+      opacity: 0.72;
+    }
+  }
+</style>

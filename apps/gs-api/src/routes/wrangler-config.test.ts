@@ -51,6 +51,10 @@ describe('gs-api wrangler env bindings', () => {
           `\\[\\[env\\.${envName}\\.kv_namespaces\\]\\][\\s\\S]*?binding = "RISK_RADAR_CACHE"[\\s\\S]*?id = "`,
         ),
       );
+      assert.match(
+        wranglerToml,
+        new RegExp(`\\[\\[env\\.${envName}\\.kv_namespaces\\]\\][\\s\\S]*?binding = "RISK_RADAR_CACHE"[\\s\\S]*?id = "`)
+      );
     });
 
     it(`defines platform, Risk Radar, and AI bindings for ${envName}`, () => {
@@ -62,25 +66,19 @@ describe('gs-api wrangler env bindings', () => {
       );
       assert.match(
         wranglerToml,
-        new RegExp(
-          `\\[\\[env\\.${envName}\\.r2_buckets\\]\\][\\s\\S]*?binding = "RISK_RADAR_R2"`,
-        ),
+        new RegExp(`\\[\\[env\\.${envName}\\.r2_buckets\\]\\][\\s\\S]*?binding = "RISK_RADAR_R2"`)
       );
       assert.match(
         wranglerToml,
-        new RegExp(
-          `\\[\\[env\\.${envName}\\.d1_databases\\]\\][\\s\\S]*?binding = "PLATFORM_DB"`,
-        ),
+        new RegExp(`\\[\\[env\\.${envName}\\.d1_databases\\]\\][\\s\\S]*?binding = "PLATFORM_DB"`)
       );
       assert.match(
         wranglerToml,
-        new RegExp(
-          `\\[\\[env\\.${envName}\\.d1_databases\\]\\][\\s\\S]*?binding = "RISK_RADAR_DB"`,
-        ),
+        new RegExp(`\\[\\[env\\.${envName}\\.d1_databases\\]\\][\\s\\S]*?binding = "RISK_RADAR_DB"`)
       );
       assert.match(
         wranglerToml,
-        new RegExp(`\\[env\\.${envName}\\.ai\\][\\s\\S]*?binding = "AI"`),
+        new RegExp(`\\[env\\.${envName}\\.ai\\][\\s\\S]*?binding = "AI"`)
       );
     });
   }
@@ -101,11 +99,19 @@ describe('gs-api wrangler env bindings', () => {
       topLevel,
       /\[\[d1_databases\]\][\s\S]*?binding\s*=\s*"PLATFORM_DB"/,
     );
+    assert.doesNotMatch(topLevel, /\[\[d1_databases\]\][\s\S]*?binding\s*=\s*"DB"/);
+    assert.doesNotMatch(topLevel, /database_id\s*=\s*"gs_db_001"/);
     assert.match(
       topLevel,
       /\[\[r2_buckets\]\][\s\S]*?binding\s*=\s*"GS_ASSETS"/,
     );
     assert.match(topLevel, /\[ai\][\s\S]*?binding\s*=\s*"AI"/);
+    assert.doesNotMatch(
+      wranglerToml,
+      /\[\[env\.(prod|preview)\.secrets_store_secrets\]\][\s\S]*?binding\s*=\s*"INTEGRATION_MASTER_KEY"/,
+    );
+    assert.doesNotMatch(wranglerToml, /\[\[migrations\]\]/);
+    assert.doesNotMatch(wranglerToml, /\[\[env\.(prod|preview)\.migrations\]\]/);
   });
 
   it('routes consolidated backend hostnames to the canonical API Worker', () => {
@@ -129,12 +135,20 @@ describe('gs-api wrangler env bindings', () => {
     );
   });
 
-  it('keeps web and migrated admin hosts separate from API hosts', () => {
+  it('keeps web and admin hosts on the canonical gs-web Worker', () => {
     assert.deepEqual(routePatterns(environmentBlock(webWranglerToml, 'prod')), [
       'goldshore.ai/*',
       'goldshore.org/*',
       'admin.goldshore.ai/*',
+      'admin-preview.goldshore.ai/*',
       'admin.goldshore.org/*',
+      'risk.goldshore.ai/*',
+      'risk.goldshore.org/*',
     ]);
+  });
+
+  it('keeps CONTROL_SYNC_TOKEN out of plain-text environment variables', () => {
+    assert.doesNotMatch(wranglerToml, /^CONTROL_SYNC_TOKEN\s*=/m);
+    assert.doesNotMatch(wranglerToml, /__PROD_CONTROL_SYNC_TOKEN__/);
   });
 });
