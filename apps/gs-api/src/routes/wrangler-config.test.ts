@@ -128,11 +128,29 @@ describe('gs-api wrangler env bindings', () => {
     ]);
   });
 
-  it('keeps production gs-api queue ownership producer-only for externally consumed queues', () => {
-    assert.deepEqual(
-      queueConsumerNames(environmentBlock(wranglerToml, 'prod')),
-      [],
+  it('assigns production and isolated preview queue consumers to gs-api', () => {
+    assert.deepEqual(queueConsumerNames(wranglerToml).sort(), [
+      'goldshore-jobs',
+      'goldshore-jobs-preview',
+      'gs-events',
+      'gs-events-preview',
+      'gs-mail-jobs',
+      'gs-mail-jobs-preview',
+    ]);
+    assert.match(wranglerToml, /dead_letter_queue = "gs-mail-dead-letter"/);
+    assert.match(wranglerToml, /dead_letter_queue = "gs-mail-dead-letter-preview"/);
+  });
+
+  it('binds each environment to its local SignalsEvaluator workflow', () => {
+    assert.match(
+      wranglerToml,
+      /\[\[env\.prod\.workflows\]\][\s\S]*?binding = "GS_SIGNALS"[\s\S]*?name = "gs-signals-evaluator"[\s\S]*?class_name = "SignalsEvaluator"/,
     );
+    assert.match(
+      wranglerToml,
+      /\[\[env\.preview\.workflows\]\][\s\S]*?binding = "GS_SIGNALS"[\s\S]*?name = "gs-signals-evaluator-preview"[\s\S]*?class_name = "SignalsEvaluator"/,
+    );
+    assert.doesNotMatch(wranglerToml, /script_name = "gs-signals-prod"/);
   });
 
   it('keeps web and admin hosts on the canonical gs-web Worker', () => {
