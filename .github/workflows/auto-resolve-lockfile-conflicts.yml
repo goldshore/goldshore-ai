@@ -17,20 +17,25 @@ permissions:
   contents: write
   pull-requests: write
 
+concurrency:
+  group: auto-resolve-lockfile-conflicts-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   resolve-lockfile-conflicts:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@f520eceda224fe1a4aed5a2a27a194379a409996 # v6
         with:
           version: 9.15.4
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .node-version
           cache: pnpm
@@ -70,6 +75,8 @@ jobs:
 
       - name: Commit resolved lockfile if changed
         if: steps.check_conflicts.outputs.has_conflicts == 'true'
+        env:
+          HEAD_REF: ${{ github.head_ref }}
         run: |
           if git diff --quiet pnpm-lock.yaml; then
             echo "No changes to commit"
@@ -80,20 +87,16 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git add pnpm-lock.yaml
-          git commit -m "fix(ci): Auto-resolve pnpm-lock.yaml conflicts
+          git commit -m "fix(ci): auto-resolve pnpm lockfile conflicts" \
+            -m "Regenerate the lockfile from the current package manifests. [skip ci]"
 
-Detected and resolved merge conflicts in pnpm-lock.yaml by regenerating
-from current package.json specs. This uses the latest versions of all
-dependencies based on their package manifest definitions.
-
-[skip ci]"
-
-          git push origin HEAD:${{ github.head_ref }}
+          test -n "$HEAD_REF" || { echo "::error::This mutation is only valid for a pull request branch"; exit 1; }
+          git push origin "HEAD:$HEAD_REF"
           echo "✅ Resolved lockfile conflicts and pushed to branch"
 
       - name: Comment on PR if conflicts were resolved
         if: steps.check_conflicts.outputs.has_conflicts == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
           script: |
             github.rest.issues.createComment({
