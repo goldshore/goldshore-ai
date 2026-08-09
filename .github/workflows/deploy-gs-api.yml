@@ -15,7 +15,25 @@ on:
   workflow_dispatch:
 
 jobs:
+  gs-api-build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 9.15.4
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build gs-api
+        run: pnpm --filter @goldshore/gs-api build
+
   deploy:
+    needs: gs-api-build
     runs-on: ubuntu-latest
     environment:
       name: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
@@ -55,7 +73,6 @@ jobs:
           echo "CLOUDFLARE_API_TOKEN=$CF_TOKEN" >> "$GITHUB_ENV"
 
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @goldshore/gs-api build
 
       - name: Apply newsletter subscriber schema
         if: github.ref == 'refs/heads/main'

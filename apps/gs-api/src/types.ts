@@ -48,7 +48,6 @@ export type Env = {
   MAIL_ALLOWED_RECIPIENTS?: string;
   AGENT?: Fetcher;
   API_ORIGIN?: string;
-  CONTROL_ADMIN_ROLES?: string;
   CLOUDFLARE_API_TOKEN?: string;
   GITHUB_TOKEN?: string;
   GITHUB_API_TOKEN?: string;
@@ -57,18 +56,9 @@ export type Env = {
   CLOUDFLARE_ZONE_ID?: string;
   CLOUDFLARE_ZONE_NAME?: string;
   CLOUDFLARE_PAGES_PROJECT?: string;
-  MAIL_FORWARD_TO?: string;
-  FORWARD_TO?: string;
-  MAIL_BLOCKED_SENDERS?: string;
-  MAIL_ALLOWED_RECIPIENTS?: string;
-  API_ORIGIN?: string;
   ADMIN_URL?: string;
   ENV?: string;
   DEV_AUTH_BYPASS?: string;
-  API_VERSION?: string;
-  DEPLOY_SHA?: string;
-  GIT_SHA?: string;
-  CONTROL_ADMIN_ROLES?: string;
   GOOGLE_OAUTH_CLIENT_ID?: string;
   GOOGLE_OAUTH_CLIENT_SECRET?: string;
   GOOGLE_OAUTH_REDIRECT_URI?: string;
