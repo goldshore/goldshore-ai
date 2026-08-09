@@ -1,31 +1,28 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for more information:
 # https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
 # https://containers.dev/guide/dependabot
+#
+# This file previously held two concatenated documents - `version:` and
+# `updates:` each appeared twice at the top level. On duplicate YAML keys the
+# second wins, so the devcontainers block was silently discarded. Merged here
+# into a single valid document.
 
-version: 2
-updates:
- - package-ecosystem: "devcontainers"
-   directory: "/"
-   schedule:
-     interval: weekly
 version: 2
 
 updates:
   # ─────────────────────────────────────────────
-  # 1. NPM (Monorepo: apps/* + packages/*)
+  # 1. NPM (monorepo: apps/* + packages/* + infra/*)
   # ─────────────────────────────────────────────
+  # Only the workspace root is declared. Dependabot follows the pnpm workspace
+  # links from here - do NOT add nested directories, or every advisory gets
+  # filed twice. A tracked goldshore-ai/ skeleton used to do exactly that.
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
     # ensures Dependabot follows workspace links
     versioning-strategy: increase
-    # optional: limit number of simultaneous PRs
     open-pull-requests-limit: 10
     allow:
-      # allow updating everything inside workspaces
       - dependency-type: "all"
 
   # ─────────────────────────────────────────────
@@ -36,3 +33,11 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+
+  # ─────────────────────────────────────────────
+  # 3. Devcontainers
+  # ─────────────────────────────────────────────
+  - package-ecosystem: "devcontainers"
+    directory: "/"
+    schedule:
+      interval: "weekly"
