@@ -23,4 +23,3 @@ CREATE INDEX IF NOT EXISTS newsletter_subscribers_status_idx
   ON newsletter_subscribers(status, updated_at);
 CREATE INDEX IF NOT EXISTS newsletter_subscribers_brand_list_idx
   ON newsletter_subscribers(brand, list_name, status);
-

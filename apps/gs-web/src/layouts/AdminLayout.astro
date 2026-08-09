@@ -1,0 +1,64 @@
+---
+import Sidebar from '../components/Sidebar.astro';
+import '../styles/admin.css';
+import { hasAdminPermission, type AdminPermission } from '@goldshore/auth';
+
+interface Props {
+  title: string;
+  requiredPermission?: AdminPermission;
+}
+
+const { title, requiredPermission } = Astro.props;
+const session = Astro.locals.adminSession;
+
+if (!session?.isAuthenticated || session.roles.length === 0) {
+  return Astro.redirect('/login?next=' + encodeURIComponent(Astro.url.pathname));
+}
+
+if (requiredPermission && !hasAdminPermission(session.permissions, requiredPermission)) {
+  return new Response('Forbidden', { status: 403 });
+}
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{title}</title>
+    <link rel="icon" href="/favicon.ico" />
+  </head>
+  <body class="gs-admin-body">
+    <div class="gs-admin-shell">
+      <Sidebar permissions={session.permissions} />
+      <main class="gs-admin-main">
+        <slot />
+      </main>
+    </div>
+  </body>
+</html>
+
+<style>
+  :root {
+    color-scheme: dark;
+  }
+
+  body.gs-admin-body {
+    margin: 0;
+    background: #050b14;
+    color: rgba(226, 232, 240, 0.92);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    min-height: 100dvh;
+  }
+
+  .gs-admin-shell {
+    display: flex;
+    min-height: 100dvh;
+  }
+
+  .gs-admin-main {
+    flex: 1;
+    overflow-x: hidden;
+    padding: 0;
+  }
+</style>

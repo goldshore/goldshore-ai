@@ -2,25 +2,9 @@ account_id_env: CF_ACCOUNT_ID
 zone_id_env: CF_ZONE_ID
 
 projects:
-  pages:
-    - name: gs-web
-      public_url: https://goldshore.ai/
-      output_dir: apps/gs-web/dist
-      max_daily_deploys: 6
-      require_checks: ['smoke', 'lighthouse']
-      skip_if_paths_only:
-        - '^docs/.*'
-        - '^scripts/.*'
-        - '^README.md$'
-    - name: gs-admin
-      public_url: https://admin.goldshore.ai/
-      output_dir: apps/gs-admin/dist
-      max_daily_deploys: 6
-      require_checks: ['smoke', 'lighthouse']
-      skip_if_paths_only:
-        - '^docs/.*'
-        - '^scripts/.*'
-        - '^README.md$'
+  # gs-web is deployed exclusively by Cloudflare Workers Builds. Do not add it
+  # to Pages automation or trigger a second build from this legacy orchestrator.
+  pages: []
 
   workers:
     - script: gs-gateway
@@ -56,18 +40,6 @@ projects:
         - pattern: 'mail.goldshore.ai/*'
           zone: goldshore.ai
       max_daily_deploys: 10
-    - script: gs-trading-prod
-      entry: apps/gs-trading/dist/index.js
-      routes:
-        - pattern: 'trading.goldshore.ai/*'
-          zone: goldshore.ai
-        - pattern: 'dashboard.goldshore.ai/*'
-          zone: goldshore.ai
-        - pattern: 'dash.goldshore.ai/*'
-          zone: goldshore.ai
-      max_daily_deploys: 6
-      require_checks: ['smoke']
-
 guards:
   dedupe_concurrency_key: 'cf-deploy'
   cool_down_minutes: 15

@@ -1,0 +1,7 @@
+---
+const { redirect } = Astro;
+
+if (Astro.url.pathname === '/admin/' || Astro.url.pathname === '/admin') {
+  redirect('/admin/overview');
+}
+---

@@ -1,7 +1,10 @@
 import {
   buildAdminSession,
   hasAdminPermission,
+  ROLE_PERMISSIONS,
   verifyAccessWithClaims,
+  authorizeAccessClaims,
+  verifyJWTCookie,
   type AccessTokenPayload,
   type AdminPermission,
   type AdminSession,
@@ -21,6 +24,10 @@ const ADMIN_HOSTS = new Set([
   'admin.goldshore.org',
   'admin-preview.goldshore.ai',
   'admin-preview.goldshore.org',
+  'dashboard.goldshore.ai',
+  'dashboard.goldshore.org',
+  'dashboard-preview.goldshore.ai',
+  'dashboard-preview.goldshore.org',
 ]);
 
 const STATIC_PATH_PREFIXES = [
@@ -64,6 +71,11 @@ export type AdminAuthorizationResult =
       status: 401 | 403 | 503;
       error: string;
     };
+
+export type AdminAuthError = {
+  status: 401 | 403 | 503 | 404;
+  message: string;
+};
 
 const normalizePathname = (pathname: string) => {
   if (!pathname || pathname === '/') return '/';
@@ -170,6 +182,8 @@ export const getAdminRouteRule = (
   }
 
   if (
+    normalizedPath === '/admin/deploy' ||
+    normalizedPath.startsWith('/admin/deploy/') ||
     normalizedPath === '/admin/api-status' ||
     normalizedPath === '/admin/workers/status' ||
     normalizedPath === '/admin/workers/routes' ||
@@ -186,7 +200,7 @@ export const getAdminRouteRule = (
     return {
       canonicalPath: normalizedPath,
       kind: normalizedPath.startsWith('/api/') ? 'api' : 'page',
-      permission: 'system:read',
+      permission: normalizedPath.startsWith('/admin/deploy') ? 'system:write' : 'system:read',
       requiresAdminRole: true,
     };
   }
@@ -203,7 +217,9 @@ export const getAdminRouteRule = (
     };
   }
 
-  if (normalizedPath === '/admin' || normalizedPath.startsWith('/admin/')) {
+  if (
+    normalizedPath === '/admin' || normalizedPath.startsWith('/admin/')
+  ) {
     return {
       canonicalPath: normalizedPath,
       kind: 'page',
@@ -251,34 +267,75 @@ export const getCanonicalAdminUrl = (pathname: string) => {
   return new URL(normalizedPath, CANONICAL_ADMIN_ORIGIN).toString();
 };
 
+export const getAdminLoginDestination = (requested?: string) => {
+  switch (requested) {
+    case 'org':
+      return ALTERNATE_ADMIN_DASHBOARD_URL;
+    case 'dashboard':
+    case 'admin':
+    case 'ai':
+    default:
+      return CANONICAL_ADMIN_DASHBOARD_URL;
+  }
+};
+
+/**
+ * A successfully verified Cloudflare Access assertion has already passed the
+ * dedicated Access application's identity policy. Access assertions do not
+ * normally contain the application-specific `admin` role used by cookie JWTs,
+ * so give that edge-authenticated identity the admin session expected by the
+ * protected dashboard. Explicit supported roles still take precedence.
+ */
+export const buildCloudflareAccessAdminSession = (
+  claims: AccessTokenPayload,
+): AdminSession => {
+  const session = buildAdminSession(claims);
+  if (session.roles.length > 0) return session;
+
+  return {
+    roles: ['admin'],
+    permissions: [...ROLE_PERMISSIONS.admin],
+  };
+};
+
 export const authorizeAdminRequest = async (
   request: Request,
   env: AccessEnv | undefined,
   rule: AdminRouteRule,
 ): Promise<AdminAuthorizationResult> => {
-  if (!env?.CLOUDFLARE_ACCESS_AUDIENCE) {
+  if (!env?.JWT_SECRET && !env?.CLOUDFLARE_TEAM_DOMAIN) {
     return {
       ok: false,
       status: 503,
-      error: 'Admin access is misconfigured: CLOUDFLARE_ACCESS_AUDIENCE is missing.',
+      error: 'Admin access is misconfigured: no JWT verifier is configured.',
     };
   }
 
-  const claims = await verifyAccessWithClaims(request, env);
+  const cookieClaims = await verifyJWTCookie(request, env);
+  const accessClaims = cookieClaims ? null : await verifyAccessWithClaims(request, env);
+  const claims = cookieClaims ?? accessClaims;
+  const verifiedClaims =
+    await verifyJWTCookie(request, env) ??
+    await verifyAccessWithClaims(request, env);
+  const claims = verifiedClaims
+    ? await authorizeAccessClaims(verifiedClaims, env)
+    : null;
   if (!claims) {
     return {
       ok: false,
       status: 401,
-      error: 'Cloudflare Access authentication is required.',
+      error: 'JWT authentication is required.',
     };
   }
 
-  const session = buildAdminSession(claims);
+  const session = accessClaims
+    ? buildCloudflareAccessAdminSession(accessClaims)
+    : buildAdminSession(claims);
   if (rule.requiresAdminRole && session.roles.length === 0) {
     return {
       ok: false,
       status: 403,
-      error: 'Cloudflare Access authenticated, but no admin role was granted.',
+      error: 'JWT authenticated, but no admin role was granted.',
     };
   }
 
@@ -294,5 +351,16 @@ export const authorizeAdminRequest = async (
     ok: true,
     claims,
     session,
+  };
+};
+
+export const getAdminAuthError = (
+  result: AdminAuthorizationResult | null | undefined,
+): AdminAuthError | null => {
+  if (!result || result.ok) return null;
+  const failure = result as Extract<AdminAuthorizationResult, { ok: false }>;
+  return {
+    status: failure.status,
+    message: failure.error,
   };
 };
