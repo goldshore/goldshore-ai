@@ -1,4 +1,5 @@
 import type { MiddlewareHandler } from 'astro';
+import { verifyJWTCookie } from '@goldshore/auth';
 import { HTML_CONTENT_SECURITY_POLICY } from './security/policy';
 import {
   authorizeAdminRequest,
