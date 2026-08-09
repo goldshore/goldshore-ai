@@ -34,6 +34,25 @@ const queueConsumerNames = (block: string) =>
     ),
   ].map((match) => match[1]);
 
+const bindingBlocks = (
+  toml: string,
+  environment: string,
+  table: string,
+  binding: string,
+) =>
+  [
+    ...toml.matchAll(
+      new RegExp(
+        `\\[\\[env\\.${environment}\\.${table}\\]\\][\\s\\S]*?(?=\\r?\\n\\[|$)`,
+        'g',
+      ),
+    ),
+  ]
+    .map((match) => match[0])
+    .filter((block) =>
+      new RegExp(`^binding\\s*=\\s*"${binding}"$`, 'm').test(block),
+    );
+
 describe('gs-api wrangler env bindings', () => {
   // Canonical environments are [env.prod] and [env.preview].
   // Legacy [env.production] has been intentionally removed.
@@ -51,9 +70,14 @@ describe('gs-api wrangler env bindings', () => {
           `\\[\\[env\\.${envName}\\.kv_namespaces\\]\\][\\s\\S]*?binding = "RISK_RADAR_CACHE"[\\s\\S]*?id = "`,
         ),
       );
-      assert.match(
-        wranglerToml,
-        new RegExp(`\\[\\[env\\.${envName}\\.kv_namespaces\\]\\][\\s\\S]*?binding = "RISK_RADAR_CACHE"[\\s\\S]*?id = "`)
+      assert.equal(
+        bindingBlocks(
+          wranglerToml,
+          envName,
+          'kv_namespaces',
+          'RISK_RADAR_CACHE',
+        ).length,
+        1,
       );
     });
 
@@ -76,12 +100,50 @@ describe('gs-api wrangler env bindings', () => {
         wranglerToml,
         new RegExp(`\\[\\[env\\.${envName}\\.d1_databases\\]\\][\\s\\S]*?binding = "RISK_RADAR_DB"`)
       );
+      assert.equal(
+        bindingBlocks(
+          wranglerToml,
+          envName,
+          'd1_databases',
+          'RISK_RADAR_DB',
+        ).length,
+        1,
+      );
       assert.match(
         wranglerToml,
         new RegExp(`\\[env\\.${envName}\\.ai\\][\\s\\S]*?binding = "AI"`)
       );
     });
   }
+
+  it('uses only verified Risk Radar resources in prod and preview', () => {
+    for (const envName of ['prod', 'preview']) {
+      assert.match(
+        bindingBlocks(
+          wranglerToml,
+          envName,
+          'kv_namespaces',
+          'RISK_RADAR_CACHE',
+        )[0],
+        /id\s*=\s*"0b56873b6d7b451f9279481920a15447"/,
+      );
+      assert.match(
+        bindingBlocks(
+          wranglerToml,
+          envName,
+          'd1_databases',
+          'RISK_RADAR_DB',
+        )[0],
+        /database_name\s*=\s*"risk-radar-db"[\s\S]*?database_id\s*=\s*"b0bf3b0e-a7d0-49ae-ac82-4f19450b2ce2"/,
+      );
+    }
+
+    assert.doesNotMatch(wranglerToml, /\[\[env\.production\./);
+    assert.doesNotMatch(
+      wranglerToml,
+      /0e67c3fe3d2b3231e7d4dba704e7dcd6|a2315c0e83f27b610c3dfdd30eb0a9ea|aabedb82-60ca-5697-bbd5-9e85675ee7c5|fe25ba0b-7d1e-5362-a03f-065487222a08/,
+    );
+  });
 
   it('keeps top-level bindings safe for Cloudflare Workers Builds version uploads', () => {
     const topLevel = topLevelBlock(wranglerToml);
