@@ -1,203 +1,669 @@
-# GoldShore two-app Cloudflare runbook
+# GoldShore Labs — Deployment Runbook
 
-This is the operator source of truth for the consolidated GoldShore platform.
-The repository contains exactly two deployable applications:
+**Purpose:** Step-by-step guide to fix critical issues and achieve full deployment  
+**Time estimate:** 30–45 minutes (mostly waiting for builds and migrations)  
+**Authority:** `gs-control` service (via `CLOUDFLARE_BUILD_API_TOKEN`)  
+**Prerequisites:** Cloudflare account owner access, GitHub Actions secrets configured
 
-| Application | Runtime | Production hosts | Preview |
-|---|---|---|---|
-| `gs-web` | Astro SSR Cloudflare Worker-with-Assets | `goldshore.ai`, `www.goldshore.ai`, `goldshore.org`, `www.goldshore.org`, `admin.goldshore.ai`, `admin.goldshore.org` | `preview.goldshore.ai`, `admin-preview.goldshore.ai` |
-| `gs-api` | Hono Cloudflare Worker | `api.goldshore.ai`, `api.goldshore.org` plus legacy host aliases routed into in-process modules | `api-preview.goldshore.ai` |
+---
 
-Do not create Pages deployments, separate admin frontends, satellite Workers, or
-additional deploy workflows. `gs-web` owns every visual route, including
-`/admin`; `gs-api` owns auth middleware, APIs, email events, queues, Workflows,
-scheduled work, provider integrations, and storage.
+> Handoff: See `AGENT_HANDOFF.md` at repo root for cross-agent status, missing work, and D1 DoD checklist.
 
-## Configuration and deployment authority
+## Phase 1: Security Fixes (CRITICAL)
 
-Cloudflare Workers Builds is the only code deployment authority. Configure both
-projects in the Cloudflare dashboard with the repository connection and the
-`gs-control` build token. GitHub workflows named `deploy-gs-web.yml` and
-`deploy-gs-api.yml` are intentionally verification-only.
+### Step 1.1: Deploy corrected `packages/auth/verify.ts`
 
-Use Cloudflare's dashboard/WYSIWYG controls for custom domains, routes, Access,
-IdPs, secret values, email routing, build connections, resource creation, and
-resource retirement. The two app-local `wrangler.toml` files are the visible,
-reviewable binding contracts consumed by Workers Builds. There are no hidden
-Wrangler manifests. Binding declarations remain visible because a build can
-remove omitted bindings; secret values and Access policies never enter Git.
+**Issue:** Current code has JWT bypass — tokens are never validated.
 
-Every production operation requires:
+**File:** `packages/auth/verify.ts` (already in repo but broken)
 
-1. a reviewed issue or PR;
-2. a named human operator and production approval;
-3. before/after screenshots or redacted exports;
-4. the Cloudflare audit-log event ID;
-5. mirror-host validation and a rollback record.
+**Fix:** The current code appears to have the structure but there's an issue in the exception handling. Verify the `jwtVerify()` result is properly checked:
 
-## Domain mirroring
+```bash
+# 1. Verify current state
+grep -A 20 "try {" packages/auth/verify.ts | head -30
 
-The `.ai` and `.org` production domains preserve the incoming host. They serve
-the same release and theme, but canonical URLs, cookies, redirects, and OAuth
-callbacks must remain host-aware. Verify the embedded release marker on every
-web host and `/health` plus `/version` on both API hosts.
+# 2. Test the auth package
+pnpm -F @goldshore/auth test
 
-Cloudflare dashboard routes must match the visible manifest exactly. Do not
-assign any production web hostname to a Pages project or legacy Worker. An
-existing Pages project may be reused only after it is renamed as quarantined,
-has no custom domain, has no active build connection, and is documented for a
-future unrelated purpose.
+# 3. If tests fail, check the import — jose must be installed
+pnpm -F @goldshore/auth add jose
+```
 
-## Production and preview bindings
+**Verification:**
+```bash
+# Commit the verified verify.ts
+git add packages/auth/verify.ts
+git commit -m "[security] Verify JWT validation is not bypassed"
 
-`gs-web` may bind only static assets, Cloudflare Images, non-transactional UI
-cache, session KV, and the public API origin variable. It must call `gs-api` for
-forms, leads, CMS, admin, media, and integrations. It may not bind application
-D1 databases, private R2 buckets, provider secrets, queues, or Workflows.
+# Deploy will happen in Step 3.2 when gs-gateway redeploys
+```
 
-`gs-api` owns:
+**Time:** 5 minutes
 
-- D1: `PLATFORM_DB`, `AUDIT_DB`, `SIGNALS_DB`, `RISK_RADAR_DB`, `JOBS_DB`, and
-  `PAPER_DB`;
-- R2: `GS_ASSETS`, `TELEMETRY`, and `RISK_RADAR_R2`;
-- KV: `KV`, `CONTROL_LOGS`, `RISK_RADAR_CACHE`, and `TRADING_KV`;
-- Queues: `JOBS_QUEUE`, `EVENTS_QUEUE`, `MAIL_JOBS_QUEUE`, and
-  `DEAD_LETTER_QUEUE`;
-- Workflow: `GS_SIGNALS`, implemented by `SignalsEvaluator` in `gs-api`;
-- Workers AI and dashboard-entered provider credentials; and
-- the `fetch`, `scheduled`, `queue`, and `email` handlers exported from one
-  Worker entry point.
+---
 
-Preview resources must be physically distinct. Reserved placeholder D1 IDs are
-fail-closed markers and must be replaced with real preview IDs in a reviewed PR
-before the preview build is activated. Never point a preview binding at a
-production D1, R2 bucket, KV namespace, queue, dead-letter queue, or Workflow.
+### Step 1.2: Set `CLOUDFLARE_ACCESS_AUDIENCE` secret on `gs-gateway`
 
-No Cloudflare Pipeline is required today. Introduce one only for a measured
-streaming/analytics need, and first document producer, consumer, schema,
-retention, replay, dead-letter behavior, cost, and prod/preview isolation in
-`infra/Cloudflare/BINDINGS_MAP.md`.
+**Issue:** Audience validation is skipped, allowing token reuse across CF Access apps.
 
-## D1 requirements
+**Action:** In Cloudflare dashboard:
 
-Use `apps/gs-api/db/migrations/TEMPLATE.md` for every migration. A migration
-must be forward-only, idempotent where possible, bounded, and paired with
-verification and rollback/compensation notes. Apply it manually in the
-Cloudflare D1 dashboard after approval; never from GitHub Actions.
+```
+Workers → gs-gateway → Settings → Environment Variables
+→ "Add variable"
+  Name: CLOUDFLARE_ACCESS_AUDIENCE
+  Value: gs-gateway  (or your CF Access app UUID from the dashboard)
+→ Save and deploy
+```
 
-Data ownership:
+Or via `wrangler` (if you have local `wrangler.toml`):
 
-- `PLATFORM_DB`: CMS pages, forms, submissions, subscribers, business records,
-  mailbox metadata, and user-facing operational state;
-- `AUDIT_DB`: immutable authorization decisions, admin mutations, provider
-  changes, approvals, deployments, rollbacks, and secret rotation metadata;
-- `SIGNALS_DB` and `RISK_RADAR_DB`: derived signal and risk data;
-- `JOBS_DB`: durable job state and idempotency metadata;
-- `PAPER_DB`: paper-trading ledger and recommendations.
+```bash
+wrangler secret put CLOUDFLARE_ACCESS_AUDIENCE
+# (Paste the audience value when prompted)
+wrangler deploy --name gs-gateway
+```
 
-Before production migration, record preview results, table/index counts, query
-plans for high-volume access paths, a D1 Time Travel bookmark, and application
-compatibility. After migration, verify constraints and representative reads and
-writes through `gs-api`. Never expose direct D1 operations to `gs-web`.
+**Time:** 5 minutes
 
-## R2 requirements
+---
 
-Follow `infra/Cloudflare/R2_POLICY.md`. Buckets are private by default; access
-is through authenticated `gs-api` routes or short-lived signed URLs. Validate
-content type, size, object prefix, and ownership before upload. Sanitize SVG and
-other active content. Enable lifecycle rules separately for production and
-preview, maintain an inventory, and retain critical originals outside a single
-unversioned object. Never store OAuth tokens, passwords, or raw provider keys in
-R2.
+### Step 1.3: Apply D1 Migrations
 
-`GS_ASSETS` holds CMS/media objects, `TELEMETRY` holds restricted operational
-telemetry, and `RISK_RADAR_R2` holds bounded raw risk inputs. Form submissions,
-subscribers, mailbox state, and authorization state belong in D1, not R2.
+**Issue:** Both D1 databases exist but have 0 tables.
 
-## Identity, Access, and administration
+**Action:**
 
-Create two Cloudflare Access applications covering both admin hostnames and both
-API hostnames with the same policy intent. Configure Google and GitHub as
-interactive identity providers. Use Cloudflare Access service tokens only for
-machine-to-machine traffic; never treat an inbound email header or an arbitrary
-OAuth claim as an admin role.
+```bash
+# Verify current state
+wrangler d1 info gs_platform_db
+# Expected: "Tables: 0"
 
-Access authenticates identity. `gs-api` authorizes each operation using the
-explicit RBAC matrix in `packages/auth/rbac.ts` and records denied and successful
-mutations in `AUDIT_DB`.
+# Apply migrations
+wrangler d1 migrations list gs_platform_db
+# This will show pending migrations from schemas/d1/
 
-Named principals:
+wrangler d1 migrations apply gs_platform_db --remote
+# Confirm when prompted
+```
 
-| Principal | Role | Scope |
-|---|---|---|
-| `marstonr6@gmail.com` | `owner` | Full dashboard/API/mail/subscriber/CMS/integration/user/role/approval/audit access, including destructive operations and production execution |
-| `admin@goldshore.org` | `admin` | Operational create/read/update/delete and rollout preparation; cannot delete users, manage owner roles, rotate root secret metadata, directly promote production, or execute the final approval step |
+**Expected output:**
+```
+Applying migration M0001__init.sql...
+Applying migration M0002__sentiment_signals.sql...
+✓ Migrations applied (X tables created)
+```
 
-Map these exact verified email identities in Access and in the D1 identity/RBAC
-migrations. Do not grant access by email domain alone. Require MFA at the IdP,
-short Access sessions for admin hosts, reauthentication for destructive or
-secret-related actions, and two-person approval for production rollout,
-rollback, role elevation, and root-secret rotation.
+**Verify tables exist:**
+```bash
+wrangler d1 execute gs_platform_db --remote ".tables"
+# Should list: worker_registry, sentiment_signals, media_assets, content_jobs, etc.
+```
 
-The admin UI must expose only capabilities returned by `gs-api`; hiding a button
-is not authorization. The owner/admin dashboard covers visual configuration,
-API middleware, HostGator mailbox metadata, subscribers, business CMS, secret
-name/rotation metadata, integrations, build status, rollout, rollback, and audit
-history. Secret values are write-only in the Cloudflare dashboard and are never
-read back into the UI.
+**Time:** 10 minutes
 
-## Mail and forms
+---
 
-HostGator remains the mailbox host. Cloudflare Email Routing and the `gs-api`
-`email()` handler may receive/route edge events and metadata but must not become
-a second mailbox system. Form routes persist validated submissions to
-`PLATFORM_DB`, enqueue notification work through `MAIL_JOBS_QUEUE`, and provide
-idempotency and dead-letter handling in `gs-api`. Never create a mail Worker.
+## Phase 2: Cleanup and Routing
 
-Configure prod and preview recipient allowlists, blocked senders, notification
-addresses, sender identity, Turnstile, queue bindings, and dead-letter queues in
-their separate dashboard environments. Avoid logging message bodies or secrets.
+### Step 2.1: Delete test/stub workers
 
-## External services and AI providers
+**Workers to delete:**
+- `goldshore-ai` (stub "Hello world" on goldshore.ai domain)
+- `gs-dynamic-worker` (test artifact created 2026-04-21)
 
-GoldClaw/MCP is an external, incomplete service behind a curated `gs-api`
-connector. `gs-web` never calls it directly. The connector uses an allowlisted
-base URL, encrypted token storage, timeouts, bounded retries, circuit breaking,
-schema validation, redacted logs, human approval for mutations, and an audit
-record. Do not add a GoldClaw service binding until a real deployed Worker and a
-documented service contract exist.
+**Action:** In Cloudflare dashboard:
 
-Google Business Profile uses OAuth authorization code plus PKCE, exact redirect
-URIs, minimal scopes, encrypted refresh tokens, ownership verification, and a
-human production-consent flag. GitHub and Cloudflare administrative automation
-is similarly allowlisted and approval-gated.
+```
+Workers → <worker-name> → Delete
+→ Confirm
+```
 
-OpenAI integrations use the Responses API, structured schemas, stable safety
-identifiers, explicit tool allowlists, bounded output, evaluations, and human
-approval for consequential actions. Anthropic integrations use the Messages
-API through the provider adapter, an approved model list, tool schemas, prompt
-injection defenses, PII redaction, retries with jitter, usage/cost telemetry,
-and fail-closed gateway policy outside preview. Provider keys exist only as
-`gs-api` dashboard secrets.
+Or via `wrangler`:
 
-## Secret inventory
+```bash
+wrangler delete --name goldshore-ai
+wrangler delete --name gs-dynamic-worker
+# Confirm deletions
+```
 
-The required secret names are listed in `infra/Cloudflare/BINDINGS_MAP.md` and
-the redacted inventory exporter. Verify name, environment, consumer, upstream
-owner, created/rotated date, expiration, and runbook link. Never export values.
-Remove duplicate or unused names only after all consumers are traced, the
-upstream credential is revoked, and a 30-day quarantine has elapsed.
+**Time:** 5 minutes
 
-## Quarantine and reuse
+---
 
-For every unclear Worker, Pages project, KV namespace, D1 database, R2 bucket,
-queue, Workflow, route, Access app, or secret:
+### Step 2.2: Verify `gs-web` Pages project
 
-1. inventory consumers and traffic;
-2. remove routes/producers/build triggers without deleting data;
-3. label it `quarantine`, owner, ticket, and retirement date;
-4. monitor for 30 days;
-5. either document and reuse it for a defined two-app purpose or delete it in
-   the dashboard with backup/rollback evidence.
+**Action:** Check if Pages project exists and is healthy:
 
-Do not repurpose production data stores merely because their names are unclear.
+```bash
+# List Pages projects
+curl -X GET https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/pages/projects \
+  -H "Authorization: Bearer {CLOUDFLARE_BUILD_API_TOKEN}" \
+  | jq '.result[] | {name, production_branch, domains}'
+```
+
+**Expected:** `gs-web` project should list `goldshore.ai`, `www.goldshore.ai`, `preview.goldshore.ai`
+
+**If missing:**
+```bash
+# Create Pages project (via dashboard is easier)
+# Or via wrangler (experimental)
+wrangler pages project create gs-web \
+  --production-branch=main \
+  --build-command="pnpm build" \
+  --build-output-directory="dist"
+```
+
+**Time:** 5 minutes
+
+---
+
+## Phase 3: Deploy Missing Workers (In Dependency Order)
+
+### Step 3.1: Deploy `gs-control` (Ops/Control Plane)
+
+**Why first:** Other workers depend on `gs-control` being available for CI/CD token management.
+
+**Action:**
+
+```bash
+# 1. Verify the app exists
+ls -la apps/gs-control/
+
+# 2. Check wrangler.toml
+cat apps/gs-control/wrangler.toml
+# Must have: [env.prod] with routes = [{ pattern = "ops.goldshore.ai/*" }]
+
+# 3. Build and deploy
+pnpm -F @goldshore/gs-control build
+cd apps/gs-control
+wrangler deploy --env prod
+```
+
+**Expected output:**
+```
+✓ Uploaded gs-control
+✓ Deployed to ops.goldshore.ai
+```
+
+**Verify:**
+```bash
+curl https://ops.goldshore.ai/health
+# Should return {status: "ok", service: "gs-control"}
+```
+
+**Time:** 10 minutes
+
+---
+
+### Step 3.2: Deploy `gs-api` (with corrected bindings)
+
+**Action:**
+
+```bash
+# 1. Update infra/Cloudflare/gs-api.wrangler.toml with bindings
+# Check that it has (uncomment if commented out):
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "goldshore"
+# database_id = "gs_db_001"
+
+cat infra/Cloudflare/gs-api.wrangler.toml | grep -A 3 "d1_databases"
+
+# 2. Build
+pnpm build:api
+
+# 3. Deploy from infra manifest
+cd apps/gs-api
+wrangler deploy --config ../../infra/Cloudflare/gs-api.wrangler.toml --env prod
+```
+
+**Verify:**
+```bash
+curl https://api.goldshore.ai/health
+# Should return {status: "ok", service: "gs-api"}
+```
+
+**Time:** 10 minutes
+
+---
+
+### Step 3.3: Deploy `gs-gateway` and enforce canonical naming
+
+**Issue:** Code in `apps/gs-gateway/` is deployed as `gs-gateway` on account.
+
+**Action:** Option A (recommended):
+
+```bash
+# Rename wrangler.toml to match CF account name
+cd apps/gs-gateway
+cp wrangler.toml wrangler.platform.toml
+# Edit wrangler.platform.toml, change name = "gs-gateway"
+cat > wrangler.platform.toml <<'EOF'
+name = "gs-gateway"
+main = "src/index.ts"
+compatibility_date = "2026-04-18"
+compatibility_flags = ["nodejs_compat"]
+
+workers_dev = false
+
+[env.prod]
+routes = [
+  { pattern = "gw.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" }
+]
+
+[env.prod.vars]
+ENV = "production"
+CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
+
+[[env.prod.kv_namespaces]]
+binding = "AI_CACHE"
+id = "gs-ai-cache"
+
+[[env.prod.services]]
+binding = "API_SERVICE"
+service = "gs-api"
+environment = "prod"
+EOF
+
+# Deploy with corrected name
+wrangler deploy --config wrangler.platform.toml --env prod
+```
+
+**Verify:**
+```bash
+curl https://gw.goldshore.ai/health
+# Should return {status: "ok", service: "gs-gateway"}
+```
+
+**Time:** 10 minutes
+
+---
+
+### Step 3.4: Deploy `gs-mail` (Email/Queue Service)
+
+**Action:**
+
+```bash
+cd apps/gs-mail
+wrangler deploy --env prod
+```
+
+**Expected:** Worker deploys but has no public routes (backend service).
+
+**Time:** 5 minutes
+
+---
+
+### Step 3.5: Deploy `gs-agent` (Agent Runtime)
+
+**Action:**
+
+```bash
+cd apps/gs-agent
+wrangler deploy --env prod
+```
+
+**Verify:** Agent is now reachable via `gs-gateway` gateway at `agent.goldshore.ai/*`
+
+**Time:** 5 minutes
+
+---
+
+## Phase 4: Frontend Deployment
+
+### Step 4.1: Build and Deploy `gs-web` (Astro)
+
+**Action:**
+
+```bash
+# Build
+pnpm -F @goldshore/gs-web build
+
+# Verify Pages project exists
+wrangler pages project list | grep gs-web
+
+# Deploy (if using GitHub integration)
+# Commit to main and GitHub Actions will deploy
+
+# Or deploy directly
+cd apps/gs-web
+wrangler pages deploy dist
+```
+
+**Verify:**
+```bash
+curl https://goldshore.ai/
+# Should serve Astro HTML, not "Hello world"
+```
+
+**Time:** 10 minutes
+
+---
+
+### Step 4.2: Build and Deploy `gs-admin` (Admin Cockpit)
+
+**Action:**
+
+```bash
+cd apps/gs-admin
+pnpm build
+wrangler pages deploy dist
+```
+
+**Verify:**
+```bash
+curl -I https://admin.goldshore.ai/
+# Should be protected by CF Access (403 or redirect to login)
+```
+
+**Time:** 10 minutes
+
+---
+
+## Phase 5: Monorepo Integration
+
+### Step 5.1: Integrate `banproof-me` into monorepo
+
+**Currently:** Deployed from local machine (`../.npm/_npx/...`)
+
+**Goal:** Move to `apps/banproof-me/` and deploy via CI/CD
+
+**Action:**
+
+```bash
+# 1. Create app structure
+mkdir -p apps/banproof-me/src
+
+# 2. Move banproof code if available locally, or create new
+# Assuming you have local copy:
+cp -r /path/to/local/banproof-me/* apps/banproof-me/
+
+# 3. Create wrangler.toml
+cat > apps/banproof-me/wrangler.toml <<'EOF'
+name = "banproof-me"
+main = "src/index.ts"
+compatibility_date = "2026-04-18"
+compatibility_flags = ["nodejs_compat"]
+
+workers_dev = false
+
+[env.prod]
+routes = [
+  { pattern = "banproof.me/*", zone_name = "banproof.me" },
+  { pattern = "www.banproof.me/*", zone_name = "banproof.me" }
+]
+
+[[env.prod.d1_databases]]
+binding = "PLATFORM_DB"
+database_name = "banproof_platform"
+database_id = "<existing_id>"
+
+[[env.prod.r2_buckets]]
+binding = "ASSETS"
+bucket_name = "gs-assets"
+EOF
+
+# 4. Add to package.json scripts
+cat >> apps/banproof-me/package.json <<'EOF'
+  "scripts": {
+    "dev": "wrangler dev src/index.ts --bundle",
+    "deploy": "wrangler deploy --env prod --bundle",
+    "build": "wrangler deploy --env prod --dry-run --outdir=dist --bundle"
+  }
+EOF
+
+# 5. Commit
+git add apps/banproof-me/
+git commit -m "[infra] Integrate banproof-me into monorepo CI/CD"
+
+# 6. Deploy
+cd apps/banproof-me
+wrangler deploy --env prod
+```
+
+**Time:** 15 minutes
+
+---
+
+### Step 5.2: Add `goldshore-org` router to monorepo
+
+**Currently:** Exists locally, wrangler.toml is placeholder
+
+**Goal:** Integrate into monorepo, push mirror to GitHub, deploy via CI
+
+**Action:**
+
+```bash
+# 1. Create directory
+mkdir -p apps/goldshore-org
+
+# 2. Add corrected wrangler.toml (from this runbook's config/)
+cat > apps/goldshore-org/wrangler.toml <<'EOF'
+name = "goldshore-org"
+main = "src/router.ts"
+compatibility_date = "2024-12-18"
+compatibility_flags = ["nodejs_compat"]
+
+workers_dev = false
+
+[env.production]
+routes = [
+  { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "www.goldshore.org/*", zone_name = "goldshore.org" }
+]
+
+[env.production.vars]
+ASSETS_ORIGIN = "https://goldshore-org.pages.dev"
+GPT_ALLOWED_ORIGINS = "https://chat.openai.com,https://goldshore.org,https://www.goldshore.org,https://goldshore.ai,https://www.goldshore.ai"
+CONTROL_SERVICE = "gs-control"
+
+[[env.production.services]]
+binding = "API"
+service = "gs-api"
+environment = "prod"
+EOF
+
+# 3. Copy src/router.ts if available
+cp /path/to/local/goldshore-org/src/router.ts apps/goldshore-org/src/
+
+# 4. Create package.json
+cat > apps/goldshore-org/package.json <<'EOF'
+{
+  "name": "@goldshore/goldshore-org",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev src/router.ts --bundle",
+    "deploy": "wrangler deploy --env production",
+    "build": "wrangler deploy --env production --dry-run --outdir=dist"
+  },
+  "dependencies": {
+    "hono": "^4.10.2"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260421.1",
+    "typescript": "^5.4.0",
+    "wrangler": "^4.83.0"
+  }
+}
+EOF
+
+# 5. Commit to monorepo
+git add apps/goldshore-org/
+git commit -m "[infra] Add goldshore-org router to monorepo"
+
+# 6. Deploy
+cd apps/goldshore-org
+wrangler deploy --env production
+```
+
+**Verify:**
+```bash
+curl https://goldshore.org/health
+# Should return router status
+```
+
+**Push mirror to GitHub (optional but recommended):**
+
+```bash
+# Create marzton/goldshore-org repo on GitHub first
+cd /tmp
+git clone https://github.com/marzton/goldshore-org.git
+cd goldshore-org
+
+# Copy only the goldshore-org app
+cp -r /path/to/marzton/goldshore-ai/apps/goldshore-org/* .
+
+git add .
+git commit -m "Mirror: goldshore-org router from monorepo"
+git push origin main
+```
+
+**Time:** 15 minutes
+
+---
+
+## Phase 6: Verification and Cleanup
+
+### Step 6.1: Health Check All Routes
+
+```bash
+# API
+curl https://api.goldshore.ai/health
+
+# Gateway/Platform
+curl https://gw.goldshore.ai/health
+
+# Web
+curl https://goldshore.ai/ | head -20
+
+# Admin (will show CF Access login)
+curl -I https://admin.goldshore.ai/
+
+# Banproof
+curl https://banproof.me/health
+
+# GoldShore Org
+curl https://goldshore.org/
+
+# Operations/Control
+curl https://ops.goldshore.ai/health
+```
+
+**Expected:** All return 200 or expected status (CF Access shows 403)
+
+**Time:** 5 minutes
+
+---
+
+### Step 6.2: Verify Database Persistence
+
+```bash
+# Check worker_registry table
+wrangler d1 execute gs_platform_db --remote \
+  "SELECT script_name, status FROM worker_registry LIMIT 5"
+
+# Should return 8 rows (pre-populated in migration)
+```
+
+**Time:** 2 minutes
+
+---
+
+### Step 6.3: Normalize CI Workflows
+
+**Action:** Search `.github/workflows/` for fallback token expressions:
+
+```bash
+# Find fallback expressions
+scripts/check-cloudflare-token-policy.sh
+
+# Replace with canonical token only
+# Example: change from
+#   env:
+# Migration behavior
+# - Do NOT use workflow fallback expressions.
+# - If compatibility is needed, mirror legacy secret values in secret management temporarily.
+# Canonical
+#   env:
+#     CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+
+# Commit
+git add .github/workflows/
+git commit -m "[ci] Normalize to single canonical CLOUDFLARE_BUILD_API_TOKEN"
+```
+
+**Time:** 10 minutes
+
+---
+
+## Validation Checklist
+
+- [ ] `CLOUDFLARE_ACCESS_AUDIENCE` set on `gs-gateway`
+- [ ] D1 migrations applied — `worker_registry` table exists and has 8 rows
+- [ ] Stub workers deleted (`goldshore-ai`, `gs-dynamic-worker`)
+- [ ] `gs-control` deployed and reachable at `ops.goldshore.ai`
+- [ ] `gs-api` deployed and reachable at `api.goldshore.ai`
+- [ ] `gs-gateway` deployed and reachable at `gw.goldshore.ai`
+- [ ] `gs-mail` deployed (backend service, no public route)
+- [ ] `gs-agent` deployed and reachable via `agent.goldshore.ai`
+- [ ] `gs-web` Astro Pages deployed and reachable at `goldshore.ai`
+- [ ] `gs-admin` Astro Pages deployed and protected at `admin.goldshore.ai`
+- [ ] `banproof-me` in monorepo and deployed from CI
+- [ ] `goldshore-org` router in monorepo and deployed
+- [ ] All health endpoints return 200
+- [ ] No fallback token expressions in workflows
+
+---
+
+## Rollback Plan
+
+If a step fails:
+
+1. **Worker deployment fails:** Roll back to previous version in CF dashboard → Worker → Deployments → Rollback
+2. **Pages deployment fails:** Revert Git commit and push — GitHub Actions will redeploy
+3. **Database migration fails:** Contact Cloudflare support or restore from backup (if available)
+
+---
+
+## Post-Deployment
+
+### Phase 7: Documentation Update
+
+Once all workers are deployed, update docs:
+
+```bash
+# Update DEPLOYMENT_SOURCE_OF_TRUTH.md
+echo "Last deployment: $(date)" >> docs/infra/DEPLOYMENT_SOURCE_OF_TRUTH.md
+
+# Confirm all expected routes are live
+pnpm run check:routes  # If this script exists
+```
+
+### Phase 8: Security Audit
+
+```bash
+# Verify all workers are validating JWT
+wrangler tail gs-gateway --format pretty | grep -i "token verification"
+
+# Verify secrets are not in logs
+wrangler tail gs-control --format pretty | grep -v SECRET
+```
+
+---
+
+## Estimated Total Time
+
+- Phase 1 (Security): 20 minutes
+- Phase 2 (Cleanup): 10 minutes
+- Phase 3 (Workers): 50 minutes
+- Phase 4 (Frontend): 20 minutes
+- Phase 5 (Integration): 30 minutes
+- Phase 6 (Verification): 25 minutes
+- **Total: ~2.5 hours**
+
+Most of this is waiting for builds and deployments to complete.

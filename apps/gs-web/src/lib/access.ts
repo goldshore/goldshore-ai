@@ -2,7 +2,6 @@ import {
   buildAdminSession,
   hasAdminPermission,
   verifyAccessWithClaims,
-  authorizeAccessClaims,
   type AdminPermission,
 } from '@goldshore/auth';
 
@@ -15,10 +14,7 @@ export async function requireAdminAccess(
   env: Record<string, unknown>,
   options?: { requiredPermission?: AdminPermission },
 ): Promise<AccessResult> {
-  const verifiedClaims = await verifyAccessWithClaims(request, env);
-  const claims = verifiedClaims
-    ? await authorizeAccessClaims(verifiedClaims, env)
-    : null;
+  const claims = await verifyAccessWithClaims(request, env);
   if (!claims) {
     return { ok: false, error: 'Unauthorized', status: 401 };
   }

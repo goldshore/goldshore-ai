@@ -1,7 +1,41 @@
 import type { APIRoute } from 'astro';
-import { proxyApiRequest } from '../../../lib/api-proxy';
+import {
+  validateKVBinding,
+  validateD1Binding,
+  validateR2Binding,
+  validateServiceBinding,
+  generateValidationReport,
+} from '../../../lib/cloudflare-validator';
 
-// Storage diagnostics execute in gs-api, which exclusively owns D1 and R2.
-// This endpoint forwards only health metadata and never binding credentials.
-export const GET: APIRoute = ({ request, locals }) =>
-  proxyApiRequest(request, '/health?type=deep', locals.PUBLIC_API);
+export const GET: APIRoute = async ({ locals }) => {
+  try {
+    const runtime = locals['runtime'] as Record<string, unknown> | undefined;
+    const env = runtime?.env as Record<string, unknown> | undefined;
+
+    // Validate all bindings with correct names from wrangler.toml
+    const kvBinding = await validateKVBinding(env?.['KV'] as Record<string, unknown> | undefined);
+    const d1Binding = await validateD1Binding(env?.['PLATFORM_DB'] as Record<string, unknown> | undefined);
+    const r2Binding = await validateR2Binding(env?.['GS_ASSETS'] as Record<string, unknown> | undefined);
+    const serviceBinding = await validateServiceBinding();
+
+    const bindings = [kvBinding, d1Binding, r2Binding, serviceBinding];
+    const report = generateValidationReport(bindings);
+
+    return new Response(JSON.stringify(report), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    console.error('Error validating Cloudflare bindings:', error);
+    return new Response(
+      JSON.stringify({
+        error: 'Validation failed',
+        message: 'An unexpected error occurred while validating bindings.',
+      }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  }
+};
