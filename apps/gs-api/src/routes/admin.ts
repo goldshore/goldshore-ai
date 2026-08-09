@@ -5,6 +5,7 @@ import {
 } from "@goldshore/auth";
 import { getActor, logAdminAction, requirePermission } from "../auth";
 import { Env, Variables, AuditEvent } from "../types";
+import deploy from "./admin/index";
 
 type AdminUserRecord = {
   id: string;
@@ -121,11 +122,11 @@ admin.patch("/users/:id", requirePermission("users:manage"), async (c) => {
 admin.get("/audit", requirePermission("audit:read"), async (c) => {
   const actor = getActor(c.get("accessClaims"), c.req.raw);
   const { keys } = await c.env.KV.list({ prefix: "audit:admin:" });
-  
+
   const entries = await Promise.all(
     keys.map(async (key) => c.env.KV.get<AuditEvent>(key.name, "json"))
   );
-  
+
   const logs = entries
     .filter(Boolean)
     .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
@@ -140,5 +141,8 @@ admin.get("/audit", requirePermission("audit:read"), async (c) => {
 
   return c.json(logs);
 });
+
+// Mount deployment assistant routes
+admin.route("/deploy", deploy);
 
 export default admin;

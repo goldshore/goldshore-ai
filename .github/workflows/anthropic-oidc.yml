@@ -110,7 +110,8 @@ jobs:
             TOKEN=$(echo "$RESPONSE" | jq --raw-output '.token // .api_key // .access_token // empty' 2>/dev/null || true)
 
             if [[ -n "$TOKEN" ]]; then
-              echo "::add-mask::$TOKEN"
+              # Do not mask values promoted to reusable-workflow outputs: GitHub
+              # suppresses masked job outputs as unsafe for downstream jobs.
               echo "api_key=$TOKEN" >> "$GITHUB_OUTPUT"
               echo "base_url=$GATEWAY_BASE" >> "$GITHUB_OUTPUT"
               echo "Issued gateway-scoped token (OIDC exchange succeeded)."

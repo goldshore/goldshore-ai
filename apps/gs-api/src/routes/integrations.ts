@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { getIntegrationRegistry, INTEGRATION_DEFINITIONS } from "../lib/IntegrationRegistry";
+import { getIntegrationRegistry, INTEGRATION_DEFINITIONS } from "@goldshore/integrations";
 import { Env, Variables } from "../types";
 import { requirePermission } from "../auth";
 import integrationKeys from "./integration-keys";
@@ -15,7 +15,8 @@ const requireIntegrationManagement = requirePermission("system:integrations:mana
 
 /**
  * Integration Management API
- * Terminal endpoint for third-party integration lifecycle: CRUD, sync, status monitoring
+ * Terminal endpoint for third-party integration lifecycle: CRUD, sync, status monitoring.
+ * This route must handle requests directly in gs-api and must never proxy back to an admin/frontend route.
  */
 
 // GET /integrations?action=list|definitions|status|sync
@@ -46,9 +47,9 @@ integrations.get("/", async (c) => {
       }
 
       case "sync": {
-        const session = buildAdminSession(c.get("accessClaims"));
-        if (!hasAdminPermission(session.permissions, "system:integrations:manage")) {
-          return c.json({ error: "Forbidden" }, 403);
+        const permission = await requirePermission("system:integrations:manage")(c, async () => undefined);
+        if (permission instanceof Response) {
+          return permission;
         }
         const results = await registry.syncAll();
         return c.json({ success: true, data: results });

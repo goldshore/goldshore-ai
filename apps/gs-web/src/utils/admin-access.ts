@@ -8,9 +8,20 @@ import {
   type Env as AccessEnv,
 } from '@goldshore/auth';
 
-export const CANONICAL_ADMIN_ORIGIN = 'https://admin.goldshore.ai';
-export const ALTERNATE_ADMIN_ORIGIN = 'https://admin.goldshore.org';
 export const ADMIN_DASHBOARD_PATH = '/app/dashboard';
+
+export const getAdminOrigin = (env?: string): string => {
+  const environment = env || (typeof import.meta !== 'undefined' && (import.meta as any).env?.PUBLIC_ENV) || 'production';
+  return environment === 'preview' ? 'https://admin-preview.goldshore.ai' : 'https://admin.goldshore.ai';
+};
+
+export const getAlternateAdminOrigin = (env?: string): string => {
+  const environment = env || (typeof import.meta !== 'undefined' && (import.meta as any).env?.PUBLIC_ENV) || 'production';
+  return environment === 'preview' ? 'https://admin-preview.goldshore.org' : 'https://admin.goldshore.org';
+};
+
+export const CANONICAL_ADMIN_ORIGIN = getAdminOrigin();
+export const ALTERNATE_ADMIN_ORIGIN = getAlternateAdminOrigin();
 export const CANONICAL_ADMIN_DASHBOARD_URL =
   `${CANONICAL_ADMIN_ORIGIN}${ADMIN_DASHBOARD_PATH}`;
 export const ALTERNATE_ADMIN_DASHBOARD_URL =
@@ -64,6 +75,11 @@ export type AdminAuthorizationResult =
       status: 401 | 403 | 503;
       error: string;
     };
+
+export type AdminAuthError = {
+  status: 401 | 403 | 503 | 404;
+  message: string;
+};
 
 const normalizePathname = (pathname: string) => {
   if (!pathname || pathname === '/') return '/';
@@ -170,6 +186,8 @@ export const getAdminRouteRule = (
   }
 
   if (
+    normalizedPath === '/admin/deploy' ||
+    normalizedPath.startsWith('/admin/deploy/') ||
     normalizedPath === '/admin/api-status' ||
     normalizedPath === '/admin/workers/status' ||
     normalizedPath === '/admin/workers/routes' ||
@@ -186,7 +204,7 @@ export const getAdminRouteRule = (
     return {
       canonicalPath: normalizedPath,
       kind: normalizedPath.startsWith('/api/') ? 'api' : 'page',
-      permission: 'system:read',
+      permission: normalizedPath.startsWith('/admin/deploy') ? 'system:write' : 'system:read',
       requiresAdminRole: true,
     };
   }
@@ -203,7 +221,9 @@ export const getAdminRouteRule = (
     };
   }
 
-  if (normalizedPath === '/admin' || normalizedPath.startsWith('/admin/')) {
+  if (
+    normalizedPath === '/admin' || normalizedPath.startsWith('/admin/')
+  ) {
     return {
       canonicalPath: normalizedPath,
       kind: 'page',
@@ -251,6 +271,18 @@ export const getCanonicalAdminUrl = (pathname: string) => {
   return new URL(normalizedPath, CANONICAL_ADMIN_ORIGIN).toString();
 };
 
+export const getAdminLoginDestination = (requested?: string) => {
+  switch (requested) {
+    case 'org':
+      return ALTERNATE_ADMIN_DASHBOARD_URL;
+    case 'dashboard':
+    case 'admin':
+    case 'ai':
+    default:
+      return CANONICAL_ADMIN_DASHBOARD_URL;
+  }
+};
+
 export const authorizeAdminRequest = async (
   request: Request,
   env: AccessEnv | undefined,
@@ -294,5 +326,16 @@ export const authorizeAdminRequest = async (
     ok: true,
     claims,
     session,
+  };
+};
+
+export const getAdminAuthError = (
+  result: AdminAuthorizationResult | null | undefined,
+): AdminAuthError | null => {
+  if (!result || result.ok) return null;
+  const failure = result as Extract<AdminAuthorizationResult, { ok: false }>;
+  return {
+    status: failure.status,
+    message: failure.error,
   };
 };
