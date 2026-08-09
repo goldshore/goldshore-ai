@@ -34,15 +34,22 @@ jobs:
   deploy:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v7.0.1
-      - name: Export binding names, routes, Access IDs, and secret names
-        run: python3 scripts/export-cloudflare-inventory.py cloudflare-inventory.json
-      - name: Display redacted inventory
-        run: jq . cloudflare-inventory.json
-      - name: Upload drift-review artifact
-        uses: actions/upload-artifact@v6
+
+      - uses: pnpm/action-setup@v6
         with:
-          name: cloudflare-inventory-${{ github.run_id }}-deploy-gs-web
-          path: cloudflare-inventory.json
-          retention-days: 30
+          version: 9.15.4
+
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Build gs-web Worker output
+        run: pnpm build:pages
