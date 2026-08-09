@@ -87,13 +87,21 @@ const exists = async (filePath) => {
   }
 };
 
+const normalizeManifestRoute = (pathname) => {
+  if (!pathname || pathname === '/') {
+    return '/';
+  }
+
+  return pathname.replace(/\/+$/, '');
+};
+
 const failures = [];
 const serverEntry = await exists(serverEntryFile) ? await readFile(serverEntryFile, 'utf8') : '';
 
 const hasServerRoute = (route) => {
-  const normalizedRoute = route === '/' ? '/' : route.replace(/\/+$/, '');
+  const normalizedRoute = normalizeManifestRoute(route);
   const escapedRoute = normalizedRoute.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return new RegExp(`["']route["']\\s*:\\s*["']${escapedRoute}["']`).test(serverEntry);
+  return new RegExp(`["']?route["']?\\s*:\\s*["']${escapedRoute}["']`).test(serverEntry);
 };
 
 for (const sourceRoute of routes) {
@@ -144,9 +152,10 @@ for (const sourceRoute of routes) {
 
     const targetFile = distFileFromPath(targetPathname);
     if (!(await exists(targetFile))) {
-      if (!hasServerRoute(targetPathname)) {
-        failures.push(`${sourcePath}: ${href} -> missing page ${targetPathname}`);
+      if (hasServerRoute(targetPathname)) {
+        continue;
       }
+      failures.push(`${sourcePath}: ${href} -> missing page ${targetPathname}`);
       continue;
     }
 
