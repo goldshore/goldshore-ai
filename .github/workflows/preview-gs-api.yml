@@ -69,7 +69,9 @@ jobs:
         run: |
           test -f apps/gs-api/wrangler.toml
           grep -Eq '^\[env\.preview\]' apps/gs-api/wrangler.toml
-          grep -Eq '^\s*\[\[env\.preview\.queues\.(producers|consumers)\]\]' apps/gs-api/wrangler.toml
+          grep -Eq '^STATE_MUTATIONS_ENABLED = "false"$' apps/gs-api/wrangler.toml
+          ! grep -Eq '^\s*\[\[env\.preview\.queues\.(producers|consumers)\]\]' apps/gs-api/wrangler.toml
+          ! grep -Eq '00000000-0000-4000-8000-00000000000[1-9]' apps/gs-api/wrangler.toml
 
       - name: Verify Cloudflare auth
         working-directory: apps/gs-api
