@@ -183,4 +183,8 @@ admin.post("/operations/:operation", async (c, next) => {
 });
 
 admin.route("/deploy", deploy);
+
+// Mount repo health routes
+admin.route("/repo-health", repoHealth);
+
 export default admin;

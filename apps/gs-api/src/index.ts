@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { secureHeaders } from 'hono/secure-headers';
 import {
   verifyAccessWithClaims,
+  authorizeAccessClaims,
   type AccessTokenPayload,
 } from '@goldshore/auth';
 import { createCorsMiddleware, APPROVED_API_ORIGINS } from '@goldshore/shared';
@@ -47,6 +48,8 @@ type Env = {
   ACCESS_CLIENT_SECRET?: string;
   CLOUDFLARE_ACCESS_AUDIENCE?: string;
   CLOUDFLARE_TEAM_DOMAIN?: string;
+  CLOUDFLARE_ACCESS_APPLICATION?: string;
+  CLOUDFLARE_SERVICE_ACCESS_AUDIENCE?: string;
   CONTROL_SYNC_TOKEN?: string;
   ALLOWED_ORIGINS?: string;
   ENV?: string;
@@ -172,27 +175,25 @@ app.use('*', async (c, next) => {
     return;
   }
 
-  if (c.req.path === '/internal/sync-runs' && c.req.method === 'POST') {
-    const controlToken = c.req.header('x-control-sync-token');
-    if (
-      controlToken &&
-      c.env.CONTROL_SYNC_TOKEN &&
-      controlToken === c.env.CONTROL_SYNC_TOKEN
-    ) {
-      c.set('accessClaims', null);
-      await next();
-      return;
-    }
-  }
-
-  if (!c.env.CLOUDFLARE_ACCESS_AUDIENCE) {
+  const serviceRequest = c.req.path === '/internal' || c.req.path.startsWith('/internal/');
+  const accessEnv = serviceRequest
+    ? {
+        ...c.env,
+        CLOUDFLARE_ACCESS_AUDIENCE: c.env.CLOUDFLARE_SERVICE_ACCESS_AUDIENCE,
+        CLOUDFLARE_ACCESS_APPLICATION: 'service-production',
+      }
+    : c.env;
+  if (!accessEnv.CLOUDFLARE_ACCESS_AUDIENCE) {
     return c.json(
       { error: 'Cloudflare Access audience is not configured for protected routes.' },
       503,
     );
   }
 
-  const claims = await verifyAccessWithClaims(c.req.raw, c.env);
+  const verifiedClaims = await verifyAccessWithClaims(c.req.raw, accessEnv);
+  const claims = verifiedClaims
+    ? await authorizeAccessClaims(verifiedClaims, accessEnv)
+    : null;
   if (!claims) {
     return c.json({ error: 'Unauthorized' }, 401);
   }

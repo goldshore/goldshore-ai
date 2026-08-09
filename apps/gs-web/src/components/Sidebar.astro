@@ -60,8 +60,19 @@ const isActive = (href: string) => {
       Dashboard
     </a>
 
-    {can('dashboard:read') && <div class="gs-nav-group-label">Operations</div>}
-    {can('dashboard:read') && operationsLinks.map((link) => (
+    <div class="gs-nav-group-label">Governance</div>
+    {governanceLinks.map((link) => (
+      <a
+        class={`gs-nav-block gs-nav-block--sub ${isActive(link.href) ? 'active' : ''}`}
+        href={link.href}
+        aria-current={isActive(link.href) ? 'page' : undefined}
+      >
+        {link.label}
+      </a>
+    ))}
+
+    <div class="gs-nav-group-label">Operations</div>
+    {operationsLinks.map((link) => (
       <a
         class={`gs-nav-block gs-nav-block--sub ${isActive(link.href) ? 'active' : ''}`}
         href={link.href}
