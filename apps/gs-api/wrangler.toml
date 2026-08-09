@@ -329,14 +329,11 @@ class_name = "SignalsEvaluator"
 [env.preview]
 workers_dev = true
 routes = [
-  { pattern = "api-preview.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "mail.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "ops.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "trading.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "dashboard.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "dash.goldshore.ai/*", zone_name = "goldshore.ai" }
+  { pattern = "api-preview.goldshore.ai/*", zone_name = "goldshore.ai" }
 ]
+
+# Do not add a .org preview alias until its DNS record, zone route, Access/CORS
+# policy, ownership, and provisioning procedure are documented and provisioned.
 
 [env.preview.vars]
 ENV = "preview"
