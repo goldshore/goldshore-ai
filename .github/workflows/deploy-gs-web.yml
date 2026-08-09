@@ -1,92 +1,71 @@
-name: Deploy gs-web
+name: Verify gs-web build
 
+# Read-only drift inventory. Cloudflare production configuration is changed only
+# by an approved human in the dashboard; this workflow has no Cloudflare credentials.
 on:
   pull_request:
-    branches: [main]
     paths:
       - 'apps/gs-web/**'
-      - 'packages/**'
-      - 'scripts/build-openapi.mjs'
-      - 'scripts/verify-web-dist.mjs'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'
-      - '.node-version'
-      - '.nvmrc'
+      - 'scripts/export-cloudflare-inventory.py'
+      - 'infra/Cloudflare/dashboard-inventory.json'
       - '.github/workflows/deploy-gs-web.yml'
   push:
     branches: [main]
     paths:
       - 'apps/gs-web/**'
-      - 'packages/**'
-      - 'scripts/build-openapi.mjs'
-      - 'scripts/verify-web-dist.mjs'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'
-      - '.node-version'
-      - '.nvmrc'
+      - 'scripts/export-cloudflare-inventory.py'
+      - 'infra/Cloudflare/dashboard-inventory.json'
       - '.github/workflows/deploy-gs-web.yml'
   workflow_dispatch:
 
 concurrency:
-  group: deploy-gs-web-${{ github.ref }}
+  group: verify-gs-web-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  # Build verification only — this job does NOT deploy.
+  #
+  # gs-web is an SSR Astro app (`main = ./src/worker.ts`, `output: server`) whose
+  # entrypoint is emitted to dist/server. It is deployed as the `gs-web-prod`
+  # Worker by the Cloudflare Workers Build git integration, which is the single
+  # authoritative deploy path.
+  #
+  # Do not add a second static-site deployment. Dynamic and static output ship
+  # together through the canonical Worker-with-Assets release.
   deploy:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    environment:
-      name: ${{ github.event_name == 'pull_request' && 'preview' || 'production' }}
     permissions:
       contents: read
-      deployments: write
     env:
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      RELEASE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.RELEASE_SHA }}
 
       - uses: pnpm/action-setup@v6
         with:
           version: 9.15.4
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@v7.0.0
         with:
           node-version-file: .node-version
           cache: pnpm
 
-      - name: Normalize Cloudflare token
-        env:
-          RAW_CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
-        run: |
-          token="$(
-            node <<'NODE'
-          const raw = process.env.RAW_CLOUDFLARE_API_TOKEN || "";
-          let token = raw.replace(/[\r\n]/g, "").trim();
-          const bearer = token.match(/(?:authorization\s*:\s*)?bearer\s+([^\s"',;}]+)/i);
-          if (bearer) token = bearer[1];
-          const cfut = token.match(/cfut_[A-Za-z0-9_-]+/);
-          if (cfut) token = cfut[0];
-          token = token.replace(/^[`'"]+|[`'",;}]+$/g, "").replace(/\s/g, "");
-          process.stdout.write(token);
-          NODE
-          )"
-          test -n "$token" || (echo "Missing: CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN" && exit 1)
-          echo "::add-mask::$token"
-          echo "CLOUDFLARE_API_TOKEN=$token" >> "$GITHUB_ENV"
-          echo "CLOUDFLARE_BUILD_API_TOKEN=$token" >> "$GITHUB_ENV"
-
-      - name: Verify Cloudflare secrets
-        run: |
-          test -n "$CLOUDFLARE_ACCOUNT_ID"
-          test -n "$CLOUDFLARE_API_TOKEN"
-
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
-      - name: Build gs-web Worker output
+      - name: Build gs-web Worker output once
         run: pnpm build:pages
 
-      - name: Deploy gs-web to Cloudflare Pages
-        run: pnpm exec wrangler pages deploy apps/gs-web/dist/client --project-name=gs-web-pages --branch=${{ github.ref_name }}
+      - name: Preserve release SHA with build output
+        run: printf '%s\n' "$RELEASE_SHA" > apps/gs-web/dist/release.sha
+
+      - name: Preserve immutable gs-web build
+        uses: actions/upload-artifact@v7
+        with:
+          name: gs-web-${{ env.RELEASE_SHA }}
+          path: apps/gs-web/dist
+          if-no-files-found: error
+          retention-days: 30
