@@ -1,8 +1,16 @@
 import type { APIRoute } from 'astro';
-import { proxyApiRequest } from '../../../lib/api-proxy';
+import {
+  buildAdminSession,
+  verifyAccessWithClaims,
+  type AdminPermission,
+  type Env as AccessEnv,
+} from '@goldshore/auth';
+import { parseJson } from '@goldshore/utils';
 
-const forward: APIRoute = ({ request, params, locals }) =>
-  proxyApiRequest(request, `/v1/forms/configs/${encodeURIComponent(params.slug || '')}`, locals.PUBLIC_API);
+/**
+ * Admin UI form configuration item endpoint.
+ * Requires `forms:read` for GET and `forms:write` for PUT/PATCH.
+ */
 
 export const prerender = false;
 

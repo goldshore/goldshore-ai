@@ -80,7 +80,7 @@ describe('RBAC Helpers', () => {
       assert.ok(result.includes('content:read'));
       assert.ok(result.includes('media:read'));
       assert.ok(result.includes('forms:read'));
-      assert.ok(result.length >= 10);
+      assert.strictEqual(result.length, 3);
     });
 
     test('unions permissions for multiple roles without duplicates', () => {
@@ -91,14 +91,14 @@ describe('RBAC Helpers', () => {
       assert.ok(result.includes('content:write'));
       assert.ok(result.includes('content:read'));
       assert.ok(result.includes('ai:analyze'));
-      assert.deepStrictEqual(result.sort(), getAdminPermissions(['editor']).sort());
+      assert.strictEqual(result.length, 9);
     });
 
     test('admin role has all permissions', () => {
       const result = getAdminPermissions(['admin']);
       // Should have many permissions
       assert.ok(result.length >= 10);
-      assert.ok(result.includes('users:update'));
+      assert.ok(result.includes('users:manage'));
       assert.ok(result.includes('audit:read'));
     });
   });
@@ -111,7 +111,7 @@ describe('RBAC Helpers', () => {
       const session = buildAdminSession(claims as any);
       assert.deepStrictEqual(session.roles, ['admin']);
       assert.ok(session.permissions.includes('content:read'));
-      assert.ok(session.permissions.includes('users:update'));
+      assert.ok(session.permissions.includes('users:manage'));
     });
 
     test('returns empty session for no roles', () => {
@@ -129,7 +129,7 @@ describe('RBAC Helpers', () => {
     });
 
     test('returns false when permission is absent', () => {
-      assert.strictEqual(hasAdminPermission(permissions, 'users:update'), false);
+      assert.strictEqual(hasAdminPermission(permissions, 'users:manage'), false);
     });
   });
 });

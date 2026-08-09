@@ -1,6 +1,9 @@
 ---
 import '../styles/home-theme.css';
-import { getAdminOriginsForHostname } from '../utils/admin-access';
+import {
+  ALTERNATE_ADMIN_ORIGIN,
+  CANONICAL_ADMIN_ORIGIN,
+} from '../utils/admin-access';
 
 export const prerender = false;
 
@@ -23,10 +26,6 @@ const tickers   = [['SPY','S&P 500 ETF','521.84','+1.24%'],['NVDA','Nvidia Corp'
 const principles = [['01','Sector-Agnostic, Systems-First',"We don't specialize in one vertical — we specialize in the architecture that makes any vertical work. Finance, operations, media, healthcare: the discipline is identical."],['02','AI as Infrastructure, Not Feature','Intelligence embedded at the routing layer, not bolted on at the end. Every workflow treats AI as a first-class component with audit trails to match.'],['03','Consulting That Ships','Strategy without delivery is overhead. We provide the advisory and we build the thing — one team, one contract, full accountability from brief to production.']];
 const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Automation','AI Implementation','Digital Strategy','Systems Integration','Design & Development','Enterprise Consulting','Sentiment Analysis','Applied Intelligence','Resilient Infrastructure','Cross-Sector Deployment'];
 const canonicalUrl = new URL('/', Astro.url.origin).toString();
-const {
-  canonical: CANONICAL_ADMIN_ORIGIN,
-  alternate: ALTERNATE_ADMIN_ORIGIN,
-} = getAdminOriginsForHostname(Astro.url.hostname);
 ---
 <html lang="en">
 <head>
@@ -399,6 +398,22 @@ const accessModal = document.getElementById('access-modal');
 document.getElementById('open-access-modal')?.addEventListener('click', () => accessModal?.showModal());
 document.querySelector('.modal-close')?.addEventListener('click', () => accessModal?.close());
 accessModal?.addEventListener('click', e => { if (e.target === accessModal) accessModal.close(); });
+
+/* ── Host-aware admin links ────────────────────────────────────────────────────────────────────── */
+const adminHost = 'admin.goldshore.ai';
+const alternateAdminHost = 'admin.goldshore.org';
+document.querySelectorAll('[data-admin-access-link]').forEach(link => {
+  link.setAttribute('href', `https://${adminHost}/`);
+});
+document.querySelectorAll('[data-admin-alternate-link]').forEach(link => {
+  link.setAttribute('href', `https://${alternateAdminHost}/`);
+});
+document.querySelectorAll('[data-admin-alternate-title]').forEach(el => {
+  el.textContent = 'Admin .org';
+});
+document.querySelectorAll('[data-admin-alternate-copy]').forEach(el => {
+  el.textContent = 'Protected organisation alias';
+});
 
 /* ── Quick engage form ───────────────────────────────────────────────────────────────────────── */
 const qsForm    = document.getElementById('quick-form');

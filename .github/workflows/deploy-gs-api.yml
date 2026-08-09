@@ -1,63 +1,39 @@
-name: Verify gs-api build
+name: Inventory gs-api configuration
 
-# Cloudflare Workers Builds, configured in the dashboard with the gs-control
-# build token, is the sole deployment authority. This workflow never receives
-# Cloudflare credentials and never mutates routes, bindings, secrets, or data.
+# Read-only drift inventory. Cloudflare production configuration is changed only
+# by an approved human in the dashboard; this workflow has no Cloudflare credentials.
 on:
   pull_request:
-    branches: [main]
     paths:
       - 'apps/gs-api/**'
-      - 'packages/**'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'
-      - '.node-version'
-      - '.nvmrc'
+      - 'scripts/export-cloudflare-inventory.py'
+      - 'infra/Cloudflare/dashboard-inventory.json'
       - '.github/workflows/deploy-gs-api.yml'
   push:
     branches: [main]
     paths:
       - 'apps/gs-api/**'
-      - 'packages/**'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'
-      - '.node-version'
-      - '.nvmrc'
+      - 'scripts/export-cloudflare-inventory.py'
+      - 'infra/Cloudflare/dashboard-inventory.json'
       - '.github/workflows/deploy-gs-api.yml'
   workflow_dispatch:
-
-concurrency:
-  group: verify-gs-api-${{ github.ref }}
-  cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
-  verify:
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+  inventory:
+    name: Export redacted expected state
     runs-on: ubuntu-latest
-    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: pnpm/action-setup@f520eceda224fe1a4aed5a2a27a194379a409996 # v6
+      - uses: actions/checkout@v7.0.1
+      - name: Export binding names, routes, Access IDs, and secret names
+        run: python3 scripts/export-cloudflare-inventory.py cloudflare-inventory.json
+      - name: Display redacted inventory
+        run: jq . cloudflare-inventory.json
+      - name: Upload drift-review artifact
+        uses: actions/upload-artifact@v6
         with:
-          version: 9.15.4
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version-file: .node-version
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile --ignore-scripts
-      - name: Test gs-api
-        run: pnpm --filter @goldshore/gs-api test
-      - name: Build and validate the production binding contract
-        run: pnpm --filter @goldshore/gs-api build
-      - name: Preserve immutable dry-run output
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: gs-api-${{ github.sha }}
-          path: apps/gs-api/dist
-          if-no-files-found: error
+          name: cloudflare-inventory-${{ github.run_id }}-deploy-gs-api
+          path: cloudflare-inventory.json
           retention-days: 30

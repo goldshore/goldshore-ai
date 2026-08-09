@@ -17,7 +17,7 @@ deploy.post('/search', async (c) => {
   }
 
   const session = buildAdminSession(claims);
-  if (!session.permissions.includes('deployments:create')) {
+  if (!session.permissions.includes('admin:deploy' as never)) {
     return c.json({ error: 'Insufficient permissions.' }, 403);
   }
 
@@ -72,7 +72,7 @@ deploy.post('/search', async (c) => {
             )
           );
 
-          const rankedFrameworks = await rankFrameworksWithClaude(frameworks, c.env, query);
+          const rankedFrameworks = await rankFrameworksWithClaude(frameworks, claudeToken, query);
 
           for (const framework of rankedFrameworks) {
             controller.enqueue(
@@ -113,7 +113,7 @@ deploy.post('/dry-run', async (c) => {
   }
 
   const session = buildAdminSession(claims);
-  if (!session.permissions.includes('deployments:create')) {
+  if (!session.permissions.includes('admin:deploy' as never)) {
     return c.json({ error: 'Insufficient permissions.' }, 403);
   }
 
@@ -258,7 +258,7 @@ deploy.post('/create-pr', async (c) => {
   }
 
   const session = buildAdminSession(claims);
-  if (!session.permissions.includes('deployments:create')) {
+  if (!session.permissions.includes('admin:deploy' as never)) {
     return c.json({ error: 'Insufficient permissions.' }, 403);
   }
 

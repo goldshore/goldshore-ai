@@ -30,7 +30,7 @@ if (requiredPermission && !hasAdminPermission(session.permissions, requiredPermi
   </head>
   <body class="gs-admin-body">
     <div class="gs-admin-shell">
-      <Sidebar permissions={session.permissions} />
+      <Sidebar />
       <main class="gs-admin-main">
         <slot />
       </main>

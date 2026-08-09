@@ -24,7 +24,7 @@ def collect(value, key, output):
 
 
 def manifest_inventory(path):
-    text = path.read_text(encoding="utf-8")
+    text = path.read_text()
     data = tomllib.loads(text)
     routes, bindings = [], set()
     collect(data, "routes", routes)
@@ -52,7 +52,7 @@ def manifest_inventory(path):
 
 
 def main():
-    dashboard = json.loads((ROOT / "infra/Cloudflare/dashboard-inventory.json").read_text(encoding="utf-8"))
+    dashboard = json.loads((ROOT / "infra/Cloudflare/dashboard-inventory.json").read_text())
     result = {
         "notice": "Names and IDs only; secret values and policy details are intentionally excluded.",
         "authority": "apps/gs-web/wrangler.toml and apps/gs-api/wrangler.toml",
@@ -60,7 +60,7 @@ def main():
         "dashboard_only": dashboard,
     }
     destination = Path(sys.argv[1] if len(sys.argv) > 1 else "cloudflare-inventory.json")
-    destination.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    destination.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
     print(destination)
 
 

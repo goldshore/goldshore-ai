@@ -1,46 +1,53 @@
 # Cloudflare configuration authority
 
-GoldShore uses two deployable applications only: `gs-web` and `gs-api`.
+## One authority model
 
-- `apps/gs-web/wrangler.toml` is the visible contract for the Astro SSR
-  Worker-with-Assets serving `goldshore.ai`, `goldshore.org`, and both admin
-  hostnames.
-- `apps/gs-api/wrangler.toml` is the visible contract for API middleware,
-  email events, queues, Workflows, D1, R2, KV, AI, and the mirrored API hosts.
-- Cloudflare Workers Builds is the sole code deployment authority and must use
-  the `gs-control` build token configured in the Cloudflare dashboard.
-- GitHub Actions may build, test, export redacted expected state, and perform a
-  separately scoped read-only audit. It must not mutate Cloudflare.
+Gold Shore uses **dashboard-only production management with repository-reviewed
+contracts**:
 
-## Dashboard/WYSIWYG boundary
+1. `apps/gs-web/wrangler.toml` and `apps/gs-api/wrangler.toml` are the only
+   reviewable contracts for Worker names, binding names, resource identifiers,
+   routes, migrations, queues, and triggers.
+2. The Cloudflare dashboard is the execution authority and the authority for
+   current live state. An approved human applies production changes there.
+3. Everything under `infra/Cloudflare/` is expected-state documentation or a
+   redacted drift-review snapshot. It is not a deploy manifest and must not be
+   used to mutate Cloudflare.
 
-Apply routes, custom domains, Access policies, IdPs, email routing, build
-connections, secret values, and resource lifecycle changes in the Cloudflare
-dashboard using a named human account. Record the issue/PR, before/after state,
-Cloudflare audit-log event ID, validation results, and rollback in the operator
-ticket.
+Legacy `*.wrangler.toml` files in this directory are non-deployable historical
+references. Automation must never glob or pass them to Wrangler.
 
-Wrangler configuration is intentionally visible because Workers Builds uses it
-as the runtime binding contract. Cloudflare does not provide a general
-`keep_bindings` control: omitting a binding can remove it during a build. Secret
-values and Access/IdP policies remain dashboard-only. Do not create hidden
-alternate Wrangler manifests or deploy from `infra/Cloudflare`.
+## Dashboard-only settings
 
-`dashboard-inventory.json` contains names and public IDs only. Replace each
-`DASHBOARD_EXPORT_REQUIRED` value from the dashboard after an approved review;
-never include policies, tokens, client secrets, or secret values.
+The following never belong in GitHub secrets, TOML, workflow output, or build
+artifacts:
 
-## Change procedure
+- Worker secret **values** and Cloudflare API/deploy credentials;
+- identity-provider client secrets;
+- Access application policy changes, session controls, and service-token
+  issuance or rotation; and
+- Email Routing rules, destinations, verification, and signing configuration.
 
-1. Update one of the two app manifests and `BINDINGS_MAP.md` in a PR.
-2. Pass Infrastructure Guard, application tests, dry-run builds, and external
-   Cloudflare Workers Builds checks.
-3. Obtain the required production-environment approval.
-4. Apply dashboard-only changes through Cloudflare WYSIWYG controls.
-5. Trigger/retry the relevant Workers Build and verify the release SHA on every
-   mirror hostname.
-6. Run the read-only Cloudflare audit and attach its artifact to the ticket.
+Public identifiers and names may be reviewed: binding names, route ownership,
+Worker names, secret names (not values), and Access application IDs. The
+redacted `dashboard-inventory.json` records the last human-supplied Access ID
+inventory; `DASHBOARD_EXPORT_REQUIRED` means an operator must obtain the ID in
+Zero Trust and update the snapshot without including policy or secret data.
 
-Legacy workers, Pages projects, bindings, and routes are quarantined for 30
-days before deletion. During quarantine remove traffic and producers, label the
-resource with its owner and retirement date, and retain a rollback record.
+## Change and drift-review procedure
+
+1. Propose contract changes to one of the two app-local manifests and review the
+   generated read-only workflow artifact.
+2. Obtain approval from a required reviewer on the GitHub `production`
+   environment. Every production mutation, including migrations, must have this
+   approval even though the actual operation occurs outside Actions.
+3. An authorized human enters values or applies the reviewed change in the
+   Cloudflare dashboard. Do not use Wrangler or the Cloudflare API to mutate
+   bindings, routes, secrets, migrations, triggers, DNS, Access, or email.
+4. Export only redacted metadata (Worker name, binding names, route ownership,
+   Access application IDs, and secret names), update
+   `dashboard-inventory.json` when applicable, and compare it with the Actions
+   inventory artifact.
+
+The inventory workflows intentionally receive no Cloudflare credentials and
+make no Cloudflare API calls. They cannot expose values or mutate production.
