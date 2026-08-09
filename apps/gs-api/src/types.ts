@@ -5,12 +5,17 @@ export type Env = {
   KV: KVNamespace;
   CONTROL_LOGS?: KVNamespace;
   RISK_RADAR_CACHE?: KVNamespace;
+  TRADING_KV?: KVNamespace;
   PLATFORM_DB: D1Database;
-  AUDIT_DB: D1Database;
+  AUDIT_DB?: D1Database;
+  SIGNALS_DB?: D1Database;
+  JOBS_DB?: D1Database;
+  PAPER_DB?: D1Database;
   RISK_RADAR_DB?: D1Database;
   TELEMETRY_DB?: D1Database;
   GS_ASSETS: R2Bucket;
   RISK_RADAR_R2?: R2Bucket;
+  TELEMETRY?: R2Bucket;
   AUTH_SESSION?: DurableObjectNamespace;
   AI: Ai;
   INTEGRATION_MASTER_KEY?: string;
@@ -64,6 +69,7 @@ export type Env = {
   CLOUDFLARE_PAGES_PROJECT?: string;
   ADMIN_URL?: string;
   ENV?: string;
+  STATE_MUTATIONS_ENABLED?: string;
   DEV_AUTH_BYPASS?: string;
   GOOGLE_OAUTH_CLIENT_ID?: string;
   GOOGLE_OAUTH_CLIENT_SECRET?: string;
