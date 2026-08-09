@@ -1,30 +1,38 @@
-name: Deploy Goldshore API
+name: Inventory gs-api configuration
 
+# Read-only drift inventory. Cloudflare production configuration is changed only
+# by an approved human in the dashboard; this workflow has no Cloudflare credentials.
 on:
-  push:
-    branches: [main, stage]
+  pull_request:
     paths:
       - 'apps/gs-api/**'
-      - 'packages/**'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'
-      - '.node-version'
-      - '.nvmrc'
+      - 'scripts/export-cloudflare-inventory.py'
+      - 'infra/Cloudflare/dashboard-inventory.json'
+      - '.github/workflows/deploy-gs-api.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/gs-api/**'
+      - 'scripts/export-cloudflare-inventory.py'
+      - 'infra/Cloudflare/dashboard-inventory.json'
       - '.github/workflows/deploy-gs-api.yml'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
-  deploy:
+  inventory:
+    name: Export redacted expected state
     runs-on: ubuntu-latest
-    environment:
-      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
-    permissions:
-      contents: read
-    env:
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@v7.0.1
+      - name: Export binding names, routes, Access IDs, and secret names
+        run: python3 scripts/export-cloudflare-inventory.py cloudflare-inventory.json
+      - name: Display redacted inventory
+        run: jq . cloudflare-inventory.json
+      - name: Upload drift-review artifact
+        uses: actions/upload-artifact@v6
         with:
           fetch-depth: 0
 

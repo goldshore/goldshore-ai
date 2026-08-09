@@ -278,6 +278,7 @@ app.route('/media', media);
 app.route('/pages', pages);
 app.route('/internal', internal);
 app.route('/products', products);
+app.route('/mail', mail);
 app.route('/services', services);
 // Host aliases are rewritten into these shared route modules above. They do
 // not own independent authentication, CORS, or security middleware stacks.
