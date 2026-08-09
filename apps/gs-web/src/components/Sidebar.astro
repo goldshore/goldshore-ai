@@ -31,6 +31,7 @@ const governanceLinks: Array<{ href: string; label: string }> = [
 ];
 
 const { logo, permissions = [] } = Astro.props;
+const can = (permission: string) => permissions.includes(permission);
 
 const isActive = (href: string) => {
   const currentPath = Astro.url.pathname;
@@ -59,8 +60,8 @@ const isActive = (href: string) => {
       Dashboard
     </a>
 
-    <div class="gs-nav-group-label">Governance</div>
-    {governanceLinks.map((link) => (
+    {can('dashboard:read') && <div class="gs-nav-group-label">Operations</div>}
+    {can('dashboard:read') && operationsLinks.map((link) => (
       <a
         class={`gs-nav-block gs-nav-block--sub ${isActive(link.href) ? 'active' : ''}`}
         href={link.href}
@@ -70,8 +71,8 @@ const isActive = (href: string) => {
       </a>
     ))}
 
-    <div class="gs-nav-group-label">Operations</div>
-    {operationsLinks.map((link) => (
+    {can('cloudflare_inventory:read') && <div class="gs-nav-group-label">Workers</div>}
+    {can('cloudflare_inventory:read') && workerLinks.map((link) => (
       <a
         class={`gs-nav-block gs-nav-block--sub ${isActive(link.href) ? 'active' : ''}`}
         href={link.href}
@@ -81,8 +82,8 @@ const isActive = (href: string) => {
       </a>
     ))}
 
-    <div class="gs-nav-group-label">Workers</div>
-    {workerLinks.map((link) => (
+    {(can('cloudflare_inventory:read') || can('secret_metadata:read')) && <div class="gs-nav-group-label">System</div>}
+    {systemLinks.filter((link) => link.label === 'Secrets' ? can('secret_metadata:read') : can('cloudflare_inventory:read')).map((link) => (
       <a
         class={`gs-nav-block gs-nav-block--sub ${isActive(link.href) ? 'active' : ''}`}
         href={link.href}
@@ -92,31 +93,20 @@ const isActive = (href: string) => {
       </a>
     ))}
 
-    <div class="gs-nav-group-label">System</div>
-    {systemLinks.map((link) => (
-      <a
-        class={`gs-nav-block gs-nav-block--sub ${isActive(link.href) ? 'active' : ''}`}
-        href={link.href}
-        aria-current={isActive(link.href) ? 'page' : undefined}
-      >
-        {link.label}
-      </a>
-    ))}
-
-    <a
+    {can('users:read') && <a
       class={`gs-nav-block ${isActive('/admin/users') ? 'active' : ''}`}
       href="/admin/users"
       aria-current={isActive('/admin/users') ? 'page' : undefined}
     >
       Users
-    </a>
-    <a
+    </a>}
+    {can('api_configuration:read') && <a
       class={`gs-nav-block ${isActive('/trading') ? 'active' : ''}`}
       href="/trading"
       aria-current={isActive('/trading') ? 'page' : undefined}
     >
       Trading
-    </a>
+    </a>}
     <a
       class={`gs-nav-block ${isActive('/admin/settings') ? 'active' : ''}`}
       href="/admin/settings"
