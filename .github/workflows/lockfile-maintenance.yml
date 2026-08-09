@@ -1,60 +1,23 @@
-cat > .github/workflows/lockfile-maintenance.yml << 'EOF'
 name: Lockfile Maintenance
 
-# Consolidated workflow for all pnpm lockfile operations:
-# - Manual regeneration (broken lockfile recovery)
-# - Standard repair (manifest drift detection)
-# - Duplicated lockfile edge case fix
-# 
-# Triggered by:
-# - Manual dispatch with operation selection
-# - Auto-repair on manifest changes or CI failures
-# - Duplicated lockfile detection on workflow changes
-
+# Recovery tool only. Normal dependency PRs update their own lockfile. Keeping
+# this workflow manual prevents bots from racing branches with generated commits.
 on:
   workflow_dispatch:
     inputs:
-      operation:
-        description: 'Operation to perform'
-        required: true
-        default: 'regenerate'
-        type: choice
-        options:
-          - regenerate
-          - repair
-          - repair-duplicated
-      branch:
-        description: 'Branch to operate on (for regenerate/repair)'
-        required: false
-        default: 'main'
-        type: string
       base_branch:
-        description: 'Base branch for lockfile refresh (for regenerate with PR)'
-        required: false
-        default: 'main'
+        description: Branch whose manifests should generate the lockfile
+        required: true
+        default: main
         type: string
       update_branch:
-        description: 'Update branch for PR creation'
-        required: false
-        default: 'automation/pnpm-lockfile-refresh'
+        description: Branch used for the generated pull request
+        required: true
+        default: automation/pnpm-lockfile-refresh
         type: string
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/lockfile-maintenance.yml'
-      - 'package.json'
-      - 'pnpm-workspace.yaml'
-      - 'apps/**/package.json'
-      - 'packages/**/package.json'
-      - 'infra/**/package.json'
-      - 'pnpm-lock.yaml'
-  workflow_run:
-    workflows: ['workspace-install']
-    types: [failed]
-    branches: [main]
 
 concurrency:
-  group: lockfile-maintenance-${{ github.ref }}-${{ github.event.inputs.operation || 'auto' }}
+  group: pnpm-lockfile-maintenance
   cancel-in-progress: false
 
 permissions:
@@ -62,58 +25,64 @@ permissions:
   pull-requests: write
 
 jobs:
-  # Regenerate lockfile from scratch (broken lockfile recovery)
   regenerate:
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.operation == 'regenerate'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - name: Check out the selected base
+        uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.inputs.branch || 'main' }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: pnpm/action-setup@v6
-        with:
-          run_install: false
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Regenerate lockfile
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Commit updated lockfile
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet pnpm-lock.yaml; then
-            echo "pnpm-lock.yaml unchanged — nothing to commit."
-          else
-            git add pnpm-lock.yaml
-            git commit -m "chore(ci): regenerate pnpm-lock.yaml [skip ci]"
-            git push origin HEAD:${{ github.event.inputs.branch || 'main' }}
-            echo "Lockfile regenerated and pushed to ${{ github.event.inputs.branch || 'main' }}."
-          fi
-
-  # Regenerate with PR creation for tracked updates
-  regenerate-with-pr:
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.operation == 'regenerate' && github.event.inputs.update_branch != ''
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout base branch
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: ${{ github.event.inputs.base_branch || 'main' }}
+          ref: ${{ inputs.base_branch }}
           fetch-depth: 0
 
-      - name: Setup Node
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v4.0.2
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
         with:
-          node-version: 22
+          version: 9.15.4
+          run_install: false
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
           cache: pnpm
 
-      - name: Enable pinned p
-
+      - name: Regenerate from scratch
+        run: |
+          rm -f pnpm-lock.yaml
+          pnpm install --lockfile-only --no-frozen-lockfile --ignore-scripts
+          pnpm install --frozen-lockfile --lockfile-only --ignore-scripts
+
+      - name: Create or update the refresh pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BASE_BRANCH: ${{ inputs.base_branch }}
+          UPDATE_BRANCH: ${{ inputs.update_branch }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- pnpm-lock.yaml; then
+            echo "pnpm-lock.yaml is already current."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -C "$UPDATE_BRANCH"
+          git add pnpm-lock.yaml
+          git commit -m "chore: regenerate pnpm lockfile"
+          git push --force-with-lease origin "$UPDATE_BRANCH"
+
+          cat > pr-body.md <<'BODY'
+          Merge strategy: squash
+
+          Regenerates `pnpm-lock.yaml` from the selected base branch with the repository's pinned pnpm version.
+
+          This is a manual recovery PR. Ordinary feature and dependency branches should not invoke this workflow.
+          BODY
+
+          existing_pr="$(gh pr list --head "$UPDATE_BRANCH" --base "$BASE_BRANCH" --json number --jq '.[0].number')"
+          if [[ -n "$existing_pr" ]]; then
+            gh pr edit "$existing_pr" --body-file pr-body.md
+          else
+            gh pr create --base "$BASE_BRANCH" --head "$UPDATE_BRANCH" \
+              --title "chore: regenerate pnpm lockfile" --body-file pr-body.md
+          fi

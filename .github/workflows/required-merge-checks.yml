@@ -36,7 +36,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Build gs-api
-        run: pnpm --filter ./apps/gs-api... build
+        run: pnpm --filter @goldshore/gs-api build
       - name: Test gs-api
         run: pnpm --filter ./apps/gs-api... test
 
