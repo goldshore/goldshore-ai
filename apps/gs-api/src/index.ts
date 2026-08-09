@@ -32,6 +32,7 @@ import trading from './routes/trading';
 import googleBusiness from './routes/google-business';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
+import type { Env, Variables } from './types';
 import agent from './routes/agent';
 import mail from './routes/mail';
 import control from './routes/control';
@@ -95,7 +96,7 @@ type ExecutionContext = {
 
 const app = new Hono<{
   Bindings: Env;
-  Variables: { accessClaims: AccessTokenPayload | null };
+  Variables: Variables;
 }>();
 
 const requiredBindings = ['PLATFORM_DB', 'GS_ASSETS', 'AI'] as const;
@@ -341,7 +342,6 @@ v1.route('/sites', sites);
 v1.route('/forms', forms);
 v1.route('/deployments', deployments);
 v1.route('/gearswipe', gearswipe);
-v1.route('/products', products);
 v1.route('/services', services);
 v1.get('/leads', (c) => c.json({ leads: [] }));
 
