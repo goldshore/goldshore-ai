@@ -12,7 +12,7 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "check:pages": "tsx scripts/check-pages-200.ts",
-    "scan:pii": "node scripts/pii-scan.mjs --mode local --output apps/gs-admin/src/data/pii-scan-results.json --summary reports/pii-scan-summary.md",
+    "scan:pii": "node scripts/pii-scan.mjs --mode local --output apps/gs-web/src/data/pii-scan-results.json --summary reports/pii-scan-summary.md",
     "check:docs-consistency": "node scripts/check-doc-consistency.mjs",
     "check:theme-exports": "node scripts/check-theme-exports.mjs",
     "check:naming": "node scripts/lint-naming.mjs",
@@ -47,7 +47,7 @@
     "@types/node": "^26.1.1",
     "@typescript-eslint/eslint-plugin": "^8.57.2",
     "@typescript-eslint/parser": "^8.65.0",
-    "astro": "^7.1.0",
+    "astro": "^7.2.0",
     "eslint": "^10.8.0",
     "eslint-plugin-astro": "^3.0.1",
     "form-data": "^4.0.6",
@@ -62,7 +62,7 @@
     "zod": "^4.3.6"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "^14.1.4",
+    "@astrojs/cloudflare": "^14.2.0",
     "p-limit": "^7.3.1",
     "turbo": "^2.10.5"
   },

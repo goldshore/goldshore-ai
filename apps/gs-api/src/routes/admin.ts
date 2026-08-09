@@ -6,6 +6,7 @@ import {
 import { getActor, logAdminAction, requirePermission } from "../auth";
 import { Env, Variables, AuditEvent } from "../types";
 import deploy from "./admin/index";
+import repoHealth from "./admin/repo-health";
 
 type AdminUserRecord = {
   id: string;
@@ -144,5 +145,8 @@ admin.get("/audit", requirePermission("audit:read"), async (c) => {
 
 // Mount deployment assistant routes
 admin.route("/deploy", deploy);
+
+// Mount repo health routes
+admin.route("/repo-health", repoHealth);
 
 export default admin;

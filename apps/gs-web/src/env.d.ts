@@ -48,6 +48,7 @@ interface Env {
   MAILCHANNELS_API_URL?: string;
   CLOUDFLARE_TEAM_DOMAIN?: string;
   CLOUDFLARE_ACCESS_AUDIENCE?: string;
+  JWT_SECRET?: string;
   DEV_AUTH_BYPASS?: string;
   PUBLIC_API?: string;
   GOOGLE_ADSENSE_CLIENT_ID?: string;
@@ -62,9 +63,17 @@ interface Env {
 
 declare namespace App {
   interface Locals {
-    runtime: {
-      env: Env;
+    runtime?: {
+      env?: Env;
     };
     securityPolicySource?: 'response-header' | 'platform-config';
+    adminSession?: {
+      roles: string[];
+      permissions: string[];
+      actor?: string;
+      isAuthenticated?: boolean;
+    };
+    TURNSTILE_SITE_KEY?: string;
+    PUBLIC_API?: string;
   }
 }
