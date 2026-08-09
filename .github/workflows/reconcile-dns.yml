@@ -28,7 +28,7 @@ jobs:
     name: Export redacted expected state
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
       - name: Export binding names, routes, Access IDs, and secret names
         run: python3 scripts/export-cloudflare-inventory.py cloudflare-inventory.json
       - name: Display redacted inventory
