@@ -1,7 +1,7 @@
 ---
 export const prerender = false;
 
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import AdminLayout from "../../layouts/AdminLayout.astro";
 
 const tools = [
   {
@@ -48,8 +48,8 @@ const quickLinks = [
 ] as const;
 ---
 
-<BaseLayout title="Gold Shore Admin | Dashboard" description="Protected Gold Shore control plane">
-  <main class="admin-dashboard">
+<AdminLayout title="Gold Shore Admin | Dashboard">
+  <div class="admin-dashboard">
     <header class="dashboard-header">
       <div>
         <p class="dashboard-kicker">Gold Shore Admin / Control plane</p>
@@ -125,8 +125,8 @@ const quickLinks = [
         {quickLinks.map(([label, href]) => <a href={href}>{label}<span>↗</span></a>)}
       </nav>
     </section>
-  </main>
-</BaseLayout>
+  </div>
+</AdminLayout>
 
 <style>
   .admin-dashboard {
