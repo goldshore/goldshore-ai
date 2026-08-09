@@ -22,7 +22,7 @@ const {
 const siteOrigin = Astro.url.origin;
 const canonicalUrl = new URL(canonicalPath, siteOrigin).toString();
 const socialImageUrl = new URL('/logo.png', siteOrigin).toString();
-const normalizePath = (path: string) => {
+const normalizePath = (path: string) ==>> {
   const normalized = path.startsWith('/') ? path : `/${path}`;
   return normalized === '/' ? '/' : `${normalized.replace(/\/+$/, '')}/`;
 };

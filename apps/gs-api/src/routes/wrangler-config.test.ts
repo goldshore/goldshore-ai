@@ -151,4 +151,27 @@ describe('gs-api wrangler env bindings', () => {
     assert.doesNotMatch(wranglerToml, /^CONTROL_SYNC_TOKEN\s*=/m);
     assert.doesNotMatch(wranglerToml, /__PROD_CONTROL_SYNC_TOKEN__/);
   });
+
+  it('keeps GoldClaw and Google Business OAuth redirects independent', () => {
+    assert.equal(
+      wranglerToml.match(
+        /GOOGLE_OAUTH_REDIRECT_URI = "https:\/\/api\.goldshore\.ai\/goldclaw\/oauth\/google\/callback"/g,
+      )?.length,
+      2,
+    );
+    assert.equal(
+      wranglerToml.match(
+        /GOOGLE_BUSINESS_OAUTH_REDIRECT_URI = "https:\/\/api\.goldshore\.ai\/admin\/google\/oauth\/callback"/g,
+      )?.length,
+      2,
+    );
+    assert.match(
+      wranglerToml,
+      /GOOGLE_BUSINESS_OAUTH_REDIRECT_URI = "https:\/\/api-preview\.goldshore\.ai\/admin\/google\/oauth\/callback"/,
+    );
+    assert.doesNotMatch(
+      wranglerToml,
+      /^GOOGLE_OAUTH_REDIRECT_URI = ".*\/admin\/google\/oauth\/callback"/m,
+    );
+  });
 });

@@ -22,6 +22,10 @@ This is the deployment contract for the Google Business Profile integration. Con
 
 Redirect URIs are environment-specific and compared byte-for-byte by the Worker. Do not use wildcards, a user-provided redirect, or a fallback derived from an untrusted host. Preview and production should use separate OAuth clients when operationally possible; if the current shared client is retained, both exact URIs must be registered.
 
+The Business Profile callback uses `GOOGLE_BUSINESS_OAUTH_REDIRECT_URI`.
+Keep `GOOGLE_OAUTH_REDIRECT_URI` reserved for GoldClaw's Google connection;
+overwriting it would break the existing `/goldclaw/oauth/google/callback` flow.
+
 ## Enabled Business Profile APIs
 
 The owning project must have all APIs needed by the allowlisted operation set enabled. Record the console enablement date and verifier for each item before deployment.

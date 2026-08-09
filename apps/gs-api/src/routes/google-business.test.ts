@@ -26,7 +26,7 @@ describe('Google Business Profile admin integration', () => {
     const response = await app().request('/admin/google/oauth/start?format=json', {}, {
       KV: kv,
       GOOGLE_OAUTH_CLIENT_ID: 'client.apps.googleusercontent.com',
-      GOOGLE_OAUTH_REDIRECT_URI: 'http://localhost/admin/google/oauth/callback',
+      GOOGLE_BUSINESS_OAUTH_REDIRECT_URI: 'http://localhost/admin/google/oauth/callback',
     } as any);
     assert.equal(response.status, 200);
     const payload = await response.json() as any;
@@ -42,7 +42,7 @@ describe('Google Business Profile admin integration', () => {
     const response = await app().request('/admin/google/oauth/start?format=json', {}, {
       KV: { put: mock.fn(async () => {}) },
       GOOGLE_OAUTH_CLIENT_ID: 'client.apps.googleusercontent.com',
-      GOOGLE_OAUTH_REDIRECT_URI: 'https://wrong.example/admin/google/oauth/callback',
+      GOOGLE_BUSINESS_OAUTH_REDIRECT_URI: 'https://wrong.example/admin/google/oauth/callback',
     } as any);
     assert.equal(response.status, 503);
   });

@@ -45,7 +45,7 @@ const decrypt = async (value: string, secret: string): Promise<Tokens> => {
   const clear = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: fromB64url(payload.iv) }, await encryptionKey(secret), fromB64url(payload.data));
   return JSON.parse(decoder.decode(clear));
 };
-const configuredRedirect = (env: Env) => env.GOOGLE_OAUTH_REDIRECT_URI;
+const configuredRedirect = (env: Env) => env.GOOGLE_BUSINESS_OAUTH_REDIRECT_URI;
 const allowlist = (value?: string) => new Set((value ?? '').split(',').map(v => v.trim()).filter(Boolean));
 const getId = (path: string, label: 'accounts' | 'locations') => path.match(new RegExp(`(?:^|/)${label}/([^/]+)`))?.[1];
 
