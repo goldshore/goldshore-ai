@@ -76,6 +76,15 @@ const requirePermission = async (
   return { response: null };
 };
 
+const forwardedHeaders = (request: Request) => {
+  const headers = new Headers();
+  for (const name of ['accept', 'authorization', 'cookie', 'cf-connecting-ip', 'user-agent', 'content-type']) {
+    const value = request.headers.get(name);
+    if (value) headers.set(name, value);
+  }
+  return headers;
+};
+
 export const GET: APIRoute = async ({ request, locals, params }) => {
   const env = locals.runtime?.env as AccessEnv | undefined;
   const slug = params.slug;

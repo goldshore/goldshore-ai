@@ -38,18 +38,16 @@ competing with the Worker for the same hostnames.
 
 ### 2. Admin (Cockpit)
 
-`admin.goldshore.ai` was migrated off the standalone `gs-admin` Pages project onto `gs-web` (route `admin.goldshore.ai/*` in `apps/gs-web/wrangler.toml`), per CLAUDE.md's repo migration plan. The DNS/routing cutover is done; the actual admin page/route content under `apps/gs-admin/src` has not been ported into `apps/gs-web` yet — that migration is in progress.
-
-- Project (legacy, not yet retired): `gs-admin`
+- Project: `gs-admin`
 - Repo: `goldshore-ai`
 - Root: `apps/gs-admin`
-- Custom Domains still on the legacy project:
+- Custom Domains:
+  - `admin.goldshore.ai`
   - `admin-preview.goldshore.ai`
-  - `admin.goldshore.org` (pending the separate `goldshore.org` ownership conflict — see `policy/ROUTE_POLICY.md` vs `docs/architecture/domain-ownership.md`)
 
 **Zero Trust:**
 
-- Access policy required on `admin.goldshore.ai` (email allowlist) — unchanged by the cutover, still applies to the same hostname regardless of which Worker/Pages project serves it.
+- Access policy required on `admin.goldshore.ai` (email allowlist).
 
 **Environment Variables:**
 

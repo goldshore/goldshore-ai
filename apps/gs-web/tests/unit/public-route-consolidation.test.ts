@@ -21,7 +21,7 @@ test('canonical gs-web owns the migrated public feature routes', async () => {
 
 test('public metadata derives canonical output from the request host', async () => {
   const [shell, home, robots, sitemap] = await Promise.all([
-    readFile(new URL('layouts/GoldShoreShell.astro', sourceRoot), 'utf8'),
+    readFile(new URL('layouts/BaseLayout.astro', sourceRoot), 'utf8'),
     readFile(new URL('pages/index.astro', sourceRoot), 'utf8'),
     readFile(new URL('pages/robots.txt.ts', sourceRoot), 'utf8'),
     readFile(new URL('pages/sitemap.xml.ts', sourceRoot), 'utf8'),

@@ -13,8 +13,7 @@ export const primaryNavLinks: NavLink[] = [
 ];
 
 export const authLinks: NavLink[] = [
-  { href: 'https://dashboard.goldshore.ai', label: 'Dashboard', external: true },
-  { href: 'https://admin.goldshore.ai', label: 'Admin', external: true },
+  { href: 'https://admin.goldshore.ai/app/dashboard', label: 'Dashboard access', external: true },
 ];
 
 export const platformLinks: NavLink[] = [
