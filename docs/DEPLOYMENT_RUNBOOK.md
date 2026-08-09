@@ -132,28 +132,11 @@ wrangler delete --name gs-dynamic-worker
 
 ---
 
-### Step 2.2: Verify `gs-web` Pages project
+### Step 2.2: Verify the `gs-web-prod` Worker
 
-**Action:** Check if Pages project exists and is healthy:
-
-```bash
-# List Pages projects
-curl -X GET https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/pages/projects \
-  -H "Authorization: Bearer {CLOUDFLARE_BUILD_API_TOKEN}" \
-  | jq '.result[] | {name, production_branch, domains}'
-```
-
-**Expected:** `gs-web` project should list `goldshore.ai`, `www.goldshore.ai`, `preview.goldshore.ai`
-
-**If missing:**
-```bash
-# Create Pages project (via dashboard is easier)
-# Or via wrangler (experimental)
-wrangler pages project create gs-web \
-  --production-branch=main \
-  --build-command="pnpm build" \
-  --build-output-directory="dist"
-```
+Confirm `apps/gs-web/wrangler.toml` retains `main = "./src/worker.ts"`, the
+`ASSETS` binding points at `./dist`, and the four production web/admin hosts are
+routes in `env.prod`. Do not create a separate static-site project.
 
 **Time:** 5 minutes
 
@@ -314,50 +297,18 @@ wrangler deploy --env prod
 
 ## Phase 4: Frontend Deployment
 
-### Step 4.1: Build and Deploy `gs-web` (Astro)
-
-**Action:**
+### Step 4.1: Build and deploy `gs-web` (Astro SSR Worker)
 
 ```bash
-# Build
-pnpm -F @goldshore/gs-web build
-
-# Verify Pages project exists
-wrangler pages project list | grep gs-web
-
-# Deploy (if using GitHub integration)
-# Commit to main and GitHub Actions will deploy
-
-# Or deploy directly
+pnpm --filter @goldshore/gs-web build
 cd apps/gs-web
-wrangler pages deploy dist
+wrangler deploy --env prod
 ```
 
-**Verify:**
-```bash
-curl https://goldshore.ai/
-# Should serve Astro HTML, not "Hello world"
-```
-
-**Time:** 10 minutes
-
----
-
-### Step 4.2: Build and Deploy `gs-admin` (Admin Cockpit)
-
-**Action:**
-
-```bash
-cd apps/gs-admin
-pnpm build
-wrangler pages deploy dist
-```
-
-**Verify:**
-```bash
-curl -I https://admin.goldshore.ai/
-# Should be protected by CF Access (403 or redirect to login)
-```
+The authoritative production path is the Cloudflare Workers Build integration.
+A manual deploy is a recovery/verification action and must target the same
+`gs-web-prod` release. Verify `goldshore.ai`, `goldshore.org`,
+`admin.goldshore.ai`, and `admin.goldshore.org` after deployment.
 
 **Time:** 10 minutes
 
@@ -611,7 +562,7 @@ git commit -m "[ci] Normalize to single canonical CLOUDFLARE_BUILD_API_TOKEN"
 - [ ] `gs-gateway` deployed and reachable at `gw.goldshore.ai`
 - [ ] `gs-mail` deployed (backend service, no public route)
 - [ ] `gs-agent` deployed and reachable via `agent.goldshore.ai`
-- [ ] `gs-web` Astro Pages deployed and reachable at `goldshore.ai`
+- [ ] `gs-web-prod` Astro SSR Worker-with-Assets release serves all four production UI hosts
 - [ ] `gs-admin` Astro Pages deployed and protected at `admin.goldshore.ai`
 - [ ] `banproof-me` in monorepo and deployed from CI
 - [ ] `goldshore-org` router in monorepo and deployed

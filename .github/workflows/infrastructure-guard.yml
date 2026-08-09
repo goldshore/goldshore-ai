@@ -6,7 +6,9 @@ on:
     paths:
       - 'infra/**'
       - 'apps/*/wrangler.toml'
-      - '.github/workflows/infrastructure-guard.yml'
+      - 'apps/gs-web/astro.config.mjs'
+      - 'apps/gs-web/src/worker.ts'
+      - '.github/workflows/**'
   workflow_dispatch:
 
 permissions:
@@ -44,6 +46,55 @@ jobs:
           done
 
           echo "All wrangler configs reference canonical workers."
+
+      - name: Verify gs-web is one SSR Worker-with-Assets release
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          workflows = Path('.github/workflows')
+          forbidden = re.compile(
+              r'wrangler\s+pages\s+deploy[^\n]*apps/gs-web/dist/client|'
+              r'apps/gs-web/dist/client[^\n]*wrangler\s+pages\s+deploy',
+              re.IGNORECASE,
+          )
+          offenders = [
+              str(path) for path in workflows.glob('*.y*ml')
+              if forbidden.search(path.read_text())
+          ]
+          if offenders:
+              raise SystemExit(
+                  'FAIL: gs-web client assets must not be deployed as a Pages project: '
+                  + ', '.join(offenders)
+              )
+
+          astro = Path('apps/gs-web/astro.config.mjs').read_text()
+          worker = Path('apps/gs-web/src/worker.ts').read_text()
+          wrangler = Path('apps/gs-web/wrangler.toml').read_text()
+          if not any(value in astro for value in ("output: 'server'", 'output: "server"')) or '@astrojs/cloudflare/handler' not in worker:
+              raise SystemExit('FAIL: gs-web must retain its Astro SSR Worker entry point')
+          if not re.search(r'(?m)^main\s*=\s*"\./src/worker\.ts"\s*$', wrangler):
+              raise SystemExit('FAIL: gs-web Wrangler main must be ./src/worker.ts')
+          if not re.search(r'(?ms)^\[assets\]\s+directory\s*=\s*"\./dist"\s+binding\s*=\s*"ASSETS"', wrangler):
+              raise SystemExit('FAIL: gs-web must upload dist through its ASSETS binding')
+
+          prod = wrangler.split('[env.prod]', 1)[1].split('[env.preview]', 1)[0]
+          expected = {
+              'goldshore.ai/*': 'goldshore.ai',
+              'goldshore.org/*': 'goldshore.org',
+              'admin.goldshore.ai/*': 'goldshore.ai',
+              'admin.goldshore.org/*': 'goldshore.org',
+          }
+          for host, zone in expected.items():
+              route = f'{{ pattern = "{host}", zone_name = "{zone}" }}'
+              if prod.count(route) != 1:
+                  raise SystemExit(
+                      f'FAIL: production host {host} must map exactly once to gs-web-prod'
+                  )
+
+          print('gs-web is one SSR Worker-with-Assets release for all four production hosts.')
+          PY
 
       - name: Verify D1 database IDs are consistent
         run: |

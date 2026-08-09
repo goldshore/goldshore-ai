@@ -878,7 +878,7 @@ jobs:
           upsert_full_access "GoldShore-Dashboard" "goldshore.ai/app" "[]" "" "" \
             '["Dashboard"]'
           # GoldShore Admin: .ai canonical + .org alias + admin-preview (Gate 5a)
-          # Served from gs-web (Pages custom preview hosts — see gs-web wrangler.toml)
+          # Served from gs-web (Worker preview hosts — see gs-web wrangler.toml)
           upsert_full_access "GoldShore-Admin-ZT" "admin.goldshore.ai" \
             '["admin.goldshore.org","admin-preview.goldshore.ai"]' "" "" \
             '["GoldShore Admin","Goldshore Admin","Admin"]'

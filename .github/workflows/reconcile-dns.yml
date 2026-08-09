@@ -12,7 +12,7 @@ name: Reconcile DNS
 # docs disagree on who owns them:
 #   - infra/Cloudflare/desired-state.yaml and policy/ROUTE_POLICY.md (Authority:
 #     Marzton, 2026-04-24) describe a standalone "goldshore-org" router Worker.
-#   - docs/architecture/domain-ownership.md (2026-06-15, later) says gs-web/Pages
+#   - docs/architecture/domain-ownership.md (2026-06-15, later) says gs-web Worker
 #     owns goldshore.org, and explicitly states "goldshore-org is not canonical".
 #   - infra/Cloudflare/deploy.ts's gs-web smoke check treats goldshore.org as part
 #     of gs-web's own deploy verification, matching the domain-ownership.md read.
