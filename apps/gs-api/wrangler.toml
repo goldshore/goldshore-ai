@@ -178,10 +178,16 @@ id = "a52e94cb331c4e3db08f2aa507e6df09"
 
 [[env.prod.kv_namespaces]]
 binding = "RISK_RADAR_CACHE"
-id = "0e67c3fe3d2b3231e7d4dba704e7dcd6"
+id = "0b56873b6d7b451f9279481920a15447"
+
+# TRADING_KV remains shared with the default environment until a dedicated
+# production namespace is provisioned in the Cloudflare dashboard.
+[[env.prod.kv_namespaces]]
+binding = "TRADING_KV"
+id = "9b3314c3b7af40a284a8c9b6e2990709"
 
 # ── R2 ──────────────────────────────────────────────────────────────────────────────────────
-[[env.production.r2_buckets]]
+[[env.prod.r2_buckets]]
 binding = "GS_ASSETS"
 bucket_name = "gs-assets"
 
@@ -192,12 +198,6 @@ bucket_name = "gs-telemetry-storage"
 [[env.prod.r2_buckets]]
 binding = "RISK_RADAR_R2"
 bucket_name = "gs-risk-radar-raw"
-
-# ── D1 ──────────────────────────────────────────────────────────────────────────────────────
-[[env.production.d1_databases]]
-binding = "DB"
-database_name = "goldshore"
-database_id = "gs_db_001"
 
 # ── D1 ───────────────────────────────────────────────────────────────────────
 [[env.prod.d1_databases]]
@@ -217,8 +217,8 @@ database_id = "76af4653-7f44-417b-b46e-250143d906fd"
 
 [[env.prod.d1_databases]]
 binding = "RISK_RADAR_DB"
-database_name = "gs_risk_radar_db"
-database_id = "aabedb82-60ca-5697-bbd5-9e85675ee7c5"
+database_name = "risk-radar-db"
+database_id = "b0bf3b0e-a7d0-49ae-ac82-4f19450b2ce2"
 
 [[env.prod.d1_databases]]
 binding = "JOBS_DB"
@@ -330,11 +330,6 @@ id = "d4d20cee39094b999dea3f7e5f4c533a"
 binding = "CONTROL_LOGS"
 id = "09e43cb8bd4749fdaaed0dc9d4ff2284"
 
-[[env.preview.kv_namespaces]]
-binding = "RISK_RADAR_CACHE"
-id = "a2315c0e83f27b610c3dfdd30eb0a9ea"
-
-# ── R2 ───────────────────────────────────────────────────────────────────────
 # RISK_RADAR_CACHE: same live "RR_CACHE" resource as env.prod — see the note
 # there. No dedicated preview KV exists for this yet.
 [[env.preview.kv_namespaces]]
@@ -382,11 +377,6 @@ database_id = "76af4653-7f44-417b-b46e-250143d906fd"
 binding = "RISK_RADAR_DB"
 database_name = "risk-radar-db"
 database_id = "b0bf3b0e-a7d0-49ae-ac82-4f19450b2ce2"
-
-[[env.preview.d1_databases]]
-binding = "RISK_RADAR_DB"
-database_name = "gs_risk_radar_db"
-database_id = "fe25ba0b-7d1e-5362-a03f-065487222a08"
 
 [[env.preview.d1_databases]]
 binding = "JOBS_DB"

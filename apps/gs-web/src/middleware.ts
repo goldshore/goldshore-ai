@@ -22,6 +22,23 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
     return context.redirect('/risk-radar', 301);
   }
 
+  // JWT cookie-based authentication gate for the admin surface.
+  // Verifies JWT from 'auth' cookie to allow admin access.
+  if (isProtectedAdminRequest(context.request, context.url)) {
+    const runtimeEnv = context.locals.runtime?.env as Env | undefined;
+    const allowLocalAdminBypass = import.meta.env.DEV || runtimeEnv?.DEV_AUTH_BYPASS === '1';
+
+    if (!allowLocalAdminBypass) {
+      const claims = await verifyJWTCookie(context.request, runtimeEnv ?? {});
+      if (!claims) {
+        return new Response('Unauthorized', {
+          status: 401,
+          headers: { 'content-type': 'text/plain; charset=utf-8' },
+        });
+      }
+    }
+  }
+
   // The admin hostname is a first-class alias for gs-web's existing admin
   // route tree. Keep implementation paths canonical without exposing the
   // /admin prefix in operator-facing URLs.
