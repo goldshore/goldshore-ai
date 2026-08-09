@@ -35,6 +35,15 @@ test('WebLayout renders one responsive admin login control', async () => {
   assert.match(source, /desktopNav\.insertBefore\(loginLink, desktopCta\)/);
 });
 
+test('GoldShoreShell renders one dashboard access action per responsive navigation', async () => {
+  const source = await readFile(new URL('layouts/GoldShoreShell.astro', sourceRoot), 'utf8');
+
+  assert.equal(source.match(/Dashboard access →/g)?.length, 2);
+  assert.equal(source.match(/data-admin-access-link/g)?.length, 2);
+  assert.doesNotMatch(source, /dashboard\.goldshore\.ai/);
+  assert.doesNotMatch(source, />Admin →<\/a>/);
+});
+
 test('WebLayout marks parent nav links current on nested public routes', async () => {
   const source = await readFile(new URL('layouts/WebLayout.astro', sourceRoot), 'utf8');
 
