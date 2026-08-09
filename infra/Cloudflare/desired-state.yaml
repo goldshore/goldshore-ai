@@ -59,6 +59,14 @@ cloudflare:
         type: CNAME
         content: "gs-web-preview.goldshore.workers.dev"
         proxied: true
+        zone: goldshore.ai
+      - name: "admin-preview"
+        type: CNAME
+        content: "gs-web-prod.goldshore.workers.dev"
+      # apps/gs-web/wrangler.toml). admin.goldshore.org is out of scope here
+      # pending the separate goldshore.org ownership conflict
+      # (policy/ROUTE_POLICY.md vs docs/architecture/domain-ownership.md) --
+      # still points at the legacy gs-admin app until that's resolved.
       - name: "admin"
       - name: "risk.goldshore.org"
         type: CNAME
