@@ -13,6 +13,19 @@ on:
     branches: [main]
     paths:
       - 'apps/gs-api/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.node-version'
+      - '.nvmrc'
+      - '.github/actions/**'
+      - '.github/workflows/deploy-gs-api.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-gs-api-${{ github.ref }}
+  cancel-in-progress: false
       - 'scripts/export-cloudflare-inventory.py'
       - 'infra/Cloudflare/dashboard-inventory.json'
       - '.github/workflows/deploy-gs-api.yml'
@@ -25,14 +38,16 @@ jobs:
   inventory:
     name: Export redacted expected state
     runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
+    permissions:
+      contents: read
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      TARGET_ENV: ${{ github.ref == 'refs/heads/main' && 'prod' || 'preview' }}
+      HEALTH_ORIGIN: ${{ github.ref == 'refs/heads/main' && 'https://api.goldshore.ai' || 'https://api-preview.goldshore.ai' }}
     steps:
       - uses: actions/checkout@v7.0.1
-      - name: Export binding names, routes, Access IDs, and secret names
-        run: python3 scripts/export-cloudflare-inventory.py cloudflare-inventory.json
-      - name: Display redacted inventory
-        run: jq . cloudflare-inventory.json
-      - name: Upload drift-review artifact
-        uses: actions/upload-artifact@v6
         with:
           fetch-depth: 0
 

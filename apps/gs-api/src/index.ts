@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { secureHeaders } from 'hono/secure-headers';
 import {
   verifyAccessWithClaims,
+  authorizeAccessClaims,
   type AccessTokenPayload,
 } from '@goldshore/auth';
 import { createCorsMiddleware, APPROVED_API_ORIGINS } from '@goldshore/shared';
@@ -23,6 +24,12 @@ import forms from './routes/forms';
 import deployments from './routes/deployments';
 import gearswipe from './routes/gearswipe';
 import services from './routes/services';
+import agent from './routes/agent';
+import control from './routes/control';
+import core from './routes/core';
+import mail from './routes/mail';
+import trading from './routes/trading';
+import googleBusiness from './routes/google-business';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
 import agent from './routes/agent';
@@ -31,18 +38,26 @@ import control from './routes/control';
 import trading from './routes/trading';
 import core from './routes/core';
 import { getHostRoutePrefix } from './host-routing';
+import { handleTokenRotation } from './workers/token-rotation';
+import { processQueueBatch } from './workers/queue-consumer';
+export { SignalsEvaluator } from './workers/signals-evaluator';
 
 type Env = {
   KV: KVNamespace;
   CONTROL_LOGS?: KVNamespace;
   RISK_RADAR_CACHE?: KVNamespace;
   PLATFORM_DB: D1Database;
+  AUDIT_DB: D1Database;
   RISK_RADAR_DB?: D1Database;
   TELEMETRY_DB?: D1Database;
   GS_ASSETS: R2Bucket;
   RISK_RADAR_R2?: R2Bucket;
   AUTH_SESSION?: DurableObjectNamespace;
   AI: Ai;
+  JOBS_QUEUE?: Queue;
+  EVENTS_QUEUE?: Queue;
+  MAIL_JOBS_QUEUE?: Queue;
+  DEAD_LETTER_QUEUE?: Queue;
   OPENAI_API_KEY?: string;
   GEMINI_API_KEY?: string;
   JWT_SECRET?: string;
@@ -51,6 +66,8 @@ type Env = {
   ACCESS_CLIENT_SECRET?: string;
   CLOUDFLARE_ACCESS_AUDIENCE?: string;
   CLOUDFLARE_TEAM_DOMAIN?: string;
+  CLOUDFLARE_ACCESS_APPLICATION?: string;
+  CLOUDFLARE_SERVICE_ACCESS_AUDIENCE?: string;
   CONTROL_SYNC_TOKEN?: string;
   ALLOWED_ORIGINS?: string;
   ENV?: string;
@@ -114,14 +131,44 @@ const isAllowedOrigin = (origin: string, allowedOrigins?: string) => {
 
 const isPublicPath = (path: string, method: string) => {
   if (method === 'OPTIONS') return true;
+  if (method === 'POST' && /^\/v1\/forms\/[a-z0-9-]+\/submissions$/i.test(path)) return true;
   return (
     path === '/' ||
     path === '/version' ||
     path === '/health' ||
     path.startsWith('/health/') ||
     (method === 'POST' && /^\/v1\/forms\/[^/]+\/submissions$/.test(path))
+    /^\/(agent|mail|control|trading|core)\/health\/?$/.test(path)
+    (method === 'GET' && path === '/admin/google/oauth/callback') ||
+    path === '/mail/contact' ||
+    (method === 'POST' && path === '/mail/contact')
   );
 };
+
+const HOST_ROUTE_PREFIXES: Record<string, string> = {
+  'agent.goldshore.ai': '/agent',
+  'mail.goldshore.ai': '/mail',
+  'ops.goldshore.ai': '/control',
+  'trading.goldshore.ai': '/trading',
+  'dashboard.goldshore.ai': '/trading',
+  'dash.goldshore.ai': '/trading',
+  'gw.goldshore.ai': '/core',
+};
+
+const getHostRoutePrefix = (request: Request) =>
+  HOST_ROUTE_PREFIXES[new URL(request.url).hostname] ?? null;
+
+const getCorrelationId = (request: Request) =>
+  request.headers.get('x-correlation-id') ?? crypto.randomUUID();
+
+const withCorrelationId = (response: Response, correlationId: string) => {
+  const forwarded = new Response(response.body, response);
+  forwarded.headers.set('x-correlation-id', correlationId);
+  return forwarded;
+};
+
+const getOptionalExecutionContext = (c: { executionCtx?: ExecutionContext }) =>
+  c.executionCtx;
 
 app.use('*', secureHeaders());
 
@@ -177,27 +224,25 @@ app.use('*', async (c, next) => {
     return;
   }
 
-  if (c.req.path === '/internal/sync-runs' && c.req.method === 'POST') {
-    const controlToken = c.req.header('x-control-sync-token');
-    if (
-      controlToken &&
-      c.env.CONTROL_SYNC_TOKEN &&
-      controlToken === c.env.CONTROL_SYNC_TOKEN
-    ) {
-      c.set('accessClaims', null);
-      await next();
-      return;
-    }
-  }
-
-  if (!c.env.CLOUDFLARE_ACCESS_AUDIENCE) {
+  const serviceRequest = c.req.path === '/internal' || c.req.path.startsWith('/internal/');
+  const accessEnv = serviceRequest
+    ? {
+        ...c.env,
+        CLOUDFLARE_ACCESS_AUDIENCE: c.env.CLOUDFLARE_SERVICE_ACCESS_AUDIENCE,
+        CLOUDFLARE_ACCESS_APPLICATION: 'service-production',
+      }
+    : c.env;
+  if (!accessEnv.CLOUDFLARE_ACCESS_AUDIENCE) {
     return c.json(
       { error: 'Cloudflare Access audience is not configured for protected routes.' },
       503,
     );
   }
 
-  const claims = await verifyAccessWithClaims(c.req.raw, c.env);
+  const verifiedClaims = await verifyAccessWithClaims(c.req.raw, accessEnv);
+  const claims = verifiedClaims
+    ? await authorizeAccessClaims(verifiedClaims, accessEnv)
+    : null;
   if (!claims) {
     return c.json({ error: 'Unauthorized' }, 401);
   }
@@ -274,6 +319,7 @@ app.route('/user', user);
 app.route('/system', system);
 app.route('/templates', templates);
 app.route('/admin', admin);
+app.route('/admin/google', googleBusiness);
 app.route('/media', media);
 app.route('/pages', pages);
 app.route('/internal', internal);
@@ -302,6 +348,53 @@ v1.get('/leads', (c) => c.json({ leads: [] }));
 app.route('/v1', v1);
 
 export { isAllowedOrigin, isPreviewOrigin, isPublicPath, parseAllowedOrigins };
+
+type DurableObjectState = {
+  id: { toString(): string };
+};
+
+const normalizeEmail = (email: string): string => {
+  return email.toLowerCase().trim();
+};
+
+const parseEmailList = (list?: string): string[] => {
+  if (!list) return [];
+  return list
+    .split(/[,;\s]+/)
+    .map((email) => normalizeEmail(email))
+    .filter((email) => email.length > 0);
+};
+
+const isEmailLike = (email: string): boolean => {
+  // Simple email validation: must contain @ and at least one dot after @
+  // Avoids ReDoS vulnerability from backtracking in complex quantifier patterns
+  const atIndex = email.indexOf('@');
+  if (atIndex <= 0 || atIndex === email.length - 1) return false;
+  const afterAt = email.substring(atIndex + 1);
+  return afterAt.includes('.') && !afterAt.endsWith('.');
+};
+
+const readInboxLogs = async (kv: KVNamespace) => {
+  try {
+    const stored = await kv.get('EMAIL_INBOX_LOGS');
+    if (!stored) return [];
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+interface Message<T> {
+  id: string;
+  body: T;
+  ack(): void;
+  retry(): void;
+}
+
+interface MessageBatch<T> {
+  messages: Array<Message<T>>;
+}
 
 interface Message<T> {
   id: string;
@@ -367,14 +460,13 @@ const readInboxLogs = async (kv: KVNamespace) => {
 export default {
   fetch: app.fetch,
 
-  async queue(batch: MessageBatch<any>, env: Env): Promise<void> {
-    for (const message of batch.messages) {
-      try {
-        await processQueueMessage(message, env);
-      } catch (error) {
-        console.error('gs-api queue message processing failed:', error);
-        message.retry();
-      }
+  async queue(batch: MessageBatch<unknown>, env: Env): Promise<void> {
+    await processQueueBatch(batch, env);
+  },
+
+  async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+    if (controller.cron === '0 2 * * *') {
+      ctx.waitUntil(handleTokenRotation(env));
     }
   },
 

@@ -133,6 +133,13 @@ Use a PR for production-impacting changes. At the top of the PR description, sta
 
 Do not force-push shared branches or bypass failing required checks merely to complete an agent task.
 
+The repository PR triage contract is `.github/pr-triage-ruleset.json`, enforced
+by `.github/workflows/pr-triage.yml`. A branch marked `blocked` by that ruleset
+must not merge. A branch marked `hold` must wait for draft, base health, branch
+drift, and required internal/external checks to clear. Approval labels documented
+in `docs/ops/mergeable-branches.md` require a human decision and must not be
+applied by an agent merely to make its own PR pass.
+
 ## Related guidance
 
 Read these when relevant:
