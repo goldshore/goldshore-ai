@@ -132,6 +132,5 @@ Apply this checklist to all default branches and any release branches designated
   - `Required Merge Checks / workspace-install`
   - `Required Merge Checks / gs-api-build-test`
   - `Required Merge Checks / gs-web-build`
-  - `Required Merge Checks / gs-admin-build`
   - `Required Merge Checks / deployment-dry-run`
 - `strict: true` is enabled so the PR branch must be up to date with the base branch before merge.

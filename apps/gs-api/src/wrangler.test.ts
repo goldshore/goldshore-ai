@@ -7,11 +7,11 @@ import { dirname, resolve } from 'node:path';
 const fixturePath = resolve(dirname(fileURLToPath(import.meta.url)), '../wrangler.toml');
 const wranglerConfig = readFileSync(fixturePath, 'utf8');
 
-const getEnvBlock = (envName: 'prod' | 'production') => {
+const getEnvBlock = (envName: 'prod' | 'preview') => {
   const start = wranglerConfig.indexOf(`[env.${envName}]`);
   assert.notStrictEqual(start, -1, `Expected [env.${envName}] block to exist`);
 
-  const nextEnvName = envName === 'prod' ? 'production' : 'preview';
+  const nextEnvName = envName === 'prod' ? 'preview' : 'migrations';
   const nextEnvStart = wranglerConfig.indexOf(`\n[env.${nextEnvName}]`, start + 1);
 
   return nextEnvStart === -1
@@ -21,16 +21,16 @@ const getEnvBlock = (envName: 'prod' | 'production') => {
 
 describe('wrangler environment bindings', () => {
   it('keeps the KV binding name expected by API handlers in deployed envs', () => {
-    for (const envName of ['prod', 'production']) {
+    for (const envName of ['prod', 'preview']) {
       const block = getEnvBlock(envName);
-      assert.match(block, /\[\[env\.(?:prod|production)\.kv_namespaces\]\][\s\S]*?binding = "KV"/);
+      assert.match(block, /\[\[env\.(?:prod|preview)\.kv_namespaces\]\][\s\S]*?binding = "KV"/);
       assert.doesNotMatch(block, /binding = "GS_CONFIG"/);
       assert.doesNotMatch(block, /binding = "GS_API_DATA"/);
     }
   });
 
   it('includes KV, D1, R2, and AI bindings in deployed envs', () => {
-    for (const envName of ['prod', 'production']) {
+    for (const envName of ['prod', 'preview']) {
       const block = getEnvBlock(envName);
       assert.match(block, new RegExp(`\\[\\[env\\.${envName}\\.kv_namespaces\\]\\][\\s\\S]*?binding = "KV"`));
       assert.match(block, new RegExp(`\\[\\[env\\.${envName}\\.kv_namespaces\\]\\][\\s\\S]*?binding = "CONTROL_LOGS"`));

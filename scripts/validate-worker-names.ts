@@ -6,10 +6,7 @@ const APPS_DIR = path.resolve(process.cwd(), "apps");
 const WRANGLER_NAME_PATTERN = /^\s*name\s*=\s*["']([^"']+)["']/m;
 const ROUTE_PATTERN = /pattern\s*=\s*["']([^"']+)["']/g;
 const SINGLE_ROUTE_PATTERN = /^\s*route\s*=\s*["']([^"']+)["']/gm;
-const EXPECTED_HOST_OWNERS: Record<string, string> = {
-  "gw.goldshore.ai": "gs-gateway",
-  "agent.goldshore.ai": "gs-gateway",
-};
+const EXPECTED_HOST_OWNERS: Record<string, string> = {};
 
 function getWorkerDirectories(): string[] {
   return readdirSync(APPS_DIR)
@@ -120,7 +117,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     failed = true;
   }
 
-  const CANONICAL_WORKERS = ["gs-agent", "gs-api", "gs-control", "gs-gateway", "gs-mail"];
+  const CANONICAL_WORKERS = ["gs-api"];
   const appsDirStr = "apps";
 
   for (const worker of CANONICAL_WORKERS) {

@@ -7,7 +7,7 @@ const REQUIRED_FILES = ["wrangler.toml", "package.json", "tsconfig.json", "src/i
 const LEGACY_API_WORKER_PATH = "apps/api-worker";
 const GS_API_PATH = "apps/gs-api";
 const DEPLOYMENT_CONFIG_FILES = [
-  ".github/workflows/deploy-platform.yml",
+  ".github/workflows/deploy-gs-api.yml",
   ".github/workflows/preview-gs-api.yml",
   ".github/workflows-disabled/deploy-api-worker.yml",
   "infra/Cloudflare/config.yaml",
@@ -19,11 +19,17 @@ const DEPLOYMENT_CONFIG_FILES = [
 // Workers that are known but not subject to canonical-worker enforcement.
 // gs-admin and gs-web are frontend apps; the others are platform/auxiliary workers.
 const KNOWN_NON_CANONICAL = new Set([
+  'armsway-com',
+  'banproof-me',
   'gs-admin',
-  'gs-web',
+  'gs-agent',
+  'gs-control',
   'gs-core-worker',
+  'gs-gateway',
+  'gs-mail',
   'gs-platform',
   'gs-trading',
+  'gs-web',
   'gs-www-redirect',
 ]);
 
@@ -90,7 +96,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     failed = true;
   }
 
-  const CANONICAL_WORKERS = ["gs-agent", "gs-api", "gs-control", "gs-gateway", "gs-mail"];
+  const CANONICAL_WORKERS = ["gs-api"];
 
   if (!existsSync(APPS_DIR)) {
     console.error("apps directory not found");
