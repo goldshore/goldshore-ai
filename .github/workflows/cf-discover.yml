@@ -1,59 +1,41 @@
-name: Discover Cloudflare Resources
+name: Inventory Cloudflare Resources
 
+# Live discovery is performed by a human in the Cloudflare dashboard. This job
+# exports repository expected state only and deliberately has no credentials.
 on:
+  pull_request:
+    paths:
+      - 'apps/gs-web/wrangler.toml'
+      - 'apps/gs-api/wrangler.toml'
+      - 'infra/Cloudflare/dashboard-inventory.json'
+      - 'scripts/export-cloudflare-inventory.py'
+      - '.github/workflows/cf-discover.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/gs-web/wrangler.toml'
+      - 'apps/gs-api/wrangler.toml'
+      - 'infra/Cloudflare/dashboard-inventory.json'
+      - 'scripts/export-cloudflare-inventory.py'
+      - '.github/workflows/cf-discover.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
 
-env:
-  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-
 jobs:
-  discover:
-    name: Export read-only Cloudflare inventory
+  inventory:
+    name: Export redacted expected state
     runs-on: ubuntu-latest
     steps:
-      - name: Normalize Cloudflare token
-        env:
-          # This credential must be a dedicated audit token with read-only
-          # permissions for the resources exported by discover.py. Never use a
-          # deploy/edit token for routine discovery.
-          RAW_CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_DISCOVERY_AUDIT_TOKEN }}
-        run: |
-          token="$(
-            node <<'NODE'
-          const raw = process.env.RAW_CLOUDFLARE_API_TOKEN || "";
-          let token = raw.replace(/[\r\n]/g, "").trim();
-          const bearer = token.match(/(?:authorization\s*:\s*)?bearer\s+([^\s"',;}]+)/i);
-          if (bearer) token = bearer[1];
-          const cfut = token.match(/cfut_[A-Za-z0-9_-]+/);
-          if (cfut) token = cfut[0];
-          token = token.replace(/^[`'"]+|[`'",;}]+$/g, "").replace(/\s/g, "");
-          process.stdout.write(token);
-          NODE
-          )"
-          test -n "$token" || (echo "Missing: CLOUDFLARE_DISCOVERY_AUDIT_TOKEN" && exit 1)
-          echo "::add-mask::$token"
-          echo "CLOUDFLARE_API_TOKEN=$token" >> "$GITHUB_ENV"
-
-      - name: Verify credentials
-        run: |
-          test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "Missing: CLOUDFLARE_ACCOUNT_ID" && exit 1)
-          test -n "$CLOUDFLARE_API_TOKEN"   || (echo "Missing: CLOUDFLARE_DISCOVERY_AUDIT_TOKEN" && exit 1)
-
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Export full read-only inventory and ambiguity review
-        env:
-          CF_DISCOVERY_OUTPUT: cloudflare-discovery
-        run: python3 infra/Cloudflare/scripts/discover.py
-
-      - name: Upload discovery export
-        if: ${{ always() }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/checkout@v7.0.1
+      - name: Export binding names, routes, Access IDs, and secret names
+        run: python3 scripts/export-cloudflare-inventory.py cloudflare-inventory.json
+      - name: Display redacted inventory
+        run: jq . cloudflare-inventory.json
+      - name: Upload drift-review artifact
+        uses: actions/upload-artifact@v6
         with:
-          name: cloudflare-discovery-${{ github.run_id }}
-          path: cloudflare-discovery/
-          if-no-files-found: error
+          name: cloudflare-inventory-${{ github.run_id }}-cf-discover
+          path: cloudflare-inventory.json
           retention-days: 30

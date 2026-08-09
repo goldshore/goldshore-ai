@@ -84,7 +84,7 @@ describe('Pages API Security', () => {
   });
 
   it('PATCH /pages/:id/status requires content:publish permission', async () => {
-    const app = createTestApp({ roles: ['viewer'] });
+    const app = createTestApp({ roles: ['editor'] });
     const res = await app.request('/pages/1/status', {
       method: 'PATCH',
       body: JSON.stringify({ status: 'published' }),

@@ -1,8 +1,9 @@
 import { Hono } from "hono";
-import { buildAdminSession, hasAdminPermission } from "@goldshore/auth";
-import type { Env, Variables } from "../types";
+import { buildAdminSession, hasAdminPermission, type AccessTokenPayload } from "@goldshore/auth";
 
-const users = new Hono<{ Bindings: Env; Variables: Variables }>();
+type Env = Record<string, never>;
+
+const users = new Hono<{ Bindings: Env; Variables: { accessClaims: AccessTokenPayload | null } }>();
 
 users.get("/", async (c) => {
   const session = buildAdminSession(c.get("accessClaims"));

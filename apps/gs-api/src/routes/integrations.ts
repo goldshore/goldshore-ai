@@ -5,7 +5,6 @@ import { requirePermission } from "../auth";
 import integrationKeys from "./integration-keys";
 import whatsappCommands from "./whatsapp-commands";
 import oauth from "./oauth";
-import connectors from "./connectors";
 
 const integrations = new Hono<{
   Bindings: Env;
@@ -146,8 +145,5 @@ integrations.route("/whatsapp", whatsappCommands);
 
 // Mount OAuth routes at /integrations/oauth
 integrations.route("/oauth", oauth);
-// Only this curated façade is available to admin and AI callers. Provider URLs
-// and arbitrary HTTP requests are deliberately not accepted from clients.
-integrations.route("/connectors", connectors);
 
 export default integrations;

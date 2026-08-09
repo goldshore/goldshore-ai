@@ -2,7 +2,7 @@
 import AdminLayout from '../../layouts/AdminLayout.astro';
 
 const services = [
-  { name: 'gs-web', kind: 'Worker with Assets', host: 'goldshore.ai + goldshore.org', status: 'Mirrored', href: 'https://goldshore.org' },
+  { name: 'gs-web', kind: 'Pages', host: 'goldshore.org', status: 'Connected', href: 'https://goldshore.org' },
   { name: 'gs-api', kind: 'Worker', host: 'api.goldshore.ai', status: 'Connected', href: 'https://api.goldshore.ai' },
   { name: 'Admin', kind: 'Access app', host: 'admin.goldshore.org', status: 'Protected', href: 'https://admin.goldshore.org' },
   { name: 'Admin AI', kind: 'Access app', host: 'admin.goldshore.ai', status: 'Protected', href: 'https://admin.goldshore.ai' },
@@ -18,10 +18,11 @@ const modules = [
 ];
 
 const resources = [
-  { name: 'D1', purpose: 'Customers, forms, subscriptions, content metadata, audit records', binding: 'PLATFORM_DB + AUDIT_DB' },
-  { name: 'R2', purpose: 'Uploads, exports, customer assets, generated documents, page media', binding: 'GS_ASSETS' },
-  { name: 'Jobs', purpose: 'Scheduled maintenance, email dispatch, cleanup, reporting', binding: 'JOBS_QUEUE' },
-  { name: 'Signal workflow', purpose: 'Durable signal normalization and evaluation', binding: 'GS_SIGNALS' },
+  { name: 'D1', purpose: 'Customers, forms, subscriptions, content metadata, audit records', binding: 'DB' },
+  { name: 'R2', purpose: 'Uploads, exports, customer assets, generated documents, page media', binding: 'ASSETS' },
+  { name: 'Jobs', purpose: 'Scheduled maintenance, email dispatch, cleanup, reporting', binding: 'JOBS' },
+  { name: 'Workflows', purpose: 'Durable multi-step API and customer operations', binding: 'WORKFLOWS' },
+  { name: 'Pipelines', purpose: 'Event ingestion, transformation, analytics, and downstream delivery', binding: 'PIPELINES' },
 ];
 ---
 

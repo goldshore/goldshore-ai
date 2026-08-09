@@ -1,21 +1,23 @@
-name: Inventory gs-web configuration
+name: Inventory preview route ownership
 
 # Read-only drift inventory. Cloudflare production configuration is changed only
 # by an approved human in the dashboard; this workflow has no Cloudflare credentials.
 on:
   pull_request:
     paths:
-      - 'apps/gs-web/**'
+      - 'apps/gs-web/wrangler.toml'
+      - 'apps/gs-api/wrangler.toml'
+      - 'infra/Cloudflare/**'
       - 'scripts/export-cloudflare-inventory.py'
-      - 'infra/Cloudflare/dashboard-inventory.json'
-      - '.github/workflows/deploy-gs-web.yml'
+      - '.github/workflows/setup-preview-dns.yml'
   push:
     branches: [main]
     paths:
-      - 'apps/gs-web/**'
+      - 'apps/gs-web/wrangler.toml'
+      - 'apps/gs-api/wrangler.toml'
+      - 'infra/Cloudflare/**'
       - 'scripts/export-cloudflare-inventory.py'
-      - 'infra/Cloudflare/dashboard-inventory.json'
-      - '.github/workflows/deploy-gs-web.yml'
+      - '.github/workflows/setup-preview-dns.yml'
   workflow_dispatch:
 
 permissions:
@@ -34,6 +36,6 @@ jobs:
       - name: Upload drift-review artifact
         uses: actions/upload-artifact@v6
         with:
-          name: cloudflare-inventory-${{ github.run_id }}-deploy-gs-web
+          name: cloudflare-inventory-${{ github.run_id }}-setup-preview-dns
           path: cloudflare-inventory.json
           retention-days: 30

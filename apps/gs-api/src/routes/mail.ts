@@ -1,13 +1,13 @@
 import { Hono } from 'hono';
-import type { Env, Variables } from '../types';
 import { isValidEmail } from '@goldshore/utils';
 
-const mail = new Hono<{ Bindings: Env; Variables: Variables }>();
+const mail = new Hono();
 
 mail.get('/', (c) => c.json({ service: 'gs-api-mail', ok: true }));
 mail.get('/health', (c) => c.json({ status: 'ok', service: 'gs-api-mail' }));
 mail.get('/inbox/logs', async (c) => {
-  const raw = await c.env.KV.get('EMAIL_INBOX_LOGS');
+  const kv = (c.env as any).KV;
+  const raw = kv ? await kv.get('EMAIL_INBOX_LOGS') : null;
   return c.json({ logs: raw ? JSON.parse(raw) : [] });
 });
 

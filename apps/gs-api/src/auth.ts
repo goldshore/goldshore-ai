@@ -22,21 +22,11 @@ export const getActor = (claims: AccessTokenPayload | null, request: Request) =>
 export const logAdminAction = async (env: Env, entry: Omit<AuditEvent, "timestamp">) => {
   const timestamp = new Date().toISOString();
   const payload: AuditEvent = { ...entry, timestamp };
-  const auditDb = env?.AUDIT_DB ?? env?.PLATFORM_DB;
-  if (!auditDb) {
+  if (!env?.KV || typeof env.KV.put !== "function") {
     return payload;
   }
-  try {
-    await auditDb.prepare(
-      `INSERT INTO audit_events (id, occurred_at, actor, action, status, metadata_json)
-       VALUES (?, ?, ?, ?, ?, ?)`
-    ).bind(crypto.randomUUID(), timestamp, entry.actor ?? "unknown", entry.action,
-      entry.status, JSON.stringify(entry.metadata ?? {})).run();
-  } catch (error) {
-    // Authorization must fail closed even if the audit store is temporarily
-    // unavailable. Emit a structured event so platform logging can alert.
-    console.error({ event: "admin.audit.write_failed", action: entry.action, error });
-  }
+  const key = `audit:admin:${timestamp}:${crypto.randomUUID()}`;
+  await env.KV.put(key, JSON.stringify(payload));
   return payload;
 };
 
