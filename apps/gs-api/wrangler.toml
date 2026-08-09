@@ -97,14 +97,6 @@ id = "0b56873b6d7b451f9279481920a15447"
 binding = "TRADING_KV"
 id = "9b3314c3b7af40a284a8c9b6e2990709"
 
-[[env.prod.kv_namespaces]]
-binding = "TRADING_KV"
-id = "9b3314c3b7af40a284a8c9b6e2990709"
-
-[[env.prod.kv_namespaces]]
-binding = "TRADING_KV"
-id = "9b3314c3b7af40a284a8c9b6e2990709"
-
 # ── R2 ──────────────────────────────────────────────────────────────────────────────────────
 [[env.prod.r2_buckets]]
 binding = "GS_ASSETS"
@@ -190,6 +182,22 @@ max_retries = 5
 retry_delay = 60
 dead_letter_queue = "gs-mail-dead-letter"
 
+[[env.prod.queues.consumers]]
+queue = "gs-events"
+max_batch_size = 10
+max_batch_timeout = 5
+max_retries = 5
+retry_delay = 60
+dead_letter_queue = "gs-mail-dead-letter"
+
+[[env.prod.queues.consumers]]
+queue = "gs-mail-jobs"
+max_batch_size = 10
+max_batch_timeout = 5
+max_retries = 5
+retry_delay = 60
+dead_letter_queue = "gs-mail-dead-letter"
+
 # ── Workflows ────────────────────────────────────────────────────────────────
 [[env.prod.workflows]]
 binding = "GS_SIGNALS"
@@ -219,6 +227,7 @@ routes = [
 ENV = "preview"
 STATE_MUTATIONS_ENABLED = "false"
 GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
+GOOGLE_OAUTH_REDIRECT_URI = "https://api-preview.goldshore.ai/goldclaw/oauth/google/callback"
 GOOGLE_BUSINESS_OAUTH_REDIRECT_URI = "https://api-preview.goldshore.ai/admin/google/oauth/callback"
 GOOGLE_BUSINESS_OWNERSHIP_VERIFIED = "false"
 GOOGLE_OAUTH_PRODUCTION_APPROVED = "false"
@@ -306,6 +315,17 @@ binding = "AI"
 # ── Queues ───────────────────────────────────────────────────────────────────
 # Intentionally unbound: dedicated preview queues have not been verified. The
 # preview mutation gate prevents handlers from falling back to production.
+# A binding that names a queue which does not exist fails every deploy, so
+# these stay unbound until the -preview queues are confirmed in the dashboard.
+
+# ── Workflows ────────────────────────────────────────────────────────────────
+# Safe to bind even though the preview queues are not: a Workflow is
+# provisioned from the class exported by this same script at deploy time, so
+# it does not need to pre-exist the way a queue does.
+[[env.preview.workflows]]
+binding = "GS_SIGNALS"
+name = "gs-signals-evaluator-preview"
+class_name = "SignalsEvaluator"
 
 # ── Secrets Store ────────────────────────────────────────────────────────────
 # Secrets Store bindings are per secret, not a store object. The runtime reads

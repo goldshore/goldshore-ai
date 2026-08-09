@@ -157,17 +157,21 @@ describe('gs-api wrangler env bindings', () => {
     ]);
   });
 
-  it('assigns production and isolated preview queue consumers to gs-api', () => {
+  it('assigns the production queue consumers to gs-api', () => {
+    // gs-api is the sole application consumer of the production queues after
+    // the satellite migration.
+    //
+    // Preview has no queue consumers on purpose. A consumer binding naming a
+    // queue that does not exist fails every deploy, and the dedicated
+    // *-preview queues have not been provisioned yet; the preview mutation
+    // gate stops handlers falling back to the production queues meanwhile.
+    // Restore the -preview entries here once those queues exist.
     assert.deepEqual(queueConsumerNames(wranglerToml).sort(), [
       'goldshore-jobs',
-      'goldshore-jobs-preview',
       'gs-events',
-      'gs-events-preview',
       'gs-mail-jobs',
-      'gs-mail-jobs-preview',
     ]);
     assert.match(wranglerToml, /dead_letter_queue = "gs-mail-dead-letter"/);
-    assert.match(wranglerToml, /dead_letter_queue = "gs-mail-dead-letter-preview"/);
   });
 
   it('binds each environment to its local SignalsEvaluator workflow', () => {
@@ -200,17 +204,25 @@ describe('gs-api wrangler env bindings', () => {
   });
 
   it('keeps GoldClaw and Google Business OAuth redirects independent', () => {
+    // Each variable is declared once per named environment. An earlier layout
+    // also repeated the production values in a top-level [vars] block, so
+    // these counts used to be 2; per-env declaration is what keeps preview
+    // from silently inheriting a production callback URL.
     assert.equal(
       wranglerToml.match(
         /GOOGLE_OAUTH_REDIRECT_URI = "https:\/\/api\.goldshore\.ai\/goldclaw\/oauth\/google\/callback"/g,
       )?.length,
-      2,
+      1,
     );
     assert.equal(
       wranglerToml.match(
         /GOOGLE_BUSINESS_OAUTH_REDIRECT_URI = "https:\/\/api\.goldshore\.ai\/admin\/google\/oauth\/callback"/g,
       )?.length,
-      2,
+      1,
+    );
+    assert.match(
+      wranglerToml,
+      /GOOGLE_OAUTH_REDIRECT_URI = "https:\/\/api-preview\.goldshore\.ai\/goldclaw\/oauth\/google\/callback"/,
     );
     assert.match(
       wranglerToml,

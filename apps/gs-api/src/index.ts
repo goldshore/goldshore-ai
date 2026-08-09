@@ -101,11 +101,12 @@ const isPublicPath = (path: string, method: string) => {
     path === '/version' ||
     path === '/health' ||
     path.startsWith('/health/') ||
-    (method === 'POST' && /^\/v1\/forms\/[^/]+\/submissions$/.test(path))
-    /^\/(agent|mail|control|trading|core)\/health\/?$/.test(path)
+    (method === 'POST' && /^\/v1\/forms\/[^/]+\/submissions$/.test(path)) ||
+    // Per-service health probes (/agent/health, /mail/health, …) are not
+    // covered by the /health/ prefix check above.
+    /^\/(agent|mail|control|trading|core)\/health\/?$/.test(path) ||
     (method === 'GET' && path === '/admin/google/oauth/callback') ||
-    path === '/mail/contact' ||
-    (method === 'POST' && path === '/mail/contact')
+    path === '/mail/contact'
   );
 };
 
@@ -378,17 +379,6 @@ interface MessageBatch<T> {
   messages: Array<Message<T>>;
 }
 
-interface Message<T> {
-  id: string;
-  body: T;
-  ack(): void;
-  retry(): void;
-}
-
-interface MessageBatch<T> {
-  messages: Array<Message<T>>;
-}
-
 const processQueueMessage = async (message: Message<any>, _env: Env): Promise<void> => {
   const body = message.body;
   const type = typeof body === 'object' && body && 'type' in body ? String((body as { type?: unknown }).type) : 'unknown';
@@ -401,42 +391,6 @@ const processQueueMessage = async (message: Message<any>, _env: Env): Promise<vo
         : 'agent_job_processed';
   console.info({ event, id: message.id, type, timestamp: new Date().toISOString() });
   message.ack();
-};
-
-type DurableObjectState = {
-  id: { toString(): string };
-};
-
-const normalizeEmail = (email: string): string => {
-  return email.toLowerCase().trim();
-};
-
-const parseEmailList = (list?: string): string[] => {
-  if (!list) return [];
-  return list
-    .split(/[,;\s]+/)
-    .map((email) => normalizeEmail(email))
-    .filter((email) => email.length > 0);
-};
-
-const isEmailLike = (email: string): boolean => {
-  // Simple email validation: must contain @ and at least one dot after @
-  // Avoids ReDoS vulnerability from backtracking in complex quantifier patterns
-  const atIndex = email.indexOf('@');
-  if (atIndex <= 0 || atIndex === email.length - 1) return false;
-  const afterAt = email.substring(atIndex + 1);
-  return afterAt.includes('.') && !afterAt.endsWith('.');
-};
-
-const readInboxLogs = async (kv: KVNamespace) => {
-  try {
-    const stored = await kv.get('EMAIL_INBOX_LOGS');
-    if (!stored) return [];
-    const parsed = JSON.parse(stored);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
 };
 
 export default {
@@ -513,5 +467,3 @@ export class AuthSession {
     );
   }
 }
-export { isAllowedOrigin, isPreviewOrigin, parseAllowedOrigins };
-export default app;
