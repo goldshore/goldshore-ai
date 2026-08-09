@@ -17,6 +17,7 @@ export type Env = {
   EVENTS_QUEUE?: Queue;
   MAIL_JOBS_QUEUE?: Queue;
   DEAD_LETTER_QUEUE?: Queue;
+  GS_SIGNALS?: Workflow<SignalsEvaluatorParams>;
   OPENAI_API_KEY?: string;
   GEMINI_API_KEY?: string;
   ANTHROPIC_API_KEY?: string;
@@ -98,6 +99,12 @@ export type Env = {
   GOLDCLAW_SANDBOX_API_TOKEN?: string;
   GOLDCLAW_SANDBOX_PROVIDER?: string;
   OAUTH_TOKEN_ENCRYPTION_KEY?: string;
+};
+
+export type SignalsEvaluatorParams = {
+  signalId: string;
+  source?: string;
+  payload?: Record<string, unknown>;
 };
 
 export type Variables = {
