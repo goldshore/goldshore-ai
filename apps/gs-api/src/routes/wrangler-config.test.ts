@@ -34,6 +34,25 @@ const queueConsumerNames = (block: string) =>
     ),
   ].map((match) => match[1]);
 
+const bindingBlocks = (
+  toml: string,
+  environment: string,
+  table: string,
+  binding: string,
+) =>
+  [
+    ...toml.matchAll(
+      new RegExp(
+        `\\[\\[env\\.${environment}\\.${table}\\]\\][\\s\\S]*?(?=\\r?\\n\\[|$)`,
+        'g',
+      ),
+    ),
+  ]
+    .map((match) => match[0])
+    .filter((block) =>
+      new RegExp(`^binding\\s*=\\s*"${binding}"$`, 'm').test(block),
+    );
+
 describe('gs-api wrangler env bindings', () => {
   // Canonical environments are [env.prod] and [env.preview].
   // Legacy [env.production] has been intentionally removed.
@@ -51,6 +70,15 @@ describe('gs-api wrangler env bindings', () => {
           `\\[\\[env\\.${envName}\\.kv_namespaces\\]\\][\\s\\S]*?binding = "RISK_RADAR_CACHE"[\\s\\S]*?id = "`,
         ),
       );
+      assert.equal(
+        bindingBlocks(
+          wranglerToml,
+          envName,
+          'kv_namespaces',
+          'RISK_RADAR_CACHE',
+        ).length,
+        1,
+      );
     });
 
     it(`defines platform, Risk Radar, and AI bindings for ${envName}`, () => {
@@ -62,78 +90,57 @@ describe('gs-api wrangler env bindings', () => {
       );
       assert.match(
         wranglerToml,
-        new RegExp(
-          `\\[\\[env\\.${envName}\\.r2_buckets\\]\\][\\s\\S]*?binding = "RISK_RADAR_R2"`,
-        ),
+        new RegExp(`\\[\\[env\\.${envName}\\.r2_buckets\\]\\][\\s\\S]*?binding = "RISK_RADAR_R2"`)
       );
       assert.match(
         wranglerToml,
-        new RegExp(
-          `\\[\\[env\\.${envName}\\.d1_databases\\]\\][\\s\\S]*?binding = "PLATFORM_DB"`,
-        ),
+        new RegExp(`\\[\\[env\\.${envName}\\.d1_databases\\]\\][\\s\\S]*?binding = "PLATFORM_DB"`)
       );
       assert.match(
         wranglerToml,
-        new RegExp(
-          `\\[\\[env\\.${envName}\\.d1_databases\\]\\][\\s\\S]*?binding = "RISK_RADAR_DB"`,
-        ),
+        new RegExp(`\\[\\[env\\.${envName}\\.d1_databases\\]\\][\\s\\S]*?binding = "RISK_RADAR_DB"`)
+      );
+      assert.equal(
+        bindingBlocks(
+          wranglerToml,
+          envName,
+          'd1_databases',
+          'RISK_RADAR_DB',
+        ).length,
+        1,
       );
       assert.match(
         wranglerToml,
-        new RegExp(`\\[env\\.${envName}\\.ai\\][\\s\\S]*?binding = "AI"`),
-      );
-    });
-
-    it(`binds the real paper-trading KV and D1 store for ${envName}`, () => {
-      // Regression guard: trading/routes/trading.ts falls back to
-      // `env.KV`/`env.PLATFORM_DB` when these are absent, which silently
-      // sends paper-trading reads/writes to a database with no matching
-      // schema. These bindings must point at the actual
-      // goldshore-paper-trading D1 + its KV namespace.
-      assert.match(
-        wranglerToml,
-        new RegExp(
-          `\\[\\[env\\.${envName}\\.kv_namespaces\\]\\][\\s\\S]*?binding = "TRADING_KV"[\\s\\S]*?id = "`,
-        ),
-      );
-      assert.match(
-        wranglerToml,
-        new RegExp(
-          `\\[\\[env\\.${envName}\\.d1_databases\\]\\][\\s\\S]*?binding = "PAPER_DB"[\\s\\S]*?database_name = "goldshore-paper-trading"`,
-        ),
+        new RegExp(`\\[env\\.${envName}\\.ai\\][\\s\\S]*?binding = "AI"`)
       );
     });
   }
 
-  it('keeps top-level bindings safe for Cloudflare Workers Builds version uploads', () => {
+  it('keeps all resources scoped to canonical named environments', () => {
     const topLevel = topLevelBlock(wranglerToml);
 
-    assert.match(topLevel, /\[vars\][\s\S]*?ENV\s*=\s*"production"/);
-    assert.match(
-      topLevel,
-      /\[vars\][\s\S]*?CLOUDFLARE_ACCESS_AUDIENCE\s*=\s*"8510d42c31fc791e295427031ffeef7c7ebc0f1b62d8634fbb284bf82562f528"/,
-    );
-    assert.match(
-      topLevel,
-      /\[\[kv_namespaces\]\][\s\S]*?binding\s*=\s*"KV"[\s\S]*?id\s*=\s*"e0b8b807191346c3b0afc25fe716d2cd"/,
-    );
-    assert.match(
-      topLevel,
-      /\[\[d1_databases\]\][\s\S]*?binding\s*=\s*"PLATFORM_DB"/,
-    );
-    assert.doesNotMatch(topLevel, /\[\[d1_databases\]\][\s\S]*?binding\s*=\s*"DB"/);
-    assert.doesNotMatch(topLevel, /database_id\s*=\s*"gs_db_001"/);
-    assert.match(
-      topLevel,
-      /\[\[r2_buckets\]\][\s\S]*?binding\s*=\s*"GS_ASSETS"/,
-    );
-    assert.match(topLevel, /\[ai\][\s\S]*?binding\s*=\s*"AI"/);
-    assert.doesNotMatch(
-      wranglerToml,
-      /\[\[env\.(prod|preview)\.secrets_store_secrets\]\][\s\S]*?binding\s*=\s*"INTEGRATION_MASTER_KEY"/,
-    );
-    assert.doesNotMatch(wranglerToml, /\[\[migrations\]\]/);
-    assert.doesNotMatch(wranglerToml, /\[\[env\.(prod|preview)\.migrations\]\]/);
+    assert.doesNotMatch(wranglerToml, /env\.production/);
+    assert.doesNotMatch(topLevel, /^\[vars\]/m);
+    assert.doesNotMatch(topLevel, /^\[\[(?:kv_namespaces|d1_databases|r2_buckets|queues\.)/m);
+    assert.doesNotMatch(topLevel, /^\[ai\]/m);
+    assert.doesNotMatch(wranglerToml, /database_id\s*=\s*"gs_db_001"/);
+
+    for (const envName of ['prod', 'preview']) {
+      const start = wranglerToml.indexOf(`[env.${envName}]`);
+      const end = envName === 'prod' ? wranglerToml.indexOf('[env.preview]') : wranglerToml.length;
+      const block = wranglerToml.slice(start, end);
+      const bindings = [...block.matchAll(/^binding = "([A-Z0-9_]+)"$/gm)].map((match) => match[1]);
+      assert.equal(bindings.length, new Set(bindings).size, `${envName} has duplicate bindings`);
+    }
+  });
+
+  it('keeps preview fail-closed and preview-only routes', () => {
+    const preview = wranglerToml.slice(wranglerToml.indexOf('[env.preview]'));
+    assert.match(preview, /STATE_MUTATIONS_ENABLED = "false"/);
+    assert.deepEqual(routePatterns(environmentBlock(wranglerToml, 'preview')), [
+      'api-preview.goldshore.ai/*',
+    ]);
+    assert.doesNotMatch(preview, /\[\[env\.preview\.queues\.(?:producers|consumers)\]\]/);
   });
 
   it('routes consolidated backend hostnames to the canonical API Worker', () => {
@@ -150,11 +157,29 @@ describe('gs-api wrangler env bindings', () => {
     ]);
   });
 
-  it('keeps production gs-api queue ownership producer-only for externally consumed queues', () => {
-    assert.deepEqual(
-      queueConsumerNames(environmentBlock(wranglerToml, 'prod')),
-      [],
+  it('assigns production and isolated preview queue consumers to gs-api', () => {
+    assert.deepEqual(queueConsumerNames(wranglerToml).sort(), [
+      'goldshore-jobs',
+      'goldshore-jobs-preview',
+      'gs-events',
+      'gs-events-preview',
+      'gs-mail-jobs',
+      'gs-mail-jobs-preview',
+    ]);
+    assert.match(wranglerToml, /dead_letter_queue = "gs-mail-dead-letter"/);
+    assert.match(wranglerToml, /dead_letter_queue = "gs-mail-dead-letter-preview"/);
+  });
+
+  it('binds each environment to its local SignalsEvaluator workflow', () => {
+    assert.match(
+      wranglerToml,
+      /\[\[env\.prod\.workflows\]\][\s\S]*?binding = "GS_SIGNALS"[\s\S]*?name = "gs-signals-evaluator"[\s\S]*?class_name = "SignalsEvaluator"/,
     );
+    assert.match(
+      wranglerToml,
+      /\[\[env\.preview\.workflows\]\][\s\S]*?binding = "GS_SIGNALS"[\s\S]*?name = "gs-signals-evaluator-preview"[\s\S]*?class_name = "SignalsEvaluator"/,
+    );
+    assert.doesNotMatch(wranglerToml, /script_name = "gs-signals-prod"/);
   });
 
   it('keeps web and admin hosts on the canonical gs-web Worker', () => {
@@ -172,5 +197,28 @@ describe('gs-api wrangler env bindings', () => {
   it('keeps CONTROL_SYNC_TOKEN out of plain-text environment variables', () => {
     assert.doesNotMatch(wranglerToml, /^CONTROL_SYNC_TOKEN\s*=/m);
     assert.doesNotMatch(wranglerToml, /__PROD_CONTROL_SYNC_TOKEN__/);
+  });
+
+  it('keeps GoldClaw and Google Business OAuth redirects independent', () => {
+    assert.equal(
+      wranglerToml.match(
+        /GOOGLE_OAUTH_REDIRECT_URI = "https:\/\/api\.goldshore\.ai\/goldclaw\/oauth\/google\/callback"/g,
+      )?.length,
+      2,
+    );
+    assert.equal(
+      wranglerToml.match(
+        /GOOGLE_BUSINESS_OAUTH_REDIRECT_URI = "https:\/\/api\.goldshore\.ai\/admin\/google\/oauth\/callback"/g,
+      )?.length,
+      2,
+    );
+    assert.match(
+      wranglerToml,
+      /GOOGLE_BUSINESS_OAUTH_REDIRECT_URI = "https:\/\/api-preview\.goldshore\.ai\/admin\/google\/oauth\/callback"/,
+    );
+    assert.doesNotMatch(
+      wranglerToml,
+      /^GOOGLE_OAUTH_REDIRECT_URI = ".*\/admin\/google\/oauth\/callback"/m,
+    );
   });
 });

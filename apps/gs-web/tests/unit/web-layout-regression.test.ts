@@ -36,12 +36,17 @@ test('WebLayout renders one responsive admin login control', async () => {
 });
 
 test('public header renders one dashboard action per responsive navigation', async () => {
-  const source = await readFile(new URL('components/PublicHeader.astro', sourceRoot), 'utf8');
+  const [source, navigation] = await Promise.all([
+    readFile(new URL('components/PublicHeader.astro', sourceRoot), 'utf8'),
+    readFile(new URL('config/navigation.ts', sourceRoot), 'utf8'),
+  ]);
 
-  assert.equal(source.match(/Dashboard access →/g)?.length, 2);
-  assert.equal(source.match(/CANONICAL_ADMIN_DASHBOARD_URL/g)?.length, 3);
+  assert.equal(source.match(/authLinks\.map/g)?.length, 2);
+  assert.match(source, /import \{ authLinks, primaryNavLinks \}/);
   assert.doesNotMatch(source, /dashboard\.goldshore\.ai/);
   assert.doesNotMatch(source, />Admin →<\/a>/);
+  assert.match(navigation, /https:\/\/admin\.goldshore\.ai\/app\/dashboard/);
+  assert.equal(navigation.match(/label: 'Dashboard access'/g)?.length, 1);
 });
 
 test('BaseLayout composes global theme parts without a shell wrapper', async () => {
