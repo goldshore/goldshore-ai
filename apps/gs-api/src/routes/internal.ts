@@ -40,7 +40,7 @@ const parseDnsSyncRun = (value: unknown): DnsSyncRun | null => {
  * [SOP] Internal Status Endpoint
  * Aggregates system health and mail logs for the Admin Dashboard.
  */
-internal.get('/inbox-status', requirePermission('system:read'), async (c) => {
+internal.get('/inbox-status', requirePermission('audit:read'), async (c) => {
   try {
     const snapshot = await loadSystemSyncSnapshot(c.env.KV);
 
@@ -66,7 +66,7 @@ internal.get('/inbox-status', requirePermission('system:read'), async (c) => {
   }
 });
 
-internal.get('/dns-sync-status', requirePermission('system:read'), async (c) => {
+internal.get('/dns-sync-status', requirePermission('audit:read'), async (c) => {
   const controlLogs = c.env.CONTROL_LOGS ?? c.env.KV;
   const [serviceStatusRaw, runIndexRaw] = await Promise.all([
     c.env.KV.get('SERVICE_STATUS', 'json'),

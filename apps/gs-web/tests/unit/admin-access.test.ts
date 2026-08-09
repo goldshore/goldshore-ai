@@ -1,9 +1,11 @@
 import { test } from 'node:test';
 import * as assert from 'node:assert/strict';
 
+import { ROLE_PERMISSIONS } from '@goldshore/auth';
 import {
   ALTERNATE_ADMIN_DASHBOARD_URL,
   CANONICAL_ADMIN_DASHBOARD_URL,
+  buildCloudflareAccessAdminSession,
   getAdminLoginDestination,
   getAdminHostRewritePath,
   getAdminRouteRule,
@@ -79,6 +81,34 @@ test('sends admin login destinations directly to the dashboard path', () => {
   assert.equal(getAdminLoginDestination('unknown'), CANONICAL_ADMIN_DASHBOARD_URL);
 });
 
+test('grants the admin session to an identity verified by the admin Access application', () => {
+  const session = buildCloudflareAccessAdminSession({
+    sub: 'access-user',
+    email: 'operator@example.com',
+  });
+
+  assert.deepEqual(session.roles, ['admin']);
+  assert.ok(session.permissions.includes('system:read'));
+  assert.ok(session.permissions.includes('system:write'));
+});
+
+test('preserves an explicit supported role from Cloudflare Access claims', () => {
+  const session = buildCloudflareAccessAdminSession({
+    sub: 'access-viewer',
+    roles: ['viewer'],
+  });
+
+  assert.deepEqual(session.roles, ['viewer']);
+
+  // The point of this case is that an explicit role is preserved rather than
+  // escalated to the blanket admin session, so assert against the viewer role
+  // definition instead of a hand-copied permission list.
+  assert.deepEqual(session.permissions, ROLE_PERMISSIONS.viewer);
+  assert.ok(session.permissions.includes('content:read'));
+  assert.ok(!session.permissions.includes('content:write'));
+  assert.ok(!session.permissions.includes('system:write'));
+});
+
 test('login page uses dashboard destinations instead of admin host roots', async () => {
   const source = await import('node:fs/promises').then(({ readFile }) =>
     readFile(new URL('../../src/pages/login.astro', import.meta.url), 'utf8'),
@@ -108,6 +138,17 @@ test('does not rewrite canonical admin, API, or static asset paths', () => {
 
 test('falls unknown admin-host pages back to the dashboard', () => {
   assert.equal(getAdminHostRewritePath('/about'), '/app/dashboard');
+});
+
+test('keeps the sign-in and sign-out routes reachable on the admin host', () => {
+  // These must not fold back to the dashboard: the dashboard requires a
+  // session, so rewriting /login would bounce an unauthenticated operator
+  // between /login and /app/dashboard forever.
+  assert.equal(getAdminHostRewritePath('/login'), null);
+  assert.equal(getAdminHostRewritePath('/logout'), null);
+
+  assert.equal(getAdminRouteRule('/login', 'GET', 'admin.goldshore.ai'), null);
+  assert.equal(getAdminRouteRule('/logout', 'GET', 'admin.goldshore.ai'), null);
 });
 
 test('middleware routes the admin hostname through its resolved dashboard path', async () => {
