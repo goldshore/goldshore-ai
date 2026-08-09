@@ -1,6 +1,5 @@
 ---
-import { primaryNavLinks } from '../config/navigation';
-import { CANONICAL_ADMIN_DASHBOARD_URL } from '../utils/admin-access';
+import { authLinks, primaryNavLinks } from '../config/navigation';
 
 const { currentPath = Astro.url.pathname } = Astro.props;
 const normalizePath = (path: string) => {
@@ -25,13 +24,13 @@ const isCurrent = (href: string) => {
     <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="mobile-navigation" aria-label="Toggle menu"><span></span><span></span><span></span></button>
     <nav class="main-nav" aria-label="Primary navigation">
       {primaryNavLinks.map((link) => <a href={link.href} aria-current={isCurrent(link.href) ? 'page' : undefined}>{link.label}</a>)}
-      <a href={CANONICAL_ADMIN_DASHBOARD_URL} class="nav-login">Dashboard access →</a>
+      {authLinks.map((link) => <a href={link.href} class="nav-login">{link.label} →</a>)}
       <a href="/contact/" class="nav-cta">Request Briefing</a>
     </nav>
   </div>
   <nav id="mobile-navigation" class="mobile-nav" aria-label="Mobile navigation">
     {primaryNavLinks.map((link) => <a href={link.href} aria-current={isCurrent(link.href) ? 'page' : undefined}>{link.label}</a>)}
-    <a href={CANONICAL_ADMIN_DASHBOARD_URL}>Dashboard access →</a>
+    {authLinks.map((link) => <a href={link.href}>{link.label} →</a>)}
     <a href="/contact/">Request Briefing</a>
   </nav>
 </header>
