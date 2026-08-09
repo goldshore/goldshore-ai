@@ -20,6 +20,16 @@ const getEnvBlock = (envName: 'prod' | 'preview') => {
 };
 
 describe('wrangler environment bindings', () => {
+  it('keeps production aliases together and preview routes isolated', () => {
+    const prod = getEnvBlock('prod');
+    const preview = getEnvBlock('preview');
+    assert.match(prod, /api\.goldshore\.ai\/\*/);
+    assert.match(prod, /api\.goldshore\.org\/\*/);
+    assert.match(preview, /api-preview\.goldshore\.ai\/\*/);
+    assert.doesNotMatch(preview, /(?:agent|mail|ops|trading|dashboard|dash)\.goldshore\.ai\/\*/);
+    assert.doesNotMatch(preview, /goldshore\.org/);
+  });
+
   it('keeps the KV binding name expected by API handlers in deployed envs', () => {
     for (const envName of ['prod', 'preview']) {
       const block = getEnvBlock(envName);
@@ -40,3 +50,22 @@ describe('wrangler environment bindings', () => {
     }
   });
 });
+
+  it('declares each binding once per named environment and has no ghost production environment', () => {
+    assert.doesNotMatch(wranglerConfig, /env\.production/);
+    assert.doesNotMatch(wranglerConfig, /^\[\[(?:kv_namespaces|r2_buckets|d1_databases|queues\.)/m);
+
+    for (const envName of ['prod', 'preview'] as const) {
+      const block = getEnvBlock(envName);
+      const bindings = [...block.matchAll(/^binding = "([A-Z0-9_]+)"$/gm)].map((match) => match[1]);
+      assert.deepEqual(bindings, [...new Set(bindings)], `${envName} contains duplicate binding names`);
+    }
+  });
+
+  it('keeps preview isolated from production routes and mutating production queues', () => {
+    const preview = getEnvBlock('preview');
+    assert.match(preview, /STATE_MUTATIONS_ENABLED = "false"/);
+    assert.match(preview, /api-preview\.goldshore\.ai/);
+    assert.doesNotMatch(preview, /(?:agent|mail|ops|trading|dashboard|dash)\.goldshore\.ai/);
+    assert.doesNotMatch(preview, /\[\[env\.preview\.queues\.(?:producers|consumers)\]\]/);
+  });

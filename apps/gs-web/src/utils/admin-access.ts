@@ -2,6 +2,7 @@ import {
   buildAdminSession,
   hasAdminPermission,
   verifyAccessWithClaims,
+  authorizeAccessClaims,
   verifyJWTCookie,
   type AccessTokenPayload,
   type AdminPermission,
@@ -290,9 +291,12 @@ export const authorizeAdminRequest = async (
     };
   }
 
-  const claims =
+  const verifiedClaims =
     await verifyJWTCookie(request, env) ??
     await verifyAccessWithClaims(request, env);
+  const claims = verifiedClaims
+    ? await authorizeAccessClaims(verifiedClaims, env)
+    : null;
   if (!claims) {
     return {
       ok: false,
