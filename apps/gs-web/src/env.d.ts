@@ -69,7 +69,7 @@ declare namespace App {
     securityPolicySource?: 'response-header' | 'platform-config';
     adminSession?: {
       roles: string[];
-      permissions: string[];
+      permissions: import('@goldshore/auth').AdminPermission[];
       actor?: string;
       isAuthenticated?: boolean;
     };
