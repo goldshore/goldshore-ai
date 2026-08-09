@@ -79,6 +79,16 @@ test('sends admin login destinations directly to the dashboard path', () => {
   assert.equal(getAdminLoginDestination('unknown'), CANONICAL_ADMIN_DASHBOARD_URL);
 });
 
+test('login page uses dashboard destinations instead of admin host roots', async () => {
+  const source = await import('node:fs/promises').then(({ readFile }) =>
+    readFile(new URL('../../src/pages/login.astro', import.meta.url), 'utf8'),
+  );
+
+  assert.match(source, /const destination = getAdminLoginDestination\(requested\)/);
+  assert.match(source, /href=\{CANONICAL_ADMIN_DASHBOARD_URL\}/);
+  assert.match(source, /href=\{ALTERNATE_ADMIN_DASHBOARD_URL\}/);
+});
+
 test('maps clean admin hostname URLs into the Astro admin route tree', () => {
   assert.equal(
     getAdminHostRewritePath('/workers/status'),

@@ -5,10 +5,10 @@ compatibility_flags = ["nodejs_compat"]
 workers_dev = false
 main = "./src/worker.ts"
 
-# Serve the Astro build as a Worker with Assets.
-# The Cloudflare adapter builds the configured Worker entrypoint and emits
-# static assets into dist. Keeping both `main` and an assets binding avoids
-# Wrangler treating the project as an assets-only Worker.
+# Deploy the Astro SSR entry point and its static bundle as one Worker release.
+# `astro build` emits the server manifest and assets under dist; Wrangler
+# bundles src/worker.ts as the Worker entry and uploads dist as its assets.
+# This is intentionally not a Cloudflare Pages project.
 [assets]
 directory = "./dist"
 binding = "ASSETS"
@@ -24,21 +24,13 @@ id = "5f13370575784c9dacff522121104cb3"
 binding = "SESSION"
 id = "09ae2ffbffe24e628c9538c8129dfe33"
 
-[[d1_databases]]
-binding = "PLATFORM_DB"
-database_name = "gs_platform_db"
-database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
-
-[[r2_buckets]]
-binding = "GS_ASSETS"
-bucket_name = "gs-assets"
-
 [vars]
 ENV = "production"
 PUBLIC_ENV = "production"
 PUBLIC_API = "https://api.goldshore.ai"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 CLOUDFLARE_ACCESS_AUDIENCE = "c520a7647223b49b20fbe5be240772863eb684b97b57c08955b6104c58170db9"
+CLOUDFLARE_ACCESS_APPLICATION = "admin-production"
 GITHUB_CLIENT_ID = "YOUR_GITHUB_CLIENT_ID_PROD"
 TURNSTILE_SITE_KEY = "YOUR_TURNSTILE_SITE_KEY_PROD"
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
@@ -47,6 +39,8 @@ MAILCHANNELS_SENDER_NAME = "GoldShore"
 # ── Production ──────────────────────────────────────────────────────────────────────────────────────
 
 [env.prod]
+# Wrangler suffixes the top-level name, so this environment is the single
+# `gs-web-prod` release serving all four canonical production UI hosts.
 routes = [
   { pattern = "goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
@@ -65,15 +59,6 @@ id = "5f13370575784c9dacff522121104cb3"
 binding = "SESSION"
 id = "09ae2ffbffe24e628c9538c8129dfe33"
 
-[[env.prod.d1_databases]]
-binding = "PLATFORM_DB"
-database_name = "gs_platform_db"
-database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
-
-[[env.prod.r2_buckets]]
-binding = "GS_ASSETS"
-bucket_name = "gs-assets"
-
 [env.prod.images]
 binding = "IMAGES"
 
@@ -83,20 +68,15 @@ PUBLIC_ENV = "production"
 PUBLIC_API = "https://api.goldshore.ai"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 CLOUDFLARE_ACCESS_AUDIENCE = "c520a7647223b49b20fbe5be240772863eb684b97b57c08955b6104c58170db9"
+CLOUDFLARE_ACCESS_APPLICATION = "admin-production"
 GITHUB_CLIENT_ID = "YOUR_GITHUB_CLIENT_ID_PROD"
 TURNSTILE_SITE_KEY = "YOUR_TURNSTILE_SITE_KEY_PROD"
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
 MAILCHANNELS_SENDER_NAME = "GoldShore"
 
-# Secrets (set via wrangler secret put — never commit):
-#   wrangler secret put MAILCHANNELS_SENDER_EMAIL --env prod --name gs-web
-#   Value: hello@goldshore.ai
-#
-#   wrangler secret put GITHUB_CLIENT_SECRET --env prod --name gs-web
-#   Value: <GitHub OAuth app client secret from https://github.com/settings/developers>
-#
-#   wrangler secret put TURNSTILE_SECRET_KEY --env prod --name gs-web
-#   Value: <Turnstile secret key from https://dash.cloudflare.com/>
+# gs-web owns no transactional database, sensitive object storage, or provider
+# secrets. Contact, form, CMS, media, and admin operations are authenticated and
+# persisted by gs-api. PUBLIC_* values and Turnstile's site key are not secrets.
 
 # ── Preview ──────────────────────────────────────────────────────────────────────────────────────
 
@@ -114,15 +94,6 @@ id = "5f13370575784c9dacff522121104cb3"
 binding = "SESSION"
 id = "09ae2ffbffe24e628c9538c8129dfe33"
 
-[[env.preview.d1_databases]]
-binding = "PLATFORM_DB"
-database_name = "gs_platform_db"
-database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
-
-[[env.preview.r2_buckets]]
-binding = "GS_ASSETS"
-bucket_name = "gs-assets-preview"
-
 [env.preview.images]
 binding = "IMAGES"
 
@@ -132,6 +103,7 @@ PUBLIC_ENV = "preview"
 PUBLIC_API = "https://api-preview.goldshore.ai"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 CLOUDFLARE_ACCESS_AUDIENCE = "5227a14ad2cd2f59e56c8c65161c29bb2f9787b5b8be37a631c60f4d07b33214"
+CLOUDFLARE_ACCESS_APPLICATION = "admin-preview"
 GITHUB_CLIENT_ID = "YOUR_GITHUB_CLIENT_ID_PREVIEW"
 TURNSTILE_SITE_KEY = "YOUR_TURNSTILE_SITE_KEY_PREVIEW"
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
