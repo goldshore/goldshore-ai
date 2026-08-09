@@ -1,11 +1,171 @@
 ---
+export const prerender = false;
+
 import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const tools = [
+  {
+    eyebrow: 'Website operations',
+    title: 'Content studio',
+    description: 'Update articles, announcements, and structured content.',
+    href: '/admin/products',
+    action: 'Manage catalog',
+    tone: 'gold',
+  },
+  {
+    eyebrow: 'Website operations',
+    title: 'Site settings',
+    description: 'Control navigation, feature flags, forms, and publishing behavior.',
+    href: '/app/settings',
+    action: 'Open settings',
+    tone: 'blue',
+  },
+  {
+    eyebrow: 'Platform controls',
+    title: 'Domains & routes',
+    description: 'Review domains, traffic rules, workers, and production destinations.',
+    href: '/admin/platform',
+    action: 'Review platform',
+    tone: 'blue',
+  },
+  {
+    eyebrow: 'Platform controls',
+    title: 'Integrations',
+    description: 'Connect analytics, ads, payments, and automation services.',
+    href: '/admin/integrations/all',
+    action: 'Configure integrations',
+    tone: 'blue',
+  },
+];
+
+const quickLinks = [
+  ['Worker status', '/admin/workers/status'],
+  ['Lead submissions', '/admin/lead-submissions'],
+  ['Products', '/admin/products'],
+  ['Services', '/admin/services'],
+  ['Search console', '/admin/search-console'],
+  ['API status', '/admin/api-status'],
+] as const;
 ---
-<BaseLayout title="Dashboard | GoldShore">
-    <section class="max-w-4xl mx-auto py-24 px-6">
-        <h1 class="text-4xl gs-heading mb-4">User Dashboard</h1>
-        <p class="text-lg text-[var(--gs-text-secondary)]">
-            Dashboard features will be added here soon.
-        </p>
+
+<BaseLayout title="Gold Shore Admin | Dashboard" description="Protected Gold Shore control plane">
+  <main class="admin-dashboard">
+    <header class="dashboard-header">
+      <div>
+        <p class="dashboard-kicker">Gold Shore Admin / Control plane</p>
+        <h1>Good morning, operator.</h1>
+        <p class="dashboard-lede">Manage the public site, content, domains, integrations, and platform systems from one protected workspace.</p>
+      </div>
+      <span class="session-pill"><i></i> Authenticated session</span>
+    </header>
+
+    <section class="tool-section" aria-labelledby="edit-publish-title">
+      <div class="section-heading">
+        <div>
+          <p class="dashboard-kicker">Website operations</p>
+          <h2 id="edit-publish-title">Edit and publish</h2>
+        </div>
+        <a href="/admin/products">View all site tools →</a>
+      </div>
+
+      <div class="tool-grid">
+        {tools.map((tool, index) => (
+          <a class={`tool-card tool-card--${tool.tone}`} href={tool.href}>
+            <span class="tool-index">0{index + 1}</span>
+            <span class="tool-eyebrow">{tool.eyebrow}</span>
+            <strong>{tool.title}</strong>
+            <span class="tool-description">{tool.description}</span>
+            <span class="tool-action">{tool.action} →</span>
+          </a>
+        ))}
+      </div>
     </section>
+
+    <section class="status-section" aria-labelledby="system-status-title">
+      <div class="section-heading">
+        <div>
+          <p class="dashboard-kicker">Operational overview</p>
+          <h2 id="system-status-title">System status</h2>
+        </div>
+        <span class="status-label"><i></i> Protected services</span>
+      </div>
+
+      <div class="status-grid">
+        <article class="status-card">
+          <span>gs-api</span>
+          <strong>Online</strong>
+          <small>Core API and data access layer</small>
+        </article>
+        <article class="status-card">
+          <span>Workers</span>
+          <strong>3 / 3</strong>
+          <small>Gateway, API, and control plane</small>
+        </article>
+        <article class="status-card">
+          <span>Access</span>
+          <strong>Enforced</strong>
+          <small>JWT identity and admin role required</small>
+        </article>
+        <article class="status-card">
+          <span>Deployments</span>
+          <strong>Ready</strong>
+          <small>Production changes require review</small>
+        </article>
+      </div>
+    </section>
+
+    <section class="quick-section" aria-labelledby="quick-links-title">
+      <div class="section-heading">
+        <div>
+          <p class="dashboard-kicker">Operator shortcuts</p>
+          <h2 id="quick-links-title">Quick links</h2>
+        </div>
+      </div>
+      <nav class="quick-links" aria-label="Admin shortcuts">
+        {quickLinks.map(([label, href]) => <a href={href}>{label}<span>↗</span></a>)}
+      </nav>
+    </section>
+  </main>
 </BaseLayout>
+
+<style>
+  .admin-dashboard {
+    min-height: 100vh;
+    padding: clamp(2rem, 5vw, 4.5rem) clamp(1.25rem, 5vw, 5rem);
+    color: #e8eef5;
+    background: radial-gradient(circle at 82% 0%, rgba(216, 164, 74, .11), transparent 31rem), #050b14;
+  }
+  .dashboard-header, .section-heading { max-width: 1180px; margin: 0 auto; }
+  .dashboard-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 2rem; padding-bottom: clamp(2.5rem, 6vw, 5rem); }
+  .dashboard-kicker { margin: 0 0 .65rem; color: #d8a44a; font: 700 .68rem/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .16em; text-transform: uppercase; }
+  h1, h2, p { margin-top: 0; }
+  h1 { max-width: 720px; margin-bottom: 1rem; font-size: clamp(2.5rem, 6vw, 5.4rem); line-height: .98; letter-spacing: -.065em; }
+  h2 { margin-bottom: 0; color: rgba(232, 238, 245, .96); font-size: clamp(1.35rem, 2.2vw, 1.8rem); letter-spacing: -.035em; }
+  .dashboard-lede { max-width: 650px; margin-bottom: 0; color: rgba(174, 190, 207, .72); font-size: 1rem; line-height: 1.65; }
+  .session-pill, .status-label { display: inline-flex; align-items: center; gap: .5rem; padding: .55rem .75rem; border: 1px solid rgba(52, 211, 153, .2); border-radius: 999px; color: rgba(187, 247, 208, .82); font: 600 .7rem ui-monospace, monospace; white-space: nowrap; }
+  .session-pill i, .status-label i { width: .45rem; height: .45rem; border-radius: 50%; background: #34d399; box-shadow: 0 0 12px rgba(52, 211, 153, .75); }
+  .tool-section, .status-section, .quick-section { max-width: 1180px; margin: 0 auto 3.75rem; }
+  .section-heading { display: flex; justify-content: space-between; align-items: end; gap: 1rem; margin-bottom: 1rem; }
+  .section-heading a { color: #72b9ff; font-size: .78rem; text-decoration: none; }
+  .section-heading a:hover { color: #fff; }
+  .tool-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .8rem; }
+  .tool-card { position: relative; display: flex; flex-direction: column; min-height: 190px; padding: 1.15rem; border: 1px solid rgba(114, 185, 255, .15); border-radius: .9rem; background: rgba(10, 22, 39, .76); color: inherit; text-decoration: none; transition: transform .16s ease, border-color .16s ease, background .16s ease; }
+  .tool-card:hover { transform: translateY(-3px); border-color: rgba(114, 185, 255, .42); background: rgba(18, 36, 62, .92); }
+  .tool-card--gold { border-color: rgba(216, 164, 74, .34); background: linear-gradient(145deg, rgba(75, 55, 21, .48), rgba(10, 22, 39, .8)); }
+  .tool-index { position: absolute; top: 1rem; right: 1rem; color: rgba(174, 190, 207, .38); font: .7rem ui-monospace, monospace; }
+  .tool-eyebrow { margin-bottom: 2rem; color: rgba(174, 190, 207, .62); font: .63rem ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase; }
+  .tool-card strong { color: #f1f5f9; font-size: 1rem; }
+  .tool-description { margin-top: .5rem; color: rgba(174, 190, 207, .68); font-size: .78rem; line-height: 1.5; }
+  .tool-action { margin-top: auto; padding-top: 1.1rem; color: #72b9ff; font-size: .72rem; }
+  .tool-card--gold .tool-action { color: #e8bd6a; }
+  .status-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .8rem; }
+  .status-card { padding: 1rem; border: 1px solid rgba(114, 185, 255, .1); border-radius: .75rem; background: rgba(10, 22, 39, .54); }
+  .status-card span, .status-card small { display: block; color: rgba(174, 190, 207, .56); font-size: .72rem; }
+  .status-card strong { display: block; margin: .55rem 0 .35rem; color: #d7f8e7; font: 700 1.3rem ui-monospace, monospace; }
+  .quick-links { display: flex; flex-wrap: wrap; gap: .6rem; }
+  .quick-links a { display: inline-flex; gap: .75rem; align-items: center; padding: .7rem .85rem; border: 1px solid rgba(114, 185, 255, .13); border-radius: .55rem; color: rgba(214, 226, 239, .76); font-size: .78rem; text-decoration: none; }
+  .quick-links a:hover { border-color: rgba(114, 185, 255, .4); color: #fff; }
+  .quick-links span { color: #72b9ff; }
+  @media (max-width: 900px) { .tool-grid, .status-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 640px) { .dashboard-header, .section-heading { align-items: flex-start; flex-direction: column; } .tool-grid, .status-grid { grid-template-columns: 1fr; } .session-pill { margin-top: .25rem; } }
+</style>

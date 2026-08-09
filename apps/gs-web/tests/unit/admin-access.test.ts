@@ -4,6 +4,7 @@ import * as assert from 'node:assert/strict';
 import {
   ALTERNATE_ADMIN_DASHBOARD_URL,
   CANONICAL_ADMIN_DASHBOARD_URL,
+  getAdminLoginDestination,
   getAdminHostRewritePath,
   getAdminRouteRule,
   getCanonicalAdminUrl,
@@ -70,6 +71,24 @@ test('maps the admin hostname root to the existing dashboard route', () => {
   assert.equal(getAdminHostRewritePath('/'), '/app/dashboard');
 });
 
+test('sends admin login destinations directly to the dashboard path', () => {
+  assert.equal(getAdminLoginDestination('dashboard'), CANONICAL_ADMIN_DASHBOARD_URL);
+  assert.equal(getAdminLoginDestination('admin'), CANONICAL_ADMIN_DASHBOARD_URL);
+  assert.equal(getAdminLoginDestination('ai'), CANONICAL_ADMIN_DASHBOARD_URL);
+  assert.equal(getAdminLoginDestination('org'), ALTERNATE_ADMIN_DASHBOARD_URL);
+  assert.equal(getAdminLoginDestination('unknown'), CANONICAL_ADMIN_DASHBOARD_URL);
+});
+
+test('login page uses dashboard destinations instead of admin host roots', async () => {
+  const source = await import('node:fs/promises').then(({ readFile }) =>
+    readFile(new URL('../../src/pages/login.astro', import.meta.url), 'utf8'),
+  );
+
+  assert.match(source, /const destination = getAdminLoginDestination\(requested\)/);
+  assert.match(source, /href=\{CANONICAL_ADMIN_DASHBOARD_URL\}/);
+  assert.match(source, /href=\{ALTERNATE_ADMIN_DASHBOARD_URL\}/);
+});
+
 test('maps clean admin hostname URLs into the Astro admin route tree', () => {
   assert.equal(
     getAdminHostRewritePath('/workers/status'),
@@ -89,4 +108,15 @@ test('does not rewrite canonical admin, API, or static asset paths', () => {
 
 test('falls unknown admin-host pages back to the dashboard', () => {
   assert.equal(getAdminHostRewritePath('/about'), '/app/dashboard');
+});
+
+test('middleware routes the admin hostname through its resolved dashboard path', async () => {
+  const source = await import('node:fs/promises').then(({ readFile }) =>
+    readFile(new URL('../../src/middleware.ts', import.meta.url), 'utf8'),
+  );
+
+  assert.match(source, /const routedPath = adminRewritePath \?\? url\.pathname/);
+  assert.match(source, /getAdminRouteRule\(\s*routedPath,\s*context\.request\.method,\s*host/);
+  assert.match(source, /Response\.redirect\(new URL\(ADMIN_DASHBOARD_PATH, url\.origin\), 302\)/);
+  assert.match(source, /await context\.rewrite\(adminRewritePath\)/);
 });

@@ -30,4 +30,3 @@ controls:
   require_verified_destination: true
   mailbox_credentials_in_repository: false
   newsletter_marketing_send_via_cloudflare_transactional_service: false
-
