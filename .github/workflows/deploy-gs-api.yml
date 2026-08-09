@@ -1,8 +1,16 @@
-name: Deploy Goldshore API
+name: Inventory gs-api configuration
 
+# Read-only drift inventory. Cloudflare production configuration is changed only
+# by an approved human in the dashboard; this workflow has no Cloudflare credentials.
 on:
+  pull_request:
+    paths:
+      - 'apps/gs-api/**'
+      - 'scripts/export-cloudflare-inventory.py'
+      - 'infra/Cloudflare/dashboard-inventory.json'
+      - '.github/workflows/deploy-gs-api.yml'
   push:
-    branches: [main, stage]
+    branches: [main]
     paths:
       - 'apps/gs-api/**'
       - 'packages/**'
@@ -18,9 +26,17 @@ on:
 concurrency:
   group: deploy-gs-api-${{ github.ref }}
   cancel-in-progress: false
+      - 'scripts/export-cloudflare-inventory.py'
+      - 'infra/Cloudflare/dashboard-inventory.json'
+      - '.github/workflows/deploy-gs-api.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
-  deploy:
+  inventory:
+    name: Export redacted expected state
     runs-on: ubuntu-latest
     environment:
       name: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
@@ -32,6 +48,12 @@ jobs:
       HEALTH_ORIGIN: ${{ github.ref == 'refs/heads/main' && 'https://api.goldshore.ai' || 'https://api-preview.goldshore.ai' }}
     steps:
       - uses: actions/checkout@v7.0.1
+      - name: Export binding names, routes, Access IDs, and secret names
+        run: python3 scripts/export-cloudflare-inventory.py cloudflare-inventory.json
+      - name: Display redacted inventory
+        run: jq . cloudflare-inventory.json
+      - name: Upload drift-review artifact
+        uses: actions/upload-artifact@v6
         with:
           fetch-depth: 0
 
@@ -105,3 +127,6 @@ jobs:
 
       - name: Health check promoted deployment
         run: scripts/cloudflare/health-check.sh "$HEALTH_ORIGIN/health"
+          name: cloudflare-inventory-${{ github.run_id }}-deploy-gs-api
+          path: cloudflare-inventory.json
+          retention-days: 30
