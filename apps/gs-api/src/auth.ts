@@ -22,11 +22,14 @@ export const getActor = (claims: AccessTokenPayload | null, request: Request) =>
 export const logAdminAction = async (env: Env, entry: Omit<AuditEvent, "timestamp">) => {
   const timestamp = new Date().toISOString();
   const payload: AuditEvent = { ...entry, timestamp };
-  if (!env?.KV || typeof env.KV.put !== "function") {
+  if (!env?.PLATFORM_DB) {
     return payload;
   }
-  const key = `audit:admin:${timestamp}:${crypto.randomUUID()}`;
-  await env.KV.put(key, JSON.stringify(payload));
+  await env.PLATFORM_DB.prepare(
+    `INSERT INTO audit_events (id, occurred_at, actor, action, status, metadata_json)
+     VALUES (?, ?, ?, ?, ?, ?)`
+  ).bind(crypto.randomUUID(), timestamp, entry.actor ?? "unknown", entry.action,
+    entry.status, JSON.stringify(entry.metadata ?? {})).run();
   return payload;
 };
 

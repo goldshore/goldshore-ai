@@ -1,0 +1,104 @@
+{
+  "servers": [
+    {
+      "name": "cloudflare",
+      "type": "http",
+      "url": "https://api.cloudflare.com/client/v4",
+      "description": "Cloudflare Developer Platform - Query workers, bindings, KV, D1, R2, and deployment status",
+      "auth": {
+        "type": "bearer",
+        "token_env": "CLOUDFLARE_API_TOKEN"
+      },
+      "headers": {
+        "X-Auth-Email": "${CLOUDFLARE_EMAIL}",
+        "X-Auth-Key": "${CLOUDFLARE_API_KEY}"
+      },
+      "account_id": "f77de112d2019e5456a3198a8bb50bd2",
+      "tools": [
+        "workers_list",
+        "workers_get_worker",
+        "workers_get_worker_code",
+        "kv_namespaces_list",
+        "d1_databases_list",
+        "d1_database_query",
+        "r2_buckets_list"
+      ]
+    },
+    {
+      "name": "github",
+      "type": "mcp",
+      "description": "GitHub MCP Server - Manage issues, PRs, branches, deployments, and audit logs",
+      "auth": {
+        "type": "token",
+        "token_env": "GITHUB_TOKEN"
+      },
+      "repository": "marzton/goldshore-ai",
+      "tools": [
+        "list_issues",
+        "search_issues",
+        "list_pull_requests",
+        "create_pull_request",
+        "pull_request_read",
+        "pull_request_review_write",
+        "create_branch",
+        "list_commits",
+        "push_files"
+      ]
+    },
+    {
+      "name": "anthropic-docs",
+      "type": "http",
+      "url": "https://api.anthropic.com/docs",
+      "description": "Anthropic Documentation - Claude API, SDK, models, pricing, prompt caching",
+      "auth": {
+        "type": "none"
+      },
+      "tools": [
+        "search_docs",
+        "get_model_info",
+        "get_pricing",
+        "get_token_limits"
+      ]
+    },
+    {
+      "name": "wrangler-docs",
+      "type": "http",
+      "url": "https://developers.cloudflare.com/workers",
+      "description": "Cloudflare Workers Documentation - Wrangler CLI, deployment, configuration",
+      "auth": {
+        "type": "none"
+      },
+      "tools": [
+        "search_wrangler_docs",
+        "get_wrangler_config_schema"
+      ]
+    }
+  ],
+  "defaults": {
+    "log_level": "info",
+    "timeout_ms": 30000,
+    "retry_count": 3,
+    "retry_delay_ms": 1000
+  },
+  "ai_agent_permissions": {
+    "allowed_tools": [
+      "cloudflare:workers_list",
+      "cloudflare:workers_get_worker",
+      "cloudflare:kv_namespaces_list",
+      "cloudflare:d1_databases_list",
+      "github:list_issues",
+      "github:list_pull_requests",
+      "github:create_branch"
+    ],
+    "restricted_tools": [
+      "cloudflare:workers_*_delete",
+      "github:push_files",
+      "github:delete_file"
+    ],
+    "require_approval_for": [
+      "cloudflare:d1_database_query",
+      "github:push_files",
+      "github:create_pull_request"
+    ]
+  }
+}

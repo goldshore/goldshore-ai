@@ -1,38 +1,32 @@
-name: Manage Cloudflare Tokens
+name: Inventory Cloudflare secret names
 
+# Read-only drift inventory. Cloudflare production configuration is changed only
+# by an approved human in the dashboard; this workflow has no Cloudflare credentials.
 on:
+  pull_request:
+    paths:
+      - 'apps/gs-web/wrangler.toml'
+      - 'apps/gs-api/wrangler.toml'
+      - 'infra/Cloudflare/dashboard-inventory.json'
+      - 'scripts/export-cloudflare-inventory.py'
+      - '.github/workflows/manage-cf-tokens.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/gs-web/wrangler.toml'
+      - 'apps/gs-api/wrangler.toml'
+      - 'infra/Cloudflare/dashboard-inventory.json'
+      - 'scripts/export-cloudflare-inventory.py'
+      - '.github/workflows/manage-cf-tokens.yml'
   workflow_dispatch:
-    inputs:
-      action:
-        description: 'Action to perform'
-        required: true
-        type: choice
-        options:
-          - list
-          - create
-          - delete
-      token_name:
-        description: 'Token name (for create/delete)'
-        required: false
-        type: string
-      token_permissions:
-        description: 'Comma-separated permissions for create (e.g. "workers_scripts:edit,d1:edit")'
-        required: false
-        type: string
 
 permissions:
   contents: read
 
 jobs:
-  manage-tokens:
-    name: Manage CF Tokens (${{ inputs.action }})
+  inventory:
+    name: Export redacted expected state
     runs-on: ubuntu-latest
-    env:
-      CF_USER_TOKEN: ${{ secrets.CF_USER_TOKEN }}
-      CF_AUTH_EMAIL: ${{ secrets.CF_AUTH_EMAIL }}
-      CF_AUTH_KEY: ${{ secrets.CF_AUTH_KEY }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-
     steps:
       - name: Normalize CF user token
         env:
