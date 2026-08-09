@@ -83,35 +83,31 @@ describe('gs-api wrangler env bindings', () => {
     });
   }
 
-  it('keeps top-level bindings safe for Cloudflare Workers Builds version uploads', () => {
+  it('keeps all resources scoped to canonical named environments', () => {
     const topLevel = topLevelBlock(wranglerToml);
 
-    assert.match(topLevel, /\[vars\][\s\S]*?ENV\s*=\s*"production"/);
-    assert.match(
-      topLevel,
-      /\[vars\][\s\S]*?CLOUDFLARE_ACCESS_AUDIENCE\s*=\s*"8510d42c31fc791e295427031ffeef7c7ebc0f1b62d8634fbb284bf82562f528"/,
-    );
-    assert.match(
-      topLevel,
-      /\[\[kv_namespaces\]\][\s\S]*?binding\s*=\s*"KV"[\s\S]*?id\s*=\s*"e0b8b807191346c3b0afc25fe716d2cd"/,
-    );
-    assert.match(
-      topLevel,
-      /\[\[d1_databases\]\][\s\S]*?binding\s*=\s*"PLATFORM_DB"/,
-    );
-    assert.doesNotMatch(topLevel, /\[\[d1_databases\]\][\s\S]*?binding\s*=\s*"DB"/);
-    assert.doesNotMatch(topLevel, /database_id\s*=\s*"gs_db_001"/);
-    assert.match(
-      topLevel,
-      /\[\[r2_buckets\]\][\s\S]*?binding\s*=\s*"GS_ASSETS"/,
-    );
-    assert.match(topLevel, /\[ai\][\s\S]*?binding\s*=\s*"AI"/);
-    assert.doesNotMatch(
-      wranglerToml,
-      /\[\[env\.(prod|preview)\.secrets_store_secrets\]\][\s\S]*?binding\s*=\s*"INTEGRATION_MASTER_KEY"/,
-    );
-    assert.doesNotMatch(wranglerToml, /\[\[migrations\]\]/);
-    assert.doesNotMatch(wranglerToml, /\[\[env\.(prod|preview)\.migrations\]\]/);
+    assert.doesNotMatch(wranglerToml, /env\.production/);
+    assert.doesNotMatch(topLevel, /^\[vars\]/m);
+    assert.doesNotMatch(topLevel, /^\[\[(?:kv_namespaces|d1_databases|r2_buckets|queues\.)/m);
+    assert.doesNotMatch(topLevel, /^\[ai\]/m);
+    assert.doesNotMatch(wranglerToml, /database_id\s*=\s*"gs_db_001"/);
+
+    for (const envName of ['prod', 'preview']) {
+      const start = wranglerToml.indexOf(`[env.${envName}]`);
+      const end = envName === 'prod' ? wranglerToml.indexOf('[env.preview]') : wranglerToml.length;
+      const block = wranglerToml.slice(start, end);
+      const bindings = [...block.matchAll(/^binding = "([A-Z0-9_]+)"$/gm)].map((match) => match[1]);
+      assert.equal(bindings.length, new Set(bindings).size, `${envName} has duplicate bindings`);
+    }
+  });
+
+  it('keeps preview fail-closed and preview-only routes', () => {
+    const preview = wranglerToml.slice(wranglerToml.indexOf('[env.preview]'));
+    assert.match(preview, /STATE_MUTATIONS_ENABLED = "false"/);
+    assert.deepEqual(routePatterns(environmentBlock(wranglerToml, 'preview')), [
+      'api-preview.goldshore.ai/*',
+    ]);
+    assert.doesNotMatch(preview, /\[\[env\.preview\.queues\.(?:producers|consumers)\]\]/);
   });
 
   it('routes consolidated backend hostnames to the canonical API Worker', () => {

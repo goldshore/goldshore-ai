@@ -22,41 +22,11 @@ import sites from './routes/sites';
 import forms from './routes/forms';
 import deployments from './routes/deployments';
 import gearswipe from './routes/gearswipe';
-import products from './routes/products';
 import services from './routes/services';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
 
-type Env = {
-  KV: KVNamespace;
-  CONTROL_LOGS?: KVNamespace;
-  RISK_RADAR_CACHE?: KVNamespace;
-  PLATFORM_DB: D1Database;
-  RISK_RADAR_DB?: D1Database;
-  TELEMETRY_DB?: D1Database;
-  GS_ASSETS: R2Bucket;
-  RISK_RADAR_R2?: R2Bucket;
-  AUTH_SESSION?: DurableObjectNamespace;
-  AI: Ai;
-  OPENAI_API_KEY?: string;
-  GEMINI_API_KEY?: string;
-  JWT_SECRET?: string;
-  STRIPE_API_KEY?: string;
-  SENDGRID_API_KEY?: string;
-  ACCESS_CLIENT_SECRET?: string;
-  CLOUDFLARE_ACCESS_AUDIENCE?: string;
-  CLOUDFLARE_TEAM_DOMAIN?: string;
-  CONTROL_SYNC_TOKEN?: string;
-  ALLOWED_ORIGINS?: string;
-  ENV?: string;
-  API_VERSION?: string;
-  DEPLOY_SHA?: string;
-  GIT_SHA?: string;
-  MAIL_BLOCKED_SENDERS?: string;
-  MAIL_ALLOWED_RECIPIENTS?: string;
-  MAIL_FORWARD_TO?: string;
-  FORWARD_TO?: string;
-};
+import type { Env, Variables } from './types';
 
 interface ForwardableEmailMessage {
   from: string;
@@ -72,7 +42,7 @@ type ExecutionContext = {
 
 const app = new Hono<{
   Bindings: Env;
-  Variables: { accessClaims: AccessTokenPayload | null };
+  Variables: Variables;
 }>();
 
 const requiredBindings = ['PLATFORM_DB', 'GS_ASSETS', 'AI'] as const;
@@ -117,6 +87,25 @@ const isPublicPath = (path: string, method: string) => {
 };
 
 app.use('*', secureHeaders());
+
+const SAFE_PREVIEW_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+const PREVIEW_GET_MUTATION_PATHS = [/\/oauth(?:\/|$)/i];
+
+app.use('*', async (c, next) => {
+  if (
+    c.env.ENV === 'preview' &&
+    c.env.STATE_MUTATIONS_ENABLED !== 'true' &&
+    (!SAFE_PREVIEW_METHODS.has(c.req.method.toUpperCase()) ||
+      PREVIEW_GET_MUTATION_PATHS.some((pattern) => pattern.test(c.req.path)))
+  ) {
+    return c.json(
+      { error: 'Preview state mutations are disabled until isolated resources are provisioned.' },
+      503,
+    );
+  }
+
+  await next();
+});
 
 app.use('*', async (c, next) => {
   if (c.env.ENV === 'production') {
@@ -344,29 +333,7 @@ interface MessageBatch<T> {
   messages: Array<Message<T>>;
 }
 
-const processQueueMessage = async (message: Message<any>, env: Env): Promise<void> => {
-  const body = message.body;
-  const type = typeof body === 'object' && body && 'type' in body ? String((body as { type?: unknown }).type) : 'unknown';
-  if (type === 'contact' || type === 'checkout') {
-    console.info({ event: 'mail_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
-    message.ack();
-    return;
-  }
-  if (type === 'trading' || type === 'trading-signal' || type === 'order') {
-    console.info({ event: 'trading_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
-    message.ack();
-    return;
-  }
-  if (type === 'signal' || type === 'atc') {
-    console.info({ event: 'core_signal_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
-    message.ack();
-    return;
-  }
-  console.info({ event: 'agent_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
-  message.ack();
-};
-
-const processQueueMessage = async (message: Message<any>, env: Env): Promise<void> => {
+const processQueueMessage = async (message: Message<any>, _env: Env): Promise<void> => {
   const body = message.body;
   const type = typeof body === 'object' && body && 'type' in body ? String((body as { type?: unknown }).type) : 'unknown';
   if (type === 'contact' || type === 'checkout') {
