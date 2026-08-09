@@ -22,10 +22,15 @@ import sites from './routes/sites';
 import forms from './routes/forms';
 import deployments from './routes/deployments';
 import gearswipe from './routes/gearswipe';
-import products from './routes/products';
 import services from './routes/services';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
+import agent from './routes/agent';
+import mail from './routes/mail';
+import control from './routes/control';
+import trading from './routes/trading';
+import core from './routes/core';
+import { getHostRoutePrefix } from './host-routing';
 
 type Env = {
   KV: KVNamespace;
@@ -52,6 +57,7 @@ type Env = {
   API_VERSION?: string;
   DEPLOY_SHA?: string;
   GIT_SHA?: string;
+  CF_VERSION_METADATA?: { id: string };
   MAIL_BLOCKED_SENDERS?: string;
   MAIL_ALLOWED_RECIPIENTS?: string;
   MAIL_FORWARD_TO?: string;
@@ -112,7 +118,8 @@ const isPublicPath = (path: string, method: string) => {
     path === '/' ||
     path === '/version' ||
     path === '/health' ||
-    path.startsWith('/health/')
+    path.startsWith('/health/') ||
+    (method === 'POST' && /^\/v1\/forms\/[^/]+\/submissions$/.test(path))
   );
 };
 
@@ -143,21 +150,23 @@ app.use(
 );
 
 app.use('*', async (c, next) => {
+  await next();
+  const runtimeVersion = getRuntimeVersion(c.env);
+  const deploySha = c.env.DEPLOY_SHA ?? c.env.GIT_SHA ?? c.env.CF_VERSION_METADATA?.id;
+  c.header('X-GS-API-Version', runtimeVersion);
+  if (deploySha) c.header('X-GS-Deploy-SHA', deploySha);
+});
+
+app.use('*', async (c, next) => {
   const routePrefix = getHostRoutePrefix(c.req.raw);
   if (!routePrefix || c.req.path === routePrefix || c.req.path.startsWith(`${routePrefix}/`)) {
     await next();
     return;
   }
 
-  const correlationId = getCorrelationId(c.req.raw);
   const routedUrl = new URL(c.req.url);
   routedUrl.pathname = `${routePrefix}${routedUrl.pathname === '/' ? '' : routedUrl.pathname}`;
-  const response = await app.fetch(
-    new Request(routedUrl.toString(), c.req.raw),
-    c.env,
-    getOptionalExecutionContext(c),
-  );
-  return withCorrelationId(response, correlationId);
+  return app.fetch(new Request(routedUrl.toString(), c.req.raw), c.env);
 });
 
 // Enforce Authentication (Defense in Depth)
@@ -270,6 +279,13 @@ app.route('/pages', pages);
 app.route('/internal', internal);
 app.route('/products', products);
 app.route('/services', services);
+// Host aliases are rewritten into these shared route modules above. They do
+// not own independent authentication, CORS, or security middleware stacks.
+app.route('/agent', agent);
+app.route('/mail', mail);
+app.route('/control', control);
+app.route('/trading', trading);
+app.route('/core', core);
 
 const v1 = new Hono<{ Bindings: Env }>();
 v1.route('/users', users);
@@ -296,6 +312,20 @@ interface Message<T> {
 interface MessageBatch<T> {
   messages: Array<Message<T>>;
 }
+
+const processQueueMessage = async (message: Message<any>, _env: Env): Promise<void> => {
+  const body = message.body;
+  const type = typeof body === 'object' && body && 'type' in body ? String((body as { type?: unknown }).type) : 'unknown';
+  const event = type === 'contact' || type === 'checkout'
+    ? 'mail_job_processed'
+    : type === 'trading' || type === 'trading-signal' || type === 'order'
+      ? 'trading_job_processed'
+      : type === 'signal' || type === 'atc'
+        ? 'core_signal_job_processed'
+        : 'agent_job_processed';
+  console.info({ event, id: message.id, type, timestamp: new Date().toISOString() });
+  message.ack();
+};
 
 type DurableObjectState = {
   id: { toString(): string };
@@ -331,61 +361,6 @@ const readInboxLogs = async (kv: KVNamespace) => {
   } catch {
     return [];
   }
-};
-
-interface Message<T> {
-  id: string;
-  body: T;
-  ack(): void;
-  retry(): void;
-}
-
-interface MessageBatch<T> {
-  messages: Array<Message<T>>;
-}
-
-const processQueueMessage = async (message: Message<any>, env: Env): Promise<void> => {
-  const body = message.body;
-  const type = typeof body === 'object' && body && 'type' in body ? String((body as { type?: unknown }).type) : 'unknown';
-  if (type === 'contact' || type === 'checkout') {
-    console.info({ event: 'mail_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
-    message.ack();
-    return;
-  }
-  if (type === 'trading' || type === 'trading-signal' || type === 'order') {
-    console.info({ event: 'trading_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
-    message.ack();
-    return;
-  }
-  if (type === 'signal' || type === 'atc') {
-    console.info({ event: 'core_signal_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
-    message.ack();
-    return;
-  }
-  console.info({ event: 'agent_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
-  message.ack();
-};
-
-const processQueueMessage = async (message: Message<any>, env: Env): Promise<void> => {
-  const body = message.body;
-  const type = typeof body === 'object' && body && 'type' in body ? String((body as { type?: unknown }).type) : 'unknown';
-  if (type === 'contact' || type === 'checkout') {
-    console.info({ event: 'mail_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
-    message.ack();
-    return;
-  }
-  if (type === 'trading' || type === 'trading-signal' || type === 'order') {
-    console.info({ event: 'trading_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
-    message.ack();
-    return;
-  }
-  if (type === 'signal' || type === 'atc') {
-    console.info({ event: 'core_signal_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
-    message.ack();
-    return;
-  }
-  console.info({ event: 'agent_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
-  message.ack();
 };
 
 export default {
