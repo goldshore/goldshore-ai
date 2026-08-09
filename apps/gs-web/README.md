@@ -29,28 +29,6 @@ Runtime variables include `PUBLIC_API`, build diagnostics, Cloudflare Access
 settings, and public provider identifiers. Secrets belong in Cloudflare secrets,
 not this repository. `gs-web` does not currently read `GS_CONFIG` directly; do
 not add that binding without a concrete request-time consumer.
-- Pages project name: `gs-web` (production), `gs-web-staging` (staging)
-- Staging is the visual source of truth for the production theme and shell.
-- Pages bindings config: `infra/cloudflare/goldshore-web.wrangler.toml`
-- Preview runtime bindings commonly set by CI:
-  - `PUBLIC_API=https://api-preview.goldshore.ai`
-  - `PUBLIC_GATEWAY=https://gw-preview.goldshore.ai`
-- Production runtime bindings commonly set by CI:
-  - `PUBLIC_API=https://api.goldshore.ai`
-  - `PUBLIC_GATEWAY=https://gw.goldshore.ai`
-- Build diagnostics exposed on `/status`:
-  - `PUBLIC_BUILD_TIMESTAMP`
-  - `PUBLIC_COMMIT_HASH`
-  - `PUBLIC_RELEASE_LABEL` (optional)
-- Pages project: `gs-web`
-- Local/app Wrangler config: `apps/gs-web/wrangler.jsonc`
-- Canonical Cloudflare manifest: `infra/Cloudflare/gs-web.wrangler.toml`
-- `gs-web` does not currently read `GS_CONFIG` directly.
-- Do not add a `GS_CONFIG` binding to the web Pages project unless a concrete `apps/gs-web` runtime consumer needs live request-time reads.
-- Preview and production deployments are driven by the live workflows under `.github/workflows/`.
-- Staging environments commonly point browser-visible runtime variables at preview services such as `https://api-preview.goldshore.ai` and `https://gw-preview.goldshore.ai`.
-- `gs-web` does not currently read `GS_CONFIG` directly.
-- Do not add a `GS_CONFIG` binding to the web Pages project unless a concrete `apps/gs-web` runtime consumer needs live request-time reads.
 
 ## Routes and endpoints
 

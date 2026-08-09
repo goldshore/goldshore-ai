@@ -20,7 +20,7 @@ export default defineConfig({
     server: isLocalDev ? { allowedHosts: true } : undefined,
     build: {
       // Disable minification to avoid lightningcss @keyframes issues
-      minify: false
+      minify: false,
     },
     resolve: {
       ...baseConfig.vite?.resolve,

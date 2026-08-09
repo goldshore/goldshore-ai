@@ -34,8 +34,6 @@ jobs:
   # together through the canonical Worker-with-Assets release.
   deploy:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-  inventory:
-    name: Export redacted expected state
     runs-on: ubuntu-latest
     permissions:
       contents: read
