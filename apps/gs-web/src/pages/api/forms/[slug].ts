@@ -212,11 +212,16 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     .bind(slug)
     .all();
 
-  const row = result?.results?.[0] as Record<string, string> | undefined;
-  if (!row) {
-    return new Response('Form not found.', { status: 404 });
+const forwardedHeaders = (request: Request) => {
+  const headers = new Headers();
+  for (const name of ['accept', 'authorization', 'cookie', 'cf-connecting-ip', 'user-agent', 'content-type']) {
+    const value = request.headers.get(name);
+    if (value) headers.set(name, value);
   }
   return headers;
+};
+
+const proxy = async (request: Request, env: Env | undefined, slug?: string) => {
 };
 
 export const GET: APIRoute = async ({ request, locals, params }) => {
