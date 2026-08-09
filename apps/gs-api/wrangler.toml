@@ -97,14 +97,6 @@ id = "0b56873b6d7b451f9279481920a15447"
 binding = "TRADING_KV"
 id = "9b3314c3b7af40a284a8c9b6e2990709"
 
-[[env.prod.kv_namespaces]]
-binding = "TRADING_KV"
-id = "9b3314c3b7af40a284a8c9b6e2990709"
-
-[[env.prod.kv_namespaces]]
-binding = "TRADING_KV"
-id = "9b3314c3b7af40a284a8c9b6e2990709"
-
 # ── R2 ──────────────────────────────────────────────────────────────────────────────────────
 [[env.prod.r2_buckets]]
 binding = "GS_ASSETS"
