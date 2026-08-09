@@ -112,7 +112,7 @@ const knownSharedKvIds = new Set([
   '09e43cb8bd4749fdaaed0dc9d4ff2284',
 ]);
 const knownExternalKvIds = new Set(['0b56873b6d7b451f9279481920a15447']);
-const knownExternalR2 = new Set(['risk-radar-raw']);
+const knownExternalR2 = new Set(['risk-radar-raw', 'gs-risk-radar-raw', 'gs-risk-radar-raw-preview']);
 const knownExternalD1 = new Set(['b0bf3b0e-a7d0-49ae-ac82-4f19450b2ce2']);
 const knownExternalAudience = new Set();
 
@@ -137,22 +137,25 @@ for (const file of appTomls) {
     const shared = knownSharedKvIds.has(id);
     const external = knownExternalKvIds.has(id);
     const ok = existsIn(kvNamespaces, 'id', id);
-    rows.push({ type: 'KV', file, item: id, status: ok ? 'ok' : 'missing', detail: shared ? 'shared' : external ? 'external' : '' });
-    if (!ok) failed = true;
+    const status = ok ? 'ok' : external ? 'warning' : 'missing';
+    rows.push({ type: 'KV', file, item: id, status, detail: shared ? 'shared' : external ? 'external' : '' });
+    if (!ok && !external) failed = true;
   }
 
   for (const id of new Set(parsed.d1Ids)) {
     const external = knownExternalD1.has(id);
     const ok = existsIn(d1Databases, 'uuid', id) || existsIn(d1Databases, 'id', id);
-    rows.push({ type: 'D1', file, item: id, status: ok ? 'ok' : 'missing', detail: external ? 'external' : '' });
-    if (!ok) failed = true;
+    const status = ok ? 'ok' : external ? 'warning' : 'missing';
+    rows.push({ type: 'D1', file, item: id, status, detail: external ? 'external' : '' });
+    if (!ok && !external) failed = true;
   }
 
   for (const name of new Set(parsed.bucketNames)) {
     const external = knownExternalR2.has(name);
     const ok = existsIn(r2Buckets, 'name', name);
-    rows.push({ type: 'R2', file, item: name, status: ok ? 'ok' : 'missing', detail: external ? 'external' : '' });
-    if (!ok) failed = true;
+    const status = ok ? 'ok' : external ? 'warning' : 'missing';
+    rows.push({ type: 'R2', file, item: name, status, detail: external ? 'external' : '' });
+    if (!ok && !external) failed = true;
   }
 
   for (const queue of new Set(parsed.queueNames)) {
