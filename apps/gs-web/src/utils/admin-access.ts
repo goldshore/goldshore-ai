@@ -283,11 +283,11 @@ export const authorizeAdminRequest = async (
   env: AccessEnv | undefined,
   rule: AdminRouteRule,
 ): Promise<AdminAuthorizationResult> => {
-  if (!env?.JWT_SECRET && !env?.CLOUDFLARE_TEAM_DOMAIN) {
+  if (!env?.JWT_SECRET) {
     return {
       ok: false,
       status: 503,
-      error: 'Admin access is misconfigured: no JWT verifier is configured.',
+      error: 'Admin access is misconfigured: JWT_SECRET is missing.',
     };
   }
 

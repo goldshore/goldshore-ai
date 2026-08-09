@@ -171,10 +171,6 @@ MAILCHANNELS_SENDER_NAME = "GoldShore"
 #   Value: <Turnstile secret key from https://dash.cloudflare.com/>
 # Required for validating Turnstile responses on form submissions.
 
-# ── AI ───────────────────────────────────────────────────────────────────────
-[env.prod.ai]
-binding = "AI"
-
 # ── KV ───────────────────────────────────────────────────────────────────────
 [[env.prod.kv_namespaces]]
 binding = "KV"
@@ -200,12 +196,6 @@ bucket_name = "gs-telemetry-storage"
 [[env.prod.r2_buckets]]
 binding = "RISK_RADAR_R2"
 bucket_name = "gs-risk-radar-raw"
-
-# ── D1 ──────────────────────────────────────────────────────────────────────────────────────
-[[env.production.d1_databases]]
-binding = "DB"
-database_name = "goldshore"
-database_id = "gs_db_001"
 
 # ── D1 ───────────────────────────────────────────────────────────────────────
 [[env.prod.d1_databases]]
@@ -321,10 +311,6 @@ CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
 PUBLIC_SITE_URL = "https://preview.goldshore.ai"
 MAILCHANNELS_SENDER_NAME = "GoldShore"
 
-# ── AI ───────────────────────────────────────────────────────────────────────
-[env.preview.ai]
-binding = "AI"
-
 # ── Secrets ──────────────────────────────────────────────────────────────────
 # MAILCHANNELS_SENDER_EMAIL secret — see env.prod above for the command;
 # use --env preview --name gs-api instead.
@@ -412,6 +398,10 @@ database_id = "750c469c-788d-49e8-9254-77231cffd70f"
 binding = "PAPER_DB"
 database_name = "goldshore-paper-trading"
 database_id = "af94f483-b98b-41c5-aa23-3fbed2764b52"
+
+# ── AI ───────────────────────────────────────────────────────────────────────
+[env.preview.ai]
+binding = "AI"
 
 # ── Queues ───────────────────────────────────────────────────────────────────
 [[env.preview.queues.producers]]
