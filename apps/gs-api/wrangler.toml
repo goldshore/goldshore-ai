@@ -13,7 +13,9 @@ ENV = "production"
 CLOUDFLARE_ACCESS_AUDIENCE = "8510d42c31fc791e295427031ffeef7c7ebc0f1b62d8634fbb284bf82562f528"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
-GOOGLE_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/goldclaw/oauth/google/callback"
+GOOGLE_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/admin/google/oauth/callback"
+GOOGLE_BUSINESS_OWNERSHIP_VERIFIED = "false"
+GOOGLE_OAUTH_PRODUCTION_APPROVED = "false"
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
 PUBLIC_SITE_URL = "https://goldshore.ai"
 MAILCHANNELS_SENDER_NAME = "GoldShore"
@@ -132,7 +134,9 @@ CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 # CONTROL_SYNC_TOKEN is a Worker secret. Keep it out of vars so deploys
 # preserve the remote secret instead of replacing it with a placeholder.
 GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
-GOOGLE_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/goldclaw/oauth/google/callback"
+GOOGLE_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/admin/google/oauth/callback"
+GOOGLE_BUSINESS_OWNERSHIP_VERIFIED = "false"
+GOOGLE_OAUTH_PRODUCTION_APPROVED = "false"
 GITHUB_CLIENT_ID = "YOUR_GITHUB_CLIENT_ID_PROD"
 GITHUB_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/auth/github/callback"
 TURNSTILE_SITE_KEY = "YOUR_TURNSTILE_SITE_KEY_PROD"
@@ -303,6 +307,9 @@ routes = [
 [env.preview.vars]
 ENV = "preview"
 GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
+GOOGLE_OAUTH_REDIRECT_URI = "https://api-preview.goldshore.ai/admin/google/oauth/callback"
+GOOGLE_BUSINESS_OWNERSHIP_VERIFIED = "false"
+GOOGLE_OAUTH_PRODUCTION_APPROVED = "false"
 GITHUB_CLIENT_ID = "YOUR_GITHUB_CLIENT_ID_PREVIEW"
 GITHUB_OAUTH_REDIRECT_URI = "https://api-preview.goldshore.ai/auth/github/callback"
 TURNSTILE_SITE_KEY = "YOUR_TURNSTILE_SITE_KEY_PREVIEW"
@@ -422,4 +429,3 @@ queue = "gs-mail-dead-letter"
 # ── Secrets Store ────────────────────────────────────────────────────────────
 # Secrets Store bindings are per secret, not a store object. The runtime reads
 # env.INTEGRATION_MASTER_KEY directly.
-

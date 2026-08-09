@@ -19,7 +19,12 @@ export const ADMIN_PERMISSIONS = [
   "users:read",
   "users:manage",
   "audit:read",
-  "ai:analyze"
+  "ai:analyze",
+  "google-business:read",
+  "google-business:publish",
+  "google-business:locations:manage",
+  "google-business:reviews:manage",
+  "google-business:accounts:manage"
 ] as const;
 export type AdminPermission = (typeof ADMIN_PERMISSIONS)[number];
 

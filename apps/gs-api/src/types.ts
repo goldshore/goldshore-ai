@@ -6,6 +6,7 @@ export type Env = {
   CONTROL_LOGS?: KVNamespace;
   RISK_RADAR_CACHE?: KVNamespace;
   PLATFORM_DB: D1Database;
+  AUDIT_DB: D1Database;
   RISK_RADAR_DB?: D1Database;
   TELEMETRY_DB?: D1Database;
   GS_ASSETS: R2Bucket;
@@ -98,6 +99,10 @@ export type Env = {
   GOLDCLAW_SANDBOX_API_TOKEN?: string;
   GOLDCLAW_SANDBOX_PROVIDER?: string;
   OAUTH_TOKEN_ENCRYPTION_KEY?: string;
+  GOOGLE_BUSINESS_OWNERSHIP_VERIFIED?: string;
+  GOOGLE_OAUTH_PRODUCTION_APPROVED?: string;
+  GOOGLE_BUSINESS_ACCOUNT_IDS?: string;
+  GOOGLE_BUSINESS_LOCATION_IDS?: string;
 };
 
 export type Variables = {
