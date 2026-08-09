@@ -1,9 +1,3 @@
-export function serializeCsp(directives: ContentSecurityPolicyDirectives): string {
-  return Object.entries(directives)
-    .map(([directive, sources]) => `${directive} ${sources.join(' ')}`)
-    .join('; ');
-}
-
 const SELF = "'self'";
 const UNSAFE_INLINE = "'unsafe-inline'";
 const NONE = "'none'";
@@ -43,6 +37,11 @@ const WEB_HEADER_DIRECTIVES = {
   'frame-ancestors': [NONE],
 } as const satisfies ContentSecurityPolicyDirectives;
 
+export const serializeCsp = (directives: ContentSecurityPolicyDirectives): string =>
+  Object.entries(directives)
+    .map(([directive, values]) => `${directive} ${values.join(' ')}`)
+    .join('; ');
+
 export function buildContentSecurityPolicy(
   directives: ContentSecurityPolicyDirectives = WEB_CSP_DIRECTIVES,
 ): string {
@@ -52,3 +51,4 @@ export function buildContentSecurityPolicy(
 export const WEB_META_CSP = buildContentSecurityPolicy(WEB_META_DIRECTIVES);
 export const WEB_HEADERS_CSP = buildContentSecurityPolicy(WEB_HEADER_DIRECTIVES);
 export const WEB_CONTENT_SECURITY_POLICY = WEB_HEADERS_CSP;
+

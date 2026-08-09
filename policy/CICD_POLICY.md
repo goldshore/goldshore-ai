@@ -13,7 +13,7 @@
 
 | Secret | Purpose | Scope | Owner | Rotation |
 |---|---|---|---|---|
-| `CLOUDFLARE_BUILD_API_TOKEN` | Deploy all workers + infra operations | All gs-* workers, Pages, API calls | gs-control service owner | 90 days |
+| `CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN` | Deploy this repository's Cloudflare resources | `goldshore-ai` Workers, Pages, Queues, and Workflows only | goldshore-ai service owner / platform ops | 90 days |
 
 ### Secondary Secrets (Per-Service)
 
@@ -60,7 +60,7 @@ Required controls:
 ```yaml
 # .github/workflows/deploy-gs-api.yml
 env:
-  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
 steps:
@@ -90,10 +90,51 @@ env:
 
 ### Migration behavior from `CLOUDFLARE_API_TOKEN`
 
-- CI/deploy and infra automation must use `secrets.CLOUDFLARE_BUILD_API_TOKEN` as the primary and only token source.
+- CI/deploy and infra automation in this repository must use `secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN` as the primary and only token source.
 - Backward compatibility is handled by **secret mirroring at the repository/org secret store**, not by workflow `||` expressions.
 - During migration, platform ops may keep `CLOUDFLARE_API_TOKEN` secret value synchronized to the same token out-of-band, then remove legacy secret references after verification.
 - Workflow-level fallback (`secrets.A || secrets.B`) is disallowed because it obscures which credential was used during deployment.
+
+
+## Cloudflare Token Compartmentalization
+
+### Incident response for exposed tokens
+
+1. Revoke the exposed Cloudflare API token immediately in the Cloudflare dashboard.
+2. Search GitHub organization, repository, environment, and Dependabot secrets for aliases of the exposed value.
+3. Remove any mirrored or fallback secrets that can still resolve to the exposed token.
+4. Re-run the affected deploy workflow only after the replacement token is installed.
+5. Record the revocation time, replacement token name, and affected repositories in the security incident log.
+
+### Token classes
+
+| Token | Repository secret | Intended repository | Allowed use |
+|---|---|---|---|
+| Mother/build token | `CLOUDFLARE_GOLDSHORE_BUILD_TOKEN` | `marzton/goldshore` | Central build orchestration and controlled cross-repo dispatch only. |
+| `goldshore-ai` deploy token | `CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN` | `marzton/goldshore-ai` | Deploy only the Cloudflare assets owned by this repository. |
+| `goldshore-admin` deploy token | `CLOUDFLARE_GOLDSHORE_ADMIN_DEPLOY_TOKEN` | `marzton/goldshore-admin` | Deploy only the admin Pages/Worker assets owned by that repository. |
+| `goldshore-api` deploy token | `CLOUDFLARE_GOLDSHORE_API_DEPLOY_TOKEN` | `marzton/goldshore-api` | Deploy only the API Workers, Queues, Workflows, and related bindings owned by that repository. |
+| `goldshore-gateway` deploy token | `CLOUDFLARE_GOLDSHORE_GATEWAY_DEPLOY_TOKEN` | `marzton/goldshore-gateway` | Deploy only gateway Workers and route bindings owned by that repository. |
+
+### Required scoping rules
+
+- Do not grant account-wide edit permissions to app repository deploy tokens.
+- Scope each deploy token to the minimum Cloudflare account, zones, Workers scripts, Pages projects, Queues, and Workflows that the repository actually deploys.
+- Keep the mother/build token out of app repositories; app repositories must store only their own deploy token plus `CLOUDFLARE_ACCOUNT_ID`.
+- Remove legacy aliases such as `CLOUDFLARE_API_TOKEN`, `CF_WORKERS_BUILDS`, and broad `CLOUDFLARE_BUILD_API_TOKEN` secrets from app repositories after migration.
+- Do not add GitHub Actions fallback expressions between Cloudflare token secrets. A workflow must fail if its repository-specific token is missing.
+
+### `goldshore-ai` GitHub Actions contract
+
+`marzton/goldshore-ai` deploy workflows must read Cloudflare credentials from:
+
+```yaml
+env:
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
+  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+```
+
+The repository secret `CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN` must be able to deploy only the canonical Cloudflare resources listed for this repository in `infra/Cloudflare/README.md` and `policy/REPO_OWNERSHIP.md`.
 
 ## Workflow Standards
 
@@ -108,7 +149,7 @@ env:
 2. **Use canonical token only**
    ```yaml
    env:
-     CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+     CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
    ```
 
 3. **Log deployment metadata**
@@ -121,7 +162,7 @@ env:
    ```yaml
    - name: Check secrets
      run: |
-       [[ -n "$CLOUDFLARE_BUILD_API_TOKEN" ]] || { echo "Missing CLOUDFLARE_BUILD_API_TOKEN"; exit 1; }
+       [[ -n "$CLOUDFLARE_API_TOKEN" ]] || { echo "Missing CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN"; exit 1; }
        [[ -n "$CLOUDFLARE_ACCOUNT_ID" ]] || { echo "Missing CLOUDFLARE_ACCOUNT_ID"; exit 1; }
    ```
 
