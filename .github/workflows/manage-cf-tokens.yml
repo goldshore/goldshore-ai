@@ -12,7 +12,7 @@ on:
           - create
           - delete
       token_name:
-        description: 'Token name (for create/delete)'
+        description: 'Token name (required for create/delete)'
         required: false
         type: string
       token_permissions:
@@ -23,9 +23,77 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: manage-cf-tokens
+  cancel-in-progress: false
+
 jobs:
-  manage-tokens:
-    name: Manage CF Tokens (${{ inputs.action }})
+  validate-request:
+    name: Validate token-management request
+    runs-on: ubuntu-latest
+    outputs:
+      action: ${{ steps.validate.outputs.action }}
+    steps:
+      - name: Validate trusted manual invocation
+        id: validate
+        env:
+          ACTION: ${{ inputs.action }}
+          EXPIRES_ON: ${{ inputs.expires_on }}
+          GITHUB_REF: ${{ github.ref }}
+          TOKEN_NAME: ${{ inputs.token_name }}
+          TOKEN_PERMISSIONS: ${{ inputs.token_permissions }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "This workflow may only be run from the main branch. Current ref: $GITHUB_REF" >&2
+            exit 1
+          fi
+
+          case "$ACTION" in
+            list|create|delete) ;;
+            *) echo "Unsupported action: $ACTION" >&2; exit 1 ;;
+          esac
+
+          if [[ "$ACTION" == "create" || "$ACTION" == "delete" ]]; then
+            if [[ -z "$TOKEN_NAME" ]]; then
+              echo "token_name is required for $ACTION." >&2
+              exit 1
+            fi
+          fi
+
+          if [[ "$ACTION" == "create" ]]; then
+            if [[ -z "$TOKEN_PERMISSIONS" ]]; then
+              echo "token_permissions is required for create; do not rely on implicit broad defaults." >&2
+              exit 1
+            fi
+            if [[ -z "$EXPIRES_ON" ]]; then
+              echo "expires_on is required for create and must use ISO 8601 UTC, for example 2026-12-31T23:59:59Z." >&2
+              exit 1
+            fi
+            python3 - <<'PY'
+          import datetime
+          import os
+          import re
+
+          value = os.environ["EXPIRES_ON"]
+          if not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", value):
+              raise SystemExit("expires_on must use ISO 8601 UTC format, for example 2026-12-31T23:59:59Z")
+          expires = datetime.datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=datetime.timezone.utc)
+          now = datetime.datetime.now(datetime.timezone.utc)
+          if expires <= now:
+              raise SystemExit("expires_on must be in the future")
+          if expires > now + datetime.timedelta(days=370):
+              raise SystemExit("expires_on must be no more than 370 days in the future")
+          PY
+          fi
+
+          echo "action=$ACTION" >> "$GITHUB_OUTPUT"
+
+  list-tokens:
+    name: List CF Tokens
+    needs: validate-request
+    if: needs.validate-request.outputs.action == 'list'
     runs-on: ubuntu-latest
     env:
       CF_USER_TOKEN: ${{ secrets.CF_USER_TOKEN }}
@@ -69,7 +137,6 @@ jobs:
           PY
 
       - name: List tokens
-        if: inputs.action == 'list'
         env:
           CF_USER_TOKEN: ${{ secrets.CF_USER_TOKEN }}
         run: |
@@ -103,18 +170,26 @@ jobs:
                   raise SystemExit(f"CF API HTTP {e.code} on {path}:\n{body}")
 
           tokens = cf_get("user/tokens")
-          print(f"{'Name':<40} {'Status':<10} {'Last Used'}")
-          print("-" * 70)
+          print(f"{'Name':<40} {'Status':<10} {'Last Used/Modified'}")
+          print("-" * 75)
           for t in tokens:
-              last = t.get("modified_on", "never")[:10]
+              last = (t.get("last_used_on") or t.get("modified_on") or "never")[:10]
               print(f"{t['name']:<40} {t['status']:<10} {last}")
           PY
 
+  mutate-token:
+    name: Mutate CF Tokens (${{ inputs.action }})
+    needs: validate-request
+    if: needs.validate-request.outputs.action == 'create' || needs.validate-request.outputs.action == 'delete'
+    runs-on: ubuntu-latest
+    environment: cf-token-management
+    steps:
       - name: Create token
         if: inputs.action == 'create'
         env:
           CF_USER_TOKEN: ${{ secrets.CF_USER_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TOKEN_EXPIRES_ON: ${{ inputs.expires_on }}
           TOKEN_NAME: ${{ inputs.token_name }}
           TOKEN_PERMISSIONS: ${{ inputs.token_permissions }}
         run: |
@@ -148,6 +223,7 @@ jobs:
           }
 
           perms = []
+          unknown = []
           for p in PERMS_RAW.split(","):
               p = p.strip()
               if not p:
@@ -155,10 +231,16 @@ jobs:
               if p in PERM_MAP:
                   perms.append({"id": PERM_MAP[p]["id"], "effect": PERM_MAP[p]["effect"]})
               else:
-                  print(f"WARNING: unknown permission '{p}', skipping")
+                  unknown.append(p)
+
+          if unknown:
+              raise SystemExit(f"Unknown permission(s): {', '.join(unknown)}")
+          if not perms:
+              raise SystemExit("At least one known permission is required")
 
           body = json.dumps({
               "name": NAME,
+              "expires_on": EXPIRES_ON,
               "policies": [{
                   "effect": "allow",
                   "resources": {f"com.cloudflare.api.account.{ACCOUNT}": "*"},

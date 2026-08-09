@@ -27,6 +27,32 @@
 
 ---
 
+
+### Cloudflare User Token Management (`CF_USER_TOKEN`)
+
+`CF_USER_TOKEN` is a privileged GitHub Actions secret used only by `.github/workflows/manage-cf-tokens.yml` to administer Cloudflare API tokens. It is not a deployment token and must not be referenced by worker, Pages, preview, or infrastructure deployment workflows.
+
+| Secret | Allowed actions | Owner | Expiration | Storage |
+|---|---|---|---|---|
+| `CF_USER_TOKEN` | List user tokens, create explicitly scoped account tokens, and delete/revoke user tokens through the manual token-management workflow | Cloudflare account owner / platform ops (`gs-control` service owner) | Maximum 370 days from issue date; rotate at least quarterly and before the recorded Cloudflare expiration date | GitHub Actions secret only |
+
+Required controls:
+
+- `.github/workflows/manage-cf-tokens.yml` must remain `workflow_dispatch` only and must reject runs from any ref other than `refs/heads/main`.
+- Token create/delete operations must run in the `cf-token-management` GitHub Environment, which must be configured with required reviewers from platform ops.
+- Token creation must require an explicit `token_permissions` allow-list and an `expires_on` timestamp in ISO 8601 UTC format. New tokens must expire no more than 370 days after creation.
+- Token deletion is treated as revocation and requires the same `cf-token-management` environment approval as creation.
+- The workflow may print a newly created token value exactly once during the approved create run; operators must immediately copy it into the intended secret store and avoid persisting it in tickets, chat, or logs.
+
+#### Rotation process
+
+1. Platform ops opens the **Manage Cloudflare Tokens** workflow from the `main` branch and selects `list` to inventory existing token names and status.
+2. Platform ops runs the workflow with `create`, a unique `token_name`, the minimum required comma-separated `token_permissions`, and an `expires_on` value no more than 370 days in the future. The run must be approved through the `cf-token-management` environment before Cloudflare is mutated.
+3. Copy the one-time token value into the target GitHub Actions secret, Cloudflare build setting, or other approved secret store. For worker builds, continue to use the canonical `gs-control` build token via `CLOUDFLARE_BUILD_API_TOKEN`.
+4. Validate the dependent workflow or service with the new token.
+5. Run the token-management workflow with `delete` for the old token name after replacement is verified. This revocation also requires `cf-token-management` environment approval.
+6. Record the rotation date, new expiration date, approver, and affected secret name in the platform ops rotation log.
+
 ## Deployment Token Policy
 
 ### ✅ REQUIRED: Use canonical token
