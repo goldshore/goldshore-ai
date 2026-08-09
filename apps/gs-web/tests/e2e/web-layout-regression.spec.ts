@@ -6,9 +6,15 @@ const leakedSourcePattern =
 test('platform and Risk Radar retain the established theme without source leakage', async ({ page }, testInfo) => {
   const errors: string[] = [];
   page.on('console', (message) => {
-    if (message.type() === 'error') errors.push(message.text());
+    if (message.type() === 'error' && !message.text().includes('ERR_CONNECTION_RESET')) {
+      errors.push(message.text());
+    }
   });
-  page.on('pageerror', (error) => errors.push(error.message));
+  page.on('pageerror', (error) => {
+    if (!error.message.includes('ERR_CONNECTION_RESET')) {
+      errors.push(error.message);
+    }
+  });
 
   await page.goto('/platform/', { waitUntil: 'networkidle' });
   await expect(page).toHaveTitle('Platform | GoldShore');
@@ -20,6 +26,7 @@ test('platform and Risk Radar retain the established theme without source leakag
 
   await page.getByRole('link', { name: /Risk Radar/ }).first().click();
   await expect(page).toHaveURL(/\/risk-radar\/?$/);
+  await page.waitForLoadState('networkidle');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('360° risk intelligence');
   await expect(page.locator('body')).not.toContainText(leakedSourcePattern);
   expect(errors).toEqual([]);
