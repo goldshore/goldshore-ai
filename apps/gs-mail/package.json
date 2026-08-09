@@ -1,0 +1,10 @@
+{
+  "name": "@goldshore/gs-mail",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy --env prod",
+    "deploy:preview": "wrangler deploy --env preview"
+  }
+}

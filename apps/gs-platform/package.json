@@ -1,0 +1,20 @@
+{
+  "name": "@goldshore/gs-platform",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev src/index.ts",
+    "deploy": "wrangler deploy --env prod",
+    "build": "wrangler deploy --env prod --dry-run --outdir=dist"
+  },
+  "dependencies": {
+    "@goldshore/auth": "workspace:^",
+    "hono": "^4.12.25"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260708.1",
+    "typescript": "^5.4.0",
+    "wrangler": "^4.83.0"
+  }
+}
