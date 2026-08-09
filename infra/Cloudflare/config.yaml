@@ -2,18 +2,9 @@ account_id_env: CF_ACCOUNT_ID
 zone_id_env: CF_ZONE_ID
 
 projects:
-  pages:
-    - name: gs-web
-      public_url: https://goldshore.ai/
-      smoke_urls:
-        - https://admin.goldshore.ai/
-      output_dir: apps/gs-web/dist
-      max_daily_deploys: 6
-      require_checks: ['smoke', 'lighthouse']
-      skip_if_paths_only:
-        - '^docs/.*'
-        - '^scripts/.*'
-        - '^README.md$'
+  # gs-web is deployed exclusively by Cloudflare Workers Builds. Do not add it
+  # to Pages automation or trigger a second build from this legacy orchestrator.
+  pages: []
 
   workers:
     - script: gs-gateway
