@@ -3,7 +3,6 @@ import {
   hasAdminPermission,
   verifyAccessWithClaims,
   type AdminPermission,
-  type Env,
 } from '@goldshore/auth';
 
 type AccessResult =
@@ -12,7 +11,7 @@ type AccessResult =
 
 export async function requireAdminAccess(
   request: Request,
-  env: Env,
+  env: Record<string, unknown>,
   options?: { requiredPermission?: AdminPermission },
 ): Promise<AccessResult> {
   const claims = await verifyAccessWithClaims(request, env);
@@ -20,11 +19,16 @@ export async function requireAdminAccess(
     return { ok: false, error: 'Unauthorized', status: 401 };
   }
 
-  if (options?.requiredPermission) {
-    const session = buildAdminSession(claims);
-    if (!hasAdminPermission(session.permissions, options.requiredPermission)) {
-      return { ok: false, error: 'Forbidden', status: 403 };
-    }
+  const session = buildAdminSession(claims);
+  if (session.roles.length === 0) {
+    return { ok: false, error: 'Forbidden', status: 403 };
+  }
+
+  if (
+    options?.requiredPermission &&
+    !hasAdminPermission(session.permissions, options.requiredPermission)
+  ) {
+    return { ok: false, error: 'Forbidden', status: 403 };
   }
 
   return { ok: true };
