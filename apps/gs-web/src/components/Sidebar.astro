@@ -1,0 +1,116 @@
+---
+import { SharedHeader } from '@goldshore/ui';
+
+const workerLinks: Array<{ href: string; label: string }> = [
+  { href: '/admin/workers/status', label: 'Status' },
+  { href: '/admin/workers/bindings', label: 'Bindings' },
+  { href: '/admin/workers/routes', label: 'Routes' },
+];
+
+const systemLinks: Array<{ href: string; label: string }> = [
+  { href: '/admin/system/dns', label: 'DNS' },
+  { href: '/admin/system/secrets', label: 'Secrets' },
+  { href: '/admin/system/storage', label: 'Storage' },
+  { href: '/admin/system/pages', label: 'Pages' },
+];
+
+const operationsLinks: Array<{ href: string; label: string }> = [
+  { href: '/admin/platform', label: 'Control Plane' },
+  { href: '/admin/workflows', label: 'API Workflows' },
+  { href: '/admin/customer-email', label: 'Customer Email' },
+  { href: '/admin/subscribe', label: 'Subscribe CTA' },
+  { href: '/admin/contact-forms', label: 'Contact Forms' },
+  { href: '/admin/pages', label: 'Custom Pages' },
+];
+
+const { logo, permissions = [] } = Astro.props;
+
+const isActive = (href: string) => {
+  const currentPath = Astro.url.pathname;
+  const cleanCurrent = currentPath.endsWith('/') ? currentPath.slice(0, -1) : currentPath;
+  const cleanHref = href.endsWith('/') ? href.slice(0, -1) : href;
+  if (cleanCurrent === cleanHref) return true;
+  return cleanCurrent.startsWith(cleanHref + '/');
+};
+---
+<aside class="gs-admin-sidebar" id="admin-sidebar" aria-label="Admin navigation">
+  <SharedHeader
+    class="sidebar-header"
+    href="/"
+    logoSrc={logo?.src || logo || '/logo/gs-penrose.svg'}
+    logoAlt="GoldShore logo"
+  >
+    <span slot="brand-text">GoldShore</span>
+    <button id="sidebar-close" class="sidebar-close" aria-label="Close menu">✕</button>
+  </SharedHeader>
+  <nav class="gs-sidebar-links">
+    <a
+      class={`gs-nav-block ${isActive('/') && Astro.url.pathname === '/' ? 'active' : ''}`}
+      href="/"
+      aria-current={Astro.url.pathname === '/' ? 'page' : undefined}
+    >
+      Dashboard
+    </a>
+
+    <div class="gs-nav-group-label">Operations</div>
+    {operationsLinks.map((link) => (
+      <a
+        class={`gs-nav-block gs-nav-block--sub ${isActive(link.href) ? 'active' : ''}`}
+        href={link.href}
+        aria-current={isActive(link.href) ? 'page' : undefined}
+      >
+        {link.label}
+      </a>
+    ))}
+
+    <div class="gs-nav-group-label">Workers</div>
+    {workerLinks.map((link) => (
+      <a
+        class={`gs-nav-block gs-nav-block--sub ${isActive(link.href) ? 'active' : ''}`}
+        href={link.href}
+        aria-current={isActive(link.href) ? 'page' : undefined}
+      >
+        {link.label}
+      </a>
+    ))}
+
+    <div class="gs-nav-group-label">System</div>
+    {systemLinks.map((link) => (
+      <a
+        class={`gs-nav-block gs-nav-block--sub ${isActive(link.href) ? 'active' : ''}`}
+        href={link.href}
+        aria-current={isActive(link.href) ? 'page' : undefined}
+      >
+        {link.label}
+      </a>
+    ))}
+
+    <a
+      class={`gs-nav-block ${isActive('/admin/users') ? 'active' : ''}`}
+      href="/admin/users"
+      aria-current={isActive('/admin/users') ? 'page' : undefined}
+    >
+      Users
+    </a>
+    <a
+      class={`gs-nav-block ${isActive('/trading') ? 'active' : ''}`}
+      href="/trading"
+      aria-current={isActive('/trading') ? 'page' : undefined}
+    >
+      Trading
+    </a>
+    <a
+      class={`gs-nav-block ${isActive('/admin/settings') ? 'active' : ''}`}
+      href="/admin/settings"
+      aria-current={isActive('/admin/settings') ? 'page' : undefined}
+    >
+      Settings
+    </a>
+
+    <div class="gs-sidebar-footer">
+      <a href="/logout" class="gs-nav-block gs-logout-btn">
+        Logout
+      </a>
+    </div>
+  </nav>
+</aside>

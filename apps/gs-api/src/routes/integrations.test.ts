@@ -1,7 +1,6 @@
-import { describe, it, mock, beforeEach, afterEach } from 'node:test';
+import { describe, it, mock, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { Hono } from 'hono';
-
 import integrations from './integrations';
 import type { Env, Variables } from '../types';
 
@@ -25,10 +24,6 @@ const createTestApp = (claims: any = null) => {
 };
 
 describe('Integration Management API security', () => {
-  beforeEach(() => {
-    mock.restoreAll();
-  });
-
   afterEach(() => {
     mock.restoreAll();
   });
