@@ -66,9 +66,7 @@ const proofPoints = [
           </svg>
         </div>
         <div class="hero-content">
-          <p class="eyebrow">
-            Institutional-grade operational AI
-          </p>
+          <p class="eyebrow">Institutional-grade operational AI</p>
           <h1>Clarity, control, and trust for live AI systems.</h1>
           <p>
             GoldShore.ai delivers resilient infrastructure, observability, and
@@ -76,9 +74,9 @@ const proofPoints = [
             not optional.
           </p>
           <p class="small">
-            The updated site experience centers the SHAS Penrose triangle mark
-            across the hero, navigation, footer, and favicon set so the brand
-            reads consistently from tab icon to full-page layout.
+            The updated site experience centers the Penrose triangle mark across
+            the hero, navigation, footer, and favicon set so the brand reads
+            consistently from tab icon to full-page layout.
           </p>
           <div class="hero-actions">
             <a class="button button-primary" href="/contact"
@@ -136,7 +134,9 @@ const proofPoints = [
       <section class="proof-section" aria-labelledby="proof-title">
         <div class="section-heading">
           <p class="section-kicker">Why GoldShore</p>
-          <h2 id="proof-title">The Penrose mark now matches a sharper site shell.</h2>
+          <h2 id="proof-title">
+            The Penrose mark now matches a sharper site shell.
+          </h2>
           <p class="section-intro">
             The homepage layout has been tightened around clearer hierarchy,
             stronger contrast, and branded visual anchors that better reflect
@@ -349,7 +349,7 @@ const proofPoints = [
 <style>
   .hero {
     position: relative;
-    min-height: calc(100vh - 6rem);
+    min-height: calc(100dvh - var(--header-offset));
     border: 1px solid rgba(120, 157, 204, 0.18);
     border-radius: 1.5rem;
     overflow: hidden;
@@ -430,6 +430,8 @@ const proofPoints = [
     margin-top: 0.5rem;
     color: white;
     font-size: clamp(2.2rem, 4vw, 3.7rem);
+    line-height: 1.02;
+    text-wrap: balance;
   }
 
   .hero-content p {
@@ -438,7 +440,7 @@ const proofPoints = [
 
   .signal-strip {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
     gap: 1rem;
   }
 
@@ -539,7 +541,7 @@ const proofPoints = [
 
   @media (max-width: 720px) {
     .hero {
-      min-height: 82vh;
+      min-height: calc(100dvh - var(--header-offset));
     }
 
     .signal-strip {

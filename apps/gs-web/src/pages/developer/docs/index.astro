@@ -1,6 +1,7 @@
 ---
 import DocsLayout from '../../../layouts/DocsLayout.astro';
 import MDXCodeBlock from '../../../components/MDXCodeBlock.astro';
+export const prerender = false;
 ---
 
 <DocsLayout title="GoldShore Documentation" page={{ slug: 'index' }}>
@@ -14,7 +15,7 @@ import MDXCodeBlock from '../../../components/MDXCodeBlock.astro';
 
   <h2 id="gateway">Gateway</h2>
   <MDXCodeBlock>
-    {import.meta.env.PUBLIC_GATEWAY || 'https://gw.goldshore.ai'}/api/* → gs-api
+    {import.meta.env.PUBLIC_GATEWAY || 'https://gw.goldshore.ai'}/api/* &rarr; gs-api
   </MDXCodeBlock>
 
   <h2 id="auth">Auth</h2>

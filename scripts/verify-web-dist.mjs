@@ -3,10 +3,12 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 
 const distDir = path.resolve('dist');
-const astroDir = path.join(distDir, '_astro');
-const indexPath = path.join(distDir, 'index.html');
+const clientDir = path.join(distDir, 'client');
+const astroDir = path.join(clientDir, '_astro');
+const indexPath = path.join(clientDir, 'index.html');
+const serverEntryPath = path.join(distDir, 'server', 'entry.mjs');
 const webAppRoot = path.resolve('.');
-const webLayoutPath = path.join(webAppRoot, 'src', 'layouts', 'WebLayout.astro');
+const canonicalLayoutPath = path.join(webAppRoot, 'src', 'layouts', 'GoldShoreShell.astro');
 const publicDir = path.join(webAppRoot, 'public');
 
 const errors = [];
@@ -15,8 +17,8 @@ if (!existsSync(distDir)) {
   errors.push(`Missing dist directory: ${distDir}`);
 }
 
-if (!existsSync(indexPath)) {
-  errors.push(`Missing index.html: ${indexPath}`);
+if (!existsSync(indexPath) && !existsSync(serverEntryPath)) {
+  errors.push(`Missing both static index and server entrypoint: ${indexPath}, ${serverEntryPath}`);
 }
 
 const astroFiles = existsSync(astroDir) ? readdirSync(astroDir) : [];
@@ -47,10 +49,10 @@ if (existsSync(indexPath)) {
   }
 }
 
-if (!existsSync(webLayoutPath)) {
-  errors.push(`Missing layout file: ${webLayoutPath}`);
+if (!existsSync(canonicalLayoutPath)) {
+  errors.push(`Missing layout file: ${canonicalLayoutPath}`);
 } else {
-  const layoutSource = readFileSync(webLayoutPath, 'utf8');
+  const layoutSource = readFileSync(canonicalLayoutPath, 'utf8');
   const iconLinkPattern = /<link\s+[^>]*rel=["']icon["'][^>]*>/gi;
   const hrefPattern = /\shref=["']([^"']+)["']/i;
   const declaredIconHrefs = [...layoutSource.matchAll(iconLinkPattern)]
@@ -61,7 +63,7 @@ if (!existsSync(webLayoutPath)) {
     .filter((href) => typeof href === 'string');
 
   if (declaredIconHrefs.length === 0) {
-    errors.push(`No favicon <link rel="icon"> tags found in ${webLayoutPath}`);
+    errors.push(`No favicon <link rel="icon"> tags found in ${canonicalLayoutPath}`);
   }
 
   for (const href of declaredIconHrefs) {
@@ -86,5 +88,6 @@ if (errors.length > 0) {
 }
 
 console.log('✅ gs-web dist integrity check passed');
+console.log(`- Rendering: ${existsSync(indexPath) ? 'prerendered index' : 'server-rendered index'}`);
 console.log(`- CSS bundles: ${cssFiles.length}`);
 console.log(`- JS bundles: ${jsFiles.length}`);

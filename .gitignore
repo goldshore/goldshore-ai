@@ -18,6 +18,7 @@ build
 .env.*
 !.env.example
 *.local
+.dev.vars
 
 # Logs
 *.log
@@ -59,6 +60,7 @@ Thumbs.db
 !.vscode/extensions.json
 !.vscode/settings.json
 !.vscode/launch.json
+!.vscode/tasks.json
 .idea
 *.swp
 *.swo
@@ -92,3 +94,6 @@ reports/*.txt
 
 # Claude local settings (contains secrets)
 .claude/settings.local.json
+.codex-remote-attachments/
+.codex/
+.mcp.json
