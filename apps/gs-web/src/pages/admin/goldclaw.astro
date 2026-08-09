@@ -1,0 +1,426 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const apiBase = (import.meta.env.PUBLIC_API || 'https://api.goldshore.ai').replace(/\/$/, '');
+---
+
+<BaseLayout
+  title="GoldClaw Control | GoldShore Admin"
+  description="GoldClaw monetization, marketing, SEO, and agent integration control surface"
+>
+  <main class="goldclaw-page" data-api-base={apiBase}>
+    <header class="goldclaw-header">
+      <div>
+        <p class="goldclaw-kicker">GoldShore Labs</p>
+        <h1>GoldClaw Control</h1>
+        <p>
+          Monetization and operator intelligence for Google, Meta, Instagram, X,
+          Cloudflare, and sandboxed analysis.
+        </p>
+      </div>
+      <div class="goldclaw-actions">
+        <button id="goldclaw-refresh" type="button">Refresh</button>
+        <button id="goldclaw-google-oauth" type="button">Connect Google</button>
+      </div>
+    </header>
+
+    <section class="goldclaw-summary" aria-label="GoldClaw readiness summary">
+      <article>
+        <span>Total providers</span>
+        <strong id="goldclaw-total">-</strong>
+      </article>
+      <article>
+        <span>Ready</span>
+        <strong id="goldclaw-ready">-</strong>
+      </article>
+      <article>
+        <span>Blocked</span>
+        <strong id="goldclaw-blocked">-</strong>
+      </article>
+      <article>
+        <span>Mode</span>
+        <strong id="goldclaw-mode">draft-first</strong>
+      </article>
+    </section>
+
+    <section class="goldclaw-layout">
+      <div class="goldclaw-panel">
+        <div class="goldclaw-panel__header">
+          <h2>Provider Readiness</h2>
+          <p>Missing values are secret names, not secret contents.</p>
+        </div>
+        <div id="goldclaw-providers" class="goldclaw-provider-list" aria-live="polite">
+          <p class="goldclaw-muted">Loading provider status...</p>
+        </div>
+      </div>
+
+      <div class="goldclaw-panel">
+        <div class="goldclaw-panel__header">
+          <h2>Strategy Brief</h2>
+          <p>GoldClaw drafts strategy from currently available tools.</p>
+        </div>
+        <label class="goldclaw-field">
+          Objective
+          <textarea id="goldclaw-objective" rows="4">rapid monetization, useful client delivery, social growth, SEO performance, and productized service experiments</textarea>
+        </label>
+        <button id="goldclaw-brief" type="button" class="goldclaw-primary">Generate Brief</button>
+        <pre id="goldclaw-brief-output" class="goldclaw-output">No brief generated yet.</pre>
+      </div>
+    </section>
+
+    <section class="goldclaw-panel">
+      <div class="goldclaw-panel__header">
+        <h2>30-Day Launch Track</h2>
+        <p>Build order for getting useful automation live without unsafe write actions.</p>
+      </div>
+      <div id="goldclaw-plan" class="goldclaw-plan"></div>
+    </section>
+  </main>
+
+  <script is:inline>
+    const page = document.querySelector('.goldclaw-page');
+    const apiBase = page?.dataset.apiBase || 'https://api.goldshore.ai';
+
+    const endpoint = (path) => `${apiBase}${path}`;
+
+    const setText = (id, value) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = String(value);
+    };
+
+    const renderProviders = (providers) => {
+      const target = document.getElementById('goldclaw-providers');
+      if (!target) return;
+
+      target.innerHTML = providers.map((provider) => {
+        const status = provider.ready ? 'ready' : 'blocked';
+        const missing = provider.missingSecrets?.length
+          ? `<div class="goldclaw-secrets">${provider.missingSecrets.map((secret) => `<code>${secret}</code>`).join('')}</div>`
+          : '<p class="goldclaw-muted">All required values are configured.</p>';
+
+        return `
+          <article class="goldclaw-provider goldclaw-provider--${status}">
+            <div>
+              <span>${provider.category}</span>
+              <h3>${provider.label}</h3>
+              <p>${provider.goal}</p>
+            </div>
+            <strong>${status}</strong>
+            ${missing}
+          </article>
+        `;
+      }).join('');
+    };
+
+    const renderPlan = (plan) => {
+      const target = document.getElementById('goldclaw-plan');
+      if (!target) return;
+
+      target.innerHTML = plan.map((phase) => `
+        <article>
+          <span>${phase.dayRange}</span>
+          <h3>${phase.title}</h3>
+          <ul>
+            ${phase.outcomes.map((outcome) => `<li>${outcome}</li>`).join('')}
+          </ul>
+        </article>
+      `).join('');
+    };
+
+    const loadGoldClaw = async () => {
+      const response = await fetch(endpoint('/goldclaw'), {
+        credentials: 'include',
+        headers: { accept: 'application/json' },
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.error || 'GoldClaw status failed');
+      }
+
+      const data = payload.data;
+      setText('goldclaw-total', data.readinessSummary.totalProviders);
+      setText('goldclaw-ready', data.readinessSummary.readyProviders);
+      setText('goldclaw-blocked', data.readinessSummary.missingProviders);
+      setText('goldclaw-mode', data.mode);
+      renderProviders(data.providers || []);
+      renderPlan(data.plan || []);
+    };
+
+    document.getElementById('goldclaw-refresh')?.addEventListener('click', () => {
+      loadGoldClaw().catch((error) => {
+        const target = document.getElementById('goldclaw-providers');
+        if (target) target.innerHTML = `<p class="goldclaw-error">${error.message}</p>`;
+      });
+    });
+
+    document.getElementById('goldclaw-google-oauth')?.addEventListener('click', () => {
+      window.location.href = endpoint('/goldclaw/oauth/google/start');
+    });
+
+    document.getElementById('goldclaw-brief')?.addEventListener('click', async () => {
+      const objective = document.getElementById('goldclaw-objective')?.value || '';
+      const output = document.getElementById('goldclaw-brief-output');
+      if (output) output.textContent = 'Generating...';
+
+      try {
+        const response = await fetch(endpoint('/goldclaw/brief'), {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'content-type': 'application/json', accept: 'application/json' },
+          body: JSON.stringify({ objective }),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.success) throw new Error(payload.error || 'Brief failed');
+        if (output) output.textContent = JSON.stringify(payload.data, null, 2);
+      } catch (error) {
+        if (output) output.textContent = error.message || 'Brief failed';
+      }
+    });
+
+    loadGoldClaw().catch((error) => {
+      const target = document.getElementById('goldclaw-providers');
+      if (target) target.innerHTML = `<p class="goldclaw-error">${error.message}</p>`;
+    });
+  </script>
+</BaseLayout>
+
+<style>
+  .goldclaw-page {
+    min-height: 100vh;
+    padding: 40px clamp(20px, 4vw, 56px);
+    color: var(--gs-text-primary, #f5f3ec);
+    background:
+      radial-gradient(circle at 15% 0%, rgba(217, 106, 50, 0.16), transparent 34rem),
+      #050507;
+  }
+
+  .goldclaw-header,
+  .goldclaw-summary,
+  .goldclaw-layout,
+  .goldclaw-plan {
+    max-width: 1240px;
+    margin: 0 auto;
+  }
+
+  .goldclaw-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    align-items: end;
+    margin-bottom: 28px;
+  }
+
+  .goldclaw-kicker {
+    margin: 0 0 10px;
+    color: #d96a32;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-transform: uppercase;
+  }
+
+  .goldclaw-header h1 {
+    margin: 0;
+    font-size: clamp(2.2rem, 5vw, 4.6rem);
+    line-height: 0.96;
+  }
+
+  .goldclaw-header p {
+    max-width: 760px;
+    margin: 14px 0 0;
+    color: var(--gs-text-muted, #a8adba);
+    font-size: 1rem;
+  }
+
+  .goldclaw-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .goldclaw-actions button,
+  .goldclaw-primary {
+    border: 1px solid rgba(217, 106, 50, 0.45);
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+    color: #f5f3ec;
+    background: rgba(217, 106, 50, 0.16);
+    cursor: pointer;
+  }
+
+  .goldclaw-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .goldclaw-summary article,
+  .goldclaw-panel,
+  .goldclaw-provider,
+  .goldclaw-plan article {
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    border-radius: 8px;
+    background: rgba(11, 13, 17, 0.88);
+  }
+
+  .goldclaw-summary article {
+    padding: 18px;
+  }
+
+  .goldclaw-summary span,
+  .goldclaw-provider span,
+  .goldclaw-plan span {
+    display: block;
+    color: #a8adba;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .goldclaw-summary strong {
+    display: block;
+    margin-top: 8px;
+    color: #f2a365;
+    font-size: 2rem;
+  }
+
+  .goldclaw-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr);
+    gap: 18px;
+    margin-bottom: 18px;
+  }
+
+  .goldclaw-panel {
+    padding: 22px;
+  }
+
+  .goldclaw-panel__header {
+    margin-bottom: 18px;
+  }
+
+  .goldclaw-panel__header h2 {
+    margin: 0;
+    font-size: 1.45rem;
+  }
+
+  .goldclaw-panel__header p,
+  .goldclaw-muted,
+  .goldclaw-provider p {
+    color: #a8adba;
+  }
+
+  .goldclaw-provider-list {
+    display: grid;
+    gap: 12px;
+  }
+
+  .goldclaw-provider {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .goldclaw-provider h3 {
+    margin: 4px 0 6px;
+  }
+
+  .goldclaw-provider strong {
+    color: #f2a365;
+  }
+
+  .goldclaw-provider--ready strong {
+    color: #5ddb9a;
+  }
+
+  .goldclaw-secrets {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .goldclaw-secrets code {
+    border-radius: 6px;
+    padding: 0.35rem 0.5rem;
+    color: #f5f3ec;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .goldclaw-field {
+    display: grid;
+    gap: 8px;
+    color: #a8adba;
+    font-size: 0.86rem;
+    font-weight: 700;
+  }
+
+  .goldclaw-field textarea,
+  .goldclaw-output {
+    width: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    padding: 12px;
+    color: #f5f3ec;
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .goldclaw-primary {
+    width: 100%;
+    margin: 14px 0;
+  }
+
+  .goldclaw-output {
+    min-height: 260px;
+    overflow: auto;
+    white-space: pre-wrap;
+  }
+
+  .goldclaw-plan {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .goldclaw-plan article {
+    padding: 16px;
+  }
+
+  .goldclaw-plan h3 {
+    margin: 6px 0 10px;
+  }
+
+  .goldclaw-plan ul {
+    margin: 0;
+    padding-left: 18px;
+    color: #a8adba;
+  }
+
+  .goldclaw-error {
+    color: #ff8a8a;
+  }
+
+  @media (max-width: 900px) {
+    .goldclaw-header,
+    .goldclaw-layout {
+      grid-template-columns: 1fr;
+      display: grid;
+    }
+
+    .goldclaw-summary,
+    .goldclaw-plan {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 560px) {
+    .goldclaw-summary,
+    .goldclaw-plan {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

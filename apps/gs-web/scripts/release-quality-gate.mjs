@@ -179,20 +179,68 @@ const checkFormLabels = (documents) => {
   }
 };
 
-const createStaticServer = (documents) => {
-  const byPath = new Map(documents.map((doc) => [doc.relativePath, doc.html]));
-  return createServer((req, res) => {
-    const pathname = (req.url || '/').split('?')[0];
-    const key = pathname === '/' ? 'index.html' : `${pathname.replace(/^\//, '').replace(/\/$/, '')}/index.html`;
-    const html = byPath.get(key);
-    if (!html) {
+const MIME = {
+  '.js': 'application/javascript', '.mjs': 'application/javascript',
+  '.css': 'text/css', '.json': 'application/json',
+  '.svg': 'image/svg+xml', '.png': 'image/png',
+  '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp',
+  '.woff': 'font/woff', '.woff2': 'font/woff2', '.ico': 'image/x-icon',
+  '.txt': 'text/plain', '.xml': 'application/xml',
+};
+
+const buildAssetIndex = async () => {
+  const index = new Map();
+  try {
+    const all = await walk(DIST_DIR);
+    for (const absPath of all) {
+      if (!absPath.endsWith('.html')) {
+        const rel = path.relative(DIST_DIR, absPath).replace(/\\/g, '/');
+        index.set('/' + rel, absPath);
+      }
+    }
+  } catch { /* dist may not contain non-HTML assets */ }
+  return index;
+};
+
+const createStaticServer = async (documents) => {
+  const byHtmlPath = new Map(documents.map((doc) => [doc.relativePath, doc.html]));
+  const byUrlPath = await buildAssetIndex();
+
+  return createServer(async (req, res) => {
+    const rawPathname = (req.url || '/').split('?')[0];
+    let pathname;
+    try {
+      pathname = decodeURIComponent(rawPathname);
+    } catch {
+      pathname = rawPathname;
+    }
+    const htmlKey = pathname === '/'
+      ? 'index.html'
+      : `${pathname.replace(/^\//, '').replace(/\/$/, '')}/index.html`;
+    const html = byHtmlPath.get(htmlKey);
+    if (html) {
+      res.statusCode = 200;
+      res.setHeader('content-type', 'text/html; charset=utf-8');
+      res.end(html);
+      return;
+    }
+    // req.url used only as Map key — absPath comes from trusted walk() scan at startup
+    const absPath = byUrlPath.get(pathname);
+    if (!absPath) {
       res.statusCode = 404;
       res.end('Not found');
       return;
     }
-    res.statusCode = 200;
-    res.setHeader('content-type', 'text/html; charset=utf-8');
-    res.end(html);
+    try {
+      const content = await readFile(absPath);
+      res.statusCode = 200;
+      res.setHeader('content-type', MIME[path.extname(absPath)] || 'application/octet-stream');
+      res.setHeader('cache-control', 'no-store');
+      res.end(content);
+    } catch {
+      res.statusCode = 404;
+      res.end('Not found');
+    }
   });
 };
 
@@ -268,7 +316,7 @@ const main = async () => {
   checkRoutesAndLinks(documents, expectedRoutes);
   checkFormLabels(documents);
 
-  const server = createStaticServer(documents);
+  const server = await createStaticServer(documents);
   await new Promise((resolve) => server.listen(PORT, HOST, resolve));
 
   const checksRoutes = ['/', '/about', '/contact', '/developer'].filter((route) =>
