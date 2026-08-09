@@ -228,6 +228,9 @@ importers:
       '@goldshore/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@goldshore/schema':
+        specifier: workspace:*
+        version: link:../../packages/schema
       '@goldshore/utils':
         specifier: workspace:*
         version: link:../../packages/utils
