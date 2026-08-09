@@ -18,6 +18,7 @@ export type Env = {
   EVENTS_QUEUE?: Queue;
   MAIL_JOBS_QUEUE?: Queue;
   DEAD_LETTER_QUEUE?: Queue;
+  GS_SIGNALS?: Workflow<SignalsEvaluatorParams>;
   OPENAI_API_KEY?: string;
   GEMINI_API_KEY?: string;
   ANTHROPIC_API_KEY?: string;
@@ -108,6 +109,12 @@ export type Env = {
   GOOGLE_OAUTH_PRODUCTION_APPROVED?: string;
   GOOGLE_BUSINESS_ACCOUNT_IDS?: string;
   GOOGLE_BUSINESS_LOCATION_IDS?: string;
+};
+
+export type SignalsEvaluatorParams = {
+  signalId: string;
+  source?: string;
+  payload?: Record<string, unknown>;
 };
 
 export type Variables = {

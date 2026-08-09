@@ -112,6 +112,11 @@ queue = "gs-mail-jobs"
 binding = "DEAD_LETTER_QUEUE"
 queue = "gs-mail-dead-letter"
 
+[[workflows]]
+binding = "GS_SIGNALS"
+name = "gs-signals-evaluator"
+class_name = "SignalsEvaluator"
+
 # ══════════════════════════════════════════════════════════════════════════════
 # Production environment
 # Canonical environment name is "prod". Use `wrangler deploy --env prod`.
@@ -196,6 +201,10 @@ id = "0b56873b6d7b451f9279481920a15447"
 binding = "TRADING_KV"
 id = "9b3314c3b7af40a284a8c9b6e2990709"
 
+[[env.prod.kv_namespaces]]
+binding = "TRADING_KV"
+id = "9b3314c3b7af40a284a8c9b6e2990709"
+
 # ── R2 ──────────────────────────────────────────────────────────────────────────────────────
 [[env.prod.r2_buckets]]
 binding = "GS_ASSETS"
@@ -242,23 +251,21 @@ binding = "PAPER_DB"
 database_name = "goldshore-paper-trading"
 database_id = "af94f483-b98b-41c5-aa23-3fbed2764b52"
 
+# ── AI ───────────────────────────────────────────────────────────────────────
 [env.prod.ai]
 binding = "AI"
 
 # ── Cron Triggers (Scheduled Jobs) ──────────────────────────────────────────────────────────────
 # Token rotation job: Runs daily at 2 AM UTC to refresh expiring OAuth tokens
-[[env.prod.triggers.crons]]
-cron = "0 2 * * *"
+[env.prod.triggers]
+crons = ["0 2 * * *"]
 
 # Legacy satellite service bindings were removed during the two-app
 # consolidation. Agent, mail, and API behavior is implemented directly by
 # gs-api routes and event handlers; no source code references these bindings.
 
-# ── AI Gateway binding ──────────────────────────────────────────────────────
-[env.prod.ai]
-binding = "AI"
-
-# ── Queues (producers) ───────────────────────────────────────────────────────────
+# ── Queues ───────────────────────────────────────────────────────────────────
+# gs-api is the sole application consumer after the satellite migration.
 [[env.prod.queues.producers]]
 binding = "JOBS_QUEUE"
 queue = "goldshore-jobs"
@@ -275,21 +282,35 @@ queue = "gs-mail-jobs"
 binding = "DEAD_LETTER_QUEUE"
 queue = "gs-mail-dead-letter"
 
-# Production queue consumers are owned outside gs-api today:
-# - goldshore-jobs and gs-events are consumed by gs-mail.
-# - gs-mail-jobs is configured as an HTTP pull consumer.
-# Keep gs-api as a producer only so deploys do not fail while attempting to
-# replace existing queue consumers.
+[[env.prod.queues.consumers]]
+queue = "goldshore-jobs"
+max_batch_size = 10
+max_batch_timeout = 5
+max_retries = 5
+retry_delay = 60
+dead_letter_queue = "gs-mail-dead-letter"
 
 [[env.prod.queues.consumers]]
 queue = "gs-events"
+max_batch_size = 10
+max_batch_timeout = 5
+max_retries = 5
+retry_delay = 60
+dead_letter_queue = "gs-mail-dead-letter"
+
+[[env.prod.queues.consumers]]
+queue = "gs-mail-jobs"
+max_batch_size = 10
+max_batch_timeout = 30
+max_retries = 5
+retry_delay = 60
+dead_letter_queue = "gs-mail-dead-letter"
 
 # ── Workflows ────────────────────────────────────────────────────────────────
 [[env.prod.workflows]]
 binding = "GS_SIGNALS"
-name = "signals-evaluator"
+name = "gs-signals-evaluator"
 class_name = "SignalsEvaluator"
-script_name = "gs-signals-prod"
 
 # ── Secrets Store ────────────────────────────────────────────────────────────
 # Secrets Store bindings are per secret, not a store object. The runtime reads
@@ -319,9 +340,9 @@ routes = [
 
 [env.preview.vars]
 ENV = "preview"
+CLOUDFLARE_ACCESS_AUDIENCE = "8510d42c31fc791e295427031ffeef7c7ebc0f1b62d8634fbb284bf82562f528"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-CLOUDFLARE_ACCESS_AUDIENCE = "REPLACE_WITH_PREVIEW_API_ACCESS_AUD"
-CLOUDFLARE_ACCESS_APPLICATION = "api-preview"
+GOOGLE_OAUTH_REDIRECT_URI = "https://api-preview.goldshore.ai/goldclaw/oauth/google/callback"
 GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
 GOOGLE_BUSINESS_OAUTH_REDIRECT_URI = "https://api-preview.goldshore.ai/admin/google/oauth/callback"
 GOOGLE_BUSINESS_OWNERSHIP_VERIFIED = "false"
@@ -349,6 +370,7 @@ id = "d4d20cee39094b999dea3f7e5f4c533a"
 binding = "CONTROL_LOGS"
 id = "09e43cb8bd4749fdaaed0dc9d4ff2284"
 
+# ── R2 ───────────────────────────────────────────────────────────────────────
 # RISK_RADAR_CACHE: same live "RR_CACHE" resource as env.prod — see the note
 # there. No dedicated preview KV exists for this yet.
 [[env.preview.kv_namespaces]]
@@ -394,8 +416,8 @@ database_id = "76af4653-7f44-417b-b46e-250143d906fd"
 # No dedicated preview database exists for this yet.
 [[env.preview.d1_databases]]
 binding = "RISK_RADAR_DB"
-database_name = "risk-radar-db"
-database_id = "b0bf3b0e-a7d0-49ae-ac82-4f19450b2ce2"
+database_name = "gs_risk_radar_db"
+database_id = "fe25ba0b-7d1e-5362-a03f-065487222a08"
 
 [[env.preview.d1_databases]]
 binding = "JOBS_DB"
@@ -412,6 +434,7 @@ database_id = "00000000-0000-4000-8000-000000000005"
 binding = "AI"
 
 # ── Queues ───────────────────────────────────────────────────────────────────
+# Preview never shares production queues or dead-letter traffic.
 [[env.preview.queues.producers]]
 binding = "JOBS_QUEUE"
 queue = "goldshore-jobs-preview"
@@ -429,11 +452,33 @@ binding = "DEAD_LETTER_QUEUE"
 queue = "gs-mail-dead-letter-preview"
 
 [[env.preview.queues.consumers]]
-queue = "gs-events-preview"
+queue = "goldshore-jobs-preview"
+max_batch_size = 10
+max_batch_timeout = 5
+max_retries = 5
+retry_delay = 60
+dead_letter_queue = "gs-mail-dead-letter-preview"
 
+[[env.preview.queues.consumers]]
+queue = "gs-events-preview"
+max_batch_size = 10
+max_batch_timeout = 5
+max_retries = 5
+retry_delay = 60
+dead_letter_queue = "gs-mail-dead-letter-preview"
+
+[[env.preview.queues.consumers]]
+queue = "gs-mail-jobs-preview"
+max_batch_size = 10
+max_batch_timeout = 30
+max_retries = 5
+retry_delay = 60
+dead_letter_queue = "gs-mail-dead-letter-preview"
+
+# ── Workflows ────────────────────────────────────────────────────────────────
 [[env.preview.workflows]]
 binding = "GS_SIGNALS"
-name = "signals-evaluator-preview"
+name = "gs-signals-evaluator-preview"
 class_name = "SignalsEvaluator"
 
 # ── Secrets Store ────────────────────────────────────────────────────────────
