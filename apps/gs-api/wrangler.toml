@@ -16,6 +16,9 @@ CLOUDFLARE_SERVICE_ACCESS_AUDIENCE = "REPLACE_WITH_SERVICE_ACCESS_AUD"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
 GOOGLE_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/goldclaw/oauth/google/callback"
+GOOGLE_BUSINESS_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/admin/google/oauth/callback"
+GOOGLE_BUSINESS_OWNERSHIP_VERIFIED = "false"
+GOOGLE_OAUTH_PRODUCTION_APPROVED = "false"
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
 PUBLIC_SITE_URL = "https://goldshore.ai"
 MAILCHANNELS_SENDER_NAME = "GoldShore"
@@ -137,6 +140,9 @@ CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 # preserve the remote secret instead of replacing it with a placeholder.
 GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
 GOOGLE_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/goldclaw/oauth/google/callback"
+GOOGLE_BUSINESS_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/admin/google/oauth/callback"
+GOOGLE_BUSINESS_OWNERSHIP_VERIFIED = "false"
+GOOGLE_OAUTH_PRODUCTION_APPROVED = "false"
 GITHUB_CLIENT_ID = "YOUR_GITHUB_CLIENT_ID_PROD"
 GITHUB_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/auth/github/callback"
 TURNSTILE_SITE_KEY = "YOUR_TURNSTILE_SITE_KEY_PROD"
@@ -186,10 +192,6 @@ id = "0b56873b6d7b451f9279481920a15447"
 
 # TRADING_KV remains shared with the default environment until a dedicated
 # production namespace is provisioned in the Cloudflare dashboard.
-[[env.prod.kv_namespaces]]
-binding = "TRADING_KV"
-id = "9b3314c3b7af40a284a8c9b6e2990709"
-
 [[env.prod.kv_namespaces]]
 binding = "TRADING_KV"
 id = "9b3314c3b7af40a284a8c9b6e2990709"
@@ -317,6 +319,9 @@ CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 CLOUDFLARE_ACCESS_AUDIENCE = "REPLACE_WITH_PREVIEW_API_ACCESS_AUD"
 CLOUDFLARE_ACCESS_APPLICATION = "api-preview"
 GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
+GOOGLE_BUSINESS_OAUTH_REDIRECT_URI = "https://api-preview.goldshore.ai/admin/google/oauth/callback"
+GOOGLE_BUSINESS_OWNERSHIP_VERIFIED = "false"
+GOOGLE_OAUTH_PRODUCTION_APPROVED = "false"
 GITHUB_CLIENT_ID = "YOUR_GITHUB_CLIENT_ID_PREVIEW"
 GITHUB_OAUTH_REDIRECT_URI = "https://api-preview.goldshore.ai/auth/github/callback"
 TURNSTILE_SITE_KEY = "YOUR_TURNSTILE_SITE_KEY_PREVIEW"
@@ -340,9 +345,11 @@ id = "d4d20cee39094b999dea3f7e5f4c533a"
 binding = "CONTROL_LOGS"
 id = "09e43cb8bd4749fdaaed0dc9d4ff2284"
 
+# RISK_RADAR_CACHE: same live "RR_CACHE" resource as env.prod — see the note
+# there. No dedicated preview KV exists for this yet.
 [[env.preview.kv_namespaces]]
 binding = "RISK_RADAR_CACHE"
-id = "a2315c0e83f27b610c3dfdd30eb0a9ea"
+id = "0b56873b6d7b451f9279481920a15447"
 
 # TRADING_KV: dedicated preview namespace (also owned by the now route-free
 # apps/gs-trading Worker previously).
@@ -376,8 +383,15 @@ database_id = "00000000-0000-4000-8000-000000000002"
 
 [[env.preview.d1_databases]]
 binding = "SIGNALS_DB"
-database_name = "gs_signals_db_preview"
-database_id = "00000000-0000-4000-8000-000000000003"
+database_name = "gs_signals_db"
+database_id = "76af4653-7f44-417b-b46e-250143d906fd"
+
+# RISK_RADAR_DB: same live "risk-radar-db" D1 as env.prod — see the note there.
+# No dedicated preview database exists for this yet.
+[[env.preview.d1_databases]]
+binding = "RISK_RADAR_DB"
+database_name = "risk-radar-db"
+database_id = "b0bf3b0e-a7d0-49ae-ac82-4f19450b2ce2"
 
 [[env.preview.d1_databases]]
 binding = "JOBS_DB"

@@ -26,6 +26,7 @@ import gearswipe from './routes/gearswipe';
 import mail from './routes/mail';
 import products from './routes/products';
 import services from './routes/services';
+import googleBusiness from './routes/google-business';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
 
@@ -34,6 +35,7 @@ type Env = {
   CONTROL_LOGS?: KVNamespace;
   RISK_RADAR_CACHE?: KVNamespace;
   PLATFORM_DB: D1Database;
+  AUDIT_DB: D1Database;
   RISK_RADAR_DB?: D1Database;
   TELEMETRY_DB?: D1Database;
   GS_ASSETS: R2Bucket;
@@ -118,6 +120,7 @@ const isPublicPath = (path: string, method: string) => {
     path === '/version' ||
     path === '/health' ||
     path.startsWith('/health/') ||
+    (method === 'GET' && path === '/admin/google/oauth/callback') ||
     path === '/mail/contact' ||
     (method === 'POST' && path === '/mail/contact')
   );
@@ -270,6 +273,7 @@ app.route('/user', user);
 app.route('/system', system);
 app.route('/templates', templates);
 app.route('/admin', admin);
+app.route('/admin/google', googleBusiness);
 app.route('/media', media);
 app.route('/pages', pages);
 app.route('/internal', internal);

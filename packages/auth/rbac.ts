@@ -20,12 +20,12 @@ export const ADMIN_PERMISSIONS = [
   "roles:read", "roles:manage",
   "approvals:read", "approvals:create", "approvals:approve", "approvals:execute",
   "audit:read",
-  // Compatibility permissions used by existing routes while they migrate to
-  // the resource names above.
-  "content:read", "content:write", "content:publish",
-  "system:read", "system:write", "system:integrations:manage",
-  "media:read", "media:write", "media:delete",
-  "forms:write", "ai:analyze"
+  "ai:analyze",
+  "google-business:read",
+  "google-business:publish",
+  "google-business:locations:manage",
+  "google-business:reviews:manage",
+  "google-business:accounts:manage"
 ] as const;
 export type AdminPermission = (typeof ADMIN_PERMISSIONS)[number];
 
