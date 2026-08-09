@@ -1,6 +1,7 @@
 ---
 const buildTimestamp = import.meta.env.PUBLIC_BUILD_TIMESTAMP || 'unknown';
 const commitHash = import.meta.env.PUBLIC_COMMIT_HASH || 'unknown';
+const releaseLabel = import.meta.env.PUBLIC_RELEASE_LABEL || '';
 ---
 
 <section class="gs-section" aria-labelledby="build-diagnostics-heading">
@@ -9,18 +10,38 @@ const commitHash = import.meta.env.PUBLIC_COMMIT_HASH || 'unknown';
     <p style="margin-top: 0.5rem; color: var(--gs-text-muted);">
       Public build metadata and layout asset diagnostics for quick verification.
     </p>
-    <ul style="list-style: none; padding: 0; margin-top: 1rem; display: grid; gap: 0.75rem;">
+    <ul
+      style="list-style: none; padding: 0; margin-top: 1rem; display: grid; gap: 0.75rem;"
+    >
       <li><strong>Build timestamp:</strong> <code>{buildTimestamp}</code></li>
       <li><strong>Commit hash:</strong> <code>{commitHash}</code></li>
-      <li><strong>Stylesheet link count:</strong> <code data-diagnostic="css-link-count">loading…</code></li>
-      <li><strong>Script tag count:</strong> <code data-diagnostic="script-count">loading…</code></li>
-      <li><strong>Layout logo asset path:</strong> <code data-diagnostic="logo-src">loading…</code></li>
+      {
+        releaseLabel && (
+          <li>
+            <strong>Release label:</strong> <code>{releaseLabel}</code>
+          </li>
+        )
+      }
+      <li>
+        <strong>Stylesheet link count:</strong>
+        <code data-diagnostic="css-link-count">loading…</code>
+      </li>
+      <li>
+        <strong>Script tag count:</strong>
+        <code data-diagnostic="script-count">loading…</code>
+      </li>
+      <li>
+        <strong>Layout logo asset path:</strong>
+        <code data-diagnostic="logo-src">loading…</code>
+      </li>
     </ul>
   </div>
 </section>
 
 <script is:inline>
-  const cssLinkCount = document.querySelectorAll('link[rel~="stylesheet"]').length;
+  const cssLinkCount = document.querySelectorAll(
+    'link[rel~="stylesheet"]',
+  ).length;
   const scriptCount = document.querySelectorAll('script').length;
   const logoMeta = document.querySelector('meta[name="gs-logo-src"]');
   const logoSrc = logoMeta?.getAttribute('content') || 'unknown';

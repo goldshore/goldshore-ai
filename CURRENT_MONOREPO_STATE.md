@@ -7,19 +7,12 @@
 
 ## Applications under `apps/`
 
-The `apps/` directory currently contains **nine** top-level folders. Seven are the current `gs-*` applications, and two are compatibility/stale aliases that still exist on disk.
+The `apps/` directory currently contains **two** top-level folders. The microservices (`gs-admin`, `gs-agent`, `gs-control`, `gs-gateway`, `gs-mail`) and legacy aliases (`apps/web`, `apps/admin`) have been **DELETED** in the Great Consolidation (2026-03-29).
 
 | Path | Package name | Type | Current state | Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| `apps/gs-web` | `@goldshore/gs-web` | Astro app | Active | Public website workspace |
-| `apps/gs-admin` | `@goldshore/gs-admin` | Astro app | Active | Admin workspace |
-| `apps/gs-api` | `@goldshore/gs-api` | Cloudflare Worker | Active | API service |
-| `apps/gs-gateway` | `@goldshore/gs-gateway` | Cloudflare Worker | Active | Gateway / router service |
-| `apps/gs-control` | `@goldshore/gs-control` | Cloudflare Worker | Active | Control-plane worker |
-| `apps/gs-agent` | `@goldshore/gs-agent` | Cloudflare Worker | Active | Agent worker |
-| `apps/gs-mail` | `@goldshore/gs-mail` | Cloudflare Worker | Active | Mail worker |
-| `apps/web` | `@goldshore/web-compat` | Compatibility workspace | Stale alias still present | Keep clearly separate from `apps/gs-web`; not the canonical app path |
-| `apps/admin` | `@goldshore/admin-compat` | Compatibility workspace | Stale alias still present | Keep clearly separate from `apps/gs-admin`; not the canonical app path |
+| `apps/gs-web` | `@goldshore/gs-web` | Astro app | Active | Public website workspace (Unified Frontend) |
+| `apps/gs-api` | `@goldshore/gs-api` | Cloudflare Worker | Active | Unified API service (Handles all backend logic) |
 
 ## Shared packages under `packages/`
 
@@ -80,12 +73,7 @@ These workflow files currently exist in the repository root workflow directory:
 - `cleanup-cache.yml`
 - `cleanup-workflow-runs.yml`
 - `close-stale-prs.yml`
-- `deploy-gs-admin.yml`
-- `deploy-gs-agent.yml`
 - `deploy-gs-api.yml`
-- `deploy-gs-control.yml.disabled`
-- `deploy-gs-gateway.yml.disabled`
-- `deploy-gs-mail.yml`
 - `deploy-gs-web.yml`
 - `jules-nightly.yml`
 - `lockfile-guard.yml`
@@ -96,10 +84,7 @@ These workflow files currently exist in the repository root workflow directory:
 - `neuralegion.yml`
 - `palette-manual.yml`
 - `pii-scan.yml`
-- `preview-gs-admin.yml`
-- `preview-gs-agent.yml`
 - `preview-gs-api.yml`
-- `preview-gs-gateway.yml`
 - `preview-gs-web.yml`
 - `repo-health.yml`
 - `route-collision-check.yml`

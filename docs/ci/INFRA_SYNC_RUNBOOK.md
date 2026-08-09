@@ -4,6 +4,8 @@ Use `.github/workflows/deploy-platform.yml` for Cloudflare app deploys and the C
 
 For incident triage and guardrail verification, inspect and run `.github/workflows/infrastructure-guard.yml` (the canonical Cloudflare live-state guard workflow in this repo).
 
+For ownership and canonical Cloudflare infrastructure context, cross-reference `policy/REPO_OWNERSHIP.md` and `infra/Cloudflare/README.md`.
+
 ## Trigger model
 
 - **Manual (`workflow_dispatch`):** the only trigger; recommended for urgent reconciliation, post-incident verification, or post-rotation validation.
