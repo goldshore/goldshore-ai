@@ -5,10 +5,26 @@ import {
   ALTERNATE_ADMIN_DASHBOARD_URL,
   CANONICAL_ADMIN_DASHBOARD_URL,
   getAdminLoginDestination,
+  getAdminOriginsForHostname,
   getAdminHostRewritePath,
   getAdminRouteRule,
   getCanonicalAdminUrl,
 } from '../../src/utils/admin-access.ts';
+
+test('selects matching production and preview admin mirrors from the request host', () => {
+  assert.deepEqual(getAdminOriginsForHostname('goldshore.org'), {
+    canonical: 'https://admin.goldshore.ai',
+    alternate: 'https://admin.goldshore.org',
+  });
+  assert.deepEqual(getAdminOriginsForHostname('preview.goldshore.ai'), {
+    canonical: 'https://admin-preview.goldshore.ai',
+    alternate: 'https://admin-preview.goldshore.org',
+  });
+  assert.deepEqual(getAdminOriginsForHostname('feature-preview.goldshore.ai'), {
+    canonical: 'https://admin-preview.goldshore.ai',
+    alternate: 'https://admin-preview.goldshore.org',
+  });
+});
 
 test('routes dashboard traffic to the admin host with system read access', () => {
   const rule = getAdminRouteRule('/app/dashboard', 'GET', 'goldshore.ai');

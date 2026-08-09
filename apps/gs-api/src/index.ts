@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { secureHeaders } from 'hono/secure-headers';
 import {
   verifyAccessWithClaims,
+  authorizeAccessClaims,
   type AccessTokenPayload,
 } from '@goldshore/auth';
 import { createCorsMiddleware, APPROVED_API_ORIGINS } from '@goldshore/shared';
@@ -22,42 +23,21 @@ import sites from './routes/sites';
 import forms from './routes/forms';
 import deployments from './routes/deployments';
 import gearswipe from './routes/gearswipe';
-import mail from './routes/mail';
-import products from './routes/products';
 import services from './routes/services';
+import googleBusiness from './routes/google-business';
+import integrations from './routes/integrations';
+import agent from './routes/agent';
+import control from './routes/control';
+import core from './routes/core';
+import mail from './routes/mail';
+import trading from './routes/trading';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
-
-type Env = {
-  KV: KVNamespace;
-  CONTROL_LOGS?: KVNamespace;
-  RISK_RADAR_CACHE?: KVNamespace;
-  PLATFORM_DB: D1Database;
-  RISK_RADAR_DB?: D1Database;
-  TELEMETRY_DB?: D1Database;
-  GS_ASSETS: R2Bucket;
-  RISK_RADAR_R2?: R2Bucket;
-  AUTH_SESSION?: DurableObjectNamespace;
-  AI: Ai;
-  OPENAI_API_KEY?: string;
-  GEMINI_API_KEY?: string;
-  JWT_SECRET?: string;
-  STRIPE_API_KEY?: string;
-  SENDGRID_API_KEY?: string;
-  ACCESS_CLIENT_SECRET?: string;
-  CLOUDFLARE_ACCESS_AUDIENCE?: string;
-  CLOUDFLARE_TEAM_DOMAIN?: string;
-  CONTROL_SYNC_TOKEN?: string;
-  ALLOWED_ORIGINS?: string;
-  ENV?: string;
-  API_VERSION?: string;
-  DEPLOY_SHA?: string;
-  GIT_SHA?: string;
-  MAIL_BLOCKED_SENDERS?: string;
-  MAIL_ALLOWED_RECIPIENTS?: string;
-  MAIL_FORWARD_TO?: string;
-  FORWARD_TO?: string;
-};
+import { handleTokenRotation } from './workers/token-rotation';
+import { processQueueBatch } from './workers/queue-consumer';
+export { SignalsEvaluator } from './workers/signals-evaluator';
+import { getHostRoutePrefix } from './host-routing';
+import type { Env, Variables } from './types';
 
 interface ForwardableEmailMessage {
   from: string;
@@ -73,7 +53,7 @@ type ExecutionContext = {
 
 const app = new Hono<{
   Bindings: Env;
-  Variables: { accessClaims: AccessTokenPayload | null };
+  Variables: Variables;
 }>();
 
 const requiredBindings = ['PLATFORM_DB', 'GS_ASSETS', 'AI'] as const;
@@ -109,15 +89,29 @@ const isAllowedOrigin = (origin: string, allowedOrigins?: string) => {
 
 const isPublicPath = (path: string, method: string) => {
   if (method === 'OPTIONS') return true;
+  if (method === 'POST' && /^\/v1\/forms\/[a-z0-9-]+\/submissions$/i.test(path)) return true;
   return (
     path === '/' ||
     path === '/version' ||
     path === '/health' ||
     path.startsWith('/health/') ||
-    path === '/mail/contact' ||
+    (method === 'GET' && path === '/admin/google/oauth/callback') ||
+    /^\/(agent|mail|control|trading|core)\/health\/?$/.test(path) ||
     (method === 'POST' && path === '/mail/contact')
   );
 };
+
+const getCorrelationId = (request: Request) =>
+  request.headers.get('x-correlation-id') ?? crypto.randomUUID();
+
+const withCorrelationId = (response: Response, correlationId: string) => {
+  const forwarded = new Response(response.body, response);
+  forwarded.headers.set('x-correlation-id', correlationId);
+  return forwarded;
+};
+
+const getOptionalExecutionContext = (c: { executionCtx?: ExecutionContext }) =>
+  c.executionCtx;
 
 app.use('*', secureHeaders());
 
@@ -146,21 +140,23 @@ app.use(
 );
 
 app.use('*', async (c, next) => {
+  await next();
+  const runtimeVersion = getRuntimeVersion(c.env);
+  const deploySha = c.env.DEPLOY_SHA ?? c.env.GIT_SHA ?? c.env.CF_VERSION_METADATA?.id;
+  c.header('X-GS-API-Version', runtimeVersion);
+  if (deploySha) c.header('X-GS-Deploy-SHA', deploySha);
+});
+
+app.use('*', async (c, next) => {
   const routePrefix = getHostRoutePrefix(c.req.raw);
   if (!routePrefix || c.req.path === routePrefix || c.req.path.startsWith(`${routePrefix}/`)) {
     await next();
     return;
   }
 
-  const correlationId = getCorrelationId(c.req.raw);
   const routedUrl = new URL(c.req.url);
   routedUrl.pathname = `${routePrefix}${routedUrl.pathname === '/' ? '' : routedUrl.pathname}`;
-  const response = await app.fetch(
-    new Request(routedUrl.toString(), c.req.raw),
-    c.env,
-    getOptionalExecutionContext(c),
-  );
-  return withCorrelationId(response, correlationId);
+  return app.fetch(new Request(routedUrl.toString(), c.req.raw), c.env);
 });
 
 // Enforce Authentication (Defense in Depth)
@@ -171,27 +167,25 @@ app.use('*', async (c, next) => {
     return;
   }
 
-  if (c.req.path === '/internal/sync-runs' && c.req.method === 'POST') {
-    const controlToken = c.req.header('x-control-sync-token');
-    if (
-      controlToken &&
-      c.env.CONTROL_SYNC_TOKEN &&
-      controlToken === c.env.CONTROL_SYNC_TOKEN
-    ) {
-      c.set('accessClaims', null);
-      await next();
-      return;
-    }
-  }
-
-  if (!c.env.CLOUDFLARE_ACCESS_AUDIENCE) {
+  const serviceRequest = c.req.path === '/internal' || c.req.path.startsWith('/internal/');
+  const accessEnv = serviceRequest
+    ? {
+        ...c.env,
+        CLOUDFLARE_ACCESS_AUDIENCE: c.env.CLOUDFLARE_SERVICE_ACCESS_AUDIENCE,
+        CLOUDFLARE_ACCESS_APPLICATION: 'service-production',
+      }
+    : c.env;
+  if (!accessEnv.CLOUDFLARE_ACCESS_AUDIENCE) {
     return c.json(
       { error: 'Cloudflare Access audience is not configured for protected routes.' },
       503,
     );
   }
 
-  const claims = await verifyAccessWithClaims(c.req.raw, c.env);
+  const verifiedClaims = await verifyAccessWithClaims(c.req.raw, accessEnv);
+  const claims = verifiedClaims
+    ? await authorizeAccessClaims(verifiedClaims, accessEnv)
+    : null;
   if (!claims) {
     return c.json({ error: 'Unauthorized' }, 401);
   }
@@ -268,12 +262,20 @@ app.route('/user', user);
 app.route('/system', system);
 app.route('/templates', templates);
 app.route('/admin', admin);
+app.route('/admin/google', googleBusiness);
 app.route('/media', media);
 app.route('/pages', pages);
 app.route('/internal', internal);
 app.route('/products', products);
-app.route('/mail', mail);
 app.route('/services', services);
+app.route('/integrations', integrations);
+// Host aliases are rewritten into these shared route modules above. They do
+// not own independent authentication, CORS, or security middleware stacks.
+app.route('/agent', agent);
+app.route('/control', control);
+app.route('/core', core);
+app.route('/mail', mail);
+app.route('/trading', trading);
 
 const v1 = new Hono<{ Bindings: Env }>();
 v1.route('/users', users);
@@ -282,24 +284,12 @@ v1.route('/sites', sites);
 v1.route('/forms', forms);
 v1.route('/deployments', deployments);
 v1.route('/gearswipe', gearswipe);
-v1.route('/products', products);
 v1.route('/services', services);
 v1.get('/leads', (c) => c.json({ leads: [] }));
 
 app.route('/v1', v1);
 
 export { isAllowedOrigin, isPreviewOrigin, isPublicPath, parseAllowedOrigins };
-
-interface Message<T> {
-  id: string;
-  body: T;
-  ack(): void;
-  retry(): void;
-}
-
-interface MessageBatch<T> {
-  messages: Array<Message<T>>;
-}
 
 type DurableObjectState = {
   id: { toString(): string };
@@ -337,50 +327,16 @@ const readInboxLogs = async (kv: KVNamespace) => {
   }
 };
 
-interface Message<T> {
-  id: string;
-  body: T;
-  ack(): void;
-  retry(): void;
-}
-
-interface MessageBatch<T> {
-  messages: Array<Message<T>>;
-}
-
-const processQueueMessage = async (message: Message<any>, env: Env): Promise<void> => {
-  const body = message.body;
-  const type = typeof body === 'object' && body && 'type' in body ? String((body as { type?: unknown }).type) : 'unknown';
-  if (type === 'contact' || type === 'checkout') {
-    console.info({ event: 'mail_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
-    message.ack();
-    return;
-  }
-  if (type === 'trading' || type === 'trading-signal' || type === 'order') {
-    console.info({ event: 'trading_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
-    message.ack();
-    return;
-  }
-  if (type === 'signal' || type === 'atc') {
-    console.info({ event: 'core_signal_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
-    message.ack();
-    return;
-  }
-  console.info({ event: 'agent_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
-  message.ack();
-};
-
 export default {
   fetch: app.fetch,
 
-  async queue(batch: MessageBatch<any>, env: Env): Promise<void> {
-    for (const message of batch.messages) {
-      try {
-        await processQueueMessage(message, env);
-      } catch (error) {
-        console.error('gs-api queue message processing failed:', error);
-        message.retry();
-      }
+  async queue(batch: MessageBatch<unknown>, env: Env): Promise<void> {
+    await processQueueBatch(batch, env);
+  },
+
+  async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+    if (controller.cron === '0 2 * * *') {
+      ctx.waitUntil(handleTokenRotation(env));
     }
   },
 

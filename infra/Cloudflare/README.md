@@ -1,69 +1,46 @@
-# Cloudflare Wrangler Manifest Canonical Map
+# Cloudflare configuration authority
 
-This directory previously contained both canonical `gs-*` Wrangler manifests and legacy `goldshore-*` variants.
+GoldShore uses two deployable applications only: `gs-web` and `gs-api`.
 
-## Inventory: legacy `goldshore-*.wrangler.toml`
+- `apps/gs-web/wrangler.toml` is the visible contract for the Astro SSR
+  Worker-with-Assets serving `goldshore.ai`, `goldshore.org`, and both admin
+  hostnames.
+- `apps/gs-api/wrangler.toml` is the visible contract for API middleware,
+  email events, queues, Workflows, D1, R2, KV, AI, and the mirrored API hosts.
+- Cloudflare Workers Builds is the sole code deployment authority and must use
+  the `gs-control` build token configured in the Cloudflare dashboard.
+- GitHub Actions may build, test, export redacted expected state, and perform a
+  separately scoped read-only audit. It must not mutate Cloudflare.
 
-The following legacy manifests were moved to `infra/Cloudflare/legacy/` and are **non-deployable references**:
+## Dashboard/WYSIWYG boundary
 
-- `goldshore-admin.wrangler.toml`
-- `goldshore-api.wrangler.toml`
-- `goldshore-web.wrangler.toml`
+Apply routes, custom domains, Access policies, IdPs, email routing, build
+connections, secret values, and resource lifecycle changes in the Cloudflare
+dashboard using a named human account. Record the issue/PR, before/after state,
+Cloudflare audit-log event ID, validation results, and rollback in the operator
+ticket.
 
-## Canonical Wrangler manifest path per live service
+Wrangler configuration is intentionally visible because Workers Builds uses it
+as the runtime binding contract. Cloudflare does not provide a general
+`keep_bindings` control: omitting a binding can remove it during a build. Secret
+values and Access/IdP policies remain dashboard-only. Do not create hidden
+alternate Wrangler manifests or deploy from `infra/Cloudflare`.
 
-Use exactly one canonical path per live service:
+`dashboard-inventory.json` contains names and public IDs only. Replace each
+`DASHBOARD_EXPORT_REQUIRED` value from the dashboard after an approved review;
+never include policies, tokens, client secrets, or secret values.
 
-| Service | Canonical manifest path |
-|---|---|
-| `gs-web` | `apps/gs-web/wrangler.toml` |
-| `gs-admin` | `apps/gs-admin/wrangler.toml` |
-| `gs-api` | `apps/gs-api/wrangler.toml` |
-| `gs-gateway` | `apps/gs-gateway/wrangler.toml` |
-| `gs-control` | `apps/gs-control/wrangler.toml` |
-| `gs-mail` | `apps/gs-mail/wrangler.toml` |
-| `gs-agent` | `apps/gs-agent/wrangler.toml` |
-| `gs-trading` | `apps/gs-trading/wrangler.toml` |
-| `banproof-me` | `apps/banproof-me/wrangler.toml` |
-| `armsway-com` | `apps/armsway-com/wrangler.toml` |
+## Change procedure
 
-The `infra/Cloudflare/*.wrangler.toml` files are infra mirrors/references. Production tooling should prefer app-local manifests unless a runbook explicitly says otherwise.
+1. Update one of the two app manifests and `BINDINGS_MAP.md` in a PR.
+2. Pass Infrastructure Guard, application tests, dry-run builds, and external
+   Cloudflare Workers Builds checks.
+3. Obtain the required production-environment approval.
+4. Apply dashboard-only changes through Cloudflare WYSIWYG controls.
+5. Trigger/retry the relevant Workers Build and verify the release SHA on every
+   mirror hostname.
+6. Run the read-only Cloudflare audit and attach its artifact to the ticket.
 
-## Routing source of truth
-
-For Pages-vs-Workers route ownership and change workflow rules, use:
-
-- `docs/architecture/domain-ownership.md`
-- `docs/architecture/cloudflare-deploy-checklist.md`
-- `docs/architecture/cloudflare-live-cleanup.md`
-- `infra/Cloudflare/runbooks/ROUTING_SOURCE_OF_TRUTH.md`
-
-## Selection policy
-
-Do **not** glob `infra/Cloudflare/*.wrangler.toml` in scripts/docs. Use explicit canonical paths.
-
-## CI Secret Contract (Canonical)
-
-Cloudflare worker deploy workflows and infra guard checks use the following canonical GitHub Actions secrets:
-
-| Secret name | Required for | Ownership |
-|---|---|---|
-| `CLOUDFLARE_ACCOUNT_ID` | All worker deploy jobs and Cloudflare infra guard checks | Cloudflare account owner / platform ops |
-| `CLOUDFLARE_BUILD_API_TOKEN` | Deploy jobs for Cloudflare resources owned by `marzton/goldshore-ai` | `gs-control` build token / platform ops |
-
-Policy:
-
-- `CLOUDFLARE_BUILD_API_TOKEN` is the canonical deploy token secret for this repository; it must be scoped only to the Workers, Pages projects, Queues, Workflows, and zones deployed from `marzton/goldshore-ai`.
-- Do not add fallback expressions such as `secretA || secretB` in worker deploy workflows unless a documented exception is added to Cloudflare runbooks.
-
-Migration behavior:
-
-- If older tooling still references `CLOUDFLARE_API_TOKEN`, migrate by updating that tooling to set runtime env `CLOUDFLARE_API_TOKEN` from `secrets.CLOUDFLARE_BUILD_API_TOKEN` in CI.
-- Do not add `||` fallbacks in workflow env blocks.
-- Temporary compatibility, if required, must be managed in secret administration with mirrored secret values and a tracked removal task.
-
-Repository token boundary:
-
-- Keep the mother/build repository token (`CLOUDFLARE_GOLDSHORE_BUILD_TOKEN` for `marzton/goldshore`) out of this repository.
-- Remove broad or legacy app-repo secrets such as `CLOUDFLARE_API_TOKEN` and `CF_WORKERS_BUILDS` after the repository-specific deploy token is installed.
-- Do not grant this repository token account-wide edit access; grant only the zones, Workers, Pages projects, Queues, and Workflows documented above.
+Legacy workers, Pages projects, bindings, and routes are quarantined for 30
+days before deletion. During quarantine remove traffic and producers, label the
+resource with its owner and retirement date, and retain a rollback record.

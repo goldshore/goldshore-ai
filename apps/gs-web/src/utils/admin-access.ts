@@ -2,6 +2,7 @@ import {
   buildAdminSession,
   hasAdminPermission,
   verifyAccessWithClaims,
+  authorizeAccessClaims,
   verifyJWTCookie,
   type AccessTokenPayload,
   type AdminPermission,
@@ -11,11 +12,34 @@ import {
 
 export const CANONICAL_ADMIN_ORIGIN = 'https://admin.goldshore.ai';
 export const ALTERNATE_ADMIN_ORIGIN = 'https://admin.goldshore.org';
+export const PREVIEW_ADMIN_ORIGIN = 'https://admin-preview.goldshore.ai';
+export const PREVIEW_ALTERNATE_ADMIN_ORIGIN = 'https://admin-preview.goldshore.org';
 export const ADMIN_DASHBOARD_PATH = '/app/dashboard';
 export const CANONICAL_ADMIN_DASHBOARD_URL =
   `${CANONICAL_ADMIN_ORIGIN}${ADMIN_DASHBOARD_PATH}`;
 export const ALTERNATE_ADMIN_DASHBOARD_URL =
   `${ALTERNATE_ADMIN_ORIGIN}${ADMIN_DASHBOARD_PATH}`;
+
+export const getAdminOriginsForHostname = (hostname: string) => {
+  const normalized = hostname.trim().toLowerCase().split(':')[0];
+  const isPreview =
+    normalized === 'preview.goldshore.ai' ||
+    normalized === 'preview.goldshore.org' ||
+    normalized.startsWith('admin-preview.') ||
+    normalized.includes('-preview.') ||
+    normalized.endsWith('.workers.dev') ||
+    normalized.endsWith('.pages.dev');
+
+  return isPreview
+    ? {
+        canonical: PREVIEW_ADMIN_ORIGIN,
+        alternate: PREVIEW_ALTERNATE_ADMIN_ORIGIN,
+      }
+    : {
+        canonical: CANONICAL_ADMIN_ORIGIN,
+        alternate: ALTERNATE_ADMIN_ORIGIN,
+      };
+};
 
 const ADMIN_HOSTS = new Set([
   'admin.goldshore.ai',
@@ -290,9 +314,12 @@ export const authorizeAdminRequest = async (
     };
   }
 
-  const claims =
+  const verifiedClaims =
     await verifyJWTCookie(request, env) ??
     await verifyAccessWithClaims(request, env);
+  const claims = verifiedClaims
+    ? await authorizeAccessClaims(verifiedClaims, env)
+    : null;
   if (!claims) {
     return {
       ok: false,
