@@ -1,0 +1,42 @@
+---
+// This page handles GitHub OAuth callbacks
+// The actual OAuth flow is handled by gs-api, which sets session cookies
+// This page just shows a success message and redirects
+
+const redirectTo = new URL(Astro.request.url).searchParams.get('redirect_uri') || '/dashboard';
+const error = new URL(Astro.request.url).searchParams.get('error');
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta http-equiv="refresh" content={error ? '3;url=/login' : `2;url=${redirectTo}`} />
+    <title>{error ? 'Authentication Error' : 'Signing In'}</title>
+    <style>
+      :root{color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#050b14;color:#eef5ff}body{margin:0;min-height:100vh;display:grid;place-items:center;background:radial-gradient(circle at 70% 20%,rgba(245,158,11,.13),transparent 35%),linear-gradient(145deg,#050b14,#091827)}main{width:min(620px,calc(100% - 3rem));padding:clamp(1.5rem,5vw,3.5rem);border:1px solid #213b58;border-radius:1.4rem;background:rgba(7,17,29,.9);box-shadow:0 30px 100px rgba(0,0,0,.35)}.mark{width:3.5rem;height:3.5rem;display:grid;place-items:center;border-radius:.9rem;background:#d97706;color:#07101a;font-weight:900;letter-spacing:-.08em}h1{font-size:clamp(1.5rem,5vw,2.5rem);line-height:1.1;letter-spacing:-.05em;margin:.65rem 0 1rem}p{color:#9db0c5;line-height:1.6}a{color:#5aa2ff;text-decoration:none;transition:color 160ms ease}a:hover{color:#8dccff}.error-state h1{color:#ffb4b4}.error-state .mark{background:#ef4444;opacity:.9}.success-state h1{color:#47e3a7}.success-state .mark{background:#10b981}
+    </style>
+  </head>
+  <body>
+    {error ? (
+      <main class="error-state">
+        <div class="mark" aria-hidden="true">⚠</div>
+        <h1>Authentication Failed</h1>
+        <p>
+          {error === 'access_denied' ? 'You denied the authorization request.' : `Error: ${error}`}
+        </p>
+        <p>
+          <a href="/login?type=github">Try signing in again</a>
+        </p>
+      </main>
+    ) : (
+      <main class="success-state">
+        <div class="mark" aria-hidden="true">✓</div>
+        <h1>Signing you in…</h1>
+        <p>Redirecting you to your account. Please wait.</p>
+      </main>
+    )}
+  </body>
+</html>
