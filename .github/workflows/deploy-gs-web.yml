@@ -1,37 +1,25 @@
-name: Deploy gs-web
+name: Inventory gs-web configuration
 
+# Read-only drift inventory. Cloudflare production configuration is changed only
+# by an approved human in the dashboard; this workflow has no Cloudflare credentials.
 on:
   pull_request:
-    branches: [main]
     paths:
       - 'apps/gs-web/**'
-      - 'packages/**'
-      - 'scripts/build-openapi.mjs'
-      - 'scripts/verify-web-dist.mjs'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'
-      - '.node-version'
-      - '.nvmrc'
+      - 'scripts/export-cloudflare-inventory.py'
+      - 'infra/Cloudflare/dashboard-inventory.json'
       - '.github/workflows/deploy-gs-web.yml'
   push:
     branches: [main]
     paths:
       - 'apps/gs-web/**'
-      - 'packages/**'
-      - 'scripts/build-openapi.mjs'
-      - 'scripts/verify-web-dist.mjs'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'
-      - '.node-version'
-      - '.nvmrc'
+      - 'scripts/export-cloudflare-inventory.py'
+      - 'infra/Cloudflare/dashboard-inventory.json'
       - '.github/workflows/deploy-gs-web.yml'
   workflow_dispatch:
 
-concurrency:
-  group: deploy-gs-web-${{ github.ref }}
-  cancel-in-progress: true
+permissions:
+  contents: read
 
 jobs:
   # Build verification only — this job does NOT deploy.
@@ -46,22 +34,15 @@ jobs:
   deploy:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
       - uses: actions/checkout@v7.0.1
-
-      - uses: pnpm/action-setup@v6
+      - name: Export binding names, routes, Access IDs, and secret names
+        run: python3 scripts/export-cloudflare-inventory.py cloudflare-inventory.json
+      - name: Display redacted inventory
+        run: jq . cloudflare-inventory.json
+      - name: Upload drift-review artifact
+        uses: actions/upload-artifact@v6
         with:
-          version: 9.15.4
-
-      - uses: actions/setup-node@v7.0.0
-        with:
-          node-version-file: .node-version
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Build gs-web Worker output
-        run: pnpm build:pages
+          name: cloudflare-inventory-${{ github.run_id }}-deploy-gs-web
+          path: cloudflare-inventory.json
+          retention-days: 30
