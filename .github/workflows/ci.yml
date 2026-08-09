@@ -71,6 +71,12 @@ jobs:
       - name: Build all
         run: pnpm -r --sequential build
 
+      # gs-web's "test" script runs Playwright only, so tests/unit never ran in
+      # CI on either this workflow or the pull-request gate. Invoke test:unit
+      # explicitly so pushes to main are covered as well.
+      - name: Test gs-web (unit)
+        run: pnpm --dir apps/gs-web test:unit
+
       - name: Detect gs-web release-impact changes
         id: gs-web-changes
         shell: bash
