@@ -16,6 +16,12 @@ interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
 
+interface KVNamespace {
+  get(key: string): Promise<string | null>;
+  put(key: string, value: string): Promise<void>;
+  delete(key: string): Promise<void>;
+}
+
 interface D1Result<Row> {
   results?: Row[];
 }
@@ -27,20 +33,11 @@ interface D1PreparedStatement<Row = Record<string, unknown>> {
   run(): Promise<unknown>;
 }
 
-// Global Cloudflare Env types
-interface KVNamespace {
-  put(
-    key: string,
-    value: string | ReadableStream | ArrayBuffer,
-    options?: unknown,
-  ): Promise<void>;
-  get(key: string, options?: unknown): Promise<string | null>;
-}
-
 interface D1Database {
-  prepare<Row = Record<string, unknown>>(query: string): D1PreparedStatement<Row>;
+  prepare(query: string): D1PreparedStatement;
 }
 
+// Global Cloudflare Env types
 interface Env {
   KV: KVNamespace;
   PLATFORM_DB: D1Database;
@@ -49,13 +46,34 @@ interface Env {
   MAILCHANNELS_SENDER_EMAIL?: string;
   MAILCHANNELS_SENDER_NAME?: string;
   MAILCHANNELS_API_URL?: string;
+  CLOUDFLARE_TEAM_DOMAIN?: string;
+  CLOUDFLARE_ACCESS_AUDIENCE?: string;
+  JWT_SECRET?: string;
+  DEV_AUTH_BYPASS?: string;
+  PUBLIC_API?: string;
+  GOOGLE_ADSENSE_CLIENT_ID?: string;
+  GOOGLE_ADSENSE_CLIENT_SECRET?: string;
+  GOOGLE_ADSENSE_REFRESH_TOKEN?: string;
+  GOOGLE_ADSENSE_ACCOUNT_ID?: string;
+  GOOGLE_GSC_CLIENT_ID?: string;
+  GOOGLE_GSC_CLIENT_SECRET?: string;
+  GOOGLE_GSC_REFRESH_TOKEN?: string;
+  GOOGLE_GSC_SITE_URL?: string;
 }
 
 declare namespace App {
   interface Locals {
-    runtime: {
-      env: Env;
+    runtime?: {
+      env?: Env;
     };
     securityPolicySource?: 'response-header' | 'platform-config';
+    adminSession?: {
+      roles: string[];
+      permissions: string[];
+      actor?: string;
+      isAuthenticated?: boolean;
+    };
+    TURNSTILE_SITE_KEY?: string;
+    PUBLIC_API?: string;
   }
 }

@@ -3,7 +3,7 @@ import { GSButton } from '@goldshore/ui';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import FlowSection from '../components/FlowSection.astro';
 
-export const prerender = true;
+export const prerender = false;
 
 const services = [
   {
@@ -100,14 +100,29 @@ const services = [
       {services.map((service) => (
         <article class="gs-card service-card">
           <h3>{service.name}</h3>
-          <p>{service.detail}</p>
-          {service.bullets ? (
-            <ul class="gs-text-sm">
-              {service.bullets.map((item) => (
+          <p class="service-card__overview">{service.overview}</p>
+          <div class="service-card__meta" aria-label={`${service.name} delivery details`}>
+            <p><strong>Timeline:</strong> {service.timeline}</p>
+            <p><strong>Best fit:</strong> {service.bestFit}</p>
+          </div>
+          {service.scope ? (
+            <div class="service-card__section">
+              <h4>Scope</h4>
+              <ul class="service-card__list">
+              {service.scope.map((item) => (
                 <li>{item}</li>
               ))}
             </ul>
+            </div>
           ) : null}
+          <div class="service-card__section">
+            <h4>Deliverables</h4>
+            <ul class="service-card__list">
+              {service.deliverables.map((item) => (
+                <li>{item}</li>
+              ))}
+            </ul>
+          </div>
           <GSButton
             href={service.cta}
             variant="secondary"
@@ -171,3 +186,67 @@ const services = [
     }
   </script>
 </BaseLayout>
+
+<style>
+  .service-card {
+    display: grid;
+    gap: 1rem;
+    align-content: start;
+  }
+
+  .service-card h3 {
+    margin: 0;
+  }
+
+  .service-card__overview {
+    margin: 0;
+    color: var(--gs-text-dim);
+    line-height: 1.7;
+  }
+
+  .service-card__meta {
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .service-card__meta p,
+  .service-card__section h4,
+  .service-card__list {
+    margin: 0;
+  }
+
+  .service-card__meta p {
+    color: var(--gs-text-dim);
+    line-height: 1.6;
+  }
+
+  .service-card__section {
+    display: grid;
+    gap: 0.55rem;
+  }
+
+  .service-card__section h4 {
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gs-text);
+  }
+
+  .service-card__list {
+    display: grid;
+    gap: 0.5rem;
+    padding-left: 1.15rem;
+    color: var(--gs-text-dim);
+    line-height: 1.6;
+  }
+
+  .service-card__list li::marker {
+    color: var(--gs-primary, #d96a32);
+  }
+
+  @media (max-width: 720px) {
+    .service-card {
+      gap: 0.85rem;
+    }
+  }
+</style>

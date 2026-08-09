@@ -23,17 +23,6 @@ type LeadSubmission = {
   user_agent: string | null;
 };
 
-const runtime = Astro.locals.runtime as {
-  env?: {
-    PLATFORM_DB?: {
-      prepare(query: string): {
-        bind(...values: string[]): { all(): Promise<{ results?: LeadSubmission[] }> };
-        all(): Promise<{ results?: LeadSubmission[] }>;
-      };
-    };
-  };
-} | undefined;
-const db = runtime?.env?.PLATFORM_DB;
 const url = new URL(Astro.request.url);
 const statusFilter = url.searchParams.get('status');
 const allowedStatuses = ['new', 'read', 'archived'] as const;
@@ -45,34 +34,18 @@ const redirectTo = `${url.pathname}${url.search}`;
 let submissions: LeadSubmission[] = [];
 let errorMessage = '';
 
-if (!db) {
-  errorMessage = 'Storage unavailable. Configure the DB binding for this environment.';
-} else {
-  const whereClause = filterStatus ? 'WHERE status = ?' : '';
-  const query = `SELECT
-    id,
-    form_type,
-    name,
-    email,
-    company,
-    role,
-    website,
-    team_size,
-    industry,
-    timeline,
-    budget,
-    goals,
-    message,
-    status,
-    received_at,
-    ip_address,
-    user_agent
-  FROM lead_submissions
-  ${whereClause}
-  ORDER BY received_at DESC`;
-  const statement = db.prepare(query);
-  const response = filterStatus ? await statement.bind(filterStatus).all() : await statement.all();
-  submissions = Array.isArray(response?.results) ? (response.results as LeadSubmission[]) : [];
+const submissionsUrl = new URL('/api/admin/lead-submissions', url.origin);
+if (filterStatus) submissionsUrl.searchParams.set('status', filterStatus);
+
+try {
+  const response = await fetch(submissionsUrl, { headers: Astro.request.headers });
+  if (response.ok) {
+    submissions = (await response.json()) as LeadSubmission[];
+  } else {
+    errorMessage = await response.text();
+  }
+} catch {
+  errorMessage = 'Storage unavailable.';
 }
 
 const exportUrl = filterStatus

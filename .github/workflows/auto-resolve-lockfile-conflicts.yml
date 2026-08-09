@@ -1,0 +1,104 @@
+name: Auto-resolve pnpm lockfile conflicts
+
+# Automatically resolves pnpm-lock.yaml conflicts by accepting the most recent versions
+# This runs on PRs to detect and fix conflicts before merge, preventing 500+ manual resolutions
+
+on:
+  pull_request:
+    paths:
+      - pnpm-lock.yaml
+      - package.json
+      - pnpm-workspace.yaml
+      - apps/**/package.json
+      - packages/**/package.json
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  resolve-lockfile-conflicts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 9.15.4
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Check for lockfile conflicts
+        id: check_conflicts
+        run: |
+          if grep -q "^<<<<<<< HEAD" pnpm-lock.yaml 2>/dev/null; then
+            echo "has_conflicts=true" >> $GITHUB_OUTPUT
+            echo "Lockfile has merge conflicts detected"
+          else
+            echo "has_conflicts=false" >> $GITHUB_OUTPUT
+            echo "No conflicts detected in lockfile"
+          fi
+
+      - name: Resolve conflicts by regenerating lockfile
+        if: steps.check_conflicts.outputs.has_conflicts == 'true'
+        run: |
+          # Remove conflict markers
+          git checkout --ours pnpm-lock.yaml
+          # Regenerate with latest package.json specs
+          pnpm install --no-frozen-lockfile --lockfile-only
+          # Full install to validate
+          pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Validate lockfile integrity
+        run: |
+          set -euo pipefail
+          # Check for any remaining conflict markers
+          if grep -qE "^(<{7}|>{7}|={7})" pnpm-lock.yaml; then
+            echo "❌ Conflict markers still present in lockfile"
+            exit 1
+          fi
+          # Verify lockfile is valid YAML
+          pnpm install --frozen-lockfile --ignore-scripts
+          echo "✅ Lockfile validated successfully"
+
+      - name: Commit resolved lockfile if changed
+        if: steps.check_conflicts.outputs.has_conflicts == 'true'
+        run: |
+          if git diff --quiet pnpm-lock.yaml; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add pnpm-lock.yaml
+          git commit -m "fix(ci): Auto-resolve pnpm-lock.yaml conflicts
+
+Detected and resolved merge conflicts in pnpm-lock.yaml by regenerating
+from current package.json specs. This uses the latest versions of all
+dependencies based on their package manifest definitions.
+
+[skip ci]"
+
+          git push origin HEAD:${{ github.head_ref }}
+          echo "✅ Resolved lockfile conflicts and pushed to branch"
+
+      - name: Comment on PR if conflicts were resolved
+        if: steps.check_conflicts.outputs.has_conflicts == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '✅ **Lockfile Conflict Resolved**\n\nDetected and automatically resolved merge conflicts in `pnpm-lock.yaml` by regenerating from package manifests. The latest version of each dependency based on your `package.json` specs has been selected.\n\n💡 This prevents manual resolution of 500+ conflicts on each branch push.'
+            })

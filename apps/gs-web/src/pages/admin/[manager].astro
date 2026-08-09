@@ -1,0 +1,96 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+
+const managers = {
+  workflows: {
+    title: 'API Workflows',
+    description: 'Design, trigger, observe, retry, and audit multi-step operations across gs-api and Cloudflare Workflows.',
+    primary: 'Create workflow',
+    items: ['Customer onboarding', 'Contact-form dispatch', 'Subscription activation', 'R2 export generation'],
+    fields: ['Trigger', 'Worker route', 'Retry policy', 'Timeout', 'Audit destination'],
+  },
+  'customer-email': {
+    title: 'Customer Email',
+    description: 'Manage transactional templates, delivery routes, suppression controls, and customer-message history.',
+    primary: 'Create template',
+    items: ['Welcome email', 'Contact confirmation', 'Subscription receipt', 'Support follow-up'],
+    fields: ['Sender identity', 'Reply-to', 'Template key', 'Delivery worker', 'Retention policy'],
+  },
+  subscribe: {
+    title: 'Subscribe CTA',
+    description: 'Configure public subscription calls to action, plan destinations, consent language, and conversion tracking.',
+    primary: 'Create CTA',
+    items: ['Homepage hero', 'Service-page footer', 'Customer portal upgrade', 'Newsletter signup'],
+    fields: ['Headline', 'Supporting copy', 'Button label', 'Destination', 'Analytics event'],
+  },
+  'contact-forms': {
+    title: 'Contact Forms',
+    description: 'Build customer intake forms backed by gs-api, D1, spam controls, email dispatch, and audit records.',
+    primary: 'Create form',
+    items: ['General inquiry', 'Managed infrastructure', 'API consultation', 'Customer support'],
+    fields: ['Schema', 'API endpoint', 'D1 table', 'Notification route', 'Retention window'],
+  },
+  pages: {
+    title: 'Custom Pages',
+    description: 'Create reusable pages with content blocks, routes, metadata, publishing state, and R2-hosted media.',
+    primary: 'Create page',
+    items: ['Landing page', 'Service page', 'Campaign page', 'Legal page'],
+    fields: ['Route', 'Template', 'SEO metadata', 'Content source', 'Publish target'],
+  },
+} as const;
+
+type ManagerKey = keyof typeof managers;
+
+export function getStaticPaths() {
+  return Object.keys(managers).map((manager) => ({ params: { manager } }));
+}
+
+const { manager } = Astro.params as { manager: ManagerKey };
+const config = managers[manager];
+---
+
+<AdminLayout title={config.title}>
+  <header class="page-header">
+    <div>
+      <a href="/admin/platform">← Control Plane</a>
+      <p class="eyebrow">Manager template</p>
+      <h1>{config.title}</h1>
+      <p>{config.description}</p>
+    </div>
+    <button type="button">{config.primary}</button>
+  </header>
+
+  <section class="grid">
+    <article class="panel inventory">
+      <div class="heading"><h2>Configured items</h2><span>{config.items.length}</span></div>
+      <div class="list">
+        {config.items.map((item, index) => (
+          <button class="item" type="button">
+            <span><strong>{item}</strong><small>Draft configuration</small></span>
+            <code>#{String(index + 1).padStart(2, '0')}</code>
+          </button>
+        ))}
+      </div>
+    </article>
+
+    <article class="panel editor">
+      <div class="heading"><h2>Configuration editor</h2><span class="status">Template</span></div>
+      <form>
+        {config.fields.map((field) => (
+          <label>{field}<input name={field.toLowerCase().replaceAll(' ', '-')} placeholder={`Configure ${field.toLowerCase()}`} /></label>
+        ))}
+        <label>Notes<textarea rows="5" placeholder="Operational notes, ownership, and rollout details"></textarea></label>
+        <div class="actions"><button type="button" class="secondary">Save draft</button><button type="button">Publish configuration</button></div>
+      </form>
+    </article>
+  </section>
+
+  <section class="panel architecture">
+    <div class="heading"><h2>Default Cloudflare flow</h2><span class="status">Reference</span></div>
+    <div class="flow"><code>admin.goldshore.org</code><span>→</span><code>gs-api</code><span>→</span><code>D1 / R2 / Workflows</code><span>→</span><code>Audit + customer email</code></div>
+  </section>
+</AdminLayout>
+
+<style>
+  .page-header{display:flex;align-items:flex-end;justify-content:space-between;gap:2rem;padding:2.25rem}.page-header>a,.page-header a{color:#7cc7ff;text-decoration:none}.page-header h1{font-size:clamp(2.2rem,5vw,4rem);line-height:1;margin:.35rem 0}.page-header p{max-width:780px;color:#97a9bd}.eyebrow{text-transform:uppercase;letter-spacing:.14em;font-size:.7rem;color:#f59e0b;font-weight:800}.grid{display:grid;grid-template-columns:minmax(280px,.75fr) minmax(420px,1.25fr);gap:1rem;margin:0 2.25rem 1rem}.panel{border:1px solid #1d3148;border-radius:1rem;background:#081522;padding:1.2rem}.architecture{margin:0 2.25rem 2.25rem}.heading,.actions,.flow{display:flex;align-items:center}.heading{justify-content:space-between;border-bottom:1px solid #1d3148;padding-bottom:.8rem;margin-bottom:1rem}.heading h2{margin:0;font-size:1rem}.heading>span,.status{color:#94cfff;font-size:.72rem;border:1px solid #294c6d;border-radius:999px;padding:.2rem .5rem}.list{display:grid;gap:.65rem}.item{display:flex;justify-content:space-between;text-align:left;width:100%;padding:.9rem;border:1px solid #203a54;border-radius:.7rem;background:#07111d;color:#e8f1fb;cursor:pointer}.item small{display:block;color:#7f93aa;margin-top:.25rem}.item code{color:#f59e0b}form{display:grid;gap:.8rem}label{display:grid;gap:.35rem;color:#9eb0c4;font-size:.78rem}input,textarea{box-sizing:border-box;width:100%;border:1px solid #29425f;background:#07111d;color:#edf5ff;border-radius:.55rem;padding:.72rem;font:inherit}button{border:1px solid #f59e0b;background:#d97706;color:#07111d;border-radius:.65rem;padding:.75rem 1rem;font:inherit;font-weight:750;cursor:pointer}.actions{justify-content:flex-end;gap:.75rem}.secondary{background:#0b1b2b;border-color:#29425f;color:#dce8f5}.flow{justify-content:center;gap:1rem;flex-wrap:wrap;padding:1rem}.flow code{border:1px solid #29425f;border-radius:.55rem;padding:.6rem;color:#f4b455;background:#07111d}@media(max-width:850px){.page-header{align-items:flex-start;flex-direction:column;padding:1.25rem}.grid{grid-template-columns:1fr;margin:0 1.25rem 1rem}.architecture{margin:0 1.25rem 1.25rem}}
+</style>

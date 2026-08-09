@@ -12,7 +12,7 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "check:pages": "tsx scripts/check-pages-200.ts",
-    "scan:pii": "node scripts/pii-scan.mjs --mode local --output apps/gs-admin/src/data/pii-scan-results.json --summary reports/pii-scan-summary.md",
+    "scan:pii": "node scripts/pii-scan.mjs --mode local --output apps/gs-web/src/data/pii-scan-results.json --summary reports/pii-scan-summary.md",
     "check:docs-consistency": "node scripts/check-doc-consistency.mjs",
     "check:theme-exports": "node scripts/check-theme-exports.mjs",
     "check:naming": "node scripts/lint-naming.mjs",
@@ -40,41 +40,31 @@
     "check:wrangler-placeholders": "node scripts/check-wrangler-placeholders.mjs"
   },
   "devDependencies": {
-    "@astrojs/mdx": "^5.0.4",
+    "@astrojs/mdx": "^7.0.3",
     "@astrojs/sitemap": "^3.7.2",
     "@astrojs/tailwind": "^6.0.2",
+    "@cloudflare/workers-types": "^5.20260708.1",
     "@types/node": "^26.1.1",
     "@typescript-eslint/eslint-plugin": "^8.57.2",
-    "@typescript-eslint/parser": "^8.62.1",
-    "astro": "^6.4.6",
-    "eslint": "^10.5.0",
-    "eslint-plugin-astro": "^1.6.0",
+    "@typescript-eslint/parser": "^8.65.0",
+    "astro": "^7.2.0",
+    "eslint": "^10.8.0",
+    "eslint-plugin-astro": "^3.0.1",
     "form-data": "^4.0.6",
     "octokit": "^5.0.5",
-    "prettier": "^3.2.5",
+    "prettier": "^3.9.6",
     "prettier-plugin-astro": "^0.14.1",
-    "svgo": "^4.0.1",
-    "tailwindcss": "^4.3.1",
-    "tsx": "^4.21.0",
+    "svgo": "^4.0.2",
+    "tsx": "^4.23.1",
     "typescript": "^5.4.2",
-    "wrangler": "^4.103.0",
+    "wrangler": "^4.112.0",
     "yaml": "^2.9.0",
     "zod": "^4.3.6"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "^13.7.0",
-    "p-limit": "^7.3.0",
-    "turbo": "^2.9.12"
-  },
-  "pnpm": {
-    "overrides": {
-      "@astrojs/cloudflare": "13.7.0",
-      "@astrojs/adapter-cloudflare": "12.6.12",
-      "postal-mime": "2.7.3",
-      "wrangler": "^4.103.0",
-      "typescript": "^5.4.2",
-      "esbuild": "0.25.12"
-    }
+    "@astrojs/cloudflare": "^14.2.0",
+    "p-limit": "^7.3.1",
+    "turbo": "^2.10.5"
   },
   "engines": {
     "node": ">=22.12.0"
