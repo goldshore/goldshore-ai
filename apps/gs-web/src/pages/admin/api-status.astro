@@ -1,0 +1,180 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { authorizeAdminRequest, getAdminRouteRule } from '../../utils/admin-access';
+
+export const prerender = false;
+
+type InboxStatusResponse = {
+  success: boolean;
+  timestamp?: string;
+  services?: Record<string, unknown>;
+  inbox?: { count: number; recent: unknown[] };
+  routing?: { hostCount: number };
+  orchestration?: { preferredModel?: string; queueConcurrency?: number };
+  error?: string;
+};
+
+type DnsSyncStatusResponse = {
+  success: boolean;
+  checkedAt?: string;
+  latestRun?: { runId: string; success: boolean; driftStatus: string; endedAt: string } | null;
+  masterConfigReport?: {
+    lastSyncTimestampVerified: string | null;
+    syncSource: string;
+    driftStatusComputed: string;
+  };
+  error?: string;
+};
+
+type HealthResponse = {
+  status: string;
+  service: string;
+  version: string;
+  kv?: string;
+  db?: string;
+};
+
+const env = Astro.locals.runtime?.env as Env | undefined;
+const rule = getAdminRouteRule('/admin/api-status', 'GET');
+
+let authError: { status: number; message: string } | null = null;
+if (!rule) {
+  authError = { status: 404, message: 'Not found.' };
+} else {
+  const authResult = await authorizeAdminRequest(Astro.request, env as never, rule);
+  if (!authResult.ok) {
+    authError = { status: authResult.status, message: authResult.error };
+  }
+}
+
+const apiBase = (env?.PUBLIC_API || 'https://api.goldshore.ai').replace(/\/$/, '');
+
+let inboxStatus: InboxStatusResponse | null = null;
+let dnsSyncStatus: DnsSyncStatusResponse | null = null;
+let health: HealthResponse | null = null;
+let fetchError = '';
+
+if (!authError) {
+  const forwardHeaders = new Headers();
+  const cookie = Astro.request.headers.get('cookie');
+  const accessJwt = Astro.request.headers.get('cf-access-jwt-assertion');
+  if (cookie) forwardHeaders.set('cookie', cookie);
+  if (accessJwt) forwardHeaders.set('cf-access-jwt-assertion', accessJwt);
+
+  try {
+    const [inboxRes, dnsRes, healthRes] = await Promise.all([
+      fetch(`${apiBase}/internal/inbox-status`, { headers: forwardHeaders }),
+      fetch(`${apiBase}/internal/dns-sync-status`, { headers: forwardHeaders }),
+      fetch(`${apiBase}/health?type=deep`, { headers: forwardHeaders }),
+    ]);
+
+    inboxStatus = inboxRes.ok ? await inboxRes.json() : { success: false, error: `HTTP ${inboxRes.status}` };
+    dnsSyncStatus = dnsRes.ok ? await dnsRes.json() : { success: false, error: `HTTP ${dnsRes.status}` };
+    health = healthRes.ok ? await healthRes.json() : null;
+  } catch {
+    fetchError = 'Unable to reach api.goldshore.ai.';
+  }
+}
+
+const formatDate = (value: string | null | undefined) => (value ? new Date(value).toLocaleString() : '—');
+---
+
+<BaseLayout title="API Status | GoldShore Admin" description="gs-api routes, health, and runtime config">
+  <section class="gs-section">
+    <div class="gs-grid columns-2">
+      <div>
+        <h1>API status</h1>
+        <p class="gs-text-lg">Live health, routing, and orchestration config for gs-api.</p>
+      </div>
+      <div class="gs-card">
+        <h2 class="section-title"><span>◆</span>Actions</h2>
+        <ul>
+          <li><a href="/admin/lead-submissions">Lead submissions</a></li>
+          <li><a href="/admin/crawler">Crawler</a></li>
+        </ul>
+      </div>
+    </div>
+
+    {authError ? (
+      <div class="gs-card" style="margin-top: 2rem;">
+        <p class="gs-text-lg">{authError.message}</p>
+        {authError.status === 401 && <p class="gs-text-sm">Sign in via Cloudflare Access to continue.</p>}
+      </div>
+    ) : fetchError ? (
+      <div class="gs-card" style="margin-top: 2rem;">
+        <p class="gs-text-lg">{fetchError}</p>
+      </div>
+    ) : (
+      <>
+        <div class="gs-grid columns-2" style="margin-top: 2rem;">
+          <div class="gs-card">
+            <h2 class="section-title"><span>◆</span>Health</h2>
+            {health ? (
+              <ul>
+                <li>Status: <span class={`gs-badge ${health.status === 'ok' ? 'success' : ''}`}>{health.status}</span></li>
+                <li>Version: {health.version}</li>
+                <li>KV: <span class={`gs-badge ${health.kv === 'connected' ? 'success' : 'info'}`}>{health.kv ?? 'unknown'}</span></li>
+                <li>DB: <span class={`gs-badge ${health.db === 'connected' ? 'success' : 'info'}`}>{health.db ?? 'unknown'}</span></li>
+              </ul>
+            ) : (
+              <p>Health check unavailable.</p>
+            )}
+          </div>
+
+          <div class="gs-card">
+            <h2 class="section-title"><span>◆</span>AI orchestration</h2>
+            {inboxStatus?.success ? (
+              <ul>
+                <li>Preferred model: {inboxStatus.orchestration?.preferredModel ?? '—'}</li>
+                <li>Queue concurrency: {inboxStatus.orchestration?.queueConcurrency ?? '—'}</li>
+                <li>Routed hosts: {inboxStatus.routing?.hostCount ?? 0}</li>
+                <li>Inbox logs: {inboxStatus.inbox?.count ?? 0}</li>
+              </ul>
+            ) : (
+              <p>{inboxStatus?.error ?? 'Unavailable.'}</p>
+            )}
+          </div>
+        </div>
+
+        <div class="gs-card" style="margin-top: 2rem;">
+          <h2 class="section-title"><span>◆</span>Service status</h2>
+          {inboxStatus?.success && inboxStatus.services ? (
+            <table class="gs-table">
+              <thead>
+                <tr><th>Service</th><th>Value</th></tr>
+              </thead>
+              <tbody>
+                {Object.entries(inboxStatus.services).map(([key, value]) => (
+                  <tr>
+                    <td>{key}</td>
+                    <td>{typeof value === 'object' ? JSON.stringify(value) : String(value)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p>No service status recorded.</p>
+          )}
+        </div>
+
+        <div class="gs-card" style="margin-top: 2rem;">
+          <h2 class="section-title"><span>◆</span>DNS sync</h2>
+          {dnsSyncStatus?.success ? (
+            <ul>
+              <li>Last verified sync: {formatDate(dnsSyncStatus.masterConfigReport?.lastSyncTimestampVerified)}</li>
+              <li>Source: {dnsSyncStatus.masterConfigReport?.syncSource ?? '—'}</li>
+              <li>
+                Drift status:{' '}
+                <span class={`gs-badge ${dnsSyncStatus.masterConfigReport?.driftStatusComputed === 'in_sync' ? 'success' : 'info'}`}>
+                  {dnsSyncStatus.masterConfigReport?.driftStatusComputed ?? 'unknown'}
+                </span>
+              </li>
+            </ul>
+          ) : (
+            <p>{dnsSyncStatus?.error ?? 'No DNS sync data recorded.'}</p>
+          )}
+        </div>
+      </>
+    )}
+  </section>
+</BaseLayout>

@@ -101,7 +101,7 @@ function main() {
   }
 
   const appsDir = "apps";
-  const requiredApps = ["gs-admin", "gs-api", "gs-control", "gs-gateway", "gs-web", "gs-agent"];
+  const requiredApps = ["gs-api", "gs-web"];
 
   if (!existsSync(appsDir)) {
     console.error("apps directory missing");
