@@ -16,17 +16,21 @@ import admin from './routes/admin';
 import media from './routes/media';
 import pages from './routes/pages';
 import internal from './routes/internal';
+import products from './routes/products';
 import domains from './routes/domains';
 import sites from './routes/sites';
 import forms from './routes/forms';
 import deployments from './routes/deployments';
 import gearswipe from './routes/gearswipe';
+import products from './routes/products';
+import services from './routes/services';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
 
 type Env = {
   KV: KVNamespace;
   CONTROL_LOGS?: KVNamespace;
+  RISK_RADAR_CACHE?: KVNamespace;
   PLATFORM_DB: D1Database;
   TELEMETRY_DB?: D1Database;
   GS_ASSETS: R2Bucket;
@@ -261,6 +265,8 @@ app.route('/admin', admin);
 app.route('/media', media);
 app.route('/pages', pages);
 app.route('/internal', internal);
+app.route('/products', products);
+app.route('/services', services);
 
 const v1 = new Hono<{ Bindings: Env }>();
 v1.route('/users', users);
@@ -269,6 +275,8 @@ v1.route('/sites', sites);
 v1.route('/forms', forms);
 v1.route('/deployments', deployments);
 v1.route('/gearswipe', gearswipe);
+v1.route('/products', products);
+v1.route('/services', services);
 v1.get('/leads', (c) => c.json({ leads: [] }));
 
 app.route('/v1', v1);
@@ -321,6 +329,17 @@ const readInboxLogs = async (kv: KVNamespace) => {
     return [];
   }
 };
+
+interface Message<T> {
+  id: string;
+  body: T;
+  ack(): void;
+  retry(): void;
+}
+
+interface MessageBatch<T> {
+  messages: Array<Message<T>>;
+}
 
 const processQueueMessage = async (message: Message<any>, env: Env): Promise<void> => {
   const body = message.body;
