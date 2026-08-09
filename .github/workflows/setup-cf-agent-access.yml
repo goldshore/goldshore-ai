@@ -569,8 +569,8 @@ jobs:
           # Used for public paths that must not hit the Access login wall.
           # CF Access resolves the more-specific path-scoped app before the broader allow app.
           upsert_bypass_app() {
-            local name="$1" domain="$2" extra_domains="${3:-[]}"
-            AID=$(find_app "$name" "$domain")
+            local name="$1" domain="$2" extra_domains="${3:-[]}" aliases="${4:-[]}"
+            AID=$(find_app "$name" "$aliases")
             if [ -n "$AID" ]; then
               echo "Found existing bypass app [$name]: $AID — updating domains and bypass policy"
               update_app "$AID" "$name" "$domain" "$extra_domains"
@@ -870,12 +870,17 @@ jobs:
           # and docs/domains-and-auth.md; app names match CF dashboard)
           # ------------------------------------------------------------------
 
+          upsert_full_access "Dashboard"       "goldshore.ai/app"
+          # GoldShore Admin: .ai canonical + .org alias + preview admin hosts
+          # on the canonical gs-web Worker surface (Gate 5a).
+          upsert_full_access "GoldShore Admin"   "admin.goldshore.ai" \
+            '["admin.goldshore.org","admin-preview.goldshore.ai","admin-preview.goldshore.org"]'
           upsert_full_access "GoldShore-Dashboard" "goldshore.ai/app" "[]" "" "" \
             '["Dashboard"]'
           # GoldShore Admin: .ai canonical + .org alias + admin-preview (Gate 5a)
-          # + admin.gs-admin.pages.dev (Pages custom preview host)
+          # Served from gs-web (Pages custom preview hosts — see gs-web wrangler.toml)
           upsert_full_access "GoldShore-Admin-ZT" "admin.goldshore.ai" \
-            '["admin.goldshore.org","admin-preview.goldshore.ai","admin.gs-admin.pages.dev"]' "" "" \
+            '["admin.goldshore.org","admin-preview.goldshore.ai"]' "" "" \
             '["GoldShore Admin","Goldshore Admin","Admin"]'
           # GoldShore Trading: canonical + dashboard/dash aliases (Gate 5b)
           upsert_full_access "GoldShore-Trading-ZT" "trading.goldshore.ai" \

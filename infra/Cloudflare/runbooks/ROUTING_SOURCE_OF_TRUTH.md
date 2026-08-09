@@ -24,7 +24,6 @@ Authoritative policy and maps:
 Use Pages project custom domain settings for:
 
 - `goldshore.ai`, `www.goldshore.ai`, `preview.goldshore.ai` → `gs-web`
-- `admin.goldshore.ai`, `admin-preview.goldshore.ai` → `gs-admin`
 
 Do not create Worker routes for these hosts unless policy is explicitly changed in `policy/ROUTE_POLICY.md`.
 
@@ -36,6 +35,8 @@ Use Worker route patterns for service subdomains:
 - `gw.goldshore.ai/*` (+ preview) → `gs-gateway`
 - `agent.goldshore.ai/*` → gateway entry for agent traffic
 - `ops.goldshore.ai/*` → `gs-control`
+- `admin.goldshore.ai/*`, `admin.goldshore.org/*` → `gs-web`
+- `admin-preview.goldshore.ai` → `gs-web-preview`
 
 ## 3) Required Change Procedure
 

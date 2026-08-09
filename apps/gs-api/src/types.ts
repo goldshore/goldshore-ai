@@ -1,4 +1,5 @@
 import { type AccessTokenPayload } from "@goldshore/auth";
+import { type SessionUser } from "./lib/sessions";
 
 export type Env = {
   KV: KVNamespace;
@@ -9,7 +10,6 @@ export type Env = {
   TELEMETRY_DB?: D1Database;
   GS_ASSETS: R2Bucket;
   RISK_RADAR_R2?: R2Bucket;
-  AUTH_SESSION?: DurableObjectNamespace;
   AI: Ai;
   INTEGRATION_MASTER_KEY?: string;
   JOBS_QUEUE?: Queue;
@@ -41,6 +41,13 @@ export type Env = {
   DEPLOY_SHA?: string;
   GIT_SHA?: string;
   CONTROL_ADMIN_ROLES?: string;
+  MAIL_FORWARD_TO?: string;
+  FORWARD_TO?: string;
+  MAIL_BLOCKED_SENDERS?: string;
+  MAIL_ALLOWED_RECIPIENTS?: string;
+  AGENT?: Fetcher;
+  API_ORIGIN?: string;
+  CONTROL_ADMIN_ROLES?: string;
   CLOUDFLARE_API_TOKEN?: string;
   GITHUB_TOKEN?: string;
   GITHUB_API_TOKEN?: string;
@@ -64,6 +71,11 @@ export type Env = {
   GOOGLE_OAUTH_CLIENT_ID?: string;
   GOOGLE_OAUTH_CLIENT_SECRET?: string;
   GOOGLE_OAUTH_REDIRECT_URI?: string;
+  GITHUB_CLIENT_ID?: string;
+  GITHUB_CLIENT_SECRET?: string;
+  GITHUB_OAUTH_REDIRECT_URI?: string;
+  TURNSTILE_SITE_KEY?: string;
+  TURNSTILE_SECRET_KEY?: string;
   CONTACT_NOTIFICATION_EMAILS?: string;
   PUBLIC_SITE_URL?: string;
   MAILCHANNELS_SENDER_EMAIL?: string;
@@ -89,6 +101,7 @@ export type Env = {
 
 export type Variables = {
   accessClaims: AccessTokenPayload | null;
+  user?: SessionUser;
 };
 
 export type AuditEvent = {

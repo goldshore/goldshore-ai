@@ -62,9 +62,17 @@ interface Env {
 
 declare namespace App {
   interface Locals {
-    runtime: {
-      env: Env;
+    runtime?: {
+      env?: Env;
     };
     securityPolicySource?: 'response-header' | 'platform-config';
+    adminSession?: {
+      roles: string[];
+      permissions: string[];
+      actor?: string;
+      isAuthenticated?: boolean;
+    };
+    TURNSTILE_SITE_KEY?: string;
+    PUBLIC_API?: string;
   }
 }
