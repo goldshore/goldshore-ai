@@ -3,23 +3,14 @@ import { verifyJWTCookie } from '@goldshore/auth';
 import { HTML_CONTENT_SECURITY_POLICY } from './security/policy';
 import {
   authorizeAdminRequest,
+  ADMIN_DASHBOARD_PATH,
   getAdminRouteRule,
   getAdminHostRewritePath,
   isAdminHost,
-  isStaticAssetPath,
 } from './utils/admin-access';
-
-const ADMIN_PATH_PREFIXES = ['/admin', '/api/admin'];
-
-const isAdminPath = (pathname: string) =>
-  ADMIN_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 
 const getRequestHostname = (request: Request, url: URL) =>
   (request.headers.get('host') ?? url.hostname).split(':')[0].toLowerCase();
-
-const isProtectedAdminRequest = (request: Request, url: URL) =>
-  isAdminPath(url.pathname) ||
-  (isAdminHost(getRequestHostname(request, url)) && !isStaticAssetPath(url.pathname));
 
 export const onRequest: MiddlewareHandler = async (context, next) => {
   // Redirect risk.goldshore.ai root → /risk-radar (subdomain alias for the product page).
@@ -60,10 +51,11 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   context.locals.securityPolicySource = 'response-header';
 
   const url = new URL(context.request.url);
+  const routedPath = adminRewritePath ?? url.pathname;
   const adminRule = getAdminRouteRule(
-    url.pathname,
+    routedPath,
     context.request.method,
-    url.hostname,
+    host,
   );
 
   if (adminRule) {
@@ -116,14 +108,17 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
 
     if (
       adminRule.kind === 'page' &&
-      isAdminHost(url.hostname) &&
-      url.pathname !== adminRule.canonicalPath
+      isAdminHost(host) &&
+      routedPath === ADMIN_DASHBOARD_PATH &&
+      url.pathname !== ADMIN_DASHBOARD_PATH
     ) {
-      return Response.redirect(new URL(adminRule.canonicalPath, url.origin), 302);
+      return Response.redirect(new URL(ADMIN_DASHBOARD_PATH, url.origin), 302);
     }
   }
 
-  const response = await next();
+  const response = adminRewritePath
+    ? await context.rewrite(adminRewritePath)
+    : await next();
   response.headers.set('Content-Security-Policy', HTML_CONTENT_SECURITY_POLICY);
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');
