@@ -1,10 +1,12 @@
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
-const webRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const workingDirectory = process.cwd();
+const webRoot = existsSync(path.join(workingDirectory, 'src', 'styles'))
+  ? workingDirectory
+  : path.join(workingDirectory, 'apps', 'gs-web');
 const repositoryRoot = path.resolve(webRoot, '../..');
 
 function gitReleaseSha(): string {

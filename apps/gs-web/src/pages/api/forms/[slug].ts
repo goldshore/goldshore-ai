@@ -1,9 +1,6 @@
 import type { APIRoute } from 'astro';
 import { proxyApiRequest } from '../../../lib/api-proxy';
 
-const forward: APIRoute = ({ request, params, locals }) =>
-  proxyApiRequest(request, `/v1/forms/configs/${encodeURIComponent(params.slug || '')}`, locals.PUBLIC_API);
-
 export const prerender = false;
 
 const apiBase = (env: Env | undefined) =>
@@ -215,11 +212,16 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     .bind(slug)
     .all();
 
-  const row = result?.results?.[0] as Record<string, string> | undefined;
-  if (!row) {
-    return new Response('Form not found.', { status: 404 });
+const forwardedHeaders = (request: Request) => {
+  const headers = new Headers();
+  for (const name of ['accept', 'authorization', 'cookie', 'cf-connecting-ip', 'user-agent', 'content-type']) {
+    const value = request.headers.get(name);
+    if (value) headers.set(name, value);
   }
   return headers;
+};
+
+const proxy = async (request: Request, env: Env | undefined, slug?: string) => {
 };
 
 export const GET: APIRoute = async ({ request, locals, params }) => {
@@ -471,20 +473,6 @@ const proxy = async (request: Request, env: Env | undefined, slug?: string) => {
 export const PUT: APIRoute = async ({ request, locals, params }) => {
   const env = locals.runtime?.env as AccessEnv | undefined;
   const slug = params.slug;
-
-  if (!env?.PLATFORM_DB) {
-    return new Response('Storage unavailable.', { status: 503 });
-  }
-
-  if (!isSameOriginRequest(request)) {
-    return forbiddenResponse('Forbidden: CSRF check failed.');
-  }
-
-  const auth = await requirePermission(request, env, 'forms:write');
-  if (auth.response) {
-    return auth.response;
-  }
-
   if (!slug) {
     return new Response('Form slug is required.', { status: 400 });
   }
@@ -568,3 +556,13 @@ export const __testing = {
   isSameOriginRequest,
   requirePermission,
 };
+  return proxyApiRequest(
+    request,
+    `/v1/forms/configs/${encodeURIComponent(slug)}`,
+    locals.PUBLIC_API,
+  );
+};
+
+export const GET = forward;
+export const PUT = forward;
+export const PATCH = forward;
