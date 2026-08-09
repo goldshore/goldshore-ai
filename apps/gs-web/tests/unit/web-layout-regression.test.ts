@@ -35,6 +35,27 @@ test('WebLayout renders one responsive admin login control', async () => {
   assert.match(source, /desktopNav\.insertBefore\(loginLink, desktopCta\)/);
 });
 
+test('public header renders one dashboard action per responsive navigation', async () => {
+  const source = await readFile(new URL('components/PublicHeader.astro', sourceRoot), 'utf8');
+
+  assert.equal(source.match(/Dashboard access →/g)?.length, 2);
+  assert.equal(source.match(/CANONICAL_ADMIN_DASHBOARD_URL/g)?.length, 3);
+  assert.doesNotMatch(source, /dashboard\.goldshore\.ai/);
+  assert.doesNotMatch(source, />Admin →<\/a>/);
+});
+
+test('BaseLayout composes global theme parts without a shell wrapper', async () => {
+  const [layout, globalCss] = await Promise.all([
+    readFile(new URL('layouts/BaseLayout.astro', sourceRoot), 'utf8'),
+    readFile(new URL('styles/global.css', sourceRoot), 'utf8'),
+  ]);
+  assert.match(layout, /import PublicHeader/);
+  assert.match(layout, /import PublicFooter/);
+  assert.match(layout, /import '\.\.\/scripts\/theme-navigation'/);
+  assert.doesNotMatch(layout, /GoldShoreShell/);
+  assert.match(globalCss, /@import '\.\/theme-chrome\.css'/);
+});
+
 test('WebLayout marks parent nav links current on nested public routes', async () => {
   const source = await readFile(new URL('layouts/WebLayout.astro', sourceRoot), 'utf8');
 
