@@ -7,7 +7,6 @@ const required = [
   'packages/brand/favicon.svg',
   'packages/brand/brand.json',
   'apps/gs-web/public/logo.svg',
-  'apps/gs-admin/public/assets/logo.svg'
 ];
 
 const createTextPlaceholder = (file) => {
