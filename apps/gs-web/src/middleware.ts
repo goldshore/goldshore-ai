@@ -1,25 +1,16 @@
 import type { MiddlewareHandler } from 'astro';
-import { verifyJWTCookie } from '@goldshore/auth';
+import { ADMIN_PERMISSIONS, verifyJWTCookie } from '@goldshore/auth';
 import { HTML_CONTENT_SECURITY_POLICY } from './security/policy';
 import {
   authorizeAdminRequest,
+  ADMIN_DASHBOARD_PATH,
   getAdminRouteRule,
   getAdminHostRewritePath,
   isAdminHost,
-  isStaticAssetPath,
 } from './utils/admin-access';
-
-const ADMIN_PATH_PREFIXES = ['/admin', '/api/admin'];
-
-const isAdminPath = (pathname: string) =>
-  ADMIN_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 
 const getRequestHostname = (request: Request, url: URL) =>
   (request.headers.get('host') ?? url.hostname).split(':')[0].toLowerCase();
-
-const isProtectedAdminRequest = (request: Request, url: URL) =>
-  isAdminPath(url.pathname) ||
-  (isAdminHost(getRequestHostname(request, url)) && !isStaticAssetPath(url.pathname));
 
 export const onRequest: MiddlewareHandler = async (context, next) => {
   // Redirect risk.goldshore.ai root → /risk-radar (subdomain alias for the product page).
@@ -29,23 +20,6 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
     context.url.pathname === '/'
   ) {
     return context.redirect('/risk-radar', 301);
-  }
-
-  // JWT cookie-based authentication gate for the admin surface.
-  // Verifies JWT from 'auth' cookie to allow admin access.
-  if (isProtectedAdminRequest(context.request, context.url)) {
-    const runtimeEnv = context.locals.runtime?.env as Env | undefined;
-    const allowLocalAdminBypass = import.meta.env.DEV || runtimeEnv?.DEV_AUTH_BYPASS === '1';
-
-    if (!allowLocalAdminBypass) {
-      const claims = await verifyJWTCookie(context.request, runtimeEnv ?? {});
-      if (!claims) {
-        return new Response('Unauthorized', {
-          status: 401,
-          headers: { 'content-type': 'text/plain; charset=utf-8' },
-        });
-      }
-    }
   }
 
   // The admin hostname is a first-class alias for gs-web's existing admin
@@ -60,10 +34,11 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   context.locals.securityPolicySource = 'response-header';
 
   const url = new URL(context.request.url);
+  const routedPath = adminRewritePath ?? url.pathname;
   const adminRule = getAdminRouteRule(
-    url.pathname,
+    routedPath,
     context.request.method,
-    url.hostname,
+    host,
   );
 
   if (adminRule) {
@@ -73,16 +48,7 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
     if (allowLocalAdminBypass) {
       context.locals.adminSession = {
         roles: ['admin'],
-        permissions: [
-          'content:read', 'content:write',
-          'system:read', 'system:write',
-          'media:read', 'media:write',
-          'forms:read', 'forms:write',
-          'users:manage',
-          'audit:read',
-          'ai:analyze',
-          'system:integrations:manage'
-        ],
+        permissions: [...ADMIN_PERMISSIONS],
         isAuthenticated: true
       };
     } else {
@@ -116,14 +82,17 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
 
     if (
       adminRule.kind === 'page' &&
-      isAdminHost(url.hostname) &&
-      url.pathname !== adminRule.canonicalPath
+      isAdminHost(host) &&
+      routedPath === ADMIN_DASHBOARD_PATH &&
+      url.pathname !== ADMIN_DASHBOARD_PATH
     ) {
-      return Response.redirect(new URL(adminRule.canonicalPath, url.origin), 302);
+      return Response.redirect(new URL(ADMIN_DASHBOARD_PATH, url.origin), 302);
     }
   }
 
-  const response = await next();
+  const response = adminRewritePath
+    ? await context.rewrite(adminRewritePath)
+    : await next();
   response.headers.set('Content-Security-Policy', HTML_CONTENT_SECURITY_POLICY);
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');
