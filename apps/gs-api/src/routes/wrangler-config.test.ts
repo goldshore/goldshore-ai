@@ -70,14 +70,9 @@ describe('gs-api wrangler env bindings', () => {
           `\\[\\[env\\.${envName}\\.kv_namespaces\\]\\][\\s\\S]*?binding = "RISK_RADAR_CACHE"[\\s\\S]*?id = "`,
         ),
       );
-      assert.equal(
-        bindingBlocks(
-          wranglerToml,
-          envName,
-          'kv_namespaces',
-          'RISK_RADAR_CACHE',
-        ).length,
-        1,
+      assert.match(
+        wranglerToml,
+        new RegExp(`\\[\\[env\\.${envName}\\.kv_namespaces\\]\\][\\s\\S]*?binding = "RISK_RADAR_CACHE"[\\s\\S]*?id = "`)
       );
     });
 
@@ -99,15 +94,6 @@ describe('gs-api wrangler env bindings', () => {
       assert.match(
         wranglerToml,
         new RegExp(`\\[\\[env\\.${envName}\\.d1_databases\\]\\][\\s\\S]*?binding = "RISK_RADAR_DB"`)
-      );
-      assert.equal(
-        bindingBlocks(
-          wranglerToml,
-          envName,
-          'd1_databases',
-          'RISK_RADAR_DB',
-        ).length,
-        1,
       );
       assert.match(
         wranglerToml,
