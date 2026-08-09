@@ -184,7 +184,7 @@
 ### 🟡 HIGH
 
 #### Issue 4: `goldshore-ai` stub claims `goldshore.ai` domain
-- **Problem:** Stub worker and superseded historical `gs-web` static project both try to own `goldshore.ai`
+- **Problem:** Stub worker and `gs-web` Pages project both try to own `goldshore.ai`
 - **Impact:** Routing conflict; `gs-web` Astro never serves
 - **Fix:** Delete stub or redirect to `gs-web`
 
@@ -298,7 +298,7 @@
 | Doc | Expected | Actual | Gap |
 |---|---|---|---|
 | `infra/Cloudflare/README.md` | `gs-gateway` canonical manifest | `gs-gateway` on account | No mismatch |
-| `infra/Cloudflare/BINDINGS_MAP.md` | superseded historical `gs-web` static project | Stub worker on `goldshore.ai` | Routing conflict |
+| `infra/Cloudflare/BINDINGS_MAP.md` | `gs-web` Pages project | Stub worker on `goldshore.ai` | Routing conflict |
 | `docs/DNS_AND_ROUTES.md` | `gs-control`, `gs-mail`, `gs-agent` routes | Not deployed | Critical gap |
 | `packages/auth/verify.ts` | Full JWT validation | Bypass in exception handling | Security regression |
 | `apps/banproof-me` location | Should be in monorepo | Lives locally only | Maintenance gap |

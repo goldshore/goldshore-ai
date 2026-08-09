@@ -1,6 +1,4 @@
 import type { FrameworkMetadata } from './github-framework-search';
-import type { Env } from '../types';
-import { callAnthropic } from './anthropic-provider';
 
 interface FrameworkScore {
   name: string;
@@ -22,8 +20,8 @@ interface FrameworkScore {
  */
 export async function rankFrameworksWithClaude(
   frameworks: FrameworkMetadata[],
-  env: Env,
-  query: string,
+  claudeApiKey: string,
+  query: string
 ): Promise<FrameworkScore[]> {
   if (frameworks.length === 0) {
     return [];
@@ -40,7 +38,7 @@ Last Updated: ${f.lastUpdated}
 Has wrangler.toml: ${f.hasWranglerConfig}
 Description: ${f.description}
 Package: ${f.packageJson ? JSON.stringify(f.packageJson).substring(0, 200) : 'N/A'}
-`,
+`
     )
     .join('\n---\n');
 
@@ -60,12 +58,38 @@ For each framework, provide a JSON response with these scores (0-10):
 
 Return a JSON array of objects with keys: name, repo, securityScore, cloudflareScore, maintenanceScore, documentationScore, overallScore, reasoning`;
 
-  const response = await callAnthropic(env, {
-    model: 'claude-sonnet-4-5',
-    maxTokens: 2048,
-    messages: [{ role: 'user', content: prompt }],
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': claudeApiKey,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: 'claude-opus-5',
+      max_tokens: 2048,
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+    }),
   });
-  const text = response.content;
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Claude API error: ${response.statusText} - ${error}`);
+  }
+
+  const data = (await response.json()) as {
+    content: Array<{ type: string; text: string }>;
+  };
+
+  const text = data.content
+    .filter((c) => c.type === 'text')
+    .map((c) => c.text)
+    .join('');
 
   const jsonMatch = text.match(/\[[\s\S]*\]/);
   if (!jsonMatch) {

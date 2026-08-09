@@ -30,7 +30,7 @@
 - Runs for PRs and pushes to `main` when web/shared build inputs change.
 - GitHub Actions performs **build verification only**.
 - Authoritative deployment is the **Cloudflare Workers Build git integration**.
-- Do not reintroduce the removed a static-site deploy path; `gs-web` requires SSR Worker output.
+- Do not reintroduce the removed `wrangler pages deploy` path; `gs-web` requires SSR Worker output.
 
 **Build validation:**
 

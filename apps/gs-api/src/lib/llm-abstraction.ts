@@ -4,9 +4,6 @@
  * Swap providers without changing business logic
  */
 
-import { callAnthropic } from './anthropic-provider';
-import type { Env } from '../types';
-
 export type LLMProvider = 'claude' | 'openai' | 'openclaw' | 'local';
 
 export interface LLMConfig {
@@ -16,7 +13,6 @@ export interface LLMConfig {
   model: string;
   temperature?: number;
   maxTokens?: number;
-  env?: Env;
 }
 
 export interface LLMRequest {
@@ -44,11 +40,6 @@ export interface LLMResponse {
     name: string;
     arguments: Record<string, unknown>;
   }>;
-  telemetry?: {
-    durationMs: number;
-    attempts: number;
-    estimatedCostUsd: number;
-  };
 }
 
 export class LLMClient {
@@ -75,24 +66,45 @@ export class LLMClient {
   }
 
   private async completeWithClaude(request: LLMRequest): Promise<LLMResponse> {
-    if (!this.config.env)
-      throw new Error('Claude calls require the gs-api runtime environment');
-    const data = await callAnthropic(this.config.env, {
-      messages: request.messages,
-      model: this.config.model,
-      maxTokens: request.maxTokens ?? this.config.maxTokens,
-      temperature: request.temperature ?? this.config.temperature,
-      tools: request.tools,
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': this.config.apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: this.config.model || 'claude-opus-4-1',
+        max_tokens: this.config.maxTokens || 2048,
+        temperature: this.config.temperature || 0.7,
+        messages: request.messages,
+        tools: request.tools?.map((tool) => ({
+          name: tool.name,
+          description: tool.description,
+          input_schema: tool.inputSchema,
+        })),
+      }),
     });
+
+    if (!response.ok) {
+      throw new Error(`Claude API error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const textContent = data.content.find(
+      (c: Record<string, unknown>) => c.type === 'text'
+    );
 
     return {
       id: data.id,
-      content: data.content,
-      tokensUsed: data.tokensUsed,
-      model: data.model,
+      content: textContent?.text || '',
+      tokensUsed: {
+        prompt: data.usage.input_tokens,
+        completion: data.usage.output_tokens,
+        total: data.usage.input_tokens + data.usage.output_tokens,
+      },
+      model: this.config.model || 'claude-opus-4-1',
       provider: 'claude',
-      toolCalls: data.toolCalls,
-      telemetry: data.telemetry,
     };
   }
 
@@ -138,9 +150,7 @@ export class LLMClient {
     };
   }
 
-  private async completeWithSelfHosted(
-    request: LLMRequest,
-  ): Promise<LLMResponse> {
+  private async completeWithSelfHosted(request: LLMRequest): Promise<LLMResponse> {
     // Support for openclaw, local llama, ollama, etc.
     const baseUrl = this.config.baseUrl || 'http://localhost:8000';
     const endpoint = `${baseUrl}/v1/chat/completions`;
@@ -149,9 +159,7 @@ export class LLMClient {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(this.config.apiKey && {
-          Authorization: `Bearer ${this.config.apiKey}`,
-        }),
+        ...(this.config.apiKey && { Authorization: `Bearer ${this.config.apiKey}` }),
       },
       body: JSON.stringify({
         model: this.config.model,
@@ -171,7 +179,7 @@ export class LLMClient {
 
     if (!response.ok) {
       throw new Error(
-        `Self-hosted LLM error: ${response.status} ${response.statusText}`,
+        `Self-hosted LLM error: ${response.status} ${response.statusText}`
       );
     }
 
@@ -183,9 +191,7 @@ export class LLMClient {
       tokensUsed: {
         prompt: data.usage?.prompt_tokens || 0,
         completion: data.usage?.completion_tokens || 0,
-        total:
-          (data.usage?.prompt_tokens || 0) +
-          (data.usage?.completion_tokens || 0),
+        total: (data.usage?.prompt_tokens || 0) + (data.usage?.completion_tokens || 0),
       },
       model: this.config.model,
       provider: this.provider,
@@ -201,8 +207,7 @@ const getEnvString = (env: LLMEnvironment, key: string): string | undefined => {
 };
 
 export const getLLMConfig = (env: LLMEnvironment): LLMConfig => {
-  const provider = (getEnvString(env, 'LLM_PROVIDER') ||
-    'claude') as LLMProvider;
+  const provider = (getEnvString(env, 'LLM_PROVIDER') || 'claude') as LLMProvider;
   const apiKey = getProviderApiKey(provider, env);
   const baseUrl = getProviderBaseUrl(provider, env);
 
@@ -213,13 +218,10 @@ export const getLLMConfig = (env: LLMEnvironment): LLMConfig => {
     model: getEnvString(env, 'LLM_MODEL') || getDefaultModel(provider),
     temperature: parseFloat(getEnvString(env, 'LLM_TEMPERATURE') || '0.7'),
     maxTokens: parseInt(getEnvString(env, 'LLM_MAX_TOKENS') || '2048', 10),
-    env: env as Env,
   };
 };
 
-export const getRedactedLLMConfig = (
-  env: LLMEnvironment,
-): Omit<LLMConfig, 'apiKey'> & { hasApiKey: boolean } => {
+export const getRedactedLLMConfig = (env: LLMEnvironment): Omit<LLMConfig, 'apiKey'> & { hasApiKey: boolean } => {
   const config = getLLMConfig(env);
   return {
     provider: config.provider,
@@ -231,57 +233,29 @@ export const getRedactedLLMConfig = (
   };
 };
 
-const getProviderApiKey = (
-  provider: LLMProvider,
-  env: LLMEnvironment,
-): string => {
+const getProviderApiKey = (provider: LLMProvider, env: LLMEnvironment): string => {
   // Check provider-specific env var first, fall back to generic LLM_API_KEY
   switch (provider) {
     case 'claude':
-      return (
-        getEnvString(env, 'ANTHROPIC_API_KEY') ||
-        getEnvString(env, 'LLM_API_KEY') ||
-        ''
-      );
+      return getEnvString(env, 'ANTHROPIC_API_KEY') || getEnvString(env, 'LLM_API_KEY') || '';
     case 'openai':
-      return (
-        getEnvString(env, 'OPENAI_API_KEY') ||
-        getEnvString(env, 'LLM_API_KEY') ||
-        ''
-      );
+      return getEnvString(env, 'OPENAI_API_KEY') || getEnvString(env, 'LLM_API_KEY') || '';
     case 'openclaw':
-      return (
-        getEnvString(env, 'OPENCLAW_API_KEY') ||
-        getEnvString(env, 'LLM_API_KEY') ||
-        ''
-      );
+      return getEnvString(env, 'OPENCLAW_API_KEY') || getEnvString(env, 'LLM_API_KEY') || '';
     case 'local':
-      return (
-        getEnvString(env, 'LOCAL_LLM_API_KEY') ||
-        getEnvString(env, 'LLM_API_KEY') ||
-        ''
-      );
+      return getEnvString(env, 'LOCAL_LLM_API_KEY') || getEnvString(env, 'LLM_API_KEY') || '';
     default:
       return getEnvString(env, 'LLM_API_KEY') || '';
   }
 };
 
-const getProviderBaseUrl = (
-  provider: LLMProvider,
-  env: LLMEnvironment,
-): string | undefined => {
+const getProviderBaseUrl = (provider: LLMProvider, env: LLMEnvironment): string | undefined => {
   // Self-hosted deployments need base URL
   switch (provider) {
     case 'openclaw':
-      return (
-        getEnvString(env, 'OPENCLAW_BASE_URL') ||
-        getEnvString(env, 'LLM_BASE_URL')
-      );
+      return getEnvString(env, 'OPENCLAW_BASE_URL') || getEnvString(env, 'LLM_BASE_URL');
     case 'local':
-      return (
-        getEnvString(env, 'LOCAL_LLM_BASE_URL') ||
-        getEnvString(env, 'LLM_BASE_URL')
-      );
+      return getEnvString(env, 'LOCAL_LLM_BASE_URL') || getEnvString(env, 'LLM_BASE_URL');
     default:
       return getEnvString(env, 'LLM_BASE_URL');
   }
@@ -289,7 +263,7 @@ const getProviderBaseUrl = (
 
 const getDefaultModel = (provider: LLMProvider): string => {
   const defaults: Record<LLMProvider, string> = {
-    claude: 'claude-sonnet-4-5',
+    claude: 'claude-opus-4-1',
     openai: 'gpt-4-turbo',
     openclaw: 'openclaw',
     local: 'local-model',

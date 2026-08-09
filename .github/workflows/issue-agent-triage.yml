@@ -17,17 +17,12 @@ permissions:
   issues: write
   pull-requests: write
 
-concurrency:
-  group: issue-agent-triage-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   label:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
     steps:
       - name: Apply shared agent and environment labels
-        uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
+        uses: actions/github-script@v9
         with:
           script: |
             const issueNumber = context.eventName === 'workflow_dispatch'
