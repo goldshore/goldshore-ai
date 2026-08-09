@@ -348,6 +348,64 @@ interface MessageBatch<T> {
   messages: Array<Message<T>>;
 }
 
+interface Message<T> {
+  id: string;
+  body: T;
+  ack(): void;
+  retry(): void;
+}
+
+interface MessageBatch<T> {
+  messages: Array<Message<T>>;
+}
+
+type DurableObjectState = {
+  id: { toString(): string };
+};
+
+const normalizeEmail = (email: string): string => {
+  return email.toLowerCase().trim();
+};
+
+const parseEmailList = (list?: string): string[] => {
+  if (!list) return [];
+  return list
+    .split(/[,;\s]+/)
+    .map((email) => normalizeEmail(email))
+    .filter((email) => email.length > 0);
+};
+
+const isEmailLike = (email: string): boolean => {
+  // Simple email validation: must contain @ and at least one dot after @
+  // Avoids ReDoS vulnerability from backtracking in complex quantifier patterns
+  const atIndex = email.indexOf('@');
+  if (atIndex <= 0 || atIndex === email.length - 1) return false;
+  const afterAt = email.substring(atIndex + 1);
+  return afterAt.includes('.') && !afterAt.endsWith('.');
+};
+
+const readInboxLogs = async (kv: KVNamespace) => {
+  try {
+    const stored = await kv.get('EMAIL_INBOX_LOGS');
+    if (!stored) return [];
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+interface Message<T> {
+  id: string;
+  body: T;
+  ack(): void;
+  retry(): void;
+}
+
+interface MessageBatch<T> {
+  messages: Array<Message<T>>;
+}
+
 const processQueueMessage = async (message: Message<any>, env: Env): Promise<void> => {
   const body = message.body;
   const type = typeof body === 'object' && body && 'type' in body ? String((body as { type?: unknown }).type) : 'unknown';
