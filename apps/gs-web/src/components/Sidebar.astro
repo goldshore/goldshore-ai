@@ -23,6 +23,13 @@ const operationsLinks: Array<{ href: string; label: string }> = [
   { href: '/admin/pages', label: 'Custom Pages' },
 ];
 
+const governanceLinks: Array<{ href: string; label: string }> = [
+  { href: '/admin/repo-health', label: 'Repo Health' },
+  { href: '/admin/governance', label: 'Governance' },
+  { href: '/admin/projects', label: 'Projects' },
+  { href: '/admin/mcp-access', label: 'MCP Access' },
+];
+
 const { logo, permissions = [] } = Astro.props;
 const can = (permission: string) => permissions.includes(permission);
 

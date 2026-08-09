@@ -3,6 +3,7 @@ import { ADMIN_ROLES, type AdminPermission, type AdminRole } from "@goldshore/au
 import { getActor, logAdminAction, requirePermission } from "../auth";
 import { Env, Variables } from "../types";
 import deploy from "./admin/index";
+import repoHealth from "./admin/repo-health";
 
 type UserRow = {
   id: string; email: string; display_name: string | null; status: string;
