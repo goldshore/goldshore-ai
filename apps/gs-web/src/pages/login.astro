@@ -1,18 +1,13 @@
 ---
 import {
-  ALTERNATE_ADMIN_ORIGIN,
-  CANONICAL_ADMIN_ORIGIN,
+  ALTERNATE_ADMIN_DASHBOARD_URL,
+  CANONICAL_ADMIN_DASHBOARD_URL,
+  getAdminLoginDestination,
 } from '../utils/admin-access';
 
 const requested = Astro.url.searchParams.get('to') ?? 'dashboard';
 const loginType = Astro.url.searchParams.get('type') ?? 'admin';
-const destinations: Record<string, string> = {
-  dashboard: CANONICAL_ADMIN_ORIGIN,
-  admin: CANONICAL_ADMIN_ORIGIN,
-  org: ALTERNATE_ADMIN_ORIGIN,
-  ai: CANONICAL_ADMIN_ORIGIN,
-};
-const destination = destinations[requested] ?? CANONICAL_ADMIN_ORIGIN;
+const destination = getAdminLoginDestination(requested);
 const apiOrigin = Astro.locals.PUBLIC_API || import.meta.env.PUBLIC_API || 'https://api.goldshore.ai';
 const redirectUri = `${Astro.url.origin}/auth/callback`;
 ---
@@ -54,9 +49,9 @@ const redirectUri = `${Astro.url.origin}/auth/callback`;
           <p>Cloudflare Access will verify your identity before loading the dashboard.</p>
           <a href={destination} class="button button--primary">Continue with Cloudflare Access</a>
           <nav aria-label="Admin destinations">
-            <a href={CANONICAL_ADMIN_ORIGIN}>Dashboard</a>
-            <a href={CANONICAL_ADMIN_ORIGIN}>Admin AI</a>
-            <a href={ALTERNATE_ADMIN_ORIGIN}>Admin Org</a>
+            <a href={CANONICAL_ADMIN_DASHBOARD_URL}>Dashboard</a>
+            <a href={CANONICAL_ADMIN_DASHBOARD_URL}>Admin AI</a>
+            <a href={ALTERNATE_ADMIN_DASHBOARD_URL}>Admin Org</a>
           </nav>
           <p class="footer-text">
             Or <a href={`/login?type=github`}>sign in with GitHub</a>

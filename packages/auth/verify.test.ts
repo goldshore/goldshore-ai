@@ -243,3 +243,22 @@ describe('verifyAccessWithClaims (public)', () => {
         assert.strictEqual(consoleErrorMock.mock.callCount(), 0);
     });
 });
+
+describe('authorizeAccessUser', () => {
+    test('requires a verified email and an active application mapping', async () => {
+        const { authorizeAccessUser } = await import('./verify.ts');
+        const row = { id: 'owner-1', email: 'admin@goldshore.org', role: 'admin', application: 'admin-production' };
+        const database = {
+            prepare: () => ({
+                bind: (...values: unknown[]) => ({
+                    first: async () => values[0] === 'admin@goldshore.org' && values[1] === 'admin-production' ? row : null,
+                }),
+            }),
+        };
+        const env = { PLATFORM_DB: database, CLOUDFLARE_ACCESS_APPLICATION: 'admin-production' };
+
+        assert.deepStrictEqual(await authorizeAccessUser({ email: ' ADMIN@goldshore.org ', email_verified: true }, env), row);
+        assert.strictEqual(await authorizeAccessUser({ email: 'admin@goldshore.org', email_verified: false }, env), null);
+        assert.strictEqual(await authorizeAccessUser({ email: 'absent@example.com', email_verified: true }, env), null);
+    });
+});
