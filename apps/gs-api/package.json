@@ -9,7 +9,7 @@
     "deploy": "wrangler deploy --env prod",
     "build": "wrangler deploy --env prod --dry-run --outdir=dist",
     "lint": "eslint .",
-    "test": "tsx --test src/routes/*.test.ts",
+    "test": "tsx --test src/routes/*.test.ts src/lib/*.test.ts",
     "test:gateway": "node test-gateway.js"
   },
   "dependencies": {

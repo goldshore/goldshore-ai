@@ -34,6 +34,25 @@ const queueConsumerNames = (block: string) =>
     ),
   ].map((match) => match[1]);
 
+const bindingBlocks = (
+  toml: string,
+  environment: string,
+  table: string,
+  binding: string,
+) =>
+  [
+    ...toml.matchAll(
+      new RegExp(
+        `\\[\\[env\\.${environment}\\.${table}\\]\\][\\s\\S]*?(?=\\r?\\n\\[|$)`,
+        'g',
+      ),
+    ),
+  ]
+    .map((match) => match[0])
+    .filter((block) =>
+      new RegExp(`^binding\\s*=\\s*"${binding}"$`, 'm').test(block),
+    );
+
 describe('gs-api wrangler env bindings', () => {
   // Canonical environments are [env.prod] and [env.preview].
   // Legacy [env.production] has been intentionally removed.
@@ -51,9 +70,14 @@ describe('gs-api wrangler env bindings', () => {
           `\\[\\[env\\.${envName}\\.kv_namespaces\\]\\][\\s\\S]*?binding = "RISK_RADAR_CACHE"[\\s\\S]*?id = "`,
         ),
       );
-      assert.match(
-        wranglerToml,
-        new RegExp(`\\[\\[env\\.${envName}\\.kv_namespaces\\]\\][\\s\\S]*?binding = "RISK_RADAR_CACHE"[\\s\\S]*?id = "`)
+      assert.equal(
+        bindingBlocks(
+          wranglerToml,
+          envName,
+          'kv_namespaces',
+          'RISK_RADAR_CACHE',
+        ).length,
+        1,
       );
     });
 
@@ -75,6 +99,15 @@ describe('gs-api wrangler env bindings', () => {
       assert.match(
         wranglerToml,
         new RegExp(`\\[\\[env\\.${envName}\\.d1_databases\\]\\][\\s\\S]*?binding = "RISK_RADAR_DB"`)
+      );
+      assert.equal(
+        bindingBlocks(
+          wranglerToml,
+          envName,
+          'd1_databases',
+          'RISK_RADAR_DB',
+        ).length,
+        1,
       );
       assert.match(
         wranglerToml,
@@ -124,11 +157,29 @@ describe('gs-api wrangler env bindings', () => {
     ]);
   });
 
-  it('keeps production gs-api queue ownership producer-only for externally consumed queues', () => {
-    assert.deepEqual(
-      queueConsumerNames(environmentBlock(wranglerToml, 'prod')),
-      [],
+  it('assigns production and isolated preview queue consumers to gs-api', () => {
+    assert.deepEqual(queueConsumerNames(wranglerToml).sort(), [
+      'goldshore-jobs',
+      'goldshore-jobs-preview',
+      'gs-events',
+      'gs-events-preview',
+      'gs-mail-jobs',
+      'gs-mail-jobs-preview',
+    ]);
+    assert.match(wranglerToml, /dead_letter_queue = "gs-mail-dead-letter"/);
+    assert.match(wranglerToml, /dead_letter_queue = "gs-mail-dead-letter-preview"/);
+  });
+
+  it('binds each environment to its local SignalsEvaluator workflow', () => {
+    assert.match(
+      wranglerToml,
+      /\[\[env\.prod\.workflows\]\][\s\S]*?binding = "GS_SIGNALS"[\s\S]*?name = "gs-signals-evaluator"[\s\S]*?class_name = "SignalsEvaluator"/,
     );
+    assert.match(
+      wranglerToml,
+      /\[\[env\.preview\.workflows\]\][\s\S]*?binding = "GS_SIGNALS"[\s\S]*?name = "gs-signals-evaluator-preview"[\s\S]*?class_name = "SignalsEvaluator"/,
+    );
+    assert.doesNotMatch(wranglerToml, /script_name = "gs-signals-prod"/);
   });
 
   it('keeps web and admin hosts on the canonical gs-web Worker', () => {
@@ -146,5 +197,28 @@ describe('gs-api wrangler env bindings', () => {
   it('keeps CONTROL_SYNC_TOKEN out of plain-text environment variables', () => {
     assert.doesNotMatch(wranglerToml, /^CONTROL_SYNC_TOKEN\s*=/m);
     assert.doesNotMatch(wranglerToml, /__PROD_CONTROL_SYNC_TOKEN__/);
+  });
+
+  it('keeps GoldClaw and Google Business OAuth redirects independent', () => {
+    assert.equal(
+      wranglerToml.match(
+        /GOOGLE_OAUTH_REDIRECT_URI = "https:\/\/api\.goldshore\.ai\/goldclaw\/oauth\/google\/callback"/g,
+      )?.length,
+      2,
+    );
+    assert.equal(
+      wranglerToml.match(
+        /GOOGLE_BUSINESS_OAUTH_REDIRECT_URI = "https:\/\/api\.goldshore\.ai\/admin\/google\/oauth\/callback"/g,
+      )?.length,
+      2,
+    );
+    assert.match(
+      wranglerToml,
+      /GOOGLE_BUSINESS_OAUTH_REDIRECT_URI = "https:\/\/api-preview\.goldshore\.ai\/admin\/google\/oauth\/callback"/,
+    );
+    assert.doesNotMatch(
+      wranglerToml,
+      /^GOOGLE_OAUTH_REDIRECT_URI = ".*\/admin\/google\/oauth\/callback"/m,
+    );
   });
 });
