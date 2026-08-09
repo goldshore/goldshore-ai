@@ -1,0 +1,11 @@
+{
+  "0001_initial_schema.sql": "PLATFORM_DB",
+  "0002_integration_secrets.sql": "PLATFORM_DB",
+  "0003_contact_archive_catalog.sql": "PLATFORM_DB",
+  "0004_newsletter_subscribers.sql": "PLATFORM_DB",
+  "0004_paper_trading.sql": "PAPER_DB",
+  "0005_access_authorization.sql": "PLATFORM_DB",
+  "0005_google_business_integration.sql": "PLATFORM_DB",
+  "0005_identity_rbac.sql": "PLATFORM_DB",
+  "0006_bootstrap_admin_principals.sql": "PLATFORM_DB"
+}

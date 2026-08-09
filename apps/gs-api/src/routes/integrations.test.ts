@@ -12,15 +12,21 @@ const createTestApp = (claims: any = null) => {
     put: mock.fn(async () => {}),
     delete: mock.fn(async () => {}),
   };
+  const mockAuditRun = mock.fn(async () => ({ success: true }));
+  const mockAuditDb = {
+    prepare: mock.fn(() => ({
+      bind: mock.fn(() => ({ run: mockAuditRun })),
+    })),
+  };
 
   app.use('*', async (c, next) => {
     c.set('accessClaims', claims);
-    c.env = { KV: mockKV } as any;
+    c.env = { KV: mockKV, AUDIT_DB: mockAuditDb } as any;
     await next();
   });
 
   app.route('/integrations', integrations);
-  return { app, mockKV };
+  return { app, mockKV, mockAuditRun };
 };
 
 describe('Integration Management API security', () => {
@@ -51,7 +57,7 @@ describe('Integration Management API security', () => {
   });
 
   it('rejects integration mutations without integration management permission', async () => {
-    const { app, mockKV } = createTestApp({ roles: ['viewer'], email: 'viewer@example.com' });
+    const { app, mockKV, mockAuditRun } = createTestApp({ roles: ['viewer'], email: 'viewer@example.com' });
 
     const res = await app.request('/integrations', {
       method: 'POST',
@@ -64,16 +70,18 @@ describe('Integration Management API security', () => {
 
     assert.equal(res.status, 403);
     assert.equal(mockKV.delete.mock.callCount(), 0);
-    assert.equal(mockKV.put.mock.callCount(), 1);
+    assert.equal(mockKV.put.mock.callCount(), 0);
+    assert.equal(mockAuditRun.mock.callCount(), 1);
   });
 
   it('rejects sync requests without integration management permission', async () => {
-    const { app, mockKV } = createTestApp({ roles: ['viewer'], email: 'viewer@example.com' });
+    const { app, mockKV, mockAuditRun } = createTestApp({ roles: ['viewer'], email: 'viewer@example.com' });
 
     const res = await app.request('/integrations?action=sync');
 
     assert.equal(res.status, 403);
     assert.equal(mockKV.list.mock.callCount(), 0);
-    assert.equal(mockKV.put.mock.callCount(), 1);
+    assert.equal(mockKV.put.mock.callCount(), 0);
+    assert.equal(mockAuditRun.mock.callCount(), 1);
   });
 });

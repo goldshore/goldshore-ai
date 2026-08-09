@@ -85,7 +85,7 @@ api.goldshore.ai             -> gs-api
 api-preview.goldshore.ai     -> gs-api preview
 gw.goldshore.ai              -> gs-gateway-prod
 agent.goldshore.ai           -> gs-api /agent route
-mcp.goldshore.ai             -> gs-mcp / MCP surface
+mcp.goldshore.ai             -> external MCP integration boundary (not gs-api; see docs/integrations/mcp-external-boundary.md)
 trading.goldshore.ai         -> gs-api /trading route
 mail.goldshore.ai            -> gs-api mail route/email handler
 ops.goldshore.ai             -> gs-api /admin/control route
@@ -109,7 +109,9 @@ Important files:
 - `apps/gs-web/public/_headers` — static route security headers.
 - `apps/gs-web/public/_routes.json` — static routing hints.
 - `apps/gs-web/wrangler.toml` — Worker name, routes, KV, D1, R2, and environment variables.
-- `.github/workflows/deploy-gs-web.yml` — production deploy workflow.
+- `.github/workflows/deploy-gs-web.yml` — immutable build verification; it does not deploy.
+- `.github/workflows/verify-gs-web-deployment.yml` — mirror verification after the
+  Cloudflare Workers Builds deployment event.
 
 The production Worker route configuration is stored in `apps/gs-web/wrangler.toml` under the production environment.
 
