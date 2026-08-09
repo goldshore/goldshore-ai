@@ -8,7 +8,7 @@ on:
       - "Repo Health"
       - "Deploy gs-web"
       - "Deploy gs-api"
-      - "Cloudflare read-only audit"
+      - "Manage Cloudflare Tokens"
     types: [completed]
   schedule:
     # Weekly reminder: every Monday 9am UTC
@@ -22,15 +22,10 @@ on:
 
 permissions: {}
 
-concurrency:
-  group: notify-chat-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   notify-failure:
     name: Notify on CI failure
     runs-on: ubuntu-latest
-    timeout-minutes: 30
     if: >
       github.event_name == 'workflow_run' &&
       github.event.workflow_run.conclusion == 'failure'
@@ -47,7 +42,7 @@ jobs:
             echo "GOOGLE_CHAT_WEBHOOK secret not set - skipping notification"
             exit 0
           fi
-          curl --fail-with-body --silent --show-error --retry 3 -X POST "$WEBHOOK" \
+          curl -s -X POST "$WEBHOOK" \
             -H "Content-Type: application/json" \
             -d "$(jq -n \
               --arg workflow "$WORKFLOW" \
@@ -59,7 +54,6 @@ jobs:
   weekly-api-key-reminder:
     name: Weekly API key reminder
     runs-on: ubuntu-latest
-    timeout-minutes: 30
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     steps:
       - name: Send API key checklist reminder
@@ -67,6 +61,8 @@ jobs:
           WEBHOOK: ${{ secrets.GOOGLE_CHAT_WEBHOOK }}
           REPO: ${{ github.repository }}
           CUSTOM_MSG: ${{ github.event.inputs.message }}
+          HAS_CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+          HAS_DEPLOY_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN != '' }}
           HAS_GCHAT: ${{ secrets.GOOGLE_CHAT_WEBHOOK != '' }}
           HAS_GOOGLE_OAUTH_CLIENT: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID != '' }}
           HAS_ADS_TOKEN: ${{ secrets.GOOGLE_ADS_DEVELOPER_TOKEN != '' }}
@@ -84,7 +80,9 @@ jobs:
           MSG="*Goldshore API Key Status* (weekly check)\n"
           MSG+="Repo: $REPO\n\n"
           MSG+="*Cloudflare*\n"
-          MSG+="  Build token and Worker secrets: verify in the Cloudflare dashboard\n\n"
+          MSG+="  CLOUDFLARE_API_TOKEN: $(check $HAS_CF_TOKEN)\n"
+          MSG+="  CLOUDFLARE_BUILD_API_TOKEN: $(check $HAS_DEPLOY_TOKEN)\n"
+          MSG+="  -> Renew at: https://dash.cloudflare.com/profile/api-tokens\n\n"
           MSG+="*Google APIs*\n"
           MSG+="  GOOGLE_OAUTH_CLIENT_ID: $(check $HAS_GOOGLE_OAUTH_CLIENT)\n"
           MSG+="  GOOGLE_ADS_DEVELOPER_TOKEN: $(check $HAS_ADS_TOKEN)\n"
@@ -98,6 +96,6 @@ jobs:
             MSG="$CUSTOM_MSG\n\n$MSG"
           fi
 
-          curl --fail-with-body --silent --show-error --retry 3 -X POST "$WEBHOOK" \
+          curl -s -X POST "$WEBHOOK" \
             -H "Content-Type: application/json" \
             -d "$(jq -n --arg text "$MSG" '{text: $text}')"

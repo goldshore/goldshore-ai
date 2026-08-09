@@ -1,8 +1,6 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import { Card } from '@goldshore/ui';
-const permissions = Astro.locals.adminSession?.permissions ?? [];
-const can = (permission: string) => permissions.includes(permission as never);
 ---
 <AdminLayout title="Users | GoldShore Admin" requiredPermission="users:read">
     <section class="max-w-5xl mx-auto py-16 px-6">
@@ -15,18 +13,17 @@ const can = (permission: string) => permissions.includes(permission as never);
             <Card>
                 <h2 class="text-lg font-semibold mb-2">User Directory</h2>
                 <p class="gs-helper mb-4">Invite or deactivate members with admin control.</p>
-                {can('users:create') && <a class="gs-link" href="/admin/users/list">Create user →</a>}
-                {can('users:invite') && <a class="gs-link" href="/admin/users/list?action=invite">Invite user →</a>}
+                <a class="gs-link" href="/admin/users/list">View users →</a>
             </Card>
             <Card>
                 <h2 class="text-lg font-semibold mb-2">Permissions Matrix</h2>
                 <p class="gs-helper mb-4">Review role access for content, media, and forms.</p>
-                {can('roles:read') && <a class="gs-link" href="/admin/users/permissions">View permissions →</a>}
+                <a class="gs-link" href="/admin/users/permissions">View permissions →</a>
             </Card>
             <Card>
                 <h2 class="text-lg font-semibold mb-2">Audit Trail</h2>
                 <p class="gs-helper mb-4">Track administrative changes and approvals.</p>
-                {can('audit:read') && <a class="gs-link" href="/admin/logs">View audit logs →</a>}
+                <a class="gs-link" href="/admin/logs">View audit logs →</a>
             </Card>
         </div>
     </section>

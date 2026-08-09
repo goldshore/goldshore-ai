@@ -6,9 +6,9 @@
 # ZONE: goldshore.ai
 # ══════════════════════════════════════════════════════════════
 
-## goldshore.ai (root) — gs-web Astro SSR Worker with Assets
+## goldshore.ai (root) — Astro Cloudflare Pages app (gs-web worker)
 # Type: CNAME, Proxied
-# Route: goldshore.ai/* → gs-web-prod
+# Name: @  →  gs-web.pages.dev  (or worker route via *.goldshore.ai)
 # NOTE: gs-web wrangler.jsonc has no routes — Pages handles root domain via custom domain
 
 ## www.goldshore.ai → redirect to apex
@@ -53,7 +53,7 @@
 
 ## goldshore.org (root) → goldshore-web (Pages or Worker)
 # Type: CNAME, Proxied: YES
-# Route: goldshore.org/* → gs-web-prod
+# Name: @  →  goldshore-web.pages.dev
 # Add as custom domain in Pages project settings
 
 ## www.goldshore.org → redirect to apex

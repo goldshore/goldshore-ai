@@ -13,9 +13,9 @@ Last updated: 2026-05-29
 
 | Domain/Host | Role | Repo | Runtime | Owner | Canonical |
 | --- | --- | --- | --- | --- | --- |
-| `goldshore.ai` | Parent lab/technical brand | `marzton/goldshore-ai` | Cloudflare Worker with Assets | `gs-web-prod` | Yes |
+| `goldshore.ai` | Parent lab/technical brand | `marzton/goldshore-ai` | Cloudflare Pages/Worker route | `gs-web` | Yes |
 | `www.goldshore.ai` | Alias | `marzton/goldshore-ai` | Cloudflare redirect | redirect rule | No |
-| `goldshore.org` | Business website management hub (Wix-style managed services layer) | `marzton/goldshore-org` or `marzton/goldshore-ai` | Cloudflare Worker with Assets | `gs-web-prod` | Yes |
+| `goldshore.org` | Business website management hub (Wix-style managed services layer) | `marzton/goldshore-org` or `marzton/goldshore-ai` | Cloudflare Pages | `goldshore-org` or `gs-web` | Yes |
 | `www.goldshore.org` | Alias | same | Cloudflare redirect | redirect rule | No |
 | `api.goldshore.ai` | Shared first-party API | `marzton/goldshore-ai` | Cloudflare Worker | `gs-api` | Yes |
 | `gw.goldshore.ai` | API gateway/auth routing | `marzton/goldshore-ai` | Cloudflare Worker | `gs-gateway` | Yes |
@@ -28,7 +28,7 @@ Last updated: 2026-05-29
 | `ops.goldshore.ai` | Internal control plane | `marzton/goldshore-ai` | Cloudflare Worker | `gs-control` | Internal |
 | `agent.goldshore.ai` | Agent endpoint | `marzton/goldshore-ai` | Cloudflare Worker | `gs-agent`/`gs-gateway` | Internal |
 | `mail.goldshore.ai` | Mail/form routing | `marzton/goldshore-ai` | Cloudflare Worker | `gs-mail` | Service |
-| `radar.goldshore.ai` | Risk Radar | `marzton/goldshore-ai` | Cloudflare Worker with Assets | `gs-web-prod` | Product |
+| `radar.goldshore.ai` | Risk Radar | `marzton/goldshore-ai` | Cloudflare Pages | `gs-web` | Product |
 | `gearswipe.com` | GearSwipe app | `marzton/gearswipe` | Cloudflare Pages | `gearswipe` | Yes |
 | `www.gearswipe.com` | GearSwipe alias | `marzton/gearswipe` | Cloudflare redirect | redirect rule | No |
 | `rmarston.com` | Personal profile | `marzton/rmarston-com` | Cloudflare Pages | `rmarston-com` | Independent |

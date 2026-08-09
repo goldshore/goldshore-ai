@@ -41,8 +41,6 @@ ai.post("/llm/complete", requirePermission("ai:analyze"), async (c) => {
           provider: response.provider,
           model: response.model,
           tokensUsed: response.tokensUsed,
-          costTelemetry: response.telemetry,
-          gateway: c.env.ANTHROPIC_GATEWAY_ID ? 'cloudflare-ai-gateway' : 'not-configured',
         },
       })
     );
