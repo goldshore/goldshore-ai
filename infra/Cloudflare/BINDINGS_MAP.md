@@ -23,6 +23,7 @@ via Pages custom domains.
   - `admin.goldshore.ai/*`, `admin-preview.goldshore.ai/*`, `admin.goldshore.org/*`
   - `risk.goldshore.ai/*`, `risk.goldshore.org/*`
 
+A second deploy path — a static-only deployment of the client bundle in `.github/workflows/deploy-gs-web.yml` — was
 A second deploy path — `wrangler pages deploy apps/gs-web/dist/client
 --project-name=gs-web-pages` in `.github/workflows/deploy-gs-web.yml` — was
 removed. It shipped only the static client assets (dist/client has no
