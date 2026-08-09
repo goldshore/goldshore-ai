@@ -38,6 +38,8 @@ ENV = "production"
 PUBLIC_API = "https://api.goldshore.ai"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 CLOUDFLARE_ACCESS_AUDIENCE = "c520a7647223b49b20fbe5be240772863eb684b97b57c08955b6104c58170db9"
+GITHUB_CLIENT_ID = "YOUR_GITHUB_CLIENT_ID_PROD"
+TURNSTILE_SITE_KEY = "YOUR_TURNSTILE_SITE_KEY_PROD"
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
 MAILCHANNELS_SENDER_NAME = "GoldShore"
 
@@ -80,12 +82,20 @@ ENV = "production"
 PUBLIC_API = "https://api.goldshore.ai"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 CLOUDFLARE_ACCESS_AUDIENCE = "c520a7647223b49b20fbe5be240772863eb684b97b57c08955b6104c58170db9"
+GITHUB_CLIENT_ID = "YOUR_GITHUB_CLIENT_ID_PROD"
+TURNSTILE_SITE_KEY = "YOUR_TURNSTILE_SITE_KEY_PROD"
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
 MAILCHANNELS_SENDER_NAME = "GoldShore"
 
 # Secrets (set via wrangler secret put — never commit):
 #   wrangler secret put MAILCHANNELS_SENDER_EMAIL --env prod --name gs-web
 #   Value: hello@goldshore.ai
+#
+#   wrangler secret put GITHUB_CLIENT_SECRET --env prod --name gs-web
+#   Value: <GitHub OAuth app client secret from https://github.com/settings/developers>
+#
+#   wrangler secret put TURNSTILE_SECRET_KEY --env prod --name gs-web
+#   Value: <Turnstile secret key from https://dash.cloudflare.com/>
 
 # ── Preview ──────────────────────────────────────────────────────────────────────────────────────
 
@@ -120,5 +130,7 @@ ENV = "preview"
 PUBLIC_API = "https://api-preview.goldshore.ai"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 CLOUDFLARE_ACCESS_AUDIENCE = "5227a14ad2cd2f59e56c8c65161c29bb2f9787b5b8be37a631c60f4d07b33214"
+GITHUB_CLIENT_ID = "YOUR_GITHUB_CLIENT_ID_PREVIEW"
+TURNSTILE_SITE_KEY = "YOUR_TURNSTILE_SITE_KEY_PREVIEW"
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
 MAILCHANNELS_SENDER_NAME = "GoldShore"
