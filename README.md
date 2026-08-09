@@ -85,7 +85,7 @@ api.goldshore.ai             -> gs-api
 api-preview.goldshore.ai     -> gs-api preview
 gw.goldshore.ai              -> gs-gateway-prod
 agent.goldshore.ai           -> gs-api /agent route
-mcp.goldshore.ai             -> gs-mcp / MCP surface
+mcp.goldshore.ai             -> external MCP integration boundary (not gs-api; see docs/integrations/mcp-external-boundary.md)
 trading.goldshore.ai         -> gs-api /trading route
 mail.goldshore.ai            -> gs-api mail route/email handler
 ops.goldshore.ai             -> gs-api /admin/control route

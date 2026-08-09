@@ -22,8 +22,8 @@ import sites from './routes/sites';
 import forms from './routes/forms';
 import deployments from './routes/deployments';
 import gearswipe from './routes/gearswipe';
-import products from './routes/products';
 import services from './routes/services';
+import integrations from './routes/integrations';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
 
@@ -270,6 +270,7 @@ app.route('/pages', pages);
 app.route('/internal', internal);
 app.route('/products', products);
 app.route('/services', services);
+app.route('/integrations', integrations);
 
 const v1 = new Hono<{ Bindings: Env }>();
 v1.route('/users', users);
@@ -331,39 +332,6 @@ const readInboxLogs = async (kv: KVNamespace) => {
   } catch {
     return [];
   }
-};
-
-interface Message<T> {
-  id: string;
-  body: T;
-  ack(): void;
-  retry(): void;
-}
-
-interface MessageBatch<T> {
-  messages: Array<Message<T>>;
-}
-
-const processQueueMessage = async (message: Message<any>, env: Env): Promise<void> => {
-  const body = message.body;
-  const type = typeof body === 'object' && body && 'type' in body ? String((body as { type?: unknown }).type) : 'unknown';
-  if (type === 'contact' || type === 'checkout') {
-    console.info({ event: 'mail_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
-    message.ack();
-    return;
-  }
-  if (type === 'trading' || type === 'trading-signal' || type === 'order') {
-    console.info({ event: 'trading_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
-    message.ack();
-    return;
-  }
-  if (type === 'signal' || type === 'atc') {
-    console.info({ event: 'core_signal_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
-    message.ack();
-    return;
-  }
-  console.info({ event: 'agent_job_processed', id: message.id, type, timestamp: new Date().toISOString() });
-  message.ack();
 };
 
 const processQueueMessage = async (message: Message<any>, env: Env): Promise<void> => {
