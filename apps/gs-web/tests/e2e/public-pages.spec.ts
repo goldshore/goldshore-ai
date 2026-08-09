@@ -110,20 +110,16 @@ test('contact form submits and redirects to thank-you', async ({ page }) => {
     };
   });
 
-  await page.route('**/api/contact', async (route) => {
+  await page.route('**/mail/contact', async (route) => {
     await route.fulfill({
-      status: 202,
+      status: 200,
       headers: {
         'content-type': 'application/json',
       },
       body: JSON.stringify({
         ok: true,
-        status: 'received',
-        formId: 'contact',
         submissionId: '123',
-        submittedAt: new Date().toISOString(),
-        redirectTo: '/thank-you',
-        mail: { notification: { attempted: true }, autoResponder: { attempted: true } },
+        mail: { notification: 'sent', autoResponder: 'sent' },
       }),
     });
   });
