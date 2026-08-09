@@ -167,6 +167,10 @@ MAILCHANNELS_SENDER_NAME = "GoldShore"
 #   Value: <Turnstile secret key from https://dash.cloudflare.com/>
 # Required for validating Turnstile responses on form submissions.
 
+# ── AI ───────────────────────────────────────────────────────────────────────
+[env.prod.ai]
+binding = "AI"
+
 # ── KV ───────────────────────────────────────────────────────────────────────
 [[env.prod.kv_namespaces]]
 binding = "KV"
@@ -176,23 +180,12 @@ id = "e0b8b807191346c3b0afc25fe716d2cd"
 binding = "CONTROL_LOGS"
 id = "a52e94cb331c4e3db08f2aa507e6df09"
 
-# RISK_RADAR_CACHE: apps/gs-api/src/routes/wrangler-config.test.ts requires this
-# binding to exist. infra/Cloudflare/BINDINGS_MAP.md documents a
-# "gs-risk-radar-cache" KV under a naming convention that was never actually
-# provisioned in the Gold Shore Labs account. Pointed at the live "RR_CACHE"
-# KV namespace (owned by the risk-radar repo) instead of inventing a resource —
-# if a dedicated gs-api cache is later provisioned, repoint this to it.
 [[env.prod.kv_namespaces]]
 binding = "RISK_RADAR_CACHE"
-id = "0b56873b6d7b451f9279481920a15447"
+id = "0e67c3fe3d2b3231e7d4dba704e7dcd6"
 
-# TRADING_KV: see top-level default-env comment above.
-[[env.prod.kv_namespaces]]
-binding = "TRADING_KV"
-id = "9b3314c3b7af40a284a8c9b6e2990709"
-
-# ── R2 ───────────────────────────────────────────────────────────────────────
-[[env.prod.r2_buckets]]
+# ── R2 ──────────────────────────────────────────────────────────────────────────────────────
+[[env.production.r2_buckets]]
 binding = "GS_ASSETS"
 bucket_name = "gs-assets"
 
@@ -200,15 +193,15 @@ bucket_name = "gs-assets"
 binding = "TELEMETRY"
 bucket_name = "gs-telemetry-storage"
 
-[env.prod.ai]
-binding = "AI"
-
-# RISK_RADAR_R2: same situation as RISK_RADAR_CACHE above — pointed at the
-# live "risk-radar-raw" bucket (risk-radar repo) rather than the undeployed
-# "gs-risk-radar-raw" name from BINDINGS_MAP.md.
 [[env.prod.r2_buckets]]
 binding = "RISK_RADAR_R2"
 bucket_name = "gs-risk-radar-raw"
+
+# ── D1 ──────────────────────────────────────────────────────────────────────────────────────
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "goldshore"
+database_id = "gs_db_001"
 
 # ── D1 ───────────────────────────────────────────────────────────────────────
 [[env.prod.d1_databases]]
@@ -226,17 +219,10 @@ binding = "SIGNALS_DB"
 database_name = "gs_signals_db"
 database_id = "76af4653-7f44-417b-b46e-250143d906fd"
 
-# RISK_RADAR_DB: same situation — the documented "gs_risk_radar_db" (IDs
-# aabedb82-60ca-5697-bbd5-9e85675ee7c5 prod / fe25ba0b-7d1e-5362-a03f-065487222a08
-# preview) does not exist in the account. Pointed at the live "risk-radar-db"
-# D1 (risk-radar repo) instead. No dedicated preview copy of any of these three
-# risk-radar resources exists yet, so env.preview below reuses the same live
-# IDs as env.prod — acceptable for a read-mostly signals cache/store, but flag
-# if preview traffic should not share the production risk-radar dataset.
 [[env.prod.d1_databases]]
 binding = "RISK_RADAR_DB"
-database_name = "risk-radar-db"
-database_id = "b0bf3b0e-a7d0-49ae-ac82-4f19450b2ce2"
+database_name = "gs_risk_radar_db"
+database_id = "aabedb82-60ca-5697-bbd5-9e85675ee7c5"
 
 [[env.prod.d1_databases]]
 binding = "JOBS_DB"
@@ -328,6 +314,10 @@ CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
 PUBLIC_SITE_URL = "https://preview.goldshore.ai"
 MAILCHANNELS_SENDER_NAME = "GoldShore"
 
+# ── AI ───────────────────────────────────────────────────────────────────────
+[env.preview.ai]
+binding = "AI"
+
 # ── Secrets ──────────────────────────────────────────────────────────────────
 # MAILCHANNELS_SENDER_EMAIL secret — see env.prod above for the command;
 # use --env preview --name gs-api instead.
@@ -398,6 +388,11 @@ database_name = "risk-radar-db"
 database_id = "b0bf3b0e-a7d0-49ae-ac82-4f19450b2ce2"
 
 [[env.preview.d1_databases]]
+binding = "RISK_RADAR_DB"
+database_name = "gs_risk_radar_db"
+database_id = "fe25ba0b-7d1e-5362-a03f-065487222a08"
+
+[[env.preview.d1_databases]]
 binding = "JOBS_DB"
 database_name = "gs_jobs_db"
 database_id = "750c469c-788d-49e8-9254-77231cffd70f"
@@ -410,10 +405,6 @@ database_id = "750c469c-788d-49e8-9254-77231cffd70f"
 binding = "PAPER_DB"
 database_name = "goldshore-paper-trading"
 database_id = "af94f483-b98b-41c5-aa23-3fbed2764b52"
-
-# ── AI ───────────────────────────────────────────────────────────────────────
-[env.preview.ai]
-binding = "AI"
 
 # ── Queues ───────────────────────────────────────────────────────────────────
 [[env.preview.queues.producers]]
