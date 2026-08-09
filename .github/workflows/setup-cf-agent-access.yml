@@ -30,7 +30,7 @@ jobs:
       - name: Display redacted inventory
         run: jq . cloudflare-inventory.json
       - name: Upload drift-review artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: cloudflare-inventory-${{ github.run_id }}-setup-cf-agent-access
           path: cloudflare-inventory.json
