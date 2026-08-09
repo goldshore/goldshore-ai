@@ -167,6 +167,10 @@ MAILCHANNELS_SENDER_NAME = "GoldShore"
 #   Value: <Turnstile secret key from https://dash.cloudflare.com/>
 # Required for validating Turnstile responses on form submissions.
 
+# ── AI ───────────────────────────────────────────────────────────────────────
+[env.prod.ai]
+binding = "AI"
+
 # ── KV ───────────────────────────────────────────────────────────────────────
 [[env.prod.kv_namespaces]]
 binding = "KV"
@@ -309,6 +313,10 @@ TURNSTILE_SITE_KEY = "YOUR_TURNSTILE_SITE_KEY_PREVIEW"
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
 PUBLIC_SITE_URL = "https://preview.goldshore.ai"
 MAILCHANNELS_SENDER_NAME = "GoldShore"
+
+# ── AI ───────────────────────────────────────────────────────────────────────
+[env.preview.ai]
+binding = "AI"
 
 # ── Secrets ──────────────────────────────────────────────────────────────────
 # MAILCHANNELS_SENDER_EMAIL secret — see env.prod above for the command;
