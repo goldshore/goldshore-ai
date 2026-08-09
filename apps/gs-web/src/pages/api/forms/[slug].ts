@@ -1,4 +1,16 @@
 import type { APIRoute } from 'astro';
+import {
+  buildAdminSession,
+  verifyAccessWithClaims,
+  type AdminPermission,
+  type Env as AccessEnv,
+} from '@goldshore/auth';
+import { parseJson } from '@goldshore/utils';
+
+/**
+ * Admin UI form configuration item endpoint.
+ * Requires `forms:read` for GET and `forms:write` for PUT/PATCH.
+ */
 
 export const prerender = false;
 
@@ -65,14 +77,14 @@ const requirePermission = async (
 };
 
 export const GET: APIRoute = async ({ request, locals, params }) => {
-  const env = locals.runtime?.env as Env | undefined;
+  const env = locals.runtime?.env as AccessEnv | undefined;
   const slug = params.slug;
 
   if (!env?.PLATFORM_DB) {
     return new Response('Storage unavailable.', { status: 503 });
   }
 
-  const auth = await requirePermission(request, env as AccessEnv, 'forms:read');
+  const auth = await requirePermission(request, env, 'forms:read');
   if (auth.response) {
     return auth.response;
   }
@@ -108,7 +120,7 @@ const proxy = async (request: Request, env: Env | undefined, slug?: string) => {
     headers: forwardedHeaders(request),
     body: request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.text(),
 export const PUT: APIRoute = async ({ request, locals, params }) => {
-  const env = locals.runtime?.env as Env | undefined;
+  const env = locals.runtime?.env as AccessEnv | undefined;
   const slug = params.slug;
 
   if (!env?.PLATFORM_DB) {
@@ -119,7 +131,7 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     return forbiddenResponse('Forbidden: CSRF check failed.');
   }
 
-  const auth = await requirePermission(request, env as AccessEnv, 'forms:write');
+  const auth = await requirePermission(request, env, 'forms:write');
   if (auth.response) {
     return auth.response;
   }
@@ -195,10 +207,11 @@ export const PUT: APIRoute = async ({ request, locals, params }) => {
     headers: forwardedHeaders(request),
     body: request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.text(),
   });
-
-  return new Response(response.body, { status: response.status, headers: response.headers });
 };
 
-export const GET: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
-export const PUT: APIRoute = async ({ request, locals, params }) => proxy(request, locals.runtime?.env as Env | undefined, params.slug);
 export const PATCH = PUT;
+
+export const __testing = {
+  isSameOriginRequest,
+  requirePermission,
+};

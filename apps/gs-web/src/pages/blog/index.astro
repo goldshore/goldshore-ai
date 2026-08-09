@@ -1,0 +1,41 @@
+---
+import PublicFeaturePage from '../../components/PublicFeaturePage.astro';
+
+export const prerender = false;
+
+const cards = [
+  {
+    title: 'Designing launch systems that compound',
+    body: 'How to sequence announcements, product releases, and stakeholder communication without exhausting audience trust.',
+    href: '/services/digital-strategy/',
+    linkLabel: 'Explore digital strategy',
+  },
+  {
+    title: 'Operating AI with accountable controls',
+    body: 'A practical model for audit trails, fallback paths, operator review, and measurable production outcomes.',
+    href: '/services/ai-implementation/',
+    linkLabel: 'Explore AI implementation',
+  },
+  {
+    title: 'Reputation defense as infrastructure',
+    body: 'Monitoring, incident response, resilient publishing, and coordinated recovery for high-pressure organizations.',
+    href: '/services/banproof/',
+    linkLabel: 'Explore Banproof',
+  },
+  {
+    title: 'Signals over noise',
+    body: 'Turning market, operational, and sentiment telemetry into decisions that remain explainable under pressure.',
+    href: '/platform/financial-signals/',
+    linkLabel: 'Explore financial signals',
+  },
+];
+---
+
+<PublicFeaturePage
+  eyebrow="Research & Analysis"
+  title="GoldShore Signals"
+  description="Analytical notes, operating patterns, and field intelligence from the GoldShore team."
+  canonicalPath="/blog/"
+  {cards}
+  ctaLabel="Request a research briefing"
+/>

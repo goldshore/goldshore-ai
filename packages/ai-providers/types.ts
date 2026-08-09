@@ -1,4 +1,4 @@
-export type ProviderName = 'openai' | 'gemini';
+export type ProviderName = 'openai' | 'gemini' | 'huggingface' | 'ollama';
 
 export type AnalysisInput = {
   prompt: string;
@@ -21,6 +21,7 @@ export type ProviderConfig = {
   fetch: typeof fetch;
   apiKey?: string;
   model?: string;
+  baseUrl?: string;
 };
 
 export interface AnalysisProvider {
