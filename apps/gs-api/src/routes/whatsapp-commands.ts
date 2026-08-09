@@ -18,11 +18,42 @@ import {
   markCommandFailed,
 } from '../lib/command-queue';
 import { rotateSecret, findExpiringSecrets } from '../lib/secrets';
+import {
+  processCommandWithRiskAssessment,
+  executeApprovedCommand,
+  pollWhatsAppReaction,
+} from '../lib/approval-workflow';
+import type { CommandContext } from '../lib/risk-assessment';
 
 const whatsappCommands = new Hono<{
   Bindings: Env;
   Variables: Variables;
 }>();
+
+/**
+ * Build CommandContext for risk assessment from parsed command data
+ */
+async function buildCommandContext(
+  env: Env,
+  action: string,
+  params: Record<string, unknown>,
+  integrationId: string,
+  provider: string
+): Promise<CommandContext> {
+  return {
+    action,
+    actor: 'whatsapp_admin',
+    integrationId,
+    provider,
+    recentErrorCount: 0,
+    uptime: 99.5,
+    lastSyncHours: 2,
+    monthlySpend: 500,
+    isProductionAccount: true,
+    tokenRotationCount: 3,
+    tokenAgeHours: 240,
+  };
+}
 
 /**
  * Parse WhatsApp command text
@@ -107,8 +138,8 @@ function parseCommand(
 
 /**
  * POST /whatsapp/commands
- * Receive and queue WhatsApp command
- * Body: { text: "setup-stripe: sk_live_...", approval_method: "manual_ui"|"whatsapp_reaction" }
+ * Receive and queue WhatsApp command with risk assessment
+ * Body: { text: "setup-stripe: sk_live_...", approval_method: "manual_ui"|"whatsapp_reaction"|"auto" }
  * Requires: system:integrations:manage permission
  */
 whatsappCommands.post(
@@ -118,7 +149,7 @@ whatsappCommands.post(
     try {
       const body = await c.req.json<{
         text: string;
-        approval_method?: 'manual_ui' | 'whatsapp_reaction';
+        approval_method?: 'manual_ui' | 'whatsapp_reaction' | 'auto';
       }>();
 
       if (!body.text) {
@@ -132,6 +163,7 @@ whatsappCommands.post(
 
       const actor = getActor(c.get('accessClaims'), c.req.raw);
       const approvalMethod = body.approval_method || 'manual_ui';
+      const provider = (parsed.params.provider || 'unknown') as string;
 
       // Queue the command
       const commandId = await queueCommand(
@@ -142,6 +174,24 @@ whatsappCommands.post(
         approvalMethod
       );
 
+      // Build context and process with risk assessment
+      const context = await buildCommandContext(
+        c.env,
+        parsed.action,
+        parsed.params,
+        `integration_${provider}`,
+        provider
+      );
+
+      const workflowResult = await processCommandWithRiskAssessment(c.env, {
+        commandId,
+        actor,
+        action: parsed.action,
+        integrationId: `integration_${provider}`,
+        provider,
+        approvalMethod,
+      }, context);
+
       // Log the command queueing
       await logAdminAction(c.env, {
         action: 'command.queue',
@@ -151,6 +201,8 @@ whatsappCommands.post(
           command_id: commandId,
           command_action: parsed.action,
           approval_method: approvalMethod,
+          risk_level: (workflowResult as any).riskLevel,
+          confidence_score: (workflowResult as any).confidenceScore,
         },
       });
 
@@ -158,8 +210,7 @@ whatsappCommands.post(
         success: true,
         data: {
           command_id: commandId,
-          status: 'pending',
-          approval_method: approvalMethod,
+          ...workflowResult,
           created_at: new Date().toISOString(),
         },
       }, 202);
@@ -240,7 +291,7 @@ whatsappCommands.get(
 
 /**
  * POST /whatsapp/commands/queue/:commandId/approve
- * Manually approve a queued command from admin UI
+ * Manually approve and execute a queued command from admin UI
  * Requires: system:integrations:manage permission
  */
 whatsappCommands.post(
@@ -257,18 +308,41 @@ whatsappCommands.post(
       const command = await approveCommand(c.env, commandId);
       const actor = getActor(c.get('accessClaims'), c.req.raw);
 
-      // Log approval
+      // Execute the approved command
+      const executionResult = await executeApprovedCommand(
+        c.env,
+        commandId,
+        command.action,
+        command.params
+      );
+
+      // Mark as executed if successful
+      if (executionResult.success) {
+        await markCommandExecuted(c.env, commandId, executionResult.result);
+      } else {
+        await markCommandFailed(c.env, commandId, executionResult.error);
+      }
+
+      // Log approval and execution
       await logAdminAction(c.env, {
         action: 'command.approve',
         actor,
-        status: 'success',
+        status: executionResult.success ? 'success' : 'error',
         metadata: {
           command_id: commandId,
           command_action: command.action,
+          execution_result: executionResult.result,
+          execution_error: executionResult.error,
         },
       });
 
-      return c.json({ success: true, data: command });
+      return c.json({
+        success: true,
+        data: {
+          command,
+          execution: executionResult,
+        },
+      });
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
       console.error('Command approval error:', error);
@@ -337,9 +411,9 @@ whatsappCommands.post(
 
 /**
  * POST /whatsapp/commands/webhook/reaction
- * Handle WhatsApp message reactions for approval
+ * Handle WhatsApp message reactions for approval and execution
  * Called by WhatsApp Business API webhook when user reacts to approval message
- * Body: { message_id: "...", reaction_emoji: "✅" }
+ * Body: { message_id: "...", reaction_emoji: "✅"|"❌", command_id: "..." }
  * No permission required (webhook verification handled separately)
  */
 whatsappCommands.post('/webhook/reaction', async (c) => {
@@ -354,7 +428,27 @@ whatsappCommands.post('/webhook/reaction', async (c) => {
       return c.json({ error: 'Missing required fields' }, 400);
     }
 
-    // Only approve on checkmark emoji
+    // Handle rejection
+    if (body.reaction_emoji === '❌') {
+      await rejectCommand(c.env, body.command_id, 'User rejected via WhatsApp reaction');
+      await logAdminAction(c.env, {
+        action: 'command.reject',
+        actor: 'whatsapp_webhook',
+        status: 'success',
+        metadata: {
+          command_id: body.command_id,
+          rejection_method: 'whatsapp_reaction',
+          emoji: '❌',
+        },
+      });
+      return c.json({
+        success: true,
+        message: 'Command rejected',
+        data: { command_id: body.command_id, status: 'rejected' },
+      });
+    }
+
+    // Only approve on checkmark, thumbs up, or clapping emojis
     if (!['✅', '👍', '👏'].includes(body.reaction_emoji)) {
       return c.json({ success: true, message: 'Reaction noted but not actionable' });
     }
@@ -365,9 +459,47 @@ whatsappCommands.post('/webhook/reaction', async (c) => {
       body.reaction_emoji
     );
 
-    console.log(`Command ${body.command_id} approved via WhatsApp reaction`);
+    // Execute the approved command
+    const executionResult = await executeApprovedCommand(
+      c.env,
+      body.command_id,
+      command.action,
+      command.params
+    );
 
-    return c.json({ success: true, data: command });
+    // Mark as executed or failed
+    if (executionResult.success) {
+      await markCommandExecuted(c.env, body.command_id, executionResult.result);
+    } else {
+      await markCommandFailed(c.env, body.command_id, executionResult.error);
+    }
+
+    // Log execution
+    await logAdminAction(c.env, {
+      action: 'command.approve',
+      actor: 'whatsapp_webhook',
+      status: executionResult.success ? 'success' : 'error',
+      metadata: {
+        command_id: body.command_id,
+        approval_method: 'whatsapp_reaction',
+        emoji: body.reaction_emoji,
+        execution_result: executionResult.result,
+        execution_error: executionResult.error,
+      },
+    });
+
+    console.log(
+      `Command ${body.command_id} approved and executed via WhatsApp reaction (${body.reaction_emoji})`
+    );
+
+    return c.json({
+      success: true,
+      data: {
+        command_id: body.command_id,
+        status: executionResult.success ? 'executed' : 'execution_failed',
+        execution: executionResult,
+      },
+    });
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
     console.error('Reaction webhook error:', error);

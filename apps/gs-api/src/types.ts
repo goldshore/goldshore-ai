@@ -1,4 +1,5 @@
 import { type AccessTokenPayload } from "@goldshore/auth";
+import { type SessionUser } from "./lib/sessions";
 
 export type Env = {
   KV: KVNamespace;
@@ -12,7 +13,6 @@ export type Env = {
   AUTH_SESSION?: DurableObjectNamespace;
   AI: Ai;
   INTEGRATION_MASTER_KEY?: string;
-  SECRETS: SecretsStore;
   JOBS_QUEUE?: Queue;
   EVENTS_QUEUE?: Queue;
   MAIL_JOBS_QUEUE?: Queue;
@@ -42,7 +42,17 @@ export type Env = {
   DEPLOY_SHA?: string;
   GIT_SHA?: string;
   CONTROL_ADMIN_ROLES?: string;
+  MAIL_FORWARD_TO?: string;
+  FORWARD_TO?: string;
+  MAIL_BLOCKED_SENDERS?: string;
+  MAIL_ALLOWED_RECIPIENTS?: string;
+  AGENT?: Fetcher;
+  API_ORIGIN?: string;
+  CONTROL_ADMIN_ROLES?: string;
   CLOUDFLARE_API_TOKEN?: string;
+  GITHUB_TOKEN?: string;
+  GITHUB_API_TOKEN?: string;
+  GH_TOKEN?: string;
   CLOUDFLARE_ACCOUNT_ID?: string;
   CLOUDFLARE_ZONE_ID?: string;
   CLOUDFLARE_ZONE_NAME?: string;
@@ -62,7 +72,13 @@ export type Env = {
   GOOGLE_OAUTH_CLIENT_ID?: string;
   GOOGLE_OAUTH_CLIENT_SECRET?: string;
   GOOGLE_OAUTH_REDIRECT_URI?: string;
+  GITHUB_CLIENT_ID?: string;
+  GITHUB_CLIENT_SECRET?: string;
+  GITHUB_OAUTH_REDIRECT_URI?: string;
+  TURNSTILE_SITE_KEY?: string;
+  TURNSTILE_SECRET_KEY?: string;
   CONTACT_NOTIFICATION_EMAILS?: string;
+  PUBLIC_SITE_URL?: string;
   MAILCHANNELS_SENDER_EMAIL?: string;
   MAILCHANNELS_SENDER_NAME?: string;
   MAILCHANNELS_API_URL?: string;
@@ -82,13 +98,11 @@ export type Env = {
   GOLDCLAW_SANDBOX_API_TOKEN?: string;
   GOLDCLAW_SANDBOX_PROVIDER?: string;
   OAUTH_TOKEN_ENCRYPTION_KEY?: string;
-  CLOUDFLARE_API_TOKEN?: string;
-  CLOUDFLARE_ACCOUNT_ID?: string;
-  CLOUDFLARE_ZONE_ID?: string;
 };
 
 export type Variables = {
   accessClaims: AccessTokenPayload | null;
+  user?: SessionUser;
 };
 
 export type AuditEvent = {

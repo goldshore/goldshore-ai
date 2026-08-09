@@ -1,0 +1,41 @@
+---
+import PublicFeaturePage from '../../components/PublicFeaturePage.astro';
+
+export const prerender = false;
+
+const cards = [
+  {
+    title: 'Foundations Sprint',
+    body: 'A two-to-three-week architecture and operating review ending in a prioritized 90-day delivery plan.',
+    href: '/contact/?intent=foundations-sprint',
+    linkLabel: 'Scope the sprint',
+  },
+  {
+    title: 'Automation Launch',
+    body: 'A four-to-six-week implementation engagement for governed workflows, observability, and team handoff.',
+    href: '/contact/?intent=automation-launch',
+    linkLabel: 'Plan an automation launch',
+  },
+  {
+    title: 'AI Ops Accelerator',
+    body: 'A six-to-eight-week program that moves model-assisted workflows from prototype to accountable production.',
+    href: '/contact/?intent=ai-ops-accelerator',
+    linkLabel: 'Plan an accelerator',
+  },
+  {
+    title: 'Embedded Delivery',
+    body: 'Ongoing technical leadership and implementation support, scoped as a monthly engagement with shared outcomes.',
+    href: '/contact/?intent=embedded-delivery-partner',
+    linkLabel: 'Discuss embedded delivery',
+  },
+];
+---
+
+<PublicFeaturePage
+  eyebrow="Engagement Models"
+  title="Pricing"
+  description="Every engagement is scoped to the system, risk profile, and delivery window. These bands provide a clear starting point."
+  canonicalPath="/pricing/"
+  {cards}
+  ctaLabel="Request a scoped proposal"
+/>

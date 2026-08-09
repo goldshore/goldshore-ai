@@ -7,7 +7,7 @@ import {
 } from '../data/status';
 import BaseLayout from '../layouts/BaseLayout.astro';
 
-export const prerender = true;
+export const prerender = false;
 
 const snapshot = statusSnapshot;
 const summary = getStatusSummary(snapshot.components);
