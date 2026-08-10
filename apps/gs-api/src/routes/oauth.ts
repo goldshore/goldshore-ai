@@ -8,6 +8,7 @@ import { Hono } from 'hono';
 import { getActor, logAdminAction, requirePermission } from '../auth';
 import type { Env, Variables } from '../types';
 import { storeSecret } from '../lib/secrets';
+import { createSession, setSessionCookie } from '../lib/sessions';
 
 const oauth = new Hono<{
   Bindings: Env;
@@ -40,6 +41,13 @@ const oauthProviders: Record<string, {
     authorize_url: 'https://www.facebook.com/v18.0/dialog/oauth',
     token_url: 'https://graph.instagram.com/v18.0/oauth/access_token',
     scope: ['instagram_basic', 'instagram_content_publish'],
+  },
+  github: {
+    client_id_env: 'GITHUB_CLIENT_ID',
+    client_secret_env: 'GITHUB_CLIENT_SECRET',
+    authorize_url: 'https://github.com/login/oauth/authorize',
+    token_url: 'https://github.com/login/oauth/access_token',
+    scope: ['user:email'],
   },
 };
 
@@ -254,6 +262,162 @@ oauth.get('/providers', (c) => {
     success: true,
     data: providers,
   });
+});
+
+/**
+ * GET /auth/github/login
+ * Initiate GitHub OAuth login flow
+ * Query: redirect_uri (optional - defaults to dashboard)
+ */
+oauth.get('/github/login', async (c) => {
+  try {
+    const redirectUri = c.req.query('redirect_uri') || '/dashboard';
+    const state = crypto.randomUUID();
+
+    const clientId = c.env.GITHUB_CLIENT_ID;
+    if (!clientId) {
+      return c.json({ error: 'GitHub OAuth not configured' }, 503);
+    }
+
+    // Store state in KV for verification in callback
+    await c.env.KV.put(
+      `oauth:github:state:${state}`,
+      JSON.stringify({
+        redirect_uri: redirectUri,
+        created_at: new Date().toISOString(),
+      }),
+      { expirationTtl: 600 } // 10 minute expiry
+    );
+
+    // Build GitHub authorization URL
+    const authUrl = new URL('https://github.com/login/oauth/authorize');
+    authUrl.searchParams.set('client_id', String(clientId));
+    authUrl.searchParams.set('redirect_uri', `${c.env.GITHUB_OAUTH_REDIRECT_URI}`);
+    authUrl.searchParams.set('scope', 'user:email');
+    authUrl.searchParams.set('state', state);
+    authUrl.searchParams.set('allow_signup', 'true');
+
+    return c.redirect(authUrl.toString());
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error('GitHub login error:', error);
+    return c.json({ error: errorMsg }, 500);
+  }
+});
+
+/**
+ * GET /auth/github/callback
+ * Handle GitHub OAuth callback
+ * Query: code, state
+ */
+oauth.get('/github/callback', async (c) => {
+  try {
+    const code = c.req.query('code');
+    const state = c.req.query('state');
+
+    if (!code || !state) {
+      return c.json({ error: 'Missing code or state parameter' }, 400);
+    }
+
+    // Verify state
+    const stateData = await c.env.KV.get(`oauth:github:state:${state}`);
+    if (!stateData) {
+      return c.json({ error: 'Invalid or expired state parameter' }, 401);
+    }
+
+    const statePayload = JSON.parse(stateData);
+    const redirectUri = statePayload.redirect_uri || '/dashboard';
+
+    // Exchange code for access token
+    const clientId = c.env.GITHUB_CLIENT_ID;
+    const clientSecret = c.env.GITHUB_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) {
+      return c.json({ error: 'GitHub OAuth not configured' }, 503);
+    }
+
+    const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        client_id: String(clientId),
+        client_secret: String(clientSecret),
+        code,
+        redirect_uri: c.env.GITHUB_OAUTH_REDIRECT_URI,
+      }),
+    });
+
+    if (!tokenResponse.ok) {
+      const errorData = await tokenResponse.text();
+      console.error('GitHub token exchange failed:', errorData);
+      return c.json({ error: 'Failed to exchange code for token' }, 400);
+    }
+
+    const tokenData = await tokenResponse.json<any>();
+    const accessToken = tokenData.access_token;
+
+    if (!accessToken) {
+      return c.json({ error: tokenData.error_description || 'No access token in response' }, 400);
+    }
+
+    // Fetch user info from GitHub API
+    const userResponse = await fetch('https://api.github.com/user', {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/vnd.github.v3+json',
+      },
+    });
+
+    if (!userResponse.ok) {
+      console.error('GitHub user fetch failed:', userResponse.status);
+      return c.json({ error: 'Failed to fetch user info' }, 400);
+    }
+
+    const githubUser = await userResponse.json<any>();
+
+    // Fetch user emails
+    const emailsResponse = await fetch('https://api.github.com/user/emails', {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/vnd.github.v3+json',
+      },
+    });
+
+    let primaryEmail = githubUser.email || '';
+    if (emailsResponse.ok) {
+      const emails = await emailsResponse.json<any[]>();
+      const primaryEmailObj = emails.find((e) => e.primary);
+      if (primaryEmailObj) {
+        primaryEmail = primaryEmailObj.email;
+      }
+    }
+
+    // Create session
+    const session = await createSession(c.env.KV, {
+      id: String(githubUser.id),
+      email: primaryEmail,
+      name: githubUser.name || githubUser.login,
+      avatar: githubUser.avatar_url,
+    });
+
+    // Create response with redirect
+    const response = c.redirect(`${c.env.PUBLIC_SITE_URL}${redirectUri}`, 302);
+
+    // Set session cookie
+    setSessionCookie(response, session.id, c.env.ENV === 'production');
+
+    // Clean up state
+    await c.env.KV.delete(`oauth:github:state:${state}`);
+
+    return response;
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error('GitHub callback error:', error);
+    return c.json({ error: errorMsg }, 500);
+  }
 });
 
 export default oauth;

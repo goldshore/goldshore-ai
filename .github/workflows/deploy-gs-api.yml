@@ -14,9 +14,17 @@ on:
       - '.github/workflows/deploy-gs-api.yml'
   workflow_dispatch:
 
+concurrency:
+  group: deploy-gs-api-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     environment:
       name: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
     permissions:
@@ -24,18 +32,18 @@ jobs:
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
       - uses: ./.github/actions/check-lockfile-conflicts
         id: lockfile-check
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@f520eceda224fe1a4aed5a2a27a194379a409996 # v6
         with:
           version: 9.15.4
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           cache: pnpm
@@ -118,3 +126,16 @@ jobs:
           
           echo "::error::gs-api failed health check after $max_retries attempts"
           exit 1
+
+      - name: Deployment audit summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## gs-api deployment audit"
+            echo "- Result: **${{ job.status }}**"
+            echo "- Commit: \`$GITHUB_SHA\`"
+            echo "- Environment: \`${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}\`"
+            echo "- Initiator: \`${{ github.actor }}\`"
+            echo "- Route/Access authority: **not granted to this workflow token**"
+          } >> "$GITHUB_STEP_SUMMARY"
