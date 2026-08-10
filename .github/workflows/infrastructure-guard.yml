@@ -54,6 +54,8 @@ jobs:
           import re
 
           inventory_workflows = (
+              Path('.github/workflows/deploy-gs-api.yml'),
+              Path('.github/workflows/deploy-gs-web.yml'),
               Path('.github/workflows/setup-cf-agent-access.yml'),
               Path('.github/workflows/reconcile-dns.yml'),
           )
