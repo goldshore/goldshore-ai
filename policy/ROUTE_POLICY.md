@@ -40,7 +40,7 @@ admin.goldshore.ai
 └── Cloudflare Access policy: email allowlist required
 
 admin-preview.goldshore.ai
-├── gs-admin Pages preview environment (not yet migrated)
+├── gs-web Worker (route admin-preview.goldshore.ai/*)
 └── Same Access policy as admin.goldshore.ai
 ```
 
@@ -80,9 +80,8 @@ ops.goldshore.ai/*
 ```
 admin.goldshore.org
 ├── gs-web worker (migrated admin UI; same route owner as admin.goldshore.ai)
-├── gs-admin Pages project (not yet migrated -- see admin.goldshore.ai above)
-├── Owner: gs-admin
-├── Hosting: Cloudflare Pages
+├── Owner: gs-web
+├── Hosting: Cloudflare Workers
 └── Cloudflare Access application/policy: GoldShore Admin / GoldShore-Admin-ZT
 ```
 
@@ -132,7 +131,6 @@ www.banproof.me/*
    - `api.*` → gs-api only
    - `gw.*` → gs-platform only
    - `admin.goldshore.ai`, `admin.goldshore.org` → gs-web only (migrated)
-   - `admin.goldshore.ai` → gs-web only (migrated); `admin.goldshore.org` → gs-admin Pages (not yet migrated)
    - etc.
 
 3. **Custom domains vs. routes.** 
@@ -240,10 +238,9 @@ When accessed via:
 |---|---|---|---|
 | `admin.goldshore.ai` | goldshore.ai | gs-web | Email: @goldshore.ai, @marzton.dev |
 | `admin.goldshore.org` | goldshore.org | gs-web | Same GoldShore Admin application/policy (`GoldShore-Admin-ZT`) as admin.goldshore.ai |
-| `admin.goldshore.org` | goldshore.org | gs-admin (not yet migrated) | Same GoldShore Admin application/policy (`GoldShore-Admin-ZT`) as admin.goldshore.ai |
-| `admin-preview.goldshore.ai` | goldshore.ai | gs-admin-preview (not yet migrated) | Same as admin |
+| `admin-preview.goldshore.ai` | goldshore.ai | gs-web | Same as admin |
 | `admin.goldshore.ai` | goldshore.ai | gs-web | Identity-based allow: Email domains `@goldshore.ai`, `@marzton.dev`; Specific email: `marstonr6@gmail.com` |
-| `admin-preview.goldshore.ai` | goldshore.ai | gs-admin-preview | Identity-based allow: Email domains `@goldshore.ai`, `@marzton.dev`; Specific email: `marstonr6@gmail.com` |
+| `admin-preview.goldshore.ai` | goldshore.ai | gs-web | Identity-based allow: Email domains `@goldshore.ai`, `@marzton.dev`; Specific email: `marstonr6@gmail.com` |
 | `ops.goldshore.ai` | goldshore.ai | gs-control | Email: @goldshore.ai (ops team only) |
 | `agent.goldshore.ai/*` | goldshore.ai | Goldshore Gateway shared AUD | Bypass `/health` and `/status`; protect all other agent paths |
 

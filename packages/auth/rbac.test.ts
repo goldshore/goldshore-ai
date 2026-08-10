@@ -100,6 +100,22 @@ describe('RBAC Helpers', () => {
       assert.ok(result.length >= 10);
       assert.ok(result.includes('users:update'));
       assert.ok(result.includes('audit:read'));
+      assert.ok(result.includes('system:integrations:manage'));
+      assert.ok(result.includes('media:delete'));
+    });
+
+    test('owner can manage integrations and delete media', () => {
+      const result = getAdminPermissions(['owner']);
+      assert.ok(result.includes('system:integrations:manage'));
+      assert.ok(result.includes('media:delete'));
+    });
+
+    test('editor and viewer cannot manage integrations or delete media', () => {
+      for (const role of ['editor', 'viewer'] satisfies AdminRole[]) {
+        const result = getAdminPermissions([role]);
+        assert.ok(!result.includes('system:integrations:manage'));
+        assert.ok(!result.includes('media:delete'));
+      }
     });
   });
 

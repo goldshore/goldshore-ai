@@ -39,6 +39,22 @@ const STATIC_PATH_PREFIXES = [
   '/sitemap',
 ];
 
+/**
+ * Paths that stay reachable on the admin hostname without an admin session.
+ *
+ * The admin host folds every unrecognized path back to the dashboard, and the
+ * dashboard requires a session. Without this exemption the sign-in and
+ * sign-out routes would themselves be rewritten to the dashboard, so an
+ * unauthenticated operator would bounce between /login and /app/dashboard
+ * with no way to authenticate.
+ */
+const ADMIN_HOST_PUBLIC_PATHS = ['/login', '/logout'];
+
+const isAdminHostPublicPath = (pathname: string) =>
+  ADMIN_HOST_PUBLIC_PATHS.some(
+    (candidate) => pathname === candidate || pathname.startsWith(`${candidate}/`),
+  );
+
 const CLEAN_ADMIN_PAGE_PREFIXES = [
   '/api-status',
   '/crawler',
@@ -92,6 +108,7 @@ export const getAdminHostRewritePath = (pathname: string) => {
   const normalizedPath = normalizePathname(pathname);
 
   if (isStaticAssetPath(normalizedPath)) return null;
+  if (isAdminHostPublicPath(normalizedPath)) return null;
   if (normalizedPath === '/') return ADMIN_DASHBOARD_PATH;
 
   if (
@@ -248,7 +265,8 @@ export const getAdminRouteRule = (
   if (
     hostname &&
     isAdminHost(hostname) &&
-    !isStaticAssetPath(normalizedPath)
+    !isStaticAssetPath(normalizedPath) &&
+    !isAdminHostPublicPath(normalizedPath)
   ) {
     return {
       canonicalPath: ADMIN_DASHBOARD_PATH,
