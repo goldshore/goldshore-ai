@@ -59,7 +59,7 @@ jobs:
     env:
       # Astro emits a flattened redirected Wrangler config during the build.
       # Select the environment before building or preview will inherit prod.
-      CLOUDFLARE_ENV: ${{ github.ref == 'refs/heads/main' && 'prod' || 'preview' }}
+      CLOUDFLARE_ENV: prod
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -73,7 +73,7 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Build gs-web Worker output
         run: pnpm build:pages

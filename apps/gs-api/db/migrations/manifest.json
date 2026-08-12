@@ -11,5 +11,6 @@
   "0006_github_app_integration.sql": "AUDIT_DB",
   "0007_google_workspace_rbac.sql": "PLATFORM_DB",
   "0007_github_webhooks.sql": "AUDIT_DB",
-  "0008_access_owner_role.sql": "PLATFORM_DB"
+  "0008_access_owner_role.sql": "PLATFORM_DB",
+  "0009_infrastructure_baseline.sql": "PLATFORM_DB"
 }

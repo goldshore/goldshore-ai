@@ -1,8 +1,6 @@
 import { escapeHtml, isValidEmail } from '@goldshore/utils';
 import type { Env } from '../types';
 
-const DEFAULT_MAILCHANNELS_API_URL = 'https://api.mailchannels.net/tx/v1/send';
-
 export type MailRecipient = {
   email: string;
   name?: string;
@@ -12,39 +10,71 @@ export type MailResult =
   | { attempted: false; reason: string }
   | { attempted: true; ok: boolean; status: number; body: string };
 
+const RETRYABLE_EMAIL_ERRORS = new Set([
+  'E_RATE_LIMIT_EXCEEDED',
+  'E_DAILY_LIMIT_EXCEEDED',
+  'E_DELIVERY_FAILED',
+  'E_INTERNAL_SERVER_ERROR',
+]);
+
+const emailErrorCode = (error: unknown) => {
+  if (!error || typeof error !== 'object' || !('code' in error)) return 'E_UNKNOWN';
+  return String((error as { code?: unknown }).code ?? 'E_UNKNOWN');
+};
+
+export type MailEnv = Pick<Env, 'EMAIL' | 'MAIL_FROM_EMAIL' | 'MAIL_FROM_NAME'>;
+
+export const isRetryableMailFailure = (result: MailResult) =>
+  result.attempted && !result.ok && RETRYABLE_EMAIL_ERRORS.has(result.body);
+
 export const sendMail = async (
-  env: Env,
+  env: MailEnv,
   to: MailRecipient[],
   subject: string,
   text: string,
   html: string,
   replyTo?: MailRecipient,
 ): Promise<MailResult> => {
-  const fromEmail = env.MAILCHANNELS_SENDER_EMAIL?.trim();
-  const fromName = env.MAILCHANNELS_SENDER_NAME?.trim() || 'GoldShore';
-  if (!fromEmail || !isValidEmail(fromEmail) || to.length === 0) {
+  const fromEmail = env.MAIL_FROM_EMAIL?.trim() || 'noreply@goldshore.ai';
+  const fromName = env.MAIL_FROM_NAME?.trim() || 'GoldShore';
+  if (!env.EMAIL || !isValidEmail(fromEmail) || to.length === 0) {
     return { attempted: false, reason: 'missing_mail_configuration' };
   }
 
-  const payload = {
-    personalizations: [{ to }],
-    from: { email: fromEmail, name: fromName },
-    ...(replyTo ? { reply_to: replyTo } : {}),
-    subject,
-    content: [
-      { type: 'text/plain', value: text },
-      { type: 'text/html', value: html },
-    ],
-  };
+  try {
+    const response = await env.EMAIL.send({
+      to: to.map((recipient) =>
+        recipient.name ? { email: recipient.email, name: recipient.name } : recipient.email,
+      ),
+      from: { email: fromEmail, name: fromName },
+      ...(replyTo
+        ? {
+            replyTo: replyTo.name
+              ? { email: replyTo.email, name: replyTo.name }
+              : replyTo.email,
+          }
+        : {}),
+      subject,
+      text,
+      html,
+    });
 
-  const endpoint = env.MAILCHANNELS_API_URL || DEFAULT_MAILCHANNELS_API_URL;
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-
-  return { attempted: true, ok: response.ok, status: response.status, body: await response.text() };
+    return {
+      attempted: true,
+      ok: true,
+      status: 202,
+      body: response.messageId,
+    };
+  } catch (error) {
+    const code = emailErrorCode(error);
+    console.error({ event: 'mail_delivery_failed', code });
+    return {
+      attempted: true,
+      ok: false,
+      status: RETRYABLE_EMAIL_ERRORS.has(code) ? 503 : 400,
+      body: code,
+    };
+  }
 };
 
 export const parseNotificationRecipients = (
