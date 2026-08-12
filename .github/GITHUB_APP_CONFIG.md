@@ -4,7 +4,7 @@
 > App ID: 36743  
 > Client ID: Iv1.2fd777cc3eb8c888  
 > Owner: @marzton  
-> Status: Active (reintegrated 2026-08-09)
+> Status: Repository webhooks active; application OAuth remains fail-closed until a dedicated client ID/secret is provisioned
 
 ---
 
@@ -32,7 +32,7 @@ Private Key SHA: BTg580BS7Ygnl1KwKSlOIe3++74pBaQMmqv/L+Ie0ew=
 
 **Callback URLs:**
 ```
-Primary:  https://goldshore.ai/oauth/github
+Primary:  https://api.goldshore.ai/auth/github/callback
 Setup:    https://mcp.goldshore.ai/setup
 Redirect: https://dash.goldshore.ai/integrations/github
 ```
@@ -48,7 +48,13 @@ user:email        (read user email)
 
 ### Webhook Configuration
 
-**Webhook URL:** https://goldshore.ai/oauth/github
+**Webhook URLs:**
+```
+https://api.goldshore.ai/webhooks/github/push
+https://api.goldshore.ai/webhooks/github/pull_request
+https://api.goldshore.ai/webhooks/github/issues
+https://api.goldshore.ai/webhooks/github/workflow_run
+```
 
 **Events Subscribed:**
 - `push` — Code deployment triggers
@@ -60,7 +66,7 @@ user:email        (read user email)
 
 **SSL Verification:** Enabled ✅
 
-**Webhook Secret:** Stored in `GITHUB_APP_WEBHOOK_SECRET` environment variable
+**Webhook Secret:** Stored as the `GS_GITHUB_WEBHOOK_SECRET` Worker secret and the same-named GitHub Actions repository secret
 
 ---
 
@@ -74,10 +80,10 @@ GITHUB_APP_ID=36743
 GITHUB_APP_CLIENT_ID=Iv1.2fd777cc3eb8c888
 GITHUB_APP_CLIENT_SECRET=<stored-in-cloudflare-secrets>
 GITHUB_APP_PRIVATE_KEY=<stored-in-cloudflare-secrets>
-GITHUB_APP_WEBHOOK_SECRET=<stored-in-cloudflare-secrets>
+GS_GITHUB_WEBHOOK_SECRET=<stored-as-a-direct-worker-secret>
 
 # OAuth Redirect
-GITHUB_OAUTH_REDIRECT_URI=https://goldshore.ai/oauth/github/callback
+GITHUB_OAUTH_REDIRECT_URI=https://api.goldshore.ai/auth/github/callback
 
 # Admin Dashboard
 ADMIN_OAUTH_CALLBACK=https://dash.goldshore.ai/admin/auth/github/callback
@@ -85,40 +91,36 @@ ADMIN_OAUTH_CALLBACK=https://dash.goldshore.ai/admin/auth/github/callback
 
 ### Storage Locations
 
-- **Cloudflare Secrets Store** (`b9824d3280c54573a24137c7e7143b33`):
-  - `GITHUB_APP_CLIENT_SECRET`
-  - `GITHUB_APP_PRIVATE_KEY`
-  - `GITHUB_APP_WEBHOOK_SECRET`
+- **Cloudflare Worker secrets** (`gs-api-prod`):
+  - `GS_GITHUB_WEBHOOK_SECRET`
+  - `GITHUB_CLIENT_SECRET` only after a dedicated OAuth client is approved
 
 - **Repository Secrets** (GitHub Settings → Secrets → Actions):
   - `GITHUB_APP_ID`
   - `GITHUB_APP_CLIENT_ID`
   - `GITHUB_OAUTH_REDIRECT_URI`
+  - `GS_GITHUB_WEBHOOK_SECRET`
 
 - **Wrangler Environment** (apps/gs-api/wrangler.toml):
-  - Bound to Secrets Store `b9824d3280c54573a24137c7e7143b33`
-  - Access via `env.INTEGRATION_MASTER_KEY.get(key_name)`
+  - Secrets are direct Worker secrets; `INTEGRATION_MASTER_KEY` is not a Secrets Store object
+  - Webhook signature verification reads `env.GS_GITHUB_WEBHOOK_SECRET`
 
 ---
 
-## Routes to Implement in gs-api
+## Routes implemented in gs-api
 
 ### 1. OAuth Flow Routes
 
-**GET /oauth/github**
+**GET /auth/github/login**
 - Initiates GitHub OAuth login flow
 - Redirects user to GitHub authorization page with app scopes
 - Query params: `redirect_to` (where to return after auth)
 
-**GET /oauth/github/callback**
+**GET /auth/github/callback**
 - GitHub OAuth callback handler
 - Exchange authorization code for access token
 - Store token in KV with user session
 - Redirect to dashboard or original URL
-
-**POST /oauth/github/logout**
-- Clear GitHub token from session
-- Revoke token from GitHub (optional)
 
 ### 2. Webhook Handlers
 
@@ -153,9 +155,9 @@ ADMIN_OAUTH_CALLBACK=https://dash.goldshore.ai/admin/auth/github/callback
 ### OAuth Login Flow (gs-web)
 
 **Pages/Routes:**
-1. `/admin/login` — GitHub App login button
-2. `/admin/auth/github/callback` — OAuth callback handler
-3. `/admin` — Protected admin dashboard (requires GitHub auth)
+1. `admin.goldshore.ai/app/dashboard` — protected by the GoldShore Admin Cloudflare Access application
+2. Cloudflare Access — primary Google/GitHub SSO and explicit-email admission policy
+3. `/auth/github/*` — optional application OAuth; fails closed until dedicated credentials are configured
 
 **Session Storage:**
 - GitHub token stored in Cloudflare KV with TTL
@@ -212,7 +214,7 @@ The GitHub App must be installed on the repository for webhooks to work:
 ```
 GitHub Event (push/PR/issue)
     ↓
-POST https://goldshore.ai/webhooks/github/<event_type>
+POST https://api.goldshore.ai/webhooks/github/<event_type>
     ↓
 Verify Webhook Signature (X-Hub-Signature-256)
     ↓

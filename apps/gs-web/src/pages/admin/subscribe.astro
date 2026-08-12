@@ -7,31 +7,31 @@ if (!Astro.locals.adminSession?.isAuthenticated) {
 }
 ---
 
-<AdminLayout title="Control Plane" requiredPermission="system:read">
+<AdminLayout title="Subscribe CTA" requiredPermission="forms:read">
   <div class="admin-page-header">
-    <h1>Control Plane</h1>
-    <p>Manage platform configuration and infrastructure</p>
+    <h1>Subscribe CTA Management</h1>
+    <p>Manage subscription call-to-action campaigns</p>
   </div>
 
   <div class="admin-content">
     <section class="admin-section">
-      <h2>Platform Status</h2>
+      <h2>Active Campaigns</h2>
       <div class="loading-state">
-        <p>Loading platform status...</p>
+        <p>Loading campaigns...</p>
       </div>
     </section>
 
     <section class="admin-section">
-      <h2>Configuration</h2>
+      <h2>Conversion Metrics</h2>
       <div class="loading-state">
-        <p>Loading configuration...</p>
+        <p>Loading conversion data...</p>
       </div>
     </section>
 
     <section class="admin-section">
-      <h2>Infrastructure Events</h2>
+      <h2>A/B Tests</h2>
       <div class="loading-state">
-        <p>Loading infrastructure events...</p>
+        <p>Loading A/B test results...</p>
       </div>
     </section>
   </div>
