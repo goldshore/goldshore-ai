@@ -30,7 +30,10 @@ test('rejects unrelated origins', () => {
 test('allows only public form submission writes through API authentication', () => {
   assert.equal(isPublicPath('/v1/forms/contact/submissions', 'POST'), true);
   assert.equal(isPublicPath('/v1/forms/newsletter/submissions', 'POST'), true);
+  assert.equal(isPublicPath('/v1/forms/newsletter/confirm', 'GET'), true);
+  assert.equal(isPublicPath('/v1/forms/newsletter/unsubscribe', 'GET'), true);
   assert.equal(isPublicPath('/v1/forms/contact/submissions', 'GET'), false);
+  assert.equal(isPublicPath('/v1/forms/subscribers', 'GET'), false);
   assert.equal(isPublicPath('/v1/forms/configs', 'GET'), false);
   assert.equal(isPublicPath('/v1/forms/leads', 'GET'), false);
 });
@@ -59,6 +62,8 @@ test('exposes /version without Cloudflare Access', async () => {
 });
 
 for (const [hostname, service] of [
+  ['api.goldshore.ai', 'gs-api'],
+  ['api.goldshore.org', 'gs-api'],
   ['agent.goldshore.ai', 'gs-api-agent'],
   ['mail.goldshore.ai', 'gs-api-mail'],
   ['ops.goldshore.ai', 'gs-api-control'],
@@ -82,6 +87,19 @@ for (const [hostname, service] of [
     assert.equal(((await response.json()) as { service: string }).service, service);
   });
 }
+
+test('emits the same release headers through both production API aliases', async () => {
+  const env = { ...requiredRuntimeEnv, GIT_SHA: 'release-sha' } as any;
+  for (const hostname of ['api.goldshore.ai', 'api.goldshore.org']) {
+    const response = await worker.fetch(
+      new Request(`https://${hostname}/health`),
+      env,
+      {} as ExecutionContext,
+    );
+    assert.equal(response.headers.get('x-gs-api-version'), 'release-sha');
+    assert.equal(response.headers.get('x-gs-deploy-sha'), 'release-sha');
+  }
+});
 
 test('fails closed when protected routes are missing the Access audience', async () => {
   const response = await app.request('/system/status', {}, { ...requiredRuntimeEnv } as any);
