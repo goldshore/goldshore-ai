@@ -81,7 +81,10 @@ describe('Media Endpoint Security', () => {
       KV: { put: async () => {} },
       PLATFORM_DB: {
         prepare: () => ({
-          bind: () => ({ all: async () => ({ results: [] }) }),
+          bind: () => ({
+            all: async () => ({ results: [] }),
+            run: async () => ({}),
+          }),
         }),
       },
     } as any);

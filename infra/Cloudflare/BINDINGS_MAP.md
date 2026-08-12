@@ -28,6 +28,13 @@ removed. It shipped only the static client assets (dist/client has no
 `_worker.js`), so it published a static shell that 404'd every SSR route while
 competing with the Worker for the same hostnames.
 
+`.github/workflows/deploy-gs-web.yml` is consequently named **Verify gs-web
+build** and retains one immutable artifact keyed by the release SHA. Successful
+Cloudflare deployment events trigger `verify-gs-web-deployment.yml`, which
+compares the embedded release marker across every supported production mirror
+and the two supported `.ai` preview hosts. No `.org` preview hostname is part of
+the current Wrangler contract.
+
 **Environment Variables:**
 
 - `PUBLIC_API=https://api.goldshore.ai`
