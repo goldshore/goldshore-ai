@@ -1,8 +1,16 @@
-name: Deploy Goldshore API
+name: Inventory gs-api configuration
 
+# Read-only drift inventory. Cloudflare production configuration is changed only
+# by an approved human in the dashboard; this workflow has no Cloudflare credentials.
 on:
+  pull_request:
+    paths:
+      - 'apps/gs-api/**'
+      - 'scripts/export-cloudflare-inventory.py'
+      - 'infra/Cloudflare/dashboard-inventory.json'
+      - '.github/workflows/deploy-gs-api.yml'
   push:
-    branches: [main, stage]
+    branches: [main]
     paths:
       - 'apps/gs-api/**'
       - 'packages/**'
@@ -11,11 +19,43 @@ on:
       - 'pnpm-workspace.yaml'
       - '.node-version'
       - '.nvmrc'
+      - '.github/actions/**'
       - '.github/workflows/deploy-gs-api.yml'
   workflow_dispatch:
 
+concurrency:
+  group: deploy-gs-api-${{ github.ref }}
+  cancel-in-progress: false
+      - 'scripts/export-cloudflare-inventory.py'
+      - 'infra/Cloudflare/dashboard-inventory.json'
+      - '.github/workflows/deploy-gs-api.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
 jobs:
+  gs-api-build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 9.15.4
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build gs-api
+        run: pnpm --filter @goldshore/gs-api build
+
   deploy:
+    needs: gs-api-build
+  inventory:
+    name: Export redacted expected state
     runs-on: ubuntu-latest
     environment:
       name: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
@@ -23,8 +63,10 @@ jobs:
       contents: read
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      TARGET_ENV: ${{ github.ref == 'refs/heads/main' && 'prod' || 'preview' }}
+      HEALTH_ORIGIN: ${{ github.ref == 'refs/heads/main' && 'https://api.goldshore.ai' || 'https://api-preview.goldshore.ai' }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
 
@@ -35,7 +77,7 @@ jobs:
         with:
           version: 9.15.4
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@v7.0.0
         with:
           node-version: 22
           cache: pnpm
@@ -118,3 +160,90 @@ jobs:
           
           echo "::error::gs-api failed health check after $max_retries attempts"
           exit 1
+          name: cloudflare-inventory-${{ github.run_id }}-deploy-gs-api
+          path: cloudflare-inventory.json
+          retention-days: 30
+      - name: Stamp release identity into the selected environment
+        working-directory: apps/gs-api
+        env:
+          DEPLOY_ENV: ${{ github.ref == 'refs/heads/main' && 'prod' || 'preview' }}
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = 'wrangler.toml';
+          const source = fs.readFileSync(path, 'utf8');
+          const marker = `[env.${process.env.DEPLOY_ENV}.vars]\n`;
+          if (!source.includes(marker)) throw new Error(`Missing ${marker.trim()} in ${path}`);
+          const identity = `API_VERSION = "${process.env.GITHUB_SHA}"\nDEPLOY_SHA = "${process.env.GITHUB_SHA}"\n`;
+          fs.writeFileSync(path, source.replace(marker, marker + identity));
+          NODE
+
+      - run: pnpm --filter @goldshore/gs-api run deploy -- --env=${{ github.ref == 'refs/heads/main' && 'prod' || 'preview' }}
+
+      - name: Verify production API aliases
+        if: github.ref == 'refs/heads/main'
+        env:
+          CORS_ORIGIN: https://goldshore.ai
+        run: |
+          set -euo pipefail
+          tmp_dir=$(mktemp -d)
+          trap 'rm -rf "$tmp_dir"' EXIT
+
+          request() {
+            local host=$1 path=$2 name=$3
+            for attempt in 1 2 3 4 5; do
+              if curl --fail-with-body --silent --show-error \
+                --dump-header "$tmp_dir/$name.headers" \
+                --output "$tmp_dir/$name.body" \
+                "https://$host$path"; then return 0; fi
+              echo "Retrying $host$path ($attempt/5)"
+              sleep 10
+            done
+            return 1
+          }
+
+          for host in api.goldshore.ai api.goldshore.org; do
+            key=${host//./_}
+            request "$host" /health "$key-health"
+            jq -e '.status == "ok" and .service == "gs-api"' "$tmp_dir/$key-health.body"
+
+            request "$host" /version "$key-version"
+            jq -e --arg sha "$GITHUB_SHA" \
+              '.service == "gs-api" and .version == $sha and .deploySha == $sha' \
+              "$tmp_dir/$key-version.body"
+
+            auth_status=$(curl --silent --show-error --output "$tmp_dir/$key-auth.body" \
+              --dump-header "$tmp_dir/$key-auth.headers" --write-out '%{http_code}' \
+              "https://$host/system/status")
+            case "$auth_status" in
+              401) jq -e '.error == "Unauthorized"' "$tmp_dir/$key-auth.body" ;;
+              302|303|307)
+                tr -d '\r' < "$tmp_dir/$key-auth.headers" \
+                  | grep -Eqi '^location: https://[^/]*cloudflareaccess\.com/'
+                ;;
+              *) echo "::error::Unexpected authentication challenge status $auth_status from $host"; exit 1 ;;
+            esac
+
+            cors_status=$(curl --silent --show-error --output /dev/null \
+              --dump-header "$tmp_dir/$key-cors.headers" --write-out '%{http_code}' \
+              -X OPTIONS -H "Origin: $CORS_ORIGIN" \
+              -H 'Access-Control-Request-Method: POST' \
+              "https://$host/v1/forms/contact/submissions")
+            test "$cors_status" = 204
+            tr -d '\r' < "$tmp_dir/$key-cors.headers" | grep -Fqi "access-control-allow-origin: $CORS_ORIGIN"
+            tr -d '\r' < "$tmp_dir/$key-cors.headers" | grep -Eqi 'access-control-allow-methods:.*POST'
+          done
+
+          header_value() {
+            tr -d '\r' < "$1" | awk -F': *' -v wanted="$2" \
+              'tolower($1) == tolower(wanted) { value=$2 } END { print value }'
+          }
+          for header in x-gs-api-version x-gs-deploy-sha; do
+            ai_value=$(header_value "$tmp_dir/api_goldshore_ai-version.headers" "$header")
+            org_value=$(header_value "$tmp_dir/api_goldshore_org-version.headers" "$header")
+            test -n "$ai_value" && test "$ai_value" = "$GITHUB_SHA"
+            test "$ai_value" = "$org_value" || {
+              echo "::error::$header differs between production API domains"
+              exit 1
+            }
+          done

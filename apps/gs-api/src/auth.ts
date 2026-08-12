@@ -6,6 +6,7 @@ import {
   type AdminPermission
 } from "@goldshore/auth";
 import { Env, Variables, AuditEvent } from "./types";
+import { validateSession, getSessionIdFromCookie, type SessionUser } from "./lib/sessions";
 
 export type AuthContext = Context<{
   Bindings: Env;
@@ -21,11 +22,14 @@ export const getActor = (claims: AccessTokenPayload | null, request: Request) =>
 export const logAdminAction = async (env: Env, entry: Omit<AuditEvent, "timestamp">) => {
   const timestamp = new Date().toISOString();
   const payload: AuditEvent = { ...entry, timestamp };
-  if (!env?.KV || typeof env.KV.put !== "function") {
+  if (!env?.PLATFORM_DB) {
     return payload;
   }
-  const key = `audit:admin:${timestamp}:${crypto.randomUUID()}`;
-  await env.KV.put(key, JSON.stringify(payload));
+  await env.PLATFORM_DB.prepare(
+    `INSERT INTO audit_events (id, occurred_at, actor, action, status, metadata_json)
+     VALUES (?, ?, ?, ?, ?, ?)`
+  ).bind(crypto.randomUUID(), timestamp, entry.actor ?? "unknown", entry.action,
+    entry.status, JSON.stringify(entry.metadata ?? {})).run();
   return payload;
 };
 
@@ -44,3 +48,25 @@ export const requirePermission =
     }
     await next();
   };
+
+export const requireUserSession = () =>
+  async (c: AuthContext, next: Next) => {
+    const sessionId = getSessionIdFromCookie(c.req.raw);
+
+    if (!sessionId) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    const user = await validateSession(c.env.KV, sessionId);
+
+    if (!user) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    c.set("user", user);
+    await next();
+  };
+
+export const getUser = (c: AuthContext): SessionUser | null => {
+  return c.get("user") || null;
+};
