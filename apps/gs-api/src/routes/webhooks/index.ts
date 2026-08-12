@@ -104,6 +104,36 @@ webhooks.post('/cloudflare', async (c) => {
   }
 });
 
+webhooks.post('/github/:action', async (c) => {
+  try {
+    const signature = c.req.header('x-hub-signature-256');
+    if (!signature) return c.json({ error: 'Missing webhook signature' }, 401);
+
+    const body = await c.req.text();
+    const secret = c.env.GS_GITHUB_WEBHOOK_SECRET;
+
+    const expectedSig = `sha256=${crypto
+      .createHmac('sha256', secret)
+      .update(body)
+      .digest('hex')}`;
+
+    if (expectedSig !== signature) return c.json({ error: 'Invalid signature' }, 401);
+
+    const event = c.req.header('x-github-event') || 'unknown';
+    const action = c.req.param('action');
+    const db = c.env.AUDIT_DB;
+
+    await db
+      .prepare('INSERT INTO github_webhooks (id, action, event_type, payload, timestamp) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)')
+      .bind(crypto.randomUUID(), action, event, body)
+      .run();
+
+    return c.json({ success: true, event });
+  } catch (error) {
+    return c.json({ error: 'Webhook processing failed' }, 500);
+  }
+});
+
 webhooks.post('/:event', async (c) => {
   try {
     const event = c.req.param('event');
