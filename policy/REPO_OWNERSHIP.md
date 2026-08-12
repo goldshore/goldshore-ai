@@ -17,7 +17,6 @@ All GoldShore Labs infrastructure, workers, and shared services live here.
 marzton/goldshore-ai/
 ├── apps/
 │   ├── gs-web/                    (Astro Pages; domains: goldshore.ai, www.goldshore.ai)
-│   ├── gs-admin/                  (Admin cockpit; domain: admin.goldshore.ai)
 │   ├── gs-api/                    (API worker; route: api.goldshore.ai/*)
 │   ├── gs-gateway/                (Gateway router; deployed as gs-platform; route: gw.goldshore.ai/*)
 │   ├── gs-control/                (Ops/control plane; route: ops.goldshore.ai/*)
@@ -49,8 +48,7 @@ marzton/goldshore-ai/
 
 | Service | Package | Root Path | Build Output | Domains | Zone | Env Vars |
 |---|---|---|---|---|---|---|
-| **gs-web** | `@goldshore/gs-web` | `apps/gs-web` | `dist/` | `goldshore.ai`<br>`www.goldshore.ai`<br>`preview.goldshore.ai` | `goldshore.ai` | `PUBLIC_API=https://api.goldshore.ai`<br>`PUBLIC_GATEWAY=https://gw.goldshore.ai` |
-| **gs-admin** | `@goldshore/gs-admin` | `apps/gs-admin` | `dist/` | `admin.goldshore.ai`<br>`admin-preview.goldshore.ai` | `goldshore.ai` | Same as gs-web<br>`+CLOUDFLARE_ACCESS_AUDIENCE` |
+| **gs-web** | `@goldshore/gs-web` | `apps/gs-web` | `dist/` | `goldshore.ai`<br>`www.goldshore.ai`<br>`preview.goldshore.ai`<br>`admin.goldshore.ai`<br>`admin.goldshore.org` | `goldshore.ai` | `PUBLIC_API=https://api.goldshore.ai`<br>`PUBLIC_GATEWAY=https://gw.goldshore.ai` |
 
 ### Edge Workers
 
@@ -81,12 +79,12 @@ marzton/goldshore-ai/
 
 ### Pages Projects (GitHub Actions)
 
-**Authority:** Individual repo maintainers (gs-web, gs-admin repos if separate)
+**Authority:** Individual repo maintainers (gs-web repo if separate)
 **Scope:** Deploy frontend builds to Cloudflare Pages
 
 **If separate repos:**
 - `marzton/goldshore-web` → gs-web Pages project
-- `marzton/goldshore-admin` → gs-admin Pages project
+- `marzton/goldshore-admin` → retired. The admin UI now lives under `apps/gs-web`; do not redeploy this project.
 
 **If in monorepo:** GitHub Actions in `marzton/goldshore-ai` triggers Pages deployment on commit to main.
 
@@ -123,8 +121,8 @@ marzton/goldshore-ai/
 | gw | GoldShore Labs | gs-platform | Route | No |
 | ops | GoldShore Labs | gs-control | Route | No |
 | agent | GoldShore Labs | gs-agent | Route | No |
-| admin | GoldShore Labs | gs-admin Pages | Custom domain | No |
-| admin-preview | GoldShore Labs | gs-admin Pages | Custom domain | No |
+| admin | GoldShore Labs | gs-web | Route | No |
+| admin-preview | GoldShore Labs | gs-web | Route | No |
 | preview | GoldShore Labs | gs-web Pages | Custom domain | No |
 
 ---
@@ -138,10 +136,6 @@ gs-web (Astro Pages, goldshore.ai)
 └── @goldshore/ui
 └── @goldshore/auth
 
-gs-admin (Astro Pages, admin.goldshore.ai)
-└── @goldshore/theme
-└── @goldshore/config
-└── @goldshore/auth
 
 gs-api (Worker)
 └── @goldshore/auth

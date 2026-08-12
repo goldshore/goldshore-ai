@@ -1,11 +1,17 @@
-name: Inventory gs-api configuration
+name: Verify gs-api build and inventory
 
-# Read-only drift inventory. Cloudflare production configuration is changed only
-# by an approved human in the dashboard; this workflow has no Cloudflare credentials.
+# Cloudflare production deployment and configuration are owned by the Workers
+# Builds integration and the dashboard. This workflow is deliberately read-only.
 on:
   pull_request:
     paths:
       - 'apps/gs-api/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.node-version'
+      - '.nvmrc'
       - 'scripts/export-cloudflare-inventory.py'
       - 'infra/Cloudflare/dashboard-inventory.json'
       - '.github/workflows/deploy-gs-api.yml'
@@ -13,31 +19,52 @@ on:
     branches: [main]
     paths:
       - 'apps/gs-api/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.node-version'
+      - '.nvmrc'
       - 'scripts/export-cloudflare-inventory.py'
       - 'infra/Cloudflare/dashboard-inventory.json'
       - '.github/workflows/deploy-gs-api.yml'
   workflow_dispatch:
 
+concurrency:
+  group: verify-gs-api-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
 jobs:
+  gs-api-build:
+    name: Build gs-api
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 9.15.4
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @goldshore/gs-api build
+
   inventory:
     name: Export redacted expected state
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7.0.1
-        with:
-          fetch-depth: 0
-
-      - uses: ./.github/actions/check-lockfile-conflicts
-        id: lockfile-check
-
-      - uses: pnpm/action-setup@v6
-        with:
-          version: 9.15.4
-
-      - uses: actions/setup-node@v7.0.0
+      - uses: actions/checkout@v7
+      - name: Export binding names, routes, Access IDs, and secret names
+        run: python3 scripts/export-cloudflare-inventory.py cloudflare-inventory.json
+      - name: Display redacted inventory
+        run: jq . cloudflare-inventory.json
+      - name: Upload drift-review artifact
+        uses: actions/upload-artifact@v7
         with:
           name: cloudflare-inventory-${{ github.run_id }}-deploy-gs-api
           path: cloudflare-inventory.json

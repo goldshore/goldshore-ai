@@ -20,7 +20,7 @@ jobs:
     name: Manifest integrity check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@v7
 
       - name: Verify INFRASTRUCTURE.md exists
         run: |
@@ -54,6 +54,8 @@ jobs:
           import re
 
           inventory_workflows = (
+              Path('.github/workflows/deploy-gs-api.yml'),
+              Path('.github/workflows/deploy-gs-web.yml'),
               Path('.github/workflows/setup-cf-agent-access.yml'),
               Path('.github/workflows/reconcile-dns.yml'),
           )
@@ -230,7 +232,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'workflow_dispatch'
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@v7
 
       - name: Normalize Cloudflare token
         env:
@@ -252,6 +254,9 @@ jobs:
             echo "::add-mask::$token"
             echo "CLOUDFLARE_API_TOKEN=$token" >> "$GITHUB_ENV"
             echo "CLOUDFLARE_BUILD_API_TOKEN=$token" >> "$GITHUB_ENV"
+            echo "CLOUDFLARE_CREDENTIALS_AVAILABLE=true" >> "$GITHUB_ENV"
+          else
+            echo "CLOUDFLARE_CREDENTIALS_AVAILABLE=false" >> "$GITHUB_ENV"
           fi
 
       - name: Verify Cloudflare credentials
@@ -269,6 +274,7 @@ jobs:
           fi
 
       - name: Audit live Cloudflare state against manifest
+        if: env.CLOUDFLARE_CREDENTIALS_AVAILABLE == 'true'
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           EVENT_NAME: ${{ github.event_name }}
