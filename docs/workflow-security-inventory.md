@@ -7,23 +7,23 @@ operator runbook and are verified by the read-only audit.
 
 | Workflow | Classification | Authority / notes |
 | --- | --- | --- |
-| `anthropic-oidc.yml` | CI | Reusable credential federation; no account mutation. |
-| `auto-resolve-lockfile-conflicts.yml` | CI | Repository-only lockfile repair. |
+| `admin-merge-cockpit.yml` | Manual repository mutation | SHA-locked salvage branch creation from reviewed conflict decisions. |
+| `audit-gs-api-secrets.yml` | Read-only discovery | Compares secret names with the source-controlled contract without reading values. |
 | `ci.yml` | CI | Validation and build checks. |
-| `cloudflare-audit.yml` | Read-only discovery | Scoped read token; redacted artifact; GET requests only. |
+| `cloudflare-audit.yml` | Read-only discovery | Scoped read token; redacted artifact; GET requests only; owns live resource-drift validation so deterministic PR CI does not depend on mutable account state. |
 | `cloudflare-operator.yml` | Manual account mutation | Approval-gated human runbook; intentionally executes no API mutation. |
 | `deploy-gs-api.yml` | Production deployment | Deploys the unified API Worker; route reassignment is prohibited. |
 | `deploy-gs-web.yml` | CI | Builds the web Worker; the workflow explicitly performs no deployment. |
 | `enforce-branch-protection.yml` | Manual account mutation | Mutates GitHub repository policy, not Cloudflare. |
 | `issue-agent-triage.yml` | CI | GitHub issue metadata automation. |
+| `label.yml` | CI | Applies path labels to pull requests. |
 | `lockfile-guard.yml` | CI | Lockfile policy check. |
-| `lockfile-maintenance.yml` | CI | Repository-only lockfile maintenance. |
-| `notify-chat.yml` | CI | Outbound operational notifications. |
-| `pr-hygiene.yml` | CI | Pull-request metadata maintenance. |
+| `migrate-gs-api-d1.yml` | Manual data mutation | Approval-gated D1 migration runner with backup artifacts. |
+| `pr-triage.yml` | CI | Evaluates the repository PR ruleset without mutating source. |
 | `preview-gs-api.yml` | Preview deployment | Currently a build-only Wrangler dry run. |
 | `repo-health.yml` | CI | Repository health checks. |
-| `repomaint.yml` | CI | Manually triggered repository validation. |
 | `required-merge-checks.yml` | CI | Required builds, tests, and deploy dry runs. |
+| `verify-gs-web-deployment.yml` | CI | Verifies Cloudflare Workers Build deployment status. |
 
 ## Retired overlapping workflows
 
@@ -35,6 +35,14 @@ creation, DNS, Worker-route, Access-policy, and identity-provider changes now re
 single `cloudflare-production-operator` environment approval and named-human runbook.
 The arbitrary satellite `deploy-dispatch.yml` path was also removed because it bypassed the
 two-app deployment boundary and accepted caller-provided install and Wrangler commands.
+
+The broken or redundant `anthropic-oidc.yml`,
+`auto-resolve-lockfile-conflicts.yml`, `frogbot-scan-and-fix.yml`,
+`lockfile-maintenance.yml`, `notify-chat.yml`, `pr-hygiene.yml`,
+`repomaint.yml`, `stale.yml`, and `summary.yml` workflows were disabled and
+removed on 2026-08-12. Git history remains the archive. Lockfile repair is now
+an intentional local operation followed by a reviewable PR; PRs are not closed
+or rewritten automatically.
 
 ## Required environments and tokens
 

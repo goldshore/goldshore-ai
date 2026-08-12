@@ -11,22 +11,51 @@ The GoldShore admin dashboard provides operators with centralized control over p
 The admin dashboard uses three layers of authentication and authorization:
 
 1. **Edge Authentication** - Cloudflare Access provides identity verification
-2. **JWT Session** - Application-level JWT cookie validates ongoing sessions
-3. **Permission-Based Authorization** - Fine-grained permissions control feature access
+2. **Application Admission** - `gs-web` verifies the Access signature, issuer,
+   audience, email verification state, and explicit owner allowlist
+3. **Durable Authorization** - `gs-api` resolves the same identity through D1
+   before permission checks are applied
 
 ### Authentication Flow
 
 ```
-User → Cloudflare Access (identity verification)
-     → Application JWT Cookie (session validation)
+User → Cloudflare Access (Google or GitHub identity)
+     → gs-web audience + owner-email verification
+     → gs-api D1 role lookup
      → Permission Check (feature authorization)
 ```
+
+The bootstrap owners are `marstonr6@gmail.com` and `admin@goldshore.org`.
+Both are assigned the `owner` role for the production and preview admin/API
+applications. No other Access identity is promoted merely because it has a
+valid token.
+
+### Cloudflare dashboard requirements
+
+Configure the Access applications in the Cloudflare dashboard only. Do not add
+an API reconciliation or hidden Wrangler policy mutation:
+
+1. Protect `admin.goldshore.ai/*` and `admin.goldshore.org/*` with the same
+   production self-hosted Access application whose audience is configured on
+   `gs-web`.
+2. Add an Allow policy containing only `marstonr6@gmail.com` and
+   `admin@goldshore.org` through the configured Google and GitHub IdPs.
+3. In each `gs-web` production and preview dashboard environment, set the
+   visible `ADMIN_OWNER_EMAILS` variable to
+   `marstonr6@gmail.com,admin@goldshore.org`. Do not put it in Wrangler files.
+   The application returns 503 when the variable is absent.
+4. Add a final Deny Everyone policy. Do not use `non_identity`, Everyone, or an
+   email-domain selector in the owner policy.
+5. Test both accounts in a private browser session and confirm a third account
+   is denied.
+6. Test `/logout`; it must reach the application-domain
+   `/cdn-cgi/access/logout` endpoint before a new login is accepted.
 
 ### Role Hierarchy
 
 Admin roles and their permissions are defined in the `@goldshore/auth` package:
 
-- **owner** - Full platform control; assigned manually only
+- **owner** - Full platform control; bootstrapped only for the two named owners
 - **admin** - Day-to-day administration with high-risk actions excluded
 - **editor** - Content and operational editing
 - **viewer** - Read-only dashboard access
