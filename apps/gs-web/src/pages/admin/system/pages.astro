@@ -1,5 +1,5 @@
 ---
-import AdminLayout from '../../layouts/AdminLayout.astro';
+import AdminLayout from '../../../layouts/AdminLayout.astro';
 
 const { redirect } = Astro;
 if (!Astro.locals.adminSession?.isAuthenticated) {
@@ -7,31 +7,31 @@ if (!Astro.locals.adminSession?.isAuthenticated) {
 }
 ---
 
-<AdminLayout title="Control Plane" requiredPermission="system:read">
+<AdminLayout title="Pages Configuration" requiredPermission="cloudflare_inventory:read">
   <div class="admin-page-header">
-    <h1>Control Plane</h1>
-    <p>Manage platform configuration and infrastructure</p>
+    <h1>Pages Configuration</h1>
+    <p>Manage Cloudflare Pages deployments</p>
   </div>
 
   <div class="admin-content">
     <section class="admin-section">
-      <h2>Platform Status</h2>
+      <h2>Pages Projects</h2>
       <div class="loading-state">
-        <p>Loading platform status...</p>
+        <p>Loading Pages projects...</p>
       </div>
     </section>
 
     <section class="admin-section">
-      <h2>Configuration</h2>
+      <h2>Deployments</h2>
       <div class="loading-state">
-        <p>Loading configuration...</p>
+        <p>Loading recent deployments...</p>
       </div>
     </section>
 
     <section class="admin-section">
-      <h2>Infrastructure Events</h2>
+      <h2>Build Settings</h2>
       <div class="loading-state">
-        <p>Loading infrastructure events...</p>
+        <p>Loading build configuration...</p>
       </div>
     </section>
   </div>
