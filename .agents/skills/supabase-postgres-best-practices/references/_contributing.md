@@ -62,9 +62,9 @@ Use meaningful table/column names. Names carry intent for LLMs.
 
 ```sql
 -- Use lowercase keywords, clear formatting
-create index concurrently users_email_idx
-  on users(email)
-  where deleted_at is null;
+CREATE INDEX CONCURRENTLY users_email_idx
+  ON users(email)
+  WHERE deleted_at IS NULL;
 
 -- Not cramped or ALL CAPS
 CREATE INDEX CONCURRENTLY USERS_EMAIL_IDX ON USERS(EMAIL) WHERE DELETED_AT IS NULL;
