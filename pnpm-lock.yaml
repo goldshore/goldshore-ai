@@ -106,8 +106,11 @@ importers:
         specifier: ^4.12.34
         version: 4.13.1
       openai:
-        specifier: ^6.48.0
-        version: 6.48.0(ws@8.21.0)(zod@4.4.3)
+        specifier: ^7.4.0
+        version: 7.4.0(ws@8.21.0)(zod@4.4.3)
+      postal-mime:
+        specifier: ^3.0.0
+        version: 3.0.0
       safe-stable-stringify:
         specifier: ^2.5.0
         version: 2.5.0
@@ -3928,6 +3931,9 @@ packages:
     resolution: {integrity: sha512-0M+L3LAD8/nm554LOla9Ayx0j0tmFZ0FBcoQ7F1VuVHpM/XpiC8RcDzBQB8W5+hA8L22THxELzeF+2WcUzvcLg==}
     engines: {node: '>=20'}
     hasBin: true
+
+  postal-mime@3.0.0:
+    resolution: {integrity: sha512-Z4a9ar2Bv3YpK3IXag+Yda30k7bMZfpRuUGyqtHnZ2pjHG8Bl62EhZIk4n1dzv00gfzP9g+94e9kd8+XmjVWLA==}
 
   postcss-import@15.1.0:
     resolution: {integrity: sha512-hpr+J05B2FVYUAXHeK1YyI267J/dDDhMU6B6civm8hSY1jYJnBXxzKDKDswzJmtLHryrjhnDjqqp/49t8FALew==}
@@ -8862,6 +8868,8 @@ snapshots:
       playwright-core: 1.62.1
     optionalDependencies:
       fsevents: 2.3.2
+
+  postal-mime@3.0.0: {}
 
   postcss-import@15.1.0(postcss@8.5.26):
     dependencies:

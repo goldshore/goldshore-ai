@@ -1,0 +1,266 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../layouts/AdminLayout.astro';
+
+const apiOrigin = Astro.url.hostname.endsWith('goldshore.org')
+  ? 'https://api.goldshore.org'
+  : (import.meta.env.PUBLIC_API_URL || 'https://api.goldshore.ai');
+const demo = import.meta.env.DEV && Astro.url.searchParams.get('demo') === '1';
+---
+
+<AdminLayout title="PR Merge Cockpit | GoldShore Admin" requiredPermission="github:read">
+  <main class="cockpit" data-api-origin={apiOrigin} data-demo={String(demo)}>
+    <header class="cockpit-header">
+      <div>
+        <p class="eyebrow">Repository governance</p>
+        <h1>PR Merge Cockpit</h1>
+        <p class="lede">Compare what the branch started from, what is on main now, and what the PR brings in before preserving it.</p>
+      </div>
+      <div class="locks" aria-label="Merge safety rules">
+        <span>SHA locked</span><span>All checks required</span><span>Original PR preserved</span>
+      </div>
+    </header>
+
+    <div id="notice" class="notice" role="status" aria-live="polite">Loading open pull requests…</div>
+
+    <div class="workspace">
+      <aside class="pull-list" aria-label="Open pull requests">
+        <div class="panel-title"><h2>Open pull requests</h2><button id="refresh" class="icon-button" type="button">Refresh</button></div>
+        <div id="pulls"></div>
+      </aside>
+
+      <section class="review" aria-label="Selected pull request review">
+        <div id="empty" class="empty-state">
+          <p class="eyebrow">No PR selected</p>
+          <h2>Choose a pull request to inspect</h2>
+          <p>The cockpit will flag files changed on both sides even when GitHub reports a clean textual merge.</p>
+        </div>
+
+        <div id="detail" hidden>
+          <div class="detail-header">
+            <div><p id="pr-meta" class="eyebrow"></p><h2 id="pr-title"></h2></div>
+            <a id="github-link" class="secondary-button" target="_blank" rel="noopener">Open on GitHub</a>
+          </div>
+
+          <div class="status-grid">
+            <article><span>Base lock</span><code id="base-sha"></code></article>
+            <article><span>Incoming lock</span><code id="head-sha"></code></article>
+            <article><span>Checks</span><strong id="check-status"></strong></article>
+            <article><span>Direct squash</span><strong id="merge-status"></strong></article>
+          </div>
+
+          <section class="conflicts">
+            <div class="panel-title">
+              <div><p class="eyebrow">Semantic review</p><h3>Files changed on both sides</h3></div>
+              <span id="conflict-count" class="count"></span>
+            </div>
+            <div id="file-list" class="file-list"></div>
+          </section>
+
+          <section id="compare" class="compare" hidden>
+            <div class="compare-heading">
+              <div><p class="eyebrow">Four-way comparison</p><h3 id="compare-file"></h3></div>
+              <label>Proposed resolution
+                <select id="resolution"><option value="defer">Defer</option><option value="current">Keep current</option><option value="incoming">Accept incoming</option></select>
+              </label>
+            </div>
+            <div class="code-grid">
+              <article><header>Base <small>common ancestor</small></header><pre id="code-base"></pre></article>
+              <article><header>Current <small>main now</small></header><pre id="code-current"></pre></article>
+              <article><header>Incoming <small>PR head</small></header><pre id="code-incoming"></pre></article>
+              <article class="proposed"><header>Proposed <small>your decision</small></header><pre id="code-proposed"></pre></article>
+            </div>
+          </section>
+
+          <section class="actions">
+            <div>
+              <h3>Preserve the feature safely</h3>
+              <p id="action-guidance">Resolve every overlap to create a draft salvage PR from current main.</p>
+            </div>
+            <div class="action-buttons">
+              <button id="salvage" class="primary-button" type="button" disabled>Create draft salvage PR</button>
+              <button id="squash" class="danger-button" type="button" disabled>Squash original PR</button>
+            </div>
+          </section>
+        </div>
+      </section>
+    </div>
+  </main>
+</AdminLayout>
+
+<script>
+  type PullSummary = { number: number; title: string; url: string; author: string; draft: boolean; updatedAt: string; head: { ref: string; sha: string } };
+  type ConflictFile = { filename: string; semanticConflict: boolean; risk: string };
+  type Detail = { pull: any; currentBaseSha: string; mergeBaseSha: string; semanticConflicts: ConflictFile[]; checks: any[]; checksGreen: boolean; directMergeEligible: boolean };
+
+  const root = document.querySelector<HTMLElement>('.cockpit')!;
+  const api = `${root.dataset.apiOrigin}/admin/merge-cockpit`;
+  const isDemo = root.dataset.demo === 'true';
+  const notice = document.querySelector<HTMLElement>('#notice')!;
+  const pullsNode = document.querySelector<HTMLElement>('#pulls')!;
+  const detailNode = document.querySelector<HTMLElement>('#detail')!;
+  const emptyNode = document.querySelector<HTMLElement>('#empty')!;
+  const resolutions: Record<string, 'current' | 'incoming' | 'defer'> = {};
+  const code: Record<string, string> = {};
+  let selected: Detail | null = null;
+  let selectedFile = '';
+
+  const fixturePulls: PullSummary[] = [
+    { number: 6432, title: 'Restore admin workflows without reviving gs-admin', url: '#', author: 'codex-cloud', draft: false, updatedAt: new Date().toISOString(), head: { ref: 'codex/admin-repair', sha: '9c42f14d0b6e283f504a9d9c7b1c6e2fd03d72b1' } },
+    { number: 6411, title: 'Update Cloudflare route contracts', url: '#', author: 'claude', draft: false, updatedAt: new Date(Date.now() - 86400000).toISOString(), head: { ref: 'claude/cf-routes', sha: '7f03a6457f739c69aa195d47ac834d6791a7845a' } },
+  ];
+  const fixtureDetail: Detail = {
+    pull: { number: 6432, title: fixturePulls[0].title, html_url: '#', user: { login: 'codex-cloud' }, head: fixturePulls[0].head },
+    currentBaseSha: '8d73c2398179af03e1c10c8fe45be61d688adb76', mergeBaseSha: 'd89ac9e31df56dcb087bbc322aca50b7409cb736',
+    semanticConflicts: [
+      { filename: 'apps/gs-web/src/utils/admin-access.ts', semanticConflict: true, risk: 'high' },
+      { filename: '.github/workflows/required-merge-checks.yml', semanticConflict: true, risk: 'critical' },
+    ],
+    checks: [{ name: 'Required Merge Checks / gs-web-build', status: 'completed', conclusion: 'success' }, { name: 'Cloudflare Workers Builds', status: 'completed', conclusion: 'failure' }],
+    checksGreen: false, directMergeEligible: false,
+  };
+  const fixtureCode: Record<string, Record<string, string>> = {
+    'apps/gs-web/src/utils/admin-access.ts': {
+      base: "const ADMIN_ROUTES = ['/admin'];\nexport const routeAdmin = (path) => path;",
+      current: "const ADMIN_ROUTES = ['/admin', '/app'];\nexport const routeAdmin = (path) => normalize(path);",
+      incoming: "const ADMIN_ROUTES = ['/admin', '/merge'];\nexport const routeAdmin = (path) => guard(path);",
+    },
+    '.github/workflows/required-merge-checks.yml': {
+      base: 'jobs:\n  build:\n    runs-on: ubuntu-latest',
+      current: 'jobs:\n  gs-web-build:\n    runs-on: ubuntu-latest\n  gs-api-build-test:\n    runs-on: ubuntu-latest',
+      incoming: 'jobs:\n  build-admin:\n    runs-on: ubuntu-latest',
+    },
+  };
+
+  const request = async (path: string, init?: RequestInit) => {
+    const response = await fetch(`${api}${path}`, { credentials: 'include', ...init, headers: { 'content-type': 'application/json', ...init?.headers } });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || `Request failed (${response.status})`);
+    return payload;
+  };
+  const short = (sha: string) => sha.slice(0, 8);
+  const escape = (value: string) => value.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]!);
+  const setNotice = (message: string, kind = '') => { notice.textContent = message; notice.className = `notice ${kind}`; };
+
+  const loadPulls = async () => {
+    setNotice('Loading open pull requests…');
+    try {
+      const pulls: PullSummary[] = isDemo ? fixturePulls : (await request('/pulls')).pulls;
+      pullsNode.innerHTML = pulls.length ? pulls.map((pull) => `
+        <button class="pull-card" data-pr="${pull.number}" type="button">
+          <span class="pull-number">#${pull.number}${pull.draft ? ' · draft' : ''}</span>
+          <strong>${escape(pull.title)}</strong><small>${escape(pull.author)} · ${escape(pull.head.ref)}</small>
+        </button>`).join('') : '<p class="list-empty">No open pull requests.</p>';
+      pullsNode.querySelectorAll<HTMLButtonElement>('[data-pr]').forEach((button) => button.addEventListener('click', () => loadDetail(Number(button.dataset.pr))));
+      setNotice(`${pulls.length} open pull request${pulls.length === 1 ? '' : 's'} ready for review.`, 'success');
+    } catch (error) { setNotice(error instanceof Error ? error.message : 'Unable to load pull requests.', 'error'); }
+  };
+
+  const loadDetail = async (number: number) => {
+    setNotice(`Inspecting #${number} and every reported check…`);
+    try {
+      selected = isDemo ? fixtureDetail : await request(`/pulls/${number}`);
+      Object.keys(resolutions).forEach((key) => delete resolutions[key]);
+      selected.semanticConflicts.forEach((file) => { resolutions[file.filename] = 'defer'; });
+      pullsNode.querySelectorAll('.pull-card').forEach((card) => card.classList.toggle('active', card.getAttribute('data-pr') === String(number)));
+      emptyNode.hidden = true; detailNode.hidden = false;
+      document.querySelector('#pr-meta')!.textContent = `#${selected.pull.number} · ${selected.pull.user.login} · ${selected.pull.head.ref}`;
+      document.querySelector('#pr-title')!.textContent = selected.pull.title;
+      (document.querySelector('#github-link') as HTMLAnchorElement).href = selected.pull.html_url;
+      document.querySelector('#base-sha')!.textContent = short(selected.currentBaseSha);
+      document.querySelector('#head-sha')!.textContent = short(selected.pull.head.sha);
+      document.querySelector('#check-status')!.textContent = selected.checksGreen ? `Green · ${selected.checks.length}` : `Blocked · ${selected.checks.length}`;
+      document.querySelector('#merge-status')!.textContent = selected.directMergeEligible ? 'Eligible' : 'Blocked';
+      document.querySelector('#conflict-count')!.textContent = `${selected.semanticConflicts.length} overlap${selected.semanticConflicts.length === 1 ? '' : 's'}`;
+      document.querySelector('#file-list')!.innerHTML = selected.semanticConflicts.length ? selected.semanticConflicts.map((file) => `
+        <button type="button" class="file-row" data-file="${escape(file.filename)}">
+          <span><strong>${escape(file.filename)}</strong><small>Changed on current and incoming</small></span>
+          <span class="risk ${file.risk}">${file.risk}</span><span class="decision">Defer</span>
+        </button>`).join('') : '<p class="list-empty">No semantic overlaps detected.</p>';
+      document.querySelectorAll<HTMLButtonElement>('[data-file]').forEach((button) => button.addEventListener('click', () => loadFile(button.dataset.file!)));
+      (document.querySelector('#squash') as HTMLButtonElement).disabled = !selected.directMergeEligible;
+      updateActions();
+      setNotice(selected.semanticConflicts.length ? 'Review every overlap before creating a salvage PR.' : 'No semantic overlap found. Direct squash still requires all checks.', selected.checksGreen ? 'success' : 'warning');
+      if (selected.semanticConflicts[0]) await loadFile(selected.semanticConflicts[0].filename);
+    } catch (error) { setNotice(error instanceof Error ? error.message : 'Unable to inspect pull request.', 'error'); }
+  };
+
+  const loadFile = async (filename: string) => {
+    if (!selected) return;
+    selectedFile = filename;
+    document.querySelectorAll('.file-row').forEach((row) => row.classList.toggle('active', row.getAttribute('data-file') === filename));
+    document.querySelector('#compare')!.removeAttribute('hidden');
+    document.querySelector('#compare-file')!.textContent = filename;
+    const values = isDemo ? fixtureCode[filename] : Object.fromEntries(await Promise.all(['base', 'current', 'incoming'].map(async (version) => {
+      const payload = await request(`/pulls/${selected!.pull.number}/file?path=${encodeURIComponent(filename)}&version=${version}`);
+      return [version, payload.content];
+    })));
+    Object.assign(code, values);
+    (document.querySelector('#code-base') as HTMLElement).textContent = values.base || '(file did not exist)';
+    (document.querySelector('#code-current') as HTMLElement).textContent = values.current || '(file deleted)';
+    (document.querySelector('#code-incoming') as HTMLElement).textContent = values.incoming || '(file deleted)';
+    const select = document.querySelector<HTMLSelectElement>('#resolution')!;
+    select.value = resolutions[filename] || 'defer';
+    renderProposed();
+  };
+
+  const renderProposed = () => {
+    const decision = resolutions[selectedFile] || 'defer';
+    document.querySelector('#code-proposed')!.textContent = decision === 'current' ? code.current : decision === 'incoming' ? code.incoming : 'Choose “Keep current” or “Accept incoming” to preview the proposed file.';
+    const row = [...document.querySelectorAll<HTMLElement>('.file-row')].find((item) => item.dataset.file === selectedFile);
+    if (row) row.querySelector('.decision')!.textContent = decision === 'current' ? 'Keep current' : decision === 'incoming' ? 'Accept incoming' : 'Defer';
+    updateActions();
+  };
+  const updateActions = () => {
+    const ready = selected && selected.semanticConflicts.every((file) => resolutions[file.filename] && resolutions[file.filename] !== 'defer');
+    (document.querySelector('#salvage') as HTMLButtonElement).disabled = !ready;
+  };
+
+  document.querySelector<HTMLSelectElement>('#resolution')!.addEventListener('change', (event) => {
+    if (!selectedFile) return;
+    resolutions[selectedFile] = (event.target as HTMLSelectElement).value as 'current' | 'incoming' | 'defer';
+    renderProposed();
+  });
+  document.querySelector('#refresh')!.addEventListener('click', loadPulls);
+  document.querySelector('#salvage')!.addEventListener('click', async () => {
+    if (!selected || isDemo) return setNotice(isDemo ? 'Demo mode: no workflow was dispatched.' : 'No PR selected.', 'warning');
+    try {
+      const result = await request('/salvage', { method: 'POST', body: JSON.stringify({ prNumber: selected.pull.number, expectedBaseSha: selected.currentBaseSha, expectedHeadSha: selected.pull.head.sha, resolutions }) });
+      setNotice(result.message, 'success');
+    } catch (error) { setNotice(error instanceof Error ? error.message : 'Salvage dispatch failed.', 'error'); }
+  });
+  document.querySelector('#squash')!.addEventListener('click', async () => {
+    if (!selected) return;
+    const confirmation = window.prompt(`Type SQUASH #${selected.pull.number} to merge the exact reviewed head.`);
+    if (!confirmation) return;
+    try {
+      const result = await request('/merge', { method: 'POST', body: JSON.stringify({ prNumber: selected.pull.number, expectedBaseSha: selected.currentBaseSha, expectedHeadSha: selected.pull.head.sha, confirmation }) });
+      setNotice(result.message || `PR #${selected.pull.number} merged.`, 'success');
+    } catch (error) { setNotice(error instanceof Error ? error.message : 'Merge failed.', 'error'); }
+  });
+
+  loadPulls();
+</script>
+
+<style is:global>
+  [hidden] { display: none !important; }
+  .cockpit { box-sizing: border-box; width: 100%; min-height: 100vh; padding: 34px; color: #dbe7f5; background: radial-gradient(circle at 82% 0%, rgba(27, 91, 128, .16), transparent 34%), #050b14; }
+  .cockpit-header, .detail-header, .panel-title, .compare-heading, .actions { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+  h1, h2, h3, p { margin: 0; } h1 { font-size: clamp(2rem, 3vw, 3.3rem); letter-spacing: -.045em; } h2 { font-size: 1.35rem; } h3 { font-size: 1rem; }
+  .eyebrow { color: #5ed1c6; text-transform: uppercase; letter-spacing: .14em; font-size: .7rem; font-weight: 800; margin-bottom: 8px; }
+  .lede { margin-top: 10px; color: #8da1b7; max-width: 760px; }
+  .locks { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }.locks span, .count { border: 1px solid #24445d; background: #0a1825; border-radius: 999px; padding: 7px 10px; color: #9bc7df; font-size: .72rem; }
+  .notice { margin: 22px 0 14px; padding: 11px 14px; border: 1px solid #23384b; background: #09131e; color: #9fb0c0; border-radius: 8px; font-size: .85rem; }.notice.error { border-color: #6c3039; color: #ff9ca7; }.notice.warning { border-color: #765e23; color: #e9c866; }.notice.success { border-color: #265a50; color: #72d5bf; }
+  .workspace { display: grid; grid-template-columns: minmax(250px, 320px) minmax(0, 1fr); border: 1px solid #1a2c3d; min-height: 700px; background: rgba(7, 16, 25, .92); border-radius: 12px; overflow: hidden; }
+  .pull-list { border-right: 1px solid #1a2c3d; background: #07101a; }.pull-list .panel-title { padding: 17px; border-bottom: 1px solid #1a2c3d; }.pull-list h2 { font-size: .9rem; }
+  .pull-card { width: 100%; text-align: left; padding: 16px 18px; border: 0; border-bottom: 1px solid #142536; background: transparent; color: inherit; cursor: pointer; display: grid; gap: 6px; }.pull-card:hover, .pull-card.active { background: #0b1d2b; box-shadow: inset 3px 0 #53cabf; }.pull-card strong { font-size: .87rem; line-height: 1.4; }.pull-card small, .pull-number { color: #7890a7; font-size: .7rem; }.pull-number { color: #56c9be; font-weight: 800; }
+  .icon-button, .secondary-button, .primary-button, .danger-button { border-radius: 7px; padding: 9px 12px; font-weight: 750; cursor: pointer; text-decoration: none; }.icon-button, .secondary-button { border: 1px solid #294157; background: #0a1724; color: #b8cada; font-size: .75rem; }.primary-button { border: 1px solid #65d3c9; background: #5ed1c6; color: #031311; }.danger-button { border: 1px solid #75414b; background: #2b1218; color: #ffadb6; } button:disabled { opacity: .38; cursor: not-allowed; }
+  .review { min-width: 0; padding: 22px; }.empty-state { display: grid; place-content: center; min-height: 610px; text-align: center; color: #7e93a8; }.empty-state h2 { color: #d9e5f0; margin-bottom: 8px; }
+  .detail-header { padding-bottom: 18px; border-bottom: 1px solid #1b3043; }.status-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 15px 0; }.status-grid article { background: #091621; border: 1px solid #1b3043; border-radius: 8px; padding: 12px; display: grid; gap: 7px; }.status-grid span { color: #71879c; font-size: .67rem; text-transform: uppercase; letter-spacing: .09em; }.status-grid code, .status-grid strong { color: #b7d6e7; font-size: .8rem; }
+  .conflicts, .compare, .actions { border: 1px solid #1b3043; background: #07111b; border-radius: 9px; margin-top: 12px; }.conflicts .panel-title, .compare-heading { padding: 14px; border-bottom: 1px solid #1b3043; }.file-row { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: 12px 14px; text-align: left; color: inherit; border: 0; border-bottom: 1px solid #142738; background: transparent; cursor: pointer; }.file-row.active, .file-row:hover { background: #0b1c29; }.file-row span:first-child { min-width: 0; display: grid; gap: 4px; }.file-row strong { overflow: hidden; text-overflow: ellipsis; font: 600 .76rem ui-monospace, monospace; }.file-row small { color: #6f879c; }.risk, .decision { border-radius: 999px; font-size: .65rem; padding: 5px 8px; }.risk { text-transform: uppercase; }.risk.critical { background: #3a151b; color: #ff9da8; }.risk.high { background: #36270d; color: #efc765; }.risk.normal { background: #143123; color: #72d5a5; }.decision { color: #8ca5ba; border: 1px solid #294157; }
+  .compare-heading label { color: #8096aa; font-size: .7rem; display: grid; gap: 5px; }.compare-heading select { color: #d9e9f4; background: #0a1723; border: 1px solid #2a4358; border-radius: 6px; padding: 7px; }.code-grid { display: grid; grid-template-columns: repeat(4, minmax(230px, 1fr)); overflow-x: auto; }.code-grid article { min-width: 0; border-right: 1px solid #1a2d3f; }.code-grid article:last-child { border-right: 0; }.code-grid header { padding: 9px 12px; color: #bdd0df; background: #0a1722; font-size: .74rem; font-weight: 800; }.code-grid small { display: block; color: #667d91; font-weight: 500; margin-top: 2px; }.code-grid pre { margin: 0; padding: 14px; min-height: 230px; max-height: 420px; overflow: auto; color: #9eb7c9; background: #050c13; font: .69rem/1.55 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre; }.code-grid .proposed pre { background: #071511; color: #a8d4c5; }
+  .actions { padding: 16px; }.actions p { color: #7d92a6; font-size: .78rem; margin-top: 5px; }.action-buttons { display: flex; gap: 9px; }.list-empty { padding: 22px; color: #72879a; text-align: center; }
+  @media (max-width: 1050px) { .cockpit { padding: 20px; }.cockpit-header { align-items: flex-start; flex-direction: column; }.locks { justify-content: flex-start; }.workspace { grid-template-columns: 240px minmax(0, 1fr); }.status-grid { grid-template-columns: repeat(2, 1fr); }.code-grid { grid-template-columns: repeat(2, minmax(300px, 1fr)); } }
+  @media (max-width: 760px) { .cockpit { padding: 14px; }.workspace { display: block; }.pull-list { border-right: 0; border-bottom: 1px solid #1a2c3d; max-height: 260px; overflow: auto; }.review { padding: 14px; }.status-grid { grid-template-columns: 1fr 1fr; }.detail-header, .compare-heading, .actions { align-items: flex-start; flex-direction: column; }.action-buttons { width: 100%; flex-direction: column; }.code-grid { grid-template-columns: repeat(4, minmax(270px, 1fr)); }.file-row { grid-template-columns: minmax(0, 1fr) auto; }.file-row .decision { grid-column: 1 / -1; width: fit-content; } }
+</style>

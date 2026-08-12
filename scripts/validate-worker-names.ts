@@ -11,13 +11,10 @@ const EXPECTED_HOST_OWNERS: Record<string, string> = {
   "goldshore.ai": "gs-web",
   "goldshore.org": "gs-web",
   "admin.goldshore.ai": "gs-web",
-  "admin-preview.goldshore.ai": "gs-web",
   "admin.goldshore.org": "gs-web",
-  "preview.goldshore.ai": "gs-web",
   "risk.goldshore.ai": "gs-web",
   "risk.goldshore.org": "gs-web",
   "api.goldshore.ai": "gs-api",
-  "api-preview.goldshore.ai": "gs-api",
   "agent.goldshore.ai": "gs-api",
   "mail.goldshore.ai": "gs-api",
   "ops.goldshore.ai": "gs-api",
@@ -26,6 +23,9 @@ const EXPECTED_HOST_OWNERS: Record<string, string> = {
   "dash.goldshore.ai": "gs-api",
   "gw.goldshore.ai": "gs-api",
   "api.goldshore.org": "gs-api",
+  "agent.goldshore.org": "gs-api",
+  "mail.goldshore.org": "gs-api",
+  "trading.goldshore.org": "gs-api",
 };
 
 function getWorkerDirectories(): string[] {
