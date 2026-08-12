@@ -140,20 +140,28 @@ describe('gs-api wrangler env bindings', () => {
     assert.deepEqual(routePatterns(environmentBlock(wranglerToml, 'preview')), [
       'api-preview.goldshore.ai/*',
     ]);
-    assert.doesNotMatch(preview, /\[\[env\.preview\.queues\.(?:producers|consumers)\]\]/);
+    assert.deepEqual(queueConsumerNames(preview).sort(), [
+      'goldshore-jobs-preview',
+      'gs-events-preview',
+      'gs-mail-jobs-preview',
+    ]);
+    assert.doesNotMatch(preview, /queue = "(?:goldshore-jobs|gs-events|gs-mail-jobs)"/);
   });
 
   it('routes consolidated backend hostnames to the canonical API Worker', () => {
     assert.deepEqual(routePatterns(environmentBlock(wranglerToml, 'prod')), [
       'api.goldshore.ai/*',
+      'api.goldshore.org/*',
       'agent.goldshore.ai/*',
+      'agent.goldshore.org/*',
       'mail.goldshore.ai/*',
+      'mail.goldshore.org/*',
       'ops.goldshore.ai/*',
       'trading.goldshore.ai/*',
+      'trading.goldshore.org/*',
       'dashboard.goldshore.ai/*',
       'dash.goldshore.ai/*',
       'gw.goldshore.ai/*',
-      'api.goldshore.org/*',
     ]);
   });
 
@@ -161,12 +169,11 @@ describe('gs-api wrangler env bindings', () => {
     // gs-api is the sole application consumer of the production queues after
     // the satellite migration.
     //
-    // Preview has no queue consumers on purpose. A consumer binding naming a
-    // queue that does not exist fails every deploy, and the dedicated
-    // *-preview queues have not been provisioned yet; the preview mutation
-    // gate stops handlers falling back to the production queues meanwhile.
-    // Restore the -preview entries here once those queues exist.
-    assert.deepEqual(queueConsumerNames(wranglerToml).sort(), [
+    const prod = wranglerToml.slice(
+      wranglerToml.indexOf('[env.prod]'),
+      wranglerToml.indexOf('[env.preview]'),
+    );
+    assert.deepEqual(queueConsumerNames(prod).sort(), [
       'goldshore-jobs',
       'gs-events',
       'gs-mail-jobs',
@@ -174,12 +181,15 @@ describe('gs-api wrangler env bindings', () => {
     assert.match(wranglerToml, /dead_letter_queue = "gs-mail-dead-letter"/);
   });
 
-  it('binds production to SignalsEvaluator and leaves preview unprovisioned', () => {
+  it('binds each environment to its isolated SignalsEvaluator workflow', () => {
     assert.match(
       wranglerToml,
       /\[\[env\.prod\.workflows\]\][\s\S]*?binding = "GS_SIGNALS"[\s\S]*?name = "gs-signals-evaluator"[\s\S]*?class_name = "SignalsEvaluator"/,
     );
-    assert.doesNotMatch(wranglerToml, /\[\[env\.preview\.workflows\]\]/);
+    assert.match(
+      wranglerToml,
+      /\[\[env\.preview\.workflows\]\][\s\S]*?binding = "GS_SIGNALS"[\s\S]*?name = "gs-signals-evaluator-preview"[\s\S]*?class_name = "SignalsEvaluator"/,
+    );
     assert.doesNotMatch(wranglerToml, /script_name = "gs-signals-prod"/);
   });
 
@@ -187,12 +197,32 @@ describe('gs-api wrangler env bindings', () => {
     assert.deepEqual(routePatterns(environmentBlock(webWranglerToml, 'prod')), [
       'goldshore.ai/*',
       'goldshore.org/*',
+      'www.goldshore.ai/*',
+      'www.goldshore.org/*',
       'admin.goldshore.ai/*',
       'admin.goldshore.org/*',
-      'admin-preview.goldshore.ai/*',
       'risk.goldshore.ai/*',
       'risk.goldshore.org/*',
     ]);
+  });
+
+  it('keeps privileged backend resources out of the web Worker', () => {
+    const prod = webWranglerToml.slice(
+      webWranglerToml.indexOf('[env.prod]'),
+      webWranglerToml.indexOf('[env.preview]'),
+    );
+    assert.match(
+      topLevelBlock(webWranglerToml),
+      /\[assets\][\s\S]*?binding = "ASSETS"/,
+    );
+    assert.doesNotMatch(
+      prod,
+      /^binding = "(?:API_AUTH|ARTIFACTS|BROWSER_RUN|CONTENT_WORKFLOW|CONTROL|D1_JOBS|GS_API|MAIL_JOBS)"$/m,
+    );
+    assert.doesNotMatch(
+      prod,
+      /\[\[env\.prod\.(?:durable_objects|r2_buckets|d1_databases|queues|services|workflows|send_email)/,
+    );
   });
 
   it('keeps CONTROL_SYNC_TOKEN out of plain-text environment variables', () => {

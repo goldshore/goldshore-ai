@@ -29,12 +29,16 @@ import core from './routes/core';
 import mail from './routes/mail';
 import trading from './routes/trading';
 import googleBusiness from './routes/google-business';
+import googleWorkspace from './routes/google-workspace';
+import oauth from './routes/oauth';
+import webhooks from './routes/webhooks';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
 import type { Env, Variables } from './types';
 import { getHostRoutePrefix } from './host-routing';
 import { handleTokenRotation } from './workers/token-rotation';
 import { processQueueBatch } from './workers/queue-consumer';
+import { syncGoogleWorkspaceRbac } from './lib/google-workspace-rbac';
 export { SignalsEvaluator } from './workers/signals-evaluator';
 
 interface ForwardableEmailMessage {
@@ -56,12 +60,6 @@ const app = new Hono<{
 
 const requiredBindings = ['PLATFORM_DB', 'GS_ASSETS', 'AI'] as const;
 const expectedD1Binding = 'PLATFORM_DB' as const;
-const requiredSecrets = [
-  'JWT_SECRET',
-  'STRIPE_API_KEY',
-  'SENDGRID_API_KEY',
-  'ACCESS_CLIENT_SECRET',
-] as const;
 
 const DEFAULT_ALLOWED_ORIGINS = [...APPROVED_API_ORIGINS];
 
@@ -98,6 +96,8 @@ const isPublicPath = (path: string, method: string) => {
     // covered by the /health/ prefix check above.
     /^\/(agent|mail|control|trading|core)\/health\/?$/.test(path) ||
     (method === 'GET' && path === '/admin/google/oauth/callback') ||
+    (method === 'GET' && /^\/auth\/github\/(?:login|callback)$/.test(path)) ||
+    (method === 'POST' && /^\/webhooks\/github\/(?:push|pull_request|issues|workflow_run)$/.test(path)) ||
     path === '/mail/contact'
   );
 };
@@ -132,7 +132,7 @@ app.use('*', async (c, next) => {
       `CRITICAL_MISSING_D1_BINDING: Expected D1 binding "${expectedD1Binding}" is undefined. Verify [[d1_databases]] binding in wrangler.toml.`,
     );
   }
-  for (const key of [...requiredBindings, ...requiredSecrets]) {
+  for (const key of requiredBindings) {
     if (!c.env[key]) {
       throw new Error(`CRITICAL_MISSING: ${key}. Terminating.`);
     }
@@ -271,6 +271,10 @@ app.route('/system', system);
 app.route('/templates', templates);
 app.route('/admin', admin);
 app.route('/admin/google', googleBusiness);
+app.route('/admin/workspace', googleWorkspace);
+app.route('/auth', oauth);
+app.route('/oauth', oauth);
+app.route('/webhooks', webhooks);
 app.route('/media', media);
 app.route('/pages', pages);
 app.route('/internal', internal);
@@ -368,7 +372,18 @@ export default {
 
   async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
     if (controller.cron === '0 2 * * *') {
-      ctx.waitUntil(handleTokenRotation(env));
+      ctx.waitUntil(
+        Promise.all([
+          handleTokenRotation(env),
+          syncGoogleWorkspaceRbac(env)
+            .then((result) => {
+              console.info({ event: 'google_workspace_sync_complete', ...result });
+            })
+            .catch((error) => {
+              console.error({ event: 'google_workspace_sync_error', error: String(error) });
+            }),
+        ]).then(() => undefined),
+      );
     }
   },
 

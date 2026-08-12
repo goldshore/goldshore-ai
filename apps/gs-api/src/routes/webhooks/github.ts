@@ -5,7 +5,7 @@ export const webhooks = new Hono();
 
 interface WebhookEnv {
   Bindings: {
-    INTEGRATION_MASTER_KEY: any;
+    GS_GITHUB_WEBHOOK_SECRET?: string;
     AUDIT_DB: D1Database;
     KV: KVNamespace;
   };
@@ -20,7 +20,7 @@ webhooks.use('*', async (c, next) => {
     return c.json({ error: 'Missing webhook signature' }, 401);
   }
 
-  const secret = c.env.INTEGRATION_MASTER_KEY?.get('GITHUB_APP_WEBHOOK_SECRET');
+  const secret = c.env.GS_GITHUB_WEBHOOK_SECRET;
   if (!secret) {
     console.error('Webhook secret not configured');
     return c.json({ error: 'Webhook secret not configured' }, 500);
@@ -29,12 +29,32 @@ webhooks.use('*', async (c, next) => {
   const hash = crypto.createHmac('sha256', secret).update(payload).digest('hex');
   const expectedSignature = `sha256=${hash}`;
 
-  if (!crypto.timingSafeEqual(signature, expectedSignature)) {
+  const supplied = Buffer.from(signature);
+  const expected = Buffer.from(expectedSignature);
+  if (supplied.length !== expected.length || !crypto.timingSafeEqual(supplied, expected)) {
     return c.json({ error: 'Invalid webhook signature' }, 401);
   }
 
+  let parsedPayload: any;
+  try {
+    parsedPayload = JSON.parse(payload);
+  } catch {
+    return c.json({ error: 'Invalid JSON payload' }, 400);
+  }
+
+  const eventType = c.req.header('X-GitHub-Event');
+  if (eventType === 'ping') {
+    const repository = parsedPayload.repository?.full_name || 'unknown';
+    const eventId = await logWebhookEvent(c.env.AUDIT_DB, 'ping', parsedPayload, repository);
+    return c.json({ success: true, eventId, event: 'ping' });
+  }
+
+  if (!eventType || !c.req.path.endsWith(`/${eventType}`)) {
+    return c.json({ error: 'Webhook event does not match the endpoint' }, 400);
+  }
+
   // Store parsed payload in context
-  c.set('payload', JSON.parse(payload));
+  c.set('payload', parsedPayload);
   await next();
 });
 
