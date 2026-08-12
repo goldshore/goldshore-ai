@@ -1,13 +1,13 @@
 import { test } from 'node:test';
 import * as assert from 'node:assert/strict';
 
-import { ROLE_PERMISSIONS } from '@goldshore/auth';
 import {
   ALTERNATE_ADMIN_DASHBOARD_URL,
   CANONICAL_ADMIN_DASHBOARD_URL,
   buildCloudflareAccessAdminSession,
   getAdminLoginDestination,
   getAdminHostRewritePath,
+  getAdminLogoutUrl,
   getAdminRouteRule,
   getCanonicalAdminUrl,
 } from '../../src/utils/admin-access.ts';
@@ -79,34 +79,61 @@ test('sends admin login destinations directly to the dashboard path', () => {
   assert.equal(getAdminLoginDestination('ai'), CANONICAL_ADMIN_DASHBOARD_URL);
   assert.equal(getAdminLoginDestination('org'), ALTERNATE_ADMIN_DASHBOARD_URL);
   assert.equal(getAdminLoginDestination('unknown'), CANONICAL_ADMIN_DASHBOARD_URL);
+  assert.equal(
+    getAdminLoginDestination('org', '/app/settings?tab=identity'),
+    'https://admin.goldshore.org/app/settings?tab=identity',
+  );
+  assert.equal(
+    getAdminLoginDestination('admin', 'https://evil.example/admin'),
+    CANONICAL_ADMIN_DASHBOARD_URL,
+  );
+  assert.equal(
+    getAdminLoginDestination('admin', '//evil.example/admin'),
+    CANONICAL_ADMIN_DASHBOARD_URL,
+  );
 });
 
-test('grants the admin session to an identity verified by the admin Access application', () => {
+test('grants owner permissions only to an explicitly configured Access identity', () => {
+  const session = buildCloudflareAccessAdminSession({
+    sub: 'access-user',
+    email: 'admin@goldshore.org',
+  }, 'marstonr6@gmail.com,admin@goldshore.org');
+
+  assert.deepEqual(session.roles, ['owner']);
+  assert.ok(session.permissions.includes('system:read'));
+  assert.ok(session.permissions.includes('system:write'));
+  assert.ok(session.permissions.includes('users:delete'));
+});
+
+test('rejects Access identities outside the application owner allowlist', () => {
   const session = buildCloudflareAccessAdminSession({
     sub: 'access-user',
     email: 'operator@example.com',
-  });
+    roles: ['owner'],
+  }, 'marstonr6@gmail.com,admin@goldshore.org');
 
-  assert.deepEqual(session.roles, ['admin']);
-  assert.ok(session.permissions.includes('system:read'));
-  assert.ok(session.permissions.includes('system:write'));
+  assert.deepEqual(session, { roles: [], permissions: [] });
 });
 
-test('preserves an explicit supported role from Cloudflare Access claims', () => {
+test('rejects an explicitly unverified owner email', () => {
   const session = buildCloudflareAccessAdminSession({
-    sub: 'access-viewer',
-    roles: ['viewer'],
-  });
+    sub: 'access-user',
+    email: 'admin@goldshore.org',
+    email_verified: false,
+  }, 'marstonr6@gmail.com,admin@goldshore.org');
 
-  assert.deepEqual(session.roles, ['viewer']);
+  assert.deepEqual(session, { roles: [], permissions: [] });
+});
 
-  // The point of this case is that an explicit role is preserved rather than
-  // escalated to the blanket admin session, so assert against the viewer role
-  // definition instead of a hand-copied permission list.
-  assert.deepEqual(session.permissions, ROLE_PERMISSIONS.viewer);
-  assert.ok(session.permissions.includes('content:read'));
-  assert.ok(!session.permissions.includes('content:write'));
-  assert.ok(!session.permissions.includes('system:write'));
+test('routes logout through the application-domain Access endpoint', () => {
+  assert.equal(
+    getAdminLogoutUrl('https://admin.goldshore.org/logout'),
+    'https://admin.goldshore.org/cdn-cgi/access/logout',
+  );
+  assert.equal(
+    getAdminLogoutUrl('https://goldshore.ai/logout'),
+    'https://admin.goldshore.ai/cdn-cgi/access/logout',
+  );
 });
 
 test('login page uses dashboard destinations instead of admin host roots', async () => {
@@ -114,7 +141,7 @@ test('login page uses dashboard destinations instead of admin host roots', async
     readFile(new URL('../../src/pages/login.astro', import.meta.url), 'utf8'),
   );
 
-  assert.match(source, /const destination = getAdminLoginDestination\(requested\)/);
+  assert.match(source, /const destination = getAdminLoginDestination\(requested, nextPath\)/);
   assert.match(source, /href=\{CANONICAL_ADMIN_DASHBOARD_URL\}/);
   assert.match(source, /href=\{ALTERNATE_ADMIN_DASHBOARD_URL\}/);
 });

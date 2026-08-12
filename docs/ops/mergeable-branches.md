@@ -85,13 +85,15 @@ git rebase origin/main
 
 ## Stale PR supersedence policy
 
-`PR Hygiene` automation closes PRs as superseded when all conditions are true:
+Stale or conflicted PRs are reviewed manually in the merge cockpit. Close a PR
+as superseded only when all conditions are true:
 
 - PR age is greater than 3 days.
 - PR has unresolved merge conflicts (`mergeable_state=dirty`) **or** has red CI checks.
 - Closure comment includes a replacement PR reference when one exists (`Supersedes #<old-pr>`), otherwise indicates replacement is pending from a clean branch.
 
-Workflow: `.github/workflows/pr-hygiene.yml`.
+The former `pr-hygiene.yml` workflow was retired because automatic closure can
+discard feature work before a replacement branch is verified.
 
 ## Automated triage ruleset
 
