@@ -1,6 +1,6 @@
 ---
-const today = new Date();
 import siteConfig from '../data/site-config.json';
+const today = new Date();
 ---
 
 <footer>
@@ -50,25 +50,15 @@ import siteConfig from '../data/site-config.json';
     width: 52px;
     height: 52px;
     color: #7eb8ff;
+  }
 
   @media (max-width: 560px) {
-    .footer-cta-col {
+    .footer-cta-row {
       flex-direction: column;
     }
 
-    .footer-cta-col .button {
+    .footer-cta-row .button {
       width: 100%;
-    }
-
-    .footer-brand {
-      display: grid;
-      justify-items: center;
-      gap: 0.9rem;
-    }
-
-    .footer-brand img {
-      width: 52px;
-      height: 52px;
     }
   }
 </style>

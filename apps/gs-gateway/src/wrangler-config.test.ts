@@ -13,11 +13,18 @@ describe('wrangler d1 bindings', () => {
 
 
 describe('wrangler Cloudflare Access audience configuration', () => {
-  it('documents and binds the prod Access AUD tag for protected gateway routes', () => {
+  it('documents the prod Access AUD tag requirement for protected gateway routes', () => {
     const prodVars = wranglerToml.match(/\[env\.prod\.vars\]([\s\S]*?)(?:\n\[|$)/)?.[1] ?? '';
 
-    assert.match(prodVars, /CLOUDFLARE_ACCESS_AUDIENCE\s*=\s*"[a-f0-9]{64}"/);
-    assert.match(prodVars, /Protected-route AUD tag shared by gw\.goldshore\.ai, api\.goldshore\.ai, and agent\.goldshore\.ai\./);
-    assert.match(prodVars, /Keep those hostnames in one Access application/);
+    assert.match(prodVars, /CLOUDFLARE_TEAM_DOMAIN\s*=\s*"goldshore\.cloudflareaccess\.com"/);
+    assert.match(prodVars, /Set CLOUDFLARE_ACCESS_AUDIENCE as a Worker secret in Cloudflare\./);
+    assert.match(prodVars, /The live AUD tag must match the Goldshore Gateway Access application\./);
+  });
+
+  it('owns the gateway routes in prod', () => {
+    const prodBlock = wranglerToml.match(/\[env\.prod\]([\s\S]*?)(?:\n\[env\.|$)/)?.[1] ?? '';
+
+    assert.match(prodBlock, /gw\.goldshore\.ai\/\*/);
+    assert.match(prodBlock, /agent\.goldshore\.ai\/\*/);
   });
 });

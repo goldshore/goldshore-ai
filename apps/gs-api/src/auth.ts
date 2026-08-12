@@ -6,6 +6,7 @@ import {
   type AdminPermission
 } from "@goldshore/auth";
 import { Env, Variables, AuditEvent } from "./types";
+import { validateSession, getSessionIdFromCookie, type SessionUser } from "./lib/sessions";
 
 export type AuthContext = Context<{
   Bindings: Env;
@@ -44,3 +45,25 @@ export const requirePermission =
     }
     await next();
   };
+
+export const requireUserSession = () =>
+  async (c: AuthContext, next: Next) => {
+    const sessionId = getSessionIdFromCookie(c.req.raw);
+
+    if (!sessionId) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    const user = await validateSession(c.env.KV, sessionId);
+
+    if (!user) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    c.set("user", user);
+    await next();
+  };
+
+export const getUser = (c: AuthContext): SessionUser | null => {
+  return c.get("user") || null;
+};

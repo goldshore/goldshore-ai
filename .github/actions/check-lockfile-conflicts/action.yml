@@ -1,0 +1,32 @@
+name: 'Check for Lockfile Conflicts'
+description: 'Detect and report pnpm-lock.yaml merge conflicts'
+
+outputs:
+  has_conflicts:
+    description: 'Whether the lockfile has unresolved merge conflicts'
+    value: ${{ steps.check.outputs.has_conflicts }}
+
+runs:
+  using: 'composite'
+  steps:
+    - id: check
+      name: Check for lockfile conflicts
+      shell: bash
+      run: |
+        if [ ! -f "pnpm-lock.yaml" ]; then
+          echo "has_conflicts=false" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        
+        if grep -q "^<<<<<<< HEAD" pnpm-lock.yaml; then
+          echo "has_conflicts=true" >> "$GITHUB_OUTPUT"
+          echo "::error::pnpm-lock.yaml has unresolved merge conflicts"
+          echo ""
+          echo "Conflict markers found. To resolve:"
+          echo "  1. Remove the lockfile: rm pnpm-lock.yaml"
+          echo "  2. Reinstall dependencies: pnpm install"
+          echo "  3. Commit the changes: git add pnpm-lock.yaml && git commit -m 'chore: resolve lockfile conflicts'"
+          exit 1
+        else
+          echo "has_conflicts=false" >> "$GITHUB_OUTPUT"
+        fi

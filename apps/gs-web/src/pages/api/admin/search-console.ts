@@ -11,7 +11,8 @@ export const GET: APIRoute = async ({ request, locals }) => {
 
   const authResult = await authorizeAdminRequest(request, env as never, rule);
   if (!authResult.ok) {
-    return Response.json({ success: false, error: authResult.error }, { status: authResult.status });
+    const failure = authResult as Extract<typeof authResult, { ok: false }>;
+    return Response.json({ success: false, error: failure.error }, { status: failure.status });
   }
 
   const config = getSearchConsoleConfig(env);
