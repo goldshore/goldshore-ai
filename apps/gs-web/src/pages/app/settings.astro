@@ -1,11 +1,358 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { authorizeAdminRequest, getAdminRouteRule } from '../../utils/admin-access';
+
+export const prerender = false;
+
+type SiteSettings = {
+  apiUrl: string;
+  contactNotificationEmails: string;
+  llmProvider: string;
+  riskRadarEnabled: boolean;
+  briefingFormEnabled: boolean;
+  maintenanceMode: boolean;
+  analyticsEnabled: boolean;
+  updatedAt: string;
+};
+
+const env = Astro.locals.runtime?.env as Env | undefined;
+const rule = getAdminRouteRule('/app/settings', 'GET');
+
+let authError: { status: number; message: string } | null = null;
+if (!rule) {
+  authError = { status: 404, message: 'Not found.' };
+} else {
+  const authResult = await authorizeAdminRequest(Astro.request, env as never, rule);
+  if (!authResult.ok) {
+    authError = { status: authResult.status, message: authResult.error };
+  }
+}
+
+let settings: SiteSettings | null = null;
+let fetchError = '';
+
+if (!authError) {
+  try {
+    const res = await fetch(new URL('/api/admin/settings', Astro.request.url), {
+      headers: Astro.request.headers,
+    });
+    if (res.ok) {
+      const data = await res.json() as { success: boolean; settings: SiteSettings };
+      if (data.success) settings = data.settings;
+    } else {
+      fetchError = `Failed to load settings (${res.status}).`;
+    }
+  } catch {
+    fetchError = 'Unable to reach storage.';
+  }
+}
 ---
-<BaseLayout title="Settings | GoldShore">
-    <section class="max-w-4xl mx-auto py-24 px-6">
-        <h1 class="text-4xl gs-heading mb-4">Settings</h1>
-        <p class="text-[var(--gs-text-secondary)]">
-            User settings and preferences will be available soon.
-        </p>
-    </section>
-</BaseLayout>
+
+<AdminLayout title="Settings | GoldShore Admin">
+  <section class="gs-section">
+    <div class="gs-grid columns-2">
+      <div>
+        <h1>Settings</h1>
+        <p class="gs-text-lg">Platform configuration, notifications, and feature flags.</p>
+      </div>
+      <div class="gs-card">
+        <h2 class="section-title"><span>◆</span>Quick links</h2>
+        <ul>
+          <li><a href="/admin/services">Service workflows</a></li>
+          <li><a href="/admin/products">Product catalog</a></li>
+          <li><a href="/admin/api-status">API status</a></li>
+          <li><a href="/app/dashboard">Dashboard</a></li>
+        </ul>
+      </div>
+    </div>
+
+    {authError ? (
+      <div class="gs-card" style="margin-top: 2rem;">
+        <p class="gs-text-lg">{authError.message}</p>
+        {authError.status === 401 && (
+          <p class="gs-text-sm">Sign in via Cloudflare Access to continue.</p>
+        )}
+      </div>
+    ) : fetchError ? (
+      <div class="gs-card" style="margin-top: 2rem;">
+        <p class="gs-text-lg">{fetchError}</p>
+      </div>
+    ) : settings ? (
+      <form id="settings-form" novalidate>
+        {/* API & Integrations */}
+        <div class="gs-card" style="margin-top: 2rem;">
+          <h2 class="section-title"><span>◆</span>API & integrations</h2>
+          <div class="settings-grid">
+            <div class="settings-field">
+              <label for="apiUrl">API base URL</label>
+              <input
+                id="apiUrl"
+                name="apiUrl"
+                type="url"
+                value={settings.apiUrl}
+                class="gs-input"
+                placeholder="https://api.goldshore.ai"
+              />
+              <span class="gs-text-sm field-hint">
+                Used by gs-web to proxy API calls. Change only if pointing to a preview API.
+              </span>
+            </div>
+
+            <div class="settings-field">
+              <label for="llmProvider">LLM provider</label>
+              <select id="llmProvider" name="llmProvider" class="gs-input">
+                {['claude', 'openai', 'openclaw', 'gemini'].map((p) => (
+                  <option value={p} selected={p === settings?.llmProvider}>
+                    {p === 'openclaw' ? 'OpenClaw (self-hosted)' : p.charAt(0).toUpperCase() + p.slice(1)}
+                  </option>
+                ))}
+              </select>
+              <span class="gs-text-sm field-hint">Default LLM provider for AI features.</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Notifications */}
+        <div class="gs-card" style="margin-top: 1.5rem;">
+          <h2 class="section-title"><span>◆</span>Notifications</h2>
+          <div class="settings-grid">
+            <div class="settings-field">
+              <label for="contactNotificationEmails">Contact notification emails</label>
+              <input
+                id="contactNotificationEmails"
+                name="contactNotificationEmails"
+                type="text"
+                value={settings.contactNotificationEmails}
+                class="gs-input"
+                placeholder="admin@goldshore.ai, team@goldshore.ai"
+              />
+              <span class="gs-text-sm field-hint">
+                Comma-separated. Receive new form submission alerts.
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Feature flags */}
+        <div class="gs-card" style="margin-top: 1.5rem;">
+          <h2 class="section-title"><span>◆</span>Feature flags</h2>
+          <div class="settings-grid">
+            <div class="settings-field settings-field--toggle">
+              <label class="toggle-label">
+                <input
+                  type="checkbox"
+                  name="riskRadarEnabled"
+                  class="gs-toggle"
+                  checked={settings.riskRadarEnabled}
+                />
+                Risk Radar enabled
+              </label>
+              <span class="gs-text-sm field-hint">Show Risk Radar product and allow briefing requests.</span>
+            </div>
+
+            <div class="settings-field settings-field--toggle">
+              <label class="toggle-label">
+                <input
+                  type="checkbox"
+                  name="briefingFormEnabled"
+                  class="gs-toggle"
+                  checked={settings.briefingFormEnabled}
+                />
+                Briefing form enabled
+              </label>
+              <span class="gs-text-sm field-hint">Allow visitors to request Risk Radar briefings.</span>
+            </div>
+
+            <div class="settings-field settings-field--toggle">
+              <label class="toggle-label">
+                <input
+                  type="checkbox"
+                  name="analyticsEnabled"
+                  class="gs-toggle"
+                  checked={settings.analyticsEnabled}
+                />
+                Analytics enabled
+              </label>
+              <span class="gs-text-sm field-hint">Enable Cloudflare Analytics and tracking.</span>
+            </div>
+
+            <div class="settings-field settings-field--toggle">
+              <label class="toggle-label">
+                <input
+                  type="checkbox"
+                  name="maintenanceMode"
+                  class="gs-toggle"
+                  checked={settings.maintenanceMode}
+                />
+                <span class={settings.maintenanceMode ? 'gs-text-warning' : ''}>
+                  Maintenance mode
+                </span>
+              </label>
+              <span class="gs-text-sm field-hint">
+                Show a maintenance banner site-wide. Does not take the site offline.
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 1.5rem; display: flex; gap: .75rem; align-items: center;">
+          <button type="submit" class="gs-btn gs-btn--primary" id="save-settings">
+            Save settings
+          </button>
+          <span id="save-status" class="gs-text-sm save-status"></span>
+        </div>
+        {settings.updatedAt && (
+          <p class="gs-text-sm" style="margin-top:.5rem; opacity:.55;">
+            Last saved: {new Date(settings.updatedAt).toLocaleString()}
+          </p>
+        )}
+      </form>
+    ) : (
+      <div class="gs-card" style="margin-top: 2rem;">
+        <p>Settings unavailable.</p>
+      </div>
+    )}
+  </section>
+
+  <script>
+    const form = document.getElementById('settings-form') as HTMLFormElement | null;
+    const saveBtn = document.getElementById('save-settings') as HTMLButtonElement | null;
+    const saveStatus = document.getElementById('save-status');
+
+    const setStatus = (msg: string, ok = true) => {
+      if (!saveStatus) return;
+      saveStatus.textContent = msg;
+      saveStatus.className = `gs-text-sm save-status ${ok ? 'save-status--ok' : 'save-status--err'}`;
+      setTimeout(() => {
+        if (saveStatus) saveStatus.textContent = '';
+        if (saveStatus) saveStatus.className = 'gs-text-sm save-status';
+      }, 4000);
+    };
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!saveBtn) return;
+
+      const fd = new FormData(form);
+      const payload = {
+        apiUrl: String(fd.get('apiUrl') ?? '').trim(),
+        contactNotificationEmails: String(fd.get('contactNotificationEmails') ?? '').trim(),
+        llmProvider: String(fd.get('llmProvider') ?? 'claude'),
+        riskRadarEnabled: fd.get('riskRadarEnabled') === 'on',
+        briefingFormEnabled: fd.get('briefingFormEnabled') === 'on',
+        analyticsEnabled: fd.get('analyticsEnabled') === 'on',
+        maintenanceMode: fd.get('maintenanceMode') === 'on',
+      };
+
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving…';
+      try {
+        const res = await fetch('/api/admin/settings', {
+          method: 'PUT',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (res.ok) {
+          setStatus('Settings saved.');
+        } else {
+          const err = await res.text();
+          setStatus(err || 'Save failed.', false);
+        }
+      } catch {
+        setStatus('Network error.', false);
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save settings';
+      }
+    });
+  </script>
+</AdminLayout>
+
+<style>
+  .settings-grid {
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    margin-top: 1rem;
+  }
+  .settings-field {
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+  }
+  .settings-field label {
+    font-size: .85rem;
+    font-weight: 700;
+  }
+  .settings-field--toggle {
+    flex-direction: column;
+  }
+  .toggle-label {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    font-weight: 700;
+    font-size: .85rem;
+    cursor: pointer;
+  }
+  .gs-toggle {
+    appearance: none;
+    width: 2.4rem;
+    height: 1.3rem;
+    background: var(--gs-border, rgba(255,255,255,.16));
+    border-radius: 999px;
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+    transition: background .2s;
+  }
+  .gs-toggle::after {
+    content: '';
+    position: absolute;
+    top: .15rem;
+    left: .15rem;
+    width: 1rem;
+    height: 1rem;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform .2s;
+  }
+  .gs-toggle:checked {
+    background: var(--gs-accent, #d96a32);
+  }
+  .gs-toggle:checked::after {
+    transform: translateX(1.1rem);
+  }
+  .gs-input {
+    background: var(--gs-surface, rgba(255,255,255,.05));
+    border: 1px solid var(--gs-border, rgba(255,255,255,.14));
+    border-radius: .5rem;
+    color: inherit;
+    font-size: .9rem;
+    padding: .5rem .75rem;
+    width: 100%;
+  }
+  .field-hint {
+    opacity: .6;
+  }
+  .gs-btn {
+    border: 0;
+    border-radius: .5rem;
+    cursor: pointer;
+    font-size: .9rem;
+    font-weight: 700;
+    padding: .55rem 1.25rem;
+  }
+  .gs-btn--primary {
+    background: var(--gs-accent, #d96a32);
+    color: var(--gs-bg, #050507);
+  }
+  .gs-btn--primary:disabled {
+    opacity: .65;
+    cursor: not-allowed;
+  }
+  .save-status--ok { color: var(--gs-success, #58d68d); }
+  .save-status--err { color: var(--gs-error, #ff7a7a); }
+  .gs-text-warning { color: var(--gs-warning, #f5b75c); }
+</style>

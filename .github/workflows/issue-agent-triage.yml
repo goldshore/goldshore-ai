@@ -15,13 +15,19 @@ on:
 permissions:
   contents: read
   issues: write
+  pull-requests: write
+
+concurrency:
+  group: issue-agent-triage-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   label:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Apply shared agent and environment labels
-        uses: actions/github-script@v8
+        uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
         with:
           script: |
             const issueNumber = context.eventName === 'workflow_dispatch'
@@ -36,7 +42,10 @@ jobs:
 
             const eventText = context.payload.comment?.body ?? '';
             const text = `${issue.title}\n${issue.body ?? ''}\n${eventText}`.toLowerCase();
-            const labels = new Set(issue.labels.map((label) => typeof label === 'string' ? label : label.name));
+            const currentLabels = issue.labels
+              .map((label) => typeof label === 'string' ? label : label.name)
+              .filter(Boolean);
+            const labels = new Set(currentLabels);
 
             const rules = [
               [/(^|\s)@codex\b|\[agent:codex\]/, 'agent:codex'],
@@ -53,9 +62,16 @@ jobs:
               if (pattern.test(text)) labels.add(label);
             }
 
+            const nextLabels = [...labels].filter(Boolean).sort();
+            const previousLabels = [...currentLabels].sort();
+            if (JSON.stringify(nextLabels) === JSON.stringify(previousLabels)) {
+              core.info('No label changes required.');
+              return;
+            }
+
             await github.rest.issues.setLabels({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: issueNumber,
-              labels: [...labels].filter(Boolean),
+              labels: nextLabels,
             });

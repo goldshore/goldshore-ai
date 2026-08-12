@@ -25,6 +25,11 @@ routes = []
 ENV = "production"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 
+# JWT Audience — must match the CF Access app audience
+# Set via: wrangler secret put CLOUDFLARE_ACCESS_AUDIENCE --env prod
+# Value: "gs-platform"
+[env.prod.secrets]
+
 # ── D1 ───────────────────────────────────────────────────────────────────────────
 [[env.prod.d1_databases]]
 binding = "PLATFORM_DB"
