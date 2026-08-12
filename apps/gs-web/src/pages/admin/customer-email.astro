@@ -7,31 +7,31 @@ if (!Astro.locals.adminSession?.isAuthenticated) {
 }
 ---
 
-<AdminLayout title="Control Plane" requiredPermission="system:read">
+<AdminLayout title="Customer Email" requiredPermission="system:read">
   <div class="admin-page-header">
-    <h1>Control Plane</h1>
-    <p>Manage platform configuration and infrastructure</p>
+    <h1>Customer Email</h1>
+    <p>Manage customer communication templates</p>
   </div>
 
   <div class="admin-content">
     <section class="admin-section">
-      <h2>Platform Status</h2>
+      <h2>Email Templates</h2>
       <div class="loading-state">
-        <p>Loading platform status...</p>
+        <p>Loading email templates...</p>
       </div>
     </section>
 
     <section class="admin-section">
-      <h2>Configuration</h2>
+      <h2>Send History</h2>
       <div class="loading-state">
-        <p>Loading configuration...</p>
+        <p>Loading send history...</p>
       </div>
     </section>
 
     <section class="admin-section">
-      <h2>Infrastructure Events</h2>
+      <h2>Bounce & Complaint Rate</h2>
       <div class="loading-state">
-        <p>Loading infrastructure events...</p>
+        <p>Loading metrics...</p>
       </div>
     </section>
   </div>

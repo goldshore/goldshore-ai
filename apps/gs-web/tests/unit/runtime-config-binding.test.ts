@@ -30,10 +30,13 @@ test('gs-web README documents one Worker release and gates a future Pages migrat
   assert.match(webReadme, /must first move into `apps\/gs-api`/);
 });
 
-test('gs-web deploy environments reuse the provisioned session namespace', () => {
-  const sessionNamespaceId = '09ae2ffbffe24e628c9538c8129dfe33';
+test('gs-web deploy environments use isolated provisioned session namespaces', () => {
+  const namespaces = {
+    prod: '09ae2ffbffe24e628c9538c8129dfe33',
+    preview: '0c75ae6798a54405a386fd36c27a510d',
+  } as const;
 
-  for (const envName of ['prod', 'preview']) {
+  for (const [envName, sessionNamespaceId] of Object.entries(namespaces)) {
     assert.match(
       deployedWebWrangler,
       new RegExp(
@@ -41,4 +44,6 @@ test('gs-web deploy environments reuse the provisioned session namespace', () =>
       ),
     );
   }
+
+  assert.notEqual(namespaces.prod, namespaces.preview);
 });

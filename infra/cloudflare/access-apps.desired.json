@@ -26,7 +26,7 @@
     },
     "serviceTokens": {
       "decision": "non_identity",
-      "include": [{ "service_token": "goldshore-services-production" }]
+      "include": [{ "service_token": "goldshore-agents" }]
     },
     "deny": { "decision": "deny", "include": [{ "everyone": {} }] }
   },
@@ -60,7 +60,7 @@
       "name": "Gold Shore Service Access Production",
       "applicationKey": "service-production",
       "audienceSecret": "CF_ACCESS_AUD_SERVICE_PRODUCTION",
-      "domains": ["api.goldshore.ai/internal/*"],
+      "domains": ["api.goldshore.ai/internal/*", "api.goldshore.org/internal/*"],
       "identityProviders": [],
       "policies": ["serviceTokens", "deny"]
     }
