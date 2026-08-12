@@ -1,133 +1,76 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
 
-const services = [
-  { name: 'gs-web', kind: 'Pages', host: 'goldshore.org', status: 'Connected', href: 'https://goldshore.org' },
-  { name: 'gs-api', kind: 'Worker', host: 'api.goldshore.ai', status: 'Connected', href: 'https://api.goldshore.ai' },
-  { name: 'Admin', kind: 'Access app', host: 'admin.goldshore.org', status: 'Protected', href: 'https://admin.goldshore.org' },
-  { name: 'Admin AI', kind: 'Access app', host: 'admin.goldshore.ai', status: 'Protected', href: 'https://admin.goldshore.ai' },
-];
-
-const modules = [
-  { title: 'Settings', description: 'Environment variables, secrets, domains, Access policy, notifications, and runtime compatibility.', href: '/admin/settings', action: 'Open settings' },
-  { title: 'API workflows', description: 'Inspect endpoints, gateway routes, triggers, retries, queues, and orchestration state.', href: '/admin/workflows', action: 'Manage workflows' },
-  { title: 'Customer email', description: 'Templates, transactional delivery, suppression state, inbound routing, and campaign handoff.', href: '/admin/customer-email', action: 'Manage email' },
-  { title: 'Subscribe CTA', description: 'Configure plan copy, CTA placement, checkout target, consent text, and conversion events.', href: '/admin/subscribe', action: 'Edit CTA' },
-  { title: 'Contact forms', description: 'Form schema, spam controls, routing, notifications, retention, and CRM dispatch.', href: '/admin/contact-forms', action: 'Manage forms' },
-  { title: 'Custom pages', description: 'Create and publish reusable landing, service, legal, campaign, and customer pages.', href: '/admin/pages', action: 'Open page manager' },
-];
-
-const resources = [
-  { name: 'D1', purpose: 'Customers, forms, subscriptions, content metadata, audit records', binding: 'DB' },
-  { name: 'R2', purpose: 'Uploads, exports, customer assets, generated documents, page media', binding: 'ASSETS' },
-  { name: 'Jobs', purpose: 'Scheduled maintenance, email dispatch, cleanup, reporting', binding: 'JOBS' },
-  { name: 'Workflows', purpose: 'Durable multi-step API and customer operations', binding: 'WORKFLOWS' },
-  { name: 'Pipelines', purpose: 'Event ingestion, transformation, analytics, and downstream delivery', binding: 'PIPELINES' },
-];
+const { redirect } = Astro;
+if (!Astro.locals.adminSession?.isAuthenticated) {
+  redirect('/login');
+}
 ---
 
-<AdminLayout title="Cloudflare Control Plane">
-  <header class="hero">
-    <div>
-      <p class="eyebrow">Gold Shore Admin</p>
-      <h1>Cloudflare control plane</h1>
-      <p class="lede">One protected workspace for gs-web, gs-api, identity, customer operations, storage, automation, and custom publishing.</p>
-    </div>
-    <div class="hero-actions">
-      <a class="button primary" href="https://admin.goldshore.org/dashboard">Open production dashboard</a>
-      <a class="button" href="https://admin.goldshore.ai">Open admin.goldshore.ai</a>
-    </div>
-  </header>
+<AdminLayout title="Control Plane" requiredPermission="system:read">
+  <div class="admin-page-header">
+    <h1>Control Plane</h1>
+    <p>Manage platform configuration and infrastructure</p>
+  </div>
 
-  <section class="panel">
-    <div class="section-heading">
-      <div>
-        <p class="eyebrow">Identity and routing</p>
-        <h2>Cloudflare Access entry points</h2>
+  <div class="admin-content">
+    <section class="admin-section">
+      <h2>Platform Status</h2>
+      <div class="loading-state">
+        <p>Loading platform status...</p>
       </div>
-      <span class="badge">IDP protected</span>
-    </div>
-    <div class="route-flow">
-      <div class="route-node"><strong>goldshore.org/login</strong><span>Public login gateway</span></div>
-      <span class="arrow">→</span>
-      <div class="route-node"><strong>Cloudflare Access</strong><span>Identity provider + policy</span></div>
-      <span class="arrow">→</span>
-      <div class="route-node"><strong>Admin dashboard</strong><span>admin.goldshore.org/dashboard</span></div>
-    </div>
-    <p class="note">Allowlisted destinations: admin.goldshore.org, admin.goldshore.org/dashboard, and admin.goldshore.ai. Cloudflare Access should enforce authentication at the admin hostnames rather than trusting a client-side session.</p>
-  </section>
+    </section>
 
-  <section class="service-grid" aria-label="Connected services">
-    {services.map((service) => (
-      <a class="service-card" href={service.href} target="_blank" rel="noreferrer">
-        <div class="service-top"><span>{service.kind}</span><span class="status">{service.status}</span></div>
-        <h2>{service.name}</h2>
-        <code>{service.host}</code>
-      </a>
-    ))}
-  </section>
-
-  <section class="panel">
-    <div class="section-heading">
-      <div>
-        <p class="eyebrow">Application managers</p>
-        <h2>Operational workspace</h2>
+    <section class="admin-section">
+      <h2>Configuration</h2>
+      <div class="loading-state">
+        <p>Loading configuration...</p>
       </div>
-    </div>
-    <div class="module-grid">
-      {modules.map((module) => (
-        <article class="module-card">
-          <h3>{module.title}</h3>
-          <p>{module.description}</p>
-          <a href={module.href}>{module.action} →</a>
-        </article>
-      ))}
-    </div>
-  </section>
+    </section>
 
-  <section class="panel">
-    <div class="section-heading">
-      <div>
-        <p class="eyebrow">Cloudflare resources</p>
-        <h2>Bindings and execution</h2>
+    <section class="admin-section">
+      <h2>Infrastructure Events</h2>
+      <div class="loading-state">
+        <p>Loading infrastructure events...</p>
       </div>
-      <a class="text-link" href="/admin/system/storage">View storage</a>
-    </div>
-    <div class="resource-table" role="table" aria-label="Cloudflare resources">
-      <div class="resource-row header" role="row"><span>Resource</span><span>Purpose</span><span>Binding</span></div>
-      {resources.map((resource) => (
-        <div class="resource-row" role="row">
-          <strong>{resource.name}</strong><span>{resource.purpose}</span><code>{resource.binding}</code>
-        </div>
-      ))}
-    </div>
-  </section>
-
-  <section class="split">
-    <article class="panel">
-      <p class="eyebrow">Customer acquisition</p>
-      <h2>Subscribe CTA template</h2>
-      <div class="preview-card">
-        <span class="badge">Gold Shore</span>
-        <h3>Turn infrastructure into an operating system.</h3>
-        <p>Subscribe for managed automation, secure customer workflows, and a unified Cloudflare-backed control plane.</p>
-        <button type="button">Subscribe</button>
-      </div>
-    </article>
-    <article class="panel">
-      <p class="eyebrow">Inbound operations</p>
-      <h2>Contact form template</h2>
-      <form class="form-preview">
-        <label>Name<input name="name" autocomplete="name" placeholder="Customer name" /></label>
-        <label>Email<input name="email" type="email" autocomplete="email" placeholder="name@example.com" /></label>
-        <label>Request type<select name="type"><option>General inquiry</option><option>API workflow</option><option>Managed infrastructure</option><option>Support</option></select></label>
-        <label>Message<textarea name="message" rows="4" placeholder="Describe the request"></textarea></label>
-        <button type="button">Send to gs-api</button>
-      </form>
-    </article>
-  </section>
+    </section>
+  </div>
 </AdminLayout>
 
 <style>
-  .hero,.section-heading,.service-top,.route-flow,.hero-actions{display:flex;align-items:center}.hero{justify-content:space-between;gap:2rem;padding:2.25rem}.hero h1{font-size:clamp(2rem,5vw,4.5rem);line-height:.95;margin:.4rem 0 1rem}.lede{max-width:760px;color:#9fb0c6;font-size:1.05rem}.hero-actions{gap:.75rem;flex-wrap:wrap}.button,button{border:1px solid #29425f;background:#0b1726;color:#e8f0fb;border-radius:.7rem;padding:.75rem 1rem;text-decoration:none;font:inherit;cursor:pointer}.button.primary,button{background:#d97706;border-color:#f59e0b;color:#070b10;font-weight:700}.panel{margin:0 2.25rem 1.25rem;padding:1.35rem;border:1px solid #1d3148;border-radius:1rem;background:linear-gradient(145deg,rgba(12,24,39,.96),rgba(6,14,24,.96))}.section-heading{justify-content:space-between;gap:1rem;margin-bottom:1rem}.section-heading h2,.panel h2{margin:.2rem 0}.eyebrow{text-transform:uppercase;letter-spacing:.14em;font-size:.72rem;color:#f59e0b;font-weight:700}.badge,.status{border:1px solid #34516f;border-radius:999px;padding:.25rem .55rem;font-size:.72rem;color:#a8d4ff}.route-flow{gap:1rem;justify-content:center;flex-wrap:wrap;padding:1rem}.route-node{min-width:210px;padding:1rem;border:1px solid #29425f;border-radius:.8rem;background:#07111d}.route-node span{display:block;color:#8ea3bb;font-size:.78rem;margin-top:.35rem}.arrow{color:#f59e0b;font-size:1.5rem}.note{color:#8ea3bb;font-size:.84rem}.service-grid,.module-grid,.split{display:grid;gap:1rem}.service-grid{grid-template-columns:repeat(4,minmax(0,1fr));margin:0 2.25rem 1.25rem}.service-card,.module-card{border:1px solid #1d3148;border-radius:1rem;background:#091522;padding:1.1rem;text-decoration:none;color:inherit}.service-card:hover,.module-card:hover{border-color:#d97706}.service-top{justify-content:space-between;color:#8ea3bb;font-size:.75rem}.service-card h2{margin:1rem 0 .3rem}.service-card code,.resource-row code{color:#f5b85b}.module-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.module-card p{color:#8ea3bb;min-height:4.2rem}.module-card a,.text-link{color:#7cc7ff;text-decoration:none}.resource-table{display:grid}.resource-row{display:grid;grid-template-columns:140px 1fr 140px;gap:1rem;padding:.85rem;border-top:1px solid #1d3148;align-items:center}.resource-row.header{border-top:0;color:#7990aa;font-size:.72rem;text-transform:uppercase}.split{grid-template-columns:1fr 1fr;margin:0 0 2.25rem}.split .panel{margin-bottom:0}.preview-card{border:1px solid #29425f;border-radius:.9rem;padding:1.25rem;background:radial-gradient(circle at top right,rgba(217,119,6,.16),transparent 45%),#07111d}.preview-card h3{font-size:1.65rem;margin:.8rem 0}.preview-card p{color:#9fb0c6}.form-preview{display:grid;gap:.85rem}.form-preview label{display:grid;gap:.35rem;color:#9fb0c6;font-size:.78rem}.form-preview input,.form-preview select,.form-preview textarea{width:100%;box-sizing:border-box;border:1px solid #29425f;background:#07111d;color:#e8f0fb;border-radius:.55rem;padding:.7rem;font:inherit}@media(max-width:1050px){.service-grid{grid-template-columns:repeat(2,1fr)}.module-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:720px){.hero{align-items:flex-start;flex-direction:column;padding:1.25rem}.panel,.service-grid{margin-left:1.25rem;margin-right:1.25rem}.service-grid,.module-grid,.split{grid-template-columns:1fr}.resource-row{grid-template-columns:1fr}.resource-row.header{display:none}}
+  .admin-page-header {
+    padding: 24px;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.1);
+  }
+
+  .admin-page-header h1 {
+    margin: 0 0 8px;
+    font-size: 28px;
+  }
+
+  .admin-page-header p {
+    margin: 0;
+    color: rgba(226, 232, 240, 0.7);
+  }
+
+  .admin-content {
+    padding: 24px;
+  }
+
+  .admin-section {
+    margin-bottom: 32px;
+  }
+
+  .admin-section h2 {
+    font-size: 18px;
+    margin: 0 0 16px;
+  }
+
+  .loading-state {
+    padding: 24px;
+    background: rgba(226, 232, 240, 0.05);
+    border-radius: 8px;
+    text-align: center;
+    color: rgba(226, 232, 240, 0.6);
+  }
 </style>

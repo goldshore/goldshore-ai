@@ -4,8 +4,8 @@ const initializeThemeNavigation = () => {
     header.dataset.navigationReady = 'true';
 
     const toggle = header.querySelector<HTMLButtonElement>('.nav-toggle');
-    const mobileNavigation = header.querySelector<HTMLElement>('#mobile-navigation');
-    if (!toggle || !mobileNavigation) return;
+    const navigation = header.querySelector<HTMLElement>('#main-nav');
+    if (!toggle || !navigation) return;
 
     const setMenu = (isOpen: boolean) => {
       header.dataset.menuOpen = String(isOpen);
@@ -13,7 +13,7 @@ const initializeThemeNavigation = () => {
     };
 
     toggle.addEventListener('click', () => setMenu(header.dataset.menuOpen !== 'true'));
-    mobileNavigation.addEventListener('click', (event) => {
+    navigation.addEventListener('click', (event) => {
       if (event.target instanceof Element && event.target.closest('a')) setMenu(false);
     });
     document.addEventListener('keydown', (event) => {

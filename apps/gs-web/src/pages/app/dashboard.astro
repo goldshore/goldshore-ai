@@ -1,15 +1,15 @@
 ---
 export const prerender = false;
 
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import AdminLayout from "../../layouts/AdminLayout.astro";
 
 const tools = [
   {
     eyebrow: 'Website operations',
     title: 'Content studio',
     description: 'Update articles, announcements, and structured content.',
-    href: '/admin/products',
-    action: 'Manage catalog',
+    href: '/content',
+    action: 'Open content studio',
     tone: 'gold',
   },
   {
@@ -48,8 +48,8 @@ const quickLinks = [
 ] as const;
 ---
 
-<BaseLayout title="Gold Shore Admin | Dashboard" description="Protected Gold Shore control plane">
-  <main class="admin-dashboard">
+<AdminLayout title="Gold Shore Admin | Dashboard">
+  <div class="admin-dashboard">
     <header class="dashboard-header">
       <div>
         <p class="dashboard-kicker">Gold Shore Admin / Control plane</p>
@@ -65,7 +65,7 @@ const quickLinks = [
           <p class="dashboard-kicker">Website operations</p>
           <h2 id="edit-publish-title">Edit and publish</h2>
         </div>
-        <a href="/admin/products">View all site tools →</a>
+        <a href="/content">View content studio →</a>
       </div>
 
       <div class="tool-grid">
@@ -84,32 +84,32 @@ const quickLinks = [
     <section class="status-section" aria-labelledby="system-status-title">
       <div class="section-heading">
         <div>
-          <p class="dashboard-kicker">Operational overview</p>
-          <h2 id="system-status-title">System status</h2>
+          <p class="dashboard-kicker">Canonical architecture</p>
+          <h2 id="system-status-title">Service ownership</h2>
         </div>
-        <span class="status-label"><i></i> Protected services</span>
+        <span class="status-label"><i></i> Two-app contract</span>
       </div>
 
       <div class="status-grid">
         <article class="status-card">
-          <span>gs-api</span>
-          <strong>Online</strong>
-          <small>Core API and data access layer</small>
+          <span>Frontend</span>
+          <strong>gs-web</strong>
+          <small>Public pages and protected admin workspace</small>
         </article>
         <article class="status-card">
-          <span>Workers</span>
-          <strong>3 / 3</strong>
-          <small>Gateway, API, and control plane</small>
+          <span>Backend</span>
+          <strong>gs-api</strong>
+          <small>API, mail, queue, cron, and integration handlers</small>
         </article>
         <article class="status-card">
-          <span>Access</span>
-          <strong>Enforced</strong>
-          <small>JWT identity and admin role required</small>
+          <span>Admin access</span>
+          <strong>Protected</strong>
+          <small>Cloudflare Access identity and application role required</small>
         </article>
         <article class="status-card">
           <span>Deployments</span>
-          <strong>Ready</strong>
-          <small>Production changes require review</small>
+          <strong>Review-gated</strong>
+          <small>Live health remains visible on the status page</small>
         </article>
       </div>
     </section>
@@ -125,8 +125,8 @@ const quickLinks = [
         {quickLinks.map(([label, href]) => <a href={href}>{label}<span>↗</span></a>)}
       </nav>
     </section>
-  </main>
-</BaseLayout>
+  </div>
+</AdminLayout>
 
 <style>
   .admin-dashboard {
