@@ -238,6 +238,7 @@ const summarizeWithClaude = async (env: Env, query: string, recommendations: Ass
       model: env.LLM_MODEL || 'claude-sonnet-4-5',
       temperature: 0.2,
       maxTokens: 400,
+      env,
     });
 
     const response = await client.complete({

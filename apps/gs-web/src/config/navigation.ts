@@ -12,6 +12,10 @@ export const primaryNavLinks: NavLink[] = [
   { href: '/about/', label: 'About' },
 ];
 
+export const authLinks: NavLink[] = [
+  { href: 'https://admin.goldshore.ai/app/dashboard', label: 'Dashboard access', external: true },
+];
+
 export const platformLinks: NavLink[] = [
   { href: '/products/', label: 'Products' },
   { href: '/risk-radar/', label: 'Risk Radar' },

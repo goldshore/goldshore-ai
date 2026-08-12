@@ -1,57 +1,35 @@
-# Gateway dispatch token rotation
+# Gateway dispatch retirement
 
-This runbook reduces risk for the cross-repository dispatch path from `marzton/goldshore-gateway` to `marzton/goldshore-ai`.
+The cross-repository deployment receiver was retired on 2026-08-09. This
+repository no longer accepts a `deploy` `repository_dispatch` event, and the
+former `.github/workflows/deploy-dispatch.yml` workflow must not be restored.
+It accepted caller-controlled repositories, refs, commands, directories, and
+health-check URLs while exposing this repository's production Cloudflare token
+to the checked-out code.
 
-## Workflow inventory
+Gold Shore gateway, agent, mail, trading, and control-plane behavior belongs in
+`apps/gs-api`; public and admin UI behavior belongs in `apps/gs-web`. Deploy
+those applications only through their repository-owned workflows.
 
-The `marzton/goldshore-gateway` repository must be checked before every rotation for workflows that reference `GS_DISPATCH_TOKEN`.
+## External repository cleanup
 
-Use this command from a fresh checkout of `marzton/goldshore-gateway`:
+The owner of `marzton/goldshore-gateway` must remove any workflow that sends the
+retired `deploy` event and revoke its `GS_DISPATCH_TOKEN`. Use the following
+command from a fresh checkout to locate remaining callers:
 
 ```bash
 rg -n "GS_DISPATCH_TOKEN|repository_dispatch|workflow_dispatch|dispatches" .github/workflows
 ```
 
-Record each matching workflow in the rotation ticket. As of this repo update, the receiving workflow in `marzton/goldshore-ai` is `.github/workflows/deploy-dispatch.yml`, which accepts the `deploy` `repository_dispatch` event. The manual verification workflow is `.github/workflows/verify-gateway-dispatch.yml`, which sends and receives `dispatch-token-rotation-verify` events.
+An external project that still owns an independent Cloudflare resource must
+deploy from its own repository. Its workflow must use:
 
-## Replacement token requirement
+- a project-specific Cloudflare token scoped only to that project's resources;
+- a protected, project-specific GitHub environment;
+- repository-owned commands and directories; and
+- a commit SHA rather than a mutable branch or tag for cross-repository source.
 
-Replace the old classic PAT with one of the following, in preference order:
-
-1. A GitHub App installation token for an app installed only on the required repositories.
-2. A fine-grained PAT restricted to the minimum required repositories.
-
-For `repository_dispatch` to `marzton/goldshore-ai`, grant only:
-
-- Repository access: `marzton/goldshore-ai`.
-- Repository permission: `Contents: Read and write` for the REST `repository_dispatch` endpoint.
-- Metadata read access, which GitHub grants automatically with repository access.
-
-If the gateway workflow uses `workflow_dispatch` instead of `repository_dispatch`, grant `Actions: Read and write` only for the target repository and document that exception in the rotation ticket.
-
-## Ownership and expiration
-
-Set a short expiration on the replacement credential:
-
-- Preferred: 30 days.
-- Maximum: 90 days unless an incident commander approves a one-time exception.
-
-Document the owner in both places below:
-
-1. The GitHub secret description or organization secret note, if available.
-2. The rotation ticket, with the owner, expiration date, target repositories, and granted permissions.
-
-## Rotation procedure
-
-1. Inventory every `marzton/goldshore-gateway` workflow that references `GS_DISPATCH_TOKEN`.
-2. Create the GitHub App installation token automation or fine-grained PAT with the permissions above.
-3. Update the `GS_DISPATCH_TOKEN` secret in `marzton/goldshore-gateway` with the replacement token value.
-4. Run **Verify gateway repository dispatch token** from `marzton/goldshore-ai` Actions and enter the documented owner and expiration date.
-5. Confirm the manual workflow reports HTTP `204` and that a paired `dispatch-token-rotation-verify` repository-dispatch run appears in Actions.
-6. Run the gateway workflow that normally sends the production `deploy` dispatch, or trigger its safest staging equivalent.
-7. Revoke the old classic PAT only after both verification runs pass.
-8. Add the revocation timestamp and validation run links to the rotation ticket.
-
-## Rollback
-
-Do not restore the classic PAT unless production deployment is blocked and the incident commander approves the temporary rollback. If rollback is approved, set an expiration of 24 hours or less, repeat the verification workflow, and open a follow-up ticket to replace it again.
+Do not give external projects `CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN`, and do not
+add a generic deployment dispatcher back to this repository. A production
+blocker requires an architecture and security review; it is not grounds to
+restore the retired workflow or a classic PAT.

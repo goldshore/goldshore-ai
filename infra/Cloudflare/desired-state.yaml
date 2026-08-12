@@ -60,22 +60,11 @@ cloudflare:
         content: "gs-web-preview.goldshore.workers.dev"
         proxied: true
       - name: "admin"
-      - name: "risk.goldshore.org"
         type: CNAME
         content: "gs-web-prod.goldshore.workers.dev"
         proxied: true
         zone: goldshore.org
-
-      # B. Admin browser surfaces owned by gs-web.
-      - name: "admin.goldshore.ai"
-        type: CNAME
-        content: "gs-web-prod.goldshore.workers.dev"
-        proxied: true
-      - name: "admin-preview.goldshore.ai"
-        type: CNAME
-        content: "gs-web-prod.goldshore.workers.dev"
-        proxied: true
-      - name: "admin.goldshore.org"
+      - name: "risk"
         type: CNAME
         content: "gs-web-prod.goldshore.workers.dev"
         proxied: true

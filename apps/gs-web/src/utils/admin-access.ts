@@ -1,7 +1,9 @@
 import {
   buildAdminSession,
   hasAdminPermission,
+  ROLE_PERMISSIONS,
   verifyAccessWithClaims,
+  verifyJWTCookie,
   type AccessTokenPayload,
   type AdminPermission,
   type AdminSession,
@@ -21,6 +23,10 @@ const ADMIN_HOSTS = new Set([
   'admin.goldshore.org',
   'admin-preview.goldshore.ai',
   'admin-preview.goldshore.org',
+  'dashboard.goldshore.ai',
+  'dashboard.goldshore.org',
+  'dashboard-preview.goldshore.ai',
+  'dashboard-preview.goldshore.org',
 ]);
 
 const STATIC_PATH_PREFIXES = [
@@ -32,6 +38,22 @@ const STATIC_PATH_PREFIXES = [
   '/robots.txt',
   '/sitemap',
 ];
+
+/**
+ * Paths that stay reachable on the admin hostname without an admin session.
+ *
+ * The admin host folds every unrecognized path back to the dashboard, and the
+ * dashboard requires a session. Without this exemption the sign-in and
+ * sign-out routes would themselves be rewritten to the dashboard, so an
+ * unauthenticated operator would bounce between /login and /app/dashboard
+ * with no way to authenticate.
+ */
+const ADMIN_HOST_PUBLIC_PATHS = ['/login', '/logout'];
+
+const isAdminHostPublicPath = (pathname: string) =>
+  ADMIN_HOST_PUBLIC_PATHS.some(
+    (candidate) => pathname === candidate || pathname.startsWith(`${candidate}/`),
+  );
 
 const CLEAN_ADMIN_PAGE_PREFIXES = [
   '/api-status',
@@ -86,6 +108,7 @@ export const getAdminHostRewritePath = (pathname: string) => {
   const normalizedPath = normalizePathname(pathname);
 
   if (isStaticAssetPath(normalizedPath)) return null;
+  if (isAdminHostPublicPath(normalizedPath)) return null;
   if (normalizedPath === '/') return ADMIN_DASHBOARD_PATH;
 
   if (
@@ -242,7 +265,8 @@ export const getAdminRouteRule = (
   if (
     hostname &&
     isAdminHost(hostname) &&
-    !isStaticAssetPath(normalizedPath)
+    !isStaticAssetPath(normalizedPath) &&
+    !isAdminHostPublicPath(normalizedPath)
   ) {
     return {
       canonicalPath: ADMIN_DASHBOARD_PATH,
@@ -272,34 +296,57 @@ export const getAdminLoginDestination = (requested?: string) => {
   }
 };
 
+/**
+ * A successfully verified Cloudflare Access assertion has already passed the
+ * dedicated Access application's identity policy. Access assertions do not
+ * normally contain the application-specific `admin` role used by cookie JWTs,
+ * so give that edge-authenticated identity the admin session expected by the
+ * protected dashboard. Explicit supported roles still take precedence.
+ */
+export const buildCloudflareAccessAdminSession = (
+  claims: AccessTokenPayload,
+): AdminSession => {
+  const session = buildAdminSession(claims);
+  if (session.roles.length > 0) return session;
+
+  return {
+    roles: ['admin'],
+    permissions: [...ROLE_PERMISSIONS.admin],
+  };
+};
+
 export const authorizeAdminRequest = async (
   request: Request,
   env: AccessEnv | undefined,
   rule: AdminRouteRule,
 ): Promise<AdminAuthorizationResult> => {
-  if (!env?.CLOUDFLARE_ACCESS_AUDIENCE) {
+  if (!env?.JWT_SECRET && !env?.CLOUDFLARE_TEAM_DOMAIN) {
     return {
       ok: false,
       status: 503,
-      error: 'Admin access is misconfigured: CLOUDFLARE_ACCESS_AUDIENCE is missing.',
+      error: 'Admin access is misconfigured: no JWT verifier is configured.',
     };
   }
 
-  const claims = await verifyAccessWithClaims(request, env);
+  const cookieClaims = await verifyJWTCookie(request, env);
+  const accessClaims = cookieClaims ? null : await verifyAccessWithClaims(request, env);
+  const claims = cookieClaims ?? accessClaims;
   if (!claims) {
     return {
       ok: false,
       status: 401,
-      error: 'Cloudflare Access authentication is required.',
+      error: 'JWT authentication is required.',
     };
   }
 
-  const session = buildAdminSession(claims);
+  const session = accessClaims
+    ? buildCloudflareAccessAdminSession(accessClaims)
+    : buildAdminSession(claims);
   if (rule.requiresAdminRole && session.roles.length === 0) {
     return {
       ok: false,
       status: 403,
-      error: 'Cloudflare Access authenticated, but no admin role was granted.',
+      error: 'JWT authenticated, but no admin role was granted.',
     };
   }
 
