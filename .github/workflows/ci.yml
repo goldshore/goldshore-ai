@@ -12,13 +12,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
 
       - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@v7.0.0
         with:
           node-version: 22
           cache: "pnpm"
@@ -26,27 +26,27 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
-      - name: Warn if banproof bindings check is disabled
-        shell: bash
-        run: |
-          if [ "${{ vars.ENABLE_BANPROOF_BINDINGS_CHECK }}" != "true" ]; then
-            echo "::warning::ENABLE_BANPROOF_BINDINGS_CHECK is not set to true; banproof binding enforcement is skipped."
-          fi
+      - name: Lint
+        run: pnpm lint
 
-      - name: Validate Cloudflare resource IDs
+      - name: Enforce banproof production bindings
+        if: ${{ vars.ENABLE_BANPROOF_BINDINGS_CHECK == 'true' }}
+        run: pnpm check:banproof-bindings
+
+      - name: Warn when banproof binding check is disabled
+        if: ${{ vars.ENABLE_BANPROOF_BINDINGS_CHECK != 'true' }}
+        run: echo "::warning::ENABLE_BANPROOF_BINDINGS_CHECK is not set to true; skipping banproof production binding validation."
+
+      - name: Validate CF resource IDs
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_BUILD_API_TOKEN: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
         run: |
           if [ -z "$CLOUDFLARE_BUILD_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
-            echo "::warning::Skipping Cloudflare resource validation because CLOUDFLARE_BUILD_API_TOKEN or CLOUDFLARE_ACCOUNT_ID is unavailable."
+            echo "::warning::Cloudflare credentials are unavailable; skipping live resource validation."
             exit 0
           fi
           node scripts/validate-cf-resources.mjs
-
-      - name: Enforce banproof production bindings
-        if: ${{ vars.ENABLE_BANPROOF_BINDINGS_CHECK == 'true' }}
-        run: pnpm check:banproof-bindings
 
       - name: Build all
         run: pnpm -r --sequential build
@@ -61,7 +61,7 @@ jobs:
             RANGE="${{ github.event.before }}...${{ github.sha }}"
           fi
 
-          if git diff --name-only "$RANGE" | grep -Eq '^(apps/gs-web/|apps/gs-admin/|packages/|package.json|pnpm-lock.yaml|pnpm-workspace.yaml|turbo.json)$'; then
+          if git diff --name-only "$RANGE" | grep -Eq '^(apps/(gs-web|gs-admin)/|packages/|package.json|pnpm-lock.yaml|pnpm-workspace.yaml|turbo.json)$'; then
             echo "release_impact=true" >> "$GITHUB_OUTPUT"
           else
             echo "release_impact=false" >> "$GITHUB_OUTPUT"
@@ -75,5 +75,5 @@ jobs:
           LH_MIN_PERFORMANCE: "0.60"
         run: pnpm check:release
 
-      - name: Verify internal links (Developer Hub, Risk Radar, Workflows)
+      - name: Verify internal links
         run: node scripts/check-internal-links.mjs

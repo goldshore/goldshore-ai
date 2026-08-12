@@ -70,7 +70,7 @@ export class FacebookPixelIntegration extends BaseIntegration {
                 event_name: event.eventName,
                 event_time: event.eventTime,
                 event_id: event.eventId,
-                user_data: event.userData ? this.hashUserData(event.userData) : {},
+                user_data: event.userData ? await this.hashUserData(event.userData) : {},
                 custom_data: event.customData,
               },
             ],
@@ -158,20 +158,43 @@ export class FacebookPixelIntegration extends BaseIntegration {
   }
 
   /**
-   * Hash user data for privacy (SHA-256)
+   * Hash user data for privacy (SHA-256) before sending to Meta.
    */
-  private hashUserData(userData: Record<string, unknown>): Record<string, unknown> {
-    // In production, implement SHA-256 hashing
-    return {
-      em: userData.email,
-      ph: userData.phone,
-      fn: userData.firstName,
-      ln: userData.lastName,
-      ct: userData.city,
-      st: userData.state,
-      zp: userData.zipCode,
-      country: userData.country,
+  private async hashUserData(userData: Record<string, unknown>): Promise<Record<string, string>> {
+    const normalizeText = (value: unknown): string | undefined =>
+      typeof value === 'string' && value.trim() ? value.trim().toLowerCase() : undefined;
+    const normalizePhone = (value: unknown): string | undefined => {
+      if (typeof value !== 'string') return undefined;
+      const normalized = value.replace(/[^0-9]/g, '');
+      return normalized || undefined;
     };
+
+    const fields: Record<string, string | undefined> = {
+      em: normalizeText(userData.email),
+      ph: normalizePhone(userData.phone),
+      fn: normalizeText(userData.firstName),
+      ln: normalizeText(userData.lastName),
+      ct: normalizeText(userData.city),
+      st: normalizeText(userData.state),
+      zp: normalizeText(userData.zipCode),
+      country: normalizeText(userData.country),
+    };
+
+    const hashedEntries = await Promise.all(
+      Object.entries(fields)
+        .filter((entry): entry is [string, string] => Boolean(entry[1]))
+        .map(async ([key, value]) => [key, await this.sha256(value)] as const)
+    );
+
+    return Object.fromEntries(hashedEntries);
+  }
+
+  private async sha256(value: string): Promise<string> {
+    const data = new TextEncoder().encode(value);
+    const digest = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(digest))
+      .map((byte) => byte.toString(16).padStart(2, '0'))
+      .join('');
   }
 
   /**

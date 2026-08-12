@@ -1,7 +1,11 @@
 ---
 import '../styles/home-theme.css';
+import {
+  ALTERNATE_ADMIN_ORIGIN,
+  CANONICAL_ADMIN_ORIGIN,
+} from '../utils/admin-access';
 
-export const prerender = true;
+export const prerender = false;
 
 const services  = ['Digital Strategy','AI Implementation','Systems Integration','Design & Development','Enterprise Consulting'];
 const sectors   = ['Financial Services','Operations & Logistics','Media & Communications','Healthcare Systems','Public Sector'];
@@ -21,14 +25,16 @@ const anomalies = [['ALGO-DRIFT — Position delta exceeds 3σ','High','00:42'],
 const tickers   = [['SPY','S&P 500 ETF','521.84','+1.24%'],['NVDA','Nvidia Corp','887.22','+2.87%'],['BTC','Bitcoin','68,420','−0.43%'],['GLD','Gold ETF','2,391','+0.61%'],['TLT','20Y Treasury','93.14','−0.18%'],['VIX','Volatility Idx','13.82','−3.20%']];
 const principles = [['01','Sector-Agnostic, Systems-First',"We don't specialize in one vertical — we specialize in the architecture that makes any vertical work. Finance, operations, media, healthcare: the discipline is identical."],['02','AI as Infrastructure, Not Feature','Intelligence embedded at the routing layer, not bolted on at the end. Every workflow treats AI as a first-class component with audit trails to match.'],['03','Consulting That Ships','Strategy without delivery is overhead. We provide the advisory and we build the thing — one team, one contract, full accountability from brief to production.']];
 const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Automation','AI Implementation','Digital Strategy','Systems Integration','Design & Development','Enterprise Consulting','Sentiment Analysis','Applied Intelligence','Resilient Infrastructure','Cross-Sector Deployment'];
+const canonicalUrl = new URL('/', Astro.url.origin).toString();
 ---
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="Gold Shore Labs — applied intelligence, digital systems, and consulting." />
+  <link rel="canonical" href={canonicalUrl} />
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://goldshore.ai/" />
+  <meta property="og:url" content={canonicalUrl} />
   <meta property="og:title" content="Gold Shore Labs | Applied Intelligence" />
   <meta property="og:description" content="Applied intelligence for institutions that need clarity under pressure." />
   <title>Gold Shore Labs | Applied Intelligence</title>
@@ -45,7 +51,7 @@ const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Aut
 
 <header class="topbar">
   <a class="brand" href="/" aria-label="GoldShore home">
-    <span class="brand-wordmark">GOLDSHORE</span>
+    <span class="brand-wordmark"><span>GOLD</span><span class="brand-shore">SHORE</span></span>
   </a>
   <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
     <span></span><span></span><span></span>
@@ -56,7 +62,7 @@ const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Aut
     <a href="/services/">Services</a>
     <a href="/developer/">Developer</a>
     <a href="/about/">About</a>
-    <button type="button" id="open-access-modal" class="nav-login">Access →</button>
+    <button type="button" id="open-access-modal" class="nav-login">Log in</button>
     <a class="nav-cta" href="#engage">Request Briefing</a>
   </nav>
 </header>
@@ -325,7 +331,6 @@ export async function verifyAccess(req, env) {
   </div>
   <div>
     <h3>Platform</h3>
-    <p><a href="/platform/">Overview</a></p>
     <p><a href="/risk-radar/">Risk Radar</a></p>
     <p><a href="/platform/financial-signals">Financial Signals</a></p>
     <p><a href="/platform/workflow-engine">Workflow Engine</a></p>
@@ -334,7 +339,6 @@ export async function verifyAccess(req, env) {
   </div>
   <div>
     <h3>Services</h3>
-    <p><a href="/services/">Overview</a></p>
     <p><a href="/services/digital-strategy">Digital Strategy</a></p>
     <p><a href="/services/ai-implementation">AI Implementation</a></p>
     <p><a href="/services/systems-integration">Systems Integration</a></p>
@@ -342,21 +346,12 @@ export async function verifyAccess(req, env) {
     <p><a href="/services/consulting">Enterprise Consulting</a></p>
   </div>
   <div>
-    <h3>Developer</h3>
-    <p><a href="/developer/">Hub</a></p>
-    <p><a href="/developer/api/">API</a></p>
-    <p><a href="/developer/docs/">Docs</a></p>
-    <p><a href="/developer/sdk">SDK</a></p>
-    <p><a href="/developer/mcp">MCP</a></p>
-  </div>
-  <div>
     <h3>Company</h3>
     <p><a href="/about/">About</a></p>
     <p><a href="/team/">Team</a></p>
+    <p><a href="/developer/">Developer Hub</a></p>
     <p><a href="/status/">Status</a></p>
     <p><a href="/contact/">Contact</a></p>
-    <p><a href="/legal/privacy">Privacy</a></p>
-    <p><a href="/legal/terms">Terms</a></p>
   </div>
   <small>© 2026 Gold Shore Labs. All rights reserved. 40°42′N · 074°00′W · goldshore.ai · <a href="/legal/privacy">Privacy</a> · <a href="/legal/">Security</a> · <a href="/legal/terms">Terms</a></small>
 </footer>
@@ -368,25 +363,10 @@ export async function verifyAccess(req, env) {
     <h2 id="access-modal-title">Access Goldshore</h2>
     <p class="modal-lead">Select a destination to continue.</p>
     <div class="modal-grid">
-      <a href="https://admin.goldshore.ai" class="modal-card" data-admin-access-link>
+      <a href={CANONICAL_ADMIN_ORIGIN} class="modal-card" data-admin-access-link>
         <span class="modal-icon">⬡</span>
         <strong>Admin</strong>
         <span>Operator dashboard</span>
-      </a>
-      <a href="https://admin.goldshore.org" class="modal-card" data-admin-alternate-link>
-        <span class="modal-icon">◈</span>
-        <strong data-admin-alternate-title>Admin .org</strong>
-        <span data-admin-alternate-copy>Protected organisation alias</span>
-      </a>
-      <a href="/developer/mcp" class="modal-card">
-        <span class="modal-icon">⬢</span>
-        <strong>MCP</strong>
-        <span>Model Context Protocol</span>
-      </a>
-      <a href="https://api.goldshore.ai" class="modal-card">
-        <span class="modal-icon">◉</span>
-        <strong>API</strong>
-        <span>Developer access</span>
       </a>
     </div>
     <p class="modal-contact">Need access? <a href="/contact/">Contact us →</a></p>
@@ -419,14 +399,17 @@ document.getElementById('open-access-modal')?.addEventListener('click', () => ac
 document.querySelector('.modal-close')?.addEventListener('click', () => accessModal?.close());
 accessModal?.addEventListener('click', e => { if (e.target === accessModal) accessModal.close(); });
 
-/* ── Host-aware admin links ────────────────────────────────────────────────────────────────────── */
-const adminHost = 'admin.goldshore.ai';
-const alternateAdminHost = 'admin.goldshore.org';
+/* ── Host-aware admin links (environment-aware routing) ──────────────────────────────────────── */
+const env = (import.meta as any).env?.PUBLIC_ENV || 'production';
+const adminHost = env === 'preview' ? 'admin-preview.goldshore.ai' : 'admin.goldshore.ai';
+const alternateAdminHost = env === 'preview' ? 'admin-preview.goldshore.org' : 'admin.goldshore.org';
 document.querySelectorAll('[data-admin-access-link]').forEach(link => {
-  link.setAttribute('href', `https://${adminHost}/`);
+  const path = link.getAttribute('data-admin-path') || '';
+  link.setAttribute('href', `https://${adminHost}${path}/`);
 });
 document.querySelectorAll('[data-admin-alternate-link]').forEach(link => {
-  link.setAttribute('href', `https://${alternateAdminHost}/`);
+  const path = link.getAttribute('data-admin-path') || '';
+  link.setAttribute('href', `https://${alternateAdminHost}${path}/`);
 });
 document.querySelectorAll('[data-admin-alternate-title]').forEach(el => {
   el.textContent = 'Admin .org';
@@ -534,8 +517,534 @@ window.addEventListener('load', function () {
     });
   }
 
+  /* Ping on click */
+  document.querySelectorAll('.ticker-item, .anomaly, .metrics div').forEach(el => {
+    el.addEventListener('click', () => {
+      el.classList.remove('is-pinged');
+      void el.offsetWidth;
+      el.classList.add('is-pinged');
+    });
+  });
+
 }, { once: true, passive: true });
 </script>
 
 </body>
 </html>
+    </section>
+  </main>
+
+  <script>
+    import { initWave } from '../scripts/init-wave';
+    import { initLogo } from '../scripts/init-logo-reactive';
+
+    let homeCleanup;
+
+    const cleanup = () => {
+      homeCleanup?.();
+      homeCleanup = undefined;
+    };
+
+    const hydrateMetrics = () => {
+      const cards = document.querySelectorAll('.signal-tile--loading');
+      const reduceMotion = window.matchMedia(
+        '(prefers-reduced-motion: reduce)',
+      ).matches;
+
+      window.setTimeout(
+        () => cards.forEach((card) => card.classList.remove('signal-tile--loading')),
+        reduceMotion ? 0 : 650,
+      );
+    };
+
+    const boot = () => {
+      cleanup();
+      hydrateMetrics();
+
+      const canvas = document.getElementById('wave-bg');
+      const logo = document.querySelector('.gs-logo-reactive');
+      const isReactiveLogo =
+        logo instanceof HTMLElement || logo instanceof SVGElement;
+
+      if (!(canvas instanceof HTMLCanvasElement) || !isReactiveLogo) return;
+
+      const wave = initWave(canvas);
+      const destroyLogo = initLogo(logo, wave);
+
+      homeCleanup = () => {
+        destroyLogo?.();
+        wave.destroy();
+      };
+    };
+
+    const root = document.documentElement;
+
+    if (root.dataset.gsHomeHeroBound !== 'true') {
+      root.dataset.gsHomeHeroBound = 'true';
+      document.addEventListener('astro:before-swap', cleanup);
+      document.addEventListener('astro:page-load', boot);
+    }
+
+    boot();
+  </script>
+
+  <style>
+    .home-page {
+      padding-bottom: 4rem;
+    }
+
+    .hero {
+      position: relative;
+      min-height: min(92vh, 960px);
+      display: grid;
+      align-items: end;
+      overflow: hidden;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    #wave-bg,
+    .hero-grid,
+    .hero::after {
+      position: absolute;
+      inset: 0;
+    }
+
+    #wave-bg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .hero-grid {
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+      background-size: 72px 72px;
+      mask-image: radial-gradient(circle at 50% 30%, black 30%, transparent 80%);
+      opacity: 0.5;
+    }
+
+    .hero::after {
+      content: '';
+      background:
+        radial-gradient(circle at 25% 20%, rgba(90, 162, 255, 0.18), transparent 28%),
+        linear-gradient(180deg, rgba(7, 11, 20, 0.18), rgba(7, 11, 20, 0.84));
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .hero-mark {
+      position: absolute;
+      inset: 18% auto auto clamp(1rem, 7vw, 6rem);
+      z-index: 1;
+    }
+
+    .gs-logo-reactive {
+      width: clamp(72px, 11vw, 120px);
+      height: auto;
+      color: #8ec1ff;
+      will-change: transform, filter;
+    }
+
+    .hero-shell,
+    .section-block,
+    .metrics-shell,
+    .signal-strip {
+      width: min(100% - 2rem, var(--gs-max-width));
+      margin: 0 auto;
+    }
+
+    .hero-shell {
+      position: relative;
+      z-index: 2;
+      padding: clamp(7rem, 12vh, 10rem) 0 1.75rem;
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr);
+      gap: clamp(1.5rem, 4vw, 4rem);
+      align-items: end;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.85rem;
+      border: 1px solid rgba(90, 162, 255, 0.22);
+      border-radius: 999px;
+      background: rgba(90, 162, 255, 0.1);
+      color: #dcedff;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .hero-content h1,
+    .section-copy h2,
+    .contact-cta h2 {
+      margin: 1rem 0;
+      font-size: clamp(2.7rem, 7vw, 5.4rem);
+      line-height: 0.98;
+      letter-spacing: -0.045em;
+      color: #fff;
+      text-wrap: balance;
+    }
+
+    .hero-content p,
+    .section-copy p,
+    .hero-panel li,
+    .proof-card p,
+    .team-card p,
+    .contact-cta p,
+    .signal-tile p {
+      color: rgba(233, 238, 252, 0.82);
+      line-height: 1.72;
+      font-size: 1rem;
+    }
+
+    .hero-lead {
+      max-width: 34rem;
+      font-size: clamp(1.08rem, 0.98rem + 0.45vw, 1.3rem);
+      color: rgba(248, 251, 255, 0.95);
+    }
+
+    .hero-supporting-copy,
+    .section-intro {
+      max-width: 42rem;
+      color: rgba(233, 238, 252, 0.72);
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 0.9rem;
+      flex-wrap: wrap;
+      margin-top: 1.5rem;
+    }
+
+    .hero-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.9rem 1.6rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+      text-decoration: none;
+      font-weight: 500;
+      backdrop-filter: blur(10px);
+      transition:
+        transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1),
+        border-color 0.25s ease,
+        background 0.25s ease,
+        box-shadow 0.25s ease;
+    }
+
+    .hero-button:hover,
+    .hero-button:focus-visible {
+      transform: translateY(-2px);
+      border-color: rgba(108, 158, 255, 0.5);
+      background: rgba(108, 158, 255, 0.15);
+      box-shadow: 0 10px 30px rgba(108, 158, 255, 0.2);
+    }
+
+    .hero-button--primary {
+      border-color: rgba(108, 158, 255, 0.4);
+      background: linear-gradient(135deg, rgba(108, 158, 255, 0.2), rgba(178, 95, 255, 0.2));
+      box-shadow: 0 16px 32px rgba(108, 158, 255, 0.2);
+    }
+
+    .hero-panel,
+    .signal-tile,
+    .capability-card,
+    .proof-card,
+    .team-card,
+    .contact-cta {
+      padding: 1.5rem;
+      border-radius: 20px;
+      border: 1px solid var(--gs-border);
+      background: var(--gs-surface);
+      box-shadow: var(--gs-shadow);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .signal-tile:hover,
+    .capability-card:hover,
+    .proof-card:hover,
+    .team-card:hover {
+      transform: translateY(-4px) scale(1.01);
+      border-color: rgba(108, 158, 255, 0.35);
+      background: var(--gs-surface-strong);
+      box-shadow: 0 32px 64px rgba(0, 0, 0, 0.5), 0 0 30px rgba(108, 158, 255, 0.15);
+    }
+
+    .hero-panel {
+      border-color: var(--gs-border);
+      background: var(--gs-surface-strong);
+      backdrop-filter: blur(24px);
+    }
+
+    .hero-panel__heading h2 {
+      margin: 0.45rem 0 0.85rem;
+      font-size: clamp(1.65rem, 2.6vw, 2.1rem);
+      line-height: 1.1;
+      color: #fff;
+    }
+
+    .status-banner {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.95rem 1rem;
+      margin-bottom: 1rem;
+      border-radius: 18px;
+      border: 1px solid rgba(90, 162, 255, 0.18);
+      background: rgba(90, 162, 255, 0.08);
+    }
+
+    .status-banner strong {
+      display: block;
+      margin-bottom: 0.2rem;
+      color: #fff;
+    }
+
+    .status-banner p {
+      margin: 0;
+      color: rgba(233, 238, 252, 0.76);
+      font-size: 0.95rem;
+    }
+
+    .status-dot {
+      width: 0.72rem;
+      height: 0.72rem;
+      border-radius: 999px;
+      background: #47e3a7;
+      box-shadow: 0 0 0 rgba(71, 227, 167, 0.5);
+      animation: statusPulse 1.9s ease-out infinite;
+      flex-shrink: 0;
+      margin-top: 0.28rem;
+    }
+
+    .hero-panel ul {
+      margin: 0;
+      padding-left: 1.1rem;
+      display: grid;
+      gap: 0.85rem;
+    }
+
+    .signal-strip,
+    .metrics-grid,
+    .capability-grid,
+    .proof-grid,
+    .team-row {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .signal-strip {
+      margin-top: 1.25rem;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .metrics-shell {
+      position: relative;
+      z-index: 2;
+      padding-top: 1rem;
+      padding-bottom: 2rem;
+    }
+
+    .metrics-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .signal-tile {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .signal-tile__header,
+    .proof-card span {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .signal-tile span,
+    .proof-card span {
+      display: block;
+      color: rgba(233, 238, 252, 0.62);
+      font-size: 0.82rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .signal-tile small {
+      color: rgba(255, 255, 255, 0.78);
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .signal-tile strong,
+    .proof-card strong {
+      font-size: clamp(1.35rem, 1.05rem + 1vw, 2rem);
+      color: #fff;
+    }
+
+    .signal-tile p {
+      margin: 0.65rem 0 0;
+      color: rgba(233, 238, 252, 0.75);
+    }
+
+    .signal-link {
+      display: inline-flex;
+      margin-top: 0.85rem;
+      color: #b2d7ff;
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .signal-link:hover,
+    .signal-link:focus-visible {
+      color: #fff;
+    }
+
+    .signal-tile--loading > * {
+      opacity: 0.2;
+    }
+
+    .signal-tile--loading::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        110deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.08) 40%,
+        transparent 82%
+      );
+      transform: translateX(-100%);
+      animation: skeletonSweep 1.2s ease-in-out infinite;
+    }
+
+    .section-block {
+      padding-top: 4.5rem;
+    }
+
+    .section-copy {
+      margin-bottom: 1.5rem;
+      max-width: 60rem;
+    }
+
+    .section-copy h2 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      margin-top: 0.65rem;
+    }
+
+    .capability-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .proof-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .proof-card--metrics {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .team-row {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .team-card--founder {
+      border-color: rgba(90, 162, 255, 0.2);
+      background: rgba(90, 162, 255, 0.08);
+    }
+
+    .contact-cta {
+      display: flex;
+      justify-content: space-between;
+      gap: 1.5rem;
+      align-items: center;
+    }
+
+    @keyframes skeletonSweep {
+      to {
+        transform: translateX(100%);
+      }
+    }
+
+    @keyframes statusPulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(71, 227, 167, 0.48);
+      }
+
+      70% {
+        box-shadow: 0 0 0 12px rgba(71, 227, 167, 0);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(71, 227, 167, 0);
+      }
+    }
+
+    @media (max-width: 960px) {
+      .hero-shell,
+      .signal-strip,
+      .metrics-grid,
+      .capability-grid,
+      .proof-grid,
+      .team-row {
+        grid-template-columns: 1fr;
+      }
+
+      .contact-cta {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .hero-shell,
+      .signal-strip,
+      .metrics-shell,
+      .section-block {
+        width: min(100% - 1.5rem, var(--gs-max-width));
+      }
+
+      .hero-shell {
+        padding-top: 6rem;
+      }
+
+      .hero-mark {
+        inset: 12% auto auto 1rem;
+      }
+
+      .hero-actions,
+      .hero-button {
+        width: 100%;
+      }
+
+      .signal-tile__header,
+      .proof-card span {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hero-button,
+      .status-dot,
+      .signal-tile--loading::after {
+        animation: none;
+        transition: none;
+      }
+    }
+
+  </style>
+</WebLayout>
