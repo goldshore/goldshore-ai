@@ -162,10 +162,11 @@ app.get("/health", (c) =>
 app.all("*", async (c) => {
   const host = new URL(c.req.url).hostname.toLowerCase();
 
-  // Admin hostnames belong exclusively to gs-web. If this service-bound legacy
-  // worker sees one, report route drift without suggesting that the retired
-  // standalone admin deployment be recreated.
-  if (host === "admin.goldshore.ai" || host === "admin.goldshore.org") {
+  // admin.goldshore.ai — this worker no longer intercepts admin traffic.
+  // gs-admin Pages project serves admin.goldshore.ai directly via custom domain.
+  // If this handler is reached, it means the Pages project custom domain is not yet
+  // configured. Return a clear diagnostic instead of a silent JSON stub.
+  if (host === "admin.goldshore.ai") {
     return c.html(
       `<!doctype html><html lang="en"><head><meta charset="utf-8">
       <title>Admin – Configuration Required</title>
@@ -174,13 +175,14 @@ app.all("*", async (c) => {
       h1{font-size:1.4rem;color:#c00}code{background:#f3f4f6;padding:2px 6px;border-radius:3px;font-size:.9em}
       a{color:#1d4ed8}</style></head>
       <body><h1>Admin dashboard is not reachable</h1>
-      <p>The admin hostname is not reaching the canonical <code>gs-web</code> Worker.</p>
+      <p>The <code>gs-admin</code> Cloudflare Pages project has not been deployed or its
+      custom domain (<code>admin.goldshore.ai</code>) has not been configured.</p>
       <h2>To fix this:</h2>
       <ol>
-        <li>Open Cloudflare Workers &amp; Pages → <code>gs-web-prod</code> → Settings → Domains &amp; Routes.</li>
-        <li>Attach both admin hostnames to <code>gs-web-prod</code>.</li>
-        <li>Remove any route that still sends an admin hostname to <code>gs-platform</code>.</li>
-        <li>Verify the protected destination at <code>/app/dashboard</code>.</li>
+        <li>Run <code>pnpm --filter gs-admin build</code></li>
+        <li>Run <code>wrangler pages deploy dist --project-name gs-admin</code></li>
+        <li>In the Cloudflare Pages dashboard → gs-admin → Custom domains → add <code>admin.goldshore.ai</code></li>
+        <li>Remove or disable the <code>admin.goldshore.ai/*</code> worker route in gs-platform if it still exists</li>
       </ol>
       </body></html>`,
       503,
