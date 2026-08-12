@@ -11,7 +11,7 @@ Only `deploy-gs-web.yml` and `deploy-gs-api.yml` are production deploy files.
 | `admin-merge-cockpit.yml` | Create a reviewed, SHA-locked salvage PR | Manual | No |
 | `audit-gs-api-secrets.yml` | Audit secret names against the gs-api contract | Schedule/manual | No |
 | `ci.yml` | Workspace validation and builds | Push/PR | Yes when required |
-| `cloudflare-audit.yml` | Read-only Cloudflare inventory | Manual | No |
+| `cloudflare-audit.yml` | Read-only Cloudflare inventory and declared-resource drift validation | Weekly/manual | No |
 | `cloudflare-operator.yml` | Record an approved dashboard-only account change | Manual | No |
 | `deploy-gs-api.yml` | Migrate and deploy the unified API Worker | Main/stage push/manual | No |
 | `deploy-gs-web.yml` | Build the canonical web Worker for Workers Builds | Main/stage push/PR/manual | No |
