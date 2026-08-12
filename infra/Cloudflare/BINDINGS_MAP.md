@@ -64,6 +64,13 @@
 - Code: `apps/gs-api`
 - Routes:
   - `api.goldshore.ai/*`
+  - `api.goldshore.org/*`
+  - `agent.goldshore.ai/*`
+  - `mail.goldshore.ai/*`
+  - `ops.goldshore.ai/*`
+  - `trading.goldshore.ai/*`
+  - `dashboard.goldshore.ai/*`
+  - `dash.goldshore.ai/*`
   - `api-preview.goldshore.ai/*`
 
 **Bindings:**
@@ -71,15 +78,34 @@
 - KV:
   - Binding: `KV`
   - Namespace: `gs_api_kv_001` _(canonical; historical alias: `goldshore-api-kv`)_
+  - Binding: `RISK_RADAR_CACHE`
+  - Namespace: `gs-risk-radar-cache` / `gs-risk-radar-cache-preview` _(Risk Radar response and signal cache; API-only)_
 - D1:
-  - Binding: `DB`
-  - Database: `goldshore` / `gs_db_001` _(historical alias: `goldshore-api-db`)_
+  - Binding: `PLATFORM_DB`
+  - Database: `gs_platform_db` _(canonical platform database)_
+  - Binding: `AUDIT_DB`
+  - Database: `gs_audit_db`
+  - Binding: `SIGNALS_DB`
+  - Database: `gs_signals_db`
+  - Binding: `RISK_RADAR_DB`
+  - Database: `gs_risk_radar_db` _(Risk Radar canonical structured storage; API-only)_
+  - Binding: `JOBS_DB`
+  - Database: `gs_jobs_db`
 - R2:
-  - Binding: `ASSETS`
-  - Bucket: `gs-assets` _(historical alias: `goldshore-api-assets`)_
+  - Binding: `GS_ASSETS`
+  - Bucket: `gs-assets` _(historical alias only: `ASSETS`)_
+  - Binding: `RISK_RADAR_R2`
+  - Bucket: `gs-risk-radar-raw` / `gs-risk-radar-raw-preview` _(Risk Radar raw source object storage; API-only)_
 - AI:
   - Binding: `AI`
   - Gateway: `goldshore-ai-gateway`
+- Worker secrets:
+  - Binding: `INTEGRATION_MASTER_KEY`
+  - Secret: `INTEGRATION_MASTER_KEY` (normal Worker secret; do not configure `secrets_store_secrets` until the referenced Cloudflare Secrets Store exists)
+
+**Risk Radar storage policy:** bind Risk Radar storage only to `gs-api`; `gs-web` must call API endpoints rather than receiving `RISK_RADAR_DB`, `RISK_RADAR_CACHE`, or `RISK_RADAR_R2` directly.
+
+**Unclear live-state note:** legacy dashboard service bindings such as `AGENT`, `GS_MAIL`, `GS_WEB`, `GS_WEB PROD`, `API_SERVICE`, `GOLDSHORE_AI`, and historical store-object binding `SECRETS` are not part of the repo-managed `gs-api` binding set. If present in Cloudflare, validate traffic before deleting, but do not reintroduce them into Wrangler config without an ADR update.
 
 ---
 
