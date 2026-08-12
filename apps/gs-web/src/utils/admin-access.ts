@@ -3,7 +3,6 @@ import {
   hasAdminPermission,
   ROLE_PERMISSIONS,
   verifyAccessWithClaims,
-  authorizeAccessClaims,
   verifyJWTCookie,
   type AccessTokenPayload,
   type AdminPermission,

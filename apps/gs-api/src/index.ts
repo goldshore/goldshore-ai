@@ -3,7 +3,6 @@ import { secureHeaders } from 'hono/secure-headers';
 import {
   verifyAccessWithClaims,
   authorizeAccessClaims,
-  type AccessTokenPayload,
 } from '@goldshore/auth';
 import { createCorsMiddleware, APPROVED_API_ORIGINS } from '@goldshore/shared';
 import { EmailLogSchema } from '@goldshore/schema';
@@ -33,17 +32,10 @@ import googleBusiness from './routes/google-business';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
 import type { Env, Variables } from './types';
-import agent from './routes/agent';
-import mail from './routes/mail';
-import control from './routes/control';
-import trading from './routes/trading';
-import core from './routes/core';
 import { getHostRoutePrefix } from './host-routing';
 import { handleTokenRotation } from './workers/token-rotation';
 import { processQueueBatch } from './workers/queue-consumer';
 export { SignalsEvaluator } from './workers/signals-evaluator';
-
-import type { Env, Variables } from './types';
 
 interface ForwardableEmailMessage {
   from: string;
@@ -109,31 +101,6 @@ const isPublicPath = (path: string, method: string) => {
     path === '/mail/contact'
   );
 };
-
-const HOST_ROUTE_PREFIXES: Record<string, string> = {
-  'agent.goldshore.ai': '/agent',
-  'mail.goldshore.ai': '/mail',
-  'ops.goldshore.ai': '/control',
-  'trading.goldshore.ai': '/trading',
-  'dashboard.goldshore.ai': '/trading',
-  'dash.goldshore.ai': '/trading',
-  'gw.goldshore.ai': '/core',
-};
-
-const getHostRoutePrefix = (request: Request) =>
-  HOST_ROUTE_PREFIXES[new URL(request.url).hostname] ?? null;
-
-const getCorrelationId = (request: Request) =>
-  request.headers.get('x-correlation-id') ?? crypto.randomUUID();
-
-const withCorrelationId = (response: Response, correlationId: string) => {
-  const forwarded = new Response(response.body, response);
-  forwarded.headers.set('x-correlation-id', correlationId);
-  return forwarded;
-};
-
-const getOptionalExecutionContext = (c: { executionCtx?: ExecutionContext }) =>
-  c.executionCtx;
 
 app.use('*', secureHeaders());
 
@@ -308,7 +275,6 @@ app.route('/media', media);
 app.route('/pages', pages);
 app.route('/internal', internal);
 app.route('/products', products);
-app.route('/mail', mail);
 app.route('/services', services);
 // Host aliases are rewritten into these shared route modules above. They do
 // not own independent authentication, CORS, or security middleware stacks.

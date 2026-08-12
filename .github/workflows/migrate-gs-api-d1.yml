@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: preview-database
     steps: &migration_steps
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
         with:
           version: 9.15.4
@@ -43,7 +43,7 @@ jobs:
           TARGET_ENV: ${{ github.job == 'preview' && 'preview' || 'prod' }}
         run: scripts/cloudflare/apply-d1-migrations.sh "$TARGET_ENV" "$RUNNER_TEMP/d1-backups"
       - name: Upload backup references and exports
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: d1-${{ github.job }}-migration-backups-${{ github.run_id }}
           path: ${{ runner.temp }}/d1-backups

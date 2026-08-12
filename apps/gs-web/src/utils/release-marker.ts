@@ -2,7 +2,6 @@ import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 /**
  * Locate the workspace root by walking up for `pnpm-workspace.yaml`.
