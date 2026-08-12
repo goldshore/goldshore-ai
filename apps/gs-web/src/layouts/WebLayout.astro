@@ -8,7 +8,7 @@ import '../styles/global.css';
 import { WEB_META_CSP } from '../utils/csp';
 import '../styles/goldshore-shell.css';
 import { primaryNavLinks, companyLinks } from '../config/navigation';
-import { CANONICAL_ADMIN_ORIGIN } from '../utils/admin-access';
+import { CANONICAL_ADMIN_DASHBOARD_URL } from '../utils/admin-access';
 
 const { title, description, canonicalPath } = Astro.props;
 const ogTitle = Astro.props.ogTitle ?? title;
@@ -82,7 +82,7 @@ const isCurrent = (href: string) => {
               ))}
             </div>
             <a
-              href={CANONICAL_ADMIN_ORIGIN}
+              href={CANONICAL_ADMIN_DASHBOARD_URL}
               class="header-login"
               id="header-login-link"
             >Log in</a>
