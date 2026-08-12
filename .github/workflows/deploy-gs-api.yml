@@ -18,10 +18,6 @@ concurrency:
   group: deploy-gs-api-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-concurrency:
-  group: verify-gs-api-${{ github.ref }}
-  cancel-in-progress: true
-
 permissions:
   contents: read
 
