@@ -40,11 +40,15 @@ an API reconciliation or hidden Wrangler policy mutation:
    `gs-web`.
 2. Add an Allow policy containing only `marstonr6@gmail.com` and
    `admin@goldshore.org` through the configured Google and GitHub IdPs.
-3. Add a final Deny Everyone policy. Do not use `non_identity`, Everyone, or an
+3. In each `gs-web` production and preview dashboard environment, set the
+   visible `ADMIN_OWNER_EMAILS` variable to
+   `marstonr6@gmail.com,admin@goldshore.org`. Do not put it in Wrangler files.
+   The application returns 503 when the variable is absent.
+4. Add a final Deny Everyone policy. Do not use `non_identity`, Everyone, or an
    email-domain selector in the owner policy.
-4. Test both accounts in a private browser session and confirm a third account
+5. Test both accounts in a private browser session and confirm a third account
    is denied.
-5. Test `/logout`; it must reach the application-domain
+6. Test `/logout`; it must reach the application-domain
    `/cdn-cgi/access/logout` endpoint before a new login is accepted.
 
 ### Role Hierarchy
