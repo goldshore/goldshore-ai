@@ -7,7 +7,7 @@ import '@goldshore/theme/styles/layout.css';
 import '../styles/global.css';
 import { WEB_META_CSP } from '../utils/csp';
 import '../styles/goldshore-shell.css';
-import { primaryNavLinks, companyLinks } from '../config/navigation';
+import { primaryNavLinks, companyLinks, platformLinks, serviceLinks } from '../config/navigation';
 import { CANONICAL_ADMIN_DASHBOARD_URL } from '../utils/admin-access';
 
 const { title, description, canonicalPath } = Astro.props;
@@ -17,7 +17,7 @@ const canonicalUrl = canonicalPath
   ? new URL(canonicalPath, Astro.url.origin).toString()
   : Astro.url.href;
 const navLinks = primaryNavLinks;
-const footerLinks = companyLinks;
+const footerLinks = [...platformLinks, ...serviceLinks, ...companyLinks];
 const mobileNavId = 'mobile-navigation';
 const normalizePath = (path: string) => {
   const normalized = path.startsWith('/') ? path : `/${path}`;

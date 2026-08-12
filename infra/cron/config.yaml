@@ -7,9 +7,7 @@ max_parallel_checks: 6
 github:
   org: goldshore
   repos:
-    - goldshore
-    - gs-admin
-    - gs-api
+    - goldshore-ai
   branch_protection:
     required_approving_review_count: 1
     dismiss_stale_reviews: true
@@ -20,8 +18,9 @@ cloudflare:
   account_id_env: CF_ACCOUNT_ID
   zone_id_env: CF_ZONE_ID
   checks:
-    - type: "pages_build_status"
-      project: "gs-admin"
+    - type: "worker_health"
+      script: "gs-web"
+      path: "/health"
     - type: "worker_health"
       script: "gs-api"
       path: "/health"
@@ -52,9 +51,6 @@ rules:
   open_conflicts:
     auto_fix_strategy: "rebase-onto-main"
     open_pr_comment: true
-  pages_output_dirs:
-    - repo: "gs-admin"
-      path: "apps/gs-admin/dist"
   sensitive:
     disallow_plaintext_secrets: true
     required_secrets:

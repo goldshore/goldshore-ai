@@ -31,6 +31,11 @@ binding = "SESSION"
 id = "09ae2ffbffe24e628c9538c8129dfe33"
 
 [vars]
+# Runtime configuration note:
+# - `GS_CONFIG` is intentionally *not* bound to gs-web today.
+# - Current gs-web runtime consumers read mutable config indirectly via
+#   `PUBLIC_API`/content fetches or admin-generated content, not from
+#   historical operator KV namespaces.
 ENV = "production"
 PUBLIC_ENV = "production"
 PUBLIC_API = "https://api.goldshore.ai"

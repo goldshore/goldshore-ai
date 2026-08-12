@@ -16,6 +16,10 @@ const systemLinks: Array<{ href: string; label: string }> = [
 
 const operationsLinks: Array<{ href: string; label: string }> = [
   { href: '/admin/platform', label: 'Control Plane' },
+  { href: '/content', label: 'Content Studio' },
+  { href: '/admin/integrations/all', label: 'Integrations' },
+  { href: '/admin/lead-submissions', label: 'Lead Submissions' },
+  { href: '/sites', label: 'Sites' },
   { href: '/admin/workflows', label: 'API Workflows' },
   { href: '/admin/customer-email', label: 'Customer Email' },
   { href: '/admin/subscribe', label: 'Subscribe CTA' },
@@ -39,12 +43,6 @@ const PUBLIC_SITE_ORIGIN = Astro.url.hostname.toLowerCase().endsWith('goldshore.
   : 'https://goldshore.ai';
 const can = (permission: string) => permissions.includes(permission);
 
-// Send operators back to the public site on the same TLD they administer, so
-// admin.goldshore.org returns to goldshore.org rather than goldshore.ai.
-const PUBLIC_SITE_ORIGIN = Astro.url.hostname.toLowerCase().endsWith('goldshore.org')
-  ? 'https://goldshore.org'
-  : 'https://goldshore.ai';
-
 const isActive = (href: string) => {
   const currentPath = Astro.url.pathname;
   const cleanCurrent = currentPath.endsWith('/') ? currentPath.slice(0, -1) : currentPath;
@@ -65,9 +63,9 @@ const isActive = (href: string) => {
   </SharedHeader>
   <nav class="gs-sidebar-links">
     <a
-      class={`gs-nav-block ${isActive('/') && Astro.url.pathname === '/' ? 'active' : ''}`}
-      href="/"
-      aria-current={Astro.url.pathname === '/' ? 'page' : undefined}
+      class={`gs-nav-block ${isActive('/app/dashboard') ? 'active' : ''}`}
+      href="/app/dashboard"
+      aria-current={isActive('/app/dashboard') ? 'page' : undefined}
     >
       Dashboard
     </a>
@@ -131,9 +129,9 @@ const isActive = (href: string) => {
       Trading
     </a>}
     <a
-      class={`gs-nav-block ${isActive('/admin/settings') ? 'active' : ''}`}
-      href="/admin/settings"
-      aria-current={isActive('/admin/settings') ? 'page' : undefined}
+      class={`gs-nav-block ${isActive('/app/settings') ? 'active' : ''}`}
+      href="/app/settings"
+      aria-current={isActive('/app/settings') ? 'page' : undefined}
     >
       Settings
     </a>
