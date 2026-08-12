@@ -1,4 +1,4 @@
-name: Inventory gs-web configuration
+name: Verify gs-web build
 
 # Read-only drift inventory. Cloudflare production configuration is changed only
 # by an approved human in the dashboard; this workflow has no Cloudflare credentials.
@@ -18,8 +18,9 @@ on:
       - '.github/workflows/deploy-gs-web.yml'
   workflow_dispatch:
 
-permissions:
-  contents: read
+concurrency:
+  group: verify-gs-web-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   # Build verification only — this job does NOT deploy.
@@ -29,12 +30,6 @@ jobs:
   # Worker by the Cloudflare Workers Build git integration, which is the single
   # authoritative deploy path.
   #
-  # This job previously also ran `wrangler pages deploy apps/gs-web/dist/client
-  # --project-name=gs-web-pages`. That uploaded only the static client assets —
-  # dist/client contains no _worker.js — so it published a static shell in which
-  # every `prerender = false` route (all of /api/admin/*, [...path].astro, ...)
-  # 404'd, racing the Worker for the same hostnames. Removed rather than fixed:
-  # one app, one deploy path.
   # Do not add a second static-site deployment. Dynamic and static output ship
   # together through the canonical Worker-with-Assets release.
   deploy:
@@ -42,8 +37,12 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      RELEASE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ env.RELEASE_SHA }}
 
       - uses: pnpm/action-setup@v6
         with:
@@ -55,7 +54,18 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
-      - name: Build gs-web Worker output
+      - name: Build gs-web Worker output once
         run: pnpm build:pages
+
+      - name: Preserve release SHA with build output
+        run: printf '%s\n' "$RELEASE_SHA" > apps/gs-web/dist/release.sha
+
+      - name: Preserve immutable gs-web build
+        uses: actions/upload-artifact@v7
+        with:
+          name: gs-web-${{ env.RELEASE_SHA }}
+          path: apps/gs-web/dist
+          if-no-files-found: error
+          retention-days: 30

@@ -252,6 +252,9 @@ jobs:
             echo "::add-mask::$token"
             echo "CLOUDFLARE_API_TOKEN=$token" >> "$GITHUB_ENV"
             echo "CLOUDFLARE_BUILD_API_TOKEN=$token" >> "$GITHUB_ENV"
+            echo "CLOUDFLARE_CREDENTIALS_AVAILABLE=true" >> "$GITHUB_ENV"
+          else
+            echo "CLOUDFLARE_CREDENTIALS_AVAILABLE=false" >> "$GITHUB_ENV"
           fi
 
       - name: Verify Cloudflare credentials
@@ -269,6 +272,7 @@ jobs:
           fi
 
       - name: Audit live Cloudflare state against manifest
+        if: env.CLOUDFLARE_CREDENTIALS_AVAILABLE == 'true'
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           EVENT_NAME: ${{ github.event_name }}

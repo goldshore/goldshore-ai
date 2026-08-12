@@ -21,8 +21,6 @@ cloudflare:
   zone_id_env: CF_ZONE_ID
   checks:
     - type: "pages_build_status"
-      project: "gs-web"
-    - type: "pages_build_status"
       project: "gs-admin"
     - type: "worker_health"
       script: "gs-api"
