@@ -141,7 +141,7 @@ What's on this branch:
 ## CI / deployment
 
 - GitHub Actions: Lighthouse CI threshold `LH_MIN_PERFORMANCE: 0.60`
-- Deploy token: `CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN` GitHub secret (renew via `manage-cf-tokens.yml` if expired)
+- Deploy token: `CLOUDFLARE_BUILD_API_TOKEN` GitHub secret (renew via `manage-cf-tokens.yml` if expired)
 - Workers deploy per-app via `wrangler deploy`
 
 ---
