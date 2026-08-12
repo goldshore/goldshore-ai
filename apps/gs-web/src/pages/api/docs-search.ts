@@ -1,6 +1,5 @@
 import type { APIRoute } from 'astro';
 import Fuse from 'fuse.js';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - JSON import might require configuration adjustments depending on environment, but works in standard Astro builds
 import searchIndex from '../../search-index.json';
 

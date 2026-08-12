@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
-import { authorizeAdminRequest, getAdminRouteRule } from '../../../utils/admin-access';
+import { authorizeAdminRequest, getAdminAuthError, getAdminRouteRule } from '../../../utils/admin-access';
 
 export const prerender = false;
 
@@ -12,9 +12,7 @@ if (!rule) {
   authError = { status: 404, message: 'Not found.' };
 } else {
   const authResult = await authorizeAdminRequest(Astro.request, env as never, rule);
-  if (!authResult.ok) {
-    authError = { status: authResult.status, message: authResult.error };
-  }
+  authError = getAdminAuthError(authResult);
 }
 ---
 

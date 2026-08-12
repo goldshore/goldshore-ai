@@ -15,16 +15,36 @@ Do not add new app workers or deploy workflows for retired services. All backend
 - **Wrangler:** `apps/gs-api/wrangler.toml`
 - **Production routes:** `api.goldshore.ai/*`, `api.goldshore.org/*`, plus consolidated backend hostnames `agent.goldshore.ai/*`, `mail.goldshore.ai/*`, `ops.goldshore.ai/*`, `trading.goldshore.ai/*`, `dashboard.goldshore.ai/*`, and `dash.goldshore.ai/*`
 - **Preview:** `workers_dev = true`; preview API route `api-preview.goldshore.ai/*`
-- **Cloudflare Builds fallback:** top-level bindings intentionally mirror production runtime bindings because the dashboard Workers Builds integration may run `wrangler versions upload` without `--env prod`. Do not remove that block until the dashboard trigger is disabled or changed to `wrangler deploy --env prod --config wrangler.toml`.
 - **Canonical bindings:**
   - KV: `KV`, `CONTROL_LOGS`, `RISK_RADAR_CACHE`
   - D1: `PLATFORM_DB`, `AUDIT_DB`, `SIGNALS_DB`, `RISK_RADAR_DB`, `JOBS_DB`
   - R2: `GS_ASSETS`, `TELEMETRY`, `RISK_RADAR_R2`
   - AI: `AI`
   - Durable Object: `AUTH_SESSION`
-  - Queues produced: `JOBS_QUEUE`, `EVENTS_QUEUE`, `MAIL_JOBS_QUEUE`, `DEAD_LETTER_QUEUE`; production queue consumers are not declared by `gs-api` while live Cloudflare routes `goldshore-jobs`/`gs-events` to `gs-mail` and `gs-mail-jobs` to an HTTP pull consumer
-  - Worker secret: `INTEGRATION_MASTER_KEY` (provision with `wrangler secret put`; do not use a Secrets Store binding unless the store and secret already exist)
+  - Queues produced: `JOBS_QUEUE`, `EVENTS_QUEUE`, `MAIL_JOBS_QUEUE`, `DEAD_LETTER_QUEUE`; `gs-api` is also the production consumer for consolidated backend queues
+  - Secrets Store: `INTEGRATION_MASTER_KEY` per-secret binding
 - **Retired aliases/service bindings:** `DB`, `ASSETS`, `TELEMETRY_DB`, `SECRETS`, `AGENT`, `GS_MAIL`, `GS_WEB`, `GS_WEB PROD`, `API_SERVICE`, and `GOLDSHORE_AI` must not be used as `gs-api` bindings. If Cloudflare still shows any of these in the dashboard, treat them as live-state cleanup candidates until a human confirms otherwise.
+- **Production routes:** `api.goldshore.ai/*`, `api.goldshore.org/*`
+- **Preview:** `workers_dev = true`
+
+- **Production routes:** `api.goldshore.ai/*`, `api.goldshore.org/*`, plus consolidated backend hostnames `agent.goldshore.ai/*`, `mail.goldshore.ai/*`, `ops.goldshore.ai/*`, `trading.goldshore.ai/*`, `dashboard.goldshore.ai/*`, and `dash.goldshore.ai/*`
+- **Preview:** `workers_dev = true`; preview API route `api-preview.goldshore.ai/*`
+
+- **Canonical bindings:**
+  - KV: `KV`, `CONTROL_LOGS`, `RISK_RADAR_CACHE`
+  - D1: `PLATFORM_DB`, `AUDIT_DB`, `SIGNALS_DB`, `RISK_RADAR_DB`, `JOBS_DB`
+  - R2: `GS_ASSETS`, `TELEMETRY`, `RISK_RADAR_R2`
+  - AI: `AI`
+  - Durable Object: `AUTH_SESSION`
+
+  - Queues produced: `JOBS_QUEUE`, `EVENTS_QUEUE`, `MAIL_JOBS_QUEUE`, `DEAD_LETTER_QUEUE`
+  - Secrets Store: `SECRETS`
+- **Retired aliases:** `DB`, `ASSETS`, `TELEMETRY_DB`, `AGENT`, `GS_MAIL`, `GS_WEB`, `API_SERVICE`, and `GOLDSHORE_AI` must not be used as `gs-api` bindings.
+
+  - Queues produced: `JOBS_QUEUE`, `EVENTS_QUEUE`, `MAIL_JOBS_QUEUE`, `DEAD_LETTER_QUEUE`; `gs-api` is also the production consumer for consolidated backend queues
+  - Secrets Store: `INTEGRATION_MASTER_KEY` per-secret binding
+- **Retired aliases/service bindings:** `DB`, `ASSETS`, `TELEMETRY_DB`, `SECRETS`, `AGENT`, `GS_MAIL`, `GS_WEB`, `GS_WEB PROD`, `API_SERVICE`, and `GOLDSHORE_AI` must not be used as `gs-api` bindings. If Cloudflare still shows any of these in the dashboard, treat them as live-state cleanup candidates until a human confirms otherwise.
+
 
 ## `gs-web` (`apps/gs-web`)
 
@@ -33,7 +53,6 @@ Do not add new app workers or deploy workflows for retired services. All backend
 - **Preview route:** `preview.goldshore.ai`
 - **Canonical bindings:**
   - Worker Assets: `ASSETS`
-  - Cloudflare Images: `IMAGES`
   - KV: `KV`
   - D1: `PLATFORM_DB`
   - R2: `GS_ASSETS`
