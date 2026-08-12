@@ -28,7 +28,14 @@ routes = [
   { pattern = "dashboard.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "dash.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "gw.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "api.goldshore.org/*", zone_name = "goldshore.org" }
+  { pattern = "api.goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "agent.goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "mail.goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "ops.goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "trading.goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "dashboard.goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "dash.goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "gw.goldshore.org/*", zone_name = "goldshore.org" }
 ]
 
 [env.prod.vars]
