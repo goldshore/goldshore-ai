@@ -201,6 +201,7 @@ describe('gs-api wrangler env bindings', () => {
       'www.goldshore.org/*',
       'admin.goldshore.ai/*',
       'admin.goldshore.org/*',
+      'admin-preview.goldshore.ai/*',
       'risk.goldshore.ai/*',
       'risk.goldshore.org/*',
     ]);
