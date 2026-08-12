@@ -48,8 +48,8 @@ on:
       - 'infra/**/package.json'
       - 'pnpm-lock.yaml'
   workflow_run:
-    workflows: ['workspace-install']
-    types: [failed]
+    workflows: ['Required Merge Checks']
+    types: [completed]
     branches: [main]
 
 concurrency:
@@ -65,17 +65,18 @@ jobs:
   regenerate:
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.operation == 'regenerate'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.inputs.branch || 'main' }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@f520eceda224fe1a4aed5a2a27a194379a409996 # v6
         with:
           run_install: false
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           cache: pnpm
@@ -101,6 +102,7 @@ jobs:
   regenerate-with-pr:
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.operation == 'regenerate' && github.event.inputs.update_branch != ''
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout base branch
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -181,19 +183,20 @@ jobs:
     if: |
       (github.event_name == 'workflow_dispatch' && github.event.inputs.operation == 'repair') ||
       (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-      (github.event_name == 'workflow_run')
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'failure')
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.inputs.branch || 'main' }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@f520eceda224fe1a4aed5a2a27a194379a409996 # v6
         with:
           version: 9.15.4
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .node-version
           cache: pnpm
@@ -238,11 +241,12 @@ jobs:
   repair-duplicated:
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.operation == 'repair-duplicated'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: write
     steps:
       - name: Check out main
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
           fetch-depth: 0

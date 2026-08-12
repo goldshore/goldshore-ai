@@ -8,7 +8,7 @@
 
 ## Web / Admin front end
 
-### 1. Web (Public)
+### 1. Web and admin UI
 
 `apps/gs-web` is **not** a Pages project. It is an SSR Astro app served by the
 `gs-web-prod` Worker, deployed by the Cloudflare Workers Build git integration.
@@ -23,33 +23,23 @@ via Pages custom domains.
   - `admin.goldshore.ai/*`, `admin-preview.goldshore.ai/*`, `admin.goldshore.org/*`
   - `risk.goldshore.ai/*`, `risk.goldshore.org/*`
 
-A second deploy path — `wrangler pages deploy apps/gs-web/dist/client
---project-name=gs-web-pages` in `.github/workflows/deploy-gs-web.yml` — was
+The protected admin cockpit is the `/app` and `/admin` route tree in this same
+Worker. There is no `apps/gs-admin` package, Pages project, or separate admin
+Worker in the repository contract. Cloudflare Access remains required on both
+admin hostnames. The root of either admin hostname redirects to
+`/app/dashboard` after authorization.
+
+A second deploy path — a static-only deployment of the client bundle in `.github/workflows/deploy-gs-web.yml` — was
 removed. It shipped only the static client assets (dist/client has no
 `_worker.js`), so it published a static shell that 404'd every SSR route while
 competing with the Worker for the same hostnames.
 
-**Environment Variables:**
-
-- `PUBLIC_API=https://api.goldshore.ai`
-- `PUBLIC_GATEWAY=https://gw.goldshore.ai`
-
----
-
-### 2. Admin (Cockpit)
-
-`admin.goldshore.ai` was migrated off the standalone `gs-admin` Pages project onto `gs-web` (route `admin.goldshore.ai/*` in `apps/gs-web/wrangler.toml`), per CLAUDE.md's repo migration plan. The DNS/routing cutover is done; the actual admin page/route content under `apps/gs-admin/src` has not been ported into `apps/gs-web` yet — that migration is in progress.
-
-- Project (legacy, not yet retired): `gs-admin`
-- Repo: `goldshore-ai`
-- Root: `apps/gs-admin`
-- Custom Domains still on the legacy project:
-  - `admin-preview.goldshore.ai`
-  - `admin.goldshore.org` (pending the separate `goldshore.org` ownership conflict — see `policy/ROUTE_POLICY.md` vs `docs/architecture/domain-ownership.md`)
-
-**Zero Trust:**
-
-- Access policy required on `admin.goldshore.ai` (email allowlist) — unchanged by the cutover, still applies to the same hostname regardless of which Worker/Pages project serves it.
+`.github/workflows/deploy-gs-web.yml` is consequently named **Verify gs-web
+build** and retains one immutable artifact keyed by the release SHA. Successful
+Cloudflare deployment events trigger `verify-gs-web-deployment.yml`, which
+compares the embedded release marker across every supported production mirror
+and the two supported `.ai` preview hosts. No `.org` preview hostname is part of
+the current Wrangler contract.
 
 **Environment Variables:**
 
@@ -58,7 +48,7 @@ competing with the Worker for the same hostnames.
 
 ---
 
-### 2b. MCP Access Surface
+### 2. MCP Access Surface
 
 - Host: `mcp.goldshore.ai`
 - Purpose: private MCP endpoint for approved humans and approved agents
@@ -112,13 +102,11 @@ competing with the Worker for the same hostnames.
 - AI:
   - Binding: `AI`
   - Gateway: `goldshore-ai-gateway`
-- Secrets Store:
-  - Binding: `INTEGRATION_MASTER_KEY`
-  - Store: `b9824d3280c54573a24137c7e7143b33`
-  - Secret: `INTEGRATION_MASTER_KEY`
 - Worker secrets:
   - Binding: `INTEGRATION_MASTER_KEY`
   - Secret: `INTEGRATION_MASTER_KEY` (normal Worker secret; do not configure `secrets_store_secrets` until the referenced Cloudflare Secrets Store exists)
+  - Binding: `GS_GITHUB_WEBHOOK_SECRET`
+  - Secret: `GS_GITHUB_WEBHOOK_SECRET` (HMAC verification for the four repository webhook endpoints)
 
 **Risk Radar storage policy:** bind Risk Radar storage only to `gs-api`; `gs-web` must call API endpoints rather than receiving `RISK_RADAR_DB`, `RISK_RADAR_CACHE`, or `RISK_RADAR_R2` directly.
 

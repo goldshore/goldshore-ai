@@ -2,12 +2,7 @@
   "canonical_structure": "Option-A-gs",
   "production_apps": [
     "apps/gs-web",
-    "apps/gs-admin",
-    "apps/gs-api",
-    "apps/gs-gateway",
-    "apps/gs-control",
-    "apps/gs-agent",
-    "apps/gs-mail"
+    "apps/gs-api"
   ],
   "legacy_paths": [
     "astro-goldshore",

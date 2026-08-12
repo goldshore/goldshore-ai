@@ -4,7 +4,7 @@
 #
 #   jobs:
 #     anthropic-token:
-#       uses: marzton/goldshore-ai/.github/workflows/anthropic-oidc.yml@main
+#       uses: marzton/goldshore-ai/.github/workflows/anthropic-oidc.yml@<full-commit-sha>
 #       permissions:
 #         id-token: write
 #         contents: read
@@ -56,10 +56,15 @@ permissions:
   id-token: write # required to mint the OIDC JWT
   contents: read
 
+concurrency:
+  group: anthropic-oidc-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   mint-token:
     name: Mint OIDC-backed Anthropic token
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     outputs:
       api_key: ${{ steps.exchange.outputs.api_key }}
       base_url: ${{ steps.exchange.outputs.base_url }}

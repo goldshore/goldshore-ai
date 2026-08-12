@@ -1,6 +1,7 @@
 import {
   buildAdminSession,
   hasAdminPermission,
+  ROLE_PERMISSIONS,
   verifyAccessWithClaims,
   verifyJWTCookie,
   type AccessTokenPayload,
@@ -38,11 +39,29 @@ const STATIC_PATH_PREFIXES = [
   '/sitemap',
 ];
 
+/**
+ * Paths that stay reachable on the admin hostname without an admin session.
+ *
+ * The admin host folds every unrecognized path back to the dashboard, and the
+ * dashboard requires a session. Without this exemption the sign-in and
+ * sign-out routes would themselves be rewritten to the dashboard, so an
+ * unauthenticated operator would bounce between /login and /app/dashboard
+ * with no way to authenticate.
+ */
+const ADMIN_HOST_PUBLIC_PATHS = ['/login', '/logout'];
+
+const isAdminHostPublicPath = (pathname: string) =>
+  ADMIN_HOST_PUBLIC_PATHS.some(
+    (candidate) => pathname === candidate || pathname.startsWith(`${candidate}/`),
+  );
+
 const CLEAN_ADMIN_PAGE_PREFIXES = [
   '/api-status',
   '/crawler',
+  '/domains',
   '/goldclaw',
   '/integrations',
+  '/leads',
   '/lead-submissions',
   '/monetization',
   '/products',
@@ -50,6 +69,22 @@ const CLEAN_ADMIN_PAGE_PREFIXES = [
   '/services',
   '/workers',
 ];
+
+const MIGRATED_ADMIN_PAGE_RULES: Array<{
+  prefix: string;
+  permission: AdminPermission;
+}> = [
+  { prefix: '/content', permission: 'content:read' },
+  { prefix: '/infrastructure', permission: 'cloudflare_inventory:read' },
+  { prefix: '/monetization', permission: 'system:read' },
+  { prefix: '/sites', permission: 'cloudflare_inventory:read' },
+  { prefix: '/trading', permission: 'api_configuration:read' },
+];
+
+const getMigratedAdminPageRule = (pathname: string) =>
+  MIGRATED_ADMIN_PAGE_RULES.find(
+    ({ prefix }) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
 
 export type AdminRouteRule = {
   canonicalPath: string;
@@ -91,7 +126,13 @@ export const getAdminHostRewritePath = (pathname: string) => {
   const normalizedPath = normalizePathname(pathname);
 
   if (isStaticAssetPath(normalizedPath)) return null;
+  if (isAdminHostPublicPath(normalizedPath)) return null;
   if (normalizedPath === '/') return ADMIN_DASHBOARD_PATH;
+
+  // These pages were moved byte-for-byte from the retired gs-admin app and
+  // intentionally retain their established paths. Let Astro serve them from
+  // gs-web instead of folding them back to the dashboard.
+  if (getMigratedAdminPageRule(normalizedPath)) return null;
 
   if (
     normalizedPath === '/app' ||
@@ -179,6 +220,37 @@ export const getAdminRouteRule = (
     };
   }
 
+  const migratedPage = getMigratedAdminPageRule(normalizedPath);
+  if (migratedPage) {
+    return {
+      canonicalPath: normalizedPath,
+      kind: 'page',
+      permission: migratedPage.permission,
+      requiresAdminRole: true,
+    };
+  }
+
+  if (
+    normalizedPath === '/admin/integrations' ||
+    normalizedPath.startsWith('/admin/integrations/')
+  ) {
+    return {
+      canonicalPath: normalizedPath,
+      kind: 'page',
+      permission: 'integrations:read',
+      requiresAdminRole: true,
+    };
+  }
+
+  if (normalizedPath === '/admin/domains' || normalizedPath.startsWith('/admin/domains/')) {
+    return {
+      canonicalPath: normalizedPath,
+      kind: 'page',
+      permission: 'cloudflare_inventory:read',
+      requiresAdminRole: true,
+    };
+  }
+
   if (
     normalizedPath === '/admin/deploy' ||
     normalizedPath.startsWith('/admin/deploy/') ||
@@ -247,7 +319,8 @@ export const getAdminRouteRule = (
   if (
     hostname &&
     isAdminHost(hostname) &&
-    !isStaticAssetPath(normalizedPath)
+    !isStaticAssetPath(normalizedPath) &&
+    !isAdminHostPublicPath(normalizedPath)
   ) {
     return {
       canonicalPath: ADMIN_DASHBOARD_PATH,
@@ -277,6 +350,25 @@ export const getAdminLoginDestination = (requested?: string) => {
   }
 };
 
+/**
+ * A successfully verified Cloudflare Access assertion has already passed the
+ * dedicated Access application's identity policy. Access assertions do not
+ * normally contain the application-specific `admin` role used by cookie JWTs,
+ * so give that edge-authenticated identity the admin session expected by the
+ * protected dashboard. Explicit supported roles still take precedence.
+ */
+export const buildCloudflareAccessAdminSession = (
+  claims: AccessTokenPayload,
+): AdminSession => {
+  const session = buildAdminSession(claims);
+  if (session.roles.length > 0) return session;
+
+  return {
+    roles: ['admin'],
+    permissions: [...ROLE_PERMISSIONS.admin],
+  };
+};
+
 export const authorizeAdminRequest = async (
   request: Request,
   env: AccessEnv | undefined,
@@ -290,10 +382,17 @@ export const authorizeAdminRequest = async (
     };
   }
 
-  const claims =
-    await verifyJWTCookie(request, env) ??
-    await verifyAccessWithClaims(request, env);
-  if (!claims) {
+  // Prefer an application cookie JWT; fall back to a Cloudflare Access
+  // assertion at the edge. Each verifier runs at most once per request.
+  const cookieClaims = await verifyJWTCookie(request, env);
+  const accessClaims = cookieClaims ? null : await verifyAccessWithClaims(request, env);
+  const verifiedClaims = cookieClaims ?? accessClaims;
+
+  // gs-web intentionally owns no D1 binding. A Cloudflare Access assertion is
+  // authorized by the dedicated, explicit-email Admin Access policy after its
+  // signature and audience are verified here. D1-backed authorization remains
+  // a gs-api responsibility for protected backend operations.
+  if (!verifiedClaims) {
     return {
       ok: false,
       status: 401,
@@ -301,7 +400,9 @@ export const authorizeAdminRequest = async (
     };
   }
 
-  const session = buildAdminSession(claims);
+  const session = accessClaims
+    ? buildCloudflareAccessAdminSession(accessClaims)
+    : buildAdminSession(verifiedClaims);
   if (rule.requiresAdminRole && session.roles.length === 0) {
     return {
       ok: false,
@@ -320,7 +421,7 @@ export const authorizeAdminRequest = async (
 
   return {
     ok: true,
-    claims,
+    claims: verifiedClaims,
     session,
   };
 };

@@ -16,7 +16,7 @@ const createApp = (claims: AccessTokenPayload | null) => {
 };
 
 describe('internal inbox status', () => {
-  it('requires system:read permission', async () => {
+  it('restricts internal diagnostics to roles holding audit:read', async () => {
     const app = createApp({ roles: ['viewer'] } as AccessTokenPayload);
     const res = await app.request('/internal/inbox-status', {}, { KV: { get: async () => null } } as any);
     assert.strictEqual(res.status, 403);

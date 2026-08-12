@@ -1,0 +1,9 @@
+{
+  "0001_initial_schema.sql": "PLATFORM_DB",
+  "0002_integration_secrets.sql": "PLATFORM_DB",
+  "0003_contact_archive_catalog.sql": "PLATFORM_DB",
+  "0004_newsletter_subscribers.sql": "PLATFORM_DB",
+  "0004_paper_trading.sql": "PAPER_DB",
+  "0007_google_workspace_rbac.sql": "PLATFORM_DB",
+  "0007_github_webhooks.sql": "AUDIT_DB"
+}

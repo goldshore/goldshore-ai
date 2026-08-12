@@ -33,20 +33,25 @@ test('WebLayout renders one responsive admin login control', async () => {
   assert.match(source, /id="header-login-link"/);
   assert.match(source, /mobileActions\.insertBefore\(loginLink, mobileDeveloperLink\)/);
   assert.match(source, /desktopNav\.insertBefore\(loginLink, desktopCta\)/);
+  assert.match(source, /href=\{CANONICAL_ADMIN_DASHBOARD_URL\}/);
 });
 
-test('public header renders one dashboard action per responsive navigation', async () => {
-  const [source, navigation] = await Promise.all([
+test('public header supplies the responsive navigation shared with the homepage', async () => {
+  const [source, homepage] = await Promise.all([
     readFile(new URL('components/PublicHeader.astro', sourceRoot), 'utf8'),
-    readFile(new URL('config/navigation.ts', sourceRoot), 'utf8'),
+    readFile(new URL('pages/index.astro', sourceRoot), 'utf8'),
   ]);
 
-  assert.equal(source.match(/authLinks\.map/g)?.length, 2);
-  assert.match(source, /import \{ authLinks, primaryNavLinks \}/);
+  assert.equal(source.match(/>Log in<\/a>/g)?.length, 1);
+  assert.match(source, /import \{ CANONICAL_ADMIN_DASHBOARD_URL \}/);
+  assert.match(source, /href=\{CANONICAL_ADMIN_DASHBOARD_URL\}/);
+  assert.match(source, /import \{ primaryNavLinks \}/);
+  assert.match(source, /id="main-nav" class="main-nav"/);
   assert.doesNotMatch(source, /dashboard\.goldshore\.ai/);
   assert.doesNotMatch(source, />Admin →<\/a>/);
-  assert.match(navigation, /https:\/\/admin\.goldshore\.ai\/app\/dashboard/);
-  assert.equal(navigation.match(/label: 'Dashboard access'/g)?.length, 1);
+  assert.match(homepage, /import PublicHeader/);
+  assert.match(homepage, /<PublicHeader currentPath=/);
+  assert.match(homepage, /https:\/\/\$\{adminHost\}\/app\/dashboard/);
 });
 
 test('BaseLayout composes global theme parts without a shell wrapper', async () => {
@@ -95,4 +100,15 @@ test('Gold Shore page templates compose the shared shell and column contract', a
   ]) {
     assert.ok(sectionTemplate.includes(contract), `Section template must retain ${contract}`);
   }
+});
+
+test('homepage has one complete document and shares navigation sources', async () => {
+  const source = await readFile(new URL('pages/index.astro', sourceRoot), 'utf8');
+
+  assert.equal(source.match(/<\/html>/g)?.length, 1);
+  assert.doesNotMatch(source, /<\/WebLayout>/);
+  assert.match(source, /import PublicHeader/);
+  assert.match(source, /companyLinks, platformLinks, serviceLinks/);
+  assert.match(source, /footerColumns\.map/);
+  assert.match(source, /CANONICAL_ADMIN_DASHBOARD_URL/);
 });

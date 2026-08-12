@@ -20,18 +20,23 @@ test('gs-web Cloudflare config documents GS_CONFIG as an unbound proposed-only r
 });
 
 test('gs-web README documents indirect runtime configuration until a concrete consumer exists', () => {
-  assert.ok(webReadme.includes('`gs-web` does not currently read `GS_CONFIG` directly.'));
-  assert.ok(
-    webReadme.includes(
-      'Do not add a `GS_CONFIG` binding to the web Pages project unless a concrete `apps/gs-web` runtime consumer needs live request-time reads.',
-    ),
-  );
+  assert.match(webReadme, /`gs-web` does not currently read `GS_CONFIG` directly/);
+  assert.match(webReadme, /do\s+not add that binding without a concrete request-time consumer/);
 });
 
-test('gs-web deploy environments reuse the provisioned session namespace', () => {
-  const sessionNamespaceId = '09ae2ffbffe24e628c9538c8129dfe33';
+test('gs-web README documents one Worker release and gates a future Pages migration', () => {
+  assert.match(webReadme, /exactly one deployment model: an Astro SSR Cloudflare Worker with\r?\nAssets/);
+  assert.match(webReadme, /Every dynamic web endpoint/);
+  assert.match(webReadme, /must first move into `apps\/gs-api`/);
+});
 
-  for (const envName of ['prod', 'preview']) {
+test('gs-web deploy environments use isolated provisioned session namespaces', () => {
+  const namespaces = {
+    prod: '09ae2ffbffe24e628c9538c8129dfe33',
+    preview: '0c75ae6798a54405a386fd36c27a510d',
+  } as const;
+
+  for (const [envName, sessionNamespaceId] of Object.entries(namespaces)) {
     assert.match(
       deployedWebWrangler,
       new RegExp(
@@ -39,4 +44,6 @@ test('gs-web deploy environments reuse the provisioned session namespace', () =>
       ),
     );
   }
+
+  assert.notEqual(namespaces.prod, namespaces.preview);
 });
