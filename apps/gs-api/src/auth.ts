@@ -22,6 +22,10 @@ export const getActor = (claims: AccessTokenPayload | null, request: Request) =>
 export const logAdminAction = async (env: Env, entry: Omit<AuditEvent, "timestamp">) => {
   const timestamp = new Date().toISOString();
   const payload: AuditEvent = { ...entry, timestamp };
+
+  // Fall back to KV when the audit database is not bound. Denied-access events
+  // are written from the authorization middleware, and dropping them whenever
+  // PLATFORM_DB is missing would leave no record of the denial at all.
   if (!env?.PLATFORM_DB) {
     if (typeof env?.KV?.put === "function") {
       try {
@@ -36,6 +40,10 @@ export const logAdminAction = async (env: Env, entry: Omit<AuditEvent, "timestam
     }
     return payload;
   }
+
+  // Recording the audit trail must not change the outcome of the request that
+  // triggered it. Callers include the authorization middleware, where a throw
+  // here would surface as a 500 and mask the 403 the caller already decided on.
   try {
     await env.PLATFORM_DB.prepare(
       `INSERT INTO audit_events (id, occurred_at, actor, action, status, metadata_json)
@@ -45,6 +53,7 @@ export const logAdminAction = async (env: Env, entry: Omit<AuditEvent, "timestam
   } catch (error) {
     console.error("Failed to write audit event", { action: entry.action, error });
   }
+
   return payload;
 };
 

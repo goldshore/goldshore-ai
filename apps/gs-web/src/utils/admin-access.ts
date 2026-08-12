@@ -328,9 +328,18 @@ export const authorizeAdminRequest = async (
     };
   }
 
+  // Prefer an application cookie JWT; fall back to a Cloudflare Access
+  // assertion at the edge. Each verifier runs at most once per request.
   const cookieClaims = await verifyJWTCookie(request, env);
   const accessClaims = cookieClaims ? null : await verifyAccessWithClaims(request, env);
-  const claims = cookieClaims ?? accessClaims;
+  const verifiedClaims = cookieClaims ?? accessClaims;
+
+  // A verified signature only proves identity. Authorization is a second,
+  // database-backed step: the identity must still resolve to an active user
+  // (or service) row carrying a supported role, and comes back enriched with
+  // that role. It fails closed — an unknown identity is rejected here.
+  const claims = verifiedClaims ? await authorizeAccessClaims(verifiedClaims, env) : null;
+
   if (!claims) {
     return {
       ok: false,
@@ -339,8 +348,11 @@ export const authorizeAdminRequest = async (
     };
   }
 
+  // Authorized claims carry their role from the database, so the Access branch
+  // resolves to that role; its blanket-admin fallback only applies to an
+  // edge-authenticated identity that carries no role at all.
   const session = accessClaims
-    ? buildCloudflareAccessAdminSession(accessClaims)
+    ? buildCloudflareAccessAdminSession(claims)
     : buildAdminSession(claims);
   if (rule.requiresAdminRole && session.roles.length === 0) {
     return {
