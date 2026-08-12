@@ -259,6 +259,8 @@ id = "d4d20cee39094b999dea3f7e5f4c533a"
 binding = "CONTROL_LOGS"
 id = "09e43cb8bd4749fdaaed0dc9d4ff2284"
 
+# RISK_RADAR_CACHE: same live "RR_CACHE" resource as env.prod — see the note
+# there. No dedicated preview KV exists for this yet.
 [[env.preview.kv_namespaces]]
 binding = "RISK_RADAR_CACHE"
 id = "0b56873b6d7b451f9279481920a15447"
