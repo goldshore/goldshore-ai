@@ -22,32 +22,14 @@ interface KVNamespace {
   delete(key: string): Promise<void>;
 }
 
-interface D1Result<Row> {
-  results?: Row[];
-}
-
-interface D1PreparedStatement<Row = Record<string, unknown>> {
-  bind(...values: unknown[]): D1PreparedStatement<Row>;
-  all(): Promise<D1Result<Row>>;
-  first<T = Row>(): Promise<T | null>;
-  run(): Promise<unknown>;
-}
-
-interface D1Database {
-  prepare(query: string): D1PreparedStatement;
-}
-
 // Global Cloudflare Env types
 interface Env {
   KV: KVNamespace;
-  PLATFORM_DB: D1Database;
   CONTACT_TTL_SECONDS?: string;
   CONTACT_NOTIFICATION_EMAILS?: string;
-  MAILCHANNELS_SENDER_EMAIL?: string;
-  MAILCHANNELS_SENDER_NAME?: string;
-  MAILCHANNELS_API_URL?: string;
   CLOUDFLARE_TEAM_DOMAIN?: string;
   CLOUDFLARE_ACCESS_AUDIENCE?: string;
+  JWT_SECRET?: string;
   DEV_AUTH_BYPASS?: string;
   PUBLIC_API?: string;
   GOOGLE_ADSENSE_CLIENT_ID?: string;
@@ -62,9 +44,17 @@ interface Env {
 
 declare namespace App {
   interface Locals {
-    runtime: {
-      env: Env;
+    runtime?: {
+      env?: Env;
     };
     securityPolicySource?: 'response-header' | 'platform-config';
+    adminSession?: {
+      roles: string[];
+      permissions: import('@goldshore/auth').AdminPermission[];
+      actor?: string;
+      isAuthenticated?: boolean;
+    };
+    TURNSTILE_SITE_KEY?: string;
+    PUBLIC_API?: string;
   }
 }

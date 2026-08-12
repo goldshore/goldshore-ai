@@ -8,5 +8,7 @@
 # `ERR_PNPM_BROKEN_LOCKFILE: expected a single document in the stream, but found
 # more` — even though the committed lockfile on every branch was clean. Letting
 # git do a normal 3-way merge of the lockfile avoids that corruption.
+# Resolve the occasional normal conflict with `pnpm lockfile:resolve`; see
+# docs/PNPM_LOCKFILE_CONFLICT_RESOLUTION.md. Do not add a lossy merge driver here.
 README.md merge=ours
 CURRENT_MONOREPO_STATE.md merge=ours
