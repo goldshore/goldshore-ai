@@ -34,10 +34,10 @@ This deliberately does not use `.gitattributes` with `merge=ours` or
 while concatenating independently valid YAML can produce a corrupt multi-document
 lockfile.
 
-## Maintenance workflow
+## Base-branch recovery
 
-`.github/workflows/lockfile-maintenance.yml` is a manual recovery tool for a
-lockfile that is already broken or out of sync on a base branch. It regenerates
-from scratch with the pinned pnpm version and opens a single reviewable PR. It
-does not run on pushes, PRs, or CI failures, so it cannot race dependency branches
-or write generated commits to them.
+Automated lockfile mutation workflows are intentionally retired. For a
+lockfile that is already broken or out of sync, create a clean branch from the
+current `origin/main`, regenerate with repository-pinned `pnpm@9.15.4`, verify a
+frozen install, and open one reviewable PR. Do not push generated lockfile
+commits directly to `main` or rewrite another agent's branch.
