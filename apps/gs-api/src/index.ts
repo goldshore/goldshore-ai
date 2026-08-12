@@ -56,12 +56,6 @@ const app = new Hono<{
 
 const requiredBindings = ['PLATFORM_DB', 'GS_ASSETS', 'AI'] as const;
 const expectedD1Binding = 'PLATFORM_DB' as const;
-const requiredSecrets = [
-  'JWT_SECRET',
-  'STRIPE_API_KEY',
-  'SENDGRID_API_KEY',
-  'ACCESS_CLIENT_SECRET',
-] as const;
 
 const DEFAULT_ALLOWED_ORIGINS = [...APPROVED_API_ORIGINS];
 
@@ -132,7 +126,7 @@ app.use('*', async (c, next) => {
       `CRITICAL_MISSING_D1_BINDING: Expected D1 binding "${expectedD1Binding}" is undefined. Verify [[d1_databases]] binding in wrangler.toml.`,
     );
   }
-  for (const key of [...requiredBindings, ...requiredSecrets]) {
+  for (const key of requiredBindings) {
     if (!c.env[key]) {
       throw new Error(`CRITICAL_MISSING: ${key}. Terminating.`);
     }

@@ -8,10 +8,23 @@ const requiredRuntimeEnv = {
   GS_ASSETS: {} as any,
   AI: {} as any,
   JWT_SECRET: 'test-jwt-secret',
-  STRIPE_API_KEY: 'test-stripe-key',
-  SENDGRID_API_KEY: 'test-sendgrid-key',
   ACCESS_CLIENT_SECRET: 'test-access-client-secret',
 };
+
+test('keeps shallow production health independent of optional provider secrets', async () => {
+  const response = await app.request(
+    '/health',
+    {},
+    {
+      ...requiredRuntimeEnv,
+      ENV: 'production',
+      CLOUDFLARE_ACCESS_AUDIENCE: 'test-audience',
+      CONTROL_SYNC_TOKEN: 'test-control-token',
+    } as any,
+  );
+
+  assert.equal(response.status, 200);
+});
 
 test('allows documented preview goldshore.ai origins', () => {
   assert.equal(isPreviewOrigin('https://feature-123-preview.goldshore.ai'), true);
