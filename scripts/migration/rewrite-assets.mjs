@@ -43,7 +43,7 @@ function walkText(d, acc = []) {
 const textFiles = [...walkText('apps'), ...walkText('packages'), ...walkText('src')];
 for(const f of textFiles){
   let c=fs.readFileSync(f,'utf8');
-  let o=c;
+  const o=c;
   for(const [from,to] of rew){
     const b=path.basename(from);
     c=c.split(b).join('/'+to.replace(/^public\//,''));

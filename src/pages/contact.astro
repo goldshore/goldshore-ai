@@ -18,21 +18,25 @@ import Footer from '../components/Footer.astro';
   <body>
     <Header />
     <main>
-      <h1>Start the Engagement</h1>
-      <p>
-        Share your operational context and we will align next steps with your
-        constraints.
-      </p>
-      <form class="card" action="/contact/thanks" method="GET">
-        <p>
+      <section class="contact-shell">
+        <div class="section-heading">
+          <p class="section-kicker">Quick inquiry</p>
+          <h1>Start the Engagement</h1>
+          <p class="section-intro">
+            Share your operational context and we will align next steps with
+            your constraints.
+          </p>
+        </div>
+        <form class="card inquiry-form" action="/contact/thanks" method="GET">
+          <p>
           <label for="name">Name</label><br />
           <input id="name" name="name" required />
         </p>
-        <p>
+          <p>
           <label for="email">Email</label><br />
           <input id="email" name="email" type="email" required />
         </p>
-        <p>
+          <p>
           <label for="timeline">Timeline (optional)</label><br />
           <select id="timeline" name="timeline">
             <option value="">Select one</option>
@@ -63,11 +67,50 @@ import Footer from '../components/Footer.astro';
           <label for="details">Project context</label><br />
           <textarea id="details" name="details" rows="5" required></textarea>
         </p>
-        <button class="button button-primary" type="submit"
-          >Start the Engagement</button
-        >
-      </form>
+          <button class="button button-primary" type="submit">
+            Start the Engagement
+          </button>
+        </form>
+      </section>
     </main>
     <Footer />
   </body>
 </html>
+<style>
+  main {
+    min-height: calc(100dvh - var(--header-offset));
+    display: grid;
+    align-content: start;
+  }
+
+  .contact-shell {
+    width: min(100%, 42rem);
+  }
+
+  .inquiry-form {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1.25rem;
+  }
+
+  .inquiry-form p {
+    margin: 0;
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .inquiry-form label {
+    line-height: 1.35;
+    font-weight: 700;
+  }
+
+  .inquiry-form input,
+  .inquiry-form select,
+  .inquiry-form textarea {
+    width: 100%;
+  }
+
+  .inquiry-form button {
+    width: 100%;
+  }
+</style>

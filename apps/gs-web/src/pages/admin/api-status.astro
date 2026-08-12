@@ -1,6 +1,6 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
-import { authorizeAdminRequest, getAdminRouteRule } from '../../utils/admin-access';
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { authorizeAdminRequest, getAdminAuthError, getAdminRouteRule } from '../../utils/admin-access';
 
 export const prerender = false;
 
@@ -42,9 +42,7 @@ if (!rule) {
   authError = { status: 404, message: 'Not found.' };
 } else {
   const authResult = await authorizeAdminRequest(Astro.request, env as never, rule);
-  if (!authResult.ok) {
-    authError = { status: authResult.status, message: authResult.error };
-  }
+  authError = getAdminAuthError(authResult);
 }
 
 const apiBase = (env?.PUBLIC_API || 'https://api.goldshore.ai').replace(/\/$/, '');
@@ -79,7 +77,7 @@ if (!authError) {
 const formatDate = (value: string | null | undefined) => (value ? new Date(value).toLocaleString() : '—');
 ---
 
-<BaseLayout title="API Status | GoldShore Admin" description="gs-api routes, health, and runtime config">
+<AdminLayout title="API Status | GoldShore Admin">
   <section class="gs-section">
     <div class="gs-grid columns-2">
       <div>
@@ -92,6 +90,7 @@ const formatDate = (value: string | null | undefined) => (value ? new Date(value
           <li><a href="/admin/lead-submissions">Lead submissions</a></li>
           <li><a href="/admin/subscribers">Newsletter subscribers</a></li>
           <li><a href="/admin/crawler">Crawler</a></li>
+          <li><a href="/admin/deploy">Deployment assistant</a></li>
         </ul>
       </div>
     </div>
@@ -178,4 +177,4 @@ const formatDate = (value: string | null | undefined) => (value ? new Date(value
       </>
     )}
   </section>
-</BaseLayout>
+</AdminLayout>

@@ -1,5 +1,5 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import AdminLayout from "../../layouts/AdminLayout.astro";
 
 export const prerender = false;
 
@@ -43,7 +43,7 @@ const exportUrl = `/api/admin/subscribers?format=csv${status ? `&status=${encode
 const formatDate = (value: string | null) => value ? new Date(value).toLocaleString() : '—';
 ---
 
-<BaseLayout title="Newsletter Subscribers | GoldShore" description="Review newsletter subscriptions and consent">
+<AdminLayout title="Newsletter Subscribers | GoldShore">
   <section class="gs-section">
     <div class="gs-grid columns-2">
       <div>
@@ -111,5 +111,4 @@ const formatDate = (value: string | null) => value ? new Date(value).toLocaleStr
       </div>
     )}
   </section>
-</BaseLayout>
-
+</AdminLayout>

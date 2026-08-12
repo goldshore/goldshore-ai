@@ -4,7 +4,6 @@ import * as assert from 'node:assert/strict';
 import {
   GOLDSHORE_API_ORIGINS,
   WEB_CONNECT_SRC,
-  WEB_CONTENT_SECURITY_POLICY,
   WEB_HEADERS_CSP,
   WEB_META_CSP,
   buildContentSecurityPolicy,

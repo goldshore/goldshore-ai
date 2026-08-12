@@ -1,0 +1,66 @@
+name: Verify deployed gs-web release
+
+# Cloudflare Workers Builds reports the authoritative deployment through the
+# GitHub Deployments API. Verification starts only after that deployment has
+# succeeded; this workflow does not initiate or retry a deployment.
+on:
+  deployment_status:
+
+concurrency:
+  group: verify-deployed-gs-web-${{ github.event.deployment.id }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: >-
+      github.event.deployment_status.state == 'success' &&
+      contains(github.event.deployment.creator.login, 'cloudflare')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: read
+    env:
+      RELEASE_SHA: ${{ github.event.deployment.sha }}
+      DEPLOYMENT_REF: ${{ github.event.deployment.ref }}
+      DEPLOYMENT_ENVIRONMENT: ${{ github.event.deployment.environment }}
+      CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+      CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.deployment.sha }}
+
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version-file: .node-version
+
+      - name: Select deployed hostname contract
+        id: target
+        shell: bash
+        run: |
+          environment="${DEPLOYMENT_ENVIRONMENT,,}"
+          if [[ "$environment" == *preview* || "$DEPLOYMENT_REF" != "main" ]]; then
+            echo 'scope=preview' >> "$GITHUB_OUTPUT"
+          else
+            echo 'scope=production' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Verify production mirrors
+        if: steps.target.outputs.scope == 'production'
+        run: >-
+          node scripts/verify-gs-web-release.mjs
+          --sha "$RELEASE_SHA"
+          https://goldshore.ai
+          https://goldshore.org
+          https://admin.goldshore.ai
+          https://admin.goldshore.org
+
+      # The Wrangler preview contract intentionally contains only .ai hosts.
+      # Do not infer or provision unsupported .org preview DNS here.
+      - name: Verify preview mirrors
+        if: steps.target.outputs.scope == 'preview'
+        run: >-
+          node scripts/verify-gs-web-release.mjs
+          --sha "$RELEASE_SHA"
+          https://preview.goldshore.ai
+          https://admin-preview.goldshore.ai

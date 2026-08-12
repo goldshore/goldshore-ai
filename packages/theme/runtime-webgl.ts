@@ -107,7 +107,7 @@ export function initWebGLField() {
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
   gl.clearColor(0, 0, 0, 0);
 
-  let t0 = performance.now();
+  const t0 = performance.now();
   const loop = (t: number) => {
     resize();
     const time = (t - t0) * 0.001;

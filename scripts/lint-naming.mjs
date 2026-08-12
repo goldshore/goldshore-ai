@@ -1,8 +1,7 @@
 #!/usr/bin/env node
-import { readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { readdirSync, readFileSync } from 'node:fs';
+import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { execSync } from 'node:child_process';
 import YAML from 'yaml';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -13,13 +12,30 @@ const aliases = JSON.parse(readFileSync(resolve(__dirname, 'name-aliases.json'),
 
 const fail = [];
 
-function run(command) {
-  const output = execSync(command, { cwd: repoRoot, encoding: 'utf8' }).trim();
-  return output ? output.split('\n').filter(Boolean) : [];
+function findFiles(root, matches) {
+  const files = [];
+
+  function walk(directory) {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      if (entry.name === 'node_modules') continue;
+
+      const absolutePath = resolve(directory, entry.name);
+      if (entry.isDirectory()) {
+        walk(absolutePath);
+      } else if (entry.isFile() && matches(entry.name)) {
+        files.push(relative(repoRoot, absolutePath).replaceAll('\\', '/'));
+      }
+    }
+  }
+
+  walk(resolve(repoRoot, root));
+  return files;
 }
 
 function lintPackages() {
-  const packageFiles = run("find apps packages infra -type f -name 'package.json' -not -path '*/node_modules/*'");
+  const packageFiles = ['apps', 'packages', 'infra'].flatMap((root) =>
+    findFiles(root, (name) => name === 'package.json'),
+  );
 
   for (const packageFile of packageFiles) {
     const packageJson = JSON.parse(readFileSync(resolve(repoRoot, packageFile), 'utf8'));
@@ -43,7 +59,7 @@ function lintPackages() {
 }
 
 function lintWorkflows() {
-  const workflowFiles = run("find .github/workflows -type f -name '*.yml'");
+  const workflowFiles = findFiles('.github/workflows', (name) => name.endsWith('.yml'));
 
   for (const workflowFile of workflowFiles) {
     const workflowBasename = workflowFile.split('/').pop().replace(/\.yml$/, '');
