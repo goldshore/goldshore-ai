@@ -4,7 +4,7 @@
 #
 #   jobs:
 #     anthropic-token:
-#       uses: marzton/goldshore-ai/.github/workflows/anthropic-oidc.yml@main
+#       uses: marzton/goldshore-ai/.github/workflows/anthropic-oidc.yml@<full-commit-sha>
 #       permissions:
 #         id-token: write
 #         contents: read
@@ -56,10 +56,15 @@ permissions:
   id-token: write # required to mint the OIDC JWT
   contents: read
 
+concurrency:
+  group: anthropic-oidc-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   mint-token:
     name: Mint OIDC-backed Anthropic token
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     outputs:
       api_key: ${{ steps.exchange.outputs.api_key }}
       base_url: ${{ steps.exchange.outputs.base_url }}
@@ -110,7 +115,8 @@ jobs:
             TOKEN=$(echo "$RESPONSE" | jq --raw-output '.token // .api_key // .access_token // empty' 2>/dev/null || true)
 
             if [[ -n "$TOKEN" ]]; then
-              echo "::add-mask::$TOKEN"
+              # Do not mask values promoted to reusable-workflow outputs: GitHub
+              # suppresses masked job outputs as unsafe for downstream jobs.
               echo "api_key=$TOKEN" >> "$GITHUB_OUTPUT"
               echo "base_url=$GATEWAY_BASE" >> "$GITHUB_OUTPUT"
               echo "Issued gateway-scoped token (OIDC exchange succeeded)."

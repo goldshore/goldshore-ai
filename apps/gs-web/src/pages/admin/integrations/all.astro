@@ -1,16 +1,15 @@
 ---
 export const prerender = false;
 
-import BaseLayout from '../../../layouts/BaseLayout.astro';
+import AdminLayout from "../../../layouts/AdminLayout.astro";
 
 const apiBase = (import.meta.env.PUBLIC_API || 'https://api.goldshore.ai').replace(/\/$/, '');
 ---
 
-<BaseLayout
+<AdminLayout
   title="Integrations | GoldShore Admin"
-  description="Connect and manage business integrations and LLM providers from the consolidated GoldShore web app."
 >
-  <main class="integrations-page" data-api-base={apiBase}>
+  <div class="integrations-page" data-api-base={apiBase}>
 
   <div class="integrations-shell">
     <div class="flex items-center justify-between">
@@ -112,7 +111,6 @@ const apiBase = (import.meta.env.PUBLIC_API || 'https://api.goldshore.ai').repla
     const page = document.querySelector('.integrations-page');
     const apiBase = page?.dataset.apiBase || 'https://api.goldshore.ai';
     const endpoint = (path) => `${apiBase}${path}`;
-
     document.addEventListener('DOMContentLoaded', async () => {
       const loadIntegrations = async () => {
         const loadingEl = document.getElementById('integrations-loading');
@@ -271,8 +269,8 @@ const apiBase = (import.meta.env.PUBLIC_API || 'https://api.goldshore.ai').repla
   </script>
 
 
-  </main>
-</BaseLayout>
+  </div>
+</AdminLayout>
 
 <style>
   .integrations-page { min-height: 100vh; background: #050507; color: #f5f3ec; padding: 40px clamp(20px,4vw,56px); }

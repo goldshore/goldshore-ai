@@ -3,8 +3,27 @@ import VanillaTilt from 'vanilla-tilt';
 let tiltInstances: Array<{ destroy: () => void }> = [];
 let cleanupStarField: (() => void) | null = null;
 let cleanupBriefingModal: (() => void) | null = null;
+let bodyScrollLockCount = 0;
+let bodyScrollLockValue = '';
 
 const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const lockBodyScroll = () => {
+  if (bodyScrollLockCount === 0) {
+    bodyScrollLockValue = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+  }
+  bodyScrollLockCount += 1;
+};
+
+const unlockBodyScroll = () => {
+  if (bodyScrollLockCount === 0) return;
+  bodyScrollLockCount -= 1;
+  if (bodyScrollLockCount === 0) {
+    document.body.style.overflow = bodyScrollLockValue;
+    bodyScrollLockValue = '';
+  }
+};
 
 export function initTilt(selector = '[data-tilt]') {
   if (prefersReducedMotion() || window.innerWidth < 768) {
@@ -141,6 +160,7 @@ export function initBriefingModal() {
   }
 
   const openModal = () => {
+    lockBodyScroll();
     if (typeof dialog.showModal === 'function') {
       dialog.showModal();
     } else {
@@ -148,7 +168,14 @@ export function initBriefingModal() {
     }
   };
 
-  const closeModal = () => dialog.close();
+  const closeModal = () => {
+    if (dialog.open) {
+      dialog.close();
+    } else {
+      dialog.removeAttribute('open');
+    }
+    unlockBodyScroll();
+  };
 
   openButton.addEventListener('click', openModal);
   closeButtons.forEach((button) => button.addEventListener('click', closeModal));
@@ -156,5 +183,6 @@ export function initBriefingModal() {
   cleanupBriefingModal = () => {
     openButton.removeEventListener('click', openModal);
     closeButtons.forEach((button) => button.removeEventListener('click', closeModal));
+    unlockBodyScroll();
   };
 }

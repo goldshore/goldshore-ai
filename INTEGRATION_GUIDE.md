@@ -62,7 +62,7 @@ LOCAL_LLM_BASE_URL=http://localhost:11434  # Ollama, etc.
 
 ### Swapping Providers at Runtime
 
-The LLM abstraction layer in `apps/gs-admin/src/lib/llm-abstraction.ts` handles provider selection:
+The LLM abstraction layer in `apps/gs-web/src/lib/llm-abstraction.ts` handles provider selection:
 
 ```typescript
 import { getLLMClient } from '@/lib/llm-abstraction';
@@ -233,7 +233,7 @@ cd goldshore-ai
 
 ```bash
 npm install
-cd apps/gs-admin
+cd apps/gs-web
 npm install
 ```
 

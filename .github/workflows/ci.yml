@@ -5,20 +5,44 @@ on:
   push:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
+  gs-api-build:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22
+          cache: "pnpm"
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Build gs-api
+        run: pnpm --filter @goldshore/gs-api build
+
   lint-test-build:
     permissions:
       contents: read
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@f520eceda224fe1a4aed5a2a27a194379a409996 # v6
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           cache: "pnpm"
@@ -26,16 +50,39 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
-      - name: Repo health checks
-        run: pnpm run repo:health
-        continue-on-error: false
+      - name: Lint
+        run: pnpm lint
+
+      - name: Validate GitHub workflow structure
+        run: pnpm check:workflows
 
       - name: Enforce banproof production bindings
         if: ${{ vars.ENABLE_BANPROOF_BINDINGS_CHECK == 'true' }}
         run: pnpm check:banproof-bindings
 
+      - name: Warn when banproof binding check is disabled
+        if: ${{ vars.ENABLE_BANPROOF_BINDINGS_CHECK != 'true' }}
+        run: echo "::warning::ENABLE_BANPROOF_BINDINGS_CHECK is not set to true; skipping banproof production binding validation."
+
+      - name: Validate CF resource IDs
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_BUILD_API_TOKEN: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
+        run: |
+          if [ -z "$CLOUDFLARE_BUILD_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::warning::Cloudflare credentials are unavailable; skipping live resource validation."
+            exit 0
+          fi
+          node scripts/validate-cf-resources.mjs
+
       - name: Build all
         run: pnpm -r --sequential build
+
+      # gs-web's "test" script runs Playwright only, so tests/unit never ran in
+      # CI on either this workflow or the pull-request gate. Invoke test:unit
+      # explicitly so pushes to main are covered as well.
+      - name: Test gs-web (unit)
+        run: pnpm --dir apps/gs-web test:unit
 
       - name: Detect gs-web release-impact changes
         id: gs-web-changes
@@ -61,5 +108,5 @@ jobs:
           LH_MIN_PERFORMANCE: "0.60"
         run: pnpm check:release
 
-      - name: Verify internal links (Developer Hub, Risk Radar, Workflows)
+      - name: Verify internal links
         run: node scripts/check-internal-links.mjs

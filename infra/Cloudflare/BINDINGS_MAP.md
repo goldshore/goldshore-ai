@@ -6,17 +6,34 @@
 
 ---
 
-## Pages Projects
+## Web / Admin front end
 
 ### 1. Web (Public)
 
-- Project: `gs-web`
+`apps/gs-web` is **not** a Pages project. It is an SSR Astro app served by the
+`gs-web-prod` Worker, deployed by the Cloudflare Workers Build git integration.
+Hostnames are attached via the `routes` list in `apps/gs-web/wrangler.toml`, not
+via Pages custom domains.
+
+- Worker: `gs-web-prod`
 - Repo: `goldshore-ai`
 - Root: `apps/gs-web`
-- Custom Domains:
-  - `goldshore.ai`
-  - `www.goldshore.ai`
-  - `preview.goldshore.ai`
+- Routes (see `[env.prod]` in `apps/gs-web/wrangler.toml` for the authoritative list):
+  - `goldshore.ai/*`, `goldshore.org/*`
+  - `admin.goldshore.ai/*`, `admin-preview.goldshore.ai/*`, `admin.goldshore.org/*`
+  - `risk.goldshore.ai/*`, `risk.goldshore.org/*`
+
+A second deploy path — a static-only deployment of the client bundle in `.github/workflows/deploy-gs-web.yml` — was
+removed. It shipped only the static client assets (dist/client has no
+`_worker.js`), so it published a static shell that 404'd every SSR route while
+competing with the Worker for the same hostnames.
+
+`.github/workflows/deploy-gs-web.yml` is consequently named **Verify gs-web
+build** and retains one immutable artifact keyed by the release SHA. Successful
+Cloudflare deployment events trigger `verify-gs-web-deployment.yml`, which
+compares the embedded release marker across every supported production mirror
+and the two supported `.ai` preview hosts. No `.org` preview hostname is part of
+the current Wrangler contract.
 
 **Environment Variables:**
 
@@ -103,6 +120,9 @@
   - Binding: `INTEGRATION_MASTER_KEY`
   - Store: `b9824d3280c54573a24137c7e7143b33`
   - Secret: `INTEGRATION_MASTER_KEY`
+- Worker secrets:
+  - Binding: `INTEGRATION_MASTER_KEY`
+  - Secret: `INTEGRATION_MASTER_KEY` (normal Worker secret; do not configure `secrets_store_secrets` until the referenced Cloudflare Secrets Store exists)
 
 **Risk Radar storage policy:** bind Risk Radar storage only to `gs-api`; `gs-web` must call API endpoints rather than receiving `RISK_RADAR_DB`, `RISK_RADAR_CACHE`, or `RISK_RADAR_R2` directly.
 
