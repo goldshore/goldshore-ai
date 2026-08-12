@@ -47,9 +47,9 @@ The `infra/` directory currently contains these top-level entries:
 
 ### `infra/Cloudflare` live files called out by name
 
-- `infra/Cloudflare/gs-admin.wrangler.toml`
 - `infra/Cloudflare/gs-agent.wrangler.toml`
 - `infra/Cloudflare/gs-api.wrangler.toml`
+- `infra/Cloudflare/gs-platform.wrangler.toml`
 - `infra/Cloudflare/gs-web.wrangler.toml`
 - `infra/Cloudflare/config.yaml`
 - `infra/Cloudflare/desired-state.yaml`
@@ -67,32 +67,23 @@ The `infra/` directory currently contains these top-level entries:
 
 These workflow files currently exist in the repository root workflow directory:
 
-- `archive-path-guard.yml`
-- `canonical-structure-check.yml`
+- `admin-merge-cockpit.yml`
+- `audit-gs-api-secrets.yml`
 - `ci.yml`
-- `cleanup-cache.yml`
-- `cleanup-workflow-runs.yml`
-- `close-stale-prs.yml`
+- `cloudflare-audit.yml`
+- `cloudflare-operator.yml`
 - `deploy-gs-api.yml`
 - `deploy-gs-web.yml`
-- `jules-nightly.yml`
+- `enforce-branch-protection.yml`
+- `issue-agent-triage.yml`
+- `label.yml`
 - `lockfile-guard.yml`
-- `maintenance-gs-sync.yml`
-- `maintenance.yml`
-- `naming-guard.yml`
-- `naming-lint.yml`
-- `neuralegion.yml`
-- `palette-manual.yml`
-- `pii-scan.yml`
+- `migrate-gs-api-d1.yml`
+- `pr-triage.yml`
 - `preview-gs-api.yml`
-- `preview-gs-web.yml`
 - `repo-health.yml`
-- `route-collision-check.yml`
-- `signed-commit-guard.yml`
-- `sonarcloud.yml`
-- `stabilization-task.yml`
-- `summary.yml`
-- `tfsec.yml`
+- `required-merge-checks.yml`
+- `verify-gs-web-deployment.yml`
 
 ## Explicit stale or removed references
 

@@ -1,4 +1,4 @@
-name: Deploy gs-web
+name: Deploy Goldshore Web
 
 on:
   pull_request:

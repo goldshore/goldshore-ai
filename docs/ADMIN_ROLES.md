@@ -13,6 +13,11 @@ application then derives roles and permissions from verified Access claims.
 | `editor` | Content and operational editing | Cannot administer users, roles, secrets, or deployments |
 | `viewer` | Read-only dashboard access | No mutation permissions |
 
+The initial `owner` assignments are intentionally source-controlled for
+`marstonr6@gmail.com` and `admin@goldshore.org` in the D1 authorization
+migrations. Google Workspace synchronization cannot create, promote, demote,
+or delete an owner assignment.
+
 The complete permission arrays are source-controlled in
 `packages/auth/rbac.ts`. API handlers must enforce a specific permission with
 `requirePermission(...)`; hiding a navigation item is not authorization.
