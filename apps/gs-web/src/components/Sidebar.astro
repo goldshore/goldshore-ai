@@ -39,6 +39,12 @@ const PUBLIC_SITE_ORIGIN = Astro.url.hostname.toLowerCase().endsWith('goldshore.
   : 'https://goldshore.ai';
 const can = (permission: string) => permissions.includes(permission);
 
+// Send operators back to the public site on the same TLD they administer, so
+// admin.goldshore.org returns to goldshore.org rather than goldshore.ai.
+const PUBLIC_SITE_ORIGIN = Astro.url.hostname.toLowerCase().endsWith('goldshore.org')
+  ? 'https://goldshore.org'
+  : 'https://goldshore.ai';
+
 const isActive = (href: string) => {
   const currentPath = Astro.url.pathname;
   const cleanCurrent = currentPath.endsWith('/') ? currentPath.slice(0, -1) : currentPath;
