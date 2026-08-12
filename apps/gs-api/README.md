@@ -17,9 +17,9 @@ Production:
 - `api.goldshore.ai/*`
 - `api.goldshore.org/*`
 
-Pull requests use Cloudflare Worker Version URLs generated from the production
-manifest. Version URLs are read-only and do not own custom DNS, event triggers,
-or separate preview resources.
+Preview:
+
+- `workers.dev` preview unless a dedicated `api-preview.goldshore.ai/*` route is intentionally added.
 
 `gs-api` owns API routes directly. It is not proxied through `gs-gateway` or any other satellite worker.
 
@@ -84,19 +84,24 @@ Cloudflare Worker Builds for API services must use the `gs-control` build token 
 
 ## Controlled operations
 
-- `.github/workflows/deploy-gs-api.yml` builds and tests pull requests without
-  mutating Cloudflare. Pushes to `main` apply the production migration ledger and
-  deploy `env.prod`. Secret values remain dashboard-managed.
-- `db/migrations/manifest.json` is the ordered D1 ledger. The production deploy
-  applies its declared migrations before publishing the Worker; recovery and
-  backfills remain explicit operator actions.
+- `.github/workflows/deploy-gs-api.yml` performs contract preflight checks, uploads a
+  tagged immutable Worker version, checks its preview alias, and promotes that exact
+  version only after it is healthy. Deployments preserve existing remote bindings,
+  variables, and secrets; they never provision secret values.
+- `.github/workflows/migrate-gs-api-d1.yml` is the only automated remote migration
+  path. A dispatch requires approval through the `preview-database` GitHub
+  environment, applies every unapplied SQL file declared in
+  `db/migrations/manifest.json`, and records its checksum in each target database's
+  `_goldshore_migrations` ledger. Production additionally requires the protected
+  `production-database` environment approval and cannot run until preview succeeds.
 - `secret-contract.json` contains names and operational metadata only. Secret values
   must be created and rotated in the Cloudflare dashboard or an approved Secrets
   Store. `.github/workflows/audit-gs-api-secrets.yml` only lists remote names and
   reports required-name drift; it never reads or writes values.
 
-Repository administrators must protect the production GitHub environment and require
-reviewers for deployment. Pull requests never mutate production D1.
+Repository administrators must configure required reviewers on both database GitHub
+environments. Keep preview and production D1 bindings isolated; an environment that
+points both names at the same D1 resource cannot provide a meaningful preview gate.
 
 ## Binding rules
 
@@ -109,9 +114,6 @@ Allowed platform bindings include:
 - `SIGNALS_DB` → `gs_signals_db`
 - `JOBS_DB` → `gs_jobs_db`
 - `GS_ASSETS` → `gs-assets`
-- `MAIL_ARCHIVE` → `gs-assets` under the `mail/inbound/` prefix
-- `EMAIL` → native Cloudflare Email Sending binding
-- `MAIL_JOBS_QUEUE` → `gs-mail-jobs`
 
 Do not add service bindings to retired or satellite workers such as `gs-agent`, `gs-gateway`, `gs-mail`, `gs-control`, or `gs-platform`. Route, cron, queue, email, auth, and AI logic belongs in `apps/gs-api`.
 
@@ -133,9 +135,7 @@ The router in `src/index.ts` and the route files in `src/routes/` are the source
 ### Public routes
 
 - `GET /` — HTML service status page
-- `GET /health` — dependency-free liveness probe
-- `GET /ready` — dependency readiness probe
-- `GET /admin/system/dependencies` — authenticated dependency detail
+- `GET /health` — shallow or deep health probe via `?type=deep`
 
 ### Authenticated API modules
 
