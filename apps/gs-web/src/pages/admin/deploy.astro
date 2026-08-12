@@ -1,7 +1,7 @@
 ---
 export const prerender = false;
 
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import AdminLayout from "../../layouts/AdminLayout.astro";
 import { authorizeAdminRequest, getAdminAuthError, getAdminRouteRule } from '../../utils/admin-access';
 
 const env = Astro.locals.runtime?.env as Env | undefined;
@@ -17,7 +17,7 @@ if (!rule) {
 }
 ---
 
-<BaseLayout title="Deploy Assistant | GoldShore Admin" description="Search Cloudflare-native templates, stream ranked recommendations, and stage dry-run deployments.">
+<AdminLayout title="Deploy Assistant | GoldShore Admin">
   <section class="gs-section deploy-assistant" data-api-base={apiBase}>
     <div class="gs-grid columns-2">
       <div>
@@ -343,7 +343,7 @@ if (!rule) {
 
     loadRecommendations().catch((error) => setText('assistant-summary', error.message || 'Initial search failed'));
   </script>
-</BaseLayout>
+</AdminLayout>
 
 <style>
   .deploy-flow {

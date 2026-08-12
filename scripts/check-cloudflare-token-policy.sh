@@ -10,13 +10,10 @@ if rg -n 'CLOUDFLARE_(BUILD_)?API_TOKEN:\s*\$\{\{[^}]*\|\|[^}]*\}\}' "$workflows
   exit 1
 fi
 
-echo "Checking canonical deploy token wiring..."
-if ! rg -n 'RAW_CLOUDFLARE_API_TOKEN:\s*\$\{\{\s*secrets\.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN\s*\}\}' "$workflows_dir/deploy-gs-api.yml" >/dev/null; then
-  echo "deploy-gs-api.yml must normalize secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN before use"
-  exit 1
-fi
-if ! rg -n 'RAW_CLOUDFLARE_API_TOKEN:\s*\$\{\{\s*secrets\.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN\s*\}\}' "$workflows_dir/deploy-gs-web.yml" >/dev/null; then
-  echo "deploy-gs-web.yml must normalize secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN before use"
+echo "Checking dashboard-owned deploy workflows are credential-free and read-only..."
+if rg -n 'CLOUDFLARE_(?:API_TOKEN|API_KEY|BUILD_API_TOKEN)|\bCF_API\b|wrangler\s+(?:deploy|delete|secret|kv|d1|r2|queue|workflow)\b' \
+  "$workflows_dir/deploy-gs-api.yml" "$workflows_dir/deploy-gs-web.yml"; then
+  echo "Canonical deploy workflow files must not contain Cloudflare credentials or mutation commands."
   exit 1
 fi
 

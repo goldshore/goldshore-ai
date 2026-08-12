@@ -1,5 +1,5 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import AdminLayout from "../../layouts/AdminLayout.astro";
 import { authorizeAdminRequest, getAdminAuthError, getAdminRouteRule } from '../../utils/admin-access';
 
 export const prerender = false;
@@ -77,7 +77,7 @@ if (!authError) {
 const formatDate = (value: string | null | undefined) => (value ? new Date(value).toLocaleString() : '—');
 ---
 
-<BaseLayout title="API Status | GoldShore Admin" description="gs-api routes, health, and runtime config">
+<AdminLayout title="API Status | GoldShore Admin">
   <section class="gs-section">
     <div class="gs-grid columns-2">
       <div>
@@ -177,4 +177,4 @@ const formatDate = (value: string | null | undefined) => (value ? new Date(value
       </>
     )}
   </section>
-</BaseLayout>
+</AdminLayout>

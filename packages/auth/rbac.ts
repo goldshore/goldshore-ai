@@ -5,10 +5,13 @@ import type { AccessTokenPayload } from "./verify";
 export const ADMIN_PERMISSIONS = [
   "dashboard:read",
   "cms:read", "cms:create", "cms:update", "cms:publish", "cms:delete",
+  "content:read", "content:write", "content:publish",
+  "media:read", "media:write", "media:delete",
+  "system:read", "system:write", "system:integrations:manage",
   "api_configuration:read", "api_configuration:update",
   "mailboxes:read", "mailboxes:create", "mailboxes:update", "mailboxes:delete",
   "email_subscribers:read", "email_subscribers:create", "email_subscribers:update", "email_subscribers:delete",
-  "forms:read", "forms:create", "forms:update", "forms:publish", "forms:delete",
+  "forms:read", "forms:create", "forms:update", "forms:publish", "forms:delete", "forms:write",
   "deployments:read", "deployments:create", "deployments:promote",
   "rollbacks:read", "rollbacks:create",
   "integrations:read", "integrations:manage",
@@ -20,12 +23,16 @@ export const ADMIN_PERMISSIONS = [
   "roles:read", "roles:manage",
   "approvals:read", "approvals:create", "approvals:approve", "approvals:execute",
   "audit:read",
-  // Compatibility permissions used by existing routes while they migrate to
-  // the resource names above.
   "content:read", "content:write", "content:publish",
-  "system:read", "system:write", "system:integrations:manage",
   "media:read", "media:write", "media:delete",
-  "forms:write", "ai:analyze"
+  "forms:write",
+  "system:read", "system:write", "system:integrations:manage",
+  "ai:analyze",
+  "google-business:read",
+  "google-business:publish",
+  "google-business:locations:manage",
+  "google-business:reviews:manage",
+  "google-business:accounts:manage"
 ] as const;
 export type AdminPermission = (typeof ADMIN_PERMISSIONS)[number];
 

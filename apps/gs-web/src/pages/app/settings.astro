@@ -1,5 +1,5 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import AdminLayout from "../../layouts/AdminLayout.astro";
 import { authorizeAdminRequest, getAdminRouteRule } from '../../utils/admin-access';
 
 export const prerender = false;
@@ -48,7 +48,7 @@ if (!authError) {
 }
 ---
 
-<BaseLayout title="Settings | GoldShore Admin" description="Site and platform configuration">
+<AdminLayout title="Settings | GoldShore Admin">
   <section class="gs-section">
     <div class="gs-grid columns-2">
       <div>
@@ -267,7 +267,7 @@ if (!authError) {
       }
     });
   </script>
-</BaseLayout>
+</AdminLayout>
 
 <style>
   .settings-grid {

@@ -1,6 +1,7 @@
 import {
   buildAdminSession,
   hasAdminPermission,
+  ROLE_PERMISSIONS,
   verifyAccessWithClaims,
   verifyJWTCookie,
   type AccessTokenPayload,
@@ -37,6 +38,22 @@ const STATIC_PATH_PREFIXES = [
   '/robots.txt',
   '/sitemap',
 ];
+
+/**
+ * Paths that stay reachable on the admin hostname without an admin session.
+ *
+ * The admin host folds every unrecognized path back to the dashboard, and the
+ * dashboard requires a session. Without this exemption the sign-in and
+ * sign-out routes would themselves be rewritten to the dashboard, so an
+ * unauthenticated operator would bounce between /login and /app/dashboard
+ * with no way to authenticate.
+ */
+const ADMIN_HOST_PUBLIC_PATHS = ['/login', '/logout'];
+
+const isAdminHostPublicPath = (pathname: string) =>
+  ADMIN_HOST_PUBLIC_PATHS.some(
+    (candidate) => pathname === candidate || pathname.startsWith(`${candidate}/`),
+  );
 
 const CLEAN_ADMIN_PAGE_PREFIXES = [
   '/api-status',
@@ -91,6 +108,7 @@ export const getAdminHostRewritePath = (pathname: string) => {
   const normalizedPath = normalizePathname(pathname);
 
   if (isStaticAssetPath(normalizedPath)) return null;
+  if (isAdminHostPublicPath(normalizedPath)) return null;
   if (normalizedPath === '/') return ADMIN_DASHBOARD_PATH;
 
   if (
@@ -247,7 +265,8 @@ export const getAdminRouteRule = (
   if (
     hostname &&
     isAdminHost(hostname) &&
-    !isStaticAssetPath(normalizedPath)
+    !isStaticAssetPath(normalizedPath) &&
+    !isAdminHostPublicPath(normalizedPath)
   ) {
     return {
       canonicalPath: ADMIN_DASHBOARD_PATH,
@@ -277,20 +296,50 @@ export const getAdminLoginDestination = (requested?: string) => {
   }
 };
 
+/**
+ * A successfully verified Cloudflare Access assertion has already passed the
+ * dedicated Access application's identity policy. Access assertions do not
+ * normally contain the application-specific `admin` role used by cookie JWTs,
+ * so give that edge-authenticated identity the admin session expected by the
+ * protected dashboard. Explicit supported roles still take precedence.
+ */
+export const buildCloudflareAccessAdminSession = (
+  claims: AccessTokenPayload,
+): AdminSession => {
+  const session = buildAdminSession(claims);
+  if (session.roles.length > 0) return session;
+
+  return {
+    roles: ['admin'],
+    permissions: [...ROLE_PERMISSIONS.admin],
+  };
+};
+
 export const authorizeAdminRequest = async (
   request: Request,
   env: AccessEnv | undefined,
   rule: AdminRouteRule,
 ): Promise<AdminAuthorizationResult> => {
-  if (!env?.JWT_SECRET) {
+  if (!env?.JWT_SECRET && !env?.CLOUDFLARE_TEAM_DOMAIN) {
     return {
       ok: false,
       status: 503,
-      error: 'Admin access is misconfigured: JWT_SECRET is missing.',
+      error: 'Admin access is misconfigured: no JWT verifier is configured.',
     };
   }
 
-  const claims = await verifyJWTCookie(request, env);
+  // Prefer an application cookie JWT; fall back to a Cloudflare Access
+  // assertion at the edge. Each verifier runs at most once per request.
+  const cookieClaims = await verifyJWTCookie(request, env);
+  const accessClaims = cookieClaims ? null : await verifyAccessWithClaims(request, env);
+  const verifiedClaims = cookieClaims ?? accessClaims;
+
+  // A verified signature only proves identity. Authorization is a second,
+  // database-backed step: the identity must still resolve to an active user
+  // (or service) row carrying a supported role, and comes back enriched with
+  // that role. It fails closed — an unknown identity is rejected here.
+  const claims = verifiedClaims ? await authorizeAccessClaims(verifiedClaims, env) : null;
+
   if (!claims) {
     return {
       ok: false,
@@ -299,7 +348,12 @@ export const authorizeAdminRequest = async (
     };
   }
 
-  const session = buildAdminSession(claims);
+  // Authorized claims carry their role from the database, so the Access branch
+  // resolves to that role; its blanket-admin fallback only applies to an
+  // edge-authenticated identity that carries no role at all.
+  const session = accessClaims
+    ? buildCloudflareAccessAdminSession(claims)
+    : buildAdminSession(claims);
   if (rule.requiresAdminRole && session.roles.length === 0) {
     return {
       ok: false,

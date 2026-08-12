@@ -1,0 +1,96 @@
+name: Cloudflare read-only audit
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 8 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    name: Inventory and drift audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: cloudflare-audit
+    env:
+      CF_API: https://api.cloudflare.com/client/v4
+      CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CF_READ_TOKEN: ${{ secrets.CLOUDFLARE_AUDIT_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Validate read-only credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CF_ACCOUNT_ID" || { echo "::error::CLOUDFLARE_ACCOUNT_ID is not configured"; exit 1; }
+          test -n "$CF_READ_TOKEN" || { echo "::error::CLOUDFLARE_AUDIT_TOKEN is not configured"; exit 1; }
+          echo "::add-mask::$CF_READ_TOKEN"
+
+      - name: Collect and redact inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p audit
+          request() {
+            local name="$1" path="$2"
+            local output="audit/${name}.json"
+            if ! curl --fail-with-body --silent --show-error --retry 3 \
+              --header "Authorization: Bearer $CF_READ_TOKEN" \
+              "$CF_API/$path" > "$output.raw"; then
+              echo "::error title=Cloudflare audit failed::$name could not be read"
+              return 1
+            fi
+            jq '{success, errors: [.errors[]? | {code, message}], result: (.result | walk(if type == "object" then del(.client_secret, .secret, .token, .key, .email, .idp_public_cert) else . end))}' \
+              "$output.raw" > "$output"
+            rm -f "$output.raw"
+          }
+
+          request access-apps "accounts/$CF_ACCOUNT_ID/access/apps?per_page=100"
+          request access-policies "accounts/$CF_ACCOUNT_ID/access/policies?per_page=100"
+          request workers "accounts/$CF_ACCOUNT_ID/workers/scripts"
+          request worker-routes "accounts/$CF_ACCOUNT_ID/workers/domains"
+          request kv "accounts/$CF_ACCOUNT_ID/storage/kv/namespaces?per_page=100"
+          request d1 "accounts/$CF_ACCOUNT_ID/d1/database?per_page=100"
+          request pages "accounts/$CF_ACCOUNT_ID/pages/projects?per_page=100"
+
+          # Repository declarations are included so reviewers can compare desired and live state.
+          find apps -maxdepth 2 -name wrangler.toml -print0 | sort -z | \
+            xargs -0 -r sha256sum > audit/wrangler-sha256.txt
+          printf '{"run":"%s","commit":"%s","generated_at":"%s"}\n' \
+            "$GITHUB_RUN_ID" "$GITHUB_SHA" "$(date -u +%FT%TZ)" > audit/metadata.json
+
+          # Defense in depth: fail rather than publish data matching common credential fields.
+          if rg -i '"(client_secret|secret|token|api_key|auth_key)"\s*:\s*"[^" ]+' audit; then
+            echo "::error::Audit redaction check found a credential-like field"
+            exit 1
+          fi
+
+      - name: Write audit summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Cloudflare read-only audit"
+            echo "- Result: **${{ job.status }}**"
+            echo "- Commit: \`$GITHUB_SHA\`"
+            echo "- Authentication: scoped \`CLOUDFLARE_AUDIT_TOKEN\` (read permissions only)"
+            echo "- Mutation methods issued: **none**"
+            echo "- Artifact retention: 14 days"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload redacted audit
+        if: always() && hashFiles('audit/**') != ''
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: cloudflare-audit-${{ github.run_id }}
+          path: audit/
+          retention-days: 14
+          if-no-files-found: error
+

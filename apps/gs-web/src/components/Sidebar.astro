@@ -31,7 +31,19 @@ const governanceLinks: Array<{ href: string; label: string }> = [
 ];
 
 const { logo, permissions = [] } = Astro.props;
+
+// Send operators back to the public site on the same TLD they administer, so
+// admin.goldshore.org returns to goldshore.org rather than goldshore.ai.
+const PUBLIC_SITE_ORIGIN = Astro.url.hostname.toLowerCase().endsWith('goldshore.org')
+  ? 'https://goldshore.org'
+  : 'https://goldshore.ai';
 const can = (permission: string) => permissions.includes(permission);
+
+// Send operators back to the public site on the same TLD they administer, so
+// admin.goldshore.org returns to goldshore.org rather than goldshore.ai.
+const PUBLIC_SITE_ORIGIN = Astro.url.hostname.toLowerCase().endsWith('goldshore.org')
+  ? 'https://goldshore.org'
+  : 'https://goldshore.ai';
 
 const isActive = (href: string) => {
   const currentPath = Astro.url.pathname;
@@ -60,8 +72,19 @@ const isActive = (href: string) => {
       Dashboard
     </a>
 
-    {can('dashboard:read') && <div class="gs-nav-group-label">Operations</div>}
-    {can('dashboard:read') && operationsLinks.map((link) => (
+    <div class="gs-nav-group-label">Governance</div>
+    {governanceLinks.map((link) => (
+      <a
+        class={`gs-nav-block gs-nav-block--sub ${isActive(link.href) ? 'active' : ''}`}
+        href={link.href}
+        aria-current={isActive(link.href) ? 'page' : undefined}
+      >
+        {link.label}
+      </a>
+    ))}
+
+    <div class="gs-nav-group-label">Operations</div>
+    {operationsLinks.map((link) => (
       <a
         class={`gs-nav-block gs-nav-block--sub ${isActive(link.href) ? 'active' : ''}`}
         href={link.href}
@@ -116,6 +139,15 @@ const isActive = (href: string) => {
     </a>
 
     <div class="gs-sidebar-footer">
+      <!--
+        Absolute URL on purpose. Every relative path on the admin hostname is
+        resolved against that host and then folded back to the dashboard by
+        getAdminHostRewritePath, so a relative "/" here would trap the operator
+        on admin.goldshore.ai with no way back to the public site.
+      -->
+      <a href={PUBLIC_SITE_ORIGIN} class="gs-nav-block gs-public-site-btn" rel="noopener">
+        ← Public site
+      </a>
       <a href="/logout" class="gs-nav-block gs-logout-btn">
         Logout
       </a>
