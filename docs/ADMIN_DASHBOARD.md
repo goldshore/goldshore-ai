@@ -24,13 +24,15 @@ User → Cloudflare Access (identity verification)
 
 ### Role Hierarchy
 
-Admin roles and their permissions are defined in `@goldshore/auth` package:
+Admin roles and their permissions are defined in the `@goldshore/auth` package:
 
-- **admin** - Full platform access (all permissions)
-- **operator** - Operational monitoring and configuration
-- **auditor** - Read-only access to logs and reports
-- **developer** - API configuration and deployment
-- **analyst** - Data and reporting access
+- **owner** - Full platform control; assigned manually only
+- **admin** - Day-to-day administration with high-risk actions excluded
+- **editor** - Content and operational editing
+- **viewer** - Read-only dashboard access
+
+Google Workspace compatibility aliases such as `operator`, `developer`,
+`auditor`, and `analyst` are normalized during sync; they are not stored roles.
 
 ## Admin Hosts
 
@@ -41,8 +43,6 @@ The following hostnames route to the admin dashboard:
 | `admin.goldshore.ai` | Production admin UI | Production |
 | `admin.goldshore.org` | Production admin UI (international) | Production |
 | `admin-preview.goldshore.ai` | Preview admin UI | Preview |
-| `dashboard.goldshore.ai` | Alternative prod alias | Production |
-| `dashboard.goldshore.org` | Alternative prod alias (international) | Production |
 
 ## Page Structure
 
@@ -140,7 +140,7 @@ Admin configuration is set in `apps/gs-web/wrangler.toml`:
 [vars]
 # Admin hosts served by gs-web-prod
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-CLOUDFLARE_ACCESS_AUDIENCE = "c520a7647223b49b20fbe5be240772863eb684b97b57c08955b6104c58170db9"
+CLOUDFLARE_ACCESS_AUDIENCE = "9b97506a6f0d65a060dda7fa33aa66f6cee4112898fd45e5cf4da1d25db996c0"
 CLOUDFLARE_ACCESS_APPLICATION = "admin-production"
 ```
 
@@ -148,7 +148,7 @@ CLOUDFLARE_ACCESS_APPLICATION = "admin-production"
 
 Admin sessions carry:
 - User identity and email
-- Assigned roles (admin, operator, auditor, developer, analyst)
+- Assigned roles (`owner`, `admin`, `editor`, or `viewer`)
 - Resolved permissions from role definitions
 - Session expiration timestamp
 
@@ -256,7 +256,7 @@ Astro.locals.adminSession = {
 
 ## Roadmap
 
-- [ ] Google Workspace RBAC integration
+- [x] Google Workspace RBAC integration (disabled until operator configuration is verified)
 - [ ] Advanced analytics dashboard
 - [ ] Bulk operations for product management
 - [ ] Scheduled reports
