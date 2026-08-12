@@ -7,31 +7,31 @@ if (!Astro.locals.adminSession?.isAuthenticated) {
 }
 ---
 
-<AdminLayout title="Control Plane" requiredPermission="system:read">
+<AdminLayout title="Custom Pages" requiredPermission="forms:read">
   <div class="admin-page-header">
-    <h1>Control Plane</h1>
-    <p>Manage platform configuration and infrastructure</p>
+    <h1>Custom Pages</h1>
+    <p>Manage custom content pages</p>
   </div>
 
   <div class="admin-content">
     <section class="admin-section">
-      <h2>Platform Status</h2>
+      <h2>Published Pages</h2>
       <div class="loading-state">
-        <p>Loading platform status...</p>
+        <p>Loading pages...</p>
       </div>
     </section>
 
     <section class="admin-section">
-      <h2>Configuration</h2>
+      <h2>Draft Pages</h2>
       <div class="loading-state">
-        <p>Loading configuration...</p>
+        <p>Loading drafts...</p>
       </div>
     </section>
 
     <section class="admin-section">
-      <h2>Infrastructure Events</h2>
+      <h2>Page Performance</h2>
       <div class="loading-state">
-        <p>Loading infrastructure events...</p>
+        <p>Loading page metrics...</p>
       </div>
     </section>
   </div>
