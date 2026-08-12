@@ -28,7 +28,10 @@ describe('wrangler production baseline', () => {
       'api.goldshore.ai', 'api.goldshore.org', 'agent.goldshore.ai', 'mail.goldshore.ai',
       'ops.goldshore.ai', 'trading.goldshore.ai', 'dashboard.goldshore.ai', 'gw.goldshore.ai',
     ]) {
-      assert.match(prod, new RegExp(hostname.replace(/\./g, '\\.') + '/\\*'));
+      assert.ok(
+        prod.includes('pattern = "' + hostname + '/*"'),
+        'missing route for ' + hostname,
+      );
     }
   });
 });
