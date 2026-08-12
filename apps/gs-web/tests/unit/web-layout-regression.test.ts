@@ -33,6 +33,7 @@ test('WebLayout renders one responsive admin login control', async () => {
   assert.match(source, /id="header-login-link"/);
   assert.match(source, /mobileActions\.insertBefore\(loginLink, mobileDeveloperLink\)/);
   assert.match(source, /desktopNav\.insertBefore\(loginLink, desktopCta\)/);
+  assert.match(source, /href=\{CANONICAL_ADMIN_DASHBOARD_URL\}/);
 });
 
 test('public header supplies the responsive navigation shared with the homepage', async () => {
@@ -99,4 +100,15 @@ test('Gold Shore page templates compose the shared shell and column contract', a
   ]) {
     assert.ok(sectionTemplate.includes(contract), `Section template must retain ${contract}`);
   }
+});
+
+test('homepage has one complete document and shares navigation sources', async () => {
+  const source = await readFile(new URL('pages/index.astro', sourceRoot), 'utf8');
+
+  assert.equal(source.match(/<\/html>/g)?.length, 1);
+  assert.doesNotMatch(source, /<\/WebLayout>/);
+  assert.match(source, /import PublicHeader/);
+  assert.match(source, /companyLinks, platformLinks, serviceLinks/);
+  assert.match(source, /footerColumns\.map/);
+  assert.match(source, /CANONICAL_ADMIN_DASHBOARD_URL/);
 });

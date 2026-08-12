@@ -25,7 +25,6 @@ function pagesCheckUrl(p: any): string {
 
   // Backward-compatible fallback for environments that have not yet set public_url.
   if (p.name === 'gs-web') return 'https://goldshore.ai/';
-  if (p.name === 'gs-admin') return 'https://admin.goldshore.ai/';
   return `https://${p.name}.goldshore.ai/`;
 }
 
