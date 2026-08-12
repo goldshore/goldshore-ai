@@ -10,7 +10,7 @@ operator runbook and are verified by the read-only audit.
 | `admin-merge-cockpit.yml` | Manual repository mutation | SHA-locked salvage branch creation from reviewed conflict decisions. |
 | `audit-gs-api-secrets.yml` | Read-only discovery | Compares secret names with the source-controlled contract without reading values. |
 | `ci.yml` | CI | Validation and build checks. |
-| `cloudflare-audit.yml` | Read-only discovery | Scoped read token; redacted artifact; GET requests only. |
+| `cloudflare-audit.yml` | Read-only discovery | Scoped read token; redacted artifact; GET requests only; owns live resource-drift validation so deterministic PR CI does not depend on mutable account state. |
 | `cloudflare-operator.yml` | Manual account mutation | Approval-gated human runbook; intentionally executes no API mutation. |
 | `deploy-gs-api.yml` | Production deployment | Deploys the unified API Worker; route reassignment is prohibited. |
 | `deploy-gs-web.yml` | CI | Builds the web Worker; the workflow explicitly performs no deployment. |
