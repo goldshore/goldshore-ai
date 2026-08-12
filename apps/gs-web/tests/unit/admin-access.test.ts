@@ -4,6 +4,7 @@ import * as assert from 'node:assert/strict';
 import {
   ALTERNATE_ADMIN_DASHBOARD_URL,
   CANONICAL_ADMIN_DASHBOARD_URL,
+  buildCloudflareAccessAdminSession,
   getAdminLoginDestination,
   getAdminHostRewritePath,
   getAdminRouteRule,
@@ -77,6 +78,27 @@ test('sends admin login destinations directly to the dashboard path', () => {
   assert.equal(getAdminLoginDestination('ai'), CANONICAL_ADMIN_DASHBOARD_URL);
   assert.equal(getAdminLoginDestination('org'), ALTERNATE_ADMIN_DASHBOARD_URL);
   assert.equal(getAdminLoginDestination('unknown'), CANONICAL_ADMIN_DASHBOARD_URL);
+});
+
+test('grants the admin session to an identity verified by the admin Access application', () => {
+  const session = buildCloudflareAccessAdminSession({
+    sub: 'access-user',
+    email: 'operator@example.com',
+  });
+
+  assert.deepEqual(session.roles, ['admin']);
+  assert.ok(session.permissions.includes('system:read'));
+  assert.ok(session.permissions.includes('system:write'));
+});
+
+test('preserves an explicit supported role from Cloudflare Access claims', () => {
+  const session = buildCloudflareAccessAdminSession({
+    sub: 'access-viewer',
+    roles: ['viewer'],
+  });
+
+  assert.deepEqual(session.roles, ['viewer']);
+  assert.deepEqual(session.permissions, ['content:read', 'media:read', 'forms:read']);
 });
 
 test('login page uses dashboard destinations instead of admin host roots', async () => {
