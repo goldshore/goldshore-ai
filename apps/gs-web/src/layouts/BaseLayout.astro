@@ -1,15 +1,61 @@
 ---
-import GoldShoreShell from './GoldShoreShell.astro';
-import '../styles/goldshore-shell.css';
+import PublicHeader from '../components/PublicHeader.astro';
+import PublicFooter from '../components/PublicFooter.astro';
+import '../styles/global.css';
 
-const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.props;
+const {
+  title = 'GoldShore',
+  description = 'GoldShore AI',
+  canonicalPath = Astro.url.pathname,
+  ogTitle = title,
+  ogDescription = description,
+} = Astro.props;
+const siteOrigin = Astro.url.origin;
+const canonicalUrl = new URL(canonicalPath, siteOrigin).toString();
+const socialImageUrl = new URL('/logo.png', siteOrigin).toString();
 ---
-<GoldShoreShell
-  title={title}
-  description={description}
-  canonicalPath={canonicalPath}
-  ogTitle={ogTitle}
-  ogDescription={ogDescription}
->
-  <slot />
-</GoldShoreShell>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:title" content={ogTitle} />
+    <meta property="og:description" content={ogDescription} />
+    <meta property="og:image" content={socialImageUrl} />
+    <meta property="og:site_name" content="GoldShore" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={ogTitle} />
+    <meta name="twitter:description" content={ogDescription} />
+    <meta name="twitter:image" content={socialImageUrl} />
+    <meta name="robots" content="index,follow,max-image-preview:large" />
+    <meta name="theme-color" content="#06060a" />
+    <link rel="icon" href="/assets/penrose-logo.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/assets/penrose-logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+    <link rel="sitemap" href="/sitemap.xml" type="application/xml" />
+    <meta name="google-adsense-account" content="ca-pub-5105781580031290" />
+    <script type="application/ld+json" set:html={JSON.stringify({
+      '@context': 'https://schema.org', '@type': 'Organization', name: 'Gold Shore Labs',
+      alternateName: 'GoldShore', url: siteOrigin, logo: socialImageUrl, sameAs: [],
+    })}></script>
+  </head>
+  <body>
+    <a href="#content" class="skip-link">Skip to content</a>
+    <div class="gs-page-shell gs-shell-v284">
+      <PublicHeader currentPath={Astro.url.pathname} />
+      <main id="content" class="gs-page-content"><slot /></main>
+      <PublicFooter />
+    </div>
+    <script>
+      import '../scripts/theme-navigation';
+      import '../scripts/page-motion';
+    </script>
+  </body>
+</html>

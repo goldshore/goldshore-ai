@@ -6,6 +6,23 @@ on:
     branches: [main]
 
 jobs:
+  gs-api-build:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22
+          cache: "pnpm"
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Build gs-api
+        run: pnpm --filter @goldshore/gs-api build
+
   lint-test-build:
     permissions:
       contents: read
@@ -13,10 +30,12 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7.0.0
         with:
           node-version: 22
           cache: "pnpm"
@@ -24,23 +43,63 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
-      - name: Repo health checks
-        run: pnpm run repo:health
-        continue-on-error: false
+      - name: Lint
+        run: pnpm lint
+
+      - name: Validate GitHub workflow structure
+        run: pnpm check:workflows
 
       - name: Enforce banproof production bindings
         if: ${{ vars.ENABLE_BANPROOF_BINDINGS_CHECK == 'true' }}
         run: pnpm check:banproof-bindings
 
+      - name: Warn when banproof binding check is disabled
+        if: ${{ vars.ENABLE_BANPROOF_BINDINGS_CHECK != 'true' }}
+        run: echo "::warning::ENABLE_BANPROOF_BINDINGS_CHECK is not set to true; skipping banproof production binding validation."
+
+      - name: Validate CF resource IDs
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_BUILD_API_TOKEN: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
+        run: |
+          if [ -z "$CLOUDFLARE_BUILD_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::warning::Cloudflare credentials are unavailable; skipping live resource validation."
+            exit 0
+          fi
+          node scripts/validate-cf-resources.mjs
+
       - name: Build all
         run: pnpm -r --sequential build
 
+      # gs-web's "test" script runs Playwright only, so tests/unit never ran in
+      # CI on either this workflow or the pull-request gate. Invoke test:unit
+      # explicitly so pushes to main are covered as well.
+      - name: Test gs-web (unit)
+        run: pnpm --dir apps/gs-web test:unit
+
+      - name: Detect gs-web release-impact changes
+        id: gs-web-changes
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            RANGE="origin/${{ github.base_ref }}...HEAD"
+          else
+            RANGE="${{ github.event.before }}...${{ github.sha }}"
+          fi
+
+          if git diff --name-only "$RANGE" | grep -Eq '^(apps/gs-web/|packages/|package.json|pnpm-lock.yaml|pnpm-workspace.yaml|turbo.json)$'; then
+            echo "release_impact=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "release_impact=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: gs-web release quality gate
+        if: steps.gs-web-changes.outputs.release_impact == 'true'
         working-directory: apps/gs-web
         env:
           # CI baseline; raise once core vitals are addressed (images, JS bundles)
           LH_MIN_PERFORMANCE: "0.60"
         run: pnpm check:release
 
-      - name: Verify internal links (Developer Hub, Risk Radar, Workflows)
+      - name: Verify internal links
         run: node scripts/check-internal-links.mjs

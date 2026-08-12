@@ -1,8 +1,35 @@
 ---
-import GoldShoreShell from './GoldShoreShell.astro';
+import Logo from '../components/brand/Logo.astro';
+import '@goldshore/theme/styles/tokens.css';
+import '@goldshore/theme/styles/base.css';
+import '@goldshore/theme/styles/components.css';
+import '@goldshore/theme/styles/layout.css';
+import '../styles/global.css';
+import { WEB_META_CSP } from '../utils/csp';
 import '../styles/goldshore-shell.css';
+import { primaryNavLinks, companyLinks } from '../config/navigation';
+import { CANONICAL_ADMIN_ORIGIN } from '../utils/admin-access';
 
-const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.props;
+const { title, description, canonicalPath } = Astro.props;
+const ogTitle = Astro.props.ogTitle ?? title;
+const ogDescription = Astro.props.ogDescription ?? description;
+const canonicalUrl = canonicalPath
+  ? new URL(canonicalPath, Astro.url.origin).toString()
+  : Astro.url.href;
+const navLinks = primaryNavLinks;
+const footerLinks = companyLinks;
+const mobileNavId = 'mobile-navigation';
+const normalizePath = (path: string) => {
+  const normalized = path.startsWith('/') ? path : `/${path}`;
+  return normalized === '/' ? '/' : `${normalized.replace(/\/+$/, '')}/`;
+};
+const activePath = normalizePath(Astro.url.pathname);
+const isCurrent = (href: string) => {
+  const normalizedHref = normalizePath(href);
+  return normalizedHref === '/'
+    ? activePath === '/'
+    : activePath === normalizedHref || activePath.startsWith(normalizedHref);
+};
 ---
 
 <html lang="en">
@@ -21,10 +48,8 @@ const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.prop
     <meta name="twitter:url" content={canonicalUrl} />
     <meta name="twitter:title" content={ogTitle} />
     <meta name="twitter:description" content={ogDescription} />
-    <!-- Response headers from middleware/platform config are authoritative. Keep this meta CSP only as a fallback when headers are unavailable. -->
-    {shouldRenderCspMeta && <meta http-equiv="Content-Security-Policy" content={HTML_CSP_META_FALLBACK} />}
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="icon" href="/favicon.png" type="image/png" sizes="32x32" />
+    <link rel="icon" href="/assets/penrose-logo.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/assets/penrose-logo.png" />
     <!-- Preconnect to external origins to speed up resource loading -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -33,6 +58,8 @@ const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.prop
       rel="stylesheet"
     />
     <link rel="manifest" href="/site.webmanifest"/>
+    <link rel="sitemap" href="/sitemap.xml" type="application/xml" />
+    <meta name="google-adsense-account" content="ca-pub-5105781580031290" />
   </head>
   <body>
     <a href="#content" class="skip-link">Skip to content</a>
@@ -40,21 +67,26 @@ const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.prop
       <header class="header" data-menu-open="false">
         <div class="header__inner">
           <a href="/" class="header-brand" aria-label="Gold Shore home">
+            <img src="/assets/penrose-logo.png" alt="GS Labs" class="header-brand__logo" />
             <span class="header-brand__coords">40°42′45″N<br />74°00′21″W</span>
             <span class="header-brand__mark">GS·LAB·v2.84</span>
-            <span class="header-brand__lockup"><strong>Gold Shore Labs</strong><em>GoldShore</em></span>
+            <span class="header-brand__lockup"><strong><span>GOLD</span><span class="header-brand__shore">SHORE</span></strong><em>GoldShore</em></span>
           </a>
 
           <nav class="desktop-nav" aria-label="Primary navigation">
             <div class="desktop-nav__links">
               {navLinks.map((link) => (
-                <a href={link.href} aria-current={currentPath === link.href ? 'page' : undefined}>
+                <a href={link.href} aria-current={isCurrent(link.href) ? 'page' : undefined}>
                   {link.label}
                 </a>
               ))}
             </div>
-            <a href="https://dashboard.goldshore.ai" class="header-login">Log in</a>
-            <a href="/contact" class="header-cta">Get a Briefing</a>
+            <a
+              href={CANONICAL_ADMIN_ORIGIN}
+              class="header-login"
+              id="header-login-link"
+            >Log in</a>
+            <a href="/contact/" class="header-cta">Get a Briefing</a>
           </nav>
 
           <button
@@ -74,24 +106,25 @@ const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.prop
           <div class="menu-panel__inner">
             <div class="menu-panel__header">
               <a href="/" class="header-brand header-brand--mobile" aria-label="GoldShore home">
-                <span class="header-brand__mark">GS·LAB</span>
-                <span class="header-brand__lockup"><strong>Gold Shore Labs</strong><em>Institutional AI systems</em></span>
+                <div class="header-brand__mobile-container">
+                  <img src="/assets/penrose-logo.png" alt="GS Labs" class="header-brand__logo header-brand__logo--mobile" />
+                  <span class="header-brand__lockup"><strong><span>GOLD</span><span class="header-brand__shore">SHORE</span></strong><em>Institutional AI systems</em></span>
+                </div>
               </a>
               <button class="menu-close" type="button" aria-label="Close navigation">×</button>
             </div>
 
             <div class="menu-panel__links">
               {navLinks.map((link) => (
-                <a href={link.href} aria-current={currentPath === link.href ? 'page' : undefined}>
+                <a href={link.href} aria-current={isCurrent(link.href) ? 'page' : undefined}>
                   {link.label}
                 </a>
               ))}
             </div>
 
             <div class="menu-panel__actions">
-              <a href="/contact" class="header-cta header-cta--mobile">Get a Briefing</a>
-              <a href="https://dashboard.goldshore.ai" class="menu-secondary-link">Log in</a>
-              <a href="/developer" class="menu-secondary-link">Open Developer Hub</a>
+              <a href="/contact/" class="header-cta header-cta--mobile">Get a Briefing</a>
+              <a href="/developer/" class="menu-secondary-link">Open Developer Hub</a>
             </div>
           </div>
         </nav>
@@ -104,12 +137,10 @@ const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.prop
       <footer class="gs-footer">
         <div class="gs-footer__inner">
           <div class="footer-brand-copy">
-            <div class="footer-brand">
-              <Logo class="gs-logo gs-logo--footer" title="Gold Shore" />
-              <div class="brand-lockup brand-lockup--footer">
-                <strong>Gold Shore</strong>
-                <span>Operational AI, observability, and control systems</span>
-              </div>
+            <img src="/assets/penrose-logo.png" alt="GS Labs" class="footer-brand__logo" />
+            <div class="brand-lockup brand-lockup--footer">
+              <strong>GOLDSHORE</strong>
+              <span>Operational AI, observability, and control systems</span>
             </div>
             <p>
               Infrastructure for high-trust AI, risk tooling, and resilient operator systems.
@@ -119,6 +150,10 @@ const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.prop
             {footerLinks.map((link) => (
               <a href={link.href}>{link.label}</a>
             ))}
+          </div>
+          <div class="footer-coords">
+            <div class="footer-coords__item">40°42′45″N</div>
+            <div class="footer-coords__item">74°00′21″W</div>
           </div>
         </div>
       </footer>
@@ -134,20 +169,52 @@ const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.prop
         const header = document.querySelector('.header');
         const toggle = document.querySelector('.menu-button');
         const mobileNav = document.getElementById('mobile-navigation');
+        const loginLink = document.getElementById('header-login-link');
+        const desktopNav = document.querySelector('.desktop-nav');
+        const desktopCta = desktopNav?.querySelector('.header-cta');
+        const mobileActions = mobileNav?.querySelector('.menu-panel__actions');
+        const mobileDeveloperLink = mobileActions?.querySelector('.menu-secondary-link');
+        const mobileViewport = window.matchMedia('(max-width: 960px)');
 
         if (
           !(header instanceof HTMLElement) ||
           !(toggle instanceof HTMLButtonElement) ||
-          !(mobileNav instanceof HTMLElement)
+          !(mobileNav instanceof HTMLElement) ||
+          !(loginLink instanceof HTMLAnchorElement) ||
+          !(desktopNav instanceof HTMLElement) ||
+          !(desktopCta instanceof HTMLAnchorElement) ||
+          !(mobileActions instanceof HTMLElement) ||
+          !(mobileDeveloperLink instanceof HTMLAnchorElement)
         ) {
           return;
         }
+
+        const placeLoginLink = (isMobile) => {
+          loginLink.classList.toggle('header-login', !isMobile);
+          loginLink.classList.toggle('menu-secondary-link', isMobile);
+
+          if (isMobile) {
+            mobileActions.insertBefore(loginLink, mobileDeveloperLink);
+          } else {
+            desktopNav.insertBefore(loginLink, desktopCta);
+          }
+        };
+
+        placeLoginLink(mobileViewport.matches);
+        mobileViewport.addEventListener('change', (event) => {
+          placeLoginLink(event.matches);
+          if (!event.matches) setMenu(false);
+        });
 
         const setMenu = (isOpen) => {
           header.dataset.menuOpen = String(isOpen);
           toggle.setAttribute('aria-expanded', String(isOpen));
           document.body.classList.toggle('menu-open', isOpen);
         };
+
+        const syncHeaderState = () => header.classList.toggle('is-scrolled', window.scrollY > 28);
+        syncHeaderState();
+        window.addEventListener('scroll', syncHeaderState, { passive: true });
 
         const handleToggle = () => {
           const next = header.dataset.menuOpen !== 'true';
@@ -220,10 +287,19 @@ const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.prop
 
       .gs-page-shell {
         min-height: 100vh;
+        --gs-header-height: 72px;
+        --gs-site-width: 1440px;
+        --gs-site-gutter: clamp(1rem, 4vw, 4rem);
+        --gs-site-columns: repeat(12, minmax(0, 1fr));
+        scroll-padding-top: var(--gs-header-height);
       }
 
       .gs-page-content {
         min-height: calc(100vh - 220px);
+      }
+
+      .gs-page-content > * {
+        scroll-margin-top: calc(var(--gs-header-height) + 1rem);
       }
 
       .header {
@@ -231,19 +307,29 @@ const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.prop
         top: 0;
         z-index: 1100;
         padding: 1rem clamp(1rem, 3vw, 3rem);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         background: rgba(6, 6, 10, 0.88);
         border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        transition:
+          padding 220ms ease,
+          background 220ms ease,
+          border-color 220ms ease;
+      }
+
+      .header.is-scrolled {
+        padding-block: 0.68rem;
+        background: rgba(6, 6, 10, 0.96);
+        border-bottom-color: rgba(217, 106, 50, 0.34);
       }
 
       .header__inner {
-        width: min(100%, 1440px);
+        width: min(100%, var(--gs-site-width));
         margin: 0 auto;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 2rem;
+        gap: clamp(1rem, 2vw, 2rem);
       }
 
       .header-brand {
@@ -253,6 +339,20 @@ const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.prop
         color: var(--gs-text);
         text-decoration: none;
         min-width: 0;
+      }
+
+      .header-brand__logo {
+        display: none;
+        width: 50px;
+        height: 50px;
+        object-fit: contain;
+        flex-shrink: 0;
+      }
+
+      @media (min-width: 961px) {
+        .header-brand__logo {
+          display: block;
+        }
       }
 
       .header-brand__coords {
@@ -292,6 +392,19 @@ const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.prop
         white-space: nowrap;
       }
 
+      .header-brand__shore {
+        color: transparent;
+        -webkit-text-stroke: 1px var(--gs-text);
+        transition:
+          color 220ms ease,
+          -webkit-text-stroke-color 220ms ease;
+      }
+
+      .header.is-scrolled .header-brand__shore {
+        color: var(--gs-text);
+        -webkit-text-stroke-color: transparent;
+      }
+
       .header-brand__lockup em {
         display: block;
         color: var(--gs-text-dim);
@@ -307,11 +420,25 @@ const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.prop
         flex: 1;
       }
 
+      .header-brand__mobile-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .header-brand__logo--mobile {
+        display: block;
+        width: 45px;
+        height: 45px;
+        object-fit: contain;
+      }
+
       .desktop-nav {
         display: flex;
         align-items: center;
         justify-content: flex-end;
-        gap: 1rem;
+        gap: clamp(0.75rem, 1.5vw, 1.5rem);
         flex: 1;
       }
 
@@ -319,7 +446,7 @@ const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.prop
         display: flex;
         align-items: center;
         justify-content: flex-end;
-        gap: 0.25rem;
+        gap: clamp(0.25rem, 0.8vw, 0.75rem);
         flex-wrap: wrap;
       }
 
@@ -334,57 +461,66 @@ const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.prop
       }
 
       .desktop-nav__links a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
         padding: 0.6rem 0.85rem;
-        border-radius: 999px;
-        color: var(--gs-text-dim);
+        border-radius: 6px;
+        color: var(--gs-text);
+        transition: all 160ms ease;
       }
 
       .desktop-nav__links a:hover,
       .desktop-nav__links a[aria-current='page'] {
         color: var(--gs-text);
-        background: rgba(217, 106, 50, 0.09);
+        background: rgba(220, 120, 60, 0.12);
       }
 
       .header-login {
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        min-height: 44px;
         padding: 0.72rem 1rem;
-        border-radius: 999px;
+        border-radius: 6px;
         text-decoration: none;
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        color: var(--gs-text-dim);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        color: var(--gs-text);
         font-weight: 500;
         white-space: nowrap;
-        transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
+        transition: all 160ms ease;
       }
 
       .header-login:hover,
       .header-login:focus-visible {
         color: var(--gs-text);
-        border-color: rgba(255, 255, 255, 0.28);
-        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(220, 120, 60, 0.6);
+        background: rgba(220, 120, 60, 0.08);
       }
 
       .header-cta {
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        min-height: 44px;
         padding: 0.82rem 1.2rem;
-        border-radius: 999px;
+        border-radius: 6px;
         text-decoration: none;
-        background: linear-gradient(135deg, rgba(217, 106, 50, 0.42), rgba(217, 106, 50, 0.22));
-        border: 1px solid rgba(217, 106, 50, 0.5);
-        color: var(--gs-text);
+        background: linear-gradient(135deg, rgba(220, 120, 60, 0.8), rgba(200, 100, 50, 0.8));
+        border: 1px solid rgba(220, 120, 60, 0.9);
+        color: #fff;
         font-weight: 700;
         white-space: nowrap;
-        box-shadow: 0 18px 40px rgba(5, 12, 29, 0.26);
+        box-shadow: 0 10px 28px rgba(220, 120, 60, 0.25);
+        transition: all 160ms ease;
       }
 
       .header-cta:hover,
       .header-cta:focus-visible {
-        transform: translateY(-1px);
-        background: linear-gradient(135deg, rgba(217, 106, 50, 0.52), rgba(217, 106, 50, 0.30));
+        transform: translateY(-2px);
+        background: linear-gradient(135deg, rgba(230, 130, 70, 0.9), rgba(210, 110, 60, 0.9));
+        box-shadow: 0 14px 36px rgba(220, 120, 60, 0.35);
       }
 
       .menu-button,
@@ -399,10 +535,16 @@ const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.prop
         height: 46px;
         place-items: center;
         gap: 4px;
-        border-radius: 999px;
+        border-radius: 6px;
         border: 1px solid var(--gs-border);
-        background: rgba(217, 106, 50, 0.08);
+        background: rgba(220, 120, 60, 0.08);
         cursor: pointer;
+        transition: all 160ms ease;
+      }
+
+      .menu-button:hover {
+        background: rgba(220, 120, 60, 0.14);
+        border-color: rgba(220, 120, 60, 0.4);
       }
 
       .menu-button span {
@@ -465,14 +607,20 @@ const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.prop
       .menu-close {
         width: 2.5rem;
         height: 2.5rem;
-        border: 0;
-        border-radius: 999px;
+        border: 1px solid var(--gs-border);
+        border-radius: 6px;
         background: rgba(255, 255, 255, 0.07);
         color: var(--gs-text);
         font-size: 1.6rem;
         line-height: 1;
         cursor: pointer;
         flex-shrink: 0;
+        transition: all 160ms ease;
+      }
+
+      .menu-close:hover {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: rgba(220, 120, 60, 0.5);
       }
 
       .menu-panel__links {
@@ -481,18 +629,22 @@ const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.prop
       }
 
       .menu-panel__links a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
         padding: 0.95rem 1rem;
-        border-radius: 16px;
+        border-radius: 6px;
         color: var(--gs-text-dim);
         border: 1px solid transparent;
         background: rgba(255, 255, 255, 0.03);
+        transition: all 160ms ease;
       }
 
       .menu-panel__links a:hover,
       .menu-panel__links a[aria-current='page'] {
         color: var(--gs-text);
-        border-color: var(--gs-border);
-        background: rgba(217, 106, 50, 0.08);
+        border-color: rgba(220, 120, 60, 0.5);
+        background: rgba(220, 120, 60, 0.10);
       }
 
       .menu-panel__actions {
@@ -510,10 +662,16 @@ const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.prop
         justify-content: center;
         align-items: center;
         padding: 0.82rem 1.2rem;
-        border-radius: 999px;
+        border-radius: 6px;
         text-decoration: none;
-        border: 1px solid rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.15);
         color: var(--gs-text);
+        transition: all 160ms ease;
+      }
+
+      .menu-secondary-link:hover {
+        border-color: rgba(220, 120, 60, 0.6);
+        background: rgba(220, 120, 60, 0.08);
       }
 
       .header[data-menu-open='true'] .menu-panel {
@@ -545,10 +703,31 @@ const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.prop
         gap: 1rem;
       }
 
+      .footer-brand__logo {
+        width: 55px;
+        height: 55px;
+        object-fit: contain;
+      }
+
       .footer-brand {
         display: inline-flex;
         align-items: center;
         gap: 0.8rem;
+      }
+
+      .footer-coords {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        text-align: right;
+        font-family: 'DM Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.65rem;
+        color: var(--gs-text-dim);
+        letter-spacing: 0.09em;
+      }
+
+      .footer-coords__item {
+        line-height: 1.2;
       }
 
       .gs-footer p {
@@ -559,11 +738,17 @@ const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.prop
       }
 
       .gs-footer__links {
-        display: grid;
-        gap: 0.65rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem 1.5rem;
+        align-content: flex-start;
       }
 
       .gs-footer__links a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        min-width: 44px;
         color: var(--gs-text-dim);
         text-decoration: none;
       }
@@ -573,8 +758,19 @@ const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.prop
       }
 
       .gs-shell-section {
-        width: min(100% - 2rem, var(--gs-max-width));
+        width: min(calc(100% - (2 * var(--gs-site-gutter))), var(--gs-site-width));
         margin: 0 auto;
+      }
+
+      .gs-column-grid {
+        display: grid;
+        grid-template-columns: var(--gs-site-columns);
+        column-gap: clamp(0.75rem, 1.5vw, 1.5rem);
+      }
+
+      .gs-column-grid > * {
+        grid-column: 1 / -1;
+        min-width: 0;
       }
 
       .gs-eyebrow {
@@ -623,12 +819,3 @@ const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.prop
     </style>
   </body>
 </html>
-<GoldShoreShell
-  title={title}
-  description={description}
-  canonicalPath={canonicalPath}
-  ogTitle={ogTitle}
-  ogDescription={ogDescription}
->
-  <slot />
-</GoldShoreShell>

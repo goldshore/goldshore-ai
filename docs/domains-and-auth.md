@@ -8,9 +8,10 @@ This document captures the Cloudflare Access applications and policies that prot
 
 | Access application      | Policy name           | Domain coverage                                                                                                                                             | Notes                                                                                                                                                                                     |
 | ----------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GoldShore Admin         | GoldShore-Admin-ZT    | `admin.goldshore.ai`, `admin.goldshore.org`, `admin-preview.goldshore.ai`, `*-preview.goldshore.ai` (admin preview branches), `{branch}.goldshore-pages.dev` (admin preview pages) | Admin cockpit is protected by Access with an email allowlist + identity provider requirement. Preview domains should be attached to the same application to match production enforcement. |
-| GoldShore MCP           | GoldShore-MCP-ZT      | `mcp.goldshore.ai`                                                                                                                                                                  | Private MCP surface. Allow only approved human identities and a dedicated service identity path for approved agents.                                                                      |
-| GoldShore Web (Preview) | GoldShore-Web-Preview | `preview.goldshore.ai`, `*-preview.goldshore.ai` (web preview branches), `{branch}.goldshore-pages.dev` (web preview pages)                                 | Web production (`goldshore.ai`, `www.goldshore.ai`) is public, but preview domains must be gated behind Access.                                                                           |
+| GoldShore Admin         | GoldShore-Admin-ZT    | `admin.goldshore.ai`, `admin.goldshore.org`, `admin-preview.goldshore.ai`, `*-preview.goldshore.ai` (admin preview branches) | Admin cockpit is protected by Access with an email allowlist + identity provider requirement. Preview domains should be attached to the same application to match production enforcement. |
+| GoldShore Trading       | GoldShore-Trading-ZT  | `trading.goldshore.ai`, `dashboard.goldshore.ai`, `dash.goldshore.ai`                                                                                       | Trading/dashboard surfaces are protected by Access. Broker OAuth callback paths are explicitly bypassed so providers can complete redirects without an Access session.                    |
+| GoldShore MCP           | GoldShore-MCP-ZT      | `mcp.goldshore.ai`                                                                                                                                                                  | Private MCP surface. The underlying worker must be routed on `mcp.goldshore.ai/*` so OAuthProvider endpoints such as `/authorize`, `/token`, `/register`, and `/callback` reach the worker. Allow only approved human identities and a dedicated service identity path for approved agents. |
+| GoldShore Web (Preview) | GoldShore-Web-Preview | `preview.goldshore.ai`, `*-preview.goldshore.ai` (web preview branches)                                 | Web production (`goldshore.ai`, `www.goldshore.ai`) is public, but preview domains must be gated behind Access.                                                                           |
 
 ## Identity providers and session policy alignment
 
@@ -39,13 +40,15 @@ This document is the canonical reference for GoldShore domains, preview URLs, Cl
 - `gw.goldshore.ai` (canonical gateway hostname; not `gateway.goldshore.ai`)
 - `ops.goldshore.ai`
 - `admin.goldshore.ai`
-- `admin.goldshore.org` (protected admin alias; gs-admin Pages)
+- `admin.goldshore.org` (protected admin alias; `gs-web` Worker route)
+- `trading.goldshore.ai`
+- `dashboard.goldshore.ai` (protected trading dashboard alias)
+- `dash.goldshore.ai` (short protected trading dashboard alias)
 - `mail.goldshore.ai`
 
 ## Preview domains
 
 - `*-preview.goldshore.ai`
-- `{branch}.goldshore-pages.dev`
 
 ## `goldshore.ai` domain layout
 
@@ -60,7 +63,8 @@ The table below is the canonical public layout for customer-facing web routes on
 | `www.goldshore.ai` | `/*` | Redirects → goldshore.ai (308, method-preserving, via gs-www-redirect) | Public |
 | `goldshore.org`, `www.goldshore.org` | `/*` | Redirects → goldshore.ai (308, via goldshore-org Worker) until org content is ready | Public |
 | `preview.goldshore.ai` and `*-preview.goldshore.ai` | `/*` | Preview deployments for web validation | Cloudflare Access (GoldShore-Web-Preview) |
-| `admin.goldshore.org` | `/*` | Protected admin alias hosted by `gs-admin` Pages | Cloudflare Access (GoldShore-Admin-ZT) |
+| `admin.goldshore.org` | `/*` | Protected admin alias served by the `gs-web` Worker | Cloudflare Access (GoldShore-Admin-ZT) |
+| `trading.goldshore.ai`, `dashboard.goldshore.ai`, `dash.goldshore.ai` | `/*` | Protected trading dashboard and dashboard aliases | Cloudflare Access (GoldShore-Trading-ZT) |
 
 ## Canonical redirect policy
 
@@ -82,8 +86,9 @@ Cloudflare Access is enforced on internal tooling and protected previews. The ta
 | ------------------ | ------------------------------------------------------------------------------------------------------------ | --------------------------- | ----------------------------------------------------------------------------------------------------- |
 | Public web         | `goldshore.ai`, `www.goldshore.ai`                                                                           | No                          | Public marketing site.                                                                                |
 | Risk Radar page    | `goldshore.ai/apps/risk-radar`, `www.goldshore.ai/apps/risk-radar`                                          | No                          | Public Risk Radar experience and demo surface on the web domain family.                              |
-| Web previews       | `preview.goldshore.ai`, `*-preview.goldshore.ai`, `{branch}.goldshore-pages.dev`                             | Yes (GoldShore-Web-Preview) | Preview builds for the marketing site should remain Access gated.                                     |
-| Admin cockpit      | `admin.goldshore.ai`, `admin.goldshore.org`, `admin-preview.goldshore.ai`, `*-preview.goldshore.ai`, `{branch}.goldshore-pages.dev` | Yes (GoldShore-Admin-ZT)    | Internal admin dashboard, email allowlist + IdP/OTP. The `.org` admin hostname is canonical only as a protected admin alias and must stay on the same Access application as `admin.goldshore.ai`. |
+| Web previews       | `preview.goldshore.ai`, `*-preview.goldshore.ai`                             | Yes (GoldShore-Web-Preview) | Preview builds for the marketing site should remain Access gated.                                     |
+| Admin cockpit      | `admin.goldshore.ai`, `admin.goldshore.org`, `admin-preview.goldshore.ai`, `*-preview.goldshore.ai` | Yes (GoldShore-Admin-ZT)    | Internal admin dashboard, email allowlist + IdP/OTP. The `.org` admin hostname is canonical only as a protected admin alias and must stay on the same Access application as `admin.goldshore.ai`. |
+| Trading dashboard  | `trading.goldshore.ai`, `dashboard.goldshore.ai`, `dash.goldshore.ai`                                           | Yes (GoldShore-Trading-ZT)  | Protected trading dashboard aliases. Keep `/oauth/schwab/callback` and `/oauth/robinhood/callback` public/bypassed for broker OAuth redirects. |
 | Control worker     | `ops.goldshore.ai`                                                                                           | Yes                         | Internal ops workflows and automation.                                                                |
 | API worker         | `api.goldshore.ai`                                                                                           | Optional                    | Keep `/`, `/health`, and `/version` public. Protect `/admin/*`, `/internal/*`, `/system/*`, `/user*`, `/users/*`, `/templates/*`, `/media/*`, `/pages/*`, and `/ai/*`. |
 | Gateway worker     | `gw.goldshore.ai`                                                                                            | Optional                    | Canonical hostname is `gw.goldshore.ai` (not `gateway.goldshore.ai`); depends on routing/auth design. |
@@ -97,6 +102,7 @@ This table is the single source of truth for Cloudflare Access identity-provider
 | Protected app | Access application / policy | Allowed IdPs / login methods | Personal Gmail path | Notes |
 | --- | --- | --- | --- | --- |
 | `admin.goldshore.ai` | `GoldShore-Admin-ZT` | Google Workspace; GitHub GoldShore Deploy; generic GitHub; email OTP | `marstonr6@gmail.com` must be allowed through email OTP or through a GitHub identity with verified email `marstonr6@gmail.com`. | Production admin cockpit. |
+| `trading.goldshore.ai`, `dashboard.goldshore.ai`, `dash.goldshore.ai` | `GoldShore-Trading-ZT` | Google Workspace; GitHub GoldShore Deploy; generic GitHub; email OTP | `marstonr6@gmail.com` must be allowed through email OTP or through a GitHub identity with verified email `marstonr6@gmail.com`. | Trading dashboard and aliases; broker OAuth callbacks must be bypass policies, not protected paths. |
 | `admin-preview.goldshore.ai` | `GoldShore-Admin-ZT` | Google Workspace; GitHub GoldShore Deploy; generic GitHub; email OTP | Same as production admin. | Admin preview must mirror production admin IdP requirements. |
 | `ops.goldshore.ai` | `Goldshore Ops` | Google Workspace; GitHub GoldShore Deploy; generic GitHub; email OTP | `marstonr6@gmail.com` must be allowed through email OTP or through a GitHub identity with verified email `marstonr6@gmail.com`. | Internal control plane. |
 | `gw.goldshore.ai` | `Goldshore Gateway` | GitHub GoldShore Deploy; generic GitHub; email OTP | `marstonr6@gmail.com` must be allowed through email OTP or through a GitHub identity with verified email `marstonr6@gmail.com`. | Gateway Access app; keep public probe bypasses separate from IdP requirements. |
@@ -111,8 +117,7 @@ Non-interactive checks against Access-protected admin and preview hosts must use
 
 - GitHub Actions and local automation should provide `CF_ACCESS_CLIENT_ID` and `CF_ACCESS_CLIENT_SECRET`.
 - `.github/workflows/maintenance-gs-sync.yml` passes those secrets into `scripts/jules-sync.sh` for authenticated sync checks.
-- `infra/Cloudflare/tests.ts` automatically attaches the service-token headers for `admin.goldshore.ai`, `admin.goldshore.org`, `mcp.goldshore.ai`, `admin-preview.goldshore.ai`, `*-preview.goldshore.ai`, and `*.goldshore-pages.dev` smoke checks when those environment variables are present.
-- Keep the Pages runtime URLs aligned with the `.ai` migration by setting explicit `public_url` values for `gs-web` and `gs-admin` in `infra/Cloudflare/config.yaml`.
+- `infra/Cloudflare/tests.ts` automatically attaches the service-token headers for `admin.goldshore.ai`, `admin.goldshore.org`, `mcp.goldshore.ai`, `trading.goldshore.ai`, `dashboard.goldshore.ai`, `dash.goldshore.ai`, `admin-preview.goldshore.ai`, `*-preview.goldshore.ai` smoke checks when those environment variables are present.
 
 ### Mail handler configuration
 
@@ -129,7 +134,7 @@ Note: If `/health` and `/version` endpoints are used for automated monitoring, t
 - Production: `https://ops.goldshore.ai/auth/github/callback`
 - Preview (ops worker): `https://ops-preview.goldshore.ai/auth/github/callback`
 - Preview (admin cockpit): `https://admin-preview.goldshore.ai/auth/github/callback`
-- Preview (web Pages branches): `https://{branch}.goldshore-pages.dev/auth/github/callback`
+- Preview (web Worker): `https://preview.goldshore.ai/auth/github/callback`
 
 ### Access + edge proxy alignment
 
@@ -141,5 +146,9 @@ When adding preview callback URLs in GitHub App settings, ensure the same hostna
 ### Cloudflare Access OIDC callback (GitHub IdP)
 
 - `https://goldshore.cloudflareaccess.com/cdn-cgi/access/callback`
+- Canonical OAuth app: `Gold Shore Cloudflare Access`
+- Canonical OAuth client ID: `Ov23liQ0fWArxJvZL7A5`
+- Store its client secret only in the repository Actions secret
+  `GOLDSHORE_ACCESS_GITHUB_CLIENT_SECRET`.
 
 Use this exact callback URL in the GitHub OAuth app configuration used by Cloudflare Access. The GitHub OAuth app homepage should be `https://goldshore.cloudflareaccess.com`; Cloudflare Access stores the GitHub OAuth client ID and client secret in the Zero Trust identity provider configuration. If this endpoint changes, update both the GitHub OAuth app and Cloudflare Access IdP configuration together to avoid login failures.

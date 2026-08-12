@@ -10,9 +10,10 @@
 
 ## Wrangler Configuration Map
 
+> Per `AGENTS.md` / `CLAUDE.md`, this repo is a strict two-app monorepo: `apps/gs-web` and `apps/gs-api`. Do not reintroduce `apps/gs-gateway`, `apps/gs-control`, or other satellite workers — route routing/cron/DB/AI/queue work into `apps/gs-api` instead.
+
 ### Active (authoritative)
-- `apps/gs-control/wrangler.toml`
-- `apps/gs-api/wrangler.toml` (if present and used directly)
+- `apps/gs-api/wrangler.toml`
 - `apps/gs-web/wrangler.toml` (if present and used directly)
 
 ### Reference (infra-managed manifests)
@@ -60,6 +61,11 @@ Never commit any of the following values or equivalents:
 - [ ] **Docs:** Runbook/handoff/docs reflect the final source of truth and recovery steps.
 
 ## Agent Pass Changelog
+
+### 2026-08-05 — Pass 3
+- **Owner:** Claude Code
+- **Scope:** Populated `.codex/environments/environment.toml` setup script (corepack + pnpm install) so Codex Cloud/CLI can bootstrap this repo. Corrected the stale Wrangler Configuration Map, which still listed `apps/gs-control/wrangler.toml` and predated the two-app monorepo consolidation.
+- **Status:** Completed
 
 ### 2026-05-26 — Pass 2
 - **Owner:** Copilot (coding agent)

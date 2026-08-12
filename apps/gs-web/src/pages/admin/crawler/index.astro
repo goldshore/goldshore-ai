@@ -1,0 +1,249 @@
+---
+export const prerender = false;
+
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import { GSButton } from '@goldshore/ui';
+---
+
+<AdminLayout title="Web Crawler | GoldShore Admin">
+  <div class="max-w-7xl mx-auto p-8 space-y-8">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-4xl gs-heading gs-text-accent">B2B Web Crawler</h1>
+        <p class="text-lg gs-text-subtle mt-2">Automated domain crawling for lead discovery</p>
+      </div>
+      <div class="flex gap-3">
+        <GSButton variant="secondary" id="refresh-jobs">Refresh</GSButton>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-4 gap-6">
+      <div class="gs-card space-y-3">
+        <h2 class="text-sm font-semibold gs-text-subtle">Total Crawls</h2>
+        <p id="total-jobs" class="text-3xl font-bold gs-text-info">0</p>
+        <p class="text-xs gs-text-subtle">All time</p>
+      </div>
+      <div class="gs-card space-y-3">
+        <h2 class="text-sm font-semibold gs-text-subtle">Success Rate</h2>
+        <p id="success-rate" class="text-3xl font-bold gs-text-success">0%</p>
+        <p class="text-xs gs-text-subtle">Completed jobs</p>
+      </div>
+      <div class="gs-card space-y-3">
+        <h2 class="text-sm font-semibold gs-text-subtle">Leads Found</h2>
+        <p id="total-leads" class="text-3xl font-bold gs-text-accent">0</p>
+        <p class="text-xs gs-text-subtle">Discovered contacts</p>
+      </div>
+      <div class="gs-card space-y-3">
+        <h2 class="text-sm font-semibold gs-text-subtle">Emails Extracted</h2>
+        <p id="total-emails" class="text-3xl font-bold gs-text-warning">0</p>
+        <p class="text-xs gs-text-subtle">Business email addresses</p>
+      </div>
+    </div>
+
+    <div class="gs-card space-y-4">
+      <h2 class="text-2xl font-semibold">New Crawl Job</h2>
+      <div class="space-y-4">
+        <div>
+          <label for="domain-input" class="text-sm font-semibold">Domain to Crawl</label>
+          <input
+            id="domain-input"
+            type="text"
+            placeholder="example.com"
+            class="gs-input mt-2 w-full text-sm py-2 px-3"
+          />
+          <p class="text-xs gs-text-dim mt-1">Enter a domain without http:// or https://</p>
+        </div>
+        <div class="flex gap-3">
+          <GSButton variant="primary" id="start-crawl">Start Crawl</GSButton>
+          <GSButton variant="secondary" id="bulk-crawl">Bulk Import</GSButton>
+        </div>
+        <p id="crawl-message" class="text-sm gs-text-dim"></p>
+      </div>
+    </div>
+
+    <div class="gs-card space-y-4">
+      <div>
+        <h2 class="text-2xl font-semibold">Crawl Jobs</h2>
+        <p class="text-sm gs-text-subtle mt-1">Status and results of all crawling operations</p>
+      </div>
+
+      <div id="jobs-loading" class="py-8 text-center">
+        <p class="gs-text-subtle">Loading jobs...</p>
+      </div>
+
+      <table id="jobs-table" class="gs-admin-table" style="display: none;">
+        <thead>
+          <tr>
+            <th>Domain</th>
+            <th>Status</th>
+            <th>Started</th>
+            <th>Leads Found</th>
+            <th>Emails</th>
+            <th>Phones</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="jobs-tbody">
+        </tbody>
+      </table>
+
+      <div id="jobs-empty" class="py-8 text-center gs-empty-state" style="display: none;">
+        <p>No crawl jobs yet. Start by entering a domain above.</p>
+      </div>
+    </div>
+
+    <div class="gs-card space-y-4">
+      <h2 class="text-2xl font-semibold">Crawler Configuration</h2>
+      <div class="grid gap-4 md:grid-cols-2">
+        <label class="flex items-center gap-3 text-sm gs-text-subtle">
+          <input type="checkbox" class="h-4 w-4" id="crawler-active" checked />
+          Crawler enabled
+        </label>
+        <label class="flex items-center gap-3 text-sm gs-text-subtle">
+          <input type="checkbox" class="h-4 w-4" id="auto-add-leads" checked />
+          Auto-add discovered emails to leads
+        </label>
+      </div>
+      <div>
+        <label class="text-sm gs-text-subtle">
+          Max crawl jobs per day
+          <input type="number" id="max-jobs-per-day" class="gs-input mt-2 text-sm" value="50" min="1" />
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const loadJobs = async () => {
+        const loadingEl = document.getElementById('jobs-loading');
+        const tableEl = document.getElementById('jobs-table');
+        const emptyEl = document.getElementById('jobs-empty');
+        const tbodyEl = document.getElementById('jobs-tbody');
+
+        const totalJobsEl = document.getElementById('total-jobs');
+        const successRateEl = document.getElementById('success-rate');
+        const totalLeadsEl = document.getElementById('total-leads');
+        const totalEmailsEl = document.getElementById('total-emails');
+
+        if (loadingEl) loadingEl.style.display = 'block';
+        if (tableEl) tableEl.style.display = 'none';
+        if (emptyEl) emptyEl.style.display = 'none';
+
+        try {
+          const response = await fetch('/api/admin/crawler/jobs');
+          const data = await response.json();
+
+          if (loadingEl) loadingEl.style.display = 'none';
+
+          if (!data.success || !data.jobs || data.jobs.length === 0) {
+            if (emptyEl) emptyEl.style.display = 'block';
+            if (totalJobsEl) totalJobsEl.textContent = '0';
+            return;
+          }
+
+          const jobs = data.jobs;
+          const completed = jobs.filter((j) => j.status === 'completed').length;
+          const totalLeads = jobs.reduce((sum, j) => sum + j.leadsFound, 0);
+          const totalEmails = jobs.reduce((sum, j) => sum + j.emailsFound.length, 0);
+          const successRate = jobs.length > 0 ? ((completed / jobs.length) * 100).toFixed(1) : 0;
+
+          if (totalJobsEl) totalJobsEl.textContent = jobs.length.toString();
+          if (successRateEl) successRateEl.textContent = successRate + '%';
+          if (totalLeadsEl) totalLeadsEl.textContent = totalLeads.toString();
+          if (totalEmailsEl) totalEmailsEl.textContent = totalEmails.toString();
+
+          // Populate table
+          if (tbodyEl && jobs.length > 0) {
+            tbodyEl.innerHTML = jobs.slice(0, 50).map((job) => {
+              const statusClass = {
+                completed: 'gs-status--ok',
+                failed: 'gs-status--err',
+                running: 'gs-status--info',
+                pending: 'gs-status--warn',
+              }[job.status] || 'gs-status--info';
+
+              const startedDate = new Date(job.startedAt).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              });
+
+              return `
+                <tr>
+                  <td class="font-mono text-sm">${escapeHtml(job.domain)}</td>
+                  <td><span class="${statusClass}">${escapeHtml(job.status)}</span></td>
+                  <td class="text-sm">${startedDate}</td>
+                  <td class="text-right">${job.leadsFound}</td>
+                  <td class="text-right">${job.emailsFound.length}</td>
+                  <td class="text-right">${job.phonesFound.length}</td>
+                  <td>
+                    <button class="gs-link text-xs" onclick="viewJob('${job.id}')">Details</button>
+                  </td>
+                </tr>
+              `;
+            }).join('');
+          }
+
+          if (tableEl) tableEl.style.display = 'table';
+        } catch (error) {
+          console.error('Error loading jobs:', error);
+          if (emptyEl) emptyEl.style.display = 'block';
+        }
+      };
+
+      const escapeHtml = (text) => {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      };
+
+      document.getElementById('start-crawl')?.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const domainInput = document.getElementById('domain-input');
+        const messageEl = document.getElementById('crawl-message');
+        const domain = domainInput?.value?.trim();
+
+        if (!domain) {
+          if (messageEl) messageEl.textContent = 'Please enter a domain.';
+          return;
+        }
+
+        if (messageEl) messageEl.textContent = 'Starting crawl...';
+
+        try {
+          const response = await fetch('/api/admin/crawler/jobs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ domain }),
+          });
+
+          const result = await response.json();
+
+          if (response.ok) {
+            if (messageEl) messageEl.textContent = 'Crawl started! Results will appear below.';
+            if (domainInput) domainInput.value = '';
+            loadJobs();
+          } else {
+            if (messageEl) messageEl.textContent = result.error || 'Failed to start crawl.';
+          }
+        } catch (error) {
+          if (messageEl) messageEl.textContent = 'Error starting crawl.';
+        }
+      });
+
+      document.getElementById('refresh-jobs')?.addEventListener('click', loadJobs);
+      document.getElementById('bulk-crawl')?.addEventListener('click', () => {
+        alert('Bulk import feature allows you to upload a CSV with multiple domains to crawl.');
+      });
+
+      window.viewJob = (jobId) => {
+        alert('Job details view for: ' + jobId);
+      };
+
+      loadJobs();
+      setInterval(loadJobs, 30000); // Refresh every 30 seconds
+    });
+  </script>
+</AdminLayout>

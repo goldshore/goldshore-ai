@@ -11,6 +11,6 @@
     "./Logo.astro": "./Logo.astro"
   },
   "peerDependencies": {
-    "astro": "^5.18.0"
+    "astro": "^5.18.0 || ^6.0.0 || ^7.0.0"
   }
 }

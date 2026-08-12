@@ -13,8 +13,6 @@ export const initHeroStars = (selector = '[data-hero-stars]'): void => {
     return;
   }
 
-  let timerId: number | undefined;
-
   const spawnStar = () => {
     const star = document.createElement('span');
     star.className = 'hero-stars__item';
@@ -28,7 +26,7 @@ export const initHeroStars = (selector = '[data-hero-stars]'): void => {
     }, 3000);
   };
 
-  timerId = window.setInterval(spawnStar, 220);
+  const timerId = window.setInterval(spawnStar, 220);
 
   const stop = () => {
     if (timerId !== undefined) {

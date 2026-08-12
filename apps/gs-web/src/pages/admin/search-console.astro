@@ -1,0 +1,161 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { authorizeAdminRequest, getAdminAuthError, getAdminRouteRule } from '../../utils/admin-access';
+
+export const prerender = false;
+
+const env = Astro.locals.runtime?.env as Env | undefined;
+const rule = getAdminRouteRule('/admin/search-console', 'GET');
+
+let authError: { status: number; message: string } | null = null;
+if (!rule) {
+  authError = { status: 404, message: 'Not found.' };
+} else {
+  const authResult = await authorizeAdminRequest(Astro.request, env as never, rule);
+  authError = getAdminAuthError(authResult);
+}
+---
+
+<AdminLayout title="Search Console | GoldShore Admin">
+  <section class="gs-section">
+    <div class="gs-grid columns-2">
+      <div>
+        <h1>Search Console</h1>
+        <p class="gs-text-lg">Organic search clicks, impressions, and top queries from Google Search Console.</p>
+      </div>
+      <div class="gs-card">
+        <h2 class="section-title"><span>◆</span>Actions</h2>
+        <button id="refresh-gsc" class="gs-button" type="button">Refresh data</button>
+      </div>
+    </div>
+
+    {authError ? (
+      <div class="gs-card" style="margin-top: 2rem;">
+        <p class="gs-text-lg">{authError.message}</p>
+      </div>
+    ) : (
+      <>
+        <div class="gs-grid columns-2" style="margin-top: 2rem;">
+          <div class="gs-card">
+            <h2 class="section-title"><span>◆</span>Summary (last 30 days)</h2>
+            <ul>
+              <li>Clicks: <strong id="total-clicks">0</strong></li>
+              <li>Impressions: <strong id="total-impressions">0</strong></li>
+              <li>Avg CTR: <strong id="avg-ctr">0.00%</strong></li>
+              <li>Avg position: <strong id="avg-position">0.0</strong></li>
+              <li>Status: <span id="gsc-status" class="gs-badge info">Checking…</span></li>
+            </ul>
+          </div>
+          <div class="gs-card" style="overflow-x: auto;">
+            <h2 class="section-title"><span>◆</span>Top queries</h2>
+            <table class="gs-table">
+              <thead>
+                <tr><th>Query</th><th>Clicks</th><th>Impressions</th><th>CTR</th><th>Position</th></tr>
+              </thead>
+              <tbody id="gsc-queries-tbody">
+                <tr><td colspan="5">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="gs-card" style="margin-top: 2rem; overflow-x: auto;">
+          <h2 class="section-title"><span>◆</span>Performance over time</h2>
+          <table class="gs-table">
+            <thead>
+              <tr><th>Date</th><th>Clicks</th><th>Impressions</th><th>CTR</th><th>Position</th></tr>
+            </thead>
+            <tbody id="gsc-metrics-tbody">
+              <tr><td colspan="5">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </>
+    )}
+  </section>
+
+  <script>
+    async function loadSearchConsoleData() {
+      const metricsBody = document.getElementById('gsc-metrics-tbody');
+      const queriesBody = document.getElementById('gsc-queries-tbody');
+      const statusEl = document.getElementById('gsc-status');
+
+      try {
+        const res = await fetch('/api/admin/search-console');
+        const data = await res.json();
+
+        if (!data.success) {
+          if (statusEl) {
+            statusEl.textContent = data.error ?? 'Not connected';
+            statusEl.className = 'gs-badge';
+          }
+          const message = data.error ?? 'Search Console not configured.';
+          if (metricsBody) metricsBody.innerHTML = `<tr><td colspan="5">${message}</td></tr>`;
+          if (queriesBody) queriesBody.innerHTML = `<tr><td colspan="5">${message}</td></tr>`;
+          return;
+        }
+
+        const { summary, metrics, topQueries } = data;
+
+        const set = (id: string, value: string) => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = value;
+        };
+        set('total-clicks', summary.totalClicks.toLocaleString());
+        set('total-impressions', summary.totalImpressions.toLocaleString());
+        set('avg-ctr', `${summary.avgCTR.toFixed(2)}%`);
+        set('avg-position', summary.avgPosition.toFixed(1));
+        if (statusEl) {
+          statusEl.textContent = 'Connected';
+          statusEl.className = 'gs-badge success';
+        }
+
+        if (metricsBody) {
+          if (!metrics?.length) {
+            metricsBody.innerHTML = '<tr><td colspan="5">No data for this period.</td></tr>';
+          } else {
+            metricsBody.innerHTML = metrics
+              .map(
+                (m: { date: string; clicks: number; impressions: number; ctr: number; position: number }) => `
+                <tr>
+                  <td>${new Date(m.date).toLocaleDateString()}</td>
+                  <td>${m.clicks.toLocaleString()}</td>
+                  <td>${m.impressions.toLocaleString()}</td>
+                  <td>${m.ctr.toFixed(2)}%</td>
+                  <td>${m.position.toFixed(1)}</td>
+                </tr>`,
+              )
+              .join('');
+          }
+        }
+
+        if (queriesBody) {
+          if (!topQueries?.length) {
+            queriesBody.innerHTML = '<tr><td colspan="5">No queries for this period.</td></tr>';
+          } else {
+            queriesBody.innerHTML = topQueries
+              .map(
+                (q: { query: string; clicks: number; impressions: number; ctr: number; position: number }) => `
+                <tr>
+                  <td>${q.query}</td>
+                  <td>${q.clicks.toLocaleString()}</td>
+                  <td>${q.impressions.toLocaleString()}</td>
+                  <td>${q.ctr.toFixed(2)}%</td>
+                  <td>${q.position.toFixed(1)}</td>
+                </tr>`,
+              )
+              .join('');
+          }
+        }
+      } catch {
+        if (statusEl) {
+          statusEl.textContent = 'Network error';
+          statusEl.className = 'gs-badge';
+        }
+      }
+    }
+
+    document.getElementById('refresh-gsc')?.addEventListener('click', loadSearchConsoleData);
+    loadSearchConsoleData();
+  </script>
+</AdminLayout>

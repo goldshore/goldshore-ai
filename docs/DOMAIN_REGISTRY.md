@@ -13,19 +13,22 @@ Last updated: 2026-05-29
 
 | Domain/Host | Role | Repo | Runtime | Owner | Canonical |
 | --- | --- | --- | --- | --- | --- |
-| `goldshore.ai` | Parent lab/technical brand | `marzton/goldshore-ai` | Cloudflare Pages/Worker route | `gs-web` | Yes |
+| `goldshore.ai` | Parent lab/technical brand | `marzton/goldshore-ai` | Cloudflare Worker with Assets | `gs-web-prod` | Yes |
 | `www.goldshore.ai` | Alias | `marzton/goldshore-ai` | Cloudflare redirect | redirect rule | No |
-| `goldshore.org` | Business website management hub (Wix-style managed services layer) | `marzton/goldshore-org` or `marzton/goldshore-ai` | Cloudflare Pages | `goldshore-org` or `gs-web` | Yes |
+| `goldshore.org` | Business website management hub (Wix-style managed services layer) | `marzton/goldshore-org` or `marzton/goldshore-ai` | Cloudflare Worker with Assets | `gs-web-prod` | Yes |
 | `www.goldshore.org` | Alias | same | Cloudflare redirect | redirect rule | No |
 | `api.goldshore.ai` | Shared first-party API | `marzton/goldshore-ai` | Cloudflare Worker | `gs-api` | Yes |
 | `gw.goldshore.ai` | API gateway/auth routing | `marzton/goldshore-ai` | Cloudflare Worker | `gs-gateway` | Yes |
 | `gateway.goldshore.ai` | Gateway alias | `marzton/goldshore-ai` | Redirect/Worker alias | `gs-gateway` | No |
-| `admin.goldshore.ai` | Internal admin UI | `marzton/goldshore-ai` | Cloudflare Pages | `gs-admin` | Internal |
-| `admin.goldshore.org` | Protected admin alias for the GoldShore Admin cockpit; covered by Access policy `GoldShore-Admin-ZT` | `marzton/goldshore-ai` | Cloudflare Pages | `gs-admin` | Internal |
+| `admin.goldshore.ai` | Internal admin UI | `marzton/goldshore-ai` | Cloudflare Workers | `gs-web` (route `admin.goldshore.ai/*`) | Internal |
+| `admin.goldshore.org` | Protected admin alias for the GoldShore Admin cockpit; covered by Access policy `GoldShore-Admin-ZT` | `marzton/goldshore-ai` | Cloudflare Workers | `gs-web` (route `admin.goldshore.org/*`) | Internal |
+| `trading.goldshore.ai` | Protected trading dashboard | `marzton/goldshore-ai` | Cloudflare Worker | `gs-trading-prod` | Internal |
+| `dashboard.goldshore.ai` | Protected trading dashboard alias | `marzton/goldshore-ai` | Cloudflare Worker | `gs-trading-prod` | Internal |
+| `dash.goldshore.ai` | Short protected trading dashboard alias | `marzton/goldshore-ai` | Cloudflare Worker | `gs-trading-prod` | Internal |
 | `ops.goldshore.ai` | Internal control plane | `marzton/goldshore-ai` | Cloudflare Worker | `gs-control` | Internal |
 | `agent.goldshore.ai` | Agent endpoint | `marzton/goldshore-ai` | Cloudflare Worker | `gs-agent`/`gs-gateway` | Internal |
 | `mail.goldshore.ai` | Mail/form routing | `marzton/goldshore-ai` | Cloudflare Worker | `gs-mail` | Service |
-| `radar.goldshore.ai` | Risk Radar | `marzton/goldshore-ai` | Cloudflare Pages | `gs-web` | Product |
+| `radar.goldshore.ai` | Risk Radar | `marzton/goldshore-ai` | Cloudflare Worker with Assets | `gs-web-prod` | Product |
 | `gearswipe.com` | GearSwipe app | `marzton/gearswipe` | Cloudflare Pages | `gearswipe` | Yes |
 | `www.gearswipe.com` | GearSwipe alias | `marzton/gearswipe` | Cloudflare redirect | redirect rule | No |
 | `rmarston.com` | Personal profile | `marzton/rmarston-com` | Cloudflare Pages | `rmarston-com` | Independent |

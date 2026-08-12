@@ -13,7 +13,8 @@
 | `www.goldshore.ai` | CF Worker | `gs-www-redirect` | ✅ Active (→ goldshore.ai) |
 | `goldshore.org` | CF Pages | `gs-web` | ✅ Active |
 | `www.goldshore.org` | CF Worker | `gs-www-redirect` | ✅ Active (→ goldshore.org) |
-| `admin.goldshore.ai` | CF Pages | `gs-admin` | ⚠️ Deploy pending |
+| `admin.goldshore.ai` | CF Worker | `gs-web` (route `admin.goldshore.ai/*`) | ⚠️ Still shadowed by the retired `gs-admin` deployment — see note below |
+| `admin.goldshore.org` | CF Worker | `gs-web` (route `admin.goldshore.org/*`) | ⚠️ Same — see note below |
 | `api.goldshore.ai` | CF Worker | `gs-api` (gs-platform proxy) | ⚠️ gs-api not deployed |
 | `gw.goldshore.ai` | CF Worker | `gs-platform` | ✅ Active |
 | `agent.goldshore.ai` | CF Worker | `gs-platform` / `gs-agent` | ⚠️ gs-agent not deployed |
@@ -37,7 +38,7 @@
 |--------|------|-------|---------|
 | `goldshore.ai` | CNAME (proxied) | `gs-web.pages.dev` | Main site |
 | `www` | CNAME (proxied) | worker route via `gs-www-redirect` | Redirects → goldshore.ai |
-| `admin` | CNAME (proxied) | `gs-admin.pages.dev` | Admin dashboard |
+| `admin` | CNAME (proxied) | Worker route via `gs-web` | Admin dashboard (`/app/dashboard`) |
 | `api` | CNAME (proxied) | Worker route via `gs-platform` | API gateway |
 | `gw` | CNAME (proxied) | Worker route via `gs-platform` | Gateway |
 | `agent` | CNAME (proxied) | Worker route via `gs-platform` | Agent endpoint |
@@ -106,7 +107,16 @@
 |--------|--------|----------------|
 | `gs-trading` | `apps/gs-trading` | `pnpm --filter gs-trading deploy:prod` |
 | `armsway-com` | `apps/armsway-com` | `pnpm --filter armsway-com deploy:prod` |
-| `gs-admin` (Pages) | `apps/gs-admin` | `pnpm --filter gs-admin build && wrangler pages deploy dist --project-name gs-admin` |
+
+> **`gs-admin` is retired.** `apps/gs-admin` no longer exists — the workspace was
+> narrowed to `apps/gs-web` + `apps/gs-api`, and the admin UI now lives at
+> `apps/gs-web/src/pages/app/` and `apps/gs-web/src/pages/admin/`, served by the
+> `gs-web` Worker via its `admin.goldshore.ai/*` and `admin.goldshore.org/*`
+> routes. A stale `gs-admin` deployment may still hold those hostnames in the
+> Cloudflare dashboard; while it does it shadows those routes, and requests to
+> `admin.goldshore.*` return 404 because that build predates the admin-host
+> routing. Remove its custom domains and delete the project so the `gs-web`
+> routes take effect. Do not redeploy `gs-admin`.
 
 ### ❌ Delete from Cloudflare dashboard — Orphaned / outdated
 
@@ -124,8 +134,8 @@
 
 | Binding Name | Database Name | ID | Used By |
 |---|---|---|---|
-| `PLATFORM_DB` / `CONTENT_DB` / `DB` | `gs_platform_db` | `9703574e-adb7-481e-8d98-96f8ce5f8a90` | gs-platform, gs-web, gs-admin |
-| `AUDIT_DB` | `gs_audit_db` | `1ae71d76-188f-481b-91d9-db2d39013f68` | gs-admin, armsway-com, banproof-me |
+| `PLATFORM_DB` / `CONTENT_DB` / `DB` | `gs_platform_db` | `9703574e-adb7-481e-8d98-96f8ce5f8a90` | gs-platform, gs-web, gs-api |
+| `AUDIT_DB` | `gs_audit_db` | `1ae71d76-188f-481b-91d9-db2d39013f68` | gs-api, armsway-com, banproof-me |
 | `GS_AUDIT_DB` | `gs_audit_db` | same as above | armsway-com |
 | `SIGNALS_DB` | `gs_signals_db` | `76af4653-7f44-417b-b46e-250143d906fd` | gs-core-worker, gs-signals-prod |
 | `JOBS_DB` | `gs_jobs_db` | `750c469c-788d-49e8-9254-77231cffd70f` | gs-agent |
@@ -138,11 +148,11 @@
 |-------|----|---------|
 | `GOLDSHORE-AI` | `5f13370575784c9dacff522121104cb3` | gs-web (KV), gs-platform (GOLDSHORE_KV) |
 | `GATEWAY_KV` | `17840f9b6ac64cb1a51aeff085efe24c` | gs-platform |
-| `GOLDSHORE-ADMIN` | `d02c0c7951a244a7987e23d8af16b7b2` | gs-admin (KV) |
-| `KV_SESSIONS` | `d0b889d0ba314b42892f5b959356ceda` | gs-admin |
+| `GOLDSHORE-ADMIN` | `d02c0c7951a244a7987e23d8af16b7b2` | retired `gs-admin` — no current binding |
+| `KV_SESSIONS` | `d0b889d0ba314b42892f5b959356ceda` | retired `gs-admin` — legacy alias, no current binding |
 | `GS_TRADING_KV` | `9b3314c3b7af40a284a8c9b6e2990709` | gs-trading |
 | `GS_TRADING_KV_PREVIEW` | `2c14b79b76e6453ab57c6dde6116a11d` | gs-trading (preview) |
-| `GS_ADMIN_KV_PREVIEW` | `1f71a79b34db4090824954634dbd78c3` | gs-admin (preview) |
+| `GS_ADMIN_KV_PREVIEW` | `1f71a79b34db4090824954634dbd78c3` | retired `gs-admin` (preview) — no current binding |
 | `GS_API_KV` | `e0b8b807191346c3b0afc25fe716d2cd` | gs-api (when deployed) |
 | `GS_CONFIG` | `68f52b467dc0413991b2195ef9081cae` | Shared config |
 | `BANPROOF-ME` | `714ee6be6df54291a4a4ade053e9f9ae` | banproof-me |
@@ -165,7 +175,6 @@ pnpm --filter gs-platform deploy:prod
 
 # 3. Public sites
 pnpm --filter gs-web build && wrangler pages deploy ./dist --project-name gs-web
-pnpm --filter gs-admin build && wrangler pages deploy dist --project-name gs-admin
 pnpm --filter gs-www-redirect deploy:prod
 
 # 4. Standalone workers
@@ -176,8 +185,7 @@ pnpm --filter armsway-com deploy:prod
 wrangler d1 execute gs_platform_db --file=apps/gs-web/migrations/0001_contact_forms.sql --remote
 
 # 6. Cloudflare Pages → Custom domains
-#    gs-web → goldshore.ai, goldshore.org
-#    gs-admin → admin.goldshore.ai
+#    gs-web → goldshore.ai, goldshore.org, admin.goldshore.ai, admin.goldshore.org
 ```
 
 ---
@@ -187,7 +195,7 @@ wrangler d1 execute gs_platform_db --file=apps/gs-web/migrations/0001_contact_fo
 Each domain is fully isolated from the others:
 
 - **goldshore.ai / .org** — goldshore-ai monorepo, gs-web Pages
-- **admin.goldshore.ai** — goldshore-ai monorepo, gs-admin Pages (CF Access protected)
+- **admin.goldshore.ai / admin.goldshore.org** — goldshore-ai monorepo, gs-web Worker routes (CF Access protected)
 - **trading.goldshore.ai** — goldshore-ai monorepo, gs-trading Worker (CF Access protected)
 - **armsway.com** — goldshore-ai monorepo, armsway-com Worker (e-commerce / Gearswipe)
 - **rmarston.com** — standalone, independent from this monorepo
