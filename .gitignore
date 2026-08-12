@@ -97,3 +97,5 @@ reports/*.txt
 .codex-remote-attachments/
 .codex/
 .mcp.json
+.codex-remote-attachments/
+.jules/
