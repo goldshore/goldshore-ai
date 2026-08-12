@@ -334,13 +334,11 @@ export const authorizeAdminRequest = async (
   const accessClaims = cookieClaims ? null : await verifyAccessWithClaims(request, env);
   const verifiedClaims = cookieClaims ?? accessClaims;
 
-  // A verified signature only proves identity. Authorization is a second,
-  // database-backed step: the identity must still resolve to an active user
-  // (or service) row carrying a supported role, and comes back enriched with
-  // that role. It fails closed — an unknown identity is rejected here.
-  const claims = verifiedClaims ? await authorizeAccessClaims(verifiedClaims, env) : null;
-
-  if (!claims) {
+  // gs-web intentionally owns no D1 binding. A Cloudflare Access assertion is
+  // authorized by the dedicated, explicit-email Admin Access policy after its
+  // signature and audience are verified here. D1-backed authorization remains
+  // a gs-api responsibility for protected backend operations.
+  if (!verifiedClaims) {
     return {
       ok: false,
       status: 401,
@@ -348,12 +346,9 @@ export const authorizeAdminRequest = async (
     };
   }
 
-  // Authorized claims carry their role from the database, so the Access branch
-  // resolves to that role; its blanket-admin fallback only applies to an
-  // edge-authenticated identity that carries no role at all.
   const session = accessClaims
-    ? buildCloudflareAccessAdminSession(claims)
-    : buildAdminSession(claims);
+    ? buildCloudflareAccessAdminSession(accessClaims)
+    : buildAdminSession(verifiedClaims);
   if (rule.requiresAdminRole && session.roles.length === 0) {
     return {
       ok: false,
@@ -372,7 +367,7 @@ export const authorizeAdminRequest = async (
 
   return {
     ok: true,
-    claims,
+    claims: verifiedClaims,
     session,
   };
 };

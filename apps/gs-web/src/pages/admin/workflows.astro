@@ -7,31 +7,31 @@ if (!Astro.locals.adminSession?.isAuthenticated) {
 }
 ---
 
-<AdminLayout title="Control Plane" requiredPermission="system:read">
+<AdminLayout title="API Workflows" requiredPermission="system:read">
   <div class="admin-page-header">
-    <h1>Control Plane</h1>
-    <p>Manage platform configuration and infrastructure</p>
+    <h1>API Workflows</h1>
+    <p>Manage Cloudflare Workflows and automation</p>
   </div>
 
   <div class="admin-content">
     <section class="admin-section">
-      <h2>Platform Status</h2>
+      <h2>Active Workflows</h2>
       <div class="loading-state">
-        <p>Loading platform status...</p>
+        <p>Loading workflows...</p>
       </div>
     </section>
 
     <section class="admin-section">
-      <h2>Configuration</h2>
+      <h2>Workflow Instances</h2>
       <div class="loading-state">
-        <p>Loading configuration...</p>
+        <p>Loading workflow instances...</p>
       </div>
     </section>
 
     <section class="admin-section">
-      <h2>Infrastructure Events</h2>
+      <h2>Workflow Logs</h2>
       <div class="loading-state">
-        <p>Loading infrastructure events...</p>
+        <p>Loading workflow execution logs...</p>
       </div>
     </section>
   </div>
