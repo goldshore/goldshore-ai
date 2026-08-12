@@ -4,6 +4,7 @@ import { getActor, logAdminAction, requirePermission } from "../auth";
 import { Env, Variables } from "../types";
 import deploy from "./admin/index";
 import repoHealth from "./admin/repo-health";
+import mergeCockpit from "./admin/merge-cockpit";
 
 type UserRow = {
   id: string; email: string; display_name: string | null; status: string;
@@ -186,5 +187,6 @@ admin.route("/deploy", deploy);
 
 // Mount repo health routes
 admin.route("/repo-health", repoHealth);
+admin.route("/merge-cockpit", mergeCockpit);
 
 export default admin;
