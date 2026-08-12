@@ -40,7 +40,7 @@ This document is the canonical reference for GoldShore domains, preview URLs, Cl
 - `gw.goldshore.ai` (canonical gateway hostname; not `gateway.goldshore.ai`)
 - `ops.goldshore.ai`
 - `admin.goldshore.ai`
-- `admin.goldshore.org` (protected admin alias; gs-admin Pages)
+- `admin.goldshore.org` (protected admin alias; `gs-web` Worker route)
 - `trading.goldshore.ai`
 - `dashboard.goldshore.ai` (protected trading dashboard alias)
 - `dash.goldshore.ai` (short protected trading dashboard alias)
@@ -63,7 +63,7 @@ The table below is the canonical public layout for customer-facing web routes on
 | `www.goldshore.ai` | `/*` | Redirects → goldshore.ai (308, method-preserving, via gs-www-redirect) | Public |
 | `goldshore.org`, `www.goldshore.org` | `/*` | Redirects → goldshore.ai (308, via goldshore-org Worker) until org content is ready | Public |
 | `preview.goldshore.ai` and `*-preview.goldshore.ai` | `/*` | Preview deployments for web validation | Cloudflare Access (GoldShore-Web-Preview) |
-| `admin.goldshore.org` | `/*` | Protected admin alias hosted by `gs-admin` Pages | Cloudflare Access (GoldShore-Admin-ZT) |
+| `admin.goldshore.org` | `/*` | Protected admin alias served by the `gs-web` Worker | Cloudflare Access (GoldShore-Admin-ZT) |
 | `trading.goldshore.ai`, `dashboard.goldshore.ai`, `dash.goldshore.ai` | `/*` | Protected trading dashboard and dashboard aliases | Cloudflare Access (GoldShore-Trading-ZT) |
 
 ## Canonical redirect policy

@@ -1,16 +1,15 @@
 ---
 export const prerender = false;
 
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import AdminLayout from "../../layouts/AdminLayout.astro";
 
 const apiBase = (import.meta.env.PUBLIC_API || 'https://api.goldshore.ai').replace(/\/$/, '');
 ---
 
-<BaseLayout
+<AdminLayout
   title="GoldClaw Control | GoldShore Admin"
-  description="GoldClaw monetization, marketing, SEO, and agent integration control surface"
 >
-  <main class="goldclaw-page" data-api-base={apiBase}>
+  <div class="goldclaw-page" data-api-base={apiBase}>
     <header class="goldclaw-header">
       <div>
         <p class="goldclaw-kicker">GoldShore Labs</p>
@@ -77,7 +76,7 @@ const apiBase = (import.meta.env.PUBLIC_API || 'https://api.goldshore.ai').repla
       </div>
       <div id="goldclaw-plan" class="goldclaw-plan"></div>
     </section>
-  </main>
+  </div>
 
   <script is:inline>
     const page = document.querySelector('.goldclaw-page');
@@ -184,7 +183,7 @@ const apiBase = (import.meta.env.PUBLIC_API || 'https://api.goldshore.ai').repla
       if (target) target.innerHTML = `<p class="goldclaw-error">${error.message}</p>`;
     });
   </script>
-</BaseLayout>
+</AdminLayout>
 
 <style>
   .goldclaw-page {

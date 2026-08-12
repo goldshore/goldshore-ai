@@ -5,12 +5,17 @@ export type Env = {
   KV: KVNamespace;
   CONTROL_LOGS?: KVNamespace;
   RISK_RADAR_CACHE?: KVNamespace;
+  TRADING_KV?: KVNamespace;
   PLATFORM_DB: D1Database;
-  AUDIT_DB: D1Database;
+  AUDIT_DB?: D1Database;
+  SIGNALS_DB?: D1Database;
+  JOBS_DB?: D1Database;
+  PAPER_DB?: D1Database;
   RISK_RADAR_DB?: D1Database;
   TELEMETRY_DB?: D1Database;
   GS_ASSETS: R2Bucket;
   RISK_RADAR_R2?: R2Bucket;
+  TELEMETRY?: R2Bucket;
   AUTH_SESSION?: DurableObjectNamespace;
   AI: Ai;
   INTEGRATION_MASTER_KEY?: string;
@@ -18,6 +23,7 @@ export type Env = {
   EVENTS_QUEUE?: Queue;
   MAIL_JOBS_QUEUE?: Queue;
   DEAD_LETTER_QUEUE?: Queue;
+  GS_SIGNALS?: Workflow<SignalsEvaluatorParams>;
   OPENAI_API_KEY?: string;
   GEMINI_API_KEY?: string;
   ANTHROPIC_API_KEY?: string;
@@ -53,7 +59,6 @@ export type Env = {
   MAIL_ALLOWED_RECIPIENTS?: string;
   AGENT?: Fetcher;
   API_ORIGIN?: string;
-  CONTROL_ADMIN_ROLES?: string;
   CLOUDFLARE_API_TOKEN?: string;
   GITHUB_TOKEN?: string;
   GITHUB_API_TOKEN?: string;
@@ -62,18 +67,10 @@ export type Env = {
   CLOUDFLARE_ZONE_ID?: string;
   CLOUDFLARE_ZONE_NAME?: string;
   CLOUDFLARE_PAGES_PROJECT?: string;
-  MAIL_FORWARD_TO?: string;
-  FORWARD_TO?: string;
-  MAIL_BLOCKED_SENDERS?: string;
-  MAIL_ALLOWED_RECIPIENTS?: string;
-  API_ORIGIN?: string;
   ADMIN_URL?: string;
   ENV?: string;
+  STATE_MUTATIONS_ENABLED?: string;
   DEV_AUTH_BYPASS?: string;
-  API_VERSION?: string;
-  DEPLOY_SHA?: string;
-  GIT_SHA?: string;
-  CONTROL_ADMIN_ROLES?: string;
   GOOGLE_OAUTH_CLIENT_ID?: string;
   GOOGLE_OAUTH_CLIENT_SECRET?: string;
   GOOGLE_OAUTH_REDIRECT_URI?: string;
@@ -108,6 +105,12 @@ export type Env = {
   GOOGLE_OAUTH_PRODUCTION_APPROVED?: string;
   GOOGLE_BUSINESS_ACCOUNT_IDS?: string;
   GOOGLE_BUSINESS_LOCATION_IDS?: string;
+};
+
+export type SignalsEvaluatorParams = {
+  signalId: string;
+  source?: string;
+  payload?: Record<string, unknown>;
 };
 
 export type Variables = {
