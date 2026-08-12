@@ -1,5 +1,5 @@
 ---
-import AdminLayout from '../../layouts/AdminLayout.astro';
+import AdminLayout from '../../../layouts/AdminLayout.astro';
 
 const { redirect } = Astro;
 if (!Astro.locals.adminSession?.isAuthenticated) {
@@ -7,31 +7,24 @@ if (!Astro.locals.adminSession?.isAuthenticated) {
 }
 ---
 
-<AdminLayout title="Control Plane" requiredPermission="system:read">
+<AdminLayout title="DNS Configuration" requiredPermission="cloudflare_inventory:read">
   <div class="admin-page-header">
-    <h1>Control Plane</h1>
-    <p>Manage platform configuration and infrastructure</p>
+    <h1>DNS Configuration</h1>
+    <p>Manage DNS records and zones across Cloudflare</p>
   </div>
 
   <div class="admin-content">
     <section class="admin-section">
-      <h2>Platform Status</h2>
+      <h2>Zones</h2>
       <div class="loading-state">
-        <p>Loading platform status...</p>
+        <p>Loading DNS zones...</p>
       </div>
     </section>
 
     <section class="admin-section">
-      <h2>Configuration</h2>
+      <h2>DNS Records</h2>
       <div class="loading-state">
-        <p>Loading configuration...</p>
-      </div>
-    </section>
-
-    <section class="admin-section">
-      <h2>Infrastructure Events</h2>
-      <div class="loading-state">
-        <p>Loading infrastructure events...</p>
+        <p>Loading DNS records...</p>
       </div>
     </section>
   </div>

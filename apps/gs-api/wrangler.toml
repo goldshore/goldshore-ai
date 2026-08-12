@@ -21,14 +21,13 @@ class_name = "SignalsEvaluator"
 [env.prod]
 routes = [
   { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "api.goldshore.org/*", zone_name = "goldshore.org" },
   { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "agent.goldshore.org/*", zone_name = "goldshore.org" },
   { pattern = "mail.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "ops.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "mail.goldshore.org/*", zone_name = "goldshore.org" },
   { pattern = "trading.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "dashboard.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "dash.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "gw.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "api.goldshore.org/*", zone_name = "goldshore.org" }
+  { pattern = "trading.goldshore.org/*", zone_name = "goldshore.org" }
 ]
 
 [env.prod.vars]
@@ -322,15 +321,6 @@ binding = "AI"
 # preview mutation gate prevents handlers from falling back to production.
 # A binding that names a queue which does not exist fails every deploy, so
 # these stay unbound until the -preview queues are confirmed in the dashboard.
-
-# ── Workflows ────────────────────────────────────────────────────────────────
-# Safe to bind even though the preview queues are not: a Workflow is
-# provisioned from the class exported by this same script at deploy time, so
-# it does not need to pre-exist the way a queue does.
-[[env.preview.workflows]]
-binding = "GS_SIGNALS"
-name = "gs-signals-evaluator-preview"
-class_name = "SignalsEvaluator"
 
 # ── Secrets Store ────────────────────────────────────────────────────────────
 # Secrets Store bindings are per secret, not a store object. The runtime reads
