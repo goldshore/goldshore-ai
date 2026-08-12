@@ -165,7 +165,7 @@ Authenticated user portal:
 └── settings
 ```
 
-### 2) `apps/gs-admin` — Admin Dashboard (Astro SSR)
+### 2) `apps/gs-web/src/pages/admin` — Admin Dashboard (Astro SSR)
 
 Protected by **Cloudflare Access**.
 
@@ -394,7 +394,6 @@ Run individual apps:
 
 ```bash
 pnpm --filter ./apps/gs-web dev
-pnpm --filter ./apps/gs-admin dev
 pnpm --filter ./apps/gs-api dev
 pnpm --filter ./apps/gs-gateway dev
 pnpm --filter ./apps/gs-agent dev
@@ -411,7 +410,6 @@ pnpm build
 Playwright tests live in:
 
 ```
-apps/gs-admin/tests
 apps/gs-web/tests
 ```
 
@@ -452,7 +450,7 @@ All rights reserved.
 | App | CF Worker/Pages | Domain | Status |
 |-----|----------------|--------|--------|
 | `apps/gs-web` | `gs-web` Pages | `goldshore.ai`, `www.goldshore.ai` | ✅ Production |
-| `apps/gs-admin` | `goldshore-admin` Pages | `admin.goldshore.ai` | ✅ CF Access protected |
+| `apps/gs-web` (admin routes) | `gs-web` Worker | `admin.goldshore.ai`, `admin.goldshore.org` | ✅ CF Access protected |
 | `apps/gs-api` | `gs-api` Worker | `api.goldshore.ai` | ✅ Live |
 | `apps/gs-gateway` | `gs-platform` Worker | `gw.goldshore.ai` | ✅ Live |
 | `apps/gs-agent` | `gs-agent` Worker | internal (queue consumer) | ✅ Live |

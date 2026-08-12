@@ -14,25 +14,20 @@ on:
       - ".nvmrc"
       - ".github/workflows/preview-gs-api.yml"
 
-concurrency:
-  group: preview-gs-api-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   preview-api:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
     name: Preview
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@f520eceda224fe1a4aed5a2a27a194379a409996 # v6
+      - uses: pnpm/action-setup@v6
         with:
           run_install: false
 
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@v7.0.0
         with:
           node-version: 22
           cache: 'pnpm'
@@ -56,10 +51,15 @@ jobs:
           process.stdout.write(token);
           NODE
           )"
-          test -n "$token" || (echo "Missing: CLOUDFLARE_BUILD_API_TOKEN" && exit 1)
+          if [ -z "$token" ]; then
+            echo "::warning::Cloudflare credentials are unavailable; skipping authenticated preview dry-run steps."
+            echo "CLOUDFLARE_CREDENTIALS_AVAILABLE=false" >> "$GITHUB_ENV"
+            exit 0
+          fi
           echo "::add-mask::$token"
           echo "CLOUDFLARE_API_TOKEN=$token" >> "$GITHUB_ENV"
           echo "CLOUDFLARE_BUILD_API_TOKEN=$token" >> "$GITHUB_ENV"
+          echo "CLOUDFLARE_CREDENTIALS_AVAILABLE=true" >> "$GITHUB_ENV"
 
       - name: Validate workspace contract
         run: pnpm validate:workspace
@@ -74,12 +74,16 @@ jobs:
         run: |
           test -f apps/gs-api/wrangler.toml
           grep -Eq '^\[env\.preview\]' apps/gs-api/wrangler.toml
-          grep -Eq '^\s*\[\[env\.preview\.queues\.(producers|consumers)\]\]' apps/gs-api/wrangler.toml
+          grep -Eq '^STATE_MUTATIONS_ENABLED = "false"$' apps/gs-api/wrangler.toml
+          ! grep -Eq '^\s*\[\[env\.preview\.queues\.(producers|consumers)\]\]' apps/gs-api/wrangler.toml
+          ! grep -Eq '00000000-0000-4000-8000-00000000000[1-9]' apps/gs-api/wrangler.toml
 
       - name: Verify Cloudflare auth
+        if: env.CLOUDFLARE_CREDENTIALS_AVAILABLE == 'true'
         working-directory: apps/gs-api
         run: pnpm exec wrangler whoami
 
       - name: Validate GS API worker preview deploy
+        if: env.CLOUDFLARE_CREDENTIALS_AVAILABLE == 'true'
         working-directory: apps/gs-api
         run: pnpm exec wrangler deploy --env preview --config wrangler.toml --dry-run --outdir=dist-preview

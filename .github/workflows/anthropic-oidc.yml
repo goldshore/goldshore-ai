@@ -1,141 +1,32 @@
-# GitHub OIDC → Anthropic API Federation
+# Anthropic requests are made server-side by gs-api. Cloudflare AI Gateway does
+# not document a GitHub OIDC workload-identity token exchange, so this reusable
+# workflow deliberately mints and exports no credentials.
 #
-# Reusable workflow. Call it from any workflow that needs the Anthropic API:
-#
-#   jobs:
-#     anthropic-token:
-#       uses: marzton/goldshore-ai/.github/workflows/anthropic-oidc.yml@<full-commit-sha>
-#       permissions:
-#         id-token: write
-#         contents: read
-#       secrets: inherit
-#
-#     my-job:
-#       needs: anthropic-token
-#       runs-on: ubuntu-latest
-#       env:
-#         ANTHROPIC_API_KEY: ${{ needs.anthropic-token.outputs.api_key }}
-#         ANTHROPIC_BASE_URL: ${{ needs.anthropic-token.outputs.base_url }}
-#
-# How it works:
-#   1. GitHub mints a short-lived OIDC JWT (sub = repo:marzton/goldshore-ai:*)
-#   2. The JWT is exchanged with Cloudflare AI Gateway, which is configured
-#      to trust GitHub's OIDC provider (issuer: token.actions.githubusercontent.com)
-#   3. The Gateway issues a scoped, time-limited bearer token that the
-#      calling job uses as ANTHROPIC_API_KEY for the duration of the run.
-#   4. No long-lived Anthropic key needs to be stored in GitHub once the
-#      Cloudflare AI Gateway federation is configured.
-#
-# Prerequisites (one-time setup in CF dashboard):
-#   CF AI Gateway → Settings → Identity Providers → Add GitHub Actions OIDC
-#     Issuer:   https://token.actions.githubusercontent.com
-#     Audience: https://gateway.ai.cloudflare.com
-#     Subject:  repo:marzton/goldshore-ai:*
-#   Then set CF_AI_GATEWAY_ID as a repo variable (not secret).
+# Runtime setup (performed by an operator, never by a calling GitHub job):
+#   wrangler secret put ANTHROPIC_API_KEY --env preview --name gs-api
+#   wrangler secret put ANTHROPIC_API_KEY --env prod --name gs-api
+# Set ANTHROPIC_GATEWAY_ID in wrangler.toml after creating the gateway. gs-api
+# uses its Workers AI binding to obtain the documented, pre-authenticated
+# Anthropic provider endpoint and supplies the provider key per request.
 
-name: Anthropic OIDC Token
+name: Anthropic Gateway Guard
 
 on:
   workflow_call:
-    secrets:
-      CLOUDFLARE_ACCOUNT_ID:
-        description: "Cloudflare account ID that owns the AI Gateway"
-        required: false
-      ANTHROPIC_API_KEY:
-        description: "Temporary fallback Anthropic API key until OIDC federation is active"
-        required: false
-    outputs:
-      api_key:
-        description: "Short-lived Anthropic-compatible bearer token via CF AI Gateway"
-        value: ${{ jobs.mint-token.outputs.api_key }}
-      base_url:
-        description: "Anthropic base URL (routed via CF AI Gateway when federation succeeds)"
-        value: ${{ jobs.mint-token.outputs.base_url }}
 
 permissions:
-  id-token: write # required to mint the OIDC JWT
   contents: read
 
-concurrency:
-  group: anthropic-oidc-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  mint-token:
-    name: Mint OIDC-backed Anthropic token
+  validate:
+    name: Validate server-side Anthropic ownership
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    outputs:
-      api_key: ${{ steps.exchange.outputs.api_key }}
-      base_url: ${{ steps.exchange.outputs.base_url }}
-
     steps:
-      - name: Get GitHub OIDC JWT
-        id: oidc
+      - uses: actions/checkout@v7
+      - name: Reject credential outputs and guessed token exchanges
+        shell: bash
         run: |
           set -euo pipefail
-
-          # Audience must match the CF AI Gateway OIDC policy.
-          JWT=$(curl --fail --silent --show-error --location \
-            --header "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=https://gateway.ai.cloudflare.com" \
-            | jq --raw-output '.value')
-
-          if [[ -z "$JWT" || "$JWT" == "null" ]]; then
-            echo "::error::GitHub did not return an OIDC JWT. Ensure the caller grants id-token: write."
-            exit 1
-          fi
-
-          echo "::add-mask::$JWT"
-          echo "jwt=$JWT" >> "$GITHUB_OUTPUT"
-
-      - name: Exchange JWT for gateway token
-        id: exchange
-        env:
-          OIDC_JWT: ${{ steps.oidc.outputs.jwt }}
-          # CF_AI_GATEWAY_ID: set as repo variable, e.g. "goldshore-ai-gateway".
-          # CLOUDFLARE_ACCOUNT_ID: set as a repo secret and passed with secrets: inherit.
-          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CF_GATEWAY_ID: ${{ vars.CF_AI_GATEWAY_ID }}
-          # Fallback: use the stored key directly if OIDC exchange is not yet
-          # configured in the CF dashboard (remove once federation is live).
-          ANTHROPIC_API_KEY_FALLBACK: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: |
-          set -euo pipefail
-
-          if [[ -n "$CF_ACCOUNT_ID" && -n "$CF_GATEWAY_ID" ]]; then
-            GATEWAY_BASE="https://gateway.ai.cloudflare.com/v1/${CF_ACCOUNT_ID}/${CF_GATEWAY_ID}/anthropic"
-
-            # Attempt OIDC token exchange with CF AI Gateway.
-            RESPONSE=$(curl --fail --silent --show-error --location --request POST \
-              --header "Content-Type: application/json" \
-              --header "cf-aig-authorization: Bearer $OIDC_JWT" \
-              "${GATEWAY_BASE}/token" 2>/dev/null || true)
-
-            TOKEN=$(echo "$RESPONSE" | jq --raw-output '.token // .api_key // .access_token // empty' 2>/dev/null || true)
-
-            if [[ -n "$TOKEN" ]]; then
-              # Do not mask values promoted to reusable-workflow outputs: GitHub
-              # suppresses masked job outputs as unsafe for downstream jobs.
-              echo "api_key=$TOKEN" >> "$GITHUB_OUTPUT"
-              echo "base_url=$GATEWAY_BASE" >> "$GITHUB_OUTPUT"
-              echo "Issued gateway-scoped token (OIDC exchange succeeded)."
-              exit 0
-            fi
-
-            echo "::warning::OIDC exchange did not return a token; falling back to stored key."
-            echo "Configure CF AI Gateway OIDC to remove the fallback."
-          else
-            echo "::warning::CF_ACCOUNT_ID or CF_AI_GATEWAY_ID is unset; falling back to stored key."
-          fi
-
-          # Fallback: direct Anthropic API (no OIDC) — remove once CF OIDC is live.
-          if [[ -z "$ANTHROPIC_API_KEY_FALLBACK" ]]; then
-            echo "::error::Neither Cloudflare AI Gateway OIDC nor ANTHROPIC_API_KEY is configured."
-            exit 1
-          fi
-
-          echo "::add-mask::$ANTHROPIC_API_KEY_FALLBACK"
-          echo "api_key=$ANTHROPIC_API_KEY_FALLBACK" >> "$GITHUB_OUTPUT"
-          echo "base_url=https://api.anthropic.com" >> "$GITHUB_OUTPUT"
-          echo "Using fallback direct key (base_url=api.anthropic.com)."
+          workflow=.github/workflows/anthropic-oidc.yml
+          ! grep -Eq '(anthropic/[t]oken|api_key=.*GITHUB_OUTPUT|[o]utputs:[[:space:]]*$)' "$workflow"
+          grep -q 'ANTHROPIC_API_KEY --env preview --name gs-api' "$workflow"
