@@ -15,7 +15,7 @@ workers_dev = false
 [env.prod]
 # All domain routes removed from gs-platform:
 #   goldshore.ai / goldshore.org  → gs-web Pages (custom domain)
-#   admin.goldshore.ai            → gs-admin Pages (custom domain)
+#   admin.goldshore.ai/.org       → gs-web Worker admin route tree
 #   armsway.com                   → armsway-com worker (its own wrangler.toml)
 #   rmarston.com                  → rmarston-com worker (standalone)
 # gs-platform now serves only internal service-binding traffic.

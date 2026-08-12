@@ -128,6 +128,40 @@ test('maps clean admin hostname URLs into the Astro admin route tree', () => {
     getAdminHostRewritePath('/integrations/keys'),
     '/admin/integrations/keys',
   );
+  assert.equal(getAdminHostRewritePath('/domains'), '/admin/domains');
+  assert.equal(getAdminHostRewritePath('/leads'), '/admin/leads');
+});
+
+test('keeps migrated gs-admin pages reachable from the admin hostname', () => {
+  const expectedPermissions = new Map([
+    ['/content', 'content:read'],
+    ['/infrastructure/cloudflare', 'cloudflare_inventory:read'],
+    ['/monetization', 'system:read'],
+    ['/sites', 'cloudflare_inventory:read'],
+    ['/trading/orders', 'api_configuration:read'],
+  ] as const);
+
+  for (const [pathname, permission] of expectedPermissions) {
+    assert.equal(getAdminHostRewritePath(pathname), null);
+    assert.deepEqual(getAdminRouteRule(pathname, 'GET', 'admin.goldshore.ai'), {
+      canonicalPath: pathname,
+      kind: 'page',
+      permission,
+      requiresAdminRole: true,
+    });
+  }
+});
+
+test('protects provider compatibility routes with integration access', () => {
+  assert.deepEqual(
+    getAdminRouteRule('/admin/integrations/meta', 'GET', 'admin.goldshore.ai'),
+    {
+      canonicalPath: '/admin/integrations/meta',
+      kind: 'page',
+      permission: 'integrations:read',
+      requiresAdminRole: true,
+    },
+  );
 });
 
 test('does not rewrite canonical admin, API, or static asset paths', () => {
@@ -182,4 +216,15 @@ test('middleware routes the admin hostname through its resolved dashboard path',
   assert.match(source, /getAdminRouteRule\(\s*routedPath,\s*context\.request\.method,\s*host/);
   assert.match(source, /Response\.redirect\(new URL\(ADMIN_DASHBOARD_PATH, url\.origin\), 302\)/);
   assert.match(source, /await context\.rewrite\(adminRewritePath\)/);
+});
+
+test('admin sidebar points at reachable gs-web destinations', async () => {
+  const source = await import('node:fs/promises').then(({ readFile }) =>
+    readFile(new URL('../../src/components/Sidebar.astro', import.meta.url), 'utf8'),
+  );
+
+  assert.match(source, /href="\/app\/dashboard"/);
+  assert.match(source, /href="\/app\/settings"/);
+  assert.match(source, /href="\/trading"/);
+  assert.doesNotMatch(source, /href="\/admin\/settings"/);
 });

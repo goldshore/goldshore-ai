@@ -58,8 +58,10 @@ const isAdminHostPublicPath = (pathname: string) =>
 const CLEAN_ADMIN_PAGE_PREFIXES = [
   '/api-status',
   '/crawler',
+  '/domains',
   '/goldclaw',
   '/integrations',
+  '/leads',
   '/lead-submissions',
   '/monetization',
   '/products',
@@ -67,6 +69,22 @@ const CLEAN_ADMIN_PAGE_PREFIXES = [
   '/services',
   '/workers',
 ];
+
+const MIGRATED_ADMIN_PAGE_RULES: Array<{
+  prefix: string;
+  permission: AdminPermission;
+}> = [
+  { prefix: '/content', permission: 'content:read' },
+  { prefix: '/infrastructure', permission: 'cloudflare_inventory:read' },
+  { prefix: '/monetization', permission: 'system:read' },
+  { prefix: '/sites', permission: 'cloudflare_inventory:read' },
+  { prefix: '/trading', permission: 'api_configuration:read' },
+];
+
+const getMigratedAdminPageRule = (pathname: string) =>
+  MIGRATED_ADMIN_PAGE_RULES.find(
+    ({ prefix }) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
 
 export type AdminRouteRule = {
   canonicalPath: string;
@@ -110,6 +128,11 @@ export const getAdminHostRewritePath = (pathname: string) => {
   if (isStaticAssetPath(normalizedPath)) return null;
   if (isAdminHostPublicPath(normalizedPath)) return null;
   if (normalizedPath === '/') return ADMIN_DASHBOARD_PATH;
+
+  // These pages were moved byte-for-byte from the retired gs-admin app and
+  // intentionally retain their established paths. Let Astro serve them from
+  // gs-web instead of folding them back to the dashboard.
+  if (getMigratedAdminPageRule(normalizedPath)) return null;
 
   if (
     normalizedPath === '/app' ||
@@ -193,6 +216,37 @@ export const getAdminRouteRule = (
       canonicalPath: normalizedPath,
       kind: 'page',
       permission: 'system:read',
+      requiresAdminRole: true,
+    };
+  }
+
+  const migratedPage = getMigratedAdminPageRule(normalizedPath);
+  if (migratedPage) {
+    return {
+      canonicalPath: normalizedPath,
+      kind: 'page',
+      permission: migratedPage.permission,
+      requiresAdminRole: true,
+    };
+  }
+
+  if (
+    normalizedPath === '/admin/integrations' ||
+    normalizedPath.startsWith('/admin/integrations/')
+  ) {
+    return {
+      canonicalPath: normalizedPath,
+      kind: 'page',
+      permission: 'integrations:read',
+      requiresAdminRole: true,
+    };
+  }
+
+  if (normalizedPath === '/admin/domains' || normalizedPath.startsWith('/admin/domains/')) {
+    return {
+      canonicalPath: normalizedPath,
+      kind: 'page',
+      permission: 'cloudflare_inventory:read',
       requiresAdminRole: true,
     };
   }
