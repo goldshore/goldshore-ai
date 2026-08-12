@@ -8,7 +8,7 @@ on:
       - "Repo Health"
       - "Deploy gs-web"
       - "Deploy gs-api"
-      - "Manage Cloudflare Tokens"
+      - "Cloudflare read-only audit"
     types: [completed]
   schedule:
     # Weekly reminder: every Monday 9am UTC
@@ -22,10 +22,15 @@ on:
 
 permissions: {}
 
+concurrency:
+  group: notify-chat-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   notify-failure:
     name: Notify on CI failure
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     if: >
       github.event_name == 'workflow_run' &&
       github.event.workflow_run.conclusion == 'failure'
@@ -42,7 +47,7 @@ jobs:
             echo "GOOGLE_CHAT_WEBHOOK secret not set - skipping notification"
             exit 0
           fi
-          curl -s -X POST "$WEBHOOK" \
+          curl --fail-with-body --silent --show-error --retry 3 -X POST "$WEBHOOK" \
             -H "Content-Type: application/json" \
             -d "$(jq -n \
               --arg workflow "$WORKFLOW" \
@@ -54,6 +59,7 @@ jobs:
   weekly-api-key-reminder:
     name: Weekly API key reminder
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     steps:
       - name: Send API key checklist reminder
@@ -96,6 +102,6 @@ jobs:
             MSG="$CUSTOM_MSG\n\n$MSG"
           fi
 
-          curl -s -X POST "$WEBHOOK" \
+          curl --fail-with-body --silent --show-error --retry 3 -X POST "$WEBHOOK" \
             -H "Content-Type: application/json" \
             -d "$(jq -n --arg text "$MSG" '{text: $text}')"

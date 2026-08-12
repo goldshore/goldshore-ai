@@ -68,22 +68,11 @@ cloudflare:
       # (policy/ROUTE_POLICY.md vs docs/architecture/domain-ownership.md) --
       # still points at the legacy gs-admin app until that's resolved.
       - name: "admin"
-      - name: "risk.goldshore.org"
         type: CNAME
         content: "gs-web-prod.goldshore.workers.dev"
         proxied: true
         zone: goldshore.org
-
-      # B. Admin browser surfaces owned by gs-web.
-      - name: "admin.goldshore.ai"
-        type: CNAME
-        content: "gs-web-prod.goldshore.workers.dev"
-        proxied: true
-      - name: "admin-preview.goldshore.ai"
-        type: CNAME
-        content: "gs-web-prod.goldshore.workers.dev"
-        proxied: true
-      - name: "admin.goldshore.org"
+      - name: "risk"
         type: CNAME
         content: "gs-web-prod.goldshore.workers.dev"
         proxied: true

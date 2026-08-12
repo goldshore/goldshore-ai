@@ -1,22 +1,37 @@
-name: Inventory gs-web configuration
+name: Deploy gs-web
 
-# Read-only drift inventory. Cloudflare production configuration is changed only
-# by an approved human in the dashboard; this workflow has no Cloudflare credentials.
 on:
   pull_request:
+    branches: [main]
     paths:
       - 'apps/gs-web/**'
-      - 'scripts/export-cloudflare-inventory.py'
-      - 'infra/Cloudflare/dashboard-inventory.json'
+      - 'packages/**'
+      - 'scripts/build-openapi.mjs'
+      - 'scripts/verify-web-dist.mjs'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.node-version'
+      - '.nvmrc'
       - '.github/workflows/deploy-gs-web.yml'
   push:
     branches: [main]
     paths:
       - 'apps/gs-web/**'
-      - 'scripts/export-cloudflare-inventory.py'
-      - 'infra/Cloudflare/dashboard-inventory.json'
+      - 'packages/**'
+      - 'scripts/build-openapi.mjs'
+      - 'scripts/verify-web-dist.mjs'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.node-version'
+      - '.nvmrc'
       - '.github/workflows/deploy-gs-web.yml'
   workflow_dispatch:
+
+concurrency:
+  group: deploy-gs-web-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -29,21 +44,26 @@ jobs:
   # Worker by the Cloudflare Workers Build git integration, which is the single
   # authoritative deploy path.
   #
-  # Do not add a second static-site deployment. Dynamic and static output ship
-  # together through the canonical Worker-with-Assets release.
+  # This job previously also ran `wrangler pages deploy apps/gs-web/dist/client
+  # --project-name=gs-web-pages`. That uploaded only the static client assets —
+  # dist/client contains no _worker.js — so it published a static shell in which
+  # every `prerender = false` route (all of /api/admin/*, [...path].astro, ...)
+  # 404'd, racing the Worker for the same hostnames. Removed rather than fixed:
+  # one app, one deploy path.
   deploy:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@f520eceda224fe1a4aed5a2a27a194379a409996 # v6
         with:
           version: 9.15.4
 
-      - uses: actions/setup-node@v7.0.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .node-version
           cache: pnpm
