@@ -151,6 +151,28 @@ test('keeps the sign-in and sign-out routes reachable on the admin host', () => 
   assert.equal(getAdminRouteRule('/logout', 'GET', 'admin.goldshore.ai'), null);
 });
 
+test('admin pages use the admin layout rather than the public site chrome', async () => {
+  // BaseLayout renders PublicHeader, whose nav links are relative. On the
+  // admin hostname they resolve against that host and are then folded back to
+  // the dashboard, leaving no route to the public site.
+  const { readdir, readFile } = await import('node:fs/promises');
+  const { join } = await import('node:path');
+  const roots = ['../../src/pages/admin', '../../src/pages/app'];
+  const offenders: string[] = [];
+
+  for (const root of roots) {
+    const dir = new URL(`${root}/`, import.meta.url);
+    for (const entry of await readdir(dir, { recursive: true, withFileTypes: true })) {
+      if (!entry.isFile() || !entry.name.endsWith('.astro')) continue;
+      const file = join(entry.parentPath, entry.name);
+      const source = await readFile(file, 'utf8');
+      if (/BaseLayout/.test(source)) offenders.push(entry.name);
+    }
+  }
+
+  assert.deepEqual(offenders, []);
+});
+
 test('middleware routes the admin hostname through its resolved dashboard path', async () => {
   const source = await import('node:fs/promises').then(({ readFile }) =>
     readFile(new URL('../../src/middleware.ts', import.meta.url), 'utf8'),

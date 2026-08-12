@@ -27,12 +27,12 @@ export const logAdminAction = async (env: Env, entry: Omit<AuditEvent, "timestam
   // are written from the authorization middleware, and dropping them whenever
   // PLATFORM_DB is missing would leave no record of the denial at all.
   if (!env?.PLATFORM_DB) {
-    if (env?.KV) {
+    if (typeof env?.KV?.put === "function") {
       try {
         await env.KV.put(
           `audit:${timestamp}:${crypto.randomUUID()}`,
           JSON.stringify(payload),
-          { expirationTtl: 60 * 60 * 24 * 30 },
+          { expirationTtl: 60 * 60 * 24 * 30 }
         );
       } catch (error) {
         console.error("Failed to write audit event to KV", { action: entry.action, error });

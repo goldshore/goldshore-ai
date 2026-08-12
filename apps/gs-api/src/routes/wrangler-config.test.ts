@@ -174,15 +174,12 @@ describe('gs-api wrangler env bindings', () => {
     assert.match(wranglerToml, /dead_letter_queue = "gs-mail-dead-letter"/);
   });
 
-  it('binds each environment to its local SignalsEvaluator workflow', () => {
+  it('binds production to SignalsEvaluator and leaves preview unprovisioned', () => {
     assert.match(
       wranglerToml,
       /\[\[env\.prod\.workflows\]\][\s\S]*?binding = "GS_SIGNALS"[\s\S]*?name = "gs-signals-evaluator"[\s\S]*?class_name = "SignalsEvaluator"/,
     );
-    assert.match(
-      wranglerToml,
-      /\[\[env\.preview\.workflows\]\][\s\S]*?binding = "GS_SIGNALS"[\s\S]*?name = "gs-signals-evaluator-preview"[\s\S]*?class_name = "SignalsEvaluator"/,
-    );
+    assert.doesNotMatch(wranglerToml, /\[\[env\.preview\.workflows\]\]/);
     assert.doesNotMatch(wranglerToml, /script_name = "gs-signals-prod"/);
   });
 
@@ -191,8 +188,8 @@ describe('gs-api wrangler env bindings', () => {
       'goldshore.ai/*',
       'goldshore.org/*',
       'admin.goldshore.ai/*',
-      'admin-preview.goldshore.ai/*',
       'admin.goldshore.org/*',
+      'admin-preview.goldshore.ai/*',
       'risk.goldshore.ai/*',
       'risk.goldshore.org/*',
     ]);

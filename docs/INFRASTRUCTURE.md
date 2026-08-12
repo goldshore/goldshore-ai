@@ -31,7 +31,7 @@ Complete documentation of all websites, deployment infrastructure, DNS/email con
 | **api.goldshore.ai** | goldshore-ai/apps/gs-api | CF Worker | ✅ Live | First-party API |
 | **gw.goldshore.ai** | goldshore-ai/apps/gs-gateway | CF Worker | ✅ Live | API gateway + auth |
 | **agent.goldshore.ai** | goldshore-ai/apps/gs-gateway | CF Worker | ✅ Live | Agent endpoint (via binding) |
-| **admin.goldshore.ai** | goldshore-ai/apps/gs-admin | CF Pages | ✅ Live | Admin dashboard (CF Access protected) |
+| **admin.goldshore.ai** | goldshore-ai/apps/gs-web | CF Worker | ✅ Live | Admin dashboard at `/app/dashboard` (CF Access protected) |
 | **ops.goldshore.ai** | goldshore-ai/apps/gs-control | CF Worker | ✅ Live | Control plane (CF Access protected) |
 | **mail.goldshore.ai** | goldshore-ai/apps/gs-mail | CF Worker | ✅ Live | Email routing & handlers |
 | **radar.goldshore.ai** | goldshore-ai/apps/gs-web | CF Pages | ✅ Live | Risk Radar product |

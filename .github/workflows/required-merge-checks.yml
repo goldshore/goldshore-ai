@@ -64,6 +64,12 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Build gs-web
         run: pnpm --dir apps/gs-web build
+      # gs-web's "test" script runs Playwright only, so tests/unit never ran in
+      # CI. That let a syntax error disable a whole unit-test file unnoticed.
+      # Invoke test:unit explicitly; the e2e suite needs a served build and is
+      # covered by the release quality gate below.
+      - name: Test gs-web (unit)
+        run: pnpm --dir apps/gs-web test:unit
       - name: Detect gs-web release-impact changes
         id: gs-web-changes
         shell: bash
