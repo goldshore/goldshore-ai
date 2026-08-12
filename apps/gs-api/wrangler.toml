@@ -374,6 +374,15 @@ binding = "GS_SIGNALS"
 name = "gs-signals-evaluator-preview"
 class_name = "SignalsEvaluator"
 
+# ── Workflows ────────────────────────────────────────────────────────────────
+# Safe to bind even though the preview queues are not: a Workflow is
+# provisioned from the class exported by this same script at deploy time, so
+# it does not need to pre-exist the way a queue does.
+[[env.preview.workflows]]
+binding = "GS_SIGNALS"
+name = "gs-signals-evaluator-preview"
+class_name = "SignalsEvaluator"
+
 # ── Secrets Store ────────────────────────────────────────────────────────────
 # Secrets Store bindings are per secret, not a store object. The runtime reads
 # env.INTEGRATION_MASTER_KEY directly.
