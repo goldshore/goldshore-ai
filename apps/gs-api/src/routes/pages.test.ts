@@ -84,6 +84,8 @@ describe('Pages API Security', () => {
   });
 
   it('PATCH /pages/:id/status requires content:publish permission', async () => {
+    // viewer is the denied role here: publishing is part of the editor role,
+    // so an editor holds content:publish and is expected to pass this guard.
     const app = createTestApp({ roles: ['viewer'] });
     const res = await app.request('/pages/1/status', {
       method: 'PATCH',
