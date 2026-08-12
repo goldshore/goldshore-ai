@@ -23,10 +23,6 @@ export const ADMIN_PERMISSIONS = [
   "roles:read", "roles:manage",
   "approvals:read", "approvals:create", "approvals:approve", "approvals:execute",
   "audit:read",
-  "content:read", "content:write", "content:publish",
-  "media:read", "media:write", "media:delete",
-  "forms:write",
-  "system:read", "system:write", "system:integrations:manage",
   "ai:analyze",
   "google-business:read",
   "google-business:publish",
@@ -43,6 +39,7 @@ const VIEWER_PERMISSIONS: AdminPermission[] = [
   "dashboard:read", "cms:read", "api_configuration:read", "mailboxes:read",
   "email_subscribers:read", "forms:read", "deployments:read", "rollbacks:read",
   "integrations:read", "google_business_profile:read", "github:read",
+  "google-business:read",
   "cloudflare_inventory:read", "secret_metadata:read", "users:read", "roles:read",
   "content:read", "system:read", "media:read"
 ];
