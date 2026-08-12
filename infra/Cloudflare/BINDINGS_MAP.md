@@ -23,11 +23,17 @@ via Pages custom domains.
   - `admin.goldshore.ai/*`, `admin-preview.goldshore.ai/*`, `admin.goldshore.org/*`
   - `risk.goldshore.ai/*`, `risk.goldshore.org/*`
 
-A second deploy path — `wrangler pages deploy apps/gs-web/dist/client
---project-name=gs-web-pages` in `.github/workflows/deploy-gs-web.yml` — was
+A second deploy path — a static-only deployment of the client bundle in `.github/workflows/deploy-gs-web.yml` — was
 removed. It shipped only the static client assets (dist/client has no
 `_worker.js`), so it published a static shell that 404'd every SSR route while
 competing with the Worker for the same hostnames.
+
+`.github/workflows/deploy-gs-web.yml` is consequently named **Verify gs-web
+build** and retains one immutable artifact keyed by the release SHA. Successful
+Cloudflare deployment events trigger `verify-gs-web-deployment.yml`, which
+compares the embedded release marker across every supported production mirror
+and the two supported `.ai` preview hosts. No `.org` preview hostname is part of
+the current Wrangler contract.
 
 **Environment Variables:**
 

@@ -8,7 +8,7 @@ const astroDir = path.join(clientDir, '_astro');
 const indexPath = path.join(clientDir, 'index.html');
 const serverEntryPath = path.join(distDir, 'server', 'entry.mjs');
 const webAppRoot = path.resolve('.');
-const canonicalLayoutPath = path.join(webAppRoot, 'src', 'layouts', 'GoldShoreShell.astro');
+const canonicalLayoutPath = path.join(webAppRoot, 'src', 'layouts', 'WebLayout.astro');
 const publicDir = path.join(webAppRoot, 'public');
 
 const errors = [];

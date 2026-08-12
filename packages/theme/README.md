@@ -43,7 +43,7 @@ The package exposes the following public CSS entry points:
 
 - Use `gs-section`, `gs-grid`, and `gs-card` classes for consistent spacing.
 - Keep navigation + menu styling inside layouts, not individual pages.
-- Templates in `apps/gs-web` and `apps/gs-admin` demonstrate recommended usage.
+- Templates in `apps/gs-web` demonstrate recommended usage.
 
 ## Integration Notes
 
