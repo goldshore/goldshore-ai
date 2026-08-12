@@ -1,9 +1,6 @@
-# Reference manifest generated from apps/gs-api/wrangler.toml.
-# Deploy from apps/gs-api; this relative entrypoint exists for validation only.
-
 name = "gs-api"
-main = "../../apps/gs-api/src/index.ts"
-compatibility_date = "2026-04-18"
+main = "src/index.ts"
+compatibility_date = "2026-08-12"
 compatibility_flags = ["nodejs_compat"]
 
 workers_dev = false
@@ -56,14 +53,8 @@ GITHUB_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/auth/github/callback"
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
 MAIL_FORWARD_TO = "marstonr6@gmail.com"
 PUBLIC_SITE_URL = "https://goldshore.ai"
-MAILCHANNELS_SENDER_NAME = "GoldShore"
-
-# MAILCHANNELS_SENDER_EMAIL is a secret, not a var — never commit the value.
-#   wrangler secret put MAILCHANNELS_SENDER_EMAIL --env prod --name gs-api
-#   Value: hello@goldshore.ai
-# Without this secret, /v1/forms/:formId/submissions still persists the
-# submission to D1; it just reports mail as not attempted
-# (reason: "missing_mail_configuration") instead of failing the request.
+MAIL_FROM_EMAIL = "noreply@goldshore.ai"
+MAIL_FROM_NAME = "GoldShore"
 
 # GITHUB_API_TOKEN is a secret for Phase 2 Admin Deployment Assistant.
 #   wrangler secret put GITHUB_API_TOKEN --env prod --name gs-api
@@ -117,6 +108,13 @@ id = "9b3314c3b7af40a284a8c9b6e2990709"
 binding = "GS_ASSETS"
 bucket_name = "gs-assets"
 
+# Reuse the verified production bucket with a dedicated binding and prefix.
+# A future dashboard migration can point MAIL_ARCHIVE at its own bucket without
+# changing application code.
+[[env.prod.r2_buckets]]
+binding = "MAIL_ARCHIVE"
+bucket_name = "gs-assets"
+
 [[env.prod.r2_buckets]]
 binding = "TELEMETRY"
 bucket_name = "gs-telemetry-storage"
@@ -162,6 +160,20 @@ database_id = "af94f483-b98b-41c5-aa23-3fbed2764b52"
 [env.prod.ai]
 binding = "AI"
 
+# Native Cloudflare Email Service. Domain onboarding and routing remain
+# dashboard-owned; there is no provider API key in Worker secrets.
+[[env.prod.send_email]]
+name = "EMAIL"
+allowed_sender_addresses = [
+  "noreply@goldshore.ai",
+  "hello@goldshore.ai",
+  "support@goldshore.ai"
+]
+
+[env.prod.observability]
+enabled = true
+head_sampling_rate = 1
+
 # ── Cron Triggers (Scheduled Jobs) ──────────────────────────────────────────────────────────────
 # Token rotation job: Runs daily at 2 AM UTC to refresh expiring OAuth tokens
 [env.prod.triggers]
@@ -184,10 +196,6 @@ queue = "gs-events"
 [[env.prod.queues.producers]]
 binding = "MAIL_JOBS_QUEUE"
 queue = "gs-mail-jobs"
-
-[[env.prod.queues.producers]]
-binding = "DEAD_LETTER_QUEUE"
-queue = "gs-mail-dead-letter"
 
 [[env.prod.queues.consumers]]
 queue = "goldshore-jobs"
@@ -219,165 +227,6 @@ binding = "GS_SIGNALS"
 name = "gs-signals-evaluator"
 class_name = "SignalsEvaluator"
 
-# ── Secrets Store ────────────────────────────────────────────────────────────
-# Secrets Store bindings are per secret, not a store object. The runtime reads
-# env.INTEGRATION_MASTER_KEY directly.
-
-# ══════════════════════════════════════════════════════════════════════════════
-# Preview environment
-# INTEGRATION_MASTER_KEY remains a normal Worker secret until a real Cloudflare
-# Secrets Store and secret are provisioned. Do not add a secrets_store_secrets
-# binding that points at a nonexistent store; that blocks every deployment.
-
-# ══════════════════════════════════════════════════════════════════════════════
-# Preview environment — deploys to workers.dev (no zone route needed)
-# ══════════════════════════════════════════════════════════════════════════════
-
-[env.preview]
-workers_dev = true
-routes = [
-  { pattern = "api-preview.goldshore.ai/*", zone_name = "goldshore.ai" }
-]
-[env.preview.vars]
-ENV = "preview"
-STATE_MUTATIONS_ENABLED = "false"
-GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
-GOOGLE_OAUTH_REDIRECT_URI = "https://api-preview.goldshore.ai/goldclaw/oauth/google/callback"
-GOOGLE_BUSINESS_OAUTH_REDIRECT_URI = "https://api-preview.goldshore.ai/admin/google/oauth/callback"
-GOOGLE_BUSINESS_OWNERSHIP_VERIFIED = "false"
-GOOGLE_OAUTH_PRODUCTION_APPROVED = "false"
-GOOGLE_WORKSPACE_SYNC_ENABLED = "false"
-GOOGLE_WORKSPACE_DELEGATED_ADMIN = ""
-GOOGLE_WORKSPACE_CUSTOMER_ID = "my_customer"
-GOOGLE_WORKSPACE_GROUP_ROLE_MAP = "{}"
-GOOGLE_WORKSPACE_ACCESS_APPLICATIONS = "admin-preview,api-preview"
-GITHUB_OAUTH_REDIRECT_URI = "https://api-preview.goldshore.ai/auth/github/callback"
-CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
-PUBLIC_SITE_URL = "https://preview.goldshore.ai"
-MAILCHANNELS_SENDER_NAME = "GoldShore"
-
-# Preview is fail-closed for state changes. Until dedicated preview resources
-# are provisioned in the Cloudflare dashboard, required read paths use existing
-# verified resources and mutating HTTP methods/OAuth callbacks remain disabled.
-# Replace these shared bindings only with resource IDs verified in the dashboard.
-
-# ── Secrets ──────────────────────────────────────────────────────────────────
-# MAILCHANNELS_SENDER_EMAIL secret — see env.prod above for the command;
-# use --env preview --name gs-api instead.
-
-# GITHUB_API_TOKEN and ANTHROPIC_API_KEY secrets — see env.prod above;
-# use --env preview --name gs-api instead.
-
-# ── KV ────────────────────────────────────────────────────────────────────────────
-[[env.preview.kv_namespaces]]
-binding = "KV"
-id = "d4d20cee39094b999dea3f7e5f4c533a"
-
-[[env.preview.kv_namespaces]]
-binding = "CONTROL_LOGS"
-id = "09e43cb8bd4749fdaaed0dc9d4ff2284"
-
-[[env.preview.kv_namespaces]]
-binding = "RISK_RADAR_CACHE"
-id = "7778423af0e74991bd97a445aaa6df95"
-
-# TRADING_KV: dedicated preview namespace (also owned by the now route-free
-# apps/gs-trading Worker previously).
-[[env.preview.kv_namespaces]]
-binding = "TRADING_KV"
-id = "2c14b79b76e6453ab57c6dde6116a11d"
-
-# ── R2 ────────────────────────────────────────────────────────────────────────────
-[[env.preview.r2_buckets]]
-binding = "GS_ASSETS"
-bucket_name = "gs-assets-preview"
-
-[[env.preview.r2_buckets]]
-binding = "TELEMETRY"
-bucket_name = "gs-telemetry-storage-preview"
-
-[[env.preview.r2_buckets]]
-binding = "RISK_RADAR_R2"
-bucket_name = "gs-risk-radar-raw-preview"
-
-# ── D1 ───────────────────────────────────────────────────────────────────────
-[[env.preview.d1_databases]]
-binding = "PLATFORM_DB"
-database_name = "gs_platform_db_preview"
-database_id = "2dc82951-cfff-45ba-8f77-4ecd42dd85dd"
-
-[[env.preview.d1_databases]]
-binding = "AUDIT_DB"
-database_name = "gs_audit_db_preview"
-database_id = "72920276-2581-4400-bf3f-78e465f93e67"
-
-[[env.preview.d1_databases]]
-binding = "SIGNALS_DB"
-database_name = "gs_signals_db_preview"
-database_id = "aa8bcc63-689f-4403-a43d-6ea0af2a712b"
-
-[[env.preview.d1_databases]]
-binding = "RISK_RADAR_DB"
-database_name = "risk-radar-db-preview"
-database_id = "0f31fa11-2a63-4c4c-9522-a07e09b7a9d9"
-
-# JOBS_DB and PAPER_DB are optional in preview. Cloudflare's account-level D1
-# limit is currently reached, so preview does not fall back to either
-# production database. Their routes fail closed until dedicated databases can
-# be provisioned.
-
-# ── AI ───────────────────────────────────────────────────────────────────────
-[env.preview.ai]
-binding = "AI"
-
-# ── Queues ───────────────────────────────────────────────────────────────────
-[[env.preview.queues.producers]]
-binding = "JOBS_QUEUE"
-queue = "goldshore-jobs-preview"
-
-[[env.preview.queues.producers]]
-binding = "EVENTS_QUEUE"
-queue = "gs-events-preview"
-
-[[env.preview.queues.producers]]
-binding = "MAIL_JOBS_QUEUE"
-queue = "gs-mail-jobs-preview"
-
-[[env.preview.queues.producers]]
-binding = "DEAD_LETTER_QUEUE"
-queue = "gs-mail-dead-letter-preview"
-
-[[env.preview.queues.consumers]]
-queue = "goldshore-jobs-preview"
-max_batch_size = 10
-max_batch_timeout = 5
-max_retries = 5
-retry_delay = 60
-dead_letter_queue = "gs-mail-dead-letter-preview"
-
-[[env.preview.queues.consumers]]
-queue = "gs-events-preview"
-max_batch_size = 10
-max_batch_timeout = 5
-max_retries = 5
-retry_delay = 60
-dead_letter_queue = "gs-mail-dead-letter-preview"
-
-[[env.preview.queues.consumers]]
-queue = "gs-mail-jobs-preview"
-max_batch_size = 10
-max_batch_timeout = 5
-max_retries = 5
-retry_delay = 60
-dead_letter_queue = "gs-mail-dead-letter-preview"
-
-# ── Workflows ────────────────────────────────────────────────────────────────
-[[env.preview.workflows]]
-binding = "GS_SIGNALS"
-name = "gs-signals-evaluator-preview"
-class_name = "SignalsEvaluator"
-
-# ── Secrets Store ────────────────────────────────────────────────────────────
-# Secrets Store bindings are per secret, not a store object. The runtime reads
-# env.INTEGRATION_MASTER_KEY directly.
-
+# Preview deployments use Cloudflare Worker Versions generated from this
+# production manifest. They have no custom preview routes or event triggers;
+# request middleware rejects state-changing requests on workers.dev hosts.

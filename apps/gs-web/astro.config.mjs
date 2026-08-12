@@ -12,6 +12,10 @@ export default defineConfig({
   // gs-web is an SSR Worker, not a static/Pages build. The Cloudflare adapter
   // emits the Worker entry point and its asset bundle together under dist/.
   output: 'server',
+  // Authentication is established by Cloudflare Access and gs-api. Disable
+  // Astro's implicit KV-backed sessions so deploying gs-web cannot silently
+  // provision a SESSION namespace outside the checked-in binding contract.
+  session: false,
   // Keep the Cloudflare adapter for production builds, but disable it for local
   // dev and Playwright runs so Astro can boot without the Workers runtime.
   adapter: isPlaywright || isLocalDev ? undefined : baseConfig.adapter,

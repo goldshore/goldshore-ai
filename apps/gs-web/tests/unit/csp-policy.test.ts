@@ -9,10 +9,9 @@ import {
   buildContentSecurityPolicy,
 } from '../../src/utils/csp.ts';
 
-test('approved API origins stay limited to the documented production and preview hosts', () => {
+test('approved API origins stay limited to the production API host', () => {
   assert.deepEqual(GOLDSHORE_API_ORIGINS, [
     'https://api.goldshore.ai',
-    'https://api-preview.goldshore.ai',
   ]);
 });
 
@@ -20,7 +19,6 @@ test('connect-src allows same-origin and GoldShore API origins used by browser r
   assert.deepEqual(WEB_CONNECT_SRC, [
     "'self'",
     'https://api.goldshore.ai',
-    'https://api-preview.goldshore.ai',
   ]);
 });
 
@@ -37,7 +35,7 @@ test('buildContentSecurityPolicy serializes directives in declaration order', ()
 test('meta CSP includes the required browser directives and omits header-only frame protections', () => {
   assert.match(
     WEB_META_CSP,
-    /connect-src 'self' https:\/\/api\.goldshore\.ai https:\/\/api-preview\.goldshore\.ai/,
+    /connect-src 'self' https:\/\/api\.goldshore\.ai/,
   );
   assert.doesNotMatch(WEB_META_CSP, /frame-ancestors/);
 });
@@ -45,7 +43,7 @@ test('meta CSP includes the required browser directives and omits header-only fr
 test('header CSP preserves frame protections and matches the legacy web CSP export', () => {
   assert.match(
     WEB_HEADERS_CSP,
-    /connect-src 'self' https:\/\/api\.goldshore\.ai https:\/\/api-preview\.goldshore\.ai/,
+    /connect-src 'self' https:\/\/api\.goldshore\.ai/,
   );
   assert.match(WEB_HEADERS_CSP, /frame-ancestors 'none'/);
 });

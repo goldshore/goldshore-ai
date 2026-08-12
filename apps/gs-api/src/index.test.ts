@@ -26,14 +26,12 @@ test('keeps shallow production health independent of optional provider secrets',
   assert.equal(response.status, 200);
 });
 
-test('allows documented preview goldshore.ai origins', () => {
-  assert.equal(isPreviewOrigin('https://feature-123-preview.goldshore.ai'), true);
-  assert.equal(isAllowedOrigin('https://feature-123-preview.goldshore.ai'), true);
-});
-
-test('allows documented goldshore-pages.dev preview origins', () => {
-  assert.equal(isPreviewOrigin('https://branch-name.goldshore-pages.dev'), true);
-  assert.equal(isAllowedOrigin('https://branch-name.goldshore-pages.dev'), true);
+test('allows only version-preview origins for canonical Workers', () => {
+  const origin = 'https://version-abc-gs-api-prod.goldshore.workers.dev';
+  assert.equal(isPreviewOrigin(origin), true);
+  assert.equal(isAllowedOrigin(origin), true);
+  assert.equal(isPreviewOrigin('https://branch-name.goldshore-pages.dev'), false);
+  assert.equal(isPreviewOrigin('https://feature-123-preview.goldshore.ai'), false);
 });
 
 test('rejects unrelated origins', () => {
