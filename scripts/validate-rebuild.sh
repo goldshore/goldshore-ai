@@ -45,7 +45,7 @@ run_optional_changed_package_builds() {
   local package
   for package in ${changed}; do
     case "${package}" in
-      apps/gs-api|apps/gs-web|apps/gs-admin)
+      apps/gs-api|apps/gs-web)
         pnpm -C "${package}" build
         ;;
       *)
@@ -66,8 +66,6 @@ case "$PHASE" in
     run_phase "Phase 5.1: Install dependencies" pnpm install
     run_phase "Phase 5.2: Build gs-api" pnpm -C apps/gs-api build
     run_phase "Phase 5.3: Build gs-web" pnpm -C apps/gs-web build
-    run_phase "Phase 5.4: Build gs-admin" pnpm -C apps/gs-admin build
-
     run_optional_changed_package_builds
     ;;
 esac

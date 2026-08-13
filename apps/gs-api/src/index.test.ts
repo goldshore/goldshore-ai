@@ -8,19 +8,30 @@ const requiredRuntimeEnv = {
   GS_ASSETS: {} as any,
   AI: {} as any,
   JWT_SECRET: 'test-jwt-secret',
-  STRIPE_API_KEY: 'test-stripe-key',
-  SENDGRID_API_KEY: 'test-sendgrid-key',
   ACCESS_CLIENT_SECRET: 'test-access-client-secret',
 };
 
-test('allows documented preview goldshore.ai origins', () => {
-  assert.equal(isPreviewOrigin('https://feature-123-preview.goldshore.ai'), true);
-  assert.equal(isAllowedOrigin('https://feature-123-preview.goldshore.ai'), true);
+test('keeps shallow production health independent of optional provider secrets', async () => {
+  const response = await app.request(
+    '/health',
+    {},
+    {
+      ...requiredRuntimeEnv,
+      ENV: 'production',
+      CLOUDFLARE_ACCESS_AUDIENCE: 'test-audience',
+      CONTROL_SYNC_TOKEN: 'test-control-token',
+    } as any,
+  );
+
+  assert.equal(response.status, 200);
 });
 
-test('allows documented goldshore-pages.dev preview origins', () => {
-  assert.equal(isPreviewOrigin('https://branch-name.goldshore-pages.dev'), true);
-  assert.equal(isAllowedOrigin('https://branch-name.goldshore-pages.dev'), true);
+test('allows only version-preview origins for canonical Workers', () => {
+  const origin = 'https://version-abc-gs-api-prod.goldshore.workers.dev';
+  assert.equal(isPreviewOrigin(origin), true);
+  assert.equal(isAllowedOrigin(origin), true);
+  assert.equal(isPreviewOrigin('https://branch-name.goldshore-pages.dev'), false);
+  assert.equal(isPreviewOrigin('https://feature-123-preview.goldshore.ai'), false);
 });
 
 test('rejects unrelated origins', () => {

@@ -8,7 +8,7 @@
 
 ## Web / Admin front end
 
-### 1. Web (Public)
+### 1. Web and admin UI
 
 `apps/gs-web` is **not** a Pages project. It is an SSR Astro app served by the
 `gs-web-prod` Worker, deployed by the Cloudflare Workers Build git integration.
@@ -22,6 +22,12 @@ via Pages custom domains.
   - `goldshore.ai/*`, `goldshore.org/*`
   - `admin.goldshore.ai/*`, `admin-preview.goldshore.ai/*`, `admin.goldshore.org/*`
   - `risk.goldshore.ai/*`, `risk.goldshore.org/*`
+
+The protected admin cockpit is the `/app` and `/admin` route tree in this same
+Worker. There is no `apps/gs-admin` package, Pages project, or separate admin
+Worker in the repository contract. Cloudflare Access remains required on both
+admin hostnames. The root of either admin hostname redirects to
+`/app/dashboard` after authorization.
 
 A second deploy path — a static-only deployment of the client bundle in `.github/workflows/deploy-gs-web.yml` — was
 removed. It shipped only the static client assets (dist/client has no
@@ -42,27 +48,7 @@ the current Wrangler contract.
 
 ---
 
-### 2. Admin (Cockpit)
-
-- Project: `gs-admin`
-- Repo: `goldshore-ai`
-- Root: `apps/gs-admin`
-- Custom Domains:
-  - `admin.goldshore.ai`
-  - `admin-preview.goldshore.ai`
-
-**Zero Trust:**
-
-- Access policy required on `admin.goldshore.ai` (email allowlist).
-
-**Environment Variables:**
-
-- `PUBLIC_API=https://api.goldshore.ai`
-- `PUBLIC_GATEWAY=https://gw.goldshore.ai`
-
----
-
-### 2b. MCP Access Surface
+### 2. MCP Access Surface
 
 - Host: `mcp.goldshore.ai`
 - Purpose: private MCP endpoint for approved humans and approved agents
@@ -116,13 +102,11 @@ the current Wrangler contract.
 - AI:
   - Binding: `AI`
   - Gateway: `goldshore-ai-gateway`
-- Secrets Store:
-  - Binding: `INTEGRATION_MASTER_KEY`
-  - Store: `b9824d3280c54573a24137c7e7143b33`
-  - Secret: `INTEGRATION_MASTER_KEY`
 - Worker secrets:
   - Binding: `INTEGRATION_MASTER_KEY`
   - Secret: `INTEGRATION_MASTER_KEY` (normal Worker secret; do not configure `secrets_store_secrets` until the referenced Cloudflare Secrets Store exists)
+  - Binding: `GS_GITHUB_WEBHOOK_SECRET`
+  - Secret: `GS_GITHUB_WEBHOOK_SECRET` (HMAC verification for the four repository webhook endpoints)
 
 **Risk Radar storage policy:** bind Risk Radar storage only to `gs-api`; `gs-web` must call API endpoints rather than receiving `RISK_RADAR_DB`, `RISK_RADAR_CACHE`, or `RISK_RADAR_R2` directly.
 

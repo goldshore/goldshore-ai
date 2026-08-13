@@ -1,17 +1,17 @@
-import { Hono } from 'hono';
-import { buildAdminSession, verifyAccessWithClaims, type AdminPermission } from '@goldshore/auth';
-import { parseJson, isValidEmail } from '@goldshore/utils';
-import type { Env } from '../types';
+import { Hono, type Context } from 'hono';
+import { buildAdminSession, type AccessTokenPayload, type AdminPermission } from '@goldshore/auth';
+import { escapeHtml, parseJson, isValidEmail } from '@goldshore/utils';
+import type { Env, Variables } from '../types';
 import {
-  sendMail,
   parseNotificationRecipients,
   buildLeadAutoResponder,
   buildNewsletterConfirmation,
   buildNewsletterWelcome,
 } from '../lib/mail';
+import { enqueueMailJob } from '../lib/mail-queue';
 import { validateFormTurnstile } from '../lib/turnstile';
 
-const forms = new Hono<{ Bindings: Env }>();
+const forms = new Hono<{ Bindings: Env; Variables: Variables }>();
 const allowedStatuses = new Set(['new', 'read', 'archived']);
 
 const normalizeRow = (row: Record<string, string>) => ({
@@ -26,10 +26,12 @@ const normalizeRow = (row: Record<string, string>) => ({
   updatedAt: row.updated_at,
 });
 
-const requirePermission = async (request: Request, env: Env, permission: AdminPermission) => {
+const requirePermission = (
+  claims: AccessTokenPayload | null,
+  env: Env,
+  permission: AdminPermission,
+) => {
   if (env.DEV_AUTH_BYPASS === '1') return null;
-
-  const claims = await verifyAccessWithClaims(request, env);
   if (!claims) return Response.json({ error: 'Authentication required.' }, { status: 401 });
   const session = buildAdminSession(claims);
   return session.permissions.includes(permission)
@@ -59,7 +61,7 @@ const sha256 = async (value: string) => {
 const publicSiteUrl = (env: Env) => (env.PUBLIC_SITE_URL || 'https://goldshore.ai').replace(/\/$/, '');
 
 forms.get('/leads', async (c) => {
-  const denied = await requirePermission(c.req.raw, c.env, 'forms:read');
+  const denied = requirePermission(c.get('accessClaims'), c.env, 'forms:read');
   if (denied) return denied;
   const status = c.req.query('status');
   const whereClause = status && allowedStatuses.has(status) ? 'WHERE status = ?' : '';
@@ -75,7 +77,7 @@ forms.get('/leads', async (c) => {
 
 forms.post('/leads', async (c) => {
   if (!isSameOriginRequest(c.req.raw)) return c.text('Forbidden: CSRF check failed', 403);
-  const denied = await requirePermission(c.req.raw, c.env, 'forms:write');
+  const denied = requirePermission(c.get('accessClaims'), c.env, 'forms:write');
   if (denied) return denied;
   const body = await c.req.parseBody();
   const id = String(body.id || '').trim();
@@ -86,7 +88,7 @@ forms.post('/leads', async (c) => {
 });
 
 forms.get('/configs', async (c) => {
-  const denied = await requirePermission(c.req.raw, c.env, 'forms:read');
+  const denied = requirePermission(c.get('accessClaims'), c.env, 'forms:read');
   if (denied) return denied;
   const result = await c.env.PLATFORM_DB.prepare('SELECT id, slug, name, status, fields, recipients, integrations, created_at, updated_at FROM form_configs ORDER BY updated_at DESC').all();
   return c.json({ configs: (result?.results ?? []).map((row) => normalizeRow(row as Record<string, string>)) });
@@ -94,7 +96,7 @@ forms.get('/configs', async (c) => {
 
 forms.post('/configs', async (c) => {
   if (!isSameOriginRequest(c.req.raw)) return c.json({ error: 'Forbidden: CSRF check failed.' }, 403);
-  const denied = await requirePermission(c.req.raw, c.env, 'forms:write');
+  const denied = requirePermission(c.get('accessClaims'), c.env, 'forms:write');
   if (denied) return denied;
   const payload = await c.req.json<{ slug?: string; name?: string; status?: string; fields?: unknown[]; recipients?: unknown[]; integrations?: unknown[] }>();
   if (!payload.slug || !payload.name) return c.text('Missing required fields.', 400);
@@ -108,7 +110,7 @@ forms.post('/configs', async (c) => {
 });
 
 forms.get('/configs/:slug', async (c) => {
-  const denied = await requirePermission(c.req.raw, c.env, 'forms:read');
+  const denied = requirePermission(c.get('accessClaims'), c.env, 'forms:read');
   if (denied) return denied;
   const result = await c.env.PLATFORM_DB.prepare('SELECT id, slug, name, status, fields, recipients, integrations, created_at, updated_at FROM form_configs WHERE slug = ? LIMIT 1').bind(c.req.param('slug')).all();
   const row = result?.results?.[0] as Record<string, string> | undefined;
@@ -116,9 +118,11 @@ forms.get('/configs/:slug', async (c) => {
 });
 
 
-const updateConfig = async (c: Parameters<Parameters<typeof forms.put>[1]>[0]) => {
+type FormsContext = Context<{ Bindings: Env; Variables: Variables }>;
+
+const updateConfig = async (c: FormsContext) => {
   if (!isSameOriginRequest(c.req.raw)) return c.json({ error: 'Forbidden: CSRF check failed.' }, 403);
-  const denied = await requirePermission(c.req.raw, c.env, 'forms:write');
+  const denied = requirePermission(c.get('accessClaims'), c.env, 'forms:write');
   if (denied) return denied;
   const slug = c.req.param('slug');
   const payload = await c.req.json<{ name?: string; status?: string; fields?: unknown[]; recipients?: unknown[]; integrations?: unknown[] }>();
@@ -145,8 +149,12 @@ forms.post('/:formId/submissions', async (c) => {
   const message = typeof body.message === 'string' ? body.message : undefined;
 
   // Validate Turnstile token if configured
+  const turnstileForm = new FormData();
+  for (const [key, value] of Object.entries(body)) {
+    if (typeof value === 'string') turnstileForm.set(key, value);
+  }
   const turnstileValidation = await validateFormTurnstile(
-    body instanceof FormData ? body : new FormData(new URLSearchParams(body as Record<string, string>)),
+    turnstileForm,
     c.env.TURNSTILE_SECRET_KEY,
     c.req.raw,
   );
@@ -167,25 +175,32 @@ forms.post('/:formId/submissions', async (c) => {
   const recipients = parseNotificationRecipients(configRecipients, c.env.CONTACT_NOTIFICATION_EMAILS);
 
   const notificationResult = recipients.length
-    ? await sendMail(
+    ? await enqueueMailJob(
         c.env,
-        recipients,
-        `[GoldShore] New ${formId} submission`,
-        [
+        {
+          to: recipients,
+          subject: `[GoldShore] New ${formId} submission`,
+          text: [
           `Name: ${name || 'N/A'}`,
           `Email: ${email || 'N/A'}`,
           '',
           message || 'No message provided.',
-        ].join('\n'),
-        `<p><strong>Name:</strong> ${name || 'N/A'}</p><p><strong>Email:</strong> ${email || 'N/A'}</p><p>${message || 'No message provided.'}</p>`,
-        email && isValidEmail(email) ? { email, name } : undefined,
+          ].join('\n'),
+          html: `<p><strong>Name:</strong> ${escapeHtml(name || 'N/A')}</p><p><strong>Email:</strong> ${escapeHtml(email || 'N/A')}</p><p>${escapeHtml(message || 'No message provided.').replace(/\n/g, '<br>')}</p>`,
+          replyTo: email && isValidEmail(email) ? { email, name } : undefined,
+        },
       )
     : { attempted: false, reason: 'no_recipients' };
 
   const autoResponder = buildLeadAutoResponder({ name, formType: formId });
   const autoResponderResult =
     email && isValidEmail(email)
-      ? await sendMail(c.env, [{ email, name }], autoResponder.subject, autoResponder.text, autoResponder.html)
+      ? await enqueueMailJob(c.env, {
+          to: [{ email, name }],
+          subject: autoResponder.subject,
+          text: autoResponder.text,
+          html: autoResponder.html,
+        })
       : { attempted: false, reason: 'missing_submitter_email' };
 
   return c.json({ ok: true, status: 'received', formId, submissionId: id, submittedAt: now, redirectTo: String(body.redirectTo || '/contact?submitted=1'), mail: { notification: notificationResult, autoResponder: autoResponderResult } }, 202);

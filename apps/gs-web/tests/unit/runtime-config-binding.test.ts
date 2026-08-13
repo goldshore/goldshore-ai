@@ -6,39 +6,39 @@ import { fileURLToPath } from 'node:url';
 const repoRelative = (relativePath: string) =>
   fileURLToPath(new URL(relativePath, import.meta.url));
 
-const webWrangler = readFileSync(
-  repoRelative('../../../../infra/Cloudflare/gs-web.wrangler.toml'),
-  'utf8',
-);
-const deployedWebWrangler = readFileSync(repoRelative('../../wrangler.toml'), 'utf8');
-
+const webWrangler = readFileSync(repoRelative('../../wrangler.toml'), 'utf8');
 const webReadme = readFileSync(repoRelative('../../README.md'), 'utf8');
+const astroConfig = readFileSync(repoRelative('../../astro.config.mjs'), 'utf8');
 
-test('gs-web Cloudflare config documents GS_CONFIG as an unbound proposed-only runtime store', () => {
-  assert.doesNotMatch(webWrangler, /binding\s*=\s*"GS_CONFIG"/);
-  assert.ok(webWrangler.includes('`GS_CONFIG` is intentionally *not* bound to gs-web today.'));
+test('gs-web has no direct operational bindings beyond its session store', () => {
+  assert.match(webWrangler, /\[assets\][\s\S]*?binding = "ASSETS"/);
+
+  // Transactional data stays behind gs-api: no app KV, no D1, no R2, no email.
+  // SESSION is deliberately excluded from this list — it backs Astro sessions
+  // for auth state and is pinned below so deploys cannot provision a new store.
+  assert.doesNotMatch(webWrangler, /^binding = "(?:KV|PLATFORM_DB|GS_ASSETS|EMAIL)"$/m);
+  assert.doesNotMatch(webWrangler, /\[\[env\.prod\.(?:d1_databases|r2_buckets|queues)/);
+
+  // The session namespace must be pinned in both scopes. Astro builds the
+  // deploy manifest before an environment is selected, and environments do not
+  // inherit bindings, so dropping either one lets Cloudflare auto-provision a
+  // replacement namespace at deploy time.
+  const sessionId = '805bff3293c2483facc5225e6ff9af60';
+  assert.match(webWrangler, new RegExp(`\\[\\[kv_namespaces\\]\\]\\nbinding = "SESSION"\\nid = "${sessionId}"`));
+  assert.match(webWrangler, new RegExp(`\\[\\[env\\.prod\\.kv_namespaces\\]\\]\\nbinding = "SESSION"\\nid = "${sessionId}"`));
+
+  // No session driver override: the Cloudflare adapter supplies its KV driver
+  // when none is set, which is what emits the SESSION binding.
+  assert.doesNotMatch(astroConfig, /^\s*session:/m);
 });
 
-test('gs-web README documents indirect runtime configuration until a concrete consumer exists', () => {
-  assert.match(webReadme, /`gs-web` does not currently read `GS_CONFIG` directly/);
-  assert.match(webReadme, /do\s+not add that binding without a concrete request-time consumer/);
+test('gs-web has no dedicated preview Worker environment', () => {
+  assert.doesNotMatch(webWrangler, /\[env\.preview(?:\.|\])/);
+  assert.doesNotMatch(webWrangler, /(?:preview|admin-preview)\.goldshore\.ai/);
 });
 
 test('gs-web README documents one Worker release and gates a future Pages migration', () => {
   assert.match(webReadme, /exactly one deployment model: an Astro SSR Cloudflare Worker with\r?\nAssets/);
   assert.match(webReadme, /Every dynamic web endpoint/);
   assert.match(webReadme, /must first move into `apps\/gs-api`/);
-});
-
-test('gs-web deploy environments reuse the provisioned session namespace', () => {
-  const sessionNamespaceId = '09ae2ffbffe24e628c9538c8129dfe33';
-
-  for (const envName of ['prod', 'preview']) {
-    assert.match(
-      deployedWebWrangler,
-      new RegExp(
-        `\\[\\[env\\.${envName}\\.kv_namespaces\\]\\][\\s\\S]*?binding = "SESSION"[\\s\\S]*?id = "${sessionNamespaceId}"`,
-      ),
-    );
-  }
 });

@@ -2,52 +2,52 @@
 -- source of truth for any of these records.
 PRAGMA foreign_keys = ON;
 
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY, email TEXT NOT NULL COLLATE NOCASE UNIQUE,
   display_name TEXT, status TEXT NOT NULL DEFAULT 'active'
     CHECK (status IN ('active','invited','disabled','deprovisioned')),
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now')), disabled_at TEXT, deleted_at TEXT
 );
-CREATE TABLE identities (
+CREATE TABLE IF NOT EXISTS identities (
   id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   provider TEXT NOT NULL, provider_subject TEXT NOT NULL, email TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')), last_seen_at TEXT,
   UNIQUE(provider, provider_subject)
 );
-CREATE TABLE roles (
+CREATE TABLE IF NOT EXISTS roles (
   id TEXT PRIMARY KEY, name TEXT NOT NULL UNIQUE, description TEXT,
   is_system INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
-CREATE TABLE permissions (
+CREATE TABLE IF NOT EXISTS permissions (
   id TEXT PRIMARY KEY, resource TEXT NOT NULL, action TEXT NOT NULL, description TEXT,
   UNIQUE(resource, action)
 );
-CREATE TABLE role_permissions (
+CREATE TABLE IF NOT EXISTS role_permissions (
   role_id TEXT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
   permission_id TEXT NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
   PRIMARY KEY(role_id, permission_id)
 );
-CREATE TABLE role_assignments (
+CREATE TABLE IF NOT EXISTS role_assignments (
   id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   role_id TEXT NOT NULL REFERENCES roles(id) ON DELETE RESTRICT,
   assigned_by TEXT REFERENCES users(id) ON DELETE SET NULL,
   created_at TEXT NOT NULL DEFAULT (datetime('now')), revoked_at TEXT,
   UNIQUE(user_id, role_id)
 );
-CREATE TABLE sessions (
+CREATE TABLE IF NOT EXISTS sessions (
   id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   token_hash TEXT NOT NULL UNIQUE, assurance_level INTEGER NOT NULL DEFAULT 1,
   created_at TEXT NOT NULL DEFAULT (datetime('now')), expires_at TEXT NOT NULL,
   last_seen_at TEXT, revoked_at TEXT
 );
-CREATE TABLE invitations (
+CREATE TABLE IF NOT EXISTS invitations (
   id TEXT PRIMARY KEY, email TEXT NOT NULL COLLATE NOCASE, role_id TEXT NOT NULL REFERENCES roles(id),
   token_hash TEXT NOT NULL UNIQUE, invited_by TEXT REFERENCES users(id) ON DELETE SET NULL,
   status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','accepted','expired','revoked')),
   created_at TEXT NOT NULL DEFAULT (datetime('now')), expires_at TEXT NOT NULL, accepted_at TEXT
 );
-CREATE TABLE approvals (
+CREATE TABLE IF NOT EXISTS approvals (
   id TEXT PRIMARY KEY, operation TEXT NOT NULL, resource_id TEXT, request_json TEXT NOT NULL,
   requested_by TEXT NOT NULL, approved_by TEXT,
   status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','approved','executed','rejected','expired')),
@@ -55,31 +55,31 @@ CREATE TABLE approvals (
   approved_at TEXT, executed_at TEXT,
   CHECK(approved_by IS NULL OR approved_by <> requested_by)
 );
-CREATE TABLE audit_events (
+CREATE TABLE IF NOT EXISTS audit_events (
   id TEXT PRIMARY KEY, occurred_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
   actor TEXT NOT NULL, action TEXT NOT NULL, status TEXT NOT NULL,
   target_type TEXT, target_id TEXT, request_id TEXT, metadata_json TEXT NOT NULL DEFAULT '{}'
 );
-CREATE INDEX idx_users_status ON users(status);
-CREATE INDEX idx_role_assignments_user ON role_assignments(user_id, revoked_at);
-CREATE INDEX idx_sessions_user_expiry ON sessions(user_id, expires_at);
-CREATE INDEX idx_invitations_email_status ON invitations(email, status);
-CREATE INDEX idx_approvals_status_expiry ON approvals(status, expires_at);
-CREATE INDEX idx_audit_occurred_at ON audit_events(occurred_at DESC);
+CREATE INDEX IF NOT EXISTS idx_users_status ON users(status);
+CREATE INDEX IF NOT EXISTS idx_role_assignments_user ON role_assignments(user_id, revoked_at);
+CREATE INDEX IF NOT EXISTS idx_sessions_user_expiry ON sessions(user_id, expires_at);
+CREATE INDEX IF NOT EXISTS idx_invitations_email_status ON invitations(email, status);
+CREATE INDEX IF NOT EXISTS idx_approvals_status_expiry ON approvals(status, expires_at);
+CREATE INDEX IF NOT EXISTS idx_audit_occurred_at ON audit_events(occurred_at DESC);
 
 -- Audit records are append-only even for privileged D1 callers.
-CREATE TRIGGER audit_events_no_update BEFORE UPDATE ON audit_events
+CREATE TRIGGER IF NOT EXISTS audit_events_no_update BEFORE UPDATE ON audit_events
 BEGIN SELECT RAISE(ABORT, 'audit events are immutable'); END;
-CREATE TRIGGER audit_events_no_delete BEFORE DELETE ON audit_events
+CREATE TRIGGER IF NOT EXISTS audit_events_no_delete BEFORE DELETE ON audit_events
 BEGIN SELECT RAISE(ABORT, 'audit events are immutable'); END;
 
-INSERT INTO roles(id,name,description,is_system) VALUES
+INSERT OR IGNORE INTO roles(id,name,description,is_system) VALUES
  ('role_owner','owner','Unrestricted owner; at least one active owner is required',1),
  ('role_admin','admin','Administrative operator',1),
  ('role_editor','editor','Content operator',1),
  ('role_viewer','viewer','Read-only operator',1);
 
-INSERT INTO permissions(id,resource,action) VALUES
+INSERT OR IGNORE INTO permissions(id,resource,action) VALUES
  ('dashboard_read','dashboard','read'),
  ('cms_read','cms','read'),('cms_create','cms','create'),('cms_update','cms','update'),('cms_publish','cms','publish'),('cms_delete','cms','delete'),
  ('api_configuration_read','api_configuration','read'),('api_configuration_update','api_configuration','update'),
@@ -100,5 +100,5 @@ INSERT INTO permissions(id,resource,action) VALUES
 
 -- The owner role is the bootstrap authority. Less privileged role grants are
 -- intentionally managed by audited administration flows after migration.
-INSERT INTO role_permissions(role_id,permission_id)
+INSERT OR IGNORE INTO role_permissions(role_id,permission_id)
 SELECT 'role_owner', id FROM permissions;

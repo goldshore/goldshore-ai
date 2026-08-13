@@ -29,6 +29,7 @@ interface Env {
   CONTACT_NOTIFICATION_EMAILS?: string;
   CLOUDFLARE_TEAM_DOMAIN?: string;
   CLOUDFLARE_ACCESS_AUDIENCE?: string;
+  ADMIN_OWNER_EMAILS?: string;
   JWT_SECRET?: string;
   DEV_AUTH_BYPASS?: string;
   PUBLIC_API?: string;

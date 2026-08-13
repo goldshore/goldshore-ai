@@ -1,7 +1,6 @@
 const HOST_ROUTE_PREFIXES = new Map<string, string>([
   ['api.goldshore.ai', ''],
   ['api.goldshore.org', ''],
-  ['api-preview.goldshore.ai', ''],
   ['agent.goldshore.ai', '/agent'],
   ['mail.goldshore.ai', '/mail'],
   ['ops.goldshore.ai', '/control'],
