@@ -20,6 +20,9 @@ const {
     aria-controls="primary-navigation"
   >
     <span class="sr-only">Toggle menu</span>
+    <span class="gs-nav-toggle__bar" aria-hidden="true"></span>
+    <span class="gs-nav-toggle__bar" aria-hidden="true"></span>
+    <span class="gs-nav-toggle__bar" aria-hidden="true"></span>
   </button>
 
   <nav class="gs-nav" id="primary-navigation" aria-label="Primary">
@@ -89,3 +92,60 @@ const {
 
   setMenuState(false);
 </script>
+
+<style>
+  .gs-nav-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    min-height: 44px;
+    padding: 0.72rem 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--gs-text-dim);
+    cursor: pointer;
+    transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
+  }
+
+  .gs-nav-toggle:hover,
+  .gs-nav-toggle:focus-visible {
+    border-color: rgba(220, 120, 60, 0.6);
+    background: rgba(220, 120, 60, 0.08);
+    color: var(--gs-text);
+  }
+
+  .gs-nav-toggle__bar {
+    position: absolute;
+    width: 20px;
+    height: 1px;
+    border-radius: 1px;
+    background: currentColor;
+    transition: transform 180ms ease, opacity 140ms ease;
+  }
+
+  .gs-nav-toggle__bar:nth-of-type(2) { transform: translateY(-6px); }
+  .gs-nav-toggle__bar:nth-of-type(3) { transform: translateY(0); }
+  .gs-nav-toggle__bar:nth-of-type(4) { transform: translateY(6px); }
+
+  .gs-nav-toggle[aria-expanded='true'] .gs-nav-toggle__bar:nth-of-type(2) {
+    transform: rotate(45deg);
+  }
+
+  .gs-nav-toggle[aria-expanded='true'] .gs-nav-toggle__bar:nth-of-type(3) {
+    opacity: 0;
+  }
+
+  .gs-nav-toggle[aria-expanded='true'] .gs-nav-toggle__bar:nth-of-type(4) {
+    transform: rotate(-45deg);
+  }
+
+  @media (max-width: 639px) {
+    .gs-nav-toggle { display: flex; }
+  }
+
+  @media (min-width: 1024px) {
+    .gs-nav-toggle { display: none; }
+  }
+</style>
