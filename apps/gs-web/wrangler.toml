@@ -25,8 +25,12 @@ CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
 # ── Production ──────────────────────────────────────────────────────────────────────────────────────
 
 [env.prod]
-# Wrangler suffixes the top-level name, so this environment is the single
-# `gs-web-prod` release serving the canonical production UI hosts.
+# Wrangler otherwise derives `<top-level name>-<env>` and would target a
+# `gs-web-prod` Worker. The production Worker was renamed to `gs-web` in the
+# dashboard (same script id, 7510e007…), so this environment pins the name
+# explicitly. Without it, `wrangler deploy --env prod` recreates `gs-web-prod`
+# and moves the routes below onto that new Worker, orphaning the live one.
+name = "gs-web"
 routes = [
   { pattern = "goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
