@@ -49,8 +49,8 @@ test('gs-web has no direct operational bindings beyond its session store', () =>
   // inherit bindings, so dropping either one lets Cloudflare auto-provision a
   // replacement namespace at deploy time.
   const sessionId = '805bff3293c2483facc5225e6ff9af60';
-  assert.match(webWrangler, new RegExp(`\\[\\[kv_namespaces\\]\\]\\nbinding = "SESSION"\\nid = "${sessionId}"`));
-  assert.match(webWrangler, new RegExp(`\\[\\[env\\.prod\\.kv_namespaces\\]\\]\\nbinding = "SESSION"\\nid = "${sessionId}"`));
+  assert.match(webWrangler, new RegExp(`\\[\\[kv_namespaces\\]\\]\\r?\\nbinding = "SESSION"\\r?\\nid = "${sessionId}"`));
+  assert.match(webWrangler, new RegExp(`\\[\\[env\\.prod\\.kv_namespaces\\]\\]\\r?\\nbinding = "SESSION"\\r?\\nid = "${sessionId}"`));
 
   // No session driver override: the Cloudflare adapter supplies its KV driver
   // when none is set, which is what emits the SESSION binding.
