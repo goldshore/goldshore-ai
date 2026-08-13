@@ -1,5 +1,11 @@
 # Cloudflare KV Claude Handoff
 
+> **Current handoff status: UNVERIFIED REPORT.** This dated report does not
+> verify present DNS records, Worker routes, Access policies, or dashboard
+> bindings. Its historical API output must not be carried forward as live state.
+> Use the read-only process and current status ledger in
+> [`reports/cloudflare-live-state-handoff.md`](cloudflare-live-state-handoff.md).
+
 Merge Strategy: Merge Commit
 
 Generated: 2026-07-14
