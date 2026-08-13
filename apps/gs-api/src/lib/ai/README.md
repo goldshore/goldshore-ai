@@ -6,7 +6,7 @@ tool-using OpenAI flows use `/v1/responses`; do not add Chat Completions flows.
 
 ## Credentials and data handling
 
-- Configure `OPENAI_API_KEY` with `wrangler secret put OPENAI_API_KEY --env prod`
+- Configure `OPENAI_API_KEY` manually in the Cloudflare dashboard; never write a production secret from a repository script or local Wrangler command.
   or bind a Cloudflare Secrets Store secret and pass its `get()` handle to
   `OpenAIResponsesProvider`. Never put a key in `wrangler.toml`, source, prompts,
   logs, tool arguments, evaluation fixtures, or browser code.
