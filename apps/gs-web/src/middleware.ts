@@ -4,7 +4,6 @@ import { HTML_CONTENT_SECURITY_POLICY } from './security/policy';
 import {
   authorizeAdminRequest,
   ADMIN_DASHBOARD_PATH,
-  getAdminDashboardRedirect,
   getAdminRouteRule,
   getAdminHostRewritePath,
   isAdminHost,
@@ -21,14 +20,6 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   // the deployed request still traverses the full admin authorization path.
   if (host === 'localhost' || host === '127.0.0.1') {
     return next();
-  }
-
-  const canonicalAdminRedirect = getAdminDashboardRedirect(
-    context.url.pathname,
-    host,
-  );
-  if (canonicalAdminRedirect) {
-    return Response.redirect(canonicalAdminRedirect, 308);
   }
   if (
     (host === 'risk.goldshore.ai' || host === 'risk.goldshore.org') &&
