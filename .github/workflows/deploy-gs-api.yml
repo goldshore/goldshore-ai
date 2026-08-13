@@ -43,11 +43,16 @@ jobs:
         run: pnpm --filter @goldshore/gs-api build
 
   deploy:
+    name: Approve and deploy production
+    # Restored with the job header. Without it the secret-provisioning steps
+    # below run on every pull_request event, which this workflow triggers on.
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: gs-api-build
-  inventory:
-    name: Export redacted expected state
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # Restored with the job header. This is the protected-environment approval
+    # gate added by #6470; without it production deploys need no approval.
+    environment: production
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: pnpm/action-setup@f520eceda224fe1a4aed5a2a27a194379a409996 # v6
@@ -119,9 +124,7 @@ jobs:
           
           echo "::error::gs-api failed health check after $max_retries attempts"
           exit 1
-          name: cloudflare-inventory-${{ github.run_id }}-deploy-gs-api
-          path: cloudflare-inventory.json
-          retention-days: 30
+
       - name: Stamp release identity into the selected environment
         working-directory: apps/gs-api
         run: pnpm exec wrangler deploy --env prod
