@@ -12,6 +12,7 @@ import user from './routes/user';
 import system from './routes/system';
 import templates from './routes/templates';
 import admin from './routes/admin';
+import mcp from './routes/mcp';
 import media from './routes/media';
 import pages from './routes/pages';
 import internal from './routes/internal';
@@ -305,6 +306,7 @@ app.route('/mail', mail);
 app.route('/control', control);
 app.route('/trading', trading);
 app.route('/core', core);
+app.route('/mcp', mcp);
 
 const v1 = new Hono<{ Bindings: Env; Variables: Variables }>();
 v1.route('/users', users);
