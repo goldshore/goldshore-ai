@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import type { Env, Variables } from '../types';
+import { searchGoldshoreKnowledge } from '../lib/goldshore-knowledge';
 
 /**
  * MCP (Model Context Protocol) surface, folded into gs-api.
@@ -115,6 +116,16 @@ const toolDescriptors = TOOLS.map((tool) => ({
   description: tool.description,
   inputSchema: ACCOUNT_ID_SCHEMA,
 }));
+toolDescriptors.push({
+  name: 'goldshore_search_knowledge',
+  description: 'Search GoldShore infrastructure, API integration, email, ads, and tool setup documentation.',
+  inputSchema: {
+    type: 'object',
+    properties: { query: { type: 'string', description: 'Question about GoldShore systems or operations.' } },
+    required: ['query'],
+    additionalProperties: false,
+  },
+});
 
 async function callTool(env: Env, tool: Tool, args: Record<string, unknown>) {
   const account =
@@ -165,6 +176,20 @@ async function dispatch(env: Env, request: JsonRpcRequest) {
 
     case 'tools/call': {
       const name = request.params?.name;
+      if (name === 'goldshore_search_knowledge') {
+        const query = request.params?.arguments && typeof request.params.arguments.query === 'string'
+          ? request.params.arguments.query.trim()
+          : '';
+        if (!query || query.length > 500) return result(id, text('query must be between 1 and 500 characters.', true));
+        try {
+          const matches = await searchGoldshoreKnowledge(env, query);
+          return result(id, text(matches.length
+            ? matches.map((match) => `${match.title} (${match.score.toFixed(3)})\n${match.text}`).join('\n\n')
+            : 'No indexed GoldShore knowledge matched this query. The AI Search source may still be indexing.'));
+        } catch (error) {
+          return result(id, text(error instanceof Error ? error.message : 'Knowledge search failed.', true));
+        }
+      }
       const tool = TOOLS.find((candidate) => candidate.name === name);
       if (!tool) {
         return failure(id, METHOD_NOT_FOUND, `Unknown tool: ${String(name)}`);
