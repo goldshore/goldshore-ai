@@ -1,10 +1,11 @@
 ---
-import { platformLinks, serviceLinks, companyLinks } from '../config/navigation';
+import { platformLinks, serviceLinks, companyLinks, adminLinks } from '../config/navigation';
 
 const footerColumns = [
   { title: 'Platform', links: platformLinks },
   { title: 'Services', links: serviceLinks },
   { title: 'Company', links: companyLinks },
+  { title: 'Admin', links: adminLinks },
 ];
 ---
 
@@ -18,7 +19,7 @@ const footerColumns = [
       {footerColumns.map((column) => (
         <div class="footer-column">
           <h3>{column.title}</h3>
-          {column.links.map((link) => <p><a href={link.href}>{link.label}</a></p>)}
+          {column.links.map((link) => <p><a href={link.href} target={link.external ? '_blank' : undefined} rel={link.external ? 'noopener noreferrer' : undefined}>{link.label}</a></p>)}
         </div>
       ))}
     </div>

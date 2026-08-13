@@ -1,40 +1,23 @@
-# Repository Secrets Reference
+# GS API secret-name inventory
 
-Add or update these secrets at the links below. Never commit values to git.
+The canonical inventory is [`apps/gs-api/secret-contract.json`](../apps/gs-api/secret-contract.json). It records only each exact Worker secret name, its owner, its purpose, and the behavior when it is unavailable or invalid. It intentionally contains no values, example values, allowlist contents, acquisition links, environment assignments, or rotation policy.
 
----
+An authorized operator must enter and rotate values directly in the Cloudflare dashboard (or an approved Cloudflare Secrets Store) for the `gs-api` Worker. Do not paste values into repository files, Wrangler configuration, shell examples, GitHub Actions, or artifacts. Private allowlist contents, including `MAIL_ALLOWED_RECIPIENTS` and `MAIL_BLOCKED_SENDERS`, follow the same dashboard-only procedure.
 
-## goldshore-ai
+## Exact GitHub credential names
 
-**Settings → Secrets:** https://github.com/marzton/goldshore-ai/settings/secrets/actions
+GitHub integrations do not share an invented generic credential name:
 
-| Secret Name | What it is | Where to get it |
-|---|---|---|
-| `CLOUDFLARE_API_TOKEN` | Cloudflare API token (read/write Workers, D1, KV, R2) | https://dash.cloudflare.com/profile/api-tokens |
-| `CLOUDFLARE_BUILD_API_TOKEN` | Cloudflare deploy token scoped to goldshore-ai Workers and Pages | https://dash.cloudflare.com/profile/api-tokens |
-| `GOOGLE_CHAT_WEBHOOK` | Google Chat space webhook URL for CI notifications | chat.google.com → Space → Apps & integrations → Webhooks |
-| `GOOGLE_OAUTH_CLIENT_ID` | GCP OAuth 2.0 client ID — name gs-api reads for OAuth/GoldClaw routes | https://console.cloud.google.com/apis/credentials |
-| `GOOGLE_OAUTH_CLIENT_SECRET` | GCP OAuth 2.0 client secret — name gs-api reads; absent → 503 on OAuth routes | https://console.cloud.google.com/apis/credentials |
-| `GOOGLE_ADS_DEVELOPER_TOKEN` | Google Ads API developer token | https://ads.google.com/aw/apicenter |
-| `GH_PAT` | GitHub PAT with `repo` + `workflow` scopes (branch protection) | https://github.com/settings/tokens |
+| Integration | Exact name(s) read | Failure behavior |
+| --- | --- | --- |
+| Admin repository health | `GITHUB_API_TOKEN` | Repository-health GitHub operations are unavailable. |
+| Admin deployment assistant | `GITHUB_TOKEN`, then `GITHUB_API_TOKEN`, then `GH_TOKEN` | GitHub-backed assistant operations are unavailable when all three are absent. |
+| Admin merge cockpit Worker route | `GITHUB_API_TOKEN`, then `GITHUB_TOKEN`, then `GH_TOKEN` | Worker-side merge-cockpit GitHub operations are unavailable when all three are absent. |
+| GitHub OAuth | `GITHUB_CLIENT_SECRET` | OAuth callbacks return a configuration error. |
+| GitHub repository webhooks | `GS_GITHUB_WEBHOOK_SECRET` | Webhooks are rejected. |
 
----
+`GH_PAT` is not a `gs-api` runtime credential and is therefore not part of this inventory.
 
-## goldshore-gateway
+## Turnstile
 
-**Settings → Secrets:** https://github.com/marzton/goldshore-gateway/settings/secrets/actions
-
-| Secret Name | What it is | Where to get it |
-|---|---|---|
-| `CLOUDFLARE_API_TOKEN` | Cloudflare API token (same token as goldshore-ai is fine) | https://dash.cloudflare.com/profile/api-tokens |
-| `GOOGLE_CHAT_WEBHOOK` | Same webhook URL as goldshore-ai | chat.google.com → Space → Apps & integrations → Webhooks |
-
----
-
-## Notes
-
-- `CLOUDFLARE_API_TOKEN` in goldshore-gateway is currently expired — renewing it unblocks PR #213 CI checks (`verify-cloudflare`, `verify-account-resources`).
-- `GOOGLE_ADS_DEVELOPER_TOKEN` — rotate the previous token before adding (prior value was shared in chat).
-- GCP service account key (`github-storage-access`) — revoke the old key at https://console.cloud.google.com/iam-admin/serviceaccounts → `github-storage-access` → Manage Keys before creating a new one.
-- `GOOGLE_CHAT_WEBHOOK` must exist in both repos before the Monday 9am UTC reminder fires.
-- **OAuth secret names**: gs-api reads `GOOGLE_OAUTH_CLIENT_ID` and `GOOGLE_OAUTH_CLIENT_SECRET`. Setting `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` instead will not work — OAuth routes return 503.
+Turnstile validation reads `TURNSTILE_SECRET_KEY`. If it is unavailable or invalid, protected form and mail submissions fail closed.

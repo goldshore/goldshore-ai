@@ -44,3 +44,8 @@ export const companyLinks: NavLink[] = [
   { href: '/status/', label: 'Status' },
   { href: '/contact/', label: 'Contact' },
 ];
+
+export const adminLinks: NavLink[] = [
+  { href: 'https://admin.goldshore.ai/app/dashboard', label: 'Admin Dashboard', external: true },
+  { href: 'https://admin.goldshore.ai/login', label: 'Admin Login', external: true },
+];

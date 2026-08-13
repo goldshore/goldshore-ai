@@ -33,21 +33,24 @@ the production hostname expected by the app:
 
 - `https://lacie.goldshore.ai` -> `Host: goldshore.ai`
 - `https://www-lacie.goldshore.ai` -> `Host: www.goldshore.ai`
-- `https://admin-lacie.goldshore.ai` -> `Host: admin.goldshore.ai`
 - `https://risk-lacie.goldshore.ai` -> `Host: risk.goldshore.ai`
 - `https://preview-lacie.goldshore.ai` -> `Host: preview.goldshore.ai`
 
 API-origin hostnames route to `gs-api` and override the origin `Host` header to
 the production hostname expected by host-based routing:
 
-- `https://api-lacie.goldshore.ai` -> `Host: api.goldshore.ai`
-- `https://agent-lacie.goldshore.ai` -> `Host: agent.goldshore.ai`
 - `https://mail-lacie.goldshore.ai` -> `Host: mail.goldshore.ai`
 - `https://ops-lacie.goldshore.ai` -> `Host: ops.goldshore.ai`
 - `https://trading-lacie.goldshore.ai` -> `Host: trading.goldshore.ai`
 - `https://dashboard-lacie.goldshore.ai` -> `Host: dashboard.goldshore.ai`
 - `https://dash-lacie.goldshore.ai` -> `Host: dash.goldshore.ai`
 - `https://gw-lacie.goldshore.ai` -> `Host: gw.goldshore.ai`
+
+The tunnel ingress may contain additional local mappings, but
+`admin-lacie.goldshore.ai`, `api-lacie.goldshore.ai`, and
+`agent-lacie.goldshore.ai` had no live DNS records in the dashboard inventory
+verified on 2026-08-13. Do not describe them as reachable until those records
+are intentionally provisioned.
 
 Do not point live production records such as `goldshore.ai`,
 `api.goldshore.ai`, or `admin.goldshore.org` at this tunnel.

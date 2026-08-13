@@ -1,4 +1,12 @@
 # Gold Shore Labs — DNS & Worker Route Configuration
+> **Status: UNVERIFIED HISTORICAL REPORT.** None of the DNS, Worker-route, Access,
+> or dashboard statements in this file are current account verification. Do not
+> apply its instructions. Use the canonical Wrangler manifests as repository
+> intent and follow [`reports/cloudflare-live-state-handoff.md`](../reports/cloudflare-live-state-handoff.md)
+> for an authorized, read-only comparison. In particular, labels such as
+> "working", "live", "existing", or "correct" below are historical observations,
+> not authoritative status.
+
 # Apply in Cloudflare Dashboard: dash.cloudflare.com → DNS
 # Account: f77de112d2019e5456a3198a8bb50bd2
 

@@ -26,14 +26,12 @@ test('keeps shallow production health independent of optional provider secrets',
   assert.equal(response.status, 200);
 });
 
-test('allows documented preview goldshore.ai origins', () => {
-  assert.equal(isPreviewOrigin('https://feature-123-preview.goldshore.ai'), true);
-  assert.equal(isAllowedOrigin('https://feature-123-preview.goldshore.ai'), true);
-});
-
-test('allows documented goldshore-pages.dev preview origins', () => {
-  assert.equal(isPreviewOrigin('https://branch-name.goldshore-pages.dev'), true);
-  assert.equal(isAllowedOrigin('https://branch-name.goldshore-pages.dev'), true);
+test('allows only version-preview origins for canonical Workers', () => {
+  const origin = 'https://version-abc-gs-api-prod.goldshore.workers.dev';
+  assert.equal(isPreviewOrigin(origin), true);
+  assert.equal(isAllowedOrigin(origin), true);
+  assert.equal(isPreviewOrigin('https://branch-name.goldshore-pages.dev'), false);
+  assert.equal(isPreviewOrigin('https://feature-123-preview.goldshore.ai'), false);
 });
 
 test('rejects unrelated origins', () => {
@@ -78,9 +76,12 @@ for (const [hostname, service] of [
   ['api.goldshore.ai', 'gs-api'],
   ['api.goldshore.org', 'gs-api'],
   ['agent.goldshore.ai', 'gs-api-agent'],
+  ['agent.goldshore.org', 'gs-api-agent'],
   ['mail.goldshore.ai', 'gs-api-mail'],
+  ['mail.goldshore.org', 'gs-api-mail'],
   ['ops.goldshore.ai', 'gs-api-control'],
   ['trading.goldshore.ai', 'gs-api-trading'],
+  ['trading.goldshore.org', 'gs-api-trading'],
   ['dashboard.goldshore.ai', 'gs-api-trading'],
   ['dash.goldshore.ai', 'gs-api-trading'],
   ['gw.goldshore.ai', 'gs-api-core'],
