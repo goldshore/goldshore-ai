@@ -1,5 +1,5 @@
 name = "gs-web"
-compatibility_date = "2026-04-18"
+compatibility_date = "2026-08-12"
 compatibility_flags = ["nodejs_compat"]
 
 workers_dev = false
@@ -13,17 +13,6 @@ main = "./src/worker.ts"
 directory = "./dist"
 binding = "ASSETS"
 
-# Astro builds before a Wrangler environment is selected. Define its session
-# binding at the top level so the generated deployment config reuses the
-# existing namespace instead of attempting automatic provisioning.
-[[kv_namespaces]]
-binding = "KV"
-id = "5f13370575784c9dacff522121104cb3"
-
-[[kv_namespaces]]
-binding = "SESSION"
-id = "09ae2ffbffe24e628c9538c8129dfe33"
-
 [vars]
 ENV = "production"
 PUBLIC_ENV = "production"
@@ -32,13 +21,16 @@ CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 CLOUDFLARE_ACCESS_AUDIENCE = "9b97506a6f0d65a060dda7fa33aa66f6cee4112898fd45e5cf4da1d25db996c0"
 CLOUDFLARE_ACCESS_APPLICATION = "admin-production"
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
-MAILCHANNELS_SENDER_NAME = "GoldShore"
 
 # ── Production ──────────────────────────────────────────────────────────────────────────────────────
 
 [env.prod]
-# Wrangler suffixes the top-level name, so this environment is the single
-# `gs-web-prod` release serving the canonical production UI hosts.
+# Wrangler otherwise derives `<top-level name>-<env>` and would target a
+# `gs-web-prod` Worker. The production Worker was renamed to `gs-web` in the
+# dashboard (same script id, 7510e007…), so this environment pins the name
+# explicitly. Without it, `wrangler deploy --env prod` recreates `gs-web-prod`
+# and moves the routes below onto that new Worker, orphaning the live one.
+name = "gs-web"
 routes = [
   { pattern = "goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
@@ -46,18 +38,9 @@ routes = [
   { pattern = "www.goldshore.org/*", zone_name = "goldshore.org" },
   { pattern = "admin.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "admin.goldshore.org/*", zone_name = "goldshore.org" },
-  { pattern = "admin-preview.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "risk.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "risk.goldshore.org/*", zone_name = "goldshore.org" }
 ]
-
-[[env.prod.kv_namespaces]]
-binding = "KV"
-id = "5f13370575784c9dacff522121104cb3"
-
-[[env.prod.kv_namespaces]]
-binding = "SESSION"
-id = "09ae2ffbffe24e628c9538c8129dfe33"
 
 [env.prod.images]
 binding = "IMAGES"
@@ -70,43 +53,14 @@ CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 CLOUDFLARE_ACCESS_AUDIENCE = "9b97506a6f0d65a060dda7fa33aa66f6cee4112898fd45e5cf4da1d25db996c0"
 CLOUDFLARE_ACCESS_APPLICATION = "admin-production"
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
-MAILCHANNELS_SENDER_NAME = "GoldShore"
 
 # gs-web owns no transactional database, sensitive object storage, Durable
 # Object, queue, Workflow, or provider-secret bindings. Contact, form, CMS,
 # media, and admin operations are authenticated and persisted by gs-api.
 # Deploying this manifest intentionally removes dashboard-only bindings such as
-# a production API_AUTH reference to gs-api-preview. ASSETS above is the Astro
+# a production API_AUTH reference to a retired preview API. ASSETS above is the Astro
 # static-assets binding and must not be replaced with an R2 bucket binding.
 
-# ── Preview ──────────────────────────────────────────────────────────────────────────────────────
-
-[env.preview]
-routes = [
-  { pattern = "preview.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "admin-preview.goldshore.ai/*", zone_name = "goldshore.ai" },
-]
-
-[[env.preview.kv_namespaces]]
-binding = "KV"
-id = "1f5fd48617ef4202ae7c460ea064f2fc"
-
-[[env.preview.kv_namespaces]]
-binding = "SESSION"
-id = "0c75ae6798a54405a386fd36c27a510d"
-
-[env.preview.images]
-binding = "IMAGES"
-
-[env.preview.vars]
-ENV = "preview"
-PUBLIC_ENV = "preview"
-PUBLIC_API = "https://api-preview.goldshore.ai"
-CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-# The same GoldShore Admin Access application protects production and preview
-# admin hosts. preview.goldshore.ai has its own edge-only Access application,
-# but application-level JWT validation runs only for the admin route tree.
-CLOUDFLARE_ACCESS_AUDIENCE = "9b97506a6f0d65a060dda7fa33aa66f6cee4112898fd45e5cf4da1d25db996c0"
-CLOUDFLARE_ACCESS_APPLICATION = "admin-preview"
-CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
-MAILCHANNELS_SENDER_NAME = "GoldShore"
+# Pull requests build this production manifest without deploying it. Cloudflare
+# Worker Versions provide read-only workers.dev previews; no preview Worker,
+# route, KV namespace, database, R2 bucket, queue, or Workflow is declared.

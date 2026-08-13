@@ -17,16 +17,13 @@ export const CANONICAL_ADMIN_DASHBOARD_URL =
   `${CANONICAL_ADMIN_ORIGIN}${ADMIN_DASHBOARD_PATH}`;
 export const ALTERNATE_ADMIN_DASHBOARD_URL =
   `${ALTERNATE_ADMIN_ORIGIN}${ADMIN_DASHBOARD_PATH}`;
+export const CLOUDFLARE_ACCESS_LOGOUT_PATH = '/cdn-cgi/access/logout';
 
 const ADMIN_HOSTS = new Set([
   'admin.goldshore.ai',
   'admin.goldshore.org',
-  'admin-preview.goldshore.ai',
-  'admin-preview.goldshore.org',
   'dashboard.goldshore.ai',
   'dashboard.goldshore.org',
-  'dashboard-preview.goldshore.ai',
-  'dashboard-preview.goldshore.org',
 ]);
 
 const STATIC_PATH_PREFIXES = [
@@ -338,34 +335,66 @@ export const getCanonicalAdminUrl = (pathname: string) => {
   return new URL(normalizedPath, CANONICAL_ADMIN_ORIGIN).toString();
 };
 
-export const getAdminLoginDestination = (requested?: string) => {
-  switch (requested) {
-    case 'org':
-      return ALTERNATE_ADMIN_DASHBOARD_URL;
-    case 'dashboard':
-    case 'admin':
-    case 'ai':
-    default:
-      return CANONICAL_ADMIN_DASHBOARD_URL;
+const getAdminOrigin = (requested?: string) =>
+  requested === 'org' ? ALTERNATE_ADMIN_ORIGIN : CANONICAL_ADMIN_ORIGIN;
+
+const getSafeAdminNextPath = (requestedPath?: string | null) => {
+  if (!requestedPath || !requestedPath.startsWith('/') || requestedPath.startsWith('//')) {
+    return ADMIN_DASHBOARD_PATH;
   }
+
+  const parsed = new URL(requestedPath, CANONICAL_ADMIN_ORIGIN);
+  if (parsed.origin !== CANONICAL_ADMIN_ORIGIN) return ADMIN_DASHBOARD_PATH;
+  if (
+    parsed.pathname === '/login' ||
+    parsed.pathname === '/logout' ||
+    parsed.pathname.startsWith('/cdn-cgi/')
+  ) {
+    return ADMIN_DASHBOARD_PATH;
+  }
+
+  return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+};
+
+export const getAdminLoginDestination = (requested?: string, nextPath?: string | null) => {
+  const origin = getAdminOrigin(requested);
+  return new URL(getSafeAdminNextPath(nextPath), origin).toString();
+};
+
+export const getAdminLogoutUrl = (requestUrl: string | URL) => {
+  const url = new URL(requestUrl);
+  const origin = isAdminHost(url.hostname) ? url.origin : CANONICAL_ADMIN_ORIGIN;
+  return new URL(CLOUDFLARE_ACCESS_LOGOUT_PATH, origin).toString();
+};
+
+export const getAdminOwnerEmails = (configuredEmails?: string) => {
+  if (!configuredEmails) return new Set<string>();
+  return new Set(
+    configuredEmails
+      .split(',')
+      .map((email) => email.trim().toLowerCase())
+      .filter(Boolean),
+  );
 };
 
 /**
- * A successfully verified Cloudflare Access assertion has already passed the
- * dedicated Access application's identity policy. Access assertions do not
- * normally contain the application-specific `admin` role used by cookie JWTs,
- * so give that edge-authenticated identity the admin session expected by the
- * protected dashboard. Explicit supported roles still take precedence.
+ * Cloudflare Access authenticates the identity, while this application-level
+ * allowlist supplies defense in depth if the dashboard policy drifts. Only the
+ * two configured bootstrap owners receive a privileged dashboard session.
  */
 export const buildCloudflareAccessAdminSession = (
   claims: AccessTokenPayload,
+  configuredOwnerEmails: string | undefined,
 ): AdminSession => {
-  const session = buildAdminSession(claims);
-  if (session.roles.length > 0) return session;
+  const email = typeof claims.email === 'string' ? claims.email.trim().toLowerCase() : '';
+  const ownerEmails = getAdminOwnerEmails(configuredOwnerEmails);
+  if (!email || claims.email_verified === false || !ownerEmails.has(email)) {
+    return { roles: [], permissions: [] };
+  }
 
   return {
-    roles: ['admin'],
-    permissions: [...ROLE_PERMISSIONS.admin],
+    roles: ['owner'],
+    permissions: [...ROLE_PERMISSIONS.owner],
   };
 };
 
@@ -400,8 +429,16 @@ export const authorizeAdminRequest = async (
     };
   }
 
+  if (accessClaims && !env?.ADMIN_OWNER_EMAILS) {
+    return {
+      ok: false,
+      status: 503,
+      error: 'Admin access is misconfigured: no owner allowlist is configured.',
+    };
+  }
+
   const session = accessClaims
-    ? buildCloudflareAccessAdminSession(accessClaims)
+    ? buildCloudflareAccessAdminSession(accessClaims, env?.ADMIN_OWNER_EMAILS)
     : buildAdminSession(verifiedClaims);
   if (rule.requiresAdminRole && session.roles.length === 0) {
     return {

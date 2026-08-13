@@ -3,6 +3,7 @@ import { access } from 'node:fs/promises';
 import test from 'node:test';
 
 import {
+  adminLinks,
   authLinks,
   companyLinks,
   platformLinks,
@@ -56,6 +57,21 @@ test('dashboard navigation bypasses the retired gs-admin root', () => {
     {
       href: 'https://admin.goldshore.ai/app/dashboard',
       label: 'Dashboard access',
+      external: true,
+    },
+  ]);
+});
+
+test('admin footer links point to the canonical admin dashboard origin', () => {
+  assert.deepEqual(adminLinks, [
+    {
+      href: 'https://admin.goldshore.ai/app/dashboard',
+      label: 'Admin Dashboard',
+      external: true,
+    },
+    {
+      href: 'https://admin.goldshore.ai/login',
+      label: 'Admin Login',
       external: true,
     },
   ]);
