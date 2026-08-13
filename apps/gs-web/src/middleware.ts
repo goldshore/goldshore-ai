@@ -1,5 +1,5 @@
 import type { MiddlewareHandler } from 'astro';
-import { verifyJWTCookie } from '@goldshore/auth';
+import { ADMIN_PERMISSIONS, verifyJWTCookie } from '@goldshore/auth';
 import { HTML_CONTENT_SECURITY_POLICY } from './security/policy';
 import {
   authorizeAdminRequest,
@@ -42,22 +42,14 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   );
 
   if (adminRule) {
-    const runtimeEnv = context.locals.runtime?.env as Env | undefined;
+    const { env: cloudflareEnv } = await import('cloudflare:workers');
+    const runtimeEnv = cloudflareEnv as Env;
     const allowLocalAdminBypass = import.meta.env.DEV || runtimeEnv?.DEV_AUTH_BYPASS === '1';
 
     if (allowLocalAdminBypass) {
       context.locals.adminSession = {
         roles: ['admin'],
-        permissions: [
-          'content:read', 'content:write',
-          'system:read', 'system:write',
-          'media:read', 'media:write',
-          'forms:read', 'forms:write',
-          'users:manage',
-          'audit:read',
-          'ai:analyze',
-          'system:integrations:manage'
-        ],
+        permissions: [...ADMIN_PERMISSIONS],
         isAuthenticated: true
       };
     } else {

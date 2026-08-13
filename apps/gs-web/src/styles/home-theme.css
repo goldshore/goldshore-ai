@@ -101,6 +101,18 @@ body.gs-home code {
   overflow-x: auto;
 }
 
+body.gs-home main,
+body.gs-home main > section,
+body.gs-home main > section > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+body.gs-home code {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
 a { color: inherit; }
 
 a:focus-visible,
@@ -153,7 +165,14 @@ main { display: grid; gap: 1px; position: relative; z-index: 1; }
   align-items: center;
   align-self: center;
   grid-column: 1 / span 4;
+  gap: 0.75rem;
   text-decoration: none;
+}
+
+.brand-logo {
+  width: 2rem;
+  height: 2rem;
+  object-fit: contain;
 }
 
 .brand-wordmark {
@@ -1486,7 +1505,7 @@ code {
   .section-head.large { grid-template-columns: 1fr; }
 }
 
-@media (max-width: 960px) {
+@media (max-width: 1023px) {
   .hero { padding-top: 4rem; }
   .topbar { grid-template-columns: 1fr auto; gap: 0.75rem; }
   .brand { grid-column: 1; }

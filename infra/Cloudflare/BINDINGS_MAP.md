@@ -8,7 +8,7 @@
 
 ## Web / Admin front end
 
-### 1. Web (Public)
+### 1. Web and admin UI
 
 `apps/gs-web` is **not** a Pages project. It is an SSR Astro app served by the
 `gs-web-prod` Worker, deployed by the Cloudflare Workers Build git integration.
@@ -23,31 +23,23 @@ via Pages custom domains.
   - `admin.goldshore.ai/*`, `admin-preview.goldshore.ai/*`, `admin.goldshore.org/*`
   - `risk.goldshore.ai/*`, `risk.goldshore.org/*`
 
-A second deploy path — `wrangler pages deploy apps/gs-web/dist/client
---project-name=gs-web-pages` in `.github/workflows/deploy-gs-web.yml` — was
+The protected admin cockpit is the `/app` and `/admin` route tree in this same
+Worker. There is no `apps/gs-admin` package, Pages project, or separate admin
+Worker in the repository contract. Cloudflare Access remains required on both
+admin hostnames. The root of either admin hostname redirects to
+`/app/dashboard` after authorization.
+
+A second deploy path — a static-only deployment of the client bundle in `.github/workflows/deploy-gs-web.yml` — was
 removed. It shipped only the static client assets (dist/client has no
 `_worker.js`), so it published a static shell that 404'd every SSR route while
 competing with the Worker for the same hostnames.
 
-**Environment Variables:**
-
-- `PUBLIC_API=https://api.goldshore.ai`
-- `PUBLIC_GATEWAY=https://gw.goldshore.ai`
-
----
-
-### 2. Admin (Cockpit)
-
-- Project: `gs-admin`
-- Repo: `goldshore-ai`
-- Root: `apps/gs-admin`
-- Custom Domains:
-  - `admin.goldshore.ai`
-  - `admin-preview.goldshore.ai`
-
-**Zero Trust:**
-
-- Access policy required on `admin.goldshore.ai` (email allowlist).
+`.github/workflows/deploy-gs-web.yml` is consequently named **Verify gs-web
+build** and retains one immutable artifact keyed by the release SHA. Successful
+Cloudflare deployment events trigger `verify-gs-web-deployment.yml`, which
+compares the embedded release marker across every supported production mirror
+and the two supported `.ai` preview hosts. No `.org` preview hostname is part of
+the current Wrangler contract.
 
 **Environment Variables:**
 
@@ -56,14 +48,24 @@ competing with the Worker for the same hostnames.
 
 ---
 
-### 2b. MCP Access Surface
+### 2. MCP Access Surface
 
 - Host: `mcp.goldshore.ai`
+- Worker: `gs-api-prod` (route `mcp.goldshore.ai/*`), handler at `/mcp`
 - Purpose: private MCP endpoint for approved humans and approved agents
 - Access: Cloudflare Access required before any private tool loads
+- Transport: Streamable HTTP — JSON-RPC 2.0 over `POST /mcp`. `GET` returns 405;
+  the surface is stateless, so it issues no `Mcp-Session-Id` and needs no KV or
+  Durable Object binding.
+- Bindings consumed: `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` (read-only
+  Cloudflare API access for the four inventory tools).
 - Notes:
   - Keep anonymous prompts and changes out of the surface.
   - Use a dedicated service identity path for agent automation.
+  - There is no standalone MCP Worker. The former `goldshore-mcp` app in
+    `marzton/goldshore` is superseded; it never ran in production because its
+    `MCP_SESSIONS` namespace shipped `id = "placeholder_kv_id"` and it declared
+    no `durable_objects` block for the `McpAgent` Durable Object it used.
 
 ---
 
@@ -110,13 +112,11 @@ competing with the Worker for the same hostnames.
 - AI:
   - Binding: `AI`
   - Gateway: `goldshore-ai-gateway`
-- Secrets Store:
-  - Binding: `INTEGRATION_MASTER_KEY`
-  - Store: `b9824d3280c54573a24137c7e7143b33`
-  - Secret: `INTEGRATION_MASTER_KEY`
 - Worker secrets:
   - Binding: `INTEGRATION_MASTER_KEY`
   - Secret: `INTEGRATION_MASTER_KEY` (normal Worker secret; do not configure `secrets_store_secrets` until the referenced Cloudflare Secrets Store exists)
+  - Binding: `GS_GITHUB_WEBHOOK_SECRET`
+  - Secret: `GS_GITHUB_WEBHOOK_SECRET` (HMAC verification for the four repository webhook endpoints)
 
 **Risk Radar storage policy:** bind Risk Radar storage only to `gs-api`; `gs-web` must call API endpoints rather than receiving `RISK_RADAR_DB`, `RISK_RADAR_CACHE`, or `RISK_RADAR_R2` directly.
 

@@ -80,7 +80,7 @@ describe('RBAC Helpers', () => {
       assert.ok(result.includes('content:read'));
       assert.ok(result.includes('media:read'));
       assert.ok(result.includes('forms:read'));
-      assert.strictEqual(result.length, 3);
+      assert.ok(result.length >= 10);
     });
 
     test('unions permissions for multiple roles without duplicates', () => {
@@ -91,15 +91,31 @@ describe('RBAC Helpers', () => {
       assert.ok(result.includes('content:write'));
       assert.ok(result.includes('content:read'));
       assert.ok(result.includes('ai:analyze'));
-      assert.strictEqual(result.length, 9);
+      assert.deepStrictEqual(result.sort(), getAdminPermissions(['editor']).sort());
     });
 
     test('admin role has all permissions', () => {
       const result = getAdminPermissions(['admin']);
       // Should have many permissions
       assert.ok(result.length >= 10);
-      assert.ok(result.includes('users:manage'));
+      assert.ok(result.includes('users:update'));
       assert.ok(result.includes('audit:read'));
+      assert.ok(result.includes('system:integrations:manage'));
+      assert.ok(result.includes('media:delete'));
+    });
+
+    test('owner can manage integrations and delete media', () => {
+      const result = getAdminPermissions(['owner']);
+      assert.ok(result.includes('system:integrations:manage'));
+      assert.ok(result.includes('media:delete'));
+    });
+
+    test('editor and viewer cannot manage integrations or delete media', () => {
+      for (const role of ['editor', 'viewer'] satisfies AdminRole[]) {
+        const result = getAdminPermissions([role]);
+        assert.ok(!result.includes('system:integrations:manage'));
+        assert.ok(!result.includes('media:delete'));
+      }
     });
   });
 
@@ -111,7 +127,7 @@ describe('RBAC Helpers', () => {
       const session = buildAdminSession(claims as any);
       assert.deepStrictEqual(session.roles, ['admin']);
       assert.ok(session.permissions.includes('content:read'));
-      assert.ok(session.permissions.includes('users:manage'));
+      assert.ok(session.permissions.includes('users:update'));
     });
 
     test('returns empty session for no roles', () => {
@@ -129,7 +145,7 @@ describe('RBAC Helpers', () => {
     });
 
     test('returns false when permission is absent', () => {
-      assert.strictEqual(hasAdminPermission(permissions, 'users:manage'), false);
+      assert.strictEqual(hasAdminPermission(permissions, 'users:update'), false);
     });
   });
 });

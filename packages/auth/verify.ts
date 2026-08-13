@@ -7,6 +7,9 @@ export interface Env {
     CLOUDFLARE_TEAM_DOMAIN?: string;
     // JWT secret for cookie-based authentication
     JWT_SECRET?: string;
+    PLATFORM_DB?: AuthorizationDatabase;
+    CLOUDFLARE_ACCESS_APPLICATION?: string;
+    ADMIN_OWNER_EMAILS?: string;
 }
 
 // Sentinel: Default to existing hardcoded values if not provided in Env
@@ -43,10 +46,75 @@ function getJwks(domain: string, deps: Dependencies) {
 
 export type AccessTokenPayload = JWTPayload & {
   email?: string;
+  email_verified?: boolean;
   groups?: string[] | string;
   roles?: string[] | string;
   role?: string;
+  common_name?: string;
 };
+
+export type AuthorizationDatabase = {
+  prepare(query: string): {
+    bind(...values: unknown[]): { first<T>(): Promise<T | null> };
+  };
+};
+
+export type AuthorizedAccessUser = {
+  id: string;
+  email: string;
+  role: "owner" | "admin" | "editor" | "viewer";
+  application: string;
+};
+
+export type AuthorizedService = {
+  id: string;
+  name: string;
+  role: string;
+  application: string;
+};
+
+/** Resolve an Access identity through the durable, application-scoped allow map. */
+export async function authorizeAccessUser(
+  claims: AccessTokenPayload,
+  env: Env,
+): Promise<AuthorizedAccessUser | null> {
+  if (!env.PLATFORM_DB || !env.CLOUDFLARE_ACCESS_APPLICATION) return null;
+  // Cloudflare Access signs the IdP-authenticated email into its JWT. Some IdPs
+  // also emit email_verified; an explicit false must always fail closed.
+  if (typeof claims.email !== "string" || claims.email_verified === false) return null;
+  const email = claims.email.trim().toLowerCase();
+  if (!email) return null;
+
+  return env.PLATFORM_DB.prepare(`
+    SELECT u.id, u.email, ar.role, ar.application
+      FROM access_users u
+      JOIN access_application_roles ar ON ar.user_id = u.id
+     WHERE lower(u.email) = ?1
+       AND u.status = 'active'
+       AND ar.application = ?2
+       AND ar.role IN ('owner', 'admin', 'editor', 'viewer')
+     LIMIT 1
+  `).bind(email, env.CLOUDFLARE_ACCESS_APPLICATION).first<AuthorizedAccessUser>();
+}
+
+export async function authorizeAccessClaims(
+  claims: AccessTokenPayload,
+  env: Env,
+): Promise<AccessTokenPayload | null> {
+  if (env.CLOUDFLARE_ACCESS_APPLICATION === "service-production") {
+    if (!env.PLATFORM_DB || typeof claims.common_name !== "string") return null;
+    const service = await env.PLATFORM_DB.prepare(`
+      SELECT id, name, role, application
+        FROM access_service_roles
+       WHERE name = ?1 AND status = 'active' AND application = ?2
+       LIMIT 1
+    `).bind(claims.common_name, env.CLOUDFLARE_ACCESS_APPLICATION).first<AuthorizedService>();
+    return service ? { ...claims, role: service.role, roles: [service.role] } : null;
+  }
+  const user = await authorizeAccessUser(claims, env);
+  if (!user) return null;
+  return { ...claims, email: user.email, role: user.role, roles: [user.role] };
+}
 
 // Internal function with dependencies exposed for testing
 export async function verifyAccessWithClaimsInternal(req: Request, env: Env, deps: Dependencies) {

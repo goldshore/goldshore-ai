@@ -1,5 +1,6 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { env as cloudflareEnv } from 'cloudflare:workers';
 import { authorizeAdminRequest, getAdminAuthError, getAdminRouteRule } from '../../utils/admin-access';
 
 export const prerender = false;
@@ -34,7 +35,7 @@ type HealthResponse = {
   db?: string;
 };
 
-const env = Astro.locals.runtime?.env as Env | undefined;
+const env = cloudflareEnv as Env;
 const rule = getAdminRouteRule('/admin/api-status', 'GET');
 
 let authError: { status: number; message: string } | null = null;
@@ -77,7 +78,7 @@ if (!authError) {
 const formatDate = (value: string | null | undefined) => (value ? new Date(value).toLocaleString() : '—');
 ---
 
-<BaseLayout title="API Status | GoldShore Admin" description="gs-api routes, health, and runtime config">
+<AdminLayout title="API Status | GoldShore Admin">
   <section class="gs-section">
     <div class="gs-grid columns-2">
       <div>
@@ -177,4 +178,4 @@ const formatDate = (value: string | null | undefined) => (value ? new Date(value
       </>
     )}
   </section>
-</BaseLayout>
+</AdminLayout>

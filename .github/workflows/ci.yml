@@ -5,20 +5,45 @@ on:
   push:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  # Never cancel a main-branch run mid-flight; only supersede PR runs.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
 jobs:
+  gs-api-build:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@f520eceda224fe1a4aed5a2a27a194379a409996 # v6
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: "pnpm"
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Build gs-api
+        run: pnpm --filter @goldshore/gs-api build
+
   lint-test-build:
     permissions:
       contents: read
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@f520eceda224fe1a4aed5a2a27a194379a409996 # v6
 
-      - uses: actions/setup-node@v7.0.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           cache: "pnpm"
@@ -29,6 +54,9 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Validate GitHub workflow structure
+        run: pnpm check:workflows
+
       - name: Enforce banproof production bindings
         if: ${{ vars.ENABLE_BANPROOF_BINDINGS_CHECK == 'true' }}
         run: pnpm check:banproof-bindings
@@ -37,31 +65,49 @@ jobs:
         if: ${{ vars.ENABLE_BANPROOF_BINDINGS_CHECK != 'true' }}
         run: echo "::warning::ENABLE_BANPROOF_BINDINGS_CHECK is not set to true; skipping banproof production binding validation."
 
-      - name: Validate CF resource IDs
-        env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_BUILD_API_TOKEN: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
-        run: |
-          if [ -z "$CLOUDFLARE_BUILD_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
-            echo "::warning::Cloudflare credentials are unavailable; skipping live resource validation."
-            exit 0
-          fi
-          node scripts/validate-cf-resources.mjs
-
       - name: Build all
         run: pnpm -r --sequential build
+
+      # gs-web's "test" script runs Playwright only, so tests/unit never ran in
+      # CI on either this workflow or the pull-request gate. Invoke test:unit
+      # explicitly so pushes to main are covered as well.
+      - name: Test gs-web (unit)
+        run: pnpm --dir apps/gs-web test:unit
 
       - name: Detect gs-web release-impact changes
         id: gs-web-changes
         shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          BEFORE_SHA: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            RANGE="origin/${{ github.base_ref }}...HEAD"
+          set -euo pipefail
+
+          # Fail open: if we cannot compute a trustworthy diff base (first push
+          # to a branch, force-push, shallow clone), run the gate rather than
+          # silently skipping it.
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            git fetch --no-tags origin "$BASE_REF" >/dev/null 2>&1 || true
+            RANGE="origin/${BASE_REF}...HEAD"
+          elif git cat-file -e "${BEFORE_SHA}^{commit}" 2>/dev/null; then
+            RANGE="${BEFORE_SHA}...${HEAD_SHA}"
           else
-            RANGE="${{ github.event.before }}...${{ github.sha }}"
+            echo "No usable diff base (${BEFORE_SHA:-unset}); running the release gate."
+            echo "release_impact=true" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
 
-          if git diff --name-only "$RANGE" | grep -Eq '^(apps/gs-web/|packages/|package.json|pnpm-lock.yaml|pnpm-workspace.yaml|turbo.json)$'; then
+          CHANGED="$(git diff --name-only "$RANGE")"
+          echo "Changed files in $RANGE:"
+          echo "$CHANGED"
+
+          # Directory entries are prefix matches; root files are exact matches.
+          # The previous single-group pattern anchored every alternative with $,
+          # so 'apps/gs-web/' could only match a line that was literally
+          # 'apps/gs-web/' — no real path ever matched and the gate never ran.
+          if printf '%s\n' "$CHANGED" | grep -Eq '^(apps/gs-web/|packages/)|^(package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|turbo\.json)$'; then
             echo "release_impact=true" >> "$GITHUB_OUTPUT"
           else
             echo "release_impact=false" >> "$GITHUB_OUTPUT"

@@ -8,20 +8,14 @@ const LEGACY_API_WORKER_PATH = "apps/api-worker";
 const GS_API_PATH = "apps/gs-api";
 const DEPLOYMENT_CONFIG_FILES = [
   ".github/workflows/deploy-gs-api.yml",
-  ".github/workflows/preview-gs-api.yml",
-  ".github/workflows-disabled/deploy-api-worker.yml",
-  "infra/Cloudflare/config.yaml",
   "infra/Cloudflare/desired-state.yaml",
-  "infra/Cloudflare/gs-api.wrangler.toml",
-  "infra/Cloudflare/legacy/goldshore-api.wrangler.toml",
 ] as const;
 
 // Workers that are known but not subject to canonical-worker enforcement.
-// gs-admin and gs-web are frontend apps; the others are platform/auxiliary workers.
+// gs-web is the sole frontend app; the others are platform/auxiliary workers.
 const KNOWN_NON_CANONICAL = new Set([
   'armsway-com',
   'banproof-me',
-  'gs-admin',
   'gs-agent',
   'gs-control',
   'gs-core-worker',

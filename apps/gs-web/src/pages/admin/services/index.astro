@@ -1,5 +1,6 @@
 ---
-import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { env as cloudflareEnv } from 'cloudflare:workers';
+import AdminLayout from "../../../layouts/AdminLayout.astro";
 import { authorizeAdminRequest, getAdminRouteRule } from '../../../utils/admin-access';
 
 export const prerender = false;
@@ -25,7 +26,7 @@ type WorkflowRow = {
   received_at: string;
 };
 
-const env = Astro.locals.runtime?.env as Env | undefined;
+const env = cloudflareEnv as Env;
 const rule = getAdminRouteRule('/admin/services', 'GET');
 
 let authError: { status: number; message: string } | null = null;
@@ -81,9 +82,8 @@ const fmt = (value: string | null | undefined) =>
   value ? new Date(value).toLocaleString() : '—';
 ---
 
-<BaseLayout
+<AdminLayout
   title="Service Workflows | GoldShore Admin"
-  description="Manage service inquiries and approval workflows"
 >
   <section class="gs-section">
     <div class="gs-grid columns-2">
@@ -284,7 +284,7 @@ const fmt = (value: string | null | undefined) =>
       });
     });
   </script>
-</BaseLayout>
+</AdminLayout>
 
 <style>
   .gs-card--active {

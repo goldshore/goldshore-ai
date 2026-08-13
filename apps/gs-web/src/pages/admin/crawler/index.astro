@@ -1,11 +1,11 @@
 ---
 export const prerender = false;
 
-import BaseLayout from '../../../layouts/BaseLayout.astro';
+import AdminLayout from "../../../layouts/AdminLayout.astro";
 import { GSButton } from '@goldshore/ui';
 ---
 
-<BaseLayout title="Web Crawler | GoldShore Admin" description="Admin crawler queue for lead discovery">
+<AdminLayout title="Web Crawler | GoldShore Admin">
   <div class="max-w-7xl mx-auto p-8 space-y-8">
     <div class="flex items-center justify-between">
       <div>
@@ -246,4 +246,4 @@ import { GSButton } from '@goldshore/ui';
       setInterval(loadJobs, 30000); // Refresh every 30 seconds
     });
   </script>
-</BaseLayout>
+</AdminLayout>

@@ -75,7 +75,7 @@ test('home page renders core layout and CTA navigation', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await expect(
     page.getByRole('link', { name: 'Request Briefing' }).first(),
-  ).toHaveAttribute('href', '#engage');
+  ).toHaveAttribute('href', '/contact/');
 
   assertHealthyPage(monitors);
 });
@@ -96,7 +96,7 @@ test('services page renders highlights and CTA', async ({ page }) => {
   assertHealthyPage(monitors);
 });
 
-test('contact form submits and redirects to thank-you', async ({ page }) => {
+test('contact form submits and redirects to confirmation', async ({ page }) => {
   const monitors = attachPageMonitors(page);
 
   await page.goto('/contact', { waitUntil: 'networkidle' });
@@ -130,15 +130,9 @@ test('contact form submits and redirects to thank-you', async ({ page }) => {
     .getByLabel('Project brief')
     .fill('Interested in a scoped engagement.');
 
-  // Click send and wait for navigation
-  await Promise.all([
-    page.waitForURL('**/thank-you'),
-    page.getByRole('button', { name: 'Send message' }).click(),
-  ]);
-
-  await expect(page.getByRole('heading', { level: 1 })).toContainText(
-    'Thank you',
-  );
+  await page.getByRole('button', { name: 'Send message' }).click();
+  await expect(page).toHaveURL(/\/thank-you\/?$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'Thank you' })).toBeVisible();
 
   assertHealthyPage(monitors);
 });

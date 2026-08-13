@@ -2,12 +2,10 @@
 import { readFileSync } from 'node:fs';
 
 const manifests = [
-  { worker: 'gs-gateway', path: 'apps/gs-gateway/wrangler.toml' },
-  { worker: 'gs-mail', path: 'apps/gs-mail/wrangler.toml' },
-  { worker: 'gs-agent', path: 'apps/gs-agent/wrangler.toml' },
+  { worker: 'gs-api', path: 'apps/gs-api/wrangler.toml' },
 ];
 
-const environments = ['dev', 'preview', 'prod'];
+const environments = ['prod'];
 
 function parseEnvQueues(content, env, kind) {
   const re = new RegExp(`\\[\\[env\\.${env}\\.queues\\.${kind}\\]\\][\\s\\S]*?queue\\s*=\\s*"([^"]+)"`, 'g');
@@ -39,6 +37,13 @@ for (const [key, producerWorkers] of producers.entries()) {
   if (!consumers.has(key)) {
     const [env, queue] = key.split('::');
     errors.push(`Missing consumer for queue "${queue}" in env "${env}" (producers: ${producerWorkers.join(', ')})`);
+  }
+}
+
+for (const [key, consumerWorkers] of consumers.entries()) {
+  if (!producers.has(key)) {
+    const [env, queue] = key.split('::');
+    errors.push(`Missing producer for queue "${queue}" in env "${env}" (consumers: ${consumerWorkers.join(', ')})`);
   }
 }
 

@@ -1,138 +1,90 @@
 name = "gs-web"
-compatibility_date = "2026-04-18"
+compatibility_date = "2026-08-12"
 compatibility_flags = ["nodejs_compat"]
 
 workers_dev = false
 main = "./src/worker.ts"
 
-# Serve the Astro build as a Worker with Assets.
-# The Cloudflare adapter builds the configured Worker entrypoint and emits
-# static assets into dist. Keeping both `main` and an assets binding avoids
-# Wrangler treating the project as an assets-only Worker.
+# Deploy the Astro SSR entry point and its static bundle as one Worker release.
+# `astro build` emits the server manifest and assets under dist; Wrangler
+# bundles src/worker.ts as the Worker entry and uploads dist as its assets.
+# This is intentionally not a Cloudflare Pages project.
 [assets]
 directory = "./dist"
 binding = "ASSETS"
+run_worker_first = true
 
-# Astro builds before a Wrangler environment is selected. Define its session
-# binding at the top level so the generated deployment config reuses the
-# existing namespace instead of attempting automatic provisioning.
-[[kv_namespaces]]
-binding = "KV"
-id = "5f13370575784c9dacff522121104cb3"
-
+# SESSION: KV namespace backing Astro sessions for auth state. The Cloudflare
+# adapter emits this binding whenever no session driver is configured, and
+# auto-provisions a namespace at deploy time if none is bound — pinning the
+# already-provisioned `goldshore-ai-session` keeps that inside the checked-in
+# binding contract instead of letting deploys create new stores.
+#
+# Declared at the top level as well as under env.prod because Astro builds the
+# deployment manifest before a Wrangler environment is selected, and
+# environments do not inherit bindings.
+#
+# This is session state only. gs-web still declares no D1, R2, queue or
+# Workflow bindings — transactional data stays behind gs-api.
 [[kv_namespaces]]
 binding = "SESSION"
-id = "09ae2ffbffe24e628c9538c8129dfe33"
-
-[[d1_databases]]
-binding = "PLATFORM_DB"
-database_name = "gs_platform_db"
-database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
-
-[[r2_buckets]]
-binding = "GS_ASSETS"
-bucket_name = "gs-assets"
+id = "805bff3293c2483facc5225e6ff9af60"
 
 [vars]
 ENV = "production"
 PUBLIC_ENV = "production"
 PUBLIC_API = "https://api.goldshore.ai"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-CLOUDFLARE_ACCESS_AUDIENCE = "c520a7647223b49b20fbe5be240772863eb684b97b57c08955b6104c58170db9"
-GITHUB_CLIENT_ID = "YOUR_GITHUB_CLIENT_ID_PROD"
-TURNSTILE_SITE_KEY = "YOUR_TURNSTILE_SITE_KEY_PROD"
+CLOUDFLARE_ACCESS_AUDIENCE = "f491d88d991e90b66fcec2ca644537309319387b08e46136984f27a078c786f2"
+CLOUDFLARE_ACCESS_APPLICATION = "admin-production"
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
-MAILCHANNELS_SENDER_NAME = "GoldShore"
 
 # ── Production ──────────────────────────────────────────────────────────────────────────────────────
 
 [env.prod]
+# Wrangler otherwise derives `<top-level name>-<env>` and would target a
+# `gs-web-prod` Worker. The production Worker was renamed to `gs-web` in the
+# dashboard (same script id, 7510e007…), so this environment pins the name
+# explicitly. Without it, `wrangler deploy --env prod` recreates `gs-web-prod`
+# and moves the routes below onto that new Worker, orphaning the live one.
+name = "gs-web"
 routes = [
   { pattern = "goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "www.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "www.goldshore.org/*", zone_name = "goldshore.org" },
   { pattern = "admin.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "admin-preview.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "admin.goldshore.org/*", zone_name = "goldshore.org" },
   { pattern = "risk.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "risk.goldshore.org/*", zone_name = "goldshore.org" }
 ]
 
-[[env.prod.kv_namespaces]]
-binding = "KV"
-id = "5f13370575784c9dacff522121104cb3"
-
-[[env.prod.kv_namespaces]]
-binding = "SESSION"
-id = "09ae2ffbffe24e628c9538c8129dfe33"
-
-[[env.prod.d1_databases]]
-binding = "PLATFORM_DB"
-database_name = "gs_platform_db"
-database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
-
-[[env.prod.r2_buckets]]
-binding = "GS_ASSETS"
-bucket_name = "gs-assets"
-
 [env.prod.images]
 binding = "IMAGES"
+
+# SESSION: see the top-level declaration. Repeated here because environments do
+# not inherit bindings — without it gs-web-prod deploys without a session store
+# and Cloudflare provisions a replacement namespace.
+[[env.prod.kv_namespaces]]
+binding = "SESSION"
+id = "805bff3293c2483facc5225e6ff9af60"
 
 [env.prod.vars]
 ENV = "production"
 PUBLIC_ENV = "production"
 PUBLIC_API = "https://api.goldshore.ai"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-CLOUDFLARE_ACCESS_AUDIENCE = "c520a7647223b49b20fbe5be240772863eb684b97b57c08955b6104c58170db9"
-GITHUB_CLIENT_ID = "YOUR_GITHUB_CLIENT_ID_PROD"
-TURNSTILE_SITE_KEY = "YOUR_TURNSTILE_SITE_KEY_PROD"
+CLOUDFLARE_ACCESS_AUDIENCE = "f491d88d991e90b66fcec2ca644537309319387b08e46136984f27a078c786f2"
+CLOUDFLARE_ACCESS_APPLICATION = "admin-production"
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
-MAILCHANNELS_SENDER_NAME = "GoldShore"
 
-# Secrets (set via wrangler secret put — never commit):
-#   wrangler secret put MAILCHANNELS_SENDER_EMAIL --env prod --name gs-web
-#   Value: hello@goldshore.ai
-#
-#   wrangler secret put GITHUB_CLIENT_SECRET --env prod --name gs-web
-#   Value: <GitHub OAuth app client secret from https://github.com/settings/developers>
-#
-#   wrangler secret put TURNSTILE_SECRET_KEY --env prod --name gs-web
-#   Value: <Turnstile secret key from https://dash.cloudflare.com/>
+# gs-web owns no transactional database, sensitive object storage, Durable
+# Object, queue, Workflow, or provider-secret bindings. Contact, form, CMS,
+# media, and admin operations are authenticated and persisted by gs-api.
+# Deploying this manifest intentionally removes dashboard-only bindings such as
+# a production API_AUTH reference to a retired preview API. ASSETS above is the Astro
+# static-assets binding and must not be replaced with an R2 bucket binding.
 
-# ── Preview ──────────────────────────────────────────────────────────────────────────────────────
-
-[env.preview]
-routes = [
-  { pattern = "preview.goldshore.ai", custom_domain = true },
-  { pattern = "admin-preview.goldshore.ai", custom_domain = true },
-]
-
-[[env.preview.kv_namespaces]]
-binding = "KV"
-id = "5f13370575784c9dacff522121104cb3"
-
-[[env.preview.kv_namespaces]]
-binding = "SESSION"
-id = "09ae2ffbffe24e628c9538c8129dfe33"
-
-[[env.preview.d1_databases]]
-binding = "PLATFORM_DB"
-database_name = "gs_platform_db"
-database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
-
-[[env.preview.r2_buckets]]
-binding = "GS_ASSETS"
-bucket_name = "gs-assets-preview"
-
-[env.preview.images]
-binding = "IMAGES"
-
-[env.preview.vars]
-ENV = "preview"
-PUBLIC_ENV = "preview"
-PUBLIC_API = "https://api-preview.goldshore.ai"
-CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-CLOUDFLARE_ACCESS_AUDIENCE = "5227a14ad2cd2f59e56c8c65161c29bb2f9787b5b8be37a631c60f4d07b33214"
-GITHUB_CLIENT_ID = "YOUR_GITHUB_CLIENT_ID_PREVIEW"
-TURNSTILE_SITE_KEY = "YOUR_TURNSTILE_SITE_KEY_PREVIEW"
-CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
-MAILCHANNELS_SENDER_NAME = "GoldShore"
+# Pull requests build this production manifest without deploying it. Cloudflare
+# Worker Versions provide read-only workers.dev previews; no preview Worker,
+# route, KV namespace, database, R2 bucket, queue, or Workflow is declared.

@@ -1,5 +1,6 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import { env as cloudflareEnv } from 'cloudflare:workers';
+import AdminLayout from "../../layouts/AdminLayout.astro";
 import { authorizeAdminRequest, getAdminRouteRule } from '../../utils/admin-access';
 
 export const prerender = false;
@@ -15,7 +16,7 @@ type SiteSettings = {
   updatedAt: string;
 };
 
-const env = Astro.locals.runtime?.env as Env | undefined;
+const env = cloudflareEnv as Env;
 const rule = getAdminRouteRule('/app/settings', 'GET');
 
 let authError: { status: number; message: string } | null = null;
@@ -48,7 +49,7 @@ if (!authError) {
 }
 ---
 
-<BaseLayout title="Settings | GoldShore Admin" description="Site and platform configuration">
+<AdminLayout title="Settings | GoldShore Admin">
   <section class="gs-section">
     <div class="gs-grid columns-2">
       <div>
@@ -267,7 +268,7 @@ if (!authError) {
       }
     });
   </script>
-</BaseLayout>
+</AdminLayout>
 
 <style>
   .settings-grid {

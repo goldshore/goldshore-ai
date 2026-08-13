@@ -1,133 +1,114 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
 
-const services = [
-  { name: 'gs-web', kind: 'Pages', host: 'goldshore.org', status: 'Connected', href: 'https://goldshore.org' },
-  { name: 'gs-api', kind: 'Worker', host: 'api.goldshore.ai', status: 'Connected', href: 'https://api.goldshore.ai' },
-  { name: 'Admin', kind: 'Access app', host: 'admin.goldshore.org', status: 'Protected', href: 'https://admin.goldshore.org' },
-  { name: 'Admin AI', kind: 'Access app', host: 'admin.goldshore.ai', status: 'Protected', href: 'https://admin.goldshore.ai' },
-];
+export const prerender = false;
 
-const modules = [
-  { title: 'Settings', description: 'Environment variables, secrets, domains, Access policy, notifications, and runtime compatibility.', href: '/admin/settings', action: 'Open settings' },
-  { title: 'API workflows', description: 'Inspect endpoints, gateway routes, triggers, retries, queues, and orchestration state.', href: '/admin/workflows', action: 'Manage workflows' },
-  { title: 'Customer email', description: 'Templates, transactional delivery, suppression state, inbound routing, and campaign handoff.', href: '/admin/customer-email', action: 'Manage email' },
-  { title: 'Subscribe CTA', description: 'Configure plan copy, CTA placement, checkout target, consent text, and conversion events.', href: '/admin/subscribe', action: 'Edit CTA' },
-  { title: 'Contact forms', description: 'Form schema, spam controls, routing, notifications, retention, and CRM dispatch.', href: '/admin/contact-forms', action: 'Manage forms' },
-  { title: 'Custom pages', description: 'Create and publish reusable landing, service, legal, campaign, and customer pages.', href: '/admin/pages', action: 'Open page manager' },
-];
+const serviceInventory = [
+  ['Public interface', 'gs-web', 'Marketing site and protected admin routes', 'Operational'],
+  ['Unified backend', 'gs-api', 'API, mail, queues, scheduled work, and integrations', 'Operational'],
+  ['Platform data', 'D1 + KV + R2', 'Application state, configuration, audit data, and assets', 'Review bindings'],
+  ['Operator access', 'Cloudflare Access', 'Identity verification and role-based permissions', 'Protected'],
+] as const;
 
-const resources = [
-  { name: 'D1', purpose: 'Customers, forms, subscriptions, content metadata, audit records', binding: 'DB' },
-  { name: 'R2', purpose: 'Uploads, exports, customer assets, generated documents, page media', binding: 'ASSETS' },
-  { name: 'Jobs', purpose: 'Scheduled maintenance, email dispatch, cleanup, reporting', binding: 'JOBS' },
-  { name: 'Workflows', purpose: 'Durable multi-step API and customer operations', binding: 'WORKFLOWS' },
-  { name: 'Pipelines', purpose: 'Event ingestion, transformation, analytics, and downstream delivery', binding: 'PIPELINES' },
-];
+const controlLinks = [
+  ['Worker status', '/admin/workers/status', 'Review the deployed worker inventory and health.'],
+  ['Domains and routes', '/admin/domains', 'Inspect active service routes and domains.'],
+  ['Integrations', '/admin/integrations/all', 'Review third-party connection health and setup.'],
+  ['Platform settings', '/app/settings', 'Manage site-wide configuration and feature controls.'],
+] as const;
 ---
 
-<AdminLayout title="Cloudflare Control Plane">
-  <header class="hero">
-    <div>
-      <p class="eyebrow">Gold Shore Admin</p>
-      <h1>Cloudflare control plane</h1>
-      <p class="lede">One protected workspace for gs-web, gs-api, identity, customer operations, storage, automation, and custom publishing.</p>
-    </div>
-    <div class="hero-actions">
-      <a class="button primary" href="https://admin.goldshore.org/dashboard">Open production dashboard</a>
-      <a class="button" href="https://admin.goldshore.ai">Open admin.goldshore.ai</a>
-    </div>
-  </header>
-
-  <section class="panel">
-    <div class="section-heading">
+<AdminLayout title="Control Plane | GoldShore Admin" requiredPermission="system:read">
+  <section class="control-plane">
+    <header class="control-plane__header">
       <div>
-        <p class="eyebrow">Identity and routing</p>
-        <h2>Cloudflare Access entry points</h2>
+        <p class="control-plane__eyebrow">Operations / System overview</p>
+        <h1>Control Plane</h1>
+        <p>Review the canonical application surface before making any configuration or deployment decision.</p>
       </div>
-      <span class="badge">IDP protected</span>
-    </div>
-    <div class="route-flow">
-      <div class="route-node"><strong>goldshore.org/login</strong><span>Public login gateway</span></div>
-      <span class="arrow">→</span>
-      <div class="route-node"><strong>Cloudflare Access</strong><span>Identity provider + policy</span></div>
-      <span class="arrow">→</span>
-      <div class="route-node"><strong>Admin dashboard</strong><span>admin.goldshore.org/dashboard</span></div>
-    </div>
-    <p class="note">Allowlisted destinations: admin.goldshore.org, admin.goldshore.org/dashboard, and admin.goldshore.ai. Cloudflare Access should enforce authentication at the admin hostnames rather than trusting a client-side session.</p>
-  </section>
+      <span class="control-plane__status"><i></i> Protected workspace</span>
+    </header>
 
-  <section class="service-grid" aria-label="Connected services">
-    {services.map((service) => (
-      <a class="service-card" href={service.href} target="_blank" rel="noreferrer">
-        <div class="service-top"><span>{service.kind}</span><span class="status">{service.status}</span></div>
-        <h2>{service.name}</h2>
-        <code>{service.host}</code>
-      </a>
-    ))}
-  </section>
-
-  <section class="panel">
-    <div class="section-heading">
-      <div>
-        <p class="eyebrow">Application managers</p>
-        <h2>Operational workspace</h2>
-      </div>
-    </div>
-    <div class="module-grid">
-      {modules.map((module) => (
-        <article class="module-card">
-          <h3>{module.title}</h3>
-          <p>{module.description}</p>
-          <a href={module.href}>{module.action} →</a>
-        </article>
-      ))}
-    </div>
-  </section>
-
-  <section class="panel">
-    <div class="section-heading">
-      <div>
-        <p class="eyebrow">Cloudflare resources</p>
-        <h2>Bindings and execution</h2>
-      </div>
-      <a class="text-link" href="/admin/system/storage">View storage</a>
-    </div>
-    <div class="resource-table" role="table" aria-label="Cloudflare resources">
-      <div class="resource-row header" role="row"><span>Resource</span><span>Purpose</span><span>Binding</span></div>
-      {resources.map((resource) => (
-        <div class="resource-row" role="row">
-          <strong>{resource.name}</strong><span>{resource.purpose}</span><code>{resource.binding}</code>
+    <section class="control-plane__section" aria-labelledby="service-inventory-title">
+      <div class="control-plane__section-heading">
+        <div>
+          <p class="control-plane__eyebrow">Canonical architecture</p>
+          <h2 id="service-inventory-title">Service ownership</h2>
         </div>
-      ))}
-    </div>
-  </section>
-
-  <section class="split">
-    <article class="panel">
-      <p class="eyebrow">Customer acquisition</p>
-      <h2>Subscribe CTA template</h2>
-      <div class="preview-card">
-        <span class="badge">Gold Shore</span>
-        <h3>Turn infrastructure into an operating system.</h3>
-        <p>Subscribe for managed automation, secure customer workflows, and a unified Cloudflare-backed control plane.</p>
-        <button type="button">Subscribe</button>
+        <span>Two-app contract</span>
       </div>
-    </article>
-    <article class="panel">
-      <p class="eyebrow">Inbound operations</p>
-      <h2>Contact form template</h2>
-      <form class="form-preview">
-        <label>Name<input name="name" autocomplete="name" placeholder="Customer name" /></label>
-        <label>Email<input name="email" type="email" autocomplete="email" placeholder="name@example.com" /></label>
-        <label>Request type<select name="type"><option>General inquiry</option><option>API workflow</option><option>Managed infrastructure</option><option>Support</option></select></label>
-        <label>Message<textarea name="message" rows="4" placeholder="Describe the request"></textarea></label>
-        <button type="button">Send to gs-api</button>
-      </form>
-    </article>
+      <div class="control-plane__inventory">
+        {serviceInventory.map(([label, value, description, status]) => (
+          <article class="control-plane__service">
+            <span>{label}</span>
+            <strong>{value}</strong>
+            <p>{description}</p>
+            <em>{status}</em>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="control-plane__section" aria-labelledby="controls-title">
+      <div class="control-plane__section-heading">
+        <div>
+          <p class="control-plane__eyebrow">Operations</p>
+          <h2 id="controls-title">Control surfaces</h2>
+        </div>
+      </div>
+      <nav class="control-plane__links" aria-label="Control plane tools">
+        {controlLinks.map(([label, href, description]) => (
+          <a href={href}>
+            <strong>{label}</strong>
+            <span>{description}</span>
+            <b>Open →</b>
+          </a>
+        ))}
+      </nav>
+    </section>
+
+    <section class="control-plane__section" aria-labelledby="deployment-title">
+      <div class="control-plane__section-heading">
+        <div>
+          <p class="control-plane__eyebrow">Deployment posture</p>
+          <h2 id="deployment-title">Production changes stay review-gated</h2>
+        </div>
+      </div>
+      <article class="control-plane__notice">
+        <p>Production bindings, routes, secrets, migrations, and DNS remain controlled by the approved deployment path. Use the inventory pages to review state, and complete production mutations through the configured human approval gate.</p>
+      </article>
+    </section>
   </section>
 </AdminLayout>
 
 <style>
-  .hero,.section-heading,.service-top,.route-flow,.hero-actions{display:flex;align-items:center}.hero{justify-content:space-between;gap:2rem;padding:2.25rem}.hero h1{font-size:clamp(2rem,5vw,4.5rem);line-height:.95;margin:.4rem 0 1rem}.lede{max-width:760px;color:#9fb0c6;font-size:1.05rem}.hero-actions{gap:.75rem;flex-wrap:wrap}.button,button{border:1px solid #29425f;background:#0b1726;color:#e8f0fb;border-radius:.7rem;padding:.75rem 1rem;text-decoration:none;font:inherit;cursor:pointer}.button.primary,button{background:#d97706;border-color:#f59e0b;color:#070b10;font-weight:700}.panel{margin:0 2.25rem 1.25rem;padding:1.35rem;border:1px solid #1d3148;border-radius:1rem;background:linear-gradient(145deg,rgba(12,24,39,.96),rgba(6,14,24,.96))}.section-heading{justify-content:space-between;gap:1rem;margin-bottom:1rem}.section-heading h2,.panel h2{margin:.2rem 0}.eyebrow{text-transform:uppercase;letter-spacing:.14em;font-size:.72rem;color:#f59e0b;font-weight:700}.badge,.status{border:1px solid #34516f;border-radius:999px;padding:.25rem .55rem;font-size:.72rem;color:#a8d4ff}.route-flow{gap:1rem;justify-content:center;flex-wrap:wrap;padding:1rem}.route-node{min-width:210px;padding:1rem;border:1px solid #29425f;border-radius:.8rem;background:#07111d}.route-node span{display:block;color:#8ea3bb;font-size:.78rem;margin-top:.35rem}.arrow{color:#f59e0b;font-size:1.5rem}.note{color:#8ea3bb;font-size:.84rem}.service-grid,.module-grid,.split{display:grid;gap:1rem}.service-grid{grid-template-columns:repeat(4,minmax(0,1fr));margin:0 2.25rem 1.25rem}.service-card,.module-card{border:1px solid #1d3148;border-radius:1rem;background:#091522;padding:1.1rem;text-decoration:none;color:inherit}.service-card:hover,.module-card:hover{border-color:#d97706}.service-top{justify-content:space-between;color:#8ea3bb;font-size:.75rem}.service-card h2{margin:1rem 0 .3rem}.service-card code,.resource-row code{color:#f5b85b}.module-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.module-card p{color:#8ea3bb;min-height:4.2rem}.module-card a,.text-link{color:#7cc7ff;text-decoration:none}.resource-table{display:grid}.resource-row{display:grid;grid-template-columns:140px 1fr 140px;gap:1rem;padding:.85rem;border-top:1px solid #1d3148;align-items:center}.resource-row.header{border-top:0;color:#7990aa;font-size:.72rem;text-transform:uppercase}.split{grid-template-columns:1fr 1fr;margin:0 0 2.25rem}.split .panel{margin-bottom:0}.preview-card{border:1px solid #29425f;border-radius:.9rem;padding:1.25rem;background:radial-gradient(circle at top right,rgba(217,119,6,.16),transparent 45%),#07111d}.preview-card h3{font-size:1.65rem;margin:.8rem 0}.preview-card p{color:#9fb0c6}.form-preview{display:grid;gap:.85rem}.form-preview label{display:grid;gap:.35rem;color:#9fb0c6;font-size:.78rem}.form-preview input,.form-preview select,.form-preview textarea{width:100%;box-sizing:border-box;border:1px solid #29425f;background:#07111d;color:#e8f0fb;border-radius:.55rem;padding:.7rem;font:inherit}@media(max-width:1050px){.service-grid{grid-template-columns:repeat(2,1fr)}.module-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:720px){.hero{align-items:flex-start;flex-direction:column;padding:1.25rem}.panel,.service-grid{margin-left:1.25rem;margin-right:1.25rem}.service-grid,.module-grid,.split{grid-template-columns:1fr}.resource-row{grid-template-columns:1fr}.resource-row.header{display:none}}
+  .control-plane { min-height: 100vh; padding: clamp(2rem, 5vw, 4.5rem) clamp(1.25rem, 5vw, 5rem); background: radial-gradient(circle at 82% 0%, rgba(216, 164, 74, .11), transparent 31rem), #050b14; }
+  .control-plane__header, .control-plane__section { max-width: 1180px; margin-right: auto; margin-left: auto; }
+  .control-plane__header { display: flex; justify-content: space-between; gap: 2rem; align-items: start; margin-bottom: 3.5rem; }
+  .control-plane__eyebrow { margin: 0 0 .65rem; color: #d8a44a; font: 700 .68rem/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .16em; text-transform: uppercase; }
+  .control-plane h1, .control-plane h2, .control-plane p { margin-top: 0; }
+  .control-plane h1 { margin-bottom: 1rem; color: #e8eef5; font-size: clamp(2.5rem, 6vw, 5.4rem); line-height: .98; letter-spacing: -.065em; }
+  .control-plane__header > div > p:last-child { max-width: 660px; margin-bottom: 0; color: rgba(174, 190, 207, .72); line-height: 1.65; }
+  .control-plane__status { display: inline-flex; align-items: center; gap: .5rem; padding: .55rem .75rem; border: 1px solid rgba(52, 211, 153, .2); border-radius: 999px; color: rgba(187, 247, 208, .82); font: 600 .7rem ui-monospace, monospace; white-space: nowrap; }
+  .control-plane__status i { width: .45rem; height: .45rem; border-radius: 50%; background: #34d399; box-shadow: 0 0 12px rgba(52, 211, 153, .75); }
+  .control-plane__section { margin-bottom: 3.5rem; }
+  .control-plane__section-heading { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+  .control-plane__section-heading h2 { margin-bottom: 0; color: #e8eef5; font-size: clamp(1.35rem, 2.2vw, 1.8rem); letter-spacing: -.035em; }
+  .control-plane__section-heading > span { color: rgba(174, 190, 207, .55); font: .72rem ui-monospace, monospace; }
+  .control-plane__inventory { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .8rem; }
+  .control-plane__service { display: flex; flex-direction: column; min-height: 175px; padding: 1.1rem; border: 1px solid rgba(114, 185, 255, .1); border-radius: .75rem; background: rgba(10, 22, 39, .54); }
+  .control-plane__service > span, .control-plane__service p { color: rgba(174, 190, 207, .56); font-size: .72rem; }
+  .control-plane__service strong { margin: .55rem 0 .35rem; color: #d7f8e7; font: 700 1.1rem ui-monospace, monospace; }
+  .control-plane__service p { margin-bottom: 0; line-height: 1.5; }
+  .control-plane__service em { margin-top: auto; padding-top: 1rem; color: #72b9ff; font: .68rem ui-monospace, monospace; font-style: normal; }
+  .control-plane__links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; }
+  .control-plane__links a { display: flex; flex-direction: column; min-height: 120px; padding: 1.15rem; border: 1px solid rgba(114, 185, 255, .15); border-radius: .9rem; background: rgba(10, 22, 39, .76); color: inherit; text-decoration: none; transition: transform .16s ease, border-color .16s ease, background .16s ease; }
+  .control-plane__links a:hover { transform: translateY(-3px); border-color: rgba(114, 185, 255, .42); background: rgba(18, 36, 62, .92); }
+  .control-plane__links strong { color: #f1f5f9; font-size: 1rem; }
+  .control-plane__links span { margin-top: .5rem; color: rgba(174, 190, 207, .68); font-size: .78rem; line-height: 1.5; }
+  .control-plane__links b { margin-top: auto; padding-top: 1rem; color: #72b9ff; font-size: .72rem; }
+  .control-plane__notice { padding: 1.2rem; border: 1px solid rgba(216, 164, 74, .25); border-radius: .75rem; background: rgba(75, 55, 21, .22); }
+  .control-plane__notice p { max-width: 850px; margin-bottom: 0; color: rgba(232, 238, 245, .76); line-height: 1.65; }
+  @media (max-width: 900px) { .control-plane__inventory { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 640px) { .control-plane__header { flex-direction: column; } .control-plane__inventory, .control-plane__links { grid-template-columns: 1fr; } }
 </style>
