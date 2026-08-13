@@ -35,20 +35,20 @@ Secrets, API tokens, dashboard credentials, R2 keys, Access JWTs, and OpenAI key
                                     ▼
                             Cloudflare Deploys
                                     │
-          ┌─────────────────────────┼─────────────────────────┐
-          │                         │                         │
-          ▼                         ▼                         ▼
-   gs-web-app                gs-www-redirect             service Workers
-   Astro + Worker Assets     canonical www redirects     api / gateway / mail / ops
-          │                         │                         │
-          ▼                         ▼                         ▼
- goldshore.ai              www.goldshore.ai             api.goldshore.ai
- goldshore.org             www.goldshore.org            gw.goldshore.ai
-                                                     agent.goldshore.ai
-                                                     trading.goldshore.ai
-                                                     mail.goldshore.ai
-                                                     ops.goldshore.ai
-                                                     mcp.goldshore.ai
+                          ┌─────────────────────────┬─────────────────────────┐
+                          │                         │
+                          ▼                         ▼
+                   gs-web-app                   gs-api-worker
+                   Astro + Assets               Unified Backend
+                          │                         │
+                          ▼                         ▼
+                 goldshore.ai              api.goldshore.ai
+                 goldshore.org             agent.goldshore.ai
+                www.goldshore.ai           trading.goldshore.ai
+                www.goldshore.org          mail.goldshore.ai
+                                           ops.goldshore.ai
+                                           dashboard.goldshore.ai
+                                           gw.goldshore.ai
 ```
 
 ## Production surface overview
@@ -56,17 +56,15 @@ Secrets, API tokens, dashboard credentials, R2 keys, Access JWTs, and OpenAI key
 | Surface | Source location | Runtime | Purpose |
 | --- | --- | --- | --- |
 | Public web app | `apps/gs-web` | Cloudflare Worker with Assets | Main Astro website for `goldshore.ai` and `goldshore.org` |
-| WWW redirect | `apps/gs-www-redirect` | Cloudflare Worker | Canonical `www` redirect handling |
-| Admin app | `apps/gs-admin` | Cloudflare Pages / Worker-adjacent app | Protected operator UI |
-| API | `apps/gs-api` | Cloudflare Worker | Core API surface |
-| Gateway | `apps/gs-gateway` | Cloudflare Worker | Gateway, agent ingress, bindings |
-| Agent | `apps/gs-agent` | Route-free Worker behind gateway binding | Agent service implementation |
-| Trading | `apps/gs-trading` | Cloudflare Worker | Trading / OAuth / paper trading surface |
-| Mail | `apps/gs-mail` | Cloudflare Worker | Mail/event handling |
-| Ops / control | `apps/gs-control` | Cloudflare Worker | Operator control plane |
-| Shared packages | `packages/*` | Workspace packages | Shared auth, engine, brand, and theme code |
-| Infrastructure docs | `infra/*`, `docs/*` | Documentation | Desired state, domain/auth notes, operational gates |
-| GitHub Actions | `.github/workflows/*` | GitHub CI/CD | Build and deploy automation |
+| Core API | `apps/gs-api` | Cloudflare Worker | Unified backend: API routes, agent, trading, mail, control, gateway |
+| Agent | `apps/gs-api/src/routes/agent.ts` + queue consumer | gs-api route/queue handler | Agent logic and ingress |
+| Trading | `apps/gs-api/src/routes/trading.ts` | gs-api route | Trading, OAuth, paper trading surface |
+| Mail | `apps/gs-api/src/routes/mail.ts` + email handlers | gs-api route/email handler | Email and event handling |
+| Ops / control | `apps/gs-api/src/routes/control.ts` | Protected gs-api route | Operator control plane |
+| Gateway | `apps/gs-api/src/routes/gateway.ts` | gs-api route | Request forwarding and bindings |
+| Shared packages | `packages/*` | Workspace packages | auth, config, schema, analytics, UI, theme, assets, utils |
+| Infrastructure docs | `infra/*`, `docs/*` | Documentation | Cloudflare bindings, domain ownership, operational guides |
+| GitHub Actions | `.github/workflows/*` | GitHub CI/CD | Build, test, and deploy automation |
 
 ## Canonical domain ownership
 
@@ -75,21 +73,18 @@ Current verified target model:
 ```text
 goldshore.ai                 -> gs-web-app
 goldshore.org                -> gs-web-app
-www.goldshore.ai             -> gs-www-redirect-prod -> goldshore.ai
-www.goldshore.org            -> gs-www-redirect-prod -> goldshore.ai
+www.goldshore.ai             -> gs-web-app (canonical)
+www.goldshore.org            -> gs-web-app (canonical)
 
-preview.goldshore.ai         -> gs-web preview / preview route as configured
-admin.goldshore.ai           -> gs-admin / protected operator UI
-admin-preview.goldshore.ai   -> gs-admin preview
-api.goldshore.ai             -> gs-api
+preview.goldshore.ai         -> gs-web preview
+api.goldshore.ai             -> gs-api (unified backend)
 api-preview.goldshore.ai     -> gs-api preview
-gw.goldshore.ai              -> gs-gateway-prod
-agent.goldshore.ai           -> gs-gateway-prod service binding to gs-agent
-mcp.goldshore.ai             -> gs-mcp / MCP surface
-trading.goldshore.ai         -> gs-trading-prod
-mail.goldshore.ai            -> gs-mail
-ops.goldshore.ai             -> gs-control
-dashboard.goldshore.ai       -> intended dashboard/admin redirect surface
+agent.goldshore.ai           -> gs-api /agent route
+trading.goldshore.ai         -> gs-api /trading route
+mail.goldshore.ai            -> gs-api /mail route
+ops.goldshore.ai             -> gs-api /admin/control route
+gw.goldshore.ai              -> gs-api /gateway route
+dashboard.goldshore.ai       -> gs-api /dashboard route
 ```
 
 When this table disagrees with live Cloudflare, Cloudflare is the current truth and the repo is drifted. Fix the repo after confirming live state.
@@ -109,7 +104,9 @@ Important files:
 - `apps/gs-web/public/_headers` — static route security headers.
 - `apps/gs-web/public/_routes.json` — static routing hints.
 - `apps/gs-web/wrangler.toml` — Worker name, routes, KV, D1, R2, and environment variables.
-- `.github/workflows/deploy-gs-web.yml` — production deploy workflow.
+- `.github/workflows/deploy-gs-web.yml` — build validation and the human-approved production deployment.
+- `.github/workflows/verify-gs-web-deployment.yml` — mirror verification after the
+  Cloudflare Workers Builds deployment event.
 
 The production Worker route configuration is stored in `apps/gs-web/wrangler.toml` under the production environment.
 
@@ -121,32 +118,20 @@ Bindings to check in `wrangler.toml`:
 - R2 bucket binding.
 - Environment variables.
 
-Secrets must never be committed. Keep tokens, API keys, R2 credentials, dashboard secrets, and OpenAI keys only in Cloudflare secrets, GitHub Actions secrets, or the appropriate platform secret manager.
-Expected production deploy command:
+Secrets must never be committed. Production secret values, DNS, routes, bindings,
+Access, and email routing are configured by a human in the Cloudflare dashboard.
+Validate the deployable manifests locally without mutating Cloudflare:
 
 ```bash
-pnpm --filter @goldshore/gs-web build
-pnpm --filter @goldshore/gs-web exec wrangler deploy --env prod
+cd apps/gs-web && pnpm exec wrangler deploy --env prod --dry-run
+cd apps/gs-api && pnpm exec wrangler deploy --env prod --dry-run
 ```
+
+Actual production deployments run only through `.github/workflows/deploy-gs-web.yml`
+and `.github/workflows/deploy-gs-api.yml`. Both require approval from the protected
+GitHub `production` environment; do not deploy a production Worker from a local shell.
 
 The production environment is `env.prod`. Do not accidentally deploy a route-free or differently named environment and then assume the public route changed.
-
-### `apps/gs-www-redirect`
-
-Small redirect Worker for canonical `www` traffic.
-
-Important files:
-
-- `apps/gs-www-redirect/src/index.ts`
-- `apps/gs-www-redirect/wrangler.toml`
-- `.github/workflows/deploy-gs-www-redirect.yml`
-
-Expected behavior:
-
-```text
-www.goldshore.ai   -> https://goldshore.ai/
-www.goldshore.org  -> https://goldshore.ai/   after explicit route/custom-domain binding
-```
 
 ## Bindings and runtime resources
 
@@ -365,12 +350,12 @@ WEB=$(gh run list --workflow "Deploy gs-web" --branch main --limit 1 --json data
 gh run watch "$WEB"
 ```
 
-### Deploy `gs-www-redirect`
+### Deploy `gs-api`
 
 ```bash
-gh workflow run deploy-gs-www-redirect.yml --ref main
-WWW=$(gh run list --workflow "Deploy gs-www-redirect" --branch main --limit 1 --json databaseId -q '.[0].databaseId')
-gh run watch "$WWW"
+gh workflow run deploy-gs-api.yml --ref main
+API=$(gh run list --workflow "Deploy gs-api" --branch main --limit 1 --json databaseId -q '.[0].databaseId')
+gh run watch "$API"
 ```
 
 ## Live verification commands
@@ -403,12 +388,16 @@ Never commit API tokens, R2 access keys, dashboard/admin secrets, or OpenAI keys
 
 ## Immediate next PRs
 
-1. Add a CI guard for public/Astro route collisions.
-2. Create `GoldShoreShell.astro` from the homepage shell.
-3. Move shared homepage effects into `gs-shell.css` and `gs-shell.js`.
-4. Migrate `risk-radar.astro` to `GoldShoreShell`.
-5. Normalize admin, dashboard, API, MCP, and core link targets.
-6. Review CSP for static routes and modal/API behavior.
+**Repository consolidation complete** (2026-08-09: merged 11 legacy apps removal, lockfile corruption fix, malformed route handlers repair, wrangler.toml config completion).
+
+Current work focus:
+
+1. Add CI guard for public/Astro route collisions in `gs-web`.
+2. Create unified shell component (`GoldShoreShell.astro`) for all public pages.
+3. Consolidate homepage and subpage styling into shared `gs-shell.css`.
+4. Migrate subpages from `WebLayout.astro` to `GoldShoreShell.astro`.
+5. Verify all `gs-api` routes respond correctly after consolidation (agent, trading, mail, control, gateway).
+6. Add comprehensive route testing in `gs-api` test suite.
 Content verification:
 
 ```bash
@@ -434,15 +423,24 @@ When taking over this repository:
 
 ## Merge safety checklist
 
-Before merging UI or routing changes:
+Before merging changes to `gs-web` or `gs-api`:
 
+**gs-web changes:**
 - [ ] `apps/gs-web/public/index.html` does not override `src/pages/index.astro`.
 - [ ] Build logs show no unexpected `Skipping src/pages/... because public folder...` warnings.
-- [ ] `deploy-gs-web.yml` deploys the routed production environment.
-- [ ] `goldshore.ai` returns `HTTP/2 200`.
-- [ ] `goldshore.org` returns expected canonical behavior.
-- [ ] `www.goldshore.ai` redirects to canonical apex.
-- [ ] `www.goldshore.org` redirects to canonical apex.
+- [ ] `goldshore.ai` and `goldshore.org` return `HTTP/2 200`.
+- [ ] `www.goldshore.ai` and `www.goldshore.org` resolve correctly.
 - [ ] Homepage content contains `Applied Intelligence`, `Where`, `Strategy`, and `GS·LAB`.
-- [ ] Subpage layout migration is deliberate and not an accidental partial theme mix.
-- [ ] Access-protected surfaces remain protected.
+- [ ] Subpage layouts use consistent styling and navigation.
+
+**gs-api changes:**
+- [ ] All route handlers in `src/routes/` compile without errors.
+- [ ] Queue consumers (mail, agent, etc.) are properly bound.
+- [ ] `api.goldshore.ai`, `agent.goldshore.ai`, `mail.goldshore.ai`, etc. respond correctly.
+- [ ] Protected routes (`/admin/control`, `/gateway`) require proper auth/headers.
+- [ ] D1 database bindings (`PLATFORM_DB`, `RISK_RADAR_DB`, etc.) are present in both `prod` and `preview` environments.
+
+**Both apps:**
+- [ ] `pnpm build` succeeds with no errors or warnings.
+- [ ] `pnpm lint` passes all checks.
+- [ ] `pnpm test` passes (gs-api suite: 75+ tests).

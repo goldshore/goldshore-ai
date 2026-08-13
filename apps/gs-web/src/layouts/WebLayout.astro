@@ -1,37 +1,20 @@
 ---
-import GoldShoreShell from './GoldShoreShell.astro';
-import Logo from '../components/brand/Logo.astro';
 import '@goldshore/theme/styles/tokens.css';
 import '@goldshore/theme/styles/base.css';
 import '@goldshore/theme/styles/components.css';
 import '@goldshore/theme/styles/layout.css';
 import '../styles/global.css';
-import Logo from '../components/brand/Logo.astro';
 import { WEB_META_CSP } from '../utils/csp';
-import '../styles/global.css';
 import '../styles/goldshore-shell.css';
+import PublicFooter from '../components/PublicFooter.astro';
+import PublicHeader from '../components/PublicHeader.astro';
 
-const { title, description, canonicalPath, ogTitle: _ogTitle, ogDescription: _ogDescription } = Astro.props;
-const ogTitle = _ogTitle ?? title;
-const ogDescription = _ogDescription ?? description;
-
-const siteUrl = Astro.site || new URL('https://goldshore.ai');
-const canonicalUrl = new URL(canonicalPath || '/', siteUrl).href;
-const currentPath = canonicalPath || '/';
-const mobileNavId = 'mobile-navigation';
-
-const navLinks = [
-  { href: '/', label: 'Home' },
-  { href: '/platform', label: 'Platform' },
-  { href: '/developer', label: 'Developer' },
-];
-
-const footerLinks = [
-  { href: '/', label: 'Home' },
-  { href: '/platform', label: 'Platform' },
-  { href: '/legal/privacy', label: 'Privacy' },
-  { href: '/legal/terms', label: 'Terms' },
-];
+const { title, description, canonicalPath } = Astro.props;
+const ogTitle = Astro.props.ogTitle ?? title;
+const ogDescription = Astro.props.ogDescription ?? description;
+const canonicalUrl = canonicalPath
+  ? new URL(canonicalPath, Astro.url.origin).toString()
+  : Astro.url.href;
 ---
 
 <html lang="en">
@@ -50,8 +33,8 @@ const footerLinks = [
     <meta name="twitter:url" content={canonicalUrl} />
     <meta name="twitter:title" content={ogTitle} />
     <meta name="twitter:description" content={ogDescription} />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="icon" href="/favicon.png" type="image/png" sizes="32x32" />
+    <link rel="icon" href="/assets/penrose-logo.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/assets/penrose-logo.png" />
     <!-- Preconnect to external origins to speed up resource loading -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -60,183 +43,20 @@ const footerLinks = [
       rel="stylesheet"
     />
     <link rel="manifest" href="/site.webmanifest"/>
+    <link rel="sitemap" href="/sitemap.xml" type="application/xml" />
     <meta name="google-adsense-account" content="ca-pub-5105781580031290" />
   </head>
   <body>
     <a href="#content" class="skip-link">Skip to content</a>
     <div class="gs-page-shell">
-      <header class="header" data-menu-open="false">
-        <div class="header__inner">
-          <a href="/" class="header-brand" aria-label="Gold Shore home">
-            <span class="header-brand__coords">40°42′45″N<br />74°00′21″W</span>
-            <span class="header-brand__mark">GS·LAB·v2.84</span>
-            <span class="header-brand__lockup"><strong>Gold Shore Labs</strong><em>GoldShore</em></span>
-          </a>
-
-          <nav class="desktop-nav" aria-label="Primary navigation">
-            <div class="desktop-nav__links">
-              {navLinks.map((link) => (
-                <a href={link.href} aria-current={currentPath === link.href ? 'page' : undefined}>
-                  {link.label}
-                </a>
-              ))}
-            </div>
-            <a href="https://admin.goldshore.ai" class="header-login" data-admin-access-link>Log in</a>
-            <a href="/contact" class="header-cta">Get a Briefing</a>
-          </nav>
-
-          <button
-            class="menu-button"
-            type="button"
-            aria-expanded="false"
-            aria-controls={mobileNavId}
-            aria-label="Open navigation"
-          >
-            <span></span>
-            <span></span>
-            <span></span>
-          </button>
-        </div>
-
-        <nav id={mobileNavId} class="menu-panel" aria-label="Mobile navigation">
-          <div class="menu-panel__inner">
-            <div class="menu-panel__header">
-              <a href="/" class="header-brand header-brand--mobile" aria-label="GoldShore home">
-                <span class="header-brand__mark">GS·LAB</span>
-                <span class="header-brand__lockup"><strong>Gold Shore Labs</strong><em>Institutional AI systems</em></span>
-              </a>
-              <button class="menu-close" type="button" aria-label="Close navigation">×</button>
-            </div>
-
-            <div class="menu-panel__links">
-              {navLinks.map((link) => (
-                <a href={link.href} aria-current={currentPath === link.href ? 'page' : undefined}>
-                  {link.label}
-                </a>
-              ))}
-            </div>
-
-            <div class="menu-panel__actions">
-              <a href="/contact" class="header-cta header-cta--mobile">Get a Briefing</a>
-              <a href="https://admin.goldshore.ai" class="menu-secondary-link" data-admin-access-link>Log in</a>
-              <a href="/developer" class="menu-secondary-link">Open Developer Hub</a>
-            </div>
-          </div>
-        </nav>
-      </header>
+      <PublicHeader currentPath={Astro.url.pathname} />
 
       <main id="content" class="gs-page-content">
         <slot />
       </main>
 
-      <footer class="gs-footer">
-        <div class="gs-footer__inner">
-          <div class="footer-brand-copy">
-            <div class="footer-brand">
-              <Logo class="gs-logo gs-logo--footer" title="Gold Shore" />
-              <div class="brand-lockup brand-lockup--footer">
-                <strong>Gold Shore</strong>
-                <span>Operational AI, observability, and control systems</span>
-              </div>
-            </div>
-            <p>
-              Infrastructure for high-trust AI, risk tooling, and resilient operator systems.
-            </p>
-          </div>
-          <div class="gs-footer__links">
-            {footerLinks.map((link) => (
-              <a href={link.href}>{link.label}</a>
-            ))}
-          </div>
-        </div>
-      </footer>
+      <PublicFooter />
     </div>
-
-    <script is:inline>
-      const menuGlobal = window;
-
-      const bindMenu = () => {
-        if (menuGlobal.__gsMenuBound) return;
-        menuGlobal.__gsMenuBound = true;
-
-        const header = document.querySelector('.header');
-        const toggle = document.querySelector('.menu-button');
-        const mobileNav = document.getElementById('mobile-navigation');
-
-        if (
-          !(header instanceof HTMLElement) ||
-          !(toggle instanceof HTMLButtonElement) ||
-          !(mobileNav instanceof HTMLElement)
-        ) {
-          return;
-        }
-
-        const setMenu = (isOpen) => {
-          header.dataset.menuOpen = String(isOpen);
-          toggle.setAttribute('aria-expanded', String(isOpen));
-          document.body.classList.toggle('menu-open', isOpen);
-        };
-
-        const handleToggle = () => {
-          const next = header.dataset.menuOpen !== 'true';
-          setMenu(next);
-        };
-
-        document.addEventListener('click', (event) => {
-          const target = event.target;
-          if (!(target instanceof Element)) return;
-
-          if (target.closest('.menu-button')) {
-            handleToggle();
-            return;
-          }
-
-          if (target.closest('.menu-close')) {
-            setMenu(false);
-            return;
-          }
-
-          // Close on any link click inside the mobile nav panel
-          if (target.closest('#mobile-navigation a')) {
-            setMenu(false);
-            return;
-          }
-
-          // Close on backdrop click
-          if (target === mobileNav) {
-            setMenu(false);
-          }
-        });
-
-        document.addEventListener('keydown', (event) => {
-          if (event.key === 'Escape') {
-            setMenu(false);
-          }
-        });
-
-        window.addEventListener('resize', () => {
-          if (window.innerWidth > 960) {
-            setMenu(false);
-          }
-        });
-
-        document.addEventListener('astro:before-swap', () => {
-          setMenu(false);
-        });
-      };
-
-      const bindAdminAccessLinks = () => {
-        const adminHost = window.location.hostname.endsWith('goldshore.org')
-          ? 'admin.goldshore.org'
-          : 'admin.goldshore.ai';
-        document.querySelectorAll('[data-admin-access-link]').forEach((link) => {
-          link.setAttribute('href', `https://${adminHost}`);
-        });
-      };
-
-      bindMenu();
-      bindAdminAccessLinks();
-    </script>
 
     <style is:global>
       .skip-link {
@@ -258,10 +78,19 @@ const footerLinks = [
 
       .gs-page-shell {
         min-height: 100vh;
+        --gs-header-height: 72px;
+        --gs-site-width: 1440px;
+        --gs-site-gutter: clamp(1rem, 4vw, 4rem);
+        --gs-site-columns: repeat(12, minmax(0, 1fr));
+        scroll-padding-top: var(--gs-header-height);
       }
 
       .gs-page-content {
         min-height: calc(100vh - 220px);
+      }
+
+      .gs-page-content > * {
+        scroll-margin-top: calc(var(--gs-header-height) + 1rem);
       }
 
       .header {
@@ -269,19 +98,29 @@ const footerLinks = [
         top: 0;
         z-index: 1100;
         padding: 1rem clamp(1rem, 3vw, 3rem);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         background: rgba(6, 6, 10, 0.88);
         border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        transition:
+          padding 220ms ease,
+          background 220ms ease,
+          border-color 220ms ease;
+      }
+
+      .header.is-scrolled {
+        padding-block: 0.68rem;
+        background: rgba(6, 6, 10, 0.96);
+        border-bottom-color: rgba(217, 106, 50, 0.34);
       }
 
       .header__inner {
-        width: min(100%, 1440px);
+        width: min(100%, var(--gs-site-width));
         margin: 0 auto;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 2rem;
+        gap: clamp(1rem, 2vw, 2rem);
       }
 
       .header-brand {
@@ -293,26 +132,6 @@ const footerLinks = [
         min-width: 0;
       }
 
-      .header-brand__coords {
-        color: var(--gs-text-dim);
-        font-family: 'DM Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-        font-size: 0.52rem;
-        letter-spacing: 0.09em;
-        line-height: 1.35;
-        text-transform: uppercase;
-      }
-
-      .header-brand__mark {
-        flex-shrink: 0;
-        padding: 0.48rem 0.64rem;
-        border: 1px solid rgba(217, 106, 50, 0.28);
-        color: var(--gs-primary);
-        font-family: 'DM Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-        font-size: 0.62rem;
-        letter-spacing: 0.09em;
-        text-transform: uppercase;
-      }
-
       .header-brand__lockup {
         display: block;
         min-width: 0;
@@ -322,7 +141,7 @@ const footerLinks = [
         display: block;
         color: var(--gs-text);
         font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
-        font-size: 0.9rem;
+        font-size: 1rem;
         font-weight: 700;
         letter-spacing: 0.12em;
         line-height: 1.2;
@@ -330,26 +149,22 @@ const footerLinks = [
         white-space: nowrap;
       }
 
-      .header-brand__lockup em {
-        display: block;
-        color: var(--gs-text-dim);
-        font-family: 'DM Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-        font-size: 0.65rem;
-        font-style: normal;
-        letter-spacing: 0.09em;
-        line-height: 1.35;
-        text-transform: uppercase;
-      }
-
       .header-brand--mobile {
         flex: 1;
+      }
+
+      .header-brand__mobile-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
       }
 
       .desktop-nav {
         display: flex;
         align-items: center;
         justify-content: flex-end;
-        gap: 1rem;
+        gap: clamp(0.75rem, 1.5vw, 1.5rem);
         flex: 1;
       }
 
@@ -357,7 +172,7 @@ const footerLinks = [
         display: flex;
         align-items: center;
         justify-content: flex-end;
-        gap: 0.25rem;
+        gap: clamp(0.25rem, 0.8vw, 0.75rem);
         flex-wrap: wrap;
       }
 
@@ -372,57 +187,66 @@ const footerLinks = [
       }
 
       .desktop-nav__links a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
         padding: 0.6rem 0.85rem;
-        border-radius: 999px;
-        color: var(--gs-text-dim);
+        border-radius: 6px;
+        color: var(--gs-text);
+        transition: all 160ms ease;
       }
 
       .desktop-nav__links a:hover,
       .desktop-nav__links a[aria-current='page'] {
         color: var(--gs-text);
-        background: rgba(217, 106, 50, 0.09);
+        background: rgba(220, 120, 60, 0.12);
       }
 
       .header-login {
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        min-height: 44px;
         padding: 0.72rem 1rem;
-        border-radius: 999px;
+        border-radius: 6px;
         text-decoration: none;
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        color: var(--gs-text-dim);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        color: var(--gs-text);
         font-weight: 500;
         white-space: nowrap;
-        transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
+        transition: all 160ms ease;
       }
 
       .header-login:hover,
       .header-login:focus-visible {
         color: var(--gs-text);
-        border-color: rgba(255, 255, 255, 0.28);
-        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(220, 120, 60, 0.6);
+        background: rgba(220, 120, 60, 0.08);
       }
 
       .header-cta {
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        min-height: 44px;
         padding: 0.82rem 1.2rem;
-        border-radius: 999px;
+        border-radius: 6px;
         text-decoration: none;
-        background: linear-gradient(135deg, rgba(217, 106, 50, 0.42), rgba(217, 106, 50, 0.22));
-        border: 1px solid rgba(217, 106, 50, 0.5);
-        color: var(--gs-text);
+        background: linear-gradient(135deg, rgba(220, 120, 60, 0.8), rgba(200, 100, 50, 0.8));
+        border: 1px solid rgba(220, 120, 60, 0.9);
+        color: #fff;
         font-weight: 700;
         white-space: nowrap;
-        box-shadow: 0 18px 40px rgba(5, 12, 29, 0.26);
+        box-shadow: 0 10px 28px rgba(220, 120, 60, 0.25);
+        transition: all 160ms ease;
       }
 
       .header-cta:hover,
       .header-cta:focus-visible {
-        transform: translateY(-1px);
-        background: linear-gradient(135deg, rgba(217, 106, 50, 0.52), rgba(217, 106, 50, 0.30));
+        transform: translateY(-2px);
+        background: linear-gradient(135deg, rgba(230, 130, 70, 0.9), rgba(210, 110, 60, 0.9));
+        box-shadow: 0 14px 36px rgba(220, 120, 60, 0.35);
       }
 
       .menu-button,
@@ -437,10 +261,16 @@ const footerLinks = [
         height: 46px;
         place-items: center;
         gap: 4px;
-        border-radius: 999px;
+        border-radius: 6px;
         border: 1px solid var(--gs-border);
-        background: rgba(217, 106, 50, 0.08);
+        background: rgba(220, 120, 60, 0.08);
         cursor: pointer;
+        transition: all 160ms ease;
+      }
+
+      .menu-button:hover {
+        background: rgba(220, 120, 60, 0.14);
+        border-color: rgba(220, 120, 60, 0.4);
       }
 
       .menu-button span {
@@ -503,14 +333,20 @@ const footerLinks = [
       .menu-close {
         width: 2.5rem;
         height: 2.5rem;
-        border: 0;
-        border-radius: 999px;
+        border: 1px solid var(--gs-border);
+        border-radius: 6px;
         background: rgba(255, 255, 255, 0.07);
         color: var(--gs-text);
         font-size: 1.6rem;
         line-height: 1;
         cursor: pointer;
         flex-shrink: 0;
+        transition: all 160ms ease;
+      }
+
+      .menu-close:hover {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: rgba(220, 120, 60, 0.5);
       }
 
       .menu-panel__links {
@@ -519,18 +355,22 @@ const footerLinks = [
       }
 
       .menu-panel__links a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
         padding: 0.95rem 1rem;
-        border-radius: 16px;
+        border-radius: 6px;
         color: var(--gs-text-dim);
         border: 1px solid transparent;
         background: rgba(255, 255, 255, 0.03);
+        transition: all 160ms ease;
       }
 
       .menu-panel__links a:hover,
       .menu-panel__links a[aria-current='page'] {
         color: var(--gs-text);
-        border-color: var(--gs-border);
-        background: rgba(217, 106, 50, 0.08);
+        border-color: rgba(220, 120, 60, 0.5);
+        background: rgba(220, 120, 60, 0.10);
       }
 
       .menu-panel__actions {
@@ -548,10 +388,16 @@ const footerLinks = [
         justify-content: center;
         align-items: center;
         padding: 0.82rem 1.2rem;
-        border-radius: 999px;
+        border-radius: 6px;
         text-decoration: none;
-        border: 1px solid rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.15);
         color: var(--gs-text);
+        transition: all 160ms ease;
+      }
+
+      .menu-secondary-link:hover {
+        border-color: rgba(220, 120, 60, 0.6);
+        background: rgba(220, 120, 60, 0.08);
       }
 
       .header[data-menu-open='true'] .menu-panel {
@@ -572,8 +418,8 @@ const footerLinks = [
       .gs-footer__inner {
         width: min(100%, var(--gs-max-width));
         margin: 0 auto;
-        display: flex;
-        justify-content: space-between;
+        display: grid;
+        grid-template-columns: minmax(260px, 1fr) minmax(360px, 1.5fr) auto;
         gap: 2rem;
         align-items: flex-start;
       }
@@ -583,10 +429,31 @@ const footerLinks = [
         gap: 1rem;
       }
 
+      .footer-brand__logo {
+        width: 55px;
+        height: 55px;
+        object-fit: contain;
+      }
+
       .footer-brand {
         display: inline-flex;
         align-items: center;
         gap: 0.8rem;
+      }
+
+      .footer-coords {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        text-align: right;
+        font-family: 'DM Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.65rem;
+        color: var(--gs-text-dim);
+        letter-spacing: 0.09em;
+      }
+
+      .footer-coords__item {
+        line-height: 1.2;
       }
 
       .gs-footer p {
@@ -598,10 +465,16 @@ const footerLinks = [
 
       .gs-footer__links {
         display: grid;
-        gap: 0.65rem;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.5rem 1.5rem;
+        align-content: flex-start;
       }
 
       .gs-footer__links a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        min-width: 44px;
         color: var(--gs-text-dim);
         text-decoration: none;
       }
@@ -611,8 +484,19 @@ const footerLinks = [
       }
 
       .gs-shell-section {
-        width: min(100% - 2rem, var(--gs-max-width));
+        width: min(calc(100% - (2 * var(--gs-site-gutter))), var(--gs-site-width));
         margin: 0 auto;
+      }
+
+      .gs-column-grid {
+        display: grid;
+        grid-template-columns: var(--gs-site-columns);
+        column-gap: clamp(0.75rem, 1.5vw, 1.5rem);
+      }
+
+      .gs-column-grid > * {
+        grid-column: 1 / -1;
+        min-width: 0;
       }
 
       .gs-eyebrow {
@@ -623,13 +507,29 @@ const footerLinks = [
         font-size: 0.78rem;
       }
 
-      @media (max-width: 960px) {
+      @media (max-width: 1023px) {
         .desktop-nav {
           display: none;
         }
 
         .menu-button {
           display: inline-grid;
+        }
+
+        .gs-footer__inner {
+          grid-template-columns: 1fr;
+          gap: 1.5rem;
+        }
+
+        .footer-brand-copy {
+          max-width: 42rem;
+        }
+
+        .footer-coords {
+          flex-direction: row;
+          justify-content: flex-start;
+          gap: 1rem;
+          text-align: left;
         }
       }
 
@@ -638,35 +538,19 @@ const footerLinks = [
           padding-inline: 0.8rem;
         }
 
-        .header-brand__coords {
-          display: none;
-        }
-
         .header-brand__lockup strong {
-          font-size: 0.78rem;
-        }
-
-        .header-brand__lockup em {
-          font-size: 0.58rem;
+          font-size: 0.9rem;
         }
 
         .menu-panel__header {
           align-items: center;
         }
 
-        .gs-footer__inner {
-          flex-direction: column;
+        .gs-footer__links {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 0.35rem 1rem;
         }
       }
     </style>
   </body>
 </html>
-<GoldShoreShell
-  title={title}
-  description={description}
-  canonicalPath={canonicalPath}
-  ogTitle={ogTitle ?? title}
-  ogDescription={ogDescription ?? description}
->
-  <slot />
-</GoldShoreShell>

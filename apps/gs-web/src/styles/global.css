@@ -2,6 +2,9 @@
 @import '@goldshore/theme/styles/layout.css';
 @import './gs-effects.css';
 @import './gs-brand-theme.css';
+@import './public-theme.css';
+@import './goldshore-shell.css';
+@import './theme-chrome.css';
 
 :root {
   --font-sans:

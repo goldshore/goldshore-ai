@@ -1,96 +1,40 @@
-# Cloudflare Deployment Checklist
+# Cloudflare deploy checklist
 
-Last updated: 2026-07-11
+## Deployable boundary
 
-Use this checklist after any Cloudflare Pages or Worker deployment from `marzton/goldshore-ai`.
+`pnpm-workspace.yaml` is definitive: the product has only `apps/gs-web` and
+`apps/gs-api`. Files for former satellite applications, including
+`apps/gs-agent`, are non-deployable legacy reference. Do not create or restore a
+separate agent Worker, route, binding, workflow, script, queue consumer, or
+dashboard configuration without an explicit human-approved architecture change.
 
-## Required GitHub secrets
+## gs-api
 
-Repository: `marzton/goldshore-ai`
+- Treat `apps/gs-api/wrangler.toml` as the sole reviewable contract for unified
+  API, agent, AI, persistence, queues/events, mail, cron, and control behavior.
+- Keep agent hostnames on `gs-api`; the unified entrypoint maps them to `/agent`.
+- Use `AI` for inference, existing KV/D1/R2 bindings for persistence, and
+  `JOBS_QUEUE` or `EVENTS_QUEUE` for asynchronous publishing.
+- Confirm the unified `queue`, `scheduled`, and Workflow handlers cover required
+  background processing; do not delegate them to a satellite Worker.
+- Build and dry-run `env.prod` from `apps/gs-api`; never use a manifest under
+  `infra/Cloudflare/` as deploy input.
+- Obtain the GitHub `production` approval before an authorized human applies the
+  reviewed mutation in the Cloudflare dashboard.
 
-- `CLOUDFLARE_ACCOUNT_ID`
-- `CLOUDFLARE_BUILD_API_TOKEN`
+## gs-web
 
-Do not use fallback expressions such as `CLOUDFLARE_BUILD_API_TOKEN || CLOUDFLARE_API_TOKEN` in workflows.
+- Build `apps/gs-web` with the Astro Cloudflare adapter in server mode.
+- Confirm `dist` contains the generated server output and static assets.
+- Confirm `src/worker.ts` remains Wrangler's `main` entry point.
+- Confirm the `ASSETS` binding points at `./dist`.
+- Deploy `env.prod` as the single `gs-web-prod` Worker release.
+- Smoke-test `goldshore.ai`, `goldshore.org`, `admin.goldshore.ai`, and
+  `admin.goldshore.org`; compare their release/version marker when available.
+- Never upload the client asset subtree as a second static project.
 
-## Cloudflare Pages build settings
+## Architecture-change gate
 
-For the `gs-web` Cloudflare Pages project, use these settings:
-
-```text
-Framework preset: Astro
-Root directory: /
-Build command: npm run build
-Build output directory: apps/gs-web/dist
-Node version: 22
-PNPM version: 9.15.4
-```
-
-The root `npm run build` script is intentionally Pages-safe. It builds OpenAPI content, builds only `@goldshore/gs-web`, and verifies `apps/gs-web/dist`. Full monorepo builds should use `pnpm build:all` instead.
-
-Do not configure Cloudflare Pages to run `turbo run build` across the full monorepo. That causes Worker dry-runs, binding checks, and unrelated backend packages to execute during a public website build.
-
-## Deploy order
-
-1. Deploy `gs-api` Worker.
-2. Deploy `gs-gateway` Worker.
-3. Deploy `gs-web` Pages.
-4. Deploy `gs-admin` Pages.
-5. Deploy optional/backend workers: `gs-control`, `gs-mail`, `gs-agent`, `gs-trading`.
-
-## Manual GitHub Actions deploy
-
-Run `.github/workflows/deploy-cloudflare.yml` with:
-
-- target: desired app/service
-- environment: `prod` or `preview`
-
-## Local deploy equivalents
-
-```bash
-pnpm install --frozen-lockfile
-
-pnpm build
-pnpm exec wrangler pages deploy apps/gs-web/dist --project-name=gs-web --branch=main
-
-pnpm build:pages:admin
-pnpm exec wrangler pages deploy apps/gs-admin/dist --project-name=gs-admin --branch=main
-
-pnpm --filter @goldshore/gs-api deploy
-pnpm --filter @goldshore/gs-gateway deploy
-```
-
-## Live Cloudflare checks
-
-```bash
-curl -I https://goldshore.ai
-curl -I https://www.goldshore.ai
-curl -I https://goldshore.org
-curl -I https://www.goldshore.org
-curl -I https://api.goldshore.ai/health
-curl -I https://gw.goldshore.ai/health
-curl -I https://admin.goldshore.ai
-```
-
-Expected:
-
-- `goldshore.ai` and `www.goldshore.ai` return 200 or a clean canonical redirect.
-- `goldshore.org` and `www.goldshore.org` return 200 or a clean canonical redirect through `gs-web`.
-- `api.goldshore.ai/health` resolves through `gs-api`, not `gs-gateway`.
-- `gw.goldshore.ai/health` resolves through `gs-gateway`.
-- `admin.goldshore.ai` requires Cloudflare Access or redirects to auth.
-
-## D1 migration verification
-
-```bash
-wrangler d1 execute gs_platform_db --remote --command "SELECT name FROM sqlite_master WHERE type='table';"
-wrangler d1 execute gs_audit_db --remote --command "SELECT name FROM sqlite_master WHERE type='table';"
-```
-
-Both databases should return table names, not an empty result.
-
-## Known non-canonical paths
-
-- `goldshore-org` standalone repo is legacy/non-canonical while `goldshore.org` is owned by `gs-web`.
-- `rmarston.com` must stay outside `gs-web`; it belongs to `rmarston-com`.
-- Any `goldshore-ai` stub Worker custom-domain binding should be removed once `gs-web` Pages owns `goldshore.ai`.
+A Pages migration is permitted only as an explicit replacement after every
+dynamic web endpoint has moved into `apps/gs-api`. It must not coexist with the
+Worker-with-Assets release.

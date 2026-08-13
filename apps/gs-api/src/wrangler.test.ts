@@ -6,37 +6,50 @@ import { dirname, resolve } from 'node:path';
 
 const fixturePath = resolve(dirname(fileURLToPath(import.meta.url)), '../wrangler.toml');
 const wranglerConfig = readFileSync(fixturePath, 'utf8');
+const workerSource = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), 'index.ts'), 'utf8');
+const prod = wranglerConfig.slice(wranglerConfig.indexOf('[env.prod]'));
+const d1Bindings = [...prod.matchAll(/\[\[env\.prod\.d1_databases\]\]\s*binding = "([^"]+)"/g)]
+  .map((match) => match[1]);
 
-const getEnvBlock = (envName: 'prod' | 'production') => {
-  const start = wranglerConfig.indexOf(`[env.${envName}]`);
-  assert.notStrictEqual(start, -1, `Expected [env.${envName}] block to exist`);
+describe('wrangler production baseline', () => {
+  it('has one production environment and no dedicated preview resources', () => {
+    assert.match(wranglerConfig, /^\[env\.prod\]$/m);
+    assert.doesNotMatch(wranglerConfig, /\[env\.preview(?:\.|\])/);
+    assert.doesNotMatch(wranglerConfig, /(?:gs-api|goldshore-jobs|gs-events|gs-mail-jobs|gs-assets)-preview/);
+  });
 
-  const nextEnvName = envName === 'prod' ? 'production' : 'preview';
-  const nextEnvStart = wranglerConfig.indexOf(`\n[env.${nextEnvName}]`, start + 1);
+  it('keeps canonical production bindings on gs-api', () => {
+    for (const binding of ['KV', 'PLATFORM_DB', 'GS_ASSETS', 'MAIL_ARCHIVE', 'MAIL_JOBS_QUEUE', 'AI']) {
+      assert.match(prod, new RegExp(`binding = "${binding}"`));
+    }
+    assert.match(prod, /\[\[env\.prod\.send_email\]\][\s\S]*?name = "EMAIL"/);
+    assert.match(prod, /\[env\.prod\.observability\][\s\S]*?enabled = true/);
+  });
 
-  return nextEnvStart === -1
-    ? wranglerConfig.slice(start)
-    : wranglerConfig.slice(start, nextEnvStart);
-};
-
-describe('wrangler environment bindings', () => {
-  it('keeps the KV binding name expected by API handlers in deployed envs', () => {
-    for (const envName of ['prod', 'production']) {
-      const block = getEnvBlock(envName);
-      assert.match(block, /\[\[env\.(?:prod|production)\.kv_namespaces\]\][\s\S]*?binding = "KV"/);
-      assert.doesNotMatch(block, /binding = "GS_CONFIG"/);
-      assert.doesNotMatch(block, /binding = "GS_API_DATA"/);
+  it('keeps production aliases on the unified API Worker', () => {
+    for (const hostname of [
+      'api.goldshore.ai', 'api.goldshore.org', 'agent.goldshore.ai', 'mail.goldshore.ai',
+      'agent.goldshore.org', 'mail.goldshore.org', 'ops.goldshore.ai', 'trading.goldshore.ai',
+      'trading.goldshore.org', 'dashboard.goldshore.ai', 'dash.goldshore.ai', 'gw.goldshore.ai',
+    ]) {
+      assert.ok(
+        prod.includes('pattern = "' + hostname + '/*"'),
+        'missing route for ' + hostname,
+      );
     }
   });
 
-  it('includes KV, D1, R2, and AI bindings in deployed envs', () => {
-    for (const envName of ['prod', 'production']) {
-      const block = getEnvBlock(envName);
-      assert.match(block, new RegExp(`\\[\\[env\\.${envName}\\.kv_namespaces\\]\\][\\s\\S]*?binding = "KV"`));
-      assert.match(block, new RegExp(`\\[\\[env\\.${envName}\\.kv_namespaces\\]\\][\\s\\S]*?binding = "CONTROL_LOGS"`));
-      assert.match(block, new RegExp(`\\[\\[env\\.${envName}\\.r2_buckets\\]\\][\\s\\S]*?binding = "GS_ASSETS"`));
-      assert.match(block, new RegExp(`\\[\\[env\\.${envName}\\.d1_databases\\]\\][\\s\\S]*?binding = "PLATFORM_DB"`));
-      assert.match(block, new RegExp(`\\[env\\.${envName}\\.ai\\][\\s\\S]*?binding = "AI"`));
-    }
+  it('keeps event triggers and the signals Workflow wired to exported handlers', () => {
+    assert.match(prod, /\[env\.prod\.triggers\]\s*crons = \["0 2 \* \* \*"\]/);
+    assert.match(
+      prod,
+      /\[\[env\.prod\.workflows\]\][\s\S]*?binding = "GS_SIGNALS"[\s\S]*?name = "gs-signals-evaluator"[\s\S]*?class_name = "SignalsEvaluator"/,
+    );
+    assert.ok(!d1Bindings.includes('GS_SIGNALS'));
+    assert.match(workerSource, /export \{ SignalsEvaluator \} from '\.\/workers\/signals-evaluator';/);
+    assert.match(workerSource, /async queue\(batch: MessageBatch<unknown>, env: Env\)/);
+    assert.match(workerSource, /async scheduled\(controller: ScheduledController, env: Env, ctx: ExecutionContext\)/);
+    assert.match(workerSource, /controller\.cron === '0 2 \* \* \*'/);
+    assert.match(workerSource, /async email\(message: ForwardableEmailMessage, env: Env, ctx: ExecutionContext\)/);
   });
 });

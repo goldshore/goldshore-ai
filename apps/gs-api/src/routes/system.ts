@@ -70,6 +70,23 @@ system.post('/sync', requirePermission('system:write'), async (c) => {
   return c.json({ success: true, syncedAt: timestamp });
 });
 
+const automationAccepted = async (c: any, action: string) => {
+  const claims = c.get('accessClaims');
+  await writeControlLog(c.env, `${action}_${Date.now()}`, {
+    action,
+    user: claims?.email,
+    timestamp: new Date().toISOString(),
+    status: 'accepted',
+  });
+
+  return c.json({ success: true, action, status: 'accepted' });
+};
+
+system.post('/dns/apply', requirePermission('system:write'), (c) => automationAccepted(c, 'dns_apply'));
+system.post('/workers/reconcile', requirePermission('system:write'), (c) => automationAccepted(c, 'workers_reconcile'));
+system.post('/pages/deploy', requirePermission('system:write'), (c) => automationAccepted(c, 'pages_deploy'));
+system.post('/access/audit', requirePermission('system:write'), (c) => automationAccepted(c, 'access_audit'));
+
 const cloudflareRequest = async (env: Env, path: string, init: RequestInit = {}) => {
   if (!env.CLOUDFLARE_API_TOKEN) {
     throw new Error('Missing CLOUDFLARE_API_TOKEN');
@@ -161,6 +178,49 @@ const auditAccess = async (env: Env) => {
   const policies = await cloudflareRequest(env, `/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/access/policies`);
   return { applications: apps.result?.length ?? 0, policies: policies.result?.length ?? 0 };
 };
+
+system.get('/cf/workers', requirePermission('system:read'), async (c) => {
+  if (!c.env.CLOUDFLARE_ACCOUNT_ID) {
+    return c.json({ success: false, error: 'Missing CLOUDFLARE_ACCOUNT_ID' }, 503);
+  }
+  try {
+    const data = await cloudflareRequest(c.env, `/accounts/${c.env.CLOUDFLARE_ACCOUNT_ID}/workers/scripts`);
+    return c.json({ success: true, accountId: c.env.CLOUDFLARE_ACCOUNT_ID, workers: data.result ?? [] });
+  } catch (error) {
+    return c.json({ success: false, error: error instanceof Error ? error.message : 'Failed to list workers' }, 502);
+  }
+});
+
+system.get('/cf/workers/:name', requirePermission('system:read'), async (c) => {
+  const name = c.req.param('name');
+  if (!c.env.CLOUDFLARE_ACCOUNT_ID) {
+    return c.json({ success: false, error: 'Missing CLOUDFLARE_ACCOUNT_ID' }, 503);
+  }
+
+  try {
+    const settings = await cloudflareRequest(
+      c.env,
+      `/accounts/${c.env.CLOUDFLARE_ACCOUNT_ID}/workers/scripts/${encodeURIComponent(name)}/settings`,
+    );
+    const bindings = settings.result?.bindings ?? [];
+
+    let routes: Array<{ pattern: string }> = [];
+    if (c.env.CLOUDFLARE_ZONE_ID) {
+      try {
+        const routesData = await cloudflareRequest(c.env, `/zones/${c.env.CLOUDFLARE_ZONE_ID}/workers/routes`);
+        routes = ((routesData.result ?? []) as Array<{ pattern: string; script?: string }>)
+          .filter((route) => route.script === name)
+          .map((route) => ({ pattern: route.pattern }));
+      } catch {
+        // Zone routes are best-effort; a Worker can still be shown without them.
+      }
+    }
+
+    return c.json({ success: true, name, bindings, routes });
+  } catch (error) {
+    return c.json({ success: false, error: error instanceof Error ? error.message : 'Failed to load worker detail' }, 502);
+  }
+});
 
 system.post('/dns/apply', requirePermission('system:write'), (c) => executeAutomation(c, 'dns_apply', () => applyDns(c.env)));
 system.post('/workers/reconcile', requirePermission('system:write'), (c) => executeAutomation(c, 'workers_reconcile', () => reconcileWorkers(c.env)));

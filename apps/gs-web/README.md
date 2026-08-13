@@ -9,30 +9,28 @@ Public marketing site, documentation hub, and customer-facing Astro app for Gold
 - marketing and contact flows,
 - developer docs and API reference pages,
 - lightweight authenticated customer routes,
-- Cloudflare Pages Functions used by forms, search, and admin support tooling.
+- SSR endpoints used by forms, search, and admin support tooling.
 
 ## Cloudflare configuration
 
-- Pages project name: `gs-web` (production), `gs-web-staging` (staging)
-- Staging is the visual source of truth for the production theme and shell.
-- Pages bindings config: `infra/cloudflare/goldshore-web.wrangler.toml`
-- Preview runtime bindings commonly set by CI:
-  - `PUBLIC_API=https://api-preview.goldshore.ai`
-  - `PUBLIC_GATEWAY=https://gw-preview.goldshore.ai`
-- Production runtime bindings commonly set by CI:
-  - `PUBLIC_API=https://api.goldshore.ai`
-  - `PUBLIC_GATEWAY=https://gw.goldshore.ai`
-- Build diagnostics exposed on `/status`:
-  - `PUBLIC_BUILD_TIMESTAMP`
-  - `PUBLIC_COMMIT_HASH`
-  - `PUBLIC_RELEASE_LABEL` (optional)
-- Pages project: `gs-web`
-- Local/app Wrangler config: `apps/gs-web/wrangler.jsonc`
-- Canonical Cloudflare manifest: `infra/Cloudflare/gs-web.wrangler.toml`
-- `gs-web` does not currently read `GS_CONFIG` directly.
-- Do not add a `GS_CONFIG` binding to the web Pages project unless a concrete `apps/gs-web` runtime consumer needs live request-time reads.
-- Preview and production deployments are driven by the live workflows under `.github/workflows/`.
-- Staging environments commonly point browser-visible runtime variables at preview services such as `https://api-preview.goldshore.ai` and `https://gw-preview.goldshore.ai`.
+`gs-web` has exactly one deployment model: an Astro SSR Cloudflare Worker with
+Assets. `astro.config.mjs` keeps `output: 'server'` and the Cloudflare adapter;
+`src/worker.ts` is the Wrangler `main`; and `wrangler.toml` uploads `dist` through
+the `ASSETS` binding. Selecting `env.prod` produces the `gs-web-prod` release.
+Astro sessions are disabled: admin identity comes from Cloudflare Access and all
+durable application state is owned by `gs-api`.
+
+The same production release owns these four canonical UI hosts:
+
+- `goldshore.ai`
+- `goldshore.org`
+- `admin.goldshore.ai`
+- `admin.goldshore.org`
+
+Runtime variables include `PUBLIC_API`, build diagnostics, Cloudflare Access
+settings, and public provider identifiers. Secrets belong in Cloudflare secrets,
+not this repository. `gs-web` does not currently read `GS_CONFIG` directly; do
+not add that binding without a concrete request-time consumer.
 
 ## Routes and endpoints
 
@@ -104,37 +102,42 @@ pnpm --filter @goldshore/gs-web test:e2e
 
 ## Deployment
 
-- Production workflow: `.github/workflows/deploy-gs-web.yml`
-- Preview workflow: `.github/workflows/preview-gs-web.yml`
-- Cloudflare Pages root directory: `apps/gs-web`
-- Build command: `pnpm build`
-- Output directory: `dist`
+- Canonical deploy workflow: `.github/workflows/deploy-gs-web.yml`.
+- Production deployment requires approval from the GitHub `production` environment.
+- Local static validation (from this directory):
+  `pnpm exec wrangler deploy --env prod --dry-run`.
+- Do not deploy from a local shell or mutate production DNS, routes, bindings,
+  Access, or secrets outside the human-approved production process.
+- Output directory: `dist` (SSR server output plus static assets).
+- Deployable manifest: `apps/gs-web/wrangler.toml`.
+- Reference manifest: `infra/Cloudflare/gs-web.wrangler.toml`.
 
-- For domain, preview, and Access details, see [`docs/domains-and-auth.md`](../../docs/domains-and-auth.md).
-- Production deploy: `.github/workflows/deploy-gs-web.yml`
-- Preview deploy: `.github/workflows/preview-gs-web.yml`
-- Domains, previews, and Access policy details: [`docs/domains-and-auth.md`](../../docs/domains-and-auth.md)
+For domain, preview, and Access details, see
+[`docs/domains-and-auth.md`](../../docs/domains-and-auth.md).
 
-## Preview authentication
+## Pull-request previews
 
-Preview environments are not public.
+Pull requests build the same production manifest without a dedicated preview Worker,
+custom preview hostname, or preview storage. Cloudflare Worker Version URLs may be
+used for read-only visual review; mutation paths remain disabled there.
 
-- Preview builds reuse the centralized GitHub App callback flow instead of per-branch callbacks.
-- Cloudflare Access protects preview hostnames.
-- Non-interactive checks against preview environments should use Cloudflare Access service-token headers.
+## Contact form and lead administration
 
-## Contact form and mail delivery
+`gs-web` does not hold runtime KV, D1, or R2 data bindings. `/api/contact`, `/api/admin/lead-submissions`, and `/api/forms/*` are thin same-origin compatibility proxies that forward request-time storage operations to `gs-api` under `/v1/forms/*`.
 
-`/api/contact` stores submissions in KV/D1 and can send email through MailChannels from Cloudflare Pages Functions.
+Set `PUBLIC_API` in the `gs-web` Worker environment to the matching API origin:
 
-Set these environment variables in the `gs-web` Pages project as needed:
+- Production: `https://api.goldshore.ai`
 
-- `MAILCHANNELS_SENDER_EMAIL`
-- `MAILCHANNELS_SENDER_NAME`
-- `CONTACT_NOTIFICATION_EMAILS`
-- `MAILCHANNELS_API_URL`
+Do not add `GS_CONFIG` or other data bindings to `gs-web` unless a specific SSR endpoint needs a public, request-time, read-only lookup that cannot be served by `gs-api`.
 
-Keep the existing `KV` and `DB` bindings so submissions still persist if mail delivery is degraded.
+## Future Pages migration
+
+Moving `gs-web` to Cloudflare Pages would be an explicit architecture change,
+not an additional deployment target. Every dynamic web endpoint—including
+forms, search, authentication callbacks, admin endpoints, and catch-all server
+rendering—must first move into `apps/gs-api`. Only after that migration may the
+Worker entry point and Worker routes be replaced by one Pages deployment.
 
 ## Source of truth
 

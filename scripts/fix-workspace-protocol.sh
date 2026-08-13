@@ -18,7 +18,6 @@ fi
 declare -a scope=(
   "apps/gs-api"
   "apps/gs-web"
-  "apps/gs-admin"
   "packages/auth"
   "packages/utils"
 )

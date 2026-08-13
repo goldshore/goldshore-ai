@@ -1,42 +1,62 @@
-# Reference wrangler.toml for gs-web (Workers Static Assets).
-# The deployable config lives at apps/gs-web/wrangler.toml; keep route ownership aligned.
-# Note: gs-web is a Workers Static Assets deployment (main + [assets] binding), not Cloudflare Pages.
-# The Cloudflare Astro adapter emits apps/gs-web/dist; wrangler deploy --env prod creates gs-web-prod.
-
 name = "gs-web"
-compatibility_date = "2026-04-18"
+compatibility_date = "2026-08-12"
 compatibility_flags = ["nodejs_compat"]
-workers_dev = false
-main = "../../apps/gs-web/src/worker.ts"
 
+workers_dev = false
+main = "./src/worker.ts"
+
+# Deploy the Astro SSR entry point and its static bundle as one Worker release.
+# `astro build` emits the server manifest and assets under dist; Wrangler
+# bundles src/worker.ts as the Worker entry and uploads dist as its assets.
+# This is intentionally not a Cloudflare Pages project.
 [assets]
-directory = "../../apps/gs-web/dist"
+directory = "./dist"
 binding = "ASSETS"
 
 [vars]
-# Runtime configuration note:
-# - `GS_CONFIG` is intentionally *not* bound to gs-web today.
-# - Current gs-web runtime consumers read mutable config indirectly via
-#   `PUBLIC_API`/content fetches or admin-generated content, not from the
-#   shared gs-control/gs-admin KV namespace.
+ENV = "production"
+PUBLIC_ENV = "production"
+PUBLIC_API = "https://api.goldshore.ai"
+CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
+CLOUDFLARE_ACCESS_AUDIENCE = "c520a7647223b49b20fbe5be240772863eb684b97b57c08955b6104c58170db9"
+CLOUDFLARE_ACCESS_APPLICATION = "admin-production"
+CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
 
-[env.dev]
-# Dev bindings for local development.
-
-[env.preview]
-routes = [
-  { pattern = "preview.goldshore.ai", custom_domain = true }
-]
+# ── Production ──────────────────────────────────────────────────────────────────────────────────────
 
 [env.prod]
-# Serving goldshore.ai and goldshore.org apex via Worker route.
-# www.goldshore.ai is owned by gs-www-redirect-prod (308 → goldshore.ai).
-# www.goldshore.org is owned by gs-www-redirect-prod (308 → goldshore.ai).
+# Wrangler suffixes the top-level name, so this environment is the single
+# `gs-web-prod` release serving the canonical production UI hosts.
 routes = [
   { pattern = "goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "goldshore.org/*", zone_name = "goldshore.org" }
+  { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "www.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "www.goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "admin.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "admin.goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "risk.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "risk.goldshore.org/*", zone_name = "goldshore.org" }
 ]
 
-# Secrets (set via wrangler secret put — never commit):
-#   wrangler secret put MAILCHANNELS_SENDER_EMAIL --env prod --name gs-web
-#   Value: hello@goldshore.ai
+[env.prod.images]
+binding = "IMAGES"
+
+[env.prod.vars]
+ENV = "production"
+PUBLIC_ENV = "production"
+PUBLIC_API = "https://api.goldshore.ai"
+CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
+CLOUDFLARE_ACCESS_AUDIENCE = "c520a7647223b49b20fbe5be240772863eb684b97b57c08955b6104c58170db9"
+CLOUDFLARE_ACCESS_APPLICATION = "admin-production"
+CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
+
+# gs-web owns no transactional database, sensitive object storage, Durable
+# Object, queue, Workflow, or provider-secret bindings. Contact, form, CMS,
+# media, and admin operations are authenticated and persisted by gs-api.
+# Deploying this manifest intentionally removes dashboard-only bindings such as
+# a production API_AUTH reference to a retired preview API. ASSETS above is the Astro
+# static-assets binding and must not be replaced with an R2 bucket binding.
+
+# Pull requests build this production manifest without deploying it. Cloudflare
+# Worker Versions provide read-only workers.dev previews; no preview Worker,
+# route, KV namespace, database, R2 bucket, queue, or Workflow is declared.

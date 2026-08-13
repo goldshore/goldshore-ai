@@ -16,45 +16,47 @@ interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
 
-interface D1Result<Row> {
-  results?: Row[];
-}
-
-interface D1PreparedStatement<Row = Record<string, unknown>> {
-  bind(...values: unknown[]): D1PreparedStatement<Row>;
-  all(): Promise<D1Result<Row>>;
-  run(): Promise<unknown>;
+interface KVNamespace {
+  get(key: string): Promise<string | null>;
+  put(key: string, value: string): Promise<void>;
+  delete(key: string): Promise<void>;
 }
 
 // Global Cloudflare Env types
-interface KVNamespace {
-  put(
-    key: string,
-    value: string | ReadableStream | ArrayBuffer,
-    options?: unknown,
-  ): Promise<void>;
-  get(key: string, options?: unknown): Promise<string | null>;
-}
-
-interface D1Database {
-  prepare<Row = Record<string, unknown>>(query: string): D1PreparedStatement<Row>;
-}
-
 interface Env {
   KV: KVNamespace;
-  DB: D1Database;
   CONTACT_TTL_SECONDS?: string;
   CONTACT_NOTIFICATION_EMAILS?: string;
-  MAILCHANNELS_SENDER_EMAIL?: string;
-  MAILCHANNELS_SENDER_NAME?: string;
-  MAILCHANNELS_API_URL?: string;
+  CLOUDFLARE_TEAM_DOMAIN?: string;
+  CLOUDFLARE_ACCESS_AUDIENCE?: string;
+  ADMIN_OWNER_EMAILS?: string;
+  JWT_SECRET?: string;
+  DEV_AUTH_BYPASS?: string;
+  PUBLIC_API?: string;
+  GOOGLE_ADSENSE_CLIENT_ID?: string;
+  GOOGLE_ADSENSE_CLIENT_SECRET?: string;
+  GOOGLE_ADSENSE_REFRESH_TOKEN?: string;
+  GOOGLE_ADSENSE_ACCOUNT_ID?: string;
+  GOOGLE_GSC_CLIENT_ID?: string;
+  GOOGLE_GSC_CLIENT_SECRET?: string;
+  GOOGLE_GSC_REFRESH_TOKEN?: string;
+  GOOGLE_GSC_SITE_URL?: string;
+}
+
+declare module 'cloudflare:workers' {
+  export const env: Env;
 }
 
 declare namespace App {
   interface Locals {
-    runtime: {
-      env: Env;
-    };
     securityPolicySource?: 'response-header' | 'platform-config';
+    adminSession?: {
+      roles: string[];
+      permissions: import('@goldshore/auth').AdminPermission[];
+      actor?: string;
+      isAuthenticated?: boolean;
+    };
+    TURNSTILE_SITE_KEY?: string;
+    PUBLIC_API?: string;
   }
 }

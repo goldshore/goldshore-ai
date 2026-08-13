@@ -1,0 +1,84 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "dev:gs-web",
+      "type": "shell",
+      "command": "corepack",
+      "args": [
+        "pnpm",
+        "--dir",
+        "apps/gs-web",
+        "astro",
+        "dev",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "4321"
+      ],
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "goldshore-astro",
+        "fileLocation": [
+          "absolute"
+        ],
+        "pattern": [],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*",
+          "endsPattern": "Local: http://127.0.0.1:4321/"
+        }
+      }
+    },
+    {
+      "label": "dev:gs-api",
+      "type": "shell",
+      "command": "corepack",
+      "args": [
+        "pnpm",
+        "--filter",
+        "@goldshore/gs-api",
+        "dev",
+        "--",
+        "--port",
+        "8787"
+      ],
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "goldshore-api",
+        "fileLocation": [
+          "absolute"
+        ],
+        "pattern": [],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*",
+          "endsPattern": "gs-api dev server listening at http://127.0.0.1:8787"
+        }
+      }
+    },
+    {
+      "label": "tunnel:goldshore-lacie",
+      "type": "shell",
+      "command": "cloudflared",
+      "args": [
+        "tunnel",
+        "--config",
+        "C:\\Users\\marst\\.cloudflared\\goldshore-lacie-local.yml",
+        "run"
+      ],
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "dev:goldshore-lacie",
+      "dependsOrder": "parallel",
+      "dependsOn": [
+        "dev:gs-web",
+        "dev:gs-api",
+        "tunnel:goldshore-lacie"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}

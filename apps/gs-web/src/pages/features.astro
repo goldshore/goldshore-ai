@@ -1,0 +1,196 @@
+---
+import PublicHeader from '../components/PublicHeader.astro';
+import PublicFooter from '../components/PublicFooter.astro';
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Explore GoldShore's powerful features for financial data analysis and automated trading." />
+    <title>Features - GoldShore Platform</title>
+    <link rel="stylesheet" href="../styles/public.css" />
+    <link rel="stylesheet" href="../styles/features.css" />
+  </head>
+  <body class="gs-public-page">
+    <PublicHeader />
+    
+    <main class="gs-features-page">
+      <section class="gs-hero-section">
+        <div class="gs-container">
+          <div class="gs-hero-content">
+            <h1>Powerful Features</h1>
+            <p class="gs-hero-subtitle">Everything you need for professional trading</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="gs-features-section">
+        <div class="gs-container">
+          <div class="gs-features-grid">
+            <div class="gs-feature-card">
+              <div class="gs-feature-icon">📊</div>
+              <h3>Real-Time Market Data</h3>
+              <p>Access live market data across multiple exchanges with sub-second latency.</p>
+            </div>
+            <div class="gs-feature-card">
+              <div class="gs-feature-icon">🤖</div>
+              <h3>Automated Trading</h3>
+              <p>Deploy sophisticated trading algorithms with our rule-based automation engine.</p>
+            </div>
+            <div class="gs-feature-card">
+              <div class="gs-feature-icon">📈</div>
+              <h3>Advanced Analytics</h3>
+              <p>Analyze market trends with machine learning-powered insights and predictions.</p>
+            </div>
+            <div class="gs-feature-card">
+              <div class="gs-feature-icon">🔐</div>
+              <h3>Enterprise Security</h3>
+              <p>Bank-grade encryption and security protocols for maximum protection.</p>
+            </div>
+            <div class="gs-feature-card">
+              <div class="gs-feature-icon">⚡</div>
+              <h3>High Performance</h3>
+              <p>Built on Cloudflare's global edge network for maximum speed and reliability.</p>
+            </div>
+            <div class="gs-feature-card">
+              <div class="gs-feature-icon">🔌</div>
+              <h3>API Access</h3>
+              <p>Comprehensive REST and WebSocket APIs for seamless integration.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="gs-detailed-features">
+        <div class="gs-container">
+          <h2>Detailed Feature Breakdown</h2>
+          
+          <div class="gs-feature-detail">
+            <h3>Real-Time Analytics Dashboard</h3>
+            <p>Monitor your portfolio performance, track open positions, and analyze market data in real time with our intuitive dashboard.</p>
+          </div>
+
+          <div class="gs-feature-detail">
+            <h3>Backtesting Engine</h3>
+            <p>Test your strategies against historical market data to optimize your trading algorithms before deploying them live.</p>
+          </div>
+
+          <div class="gs-feature-detail">
+            <h3>Risk Management Tools</h3>
+            <p>Advanced risk analysis, position sizing recommendations, and automated stop-loss mechanisms.</p>
+          </div>
+
+          <div class="gs-feature-detail">
+            <h3>Multi-Exchange Support</h3>
+            <p>Trade across multiple exchanges from a single interface with unified order management.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="gs-cta-section">
+        <div class="gs-container">
+          <h2>Ready to Get Started?</h2>
+          <p>Join thousands of traders using GoldShore for smarter trading decisions.</p>
+          <a href="/pricing" class="gs-btn gs-btn-primary gs-btn-lg">View Pricing</a>
+        </div>
+      </section>
+    </main>
+
+    <PublicFooter />
+  </body>
+</html>
+
+<style>
+  .gs-features-page {
+    background: linear-gradient(135deg, #050b14 0%, #0f1622 100%);
+    color: rgba(226, 232, 240, 0.92);
+  }
+
+  .gs-features-section {
+    padding: 80px 20px;
+  }
+
+  .gs-features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 32px;
+    margin-top: 48px;
+  }
+
+  .gs-feature-card {
+    padding: 32px;
+    background: rgba(15, 22, 34, 0.5);
+    border: 1px solid rgba(226, 232, 240, 0.1);
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+  }
+
+  .gs-feature-card:hover {
+    border-color: rgba(59, 130, 246, 0.3);
+    transform: translateY(-4px);
+  }
+
+  .gs-feature-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+  }
+
+  .gs-feature-card h3 {
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+
+  .gs-feature-card p {
+    color: rgba(226, 232, 240, 0.6);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .gs-detailed-features {
+    padding: 80px 20px;
+  }
+
+  .gs-detailed-features h2 {
+    font-size: 36px;
+    margin-bottom: 48px;
+    text-align: center;
+  }
+
+  .gs-feature-detail {
+    margin-bottom: 40px;
+    padding: 32px;
+    background: rgba(15, 22, 34, 0.3);
+    border-left: 4px solid #3b82f6;
+    border-radius: 8px;
+  }
+
+  .gs-feature-detail h3 {
+    font-size: 20px;
+    margin-bottom: 12px;
+  }
+
+  .gs-feature-detail p {
+    color: rgba(226, 232, 240, 0.7);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  .gs-cta-section {
+    padding: 80px 20px;
+    text-align: center;
+  }
+
+  .gs-cta-section h2 {
+    font-size: 36px;
+    margin-bottom: 12px;
+  }
+
+  .gs-cta-section p {
+    font-size: 16px;
+    color: rgba(226, 232, 240, 0.7);
+    margin-bottom: 32px;
+  }
+</style>

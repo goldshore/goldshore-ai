@@ -97,7 +97,7 @@ const { serviceUrl } = Astro.props;
       if (apiVal) apiVal.innerText = 'CONNECTED';
       if (data.kv && kvVal) kvVal.innerText = String(data.kv).toUpperCase();
       if (data.db && dbVal) dbVal.innerText = String(data.db).toUpperCase();
-    } catch (_error) {
+    } catch {
       updateStatus('OFFLINE');
     } finally {
       isChecking = false;
