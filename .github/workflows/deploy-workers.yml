@@ -26,7 +26,10 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # Astro 7 requires >=22.12.0, so Node 20 fails this job at the build
+          # step every time. Track .node-version (22.22.2) like the other
+          # workflows instead of pinning a second, drifting version here.
+          node-version-file: .node-version
 
       - name: Install pnpm
         uses: pnpm/action-setup@v2
