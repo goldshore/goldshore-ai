@@ -1,0 +1,187 @@
+---
+// Hero animation component with animated gradients and floating elements
+---
+
+<div class="gs-hero-animation-container">
+  <div class="gs-gradient-orb gs-orb-1"></div>
+  <div class="gs-gradient-orb gs-orb-2"></div>
+  <div class="gs-gradient-orb gs-orb-3"></div>
+  
+  <div class="gs-floating-elements">
+    <div class="gs-float-element gs-element-1"></div>
+    <div class="gs-float-element gs-element-2"></div>
+    <div class="gs-float-element gs-element-3"></div>
+  </div>
+
+  <canvas id="gs-hero-canvas"></canvas>
+</div>
+
+<style>
+  .gs-hero-animation-container {
+    position: relative;
+    width: 100%;
+    height: 600px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #050b14 0%, #0f1622 100%);
+  }
+
+  .gs-gradient-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    opacity: 0.6;
+    animation: float 20s ease-in-out infinite;
+  }
+
+  .gs-orb-1 {
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, #3b82f6, transparent);
+    top: -50px;
+    left: -50px;
+    animation-delay: 0s;
+  }
+
+  .gs-orb-2 {
+    width: 250px;
+    height: 250px;
+    background: radial-gradient(circle, #8b5cf6, transparent);
+    top: 50%;
+    right: -100px;
+    animation-delay: 5s;
+  }
+
+  .gs-orb-3 {
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, #ec4899, transparent);
+    bottom: -50px;
+    left: 20%;
+    animation-delay: 10s;
+  }
+
+  .gs-floating-elements {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .gs-float-element {
+    position: absolute;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 50%;
+    animation: float-element 30s linear infinite;
+  }
+
+  .gs-element-1 {
+    width: 100px;
+    height: 100px;
+    top: 20%;
+    left: 10%;
+    animation-delay: 0s;
+  }
+
+  .gs-element-2 {
+    width: 150px;
+    height: 150px;
+    top: 60%;
+    right: 15%;
+    animation-delay: 10s;
+  }
+
+  .gs-element-3 {
+    width: 80px;
+    height: 80px;
+    top: 40%;
+    right: 5%;
+    animation-delay: 20s;
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translate(0, 0);
+    }
+    25% {
+      transform: translate(20px, -20px);
+    }
+    50% {
+      transform: translate(0, 20px);
+    }
+    75% {
+      transform: translate(-20px, -10px);
+    }
+  }
+
+  @keyframes float-element {
+    0% {
+      transform: translate(0, 0);
+      opacity: 0.3;
+    }
+    50% {
+      opacity: 0.6;
+    }
+    100% {
+      transform: translate(30px, 30px);
+      opacity: 0.3;
+    }
+  }
+
+  #gs-hero-canvas {
+    position: absolute;
+    inset: 0;
+  }
+</style>
+
+<script>
+  const canvas = document.getElementById('gs-hero-canvas') as HTMLCanvasElement;
+  const ctx = canvas.getContext('2d');
+
+  function resizeCanvas() {
+    const container = canvas.parentElement;
+    if (container) {
+      canvas.width = container.clientWidth;
+      canvas.height = container.clientHeight;
+    }
+  }
+
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  let animationFrameId: number;
+
+  function animate() {
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw animated grid background
+    const gridSize = 40;
+    const time = Date.now() / 5000;
+
+    ctx.strokeStyle = `rgba(59, 130, 246, ${0.05 + Math.sin(time) * 0.05})`;
+    ctx.lineWidth = 1;
+
+    for (let x = 0; x < canvas.width; x += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, canvas.height);
+      ctx.stroke();
+    }
+
+    for (let y = 0; y < canvas.height; y += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(canvas.width, y);
+      ctx.stroke();
+    }
+
+    animationFrameId = requestAnimationFrame(animate);
+  }
+
+  animate();
+
+  // Cleanup on page unload
+  window.addEventListener('beforeunload', () => {
+    cancelAnimationFrame(animationFrameId);
+  });
+</script>
