@@ -16,7 +16,7 @@ Do not add new app workers or deploy workflows for retired services. All backend
 - **Production routes:** `api.goldshore.ai/*`, `api.goldshore.org/*`, plus consolidated backend hostnames `agent.goldshore.ai/*`, `mail.goldshore.ai/*`, `ops.goldshore.ai/*`, `trading.goldshore.ai/*`, `dashboard.goldshore.ai/*`, and `dash.goldshore.ai/*`
 - **Preview:** `workers_dev = true`; preview API route `api-preview.goldshore.ai/*`
 - **Canonical bindings:**
-  - KV: `KV`, `CONTROL_LOGS`, `RISK_RADAR_CACHE`
+  - KV: `KV`, `CONTROL_LOGS`, `TRADING_KV`
   - D1: `PLATFORM_DB`, `AUDIT_DB`, `SIGNALS_DB`, `RISK_RADAR_DB`, `JOBS_DB`
   - R2: `GS_ASSETS`, `TELEMETRY`, `RISK_RADAR_R2`
   - AI: `AI`
@@ -31,7 +31,7 @@ Do not add new app workers or deploy workflows for retired services. All backend
 - **Preview:** `workers_dev = true`; preview API route `api-preview.goldshore.ai/*`
 
 - **Canonical bindings:**
-  - KV: `KV`, `CONTROL_LOGS`, `RISK_RADAR_CACHE`
+  - KV: `KV`, `CONTROL_LOGS`, `TRADING_KV`
   - D1: `PLATFORM_DB`, `AUDIT_DB`, `SIGNALS_DB`, `RISK_RADAR_DB`, `JOBS_DB`
   - R2: `GS_ASSETS`, `TELEMETRY`, `RISK_RADAR_R2`
   - AI: `AI`
