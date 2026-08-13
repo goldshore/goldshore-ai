@@ -462,16 +462,12 @@ All rights reserved.
 - **D1:** `gs_platform_db` (9703574e) · `gs_audit_db` (1ae71d76)
 
 ## Deploy
-```bash
-# gs-web (goldshore.ai)
-cd apps/gs-web && pnpm build && wrangler pages deploy dist
 
-# gs-api
-cd apps/gs-api && wrangler deploy
-
-# gs-gateway (gs-platform)
-cd apps/gs-gateway && wrangler deploy
-```
+Use `.github/workflows/deploy-gs-web.yml` and
+`.github/workflows/deploy-gs-api.yml`. Production jobs require approval through
+the GitHub `production` environment. Local validation uses
+`pnpm exec wrangler deploy --env prod --dry-run` from the relevant canonical app;
+do not deploy directly or restore a satellite Worker.
 
 ## Secrets needed
 - `CLOUDFLARE_API_TOKEN` · `CLOUDFLARE_ACCOUNT_ID` (GitHub Actions)

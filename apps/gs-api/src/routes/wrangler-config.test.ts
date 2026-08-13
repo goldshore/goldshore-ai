@@ -10,6 +10,16 @@ const queueConsumers = (config: string) =>
   [...config.matchAll(/\[\[env\.prod\.queues\.consumers\]\][\s\S]*?queue\s*=\s*"([^"]+)"/g)]
     .map((match) => match[1]);
 
+const productionRoutes = (config: string) => {
+  const routes = config.match(/^routes = \[([\s\S]*?)^\]/m)?.[1] ?? '';
+  return [...routes.matchAll(/pattern = "([^"]+)", zone_name = "([^"]+)"/g)]
+    .map(([, pattern, zoneName]) => ({ pattern, zoneName }));
+};
+
+const d1Bindings = (config: string) =>
+  [...config.matchAll(/\[\[env\.prod\.d1_databases\]\]\s*binding = "([^"]+)"/g)]
+    .map((match) => match[1]);
+
 describe('two-app Cloudflare binding contract', () => {
   it('assigns all production queue consumers and the signals Workflow to gs-api', () => {
     assert.deepEqual(queueConsumers(apiConfig).sort(), [
@@ -20,14 +30,46 @@ describe('two-app Cloudflare binding contract', () => {
     assert.match(apiConfig, /dead_letter_queue = "gs-mail-dead-letter"/);
     assert.match(
       apiConfig,
-      /\[\[env\.prod\.workflows\]\][\s\S]*?binding = "GS_SIGNALS"[\s\S]*?name = "gs-signals-evaluator"/,
+      /\[\[env\.prod\.workflows\]\][\s\S]*?binding = "GS_SIGNALS"[\s\S]*?name = "gs-signals-evaluator"[\s\S]*?class_name = "SignalsEvaluator"/,
     );
+    assert.ok(!d1Bindings(apiConfig).includes('GS_SIGNALS'));
+  });
+
+  it('keeps every verified production route on the unified API', () => {
+    assert.deepEqual(productionRoutes(apiConfig), [
+      { pattern: 'api.goldshore.ai/*', zoneName: 'goldshore.ai' },
+      { pattern: 'api.goldshore.org/*', zoneName: 'goldshore.org' },
+      { pattern: 'agent.goldshore.ai/*', zoneName: 'goldshore.ai' },
+      { pattern: 'agent.goldshore.org/*', zoneName: 'goldshore.org' },
+      { pattern: 'mail.goldshore.ai/*', zoneName: 'goldshore.ai' },
+      { pattern: 'mail.goldshore.org/*', zoneName: 'goldshore.org' },
+      { pattern: 'ops.goldshore.ai/*', zoneName: 'goldshore.ai' },
+      { pattern: 'trading.goldshore.ai/*', zoneName: 'goldshore.ai' },
+      { pattern: 'trading.goldshore.org/*', zoneName: 'goldshore.org' },
+      { pattern: 'dashboard.goldshore.ai/*', zoneName: 'goldshore.ai' },
+      { pattern: 'dash.goldshore.ai/*', zoneName: 'goldshore.ai' },
+      { pattern: 'gw.goldshore.ai/*', zoneName: 'goldshore.ai' },
+    ]);
+  });
+
+  it('declares the cron consumed by the scheduled module handler', () => {
+    assert.match(apiConfig, /\[env\.prod\.triggers\]\s*crons = \["0 2 \* \* \*"\]/);
   });
 
   it('keeps databases, object storage, queues, Workflows, and mail off gs-web', () => {
     assert.match(webConfig, /\[assets\][\s\S]*?binding = "ASSETS"/);
-    assert.doesNotMatch(webConfig, /^binding = "(?:KV|SESSION|PLATFORM_DB|GS_ASSETS|MAIL_JOBS_QUEUE|EMAIL)"$/m);
-    assert.doesNotMatch(webConfig, /\[\[env\.prod\.(?:kv_namespaces|d1_databases|r2_buckets|queues|services|workflows|send_email)/);
+
+    // SESSION is deliberately absent from this list: gs-web binds a KV
+    // namespace for Astro session/auth state. Everything transactional still
+    // belongs to gs-api.
+    assert.doesNotMatch(webConfig, /^binding = "(?:KV|PLATFORM_DB|GS_ASSETS|MAIL_JOBS_QUEUE|EMAIL)"$/m);
+    assert.doesNotMatch(webConfig, /\[\[env\.prod\.(?:d1_databases|r2_buckets|queues|services|workflows|send_email)/);
+
+    // gs-web's only permitted KV binding is the session store.
+    const webKvBindings = [...webConfig.matchAll(/^binding = "(\w+)"$/gm)]
+      .map((m) => m[1])
+      .filter((b) => b !== 'ASSETS' && b !== 'IMAGES');
+    assert.deepEqual([...new Set(webKvBindings)], ['SESSION']);
   });
 
   it('declares no dedicated preview Worker environments', () => {

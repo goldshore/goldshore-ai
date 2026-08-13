@@ -4,6 +4,14 @@ This is the implementation handoff for the two-app production architecture. It
 describes repository intent; it does not assert that the Cloudflare dashboard has
 already been changed.
 
+> **Handoff status: UNVERIFIED REPORT.** Every DNS record, Worker route, Access
+> policy, and dashboard binding mentioned below is expected state only until an
+> authorized operator completes the read-only procedure in
+> [`reports/cloudflare-live-state-handoff.md`](../../reports/cloudflare-live-state-handoff.md).
+> Historical dashboard observations and inferred wildcard coverage do not verify
+> an item. Report discrepancies without changing Cloudflare or the Wrangler
+> manifests.
+
 ## Runtime ownership
 
 | Surface | Canonical runtime | Responsibilities |
@@ -17,10 +25,12 @@ There is no standalone admin, mail, gateway, agent, or preview application in th
 repository contract. Do not delete live legacy resources until request logs and
 route inventory prove that traffic has moved.
 
-## Binding baseline
+## Expected binding baseline (unverified report)
 
-`gs-web-prod` has only `ASSETS`, `IMAGES`, public runtime variables, and
-dashboard-managed Access secrets. Astro's implicit session store is disabled.
+The canonical `gs-web` manifest expects `ASSETS`, `IMAGES`, and `SESSION`, plus
+public runtime variables. Whether the live Worker has that exact set is
+unverified; the manifest, rather than historical dashboard observations, is the
+comparison baseline.
 
 `gs-api-prod` owns:
 

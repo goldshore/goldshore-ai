@@ -10,7 +10,8 @@ workers_dev = false
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Production environment
-# Canonical environment name is "prod". Use `wrangler deploy --env prod`.
+# Canonical environment name is "prod". Validate locally with
+# `pnpm exec wrangler deploy --env prod --dry-run`; production uses the protected workflow.
 # ══════════════════════════════════════════════════════════════════════════════
 
 [env.prod]
@@ -70,32 +71,26 @@ MAIL_FROM_EMAIL = "noreply@goldshore.ai"
 MAIL_FROM_NAME = "GoldShore"
 
 # GITHUB_API_TOKEN is a secret for Phase 2 Admin Deployment Assistant.
-#   wrangler secret put GITHUB_API_TOKEN --env prod --name gs-api
 #   Value: <personal access token with public_repo scope>
 # Required for searching GitHub repositories and validating wrangler.toml files.
 
 # ANTHROPIC_API_KEY is a secret for Phase 2 Admin Deployment Assistant Claude ranking.
-#   wrangler secret put ANTHROPIC_API_KEY --env prod --name gs-api
 #   Value: <Anthropic API key>
 # Required for AI-powered framework ranking and recommendations.
 
 # GITHUB_CLIENT_SECRET is a secret for GitHub OAuth authentication.
-#   wrangler secret put GITHUB_CLIENT_SECRET --env prod --name gs-api
 #   Value: <GitHub OAuth app client secret from https://github.com/settings/developers>
 # Required for /auth/github/callback and session creation.
 
 # GS_GITHUB_WEBHOOK_SECRET is the HMAC secret shared only with GitHub repository
 # webhooks. It is distinct from INTEGRATION_MASTER_KEY and OAuth credentials.
-#   wrangler secret put GS_GITHUB_WEBHOOK_SECRET --env prod --name gs-api
 
 # TURNSTILE_SECRET_KEY is a secret for Cloudflare Turnstile bot protection validation.
-#   wrangler secret put TURNSTILE_SECRET_KEY --env prod --name gs-api
 #   Value: <Turnstile secret key from https://dash.cloudflare.com/>
 # Required for validating Turnstile responses on form submissions.
 
 # GOOGLE_ADMIN_SERVICE_ACCOUNT is a JSON Worker secret used only by the
 # disabled-by-default Workspace RBAC sync.
-#   wrangler secret put GOOGLE_ADMIN_SERVICE_ACCOUNT --env prod --name gs-api
 
 # ── KV ───────────────────────────────────────────────────────────────────────
 [[env.prod.kv_namespaces]]
