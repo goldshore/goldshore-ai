@@ -1,15 +1,54 @@
 import { type AccessTokenPayload } from "@goldshore/auth";
+import { type SessionUser } from "./lib/sessions";
 
 export type Env = {
   KV: KVNamespace;
   CONTROL_LOGS?: KVNamespace;
+  RISK_RADAR_CACHE?: KVNamespace;
+  TRADING_KV?: KVNamespace;
   PLATFORM_DB: D1Database;
+  AUDIT_DB?: D1Database;
+  SIGNALS_DB?: D1Database;
+  JOBS_DB?: D1Database;
+  PAPER_DB?: D1Database;
+  RISK_RADAR_DB?: D1Database;
+  TELEMETRY_DB?: D1Database;
   GS_ASSETS: R2Bucket;
+  RISK_RADAR_R2?: R2Bucket;
+  TELEMETRY?: R2Bucket;
+  AUTH_SESSION?: DurableObjectNamespace;
   AI: Ai;
+  INTEGRATION_MASTER_KEY?: string;
+  JOBS_QUEUE?: Queue;
+  EVENTS_QUEUE?: Queue;
+  MAIL_JOBS_QUEUE?: Queue;
+  DEAD_LETTER_QUEUE?: Queue;
+  GS_SIGNALS?: Workflow<SignalsEvaluatorParams>;
   OPENAI_API_KEY?: string;
   GEMINI_API_KEY?: string;
+  ANTHROPIC_API_KEY?: string;
+  ANTHROPIC_GATEWAY_ID?: string;
+  ANTHROPIC_GATEWAY_VERIFIED?: string;
+  LLM_API_KEY?: string;
+  LLM_PROVIDER?: string;
+  LLM_MODEL?: string;
+  LLM_TEMPERATURE?: string;
+  LLM_MAX_TOKENS?: string;
+  LLM_BASE_URL?: string;
+  OPENCLAW_API_KEY?: string;
+  OPENCLAW_BASE_URL?: string;
+  LOCAL_LLM_API_KEY?: string;
+  LOCAL_LLM_BASE_URL?: string;
+  JWT_SECRET?: string;
+  STRIPE_API_KEY?: string;
+  SENDGRID_API_KEY?: string;
+  ACCESS_CLIENT_SECRET?: string;
   CLOUDFLARE_ACCESS_AUDIENCE?: string;
   CLOUDFLARE_TEAM_DOMAIN?: string;
+  CLOUDFLARE_ACCESS_APPLICATION?: string;
+  CLOUDFLARE_SERVICE_ACCESS_AUDIENCE?: string;
+  CONTROL_SYNC_TOKEN?: string;
+  ALLOWED_ORIGINS?: string;
   API_VERSION?: string;
   DEPLOY_SHA?: string;
   GIT_SHA?: string;
@@ -20,11 +59,63 @@ export type Env = {
   MAIL_ALLOWED_RECIPIENTS?: string;
   AGENT?: Fetcher;
   API_ORIGIN?: string;
+  CLOUDFLARE_API_TOKEN?: string;
+  GITHUB_TOKEN?: string;
+  GITHUB_API_TOKEN?: string;
+  GH_TOKEN?: string;
+  CLOUDFLARE_ACCOUNT_ID?: string;
+  CLOUDFLARE_ZONE_ID?: string;
+  CLOUDFLARE_ZONE_NAME?: string;
+  CLOUDFLARE_PAGES_PROJECT?: string;
+  ADMIN_URL?: string;
+  ENV?: string;
+  STATE_MUTATIONS_ENABLED?: string;
   DEV_AUTH_BYPASS?: string;
+  GOOGLE_OAUTH_CLIENT_ID?: string;
+  GOOGLE_OAUTH_CLIENT_SECRET?: string;
+  GOOGLE_OAUTH_REDIRECT_URI?: string;
+  GOOGLE_BUSINESS_OAUTH_REDIRECT_URI?: string;
+  GITHUB_CLIENT_ID?: string;
+  GITHUB_CLIENT_SECRET?: string;
+  GITHUB_OAUTH_REDIRECT_URI?: string;
+  TURNSTILE_SITE_KEY?: string;
+  TURNSTILE_SECRET_KEY?: string;
+  CONTACT_NOTIFICATION_EMAILS?: string;
+  PUBLIC_SITE_URL?: string;
+  MAILCHANNELS_SENDER_EMAIL?: string;
+  MAILCHANNELS_SENDER_NAME?: string;
+  MAILCHANNELS_API_URL?: string;
+  GOOGLE_ADS_DEVELOPER_TOKEN?: string;
+  GOOGLE_ADS_LOGIN_CUSTOMER_ID?: string;
+  GOOGLE_ANALYTICS_PROPERTY_ID?: string;
+  META_APP_ID?: string;
+  META_APP_SECRET?: string;
+  META_BUSINESS_ID?: string;
+  META_AD_ACCOUNT_ID?: string;
+  META_PIXEL_ID?: string;
+  INSTAGRAM_BUSINESS_ACCOUNT_ID?: string;
+  X_CLIENT_ID?: string;
+  X_CLIENT_SECRET?: string;
+  X_AD_ACCOUNT_ID?: string;
+  GOLDCLAW_SANDBOX_API_URL?: string;
+  GOLDCLAW_SANDBOX_API_TOKEN?: string;
+  GOLDCLAW_SANDBOX_PROVIDER?: string;
+  OAUTH_TOKEN_ENCRYPTION_KEY?: string;
+  GOOGLE_BUSINESS_OWNERSHIP_VERIFIED?: string;
+  GOOGLE_OAUTH_PRODUCTION_APPROVED?: string;
+  GOOGLE_BUSINESS_ACCOUNT_IDS?: string;
+  GOOGLE_BUSINESS_LOCATION_IDS?: string;
+};
+
+export type SignalsEvaluatorParams = {
+  signalId: string;
+  source?: string;
+  payload?: Record<string, unknown>;
 };
 
 export type Variables = {
   accessClaims: AccessTokenPayload | null;
+  user?: SessionUser;
 };
 
 export type AuditEvent = {
@@ -33,4 +124,32 @@ export type AuditEvent = {
   status: "success" | "denied" | "error";
   metadata?: Record<string, unknown>;
   timestamp: string;
+};
+
+export type KeyType = 'apiKey' | 'apiSecret' | 'webhook_secret' | 'oauth_token';
+
+export type IntegrationSecret = {
+  id: string;
+  integration_id: string;
+  key_type: KeyType;
+  key_prefix: string;
+  key_hash: string;
+  created_at: string;
+  rotated_at?: string;
+  expires_at?: string;
+  created_by: string;
+  rotation_count: number;
+  metadata?: Record<string, unknown>;
+};
+
+export type IntegrationSecretRequest = {
+  integration_id: string;
+  key_type: KeyType;
+  value: string;
+  metadata?: Record<string, unknown>;
+  expires_at?: string;
+};
+
+export type IntegrationSecretResponse = Omit<IntegrationSecret, 'encrypted_value'> & {
+  key_prefix: string;
 };

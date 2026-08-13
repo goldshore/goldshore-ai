@@ -1,14 +1,7 @@
 ---
-import WebLayout from './WebLayout.astro';
-
+import BaseLayout from './BaseLayout.astro';
 const { title, description, canonicalPath, ogTitle, ogDescription } = Astro.props;
 ---
-<WebLayout
-  title={title}
-  description={description}
-  canonicalPath={canonicalPath}
-  ogTitle={ogTitle}
-  ogDescription={ogDescription}
->
+<BaseLayout {title} {description} {canonicalPath} {ogTitle} {ogDescription}>
   <slot />
-</WebLayout>
+</BaseLayout>

@@ -1,0 +1,107 @@
+name: Google Chat Notifications
+
+on:
+  workflow_run:
+    workflows:
+      - "CI"
+      - "Required Merge Checks"
+      - "Repo Health"
+      - "Deploy gs-web"
+      - "Deploy gs-api"
+      - "Cloudflare read-only audit"
+    types: [completed]
+  schedule:
+    # Weekly reminder: every Monday 9am UTC
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+    inputs:
+      message:
+        description: "Custom message to send to Google Chat"
+        required: false
+        default: "Manual notification triggered"
+
+permissions: {}
+
+concurrency:
+  group: notify-chat-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  notify-failure:
+    name: Notify on CI failure
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: >
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'failure'
+    steps:
+      - name: Send failure alert to Google Chat
+        env:
+          WEBHOOK: ${{ secrets.GOOGLE_CHAT_WEBHOOK }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          WORKFLOW: ${{ github.event.workflow_run.name }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ -z "$WEBHOOK" ]; then
+            echo "GOOGLE_CHAT_WEBHOOK secret not set - skipping notification"
+            exit 0
+          fi
+          curl --fail-with-body --silent --show-error --retry 3 -X POST "$WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n \
+              --arg workflow "$WORKFLOW" \
+              --arg branch "$BRANCH" \
+              --arg repo "$REPO" \
+              --arg url "$RUN_URL" \
+              '{text: ("*CI FAILED* on `" + $repo + "`\nWorkflow: " + $workflow + "\nBranch: `" + $branch + "`\n<" + $url + "|View run>")}')"  
+
+  weekly-api-key-reminder:
+    name: Weekly API key reminder
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Send API key checklist reminder
+        env:
+          WEBHOOK: ${{ secrets.GOOGLE_CHAT_WEBHOOK }}
+          REPO: ${{ github.repository }}
+          CUSTOM_MSG: ${{ github.event.inputs.message }}
+          HAS_CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+          HAS_DEPLOY_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN != '' }}
+          HAS_GCHAT: ${{ secrets.GOOGLE_CHAT_WEBHOOK != '' }}
+          HAS_GOOGLE_OAUTH_CLIENT: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID != '' }}
+          HAS_ADS_TOKEN: ${{ secrets.GOOGLE_ADS_DEVELOPER_TOKEN != '' }}
+        run: |
+          if [ -z "$WEBHOOK" ]; then
+            echo "GOOGLE_CHAT_WEBHOOK not set. To enable notifications:"
+            echo "1. Go to chat.google.com -> create Space 'goldshore-ci'"
+            echo "2. Space settings -> Apps & integrations -> Webhooks -> Add webhook"
+            echo "3. Add webhook URL as GOOGLE_CHAT_WEBHOOK in repo secrets"
+            exit 0
+          fi
+
+          check() { [ "$1" = "true" ] && echo "OK" || echo "MISSING"; }
+
+          MSG="*Goldshore API Key Status* (weekly check)\n"
+          MSG+="Repo: $REPO\n\n"
+          MSG+="*Cloudflare*\n"
+          MSG+="  CLOUDFLARE_API_TOKEN: $(check $HAS_CF_TOKEN)\n"
+          MSG+="  CLOUDFLARE_BUILD_API_TOKEN: $(check $HAS_DEPLOY_TOKEN)\n"
+          MSG+="  -> Renew at: https://dash.cloudflare.com/profile/api-tokens\n\n"
+          MSG+="*Google APIs*\n"
+          MSG+="  GOOGLE_OAUTH_CLIENT_ID: $(check $HAS_GOOGLE_OAUTH_CLIENT)\n"
+          MSG+="  GOOGLE_ADS_DEVELOPER_TOKEN: $(check $HAS_ADS_TOKEN)\n"
+          MSG+="  -> Set up at: https://console.cloud.google.com/apis/credentials\n"
+          MSG+="  -> Ads token: https://ads.google.com/aw/apicenter\n\n"
+          MSG+="*Google Chat*\n"
+          MSG+="  GOOGLE_CHAT_WEBHOOK: $(check $HAS_GCHAT)\n\n"
+          MSG+="Full checklist: https://github.com/$REPO/blob/main/docs/api-keys-checklist.md"
+
+          if [ -n "$CUSTOM_MSG" ] && [ "$CUSTOM_MSG" != "Manual notification triggered" ]; then
+            MSG="$CUSTOM_MSG\n\n$MSG"
+          fi
+
+          curl --fail-with-body --silent --show-error --retry 3 -X POST "$WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n --arg text "$MSG" '{text: $text}')"

@@ -60,6 +60,7 @@ Thumbs.db
 !.vscode/extensions.json
 !.vscode/settings.json
 !.vscode/launch.json
+!.vscode/tasks.json
 .idea
 *.swp
 *.swo
@@ -96,3 +97,5 @@ reports/*.txt
 .codex-remote-attachments/
 .codex/
 .mcp.json
+.codex-remote-attachments/
+.jules/

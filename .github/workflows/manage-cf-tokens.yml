@@ -1,53 +1,139 @@
-name: Manage Cloudflare Tokens
+name: Inventory Cloudflare secret names
 
+# Read-only drift inventory. Cloudflare production configuration is changed only
+# by an approved human in the dashboard; this workflow has no Cloudflare credentials.
 on:
+  pull_request:
+    paths:
+      - 'apps/gs-web/wrangler.toml'
+      - 'apps/gs-api/wrangler.toml'
+      - 'infra/Cloudflare/dashboard-inventory.json'
+      - 'scripts/export-cloudflare-inventory.py'
+      - '.github/workflows/manage-cf-tokens.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/gs-web/wrangler.toml'
+      - 'apps/gs-api/wrangler.toml'
+      - 'infra/Cloudflare/dashboard-inventory.json'
+      - 'scripts/export-cloudflare-inventory.py'
+      - '.github/workflows/manage-cf-tokens.yml'
   workflow_dispatch:
-    inputs:
-      action:
-        description: 'Action to perform'
-        required: true
-        type: choice
-        options:
-          - list
-          - create
-          - delete
-      token_name:
-        description: 'Token name (for create/delete)'
-        required: false
-        type: string
-      token_permissions:
-        description: 'Comma-separated permissions for create (e.g. "workers_scripts:edit,d1:edit")'
-        required: false
-        type: string
 
 permissions:
   contents: read
 
 jobs:
-  manage-tokens:
-    name: Manage CF Tokens (${{ inputs.action }})
+  inventory:
+    name: Export redacted expected state
     runs-on: ubuntu-latest
     steps:
-      - name: List tokens
-        if: inputs.action == 'list'
+      - name: Normalize CF user token
         env:
-          CF_USER_TOKEN: ${{ secrets.CF_USER_TOKEN }}
+          RAW_CF_USER_TOKEN: ${{ secrets.CF_USER_TOKEN }}
         run: |
           python3 - <<'PY'
-          import json, os, urllib.request
+          import os, re
 
-          TOKEN = os.environ["CF_USER_TOKEN"]
+          raw = os.environ.get("RAW_CF_USER_TOKEN", "")
+          token = raw.replace("\r", "").replace("\n", "").strip()
+          bearer = re.search(r"(?:authorization\s*:\s*)?bearer\s+([^\s\"',;}]+)", token, re.I)
+          if bearer:
+              token = bearer.group(1)
+          cfut = re.search(r"cfut_[A-Za-z0-9_-]+", token)
+          if cfut:
+              token = cfut.group(0)
+          token = re.sub(r"^[`'\"]+|[`'\",;}]+$", "", token)
+          token = re.sub(r"\s+", "", token)
+
+          if not token:
+              print("No CF_USER_TOKEN provided; workflow will use CF_AUTH_EMAIL + CF_AUTH_KEY if configured.")
+              raise SystemExit(0)
+
+          print(f"Normalized CF_USER_TOKEN (masked): {token[:4]}...{token[-4:] if len(token) > 8 else ''}")
+          print(f"::add-mask::{token}")
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env:
+              env.write(f"CF_USER_TOKEN={token}\n")
+          PY
+
+      - name: Verify credentials
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.request, urllib.error
+
+          API_BASE = "https://api.cloudflare.com/client/v4"
+
+          token = os.environ.get("CF_USER_TOKEN", "").strip()
+          email = os.environ.get("CF_AUTH_EMAIL", "").strip()
+          key   = os.environ.get("CF_AUTH_KEY",   "").strip()
+
+          def cf_get(path, headers, method):
+              req = urllib.request.Request(f"{API_BASE}/{path}", headers=headers)
+              try:
+                  with urllib.request.urlopen(req) as r:
+                      data = json.loads(r.read())
+                      if not data["success"]:
+                          raise SystemExit(f"Auth rejected on {path} (auth method: {method}): {data['errors']}")
+                      return data["result"]
+              except urllib.error.HTTPError as e:
+                  body = e.read().decode()
+                  raise SystemExit(f"HTTP {e.code} on /{path} (auth method: {method}):\n{body}")
+
+          if email and key:
+              headers = {"X-Auth-Email": email, "X-Auth-Key": key, "Content-Type": "application/json"}
+              method  = "Global API Key"
+              print(f"Using Global API Key for email: {email}")
+              user = cf_get("user", headers, method)
+              print(f"Email       : {user.get('email')}")
+              print(f"Username    : {user.get('username')}")
+          elif token:
+              headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+              method  = "API Token (Bearer)"
+              print(f"Using API Token (masked): {token[:4]}...{token[-4:] if len(token)>8 else ''}")
+              verified = cf_get("user/tokens/verify", headers, method)
+              print(f"Token ID    : {verified.get('id')}")
+              print(f"Token status: {verified.get('status')}")
+              if verified.get("status") != "active":
+                  raise SystemExit(f"Cloudflare token is not active: {verified.get('status')}")
+          else:
+              raise SystemExit("No credentials. Configure CF_USER_TOKEN or both CF_AUTH_EMAIL and CF_AUTH_KEY as GitHub secrets.")
+          PY
+
+      - name: List tokens
+        if: inputs.action == 'list'
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.request, urllib.error
+
+          token = os.environ.get("CF_USER_TOKEN", "").strip()
+          email = os.environ.get("CF_AUTH_EMAIL", "").strip()
+          key   = os.environ.get("CF_AUTH_KEY",   "").strip()
+
+          if email and key:
+              headers = {"X-Auth-Email": email, "X-Auth-Key": key, "Content-Type": "application/json"}
+              method = "Global API Key"
+          elif token:
+              headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+              method = "API Token (Bearer)"
+          else:
+              raise SystemExit("No credentials. Configure CF_USER_TOKEN or both CF_AUTH_EMAIL and CF_AUTH_KEY as GitHub secrets.")
+
+          print(f"Auth method : {method}")
 
           def cf_get(path):
               req = urllib.request.Request(
                   f"https://api.cloudflare.com/client/v4/{path}",
-                  headers={"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"},
+                  headers=headers,
               )
-              with urllib.request.urlopen(req) as r:
-                  data = json.loads(r.read())
-                  if not data["success"]:
-                      raise SystemExit(f"CF API error: {data}")
-                  return data["result"]
+              try:
+                  with urllib.request.urlopen(req) as r:
+                      data = json.loads(r.read())
+                      if not data["success"]:
+                          raise SystemExit(f"CF API error: {data}")
+                      return data["result"]
+              except urllib.error.HTTPError as e:
+                  body = e.read().decode()
+                  raise SystemExit(f"CF API HTTP {e.code} on {path} (auth method: {method}):\n{body}")
 
           tokens = cf_get("user/tokens")
           print(f"{'Name':<40} {'Status':<10} {'Last Used'}")
@@ -60,40 +146,94 @@ jobs:
       - name: Create token
         if: inputs.action == 'create'
         env:
-          CF_USER_TOKEN: ${{ secrets.CF_USER_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           TOKEN_NAME: ${{ inputs.token_name }}
           TOKEN_PERMISSIONS: ${{ inputs.token_permissions }}
         run: |
           python3 - <<'PY'
-          import json, os, urllib.request
+          import json, os, urllib.request, urllib.error
 
-          TOKEN = os.environ["CF_USER_TOKEN"]
+          token   = os.environ.get("CF_USER_TOKEN", "").strip()
+          email   = os.environ.get("CF_AUTH_EMAIL", "").strip()
+          key     = os.environ.get("CF_AUTH_KEY",   "").strip()
           ACCOUNT = os.environ["CLOUDFLARE_ACCOUNT_ID"]
-          NAME = os.environ["TOKEN_NAME"]
-          PERMS_RAW = os.environ.get("TOKEN_PERMISSIONS", "workers_scripts:edit,d1:edit,kv_storage:edit,pages:edit,workers_routes:edit,account_settings:read")
+          NAME    = os.environ["TOKEN_NAME"]
+          PERMS_RAW = os.environ.get("TOKEN_PERMISSIONS", "").strip() or \
+              "workers_scripts:edit,d1:edit,kv_storage:edit,pages:edit,workers_routes:edit,account_settings:read"
 
-          PERM_MAP = {
-              "workers_scripts:edit": {"id": "e086da7e2179491d91ee5f35b3ca210a", "effect": "allow"},
-              "d1:edit":              {"id": "2efd5506f9c8494dacb1fa10a3e7d5b6", "effect": "allow"},
-              "kv_storage:edit":      {"id": "f7f0eda5697f475c90846e879bab8666", "effect": "allow"},
-              "pages:edit":           {"id": "3030687196b94b638145a3953da2b699", "effect": "allow"},
-              "workers_routes:edit":  {"id": "9af8e4e7548b4d6a985399dc62d20d6a", "effect": "allow"},
-              "account_settings:read":{"id": "0f093e63e3424b1c8e1f7d11d72c1e39", "effect": "allow"},
-              "r2_storage:edit":      {"id": "6a770521628a4a50b5e026ceebb55c1c", "effect": "allow"},
-              "queues:edit":          {"id": "fde1bf37f0cd48b8897b5bdc9e7d5e14", "effect": "allow"},
+          if email and key:
+              headers = {"X-Auth-Email": email, "X-Auth-Key": key, "Content-Type": "application/json"}
+              method = "Global API Key"
+          elif token:
+              headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+              method = "API Token (Bearer)"
+          else:
+              raise SystemExit("No credentials. Configure CF_USER_TOKEN or both CF_AUTH_EMAIL and CF_AUTH_KEY as GitHub secrets.")
+
+          print(f"Auth method : {method}")
+
+          # Keyword aliases: shorthand input -> words that must appear in the CF group name
+          PERM_KEYWORDS = {
+              "workers_scripts:edit": (["workers scripts"], "edit"),
+              "workers_routes:edit":  (["workers routes"], "edit"),
+              "d1:edit":              (["d1"], "edit"),
+              "kv_storage:edit":      (["kv storage"], "edit"),
+              "pages:edit":           (["pages"], "edit"),
+              "account_settings:read":(["account settings"], "read"),
+              "r2_storage:edit":      (["r2 storage"], "edit"),
+              "queues:edit":          (["queues"], "edit"),
           }
+
+          # Fetch live permission group list so IDs are always current
+          def cf_get(path):
+              req = urllib.request.Request(
+                  f"https://api.cloudflare.com/client/v4/{path}",
+                  headers=headers,
+              )
+              try:
+                  with urllib.request.urlopen(req) as r:
+                      data = json.loads(r.read())
+                      if not data["success"]:
+                          raise SystemExit(f"CF API error on {path}: {data}")
+                      return data["result"]
+              except urllib.error.HTTPError as e:
+                  raise SystemExit(f"CF API HTTP {e.code} on {path}:\n{e.read().decode()}")
+
+          all_groups = cf_get("user/tokens/permission_groups")
+          print(f"Fetched {len(all_groups)} permission groups from Cloudflare API")
+
+          def find_group(keywords, effect):
+              kws = [k.lower() for k in keywords]
+              effect_lc = effect.lower()
+              for g in all_groups:
+                  name_lc = g["name"].lower()
+                  scope_lc = g.get("scope_type", "").lower() if "scope_type" in g else ""
+                  # match all keywords in name
+                  if all(k in name_lc for k in kws):
+                      # prefer group whose name contains the effect word
+                      if effect_lc in name_lc:
+                          return g["id"]
+              # fallback: first match without effect constraint
+              for g in all_groups:
+                  name_lc = g["name"].lower()
+                  if all(k in name_lc for k in kws):
+                      return g["id"]
+              return None
 
           perms = []
           for p in PERMS_RAW.split(","):
               p = p.strip()
-              if p in PERM_MAP:
-                  perms.append({
-                      "id": PERM_MAP[p]["id"],
-                      "effect": PERM_MAP[p]["effect"],
-                  })
+              if not p:
+                  continue
+              if p in PERM_KEYWORDS:
+                  keywords, effect = PERM_KEYWORDS[p]
+                  gid = find_group(keywords, effect)
+                  if gid:
+                      perms.append({"id": gid, "effect": "allow"})
+                      print(f"  ✓ {p} -> {gid}")
+                  else:
+                      print(f"  WARNING: no match found for '{p}' — skipping")
               else:
-                  print(f"WARNING: unknown permission '{p}', skipping")
+                  print(f"  WARNING: unknown permission shorthand '{p}', skipping")
 
           body = json.dumps({
               "name": NAME,
@@ -107,51 +247,71 @@ jobs:
           req = urllib.request.Request(
               "https://api.cloudflare.com/client/v4/user/tokens",
               data=body,
-              headers={"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"},
+              headers=headers,
               method="POST",
           )
-          with urllib.request.urlopen(req) as r:
-              data = json.loads(r.read())
-              if not data["success"]:
-                  raise SystemExit(f"CF API error: {data}")
-              result = data["result"]
-              print(f"✅ Token created: {result['name']}")
-              print(f"   ID:    {result['id']}")
-              print(f"   Value: {result['value']}")
-              print()
-              print("⚠️  Copy the token value now — it will not be shown again.")
+          try:
+              with urllib.request.urlopen(req) as r:
+                  data = json.loads(r.read())
+                  if not data["success"]:
+                      raise SystemExit(f"CF API error: {data}")
+                  result = data["result"]
+                  print(f"✅ Token created: {result['name']}")
+                  print(f"   ID:    {result['id']}")
+                  print(f"   Value: {result['value']}")
+                  print()
+                  print("⚠️  Copy the token value now — it will not be shown again.")
+          except urllib.error.HTTPError as e:
+              body = e.read().decode()
+              raise SystemExit(f"CF API HTTP {e.code} on user/tokens (auth method: {method}):\n{body}")
           PY
 
       - name: Delete token
         if: inputs.action == 'delete'
         env:
-          CF_USER_TOKEN: ${{ secrets.CF_USER_TOKEN }}
           TOKEN_NAME: ${{ inputs.token_name }}
         run: |
           python3 - <<'PY'
-          import json, os, urllib.request
+          import json, os, urllib.request, urllib.error
 
-          TOKEN = os.environ["CF_USER_TOKEN"]
-          NAME = os.environ["TOKEN_NAME"]
+          token = os.environ.get("CF_USER_TOKEN", "").strip()
+          email = os.environ.get("CF_AUTH_EMAIL", "").strip()
+          key   = os.environ.get("CF_AUTH_KEY",   "").strip()
+          NAME  = os.environ["TOKEN_NAME"]
 
-          def cf(method, path, body=None):
+          if email and key:
+              headers = {"X-Auth-Email": email, "X-Auth-Key": key, "Content-Type": "application/json"}
+              method = "Global API Key"
+          elif token:
+              headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+              method = "API Token (Bearer)"
+          else:
+              raise SystemExit("No credentials. Configure CF_USER_TOKEN or both CF_AUTH_EMAIL and CF_AUTH_KEY as GitHub secrets.")
+
+          print(f"Auth method : {method}")
+
+          def cf(http_method, path, body=None):
               req = urllib.request.Request(
                   f"https://api.cloudflare.com/client/v4/{path}",
                   data=json.dumps(body).encode() if body else None,
-                  headers={"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"},
-                  method=method,
+                  headers=headers,
+                  method=http_method,
               )
-              with urllib.request.urlopen(req) as r:
-                  data = json.loads(r.read())
-                  if not data["success"]:
-                      raise SystemExit(f"CF API error: {data}")
-                  return data["result"]
+              try:
+                  with urllib.request.urlopen(req) as r:
+                      data = json.loads(r.read())
+                      if not data["success"]:
+                          raise SystemExit(f"CF API error: {data}")
+                      return data["result"]
+              except urllib.error.HTTPError as e:
+                  body = e.read().decode()
+                  raise SystemExit(f"CF API HTTP {e.code} on {path} (auth method: {method}):\n{body}")
 
           tokens = cf("GET", "user/tokens")
-          match = [t for t in tokens if t["name"] == NAME]
+          match  = [t for t in tokens if t["name"] == NAME]
           if not match:
               raise SystemExit(f"No token found with name '{NAME}'")
           for t in match:
               cf("DELETE", f"user/tokens/{t['id']}")
-              print(f"🗑️  Deleted token: {t['name']} ({t['id']})")
+              print(f"\U0001f5d1️  Deleted token: {t['name']} ({t['id']})")
           PY

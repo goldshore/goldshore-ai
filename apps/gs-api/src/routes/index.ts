@@ -3,16 +3,18 @@ import { cors } from 'hono/cors';
 import { secureHeaders } from 'hono/secure-headers';
 
 // Route Imports
-import pages from './routes/pages';
-import internal from './routes/internal';
-import ai from './routes/ai';
-import admin from './routes/admin';
-import system from './routes/system';
-import media from './routes/media';
-import health from './routes/health';
-import templates from './routes/templates';
-import user from './routes/user';
-import users from './routes/users';
+import pages from './pages';
+import internal from './internal';
+import ai from './ai';
+import admin from './admin';
+import system from './system';
+import media from './media';
+import health from './health';
+import templates from './templates';
+import deployments from './deployments';
+import user from './user';
+import users from './users';
+import oauth from './oauth';
 
 import { Env, Variables } from './types';
 
@@ -41,7 +43,10 @@ app.route('/media', media);       // R2-backed secure assets
 // 4. Intelligence & IAM Routes
 app.route('/ai', ai);             // Orchestrated LLM gateway
 app.route('/admin', admin);       // User management & Audit
+app.route('/deployments', deployments); // Deployment assistant and dry-run orchestration
 app.route('/users', users);       // Session-aware user data
 app.route('/user', user);         // Legacy redirect to /users
+app.route('/auth', oauth);        // OAuth login & integration flows
+app.route('/oauth', oauth);       // OAuth (legacy integration path)
 
 export default app;

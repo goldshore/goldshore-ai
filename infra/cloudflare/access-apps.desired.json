@@ -1,0 +1,68 @@
+{
+  "$schema": "./access-apps.schema.json",
+  "tenant": "goldshore.cloudflareaccess.com",
+  "defaults": {
+    "sessionDuration": "8h",
+    "denyByDefault": true,
+    "oneTimePinPermitted": false,
+    "notes": "One-time PIN is deliberately disabled. Enabling it requires an explicit policy review and must not add it to an owner policy implicitly."
+  },
+  "identityProviders": [
+    { "name": "GoldShore GitHub Production", "type": "github", "oauthApplication": "github-production" },
+    { "name": "GoldShore Google Production", "type": "google", "oauthApplication": "google-production" },
+    { "name": "GoldShore GitHub Preview", "type": "github", "oauthApplication": "github-preview" },
+    { "name": "GoldShore Google Preview", "type": "google", "oauthApplication": "google-preview" }
+  ],
+  "policies": {
+    "owners": {
+      "decision": "allow",
+      "include": [
+        { "email": "marstonr6@gmail.com" },
+        { "email": "admin@goldshore.org" }
+      ],
+      "exclude": [],
+      "require": [],
+      "notes": "No email_domain include is permitted in this owner policy. Domain-wide workforce access must be a separate, lower-privilege policy."
+    },
+    "serviceTokens": {
+      "decision": "non_identity",
+      "include": [{ "service_token": "goldshore-services-production" }]
+    },
+    "deny": { "decision": "deny", "include": [{ "everyone": {} }] }
+  },
+  "applications": [
+    {
+      "name": "Gold Shore Admin Production",
+      "applicationKey": "admin-production",
+      "audienceSecret": "CF_ACCESS_AUD_ADMIN_PRODUCTION",
+      "domains": ["admin.goldshore.ai/*", "admin.goldshore.org/*"],
+      "identityProviders": ["GoldShore GitHub Production", "GoldShore Google Production"],
+      "policies": ["owners", "deny"]
+    },
+    {
+      "name": "Gold Shore Admin Preview",
+      "applicationKey": "admin-preview",
+      "audienceSecret": "CF_ACCESS_AUD_ADMIN_PREVIEW",
+      "domains": ["admin-preview.goldshore.ai/*", "admin-preview.goldshore.org/*"],
+      "identityProviders": ["GoldShore GitHub Preview", "GoldShore Google Preview"],
+      "policies": ["owners", "deny"]
+    },
+    {
+      "name": "Gold Shore API Production",
+      "applicationKey": "api-production",
+      "audienceSecret": "CF_ACCESS_AUD_API_PRODUCTION",
+      "domains": ["api.goldshore.ai/*", "api.goldshore.org/*"],
+      "identityProviders": ["GoldShore GitHub Production", "GoldShore Google Production"],
+      "policies": ["owners", "deny"],
+      "publicPaths": ["/", "/version", "/health", "/health/*"]
+    },
+    {
+      "name": "Gold Shore Service Access Production",
+      "applicationKey": "service-production",
+      "audienceSecret": "CF_ACCESS_AUD_SERVICE_PRODUCTION",
+      "domains": ["api.goldshore.ai/internal/*"],
+      "identityProviders": [],
+      "policies": ["serviceTokens", "deny"]
+    }
+  ]
+}

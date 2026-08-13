@@ -1,32 +1,37 @@
-name: Setup Preview DNS
+name: Inventory preview route ownership
+
+# Read-only drift inventory. Cloudflare production configuration is changed only
+# by an approved human in the dashboard; this workflow has no Cloudflare credentials.
+on:
+  pull_request:
+    paths:
+      - 'apps/gs-web/wrangler.toml'
+      - 'apps/gs-api/wrangler.toml'
+      - 'infra/Cloudflare/**'
+      - 'scripts/export-cloudflare-inventory.py'
+      - '.github/workflows/setup-preview-dns.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/gs-web/wrangler.toml'
+      - 'apps/gs-api/wrangler.toml'
+      - 'infra/Cloudflare/**'
+      - 'scripts/export-cloudflare-inventory.py'
+      - '.github/workflows/setup-preview-dns.yml'
+  workflow_dispatch:
+
 permissions:
   contents: read
 
-on:
-  workflow_dispatch:
-
 jobs:
-  setup-dns:
-    name: Configure preview.goldshore.ai DNS
+  inventory:
+    name: Export redacted expected state
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7.0.0
         with:
-          node-version: 22
-
-      - name: Run DNS setup script
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          test -n "$CLOUDFLARE_API_TOKEN" || (echo "Missing required secret: CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN" && exit 1)
-          test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "Missing required secret: CLOUDFLARE_ACCOUNT_ID" && exit 1)
-
-      - name: Configure preview DNS
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
-        run: node scripts/setup-preview-dns.mjs
+          name: cloudflare-inventory-${{ github.run_id }}-setup-preview-dns
+          path: cloudflare-inventory.json
+          retention-days: 30
