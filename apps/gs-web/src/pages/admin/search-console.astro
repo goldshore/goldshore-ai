@@ -1,10 +1,11 @@
 ---
+import { env as cloudflareEnv } from 'cloudflare:workers';
 import AdminLayout from "../../layouts/AdminLayout.astro";
 import { authorizeAdminRequest, getAdminAuthError, getAdminRouteRule } from '../../utils/admin-access';
 
 export const prerender = false;
 
-const env = Astro.locals.runtime?.env as Env | undefined;
+const env = cloudflareEnv as Env;
 const rule = getAdminRouteRule('/admin/search-console', 'GET');
 
 let authError: { status: number; message: string } | null = null;

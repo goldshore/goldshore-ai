@@ -34,7 +34,7 @@
       "applicationKey": "admin-production",
       "audienceSecret": "CF_ACCESS_AUD_ADMIN_PRODUCTION",
       "domains": ["admin.goldshore.ai/*", "admin.goldshore.org/*"],
-      "identityProviders": ["GoldShore GitHub Production", "GoldShore Google Production"],
+      "identityProviders": ["GoldShore GitHub Production"],
       "policies": ["owners", "deny"]
     },
     {

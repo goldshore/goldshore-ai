@@ -19,7 +19,7 @@ test('gs-web retains its Astro SSR Worker-with-Assets deployment contract', () =
   assert.match(webWrangler, /^main = "\.\/src\/worker\.ts"$/m);
   assert.match(
     webWrangler,
-    /^\[assets\]\r?\ndirectory = "\.\/dist"\r?\nbinding = "ASSETS"$/m,
+    /^\[assets\]\r?\ndirectory = "\.\/dist"\r?\nbinding = "ASSETS"\r?\nrun_worker_first = true$/m,
   );
 
   // The checked-in entrypoint delegates requests to Astro's SSR handler. A
