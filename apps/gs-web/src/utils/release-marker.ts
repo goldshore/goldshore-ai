@@ -2,38 +2,12 @@ import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
-/**
- * Locate the workspace root by walking up for `pnpm-workspace.yaml`.
- *
- * This module is bundled before it runs, and the emitted chunk does not sit at
- * the same depth as this source file, so resolving a fixed number of `..`
- * segments off `import.meta.url` points somewhere different at build time than
- * it does in source. Searching for the workspace marker is stable under both.
- */
-function findRepositoryRoot(): string {
-  const candidates = [process.cwd(), path.dirname(fileURLToPath(import.meta.url))];
-
-  for (const candidate of candidates) {
-    let directory = path.resolve(candidate);
-
-    while (true) {
-      if (existsSync(path.join(directory, 'pnpm-workspace.yaml'))) return directory;
-      const parent = path.dirname(directory);
-      if (parent === directory) break;
-      directory = parent;
-    }
-  }
-
-  throw new Error(
-    'Unable to locate the workspace root (no pnpm-workspace.yaml found above ' +
-      `${candidates.join(' or ')}).`,
-  );
-}
-
-const repositoryRoot = findRepositoryRoot();
-const webRoot = path.join(repositoryRoot, 'apps/gs-web');
+const workingDirectory = process.cwd();
+const webRoot = existsSync(path.join(workingDirectory, 'src', 'styles'))
+  ? workingDirectory
+  : path.join(workingDirectory, 'apps', 'gs-web');
+const repositoryRoot = path.resolve(webRoot, '../..');
 
 function gitReleaseSha(): string {
   const configured = process.env.RELEASE_SHA?.trim();
@@ -46,10 +20,6 @@ function gitReleaseSha(): string {
 }
 
 function addTreeToHash(hash: ReturnType<typeof createHash>, directory: string): void {
-  if (!existsSync(directory)) {
-    throw new Error(`Release marker source directory is missing: ${directory}`);
-  }
-
   for (const entry of readdirSync(directory, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
     const absolutePath = path.join(directory, entry.name);
     if (entry.isDirectory()) addTreeToHash(hash, absolutePath);

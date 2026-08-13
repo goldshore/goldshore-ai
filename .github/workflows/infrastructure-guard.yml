@@ -1,0 +1,336 @@
+name: Infrastructure Guard
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'infra/**'
+      - 'apps/*/wrangler.toml'
+      - 'apps/gs-web/astro.config.mjs'
+      - 'apps/gs-web/src/worker.ts'
+      - '.github/workflows/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # ─── Job 1: Manifest integrity check ─────────────────────────────────────
+  manifest-integrity:
+    name: Manifest integrity check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Verify INFRASTRUCTURE.md exists
+        run: |
+          test -f infra/INFRASTRUCTURE.md || (echo "FAIL: infra/INFRASTRUCTURE.md is missing" && exit 1)
+
+      - name: Verify branch-protection.json exists
+        run: |
+          test -f infra/branch-protection.json || (echo "FAIL: infra/branch-protection.json is missing" && exit 1)
+
+      - name: Verify canonical wrangler config references canonical worker names
+        run: |
+          CANONICAL_WORKERS="gs-api"
+
+          echo "Canonical workers:"
+          echo "$CANONICAL_WORKERS"
+
+          for toml in apps/gs-api/wrangler.toml; do
+            WORKER_NAME=$(grep '^name = ' "$toml" | head -1 | sed 's/name = "\(.*\)"/\1/')
+            if [ -n "$WORKER_NAME" ] && ! echo "$CANONICAL_WORKERS" | grep -qx "$WORKER_NAME"; then
+              echo "FAIL: $toml references unrecognized worker '$WORKER_NAME'"
+              exit 1
+            fi
+          done
+
+          echo "All wrangler configs reference canonical workers."
+
+      - name: Verify dashboard-only inventories cannot mutate Cloudflare
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          inventory_workflows = (
+              Path('.github/workflows/deploy-gs-api.yml'),
+              Path('.github/workflows/deploy-gs-web.yml'),
+              Path('.github/workflows/setup-cf-agent-access.yml'),
+              Path('.github/workflows/reconcile-dns.yml'),
+          )
+          forbidden = re.compile(
+              r'CLOUDFLARE_(?:API_TOKEN|API_KEY)|'
+              r'\bCF_API\b|'
+              r'\bcurl\b|'
+              r'^\s*(?:run:\s*)?[^#\n]*\bwrangler\s+'
+              r'(?:deploy|delete|secret|kv|d1|r2|queue|workflow)\b',
+              re.IGNORECASE | re.MULTILINE,
+          )
+          offenders = [
+              f'{path}: {match.group(0)}'
+              for path in inventory_workflows
+              if (match := forbidden.search(path.read_text(encoding='utf-8')))
+          ]
+          if offenders:
+              raise SystemExit(
+                  'FAIL: dashboard-only inventory workflows contain a Cloudflare '
+                  'credential or mutation path: ' + ', '.join(offenders)
+              )
+
+          print('Cloudflare inventory workflows are credential-free and read-only.')
+          PY
+
+      - name: Verify gs-web is one SSR Worker-with-Assets release
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          workflows = Path('.github/workflows')
+          forbidden = re.compile(
+              r'wrangler\s+pages\s+deploy[^\n]*apps/gs-web/dist/client|'
+              r'apps/gs-web/dist/client[^\n]*wrangler\s+pages\s+deploy',
+              re.IGNORECASE,
+          )
+          offenders = [
+              str(path) for path in workflows.glob('*.y*ml')
+              if forbidden.search(path.read_text())
+          ]
+          if offenders:
+              raise SystemExit(
+                  'FAIL: gs-web client assets must not be deployed as a Pages project: '
+                  + ', '.join(offenders)
+              )
+
+          astro = Path('apps/gs-web/astro.config.mjs').read_text()
+          worker = Path('apps/gs-web/src/worker.ts').read_text()
+          wrangler = Path('apps/gs-web/wrangler.toml').read_text()
+          if not any(value in astro for value in ("output: 'server'", 'output: "server"')) or '@astrojs/cloudflare/handler' not in worker:
+              raise SystemExit('FAIL: gs-web must retain its Astro SSR Worker entry point')
+          if not re.search(r'(?m)^main\s*=\s*"\./src/worker\.ts"\s*$', wrangler):
+              raise SystemExit('FAIL: gs-web Wrangler main must be ./src/worker.ts')
+          if not re.search(r'(?ms)^\[assets\]\s+directory\s*=\s*"\./dist"\s+binding\s*=\s*"ASSETS"', wrangler):
+              raise SystemExit('FAIL: gs-web must upload dist through its ASSETS binding')
+
+          prod = wrangler.split('[env.prod]', 1)[1].split('[env.preview]', 1)[0]
+          expected = {
+              'goldshore.ai/*': 'goldshore.ai',
+              'goldshore.org/*': 'goldshore.org',
+              'admin.goldshore.ai/*': 'goldshore.ai',
+              'admin.goldshore.org/*': 'goldshore.org',
+          }
+          for host, zone in expected.items():
+              route = f'{{ pattern = "{host}", zone_name = "{zone}" }}'
+              if prod.count(route) != 1:
+                  raise SystemExit(
+                      f'FAIL: production host {host} must map exactly once to gs-web-prod'
+                  )
+
+          print('gs-web is one SSR Worker-with-Assets release for all four production hosts.')
+          PY
+
+      - name: Verify D1 database IDs are consistent
+        run: |
+          # Build a canonical database_name -> database_id map from the D1 Databases
+          # table in INFRASTRUCTURE.md, then verify each wrangler.toml binding matches
+          # the exact documented pair.
+          mismatch_found=0
+
+          CANONICAL_D1_MAP=$(
+            awk '
+              /^## D1 Databases/ { in_section=1; next }
+              in_section && /^## / { exit }
+              in_section && /^\|/ {
+                n=split($0, parts, "|")
+                name=""
+                id=""
+                for (i = 1; i <= n; i++) {
+                  if (parts[i] ~ /`[a-zA-Z0-9_-]+`/) {
+                    value = parts[i]
+                    gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+                    gsub(/`/, "", value)
+                    if (name == "") {
+                      name = value
+                    } else if (id == "" && value ~ /^[a-f0-9-]+$/) {
+                      id = value
+                    }
+                  }
+                }
+                if (name != "" && id != "") {
+                  print name "|" id
+                }
+              }
+            ' infra/INFRASTRUCTURE.md | sort -u
+          )
+
+          if [ -z "$CANONICAL_D1_MAP" ]; then
+            echo "FAIL: Could not extract any canonical D1 database mappings from infra/INFRASTRUCTURE.md"
+            exit 1
+          fi
+
+          echo "Canonical D1 databases:"
+          echo "$CANONICAL_D1_MAP"
+
+          for toml in apps/gs-api/wrangler.toml infra/Cloudflare/gs-api.wrangler.toml; do
+            [ -f "$toml" ] || continue
+
+            awk '
+              BEGIN { in_block=0; db_name=""; db_id="" }
+              /^\[\[d1_databases\]\]/ {
+                if (in_block && db_name != "" && db_id != "") {
+                  print db_name "|" db_id
+                }
+                in_block=1
+                db_name=""
+                db_id=""
+                next
+              }
+              in_block && /^[[:space:]]*database_name[[:space:]]*=/ {
+                match($0, /"[^"]+"/)
+                if (RSTART > 0) {
+                  db_name = substr($0, RSTART + 1, RLENGTH - 2)
+                }
+              }
+              in_block && /^[[:space:]]*database_id[[:space:]]*=/ {
+                match($0, /"[^"]+"/)
+                if (RSTART > 0) {
+                  db_id = substr($0, RSTART + 1, RLENGTH - 2)
+                }
+              }
+              END {
+                if (in_block && db_name != "" && db_id != "") {
+                  print db_name "|" db_id
+                }
+              }
+            ' "$toml" | while IFS='|' read -r db_name db_id; do
+              [ -n "$db_name" ] || continue
+              [ -n "$db_id" ] || continue
+
+              expected_id=$(printf '%s\n' "$CANONICAL_D1_MAP" | awk -F'|' -v name="$db_name" '$1 == name { print $2; exit }')
+
+              if [ -z "$expected_id" ]; then
+                echo "FAIL: $toml references D1 database '$db_name' that is not documented in infra/INFRASTRUCTURE.md"
+                mismatch_found=1
+              elif [ "$db_id" != "$expected_id" ]; then
+                echo "FAIL: $toml references D1 database '$db_name' with ID '$db_id' but INFRASTRUCTURE.md specifies '$expected_id'"
+                mismatch_found=1
+              fi
+            done
+          done
+
+          if [ "$mismatch_found" -ne 0 ]; then
+            echo "D1 ID consistency check failed."
+            exit 1
+          fi
+
+          echo "D1 ID consistency check complete."
+
+  # ─── Job 2: Cloudflare live state audit ──────────────────────────────────
+  live-state-audit:
+    name: Cloudflare live state audit
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Normalize Cloudflare token
+        env:
+          RAW_CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_BUILD_API_TOKEN }}
+        run: |
+          token="$(
+            node <<'NODE'
+          const raw = process.env.RAW_CLOUDFLARE_API_TOKEN || "";
+          let token = raw.replace(/[\r\n]/g, "").trim();
+          const bearer = token.match(/(?:authorization\s*:\s*)?bearer\s+([^\s"',;}]+)/i);
+          if (bearer) token = bearer[1];
+          const cfut = token.match(/cfut_[A-Za-z0-9_-]+/);
+          if (cfut) token = cfut[0];
+          token = token.replace(/^[`'"]+|[`'",;}]+$/g, "").replace(/\s/g, "");
+          process.stdout.write(token);
+          NODE
+          )"
+          if [ -n "$token" ]; then
+            echo "::add-mask::$token"
+            echo "CLOUDFLARE_API_TOKEN=$token" >> "$GITHUB_ENV"
+            echo "CLOUDFLARE_BUILD_API_TOKEN=$token" >> "$GITHUB_ENV"
+            echo "CLOUDFLARE_CREDENTIALS_AVAILABLE=true" >> "$GITHUB_ENV"
+          else
+            echo "CLOUDFLARE_CREDENTIALS_AVAILABLE=false" >> "$GITHUB_ENV"
+          fi
+
+      - name: Verify Cloudflare credentials
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [ -z "$CLOUDFLARE_ACCOUNT_ID" ] || [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            if [ "$EVENT_NAME" = "pull_request" ]; then
+              echo "::warning::Cloudflare credentials are unavailable; skipping live-state audit for this PR."
+              exit 0
+            fi
+            test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "Missing: CLOUDFLARE_ACCOUNT_ID" && exit 1)
+            test -n "$CLOUDFLARE_API_TOKEN" || (echo "Missing: CLOUDFLARE_BUILD_API_TOKEN" && exit 1)
+          fi
+
+      - name: Audit live Cloudflare state against manifest
+        if: env.CLOUDFLARE_CREDENTIALS_AVAILABLE == 'true'
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.request, urllib.error
+
+          TOKEN = os.environ["CLOUDFLARE_API_TOKEN"]
+          ACCOUNT = os.environ["CLOUDFLARE_ACCOUNT_ID"]
+          EVENT_NAME = os.environ.get("EVENT_NAME", "")
+
+          def cf_get(path):
+              url = f"https://api.cloudflare.com/client/v4/accounts/{ACCOUNT}/{path}"
+              req = urllib.request.Request(url, headers={
+                  "Authorization": f"Bearer {TOKEN}",
+                  "Content-Type": "application/json",
+              })
+              try:
+                  with urllib.request.urlopen(req) as resp:
+                      data = json.loads(resp.read().decode())
+                      if not data.get("success"):
+                          raise SystemExit(f"CF API error: {url} → {data}")
+                      return data["result"]
+              except urllib.error.HTTPError as e:
+                  body = e.read().decode()
+                  if EVENT_NAME == "pull_request" and e.code in (400, 401, 403):
+                      print(f"::warning::Skipping live Cloudflare audit for PR because Cloudflare auth failed: HTTP {e.code}")
+                      print(body)
+                      raise SystemExit(0)
+                  raise SystemExit(f"CF API HTTP error: {url} → {e.code} {body}")
+
+          # List workers from the account
+          workers = cf_get("workers/scripts")
+          live_names = sorted(w["id"] for w in workers)
+
+          # Read canonical list from INFRASTRUCTURE.md
+          with open("infra/INFRASTRUCTURE.md") as f:
+              manifest = f.read()
+
+          # Extract the current live inventory. Legacy and external workers listed
+          # here are inventory records, not in-repo deploy targets.
+          import re
+          workers_section = re.search(r"(?ms)^## Current live Cloudflare worker inventory[^\n]*\n(.*?)(?=^## |\Z)", manifest)
+          if not workers_section:
+              raise SystemExit("Could not find current live worker inventory in infra/INFRASTRUCTURE.md")
+          documented = sorted(set(re.findall(r"\| `([a-z0-9_-]+)` \|", workers_section.group(1))))
+
+          print(f"Live workers:      {live_names}")
+          print(f"Documented workers: {documented}")
+
+          unknown = set(live_names) - set(documented)
+          if unknown:
+              print(f"ERROR: Unrecognized workers in account: {unknown}")
+              print("These workers are NOT in the canonical set — complete Gate 1 in infra/INFRASTRUCTURE.md")
+              print("to delete or promote each worker before this audit will pass.")
+              raise SystemExit("Failing audit: unrecognized workers must not exist in the account.")
+
+          print("Cloudflare live state audit complete.")
+          PY

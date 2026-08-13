@@ -93,12 +93,9 @@ const isPublicPath = (path: string, method: string) => {
     path === '/version' ||
     path === '/health' ||
     path.startsWith('/health/') ||
-    (method === 'POST' && /^\/v1\/forms\/[^/]+\/submissions$/.test(path)) ||
-    // Per-service health probes (/agent/health, /mail/health, …) are not
-    // covered by the /health/ prefix check above.
     /^\/(agent|mail|control|trading|core)\/health\/?$/.test(path) ||
     (method === 'GET' && path === '/admin/google/oauth/callback') ||
-    path === '/mail/contact'
+    (method === 'POST' && path === '/mail/contact')
   );
 };
 
@@ -344,20 +341,6 @@ interface Message<T> {
 interface MessageBatch<T> {
   messages: Array<Message<T>>;
 }
-
-const processQueueMessage = async (message: Message<any>, _env: Env): Promise<void> => {
-  const body = message.body;
-  const type = typeof body === 'object' && body && 'type' in body ? String((body as { type?: unknown }).type) : 'unknown';
-  const event = type === 'contact' || type === 'checkout'
-    ? 'mail_job_processed'
-    : type === 'trading' || type === 'trading-signal' || type === 'order'
-      ? 'trading_job_processed'
-      : type === 'signal' || type === 'atc'
-        ? 'core_signal_job_processed'
-        : 'agent_job_processed';
-  console.info({ event, id: message.id, type, timestamp: new Date().toISOString() });
-  message.ack();
-};
 
 export default {
   fetch: app.fetch,
