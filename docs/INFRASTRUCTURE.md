@@ -31,7 +31,7 @@ Complete documentation of all websites, deployment infrastructure, DNS/email con
 | **api.goldshore.ai** | goldshore-ai/apps/gs-api | CF Worker | ✅ Live | First-party API |
 | **gw.goldshore.ai** | goldshore-ai/apps/gs-gateway | CF Worker | ✅ Live | API gateway + auth |
 | **agent.goldshore.ai** | goldshore-ai/apps/gs-gateway | CF Worker | ✅ Live | Agent endpoint (via binding) |
-| **admin.goldshore.ai** | goldshore-ai/apps/gs-admin | CF Pages | ✅ Live | Admin dashboard (CF Access protected) |
+| **admin.goldshore.ai** | goldshore-ai/apps/gs-web | CF Worker | ✅ Live | Admin dashboard at `/app/dashboard` (CF Access protected) |
 | **ops.goldshore.ai** | goldshore-ai/apps/gs-control | CF Worker | ✅ Live | Control plane (CF Access protected) |
 | **mail.goldshore.ai** | goldshore-ai/apps/gs-mail | CF Worker | ✅ Live | Email routing & handlers |
 | **radar.goldshore.ai** | goldshore-ai/apps/gs-web | CF Pages | ✅ Live | Risk Radar product |
@@ -64,23 +64,12 @@ Complete documentation of all websites, deployment infrastructure, DNS/email con
 ┌─────────────────────────────────────────────────────────┐
 │         goldshore-ai Monorepo (Central Hub)             │
 │                                                         │
-│  apps/gs-web        → goldshore.ai, goldshore.org      │
-│  apps/gs-api        → api.goldshore.ai                 │
-│  apps/gs-gateway    → gw.goldshore.ai, agent.*         │
-│  apps/gs-control    → ops.goldshore.ai                 │
-│  apps/gs-mail       → mail.goldshore.ai                │
-│  apps/gs-admin      → admin.goldshore.ai               │
-│  apps/banproof-me   → banproof.me (consolidated)       │
-│  apps/armsway-com   → armsway.com                       │
-│  apps/*             → 10+ workers total                 │
+│  apps/gs-web        → frontend, public pages, admin UI │
+│  apps/gs-api        → API, auth, queues, integrations  │
 │                                                         │
-│  .github/workflows/deploy-platform.yml                 │
-│    ├─ deploy-web (gs-web Worker)                       │
-│    ├─ deploy-admin (gs-admin Pages)                    │
-│    └─ deploy-workers (matrix: 10 workers)              │
-│         ├─ Health check: POST /health                  │
-│         ├─ Retry logic: 5x with 2s backoff             │
-│         └─ Fail fast on health check failure           │
+│  .github/workflows/deploy-gs-web.yml                   │
+│  .github/workflows/deploy-gs-api.yml                   │
+│  .github/workflows/preview-gs-api.yml                  │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
         ↓                           ↓
@@ -268,7 +257,7 @@ v=DMARC1; p=quarantine; adkim=r; aspf=r; rua=mailto:dmarc-reports@goldshore.org;
 #### In goldshore-ai
 ```
 CLOUDFLARE_ACCOUNT_ID = f77de112d2019e5456a3198a8bb50bd2
-CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN = [CF API token with worker deploy scope]
+CLOUDFLARE_BUILD_API_TOKEN = [CF API token with worker deploy scope]
 CLOUDFLARE_ZONE_ID = [Zone ID for DNS operations]
 ```
 
@@ -292,11 +281,9 @@ HEALTH_CHECK_URL = https://[domain]/health (optional, for post-deploy validation
 
 ### Post-Deployment Health Checks
 
-**Implemented:** deploy-platform.yml, deploy-dispatch.yml  
-**Endpoints:** `/health` on each worker  
-**Retry Logic:** 5 attempts with 2s backoff  
-**Timeout:** 30s total  
-**Failure:** Halts deployment (prevents bad code going live)
+**Implemented:** `.github/workflows/deploy-gs-api.yml`, `.github/workflows/deploy-gs-web.yml`, and `.github/workflows/preview-gs-api.yml`
+**Endpoints:** `/health` on the canonical API worker and Pages deployment checks for `gs-web`
+**Failure:** Halts the active two-app deployment path
 
 ### Uptime Monitoring (To Be Implemented)
 
@@ -328,10 +315,12 @@ cd goldshore-ai/apps/banproof-me
 git add -A
 git commit -m "..."
 git push origin main
-# Deployment triggers automatically (via deploy-platform.yml)
+# Deployment triggers automatically only through canonical workflows when routed
+# through apps/gs-api or apps/gs-web.
 
 # Option 2: Manual deploy
-# Go to: https://github.com/marzton/goldshore-ai/actions/workflows/deploy-platform.yml
+# Go to: https://github.com/marzton/goldshore-ai/actions/workflows/deploy-gs-api.yml
+# or: https://github.com/marzton/goldshore-ai/actions/workflows/deploy-gs-web.yml
 # Click "Run workflow"
 # Select target: "banproof-me"
 # Select environment: "prod" or "preview"
@@ -345,7 +334,7 @@ curl -I https://banproof.me/
 ```
 
 **If health check fails:**
-1. Check deployment logs: GitHub Actions → deploy-platform.yml
+1. Check deployment logs: GitHub Actions → deploy-gs-api.yml or deploy-gs-web.yml
 2. Check worker logs: Cloudflare Dashboard → Workers → banproof-me → Real-time logs
 3. Verify database bindings: `apps/banproof-me/wrangler.toml`
 4. Check service bindings: gs-api, gs-control availability
@@ -383,16 +372,16 @@ nslookup -type=NS armsway.com
 
 **Steps:**
 1. Log into Cloudflare Dashboard → Account Settings → API Tokens
-2. View existing token (CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN)
+2. View existing token (`CLOUDFLARE_BUILD_API_TOKEN`)
 3. Create new token:
    - Token name: `goldshore-ai-deploy-[date]`
    - Permissions: Account:Cloudflare Workers Scripts: Edit
    - Scope: Account: Gold Shore Labs
 4. Update GitHub secret in goldshore-ai repo:
    - Settings → Secrets and variables → Actions
-   - Update: CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN
+   - Update: `CLOUDFLARE_BUILD_API_TOKEN`
 5. Test deployment:
-   - Trigger deploy-platform.yml with target=all
+   - Trigger `deploy-gs-api.yml` and `deploy-gs-web.yml`
    - Verify success
 6. Delete old token from CF Dashboard
 

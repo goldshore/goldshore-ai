@@ -1,0 +1,1723 @@
+{
+  "ok": false,
+  "generatedAt": "2026-07-14T21:43:12.512Z",
+  "accountId": "f77de112d2019e5456a3198a8bb50bd2",
+  "desiredStatePath": "E:\\OneDrive\\Documents\\goldshore-ai\\infra\\Cloudflare\\desired-state.yaml",
+  "authSources": [
+    "runtime:CLOUDFLARE_SYNC_AUTH_TOKEN",
+    "runtime:CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN",
+    "runtime:CLOUDFLARE_API_TOKEN"
+  ],
+  "summary": {
+    "liveApps": 10,
+    "desiredPolicies": 7,
+    "policyIssues": 38,
+    "warnings": 28,
+    "smokeTotal": 0,
+    "smokePassed": 0
+  },
+  "identityProviders": [
+    {
+      "id": "12fe6296-fb0c-495f-98ce-8ed022b9e13f",
+      "name": "",
+      "type": "onetimepin",
+      "scimEnabled": false,
+      "configKeys": [
+        "redirect_url"
+      ]
+    },
+    {
+      "id": "8a93fc78-a057-4e9e-bde4-c6515ef4b9c4",
+      "name": "Gold Shore Cloudflare Access",
+      "type": "github",
+      "scimEnabled": false,
+      "configKeys": [
+        "client_id",
+        "redirect_url"
+      ]
+    },
+    {
+      "id": "b05ff0c1-08de-4b34-83a7-0eb427fed15b",
+      "name": "Google",
+      "type": "google",
+      "scimEnabled": false,
+      "configKeys": [
+        "client_id",
+        "redirect_url"
+      ]
+    },
+    {
+      "id": "b2795891-ffe8-4e7c-84b0-9221f0f1497d",
+      "name": "CloudFlare GitHub IDP",
+      "type": "github",
+      "scimEnabled": false,
+      "configKeys": [
+        "client_id",
+        "redirect_url"
+      ]
+    }
+  ],
+  "policyResults": [
+    {
+      "name": "GoldShore-Admin-ZT",
+      "source": "infra/Cloudflare/desired-state.yaml",
+      "desiredDomains": [
+        "admin.goldshore.ai",
+        "admin.goldshore.org",
+        "admin-preview.goldshore.ai"
+      ],
+      "action": "allow",
+      "paths": [],
+      "publicPaths": [],
+      "domainChecks": [
+        {
+          "domain": "admin.goldshore.ai",
+          "ok": false,
+          "exactApps": [],
+          "acceptableExactApps": [],
+          "wildcardApps": [
+            "* (ssh)"
+          ]
+        },
+        {
+          "domain": "admin.goldshore.org",
+          "ok": false,
+          "exactApps": [],
+          "acceptableExactApps": [],
+          "wildcardApps": []
+        },
+        {
+          "domain": "admin-preview.goldshore.ai",
+          "ok": false,
+          "exactApps": [],
+          "acceptableExactApps": [],
+          "wildcardApps": [
+            "* (ssh)"
+          ]
+        }
+      ],
+      "matchingApps": [],
+      "exactApps": [],
+      "idpChecks": [
+        {
+          "alias": "google_workspace",
+          "label": "Google Workspace / Google",
+          "existsInAccount": true,
+          "explicitlyAllowed": false,
+          "ok": true,
+          "warning": false,
+          "detail": "The matching app does not explicitly restrict allowed_idps."
+        },
+        {
+          "alias": "github_goldshore_deploy",
+          "label": "GitHub GoldShore Deploy",
+          "existsInAccount": true,
+          "explicitlyAllowed": false,
+          "ok": true,
+          "warning": true,
+          "detail": "The matching app does not explicitly restrict allowed_idps."
+        },
+        {
+          "alias": "github",
+          "label": "GitHub",
+          "existsInAccount": true,
+          "explicitlyAllowed": false,
+          "ok": true,
+          "warning": false,
+          "detail": "The matching app does not explicitly restrict allowed_idps."
+        },
+        {
+          "alias": "email_otp",
+          "label": "Email OTP",
+          "existsInAccount": true,
+          "explicitlyAllowed": false,
+          "ok": true,
+          "warning": false,
+          "detail": "The matching app does not explicitly restrict allowed_idps."
+        }
+      ],
+      "issues": [
+        "admin.goldshore.ai has no exact acceptable Access application.",
+        "admin.goldshore.org has no exact acceptable Access application.",
+        "admin-preview.goldshore.ai has no exact acceptable Access application.",
+        "Missing allow include selector for email domain goldshore.ai.",
+        "Missing allow include selector for email marstonr6@gmail.com.",
+        "Missing allow include selector for email goldshorelabs@gmail.com.",
+        "Missing allow include selector for email admin@goldshore.org."
+      ],
+      "warnings": [
+        "admin.goldshore.ai is only wildcard-covered by * (ssh); exact app coverage is still required.",
+        "admin-preview.goldshore.ai is only wildcard-covered by * (ssh); exact app coverage is still required.",
+        "No exact app or policy name matches GoldShore-Admin-ZT.",
+        "github_goldshore_deploy: account has a GitHub IdP, but its name does not identify a deploy-specific IdP."
+      ],
+      "ok": false
+    },
+    {
+      "name": "Goldshore Ops",
+      "source": "infra/Cloudflare/desired-state.yaml",
+      "desiredDomains": [
+        "ops.goldshore.ai"
+      ],
+      "action": "allow",
+      "paths": [],
+      "publicPaths": [],
+      "domainChecks": [
+        {
+          "domain": "ops.goldshore.ai",
+          "ok": false,
+          "exactApps": [],
+          "acceptableExactApps": [],
+          "wildcardApps": [
+            "* (ssh)"
+          ]
+        }
+      ],
+      "matchingApps": [],
+      "exactApps": [],
+      "idpChecks": [
+        {
+          "alias": "google_workspace",
+          "label": "Google Workspace / Google",
+          "existsInAccount": true,
+          "explicitlyAllowed": false,
+          "ok": true,
+          "warning": false,
+          "detail": "The matching app does not explicitly restrict allowed_idps."
+        },
+        {
+          "alias": "github_goldshore_deploy",
+          "label": "GitHub GoldShore Deploy",
+          "existsInAccount": true,
+          "explicitlyAllowed": false,
+          "ok": true,
+          "warning": true,
+          "detail": "The matching app does not explicitly restrict allowed_idps."
+        },
+        {
+          "alias": "github",
+          "label": "GitHub",
+          "existsInAccount": true,
+          "explicitlyAllowed": false,
+          "ok": true,
+          "warning": false,
+          "detail": "The matching app does not explicitly restrict allowed_idps."
+        },
+        {
+          "alias": "email_otp",
+          "label": "Email OTP",
+          "existsInAccount": true,
+          "explicitlyAllowed": false,
+          "ok": true,
+          "warning": false,
+          "detail": "The matching app does not explicitly restrict allowed_idps."
+        }
+      ],
+      "issues": [
+        "ops.goldshore.ai has no exact acceptable Access application.",
+        "Missing allow include selector for email domain goldshore.ai.",
+        "Missing allow include selector for email marstonr6@gmail.com.",
+        "Missing allow include selector for email goldshorelabs@gmail.com.",
+        "Missing allow include selector for email admin@goldshore.org."
+      ],
+      "warnings": [
+        "ops.goldshore.ai is only wildcard-covered by * (ssh); exact app coverage is still required.",
+        "No exact app or policy name matches Goldshore Ops.",
+        "github_goldshore_deploy: account has a GitHub IdP, but its name does not identify a deploy-specific IdP."
+      ],
+      "ok": false
+    },
+    {
+      "name": "GoldShore-Trading-ZT",
+      "source": "infra/Cloudflare/desired-state.yaml",
+      "desiredDomains": [
+        "trading.goldshore.ai",
+        "dashboard.goldshore.ai",
+        "dash.goldshore.ai"
+      ],
+      "action": "allow",
+      "paths": [
+        "/*"
+      ],
+      "publicPaths": [
+        "/health",
+        "/version",
+        "/oauth/schwab/callback",
+        "/oauth/robinhood/callback"
+      ],
+      "domainChecks": [
+        {
+          "domain": "trading.goldshore.ai",
+          "ok": false,
+          "exactApps": [],
+          "acceptableExactApps": [],
+          "wildcardApps": [
+            "* (ssh)"
+          ]
+        },
+        {
+          "domain": "dashboard.goldshore.ai",
+          "ok": false,
+          "exactApps": [],
+          "acceptableExactApps": [],
+          "wildcardApps": [
+            "* (ssh)"
+          ]
+        },
+        {
+          "domain": "dash.goldshore.ai",
+          "ok": false,
+          "exactApps": [],
+          "acceptableExactApps": [],
+          "wildcardApps": [
+            "* (ssh)"
+          ]
+        }
+      ],
+      "matchingApps": [],
+      "exactApps": [],
+      "idpChecks": [
+        {
+          "alias": "google_workspace",
+          "label": "Google Workspace / Google",
+          "existsInAccount": true,
+          "explicitlyAllowed": false,
+          "ok": true,
+          "warning": false,
+          "detail": "The matching app does not explicitly restrict allowed_idps."
+        },
+        {
+          "alias": "github_goldshore_deploy",
+          "label": "GitHub GoldShore Deploy",
+          "existsInAccount": true,
+          "explicitlyAllowed": false,
+          "ok": true,
+          "warning": true,
+          "detail": "The matching app does not explicitly restrict allowed_idps."
+        },
+        {
+          "alias": "github",
+          "label": "GitHub",
+          "existsInAccount": true,
+          "explicitlyAllowed": false,
+          "ok": true,
+          "warning": false,
+          "detail": "The matching app does not explicitly restrict allowed_idps."
+        },
+        {
+          "alias": "email_otp",
+          "label": "Email OTP",
+          "existsInAccount": true,
+          "explicitlyAllowed": false,
+          "ok": true,
+          "warning": false,
+          "detail": "The matching app does not explicitly restrict allowed_idps."
+        }
+      ],
+      "issues": [
+        "trading.goldshore.ai has no exact acceptable Access application.",
+        "dashboard.goldshore.ai has no exact acceptable Access application.",
+        "dash.goldshore.ai has no exact acceptable Access application.",
+        "Missing allow include selector for email domain goldshore.ai.",
+        "Missing allow include selector for email marstonr6@gmail.com.",
+        "Missing allow include selector for email goldshorelabs@gmail.com.",
+        "Missing allow include selector for email admin@goldshore.org."
+      ],
+      "warnings": [
+        "trading.goldshore.ai is only wildcard-covered by * (ssh); exact app coverage is still required.",
+        "dashboard.goldshore.ai is only wildcard-covered by * (ssh); exact app coverage is still required.",
+        "dash.goldshore.ai is only wildcard-covered by * (ssh); exact app coverage is still required.",
+        "No exact app or policy name matches GoldShore-Trading-ZT.",
+        "github_goldshore_deploy: account has a GitHub IdP, but its name does not identify a deploy-specific IdP."
+      ],
+      "ok": false
+    },
+    {
+      "name": "Goldshore Gateway",
+      "source": "infra/Cloudflare/desired-state.yaml",
+      "desiredDomains": [
+        "gw.goldshore.ai",
+        "agent.goldshore.ai"
+      ],
+      "action": "allow",
+      "paths": [
+        "/admin/*",
+        "/internal/*",
+        "/system/*",
+        "/users/*",
+        "/user/*",
+        "/templates/*",
+        "/media/*",
+        "/pages/*",
+        "/ai/*"
+      ],
+      "publicPaths": [
+        "/",
+        "/health",
+        "/status",
+        "/version"
+      ],
+      "domainChecks": [
+        {
+          "domain": "gw.goldshore.ai",
+          "ok": false,
+          "exactApps": [],
+          "acceptableExactApps": [],
+          "wildcardApps": [
+            "* (ssh)"
+          ]
+        },
+        {
+          "domain": "agent.goldshore.ai",
+          "ok": false,
+          "exactApps": [],
+          "acceptableExactApps": [],
+          "wildcardApps": [
+            "* (ssh)"
+          ]
+        }
+      ],
+      "matchingApps": [],
+      "exactApps": [],
+      "idpChecks": [
+        {
+          "alias": "google_workspace",
+          "label": "Google Workspace / Google",
+          "existsInAccount": true,
+          "explicitlyAllowed": false,
+          "ok": true,
+          "warning": false,
+          "detail": "The matching app does not explicitly restrict allowed_idps."
+        },
+        {
+          "alias": "github_goldshore_deploy",
+          "label": "GitHub GoldShore Deploy",
+          "existsInAccount": true,
+          "explicitlyAllowed": false,
+          "ok": true,
+          "warning": true,
+          "detail": "The matching app does not explicitly restrict allowed_idps."
+        },
+        {
+          "alias": "github",
+          "label": "GitHub",
+          "existsInAccount": true,
+          "explicitlyAllowed": false,
+          "ok": true,
+          "warning": false,
+          "detail": "The matching app does not explicitly restrict allowed_idps."
+        },
+        {
+          "alias": "email_otp",
+          "label": "Email OTP",
+          "existsInAccount": true,
+          "explicitlyAllowed": false,
+          "ok": true,
+          "warning": false,
+          "detail": "The matching app does not explicitly restrict allowed_idps."
+        }
+      ],
+      "issues": [
+        "gw.goldshore.ai has no exact acceptable Access application.",
+        "agent.goldshore.ai has no exact acceptable Access application.",
+        "Missing allow include selector for email domain goldshore.ai.",
+        "Missing allow include selector for email marstonr6@gmail.com.",
+        "Missing allow include selector for email goldshorelabs@gmail.com.",
+        "Missing allow include selector for email admin@goldshore.org."
+      ],
+      "warnings": [
+        "gw.goldshore.ai is only wildcard-covered by * (ssh); exact app coverage is still required.",
+        "agent.goldshore.ai is only wildcard-covered by * (ssh); exact app coverage is still required.",
+        "No exact app or policy name matches Goldshore Gateway.",
+        "github_goldshore_deploy: account has a GitHub IdP, but its name does not identify a deploy-specific IdP."
+      ],
+      "ok": false
+    },
+    {
+      "name": "Goldshore API",
+      "source": "infra/Cloudflare/desired-state.yaml",
+      "desiredDomains": [
+        "api.goldshore.ai"
+      ],
+      "action": "allow",
+      "paths": [
+        "/admin/*",
+        "/internal/*",
+        "/system/*",
+        "/users/*",
+        "/user/*",
+        "/templates/*",
+        "/media/*",
+        "/pages/*",
+        "/ai/*"
+      ],
+      "publicPaths": [
+        "/",
+        "/health",
+        "/status",
+        "/version",
+        "/oauth/github/callback",
+        "/webhook/github"
+      ],
+      "domainChecks": [
+        {
+          "domain": "api.goldshore.ai",
+          "ok": false,
+          "exactApps": [],
+          "acceptableExactApps": [],
+          "wildcardApps": [
+            "* (ssh)"
+          ]
+        }
+      ],
+      "matchingApps": [],
+      "exactApps": [],
+      "idpChecks": [
+        {
+          "alias": "google_workspace",
+          "label": "Google Workspace / Google",
+          "existsInAccount": true,
+          "explicitlyAllowed": false,
+          "ok": true,
+          "warning": false,
+          "detail": "The matching app does not explicitly restrict allowed_idps."
+        },
+        {
+          "alias": "github_goldshore_deploy",
+          "label": "GitHub GoldShore Deploy",
+          "existsInAccount": true,
+          "explicitlyAllowed": false,
+          "ok": true,
+          "warning": true,
+          "detail": "The matching app does not explicitly restrict allowed_idps."
+        },
+        {
+          "alias": "github",
+          "label": "GitHub",
+          "existsInAccount": true,
+          "explicitlyAllowed": false,
+          "ok": true,
+          "warning": false,
+          "detail": "The matching app does not explicitly restrict allowed_idps."
+        },
+        {
+          "alias": "email_otp",
+          "label": "Email OTP",
+          "existsInAccount": true,
+          "explicitlyAllowed": false,
+          "ok": true,
+          "warning": false,
+          "detail": "The matching app does not explicitly restrict allowed_idps."
+        }
+      ],
+      "issues": [
+        "api.goldshore.ai has no exact acceptable Access application.",
+        "Missing allow include selector for email domain goldshore.ai.",
+        "Missing allow include selector for email marstonr6@gmail.com.",
+        "Missing allow include selector for email goldshorelabs@gmail.com.",
+        "Missing allow include selector for email admin@goldshore.org.",
+        "AUD mismatch or missing for Goldshore API; expected d303765cb1746f11a0fe37affad2d191deb18771a1d98beb29cb9c52b6cd731b."
+      ],
+      "warnings": [
+        "api.goldshore.ai is only wildcard-covered by * (ssh); exact app coverage is still required.",
+        "No exact app or policy name matches Goldshore API.",
+        "github_goldshore_deploy: account has a GitHub IdP, but its name does not identify a deploy-specific IdP."
+      ],
+      "ok": false
+    },
+    {
+      "name": "GoldShore-Web-Preview",
+      "source": "infra/Cloudflare/desired-state.yaml",
+      "desiredDomains": [
+        "preview.goldshore.ai"
+      ],
+      "action": "allow",
+      "paths": [],
+      "publicPaths": [],
+      "domainChecks": [
+        {
+          "domain": "preview.goldshore.ai",
+          "ok": false,
+          "exactApps": [],
+          "acceptableExactApps": [],
+          "wildcardApps": [
+            "* (ssh)"
+          ]
+        }
+      ],
+      "matchingApps": [],
+      "exactApps": [],
+      "idpChecks": [
+        {
+          "alias": "google_workspace",
+          "label": "Google Workspace / Google",
+          "existsInAccount": true,
+          "explicitlyAllowed": false,
+          "ok": true,
+          "warning": false,
+          "detail": "The matching app does not explicitly restrict allowed_idps."
+        },
+        {
+          "alias": "github_goldshore_deploy",
+          "label": "GitHub GoldShore Deploy",
+          "existsInAccount": true,
+          "explicitlyAllowed": false,
+          "ok": true,
+          "warning": true,
+          "detail": "The matching app does not explicitly restrict allowed_idps."
+        },
+        {
+          "alias": "github",
+          "label": "GitHub",
+          "existsInAccount": true,
+          "explicitlyAllowed": false,
+          "ok": true,
+          "warning": false,
+          "detail": "The matching app does not explicitly restrict allowed_idps."
+        },
+        {
+          "alias": "email_otp",
+          "label": "Email OTP",
+          "existsInAccount": true,
+          "explicitlyAllowed": false,
+          "ok": true,
+          "warning": false,
+          "detail": "The matching app does not explicitly restrict allowed_idps."
+        }
+      ],
+      "issues": [
+        "preview.goldshore.ai has no exact acceptable Access application.",
+        "Missing allow include selector for email domain goldshore.ai.",
+        "Missing allow include selector for email marstonr6@gmail.com.",
+        "Missing allow include selector for email goldshorelabs@gmail.com.",
+        "Missing allow include selector for email admin@goldshore.org."
+      ],
+      "warnings": [
+        "preview.goldshore.ai is only wildcard-covered by * (ssh); exact app coverage is still required.",
+        "No exact app or policy name matches GoldShore-Web-Preview.",
+        "github_goldshore_deploy: account has a GitHub IdP, but its name does not identify a deploy-specific IdP."
+      ],
+      "ok": false
+    },
+    {
+      "name": "GoldShore-MCP-ZT",
+      "source": "infra/Cloudflare/desired-state.yaml",
+      "desiredDomains": [
+        "mcp.goldshore.ai"
+      ],
+      "action": "allow",
+      "paths": [],
+      "publicPaths": [],
+      "domainChecks": [
+        {
+          "domain": "mcp.goldshore.ai",
+          "ok": true,
+          "exactApps": [
+            "Goldshore MCP Portal"
+          ],
+          "acceptableExactApps": [
+            "Goldshore MCP Portal"
+          ],
+          "wildcardApps": [
+            "* (ssh)"
+          ]
+        }
+      ],
+      "matchingApps": [
+        {
+          "id": "18753be6-901e-41a1-a857-88b1a63b1a0d",
+          "name": "Goldshore MCP Portal",
+          "type": "mcp_portal",
+          "aud": "95aa2409100eea09257ab2d3a41451fe8407db48493840686e6077e3444610b4"
+        }
+      ],
+      "exactApps": [
+        {
+          "id": "18753be6-901e-41a1-a857-88b1a63b1a0d",
+          "name": "Goldshore MCP Portal",
+          "type": "mcp_portal",
+          "aud": "95aa2409100eea09257ab2d3a41451fe8407db48493840686e6077e3444610b4"
+        }
+      ],
+      "idpChecks": [
+        {
+          "alias": "google_workspace",
+          "label": "Google Workspace / Google",
+          "existsInAccount": true,
+          "explicitlyAllowed": false,
+          "ok": false,
+          "warning": false,
+          "detail": "The matching app does not explicitly restrict allowed_idps."
+        },
+        {
+          "alias": "github_goldshore_deploy",
+          "label": "GitHub GoldShore Deploy",
+          "existsInAccount": true,
+          "explicitlyAllowed": false,
+          "ok": false,
+          "warning": true,
+          "detail": "The matching app does not explicitly restrict allowed_idps."
+        },
+        {
+          "alias": "github",
+          "label": "GitHub",
+          "existsInAccount": true,
+          "explicitlyAllowed": false,
+          "ok": false,
+          "warning": false,
+          "detail": "The matching app does not explicitly restrict allowed_idps."
+        },
+        {
+          "alias": "email_otp",
+          "label": "Email OTP",
+          "existsInAccount": true,
+          "explicitlyAllowed": false,
+          "ok": false,
+          "warning": false,
+          "detail": "The matching app does not explicitly restrict allowed_idps."
+        }
+      ],
+      "issues": [
+        "Missing allow include selector for email domain goldshore.ai.",
+        "Policy Service Login on Goldshore MCP Portal allows everyone."
+      ],
+      "warnings": [
+        "No exact app or policy name matches GoldShore-MCP-ZT.",
+        "google_workspace: The matching app does not explicitly restrict allowed_idps.",
+        "github_goldshore_deploy: The matching app does not explicitly restrict allowed_idps.",
+        "github_goldshore_deploy: account has a GitHub IdP, but its name does not identify a deploy-specific IdP.",
+        "github: The matching app does not explicitly restrict allowed_idps.",
+        "email_otp: The matching app does not explicitly restrict allowed_idps."
+      ],
+      "ok": false
+    }
+  ],
+  "smokeTests": [],
+  "liveApps": [
+    {
+      "id": "41929bbe-ae7e-4a52-8987-1c2f23d78ef0",
+      "name": "*",
+      "type": "ssh",
+      "aud": "4c5083024ace5fdc2a4d64a6970722f60e0a6fa123203584095ee579ffc35d10",
+      "domains": [
+        "*.goldshore.ai",
+        "*.goldshore-github-io.pages.dev",
+        "*.gs-web-bon.pages.dev",
+        "*.goldshore.workers.dev"
+      ],
+      "hostPatterns": [
+        "*.goldshore.ai",
+        "*.goldshore-github-io.pages.dev",
+        "*.gs-web-bon.pages.dev",
+        "*.goldshore.workers.dev"
+      ],
+      "pathPatterns": [],
+      "allowedIdps": [
+        "12fe6296-fb0c-495f-98ce-8ed022b9e13f"
+      ],
+      "policies": [
+        {
+          "id": "22b2ddc4-3037-426f-9018-b1058afde027",
+          "name": "Service Login",
+          "decision": "allow",
+          "precedence": 1,
+          "include": [
+            {
+              "everyone": {}
+            }
+          ],
+          "exclude": [],
+          "require": []
+        },
+        {
+          "id": "3fa7405b-992d-4954-ac9c-785f3576f9f4",
+          "name": "gs-agent - Production",
+          "decision": "allow",
+          "precedence": 2,
+          "include": [
+            {
+              "email": {
+                "email": "marstonr6@gmail.com"
+              }
+            },
+            {
+              "email": {
+                "email": "goldshorelabs@gmail.com"
+              }
+            }
+          ],
+          "exclude": [],
+          "require": []
+        },
+        {
+          "id": "cb52c448-7cd0-4476-8f62-1489c551ed37",
+          "name": "METHODS",
+          "decision": "allow",
+          "precedence": 3,
+          "include": [
+            {
+              "auth_method": {
+                "auth_method": "mfa"
+              }
+            },
+            {
+              "auth_method": {
+                "auth_method": "pwd"
+              }
+            },
+            {
+              "auth_method": {
+                "auth_method": "sms"
+              }
+            },
+            {
+              "auth_method": {
+                "auth_method": "pin"
+              }
+            },
+            {
+              "auth_method": {
+                "auth_method": "otp"
+              }
+            },
+            {
+              "auth_method": {
+                "auth_method": "kba"
+              }
+            },
+            {
+              "auth_method": {
+                "auth_method": "mca"
+              }
+            },
+            {
+              "auth_method": {
+                "auth_method": "user"
+              }
+            },
+            {
+              "auth_method": {
+                "auth_method": "fpt"
+              }
+            },
+            {
+              "auth_method": {
+                "auth_method": "face"
+              }
+            },
+            {
+              "auth_method": {
+                "auth_method": "wia"
+              }
+            },
+            {
+              "auth_method": {
+                "auth_method": "tel"
+              }
+            }
+          ],
+          "exclude": [],
+          "require": []
+        },
+        {
+          "id": "017dbfb5-4b4b-435c-be16-f2563cb90d1c",
+          "name": "gs-signals-prod - Production",
+          "decision": "allow",
+          "precedence": 4,
+          "include": [
+            {
+              "email": {
+                "email": "marstonr6@gmail.com"
+              }
+            }
+          ],
+          "exclude": [],
+          "require": []
+        },
+        {
+          "id": "64a2bc9e-6be8-4f74-af69-cfcbbc593a3a",
+          "name": "gs-mail-prod - Production",
+          "decision": "allow",
+          "precedence": 5,
+          "include": [
+            {
+              "email": {
+                "email": "marstonr6@gmail.com"
+              }
+            }
+          ],
+          "exclude": [],
+          "require": []
+        },
+        {
+          "id": "ec3a9e9b-0a3c-4823-9c6b-dc5f279007dc",
+          "name": "banproof-me - Production",
+          "decision": "allow",
+          "precedence": 6,
+          "include": [
+            {
+              "email": {
+                "email": "marstonr6@gmail.com"
+              }
+            }
+          ],
+          "exclude": [],
+          "require": []
+        },
+        {
+          "id": "49648067-151b-4afe-bdb7-e62046af0a67",
+          "name": "rmarston-com - Production",
+          "decision": "allow",
+          "precedence": 7,
+          "include": [
+            {
+              "email": {
+                "email": "marstonr6@gmail.com"
+              }
+            }
+          ],
+          "exclude": [],
+          "require": []
+        },
+        {
+          "id": "33dda152-b59a-4b4c-a8ff-3e3ad470d265",
+          "name": "goldshore-ai - Production",
+          "decision": "allow",
+          "precedence": 8,
+          "include": [
+            {
+              "email": {
+                "email": "marstonr6@gmail.com"
+              }
+            }
+          ],
+          "exclude": [],
+          "require": []
+        },
+        {
+          "id": "e9cca2cb-261d-4646-8768-657e3532bafd",
+          "name": "banproof-me - Production",
+          "decision": "allow",
+          "precedence": 9,
+          "include": [
+            {
+              "device_posture": {
+                "integration_uid": "859e5606-d6c8-44e2-9936-83e7ff050226"
+              }
+            }
+          ],
+          "exclude": [],
+          "require": []
+        },
+        {
+          "id": "e7d79245-4932-45b4-bab5-a5e32d5fa56d",
+          "name": "Cloudflare Workers Preview URLs",
+          "decision": "allow",
+          "precedence": 10,
+          "include": [
+            {
+              "email": {
+                "email": "marstonr6@gmail.com"
+              }
+            },
+            {
+              "email": {
+                "email": "goldshorelabs@gmail.com"
+              }
+            },
+            {
+              "email": {
+                "email": "admin@goldshore.org"
+              }
+            },
+            {
+              "device_posture": {
+                "integration_uid": "859e5606-d6c8-44e2-9936-83e7ff050226"
+              }
+            },
+            {
+              "github-organization": {
+                "identity_provider_id": "8a93fc78-a057-4e9e-bde4-c6515ef4b9c4",
+                "id": "204531282",
+                "name": "goldshore"
+              }
+            },
+            {
+              "service_token": {
+                "token_id": "c5bd2271-e7a8-429f-bc1e-95147d8927a2"
+              }
+            },
+            {
+              "certificate": {}
+            }
+          ],
+          "exclude": [],
+          "require": []
+        },
+        {
+          "id": "3544f8d4-dc00-43f5-8f9e-fead14a293b8",
+          "name": "gs-api - Production",
+          "decision": "allow",
+          "precedence": 11,
+          "include": [
+            {
+              "device_posture": {
+                "integration_uid": "859e5606-d6c8-44e2-9936-83e7ff050226"
+              }
+            }
+          ],
+          "exclude": [],
+          "require": []
+        },
+        {
+          "id": "b5695f01-d7ed-404e-9514-ca6c17ef7c6c",
+          "name": "marstonr6@gmail.com",
+          "decision": "allow",
+          "precedence": 12,
+          "include": [
+            {
+              "email": {
+                "email": "marstonr6@gmail.com"
+              }
+            }
+          ],
+          "exclude": [],
+          "require": []
+        },
+        {
+          "id": "073eb87c-0524-4e5e-94cd-1fec2f14c45c",
+          "name": "gs-platform - Production",
+          "decision": "allow",
+          "precedence": 13,
+          "include": [
+            {
+              "email": {
+                "email": "marstonr6@gmail.com"
+              }
+            }
+          ],
+          "exclude": [],
+          "require": []
+        },
+        {
+          "id": "ab0d1d63-fb5a-4f89-b29d-70b74eddf487",
+          "name": "goldshore-core - Production",
+          "decision": "allow",
+          "precedence": 14,
+          "include": [
+            {
+              "email": {
+                "email": "marstonr6@gmail.com"
+              }
+            }
+          ],
+          "exclude": [],
+          "require": []
+        },
+        {
+          "id": "f5b79f18-4d12-40c3-acf6-d5785a900afa",
+          "name": "gs-agent - Production",
+          "decision": "allow",
+          "precedence": 15,
+          "include": [
+            {
+              "email": {
+                "email": "marstonr6@gmail.com"
+              }
+            },
+            {
+              "email": {
+                "email": "goldshorelabs@gmail.com"
+              }
+            }
+          ],
+          "exclude": [],
+          "require": []
+        }
+      ]
+    },
+    {
+      "id": "05a958be-1be4-435f-814f-3970cc6fa2fa",
+      "name": "App Launcher",
+      "type": "app_launcher",
+      "aud": "c9b97a62732ed8d7b64f64f89975e47c3d91df21ddbe8a7c14acdd097e7e4e1a",
+      "domains": [
+        "goldshore.cloudflareaccess.com"
+      ],
+      "hostPatterns": [
+        "goldshore.cloudflareaccess.com"
+      ],
+      "pathPatterns": [],
+      "allowedIdps": [
+        "12fe6296-fb0c-495f-98ce-8ed022b9e13f",
+        "8a93fc78-a057-4e9e-bde4-c6515ef4b9c4",
+        "b05ff0c1-08de-4b34-83a7-0eb427fed15b"
+      ],
+      "policies": [
+        {
+          "id": "22b2ddc4-3037-426f-9018-b1058afde027",
+          "name": "Service Login",
+          "decision": "allow",
+          "precedence": 1,
+          "include": [
+            {
+              "everyone": {}
+            }
+          ],
+          "exclude": [],
+          "require": []
+        },
+        {
+          "id": "cb52c448-7cd0-4476-8f62-1489c551ed37",
+          "name": "METHODS",
+          "decision": "allow",
+          "precedence": 2,
+          "include": [
+            {
+              "auth_method": {
+                "auth_method": "mfa"
+              }
+            },
+            {
+              "auth_method": {
+                "auth_method": "pwd"
+              }
+            },
+            {
+              "auth_method": {
+                "auth_method": "sms"
+              }
+            },
+            {
+              "auth_method": {
+                "auth_method": "pin"
+              }
+            },
+            {
+              "auth_method": {
+                "auth_method": "otp"
+              }
+            },
+            {
+              "auth_method": {
+                "auth_method": "kba"
+              }
+            },
+            {
+              "auth_method": {
+                "auth_method": "mca"
+              }
+            },
+            {
+              "auth_method": {
+                "auth_method": "user"
+              }
+            },
+            {
+              "auth_method": {
+                "auth_method": "fpt"
+              }
+            },
+            {
+              "auth_method": {
+                "auth_method": "face"
+              }
+            },
+            {
+              "auth_method": {
+                "auth_method": "wia"
+              }
+            },
+            {
+              "auth_method": {
+                "auth_method": "tel"
+              }
+            }
+          ],
+          "exclude": [],
+          "require": []
+        },
+        {
+          "id": "ec3a9e9b-0a3c-4823-9c6b-dc5f279007dc",
+          "name": "banproof-me - Production",
+          "decision": "allow",
+          "precedence": 3,
+          "include": [
+            {
+              "email": {
+                "email": "marstonr6@gmail.com"
+              }
+            }
+          ],
+          "exclude": [],
+          "require": []
+        },
+        {
+          "id": "64a2bc9e-6be8-4f74-af69-cfcbbc593a3a",
+          "name": "gs-mail-prod - Production",
+          "decision": "allow",
+          "precedence": 4,
+          "include": [
+            {
+              "email": {
+                "email": "marstonr6@gmail.com"
+              }
+            }
+          ],
+          "exclude": [],
+          "require": []
+        },
+        {
+          "id": "49648067-151b-4afe-bdb7-e62046af0a67",
+          "name": "rmarston-com - Production",
+          "decision": "allow",
+          "precedence": 5,
+          "include": [
+            {
+              "email": {
+                "email": "marstonr6@gmail.com"
+              }
+            }
+          ],
+          "exclude": [],
+          "require": []
+        },
+        {
+          "id": "33dda152-b59a-4b4c-a8ff-3e3ad470d265",
+          "name": "goldshore-ai - Production",
+          "decision": "allow",
+          "precedence": 6,
+          "include": [
+            {
+              "email": {
+                "email": "marstonr6@gmail.com"
+              }
+            }
+          ],
+          "exclude": [],
+          "require": []
+        },
+        {
+          "id": "e7d79245-4932-45b4-bab5-a5e32d5fa56d",
+          "name": "Cloudflare Workers Preview URLs",
+          "decision": "allow",
+          "precedence": 7,
+          "include": [
+            {
+              "email": {
+                "email": "marstonr6@gmail.com"
+              }
+            },
+            {
+              "email": {
+                "email": "goldshorelabs@gmail.com"
+              }
+            },
+            {
+              "email": {
+                "email": "admin@goldshore.org"
+              }
+            },
+            {
+              "device_posture": {
+                "integration_uid": "859e5606-d6c8-44e2-9936-83e7ff050226"
+              }
+            },
+            {
+              "github-organization": {
+                "identity_provider_id": "8a93fc78-a057-4e9e-bde4-c6515ef4b9c4",
+                "id": "204531282",
+                "name": "goldshore"
+              }
+            },
+            {
+              "service_token": {
+                "token_id": "c5bd2271-e7a8-429f-bc1e-95147d8927a2"
+              }
+            },
+            {
+              "certificate": {}
+            }
+          ],
+          "exclude": [],
+          "require": []
+        },
+        {
+          "id": "e9cca2cb-261d-4646-8768-657e3532bafd",
+          "name": "banproof-me - Production",
+          "decision": "allow",
+          "precedence": 8,
+          "include": [
+            {
+              "device_posture": {
+                "integration_uid": "859e5606-d6c8-44e2-9936-83e7ff050226"
+              }
+            }
+          ],
+          "exclude": [],
+          "require": []
+        },
+        {
+          "id": "b5695f01-d7ed-404e-9514-ca6c17ef7c6c",
+          "name": "marstonr6@gmail.com",
+          "decision": "allow",
+          "precedence": 9,
+          "include": [
+            {
+              "email": {
+                "email": "marstonr6@gmail.com"
+              }
+            }
+          ],
+          "exclude": [],
+          "require": []
+        },
+        {
+          "id": "3544f8d4-dc00-43f5-8f9e-fead14a293b8",
+          "name": "gs-api - Production",
+          "decision": "allow",
+          "precedence": 10,
+          "include": [
+            {
+              "device_posture": {
+                "integration_uid": "859e5606-d6c8-44e2-9936-83e7ff050226"
+              }
+            }
+          ],
+          "exclude": [],
+          "require": []
+        },
+        {
+          "id": "073eb87c-0524-4e5e-94cd-1fec2f14c45c",
+          "name": "gs-platform - Production",
+          "decision": "allow",
+          "precedence": 11,
+          "include": [
+            {
+              "email": {
+                "email": "marstonr6@gmail.com"
+              }
+            }
+          ],
+          "exclude": [],
+          "require": []
+        },
+        {
+          "id": "ab0d1d63-fb5a-4f89-b29d-70b74eddf487",
+          "name": "goldshore-core - Production",
+          "decision": "allow",
+          "precedence": 12,
+          "include": [
+            {
+              "email": {
+                "email": "marstonr6@gmail.com"
+              }
+            }
+          ],
+          "exclude": [],
+          "require": []
+        },
+        {
+          "id": "f5b79f18-4d12-40c3-acf6-d5785a900afa",
+          "name": "gs-agent - Production",
+          "decision": "allow",
+          "precedence": 13,
+          "include": [
+            {
+              "email": {
+                "email": "marstonr6@gmail.com"
+              }
+            },
+            {
+              "email": {
+                "email": "goldshorelabs@gmail.com"
+              }
+            }
+          ],
+          "exclude": [],
+          "require": []
+        }
+      ]
+    },
+    {
+      "id": "18753be6-901e-41a1-a857-88b1a63b1a0d",
+      "name": "Goldshore MCP Portal",
+      "type": "mcp_portal",
+      "aud": "95aa2409100eea09257ab2d3a41451fe8407db48493840686e6077e3444610b4",
+      "domains": [
+        "mcp.goldshore.ai",
+        "mcp.goldshore.org"
+      ],
+      "hostPatterns": [
+        "mcp.goldshore.ai",
+        "mcp.goldshore.org"
+      ],
+      "pathPatterns": [],
+      "allowedIdps": [],
+      "policies": [
+        {
+          "id": "22b2ddc4-3037-426f-9018-b1058afde027",
+          "name": "Service Login",
+          "decision": "allow",
+          "precedence": 1,
+          "include": [
+            {
+              "everyone": {}
+            }
+          ],
+          "exclude": [],
+          "require": []
+        },
+        {
+          "id": "e7d79245-4932-45b4-bab5-a5e32d5fa56d",
+          "name": "Cloudflare Workers Preview URLs",
+          "decision": "allow",
+          "precedence": 2,
+          "include": [
+            {
+              "email": {
+                "email": "marstonr6@gmail.com"
+              }
+            },
+            {
+              "email": {
+                "email": "goldshorelabs@gmail.com"
+              }
+            },
+            {
+              "email": {
+                "email": "admin@goldshore.org"
+              }
+            },
+            {
+              "device_posture": {
+                "integration_uid": "859e5606-d6c8-44e2-9936-83e7ff050226"
+              }
+            },
+            {
+              "github-organization": {
+                "identity_provider_id": "8a93fc78-a057-4e9e-bde4-c6515ef4b9c4",
+                "id": "204531282",
+                "name": "goldshore"
+              }
+            },
+            {
+              "service_token": {
+                "token_id": "c5bd2271-e7a8-429f-bc1e-95147d8927a2"
+              }
+            },
+            {
+              "certificate": {}
+            }
+          ],
+          "exclude": [],
+          "require": []
+        }
+      ]
+    },
+    {
+      "id": "8cce9500-6833-4302-b0e6-307fce2fe9c9",
+      "name": "gs-admin - Cloudflare Pages",
+      "type": "self_hosted",
+      "aud": "099bd7dbac57461bfa834021a54aaeea7616df540e2e07f79ba7a5c6f3e0dc66",
+      "domains": [
+        "*.gs-admin.pages.dev"
+      ],
+      "hostPatterns": [
+        "*.gs-admin.pages.dev"
+      ],
+      "pathPatterns": [],
+      "allowedIdps": [
+        "12fe6296-fb0c-495f-98ce-8ed022b9e13f"
+      ],
+      "policies": [
+        {
+          "id": "877e834c-7697-470f-88b7-e6dfe4ffcd94",
+          "name": "Allow Members - Cloudflare Pages",
+          "decision": "allow",
+          "precedence": 1,
+          "include": [
+            {
+              "email": {
+                "email": "marstonr6@gmail.com"
+              }
+            },
+            {
+              "email": {
+                "email": "goldshorelabs@gmail.com"
+              }
+            },
+            {
+              "email": {
+                "email": "nickburzo@gmail.com"
+              }
+            }
+          ],
+          "exclude": [],
+          "require": []
+        }
+      ]
+    },
+    {
+      "id": "ebdf74d0-52fc-4e34-bec0-485739a9116b",
+      "name": "gs-agent - Cloudflare Workers",
+      "type": "ssh",
+      "aud": "54a690d758fad666ae49b3ef80dbbe0f6d2403cb23b87fcf78a92e82bd029655",
+      "domains": [
+        "agent.goldshore.workers.dev"
+      ],
+      "hostPatterns": [
+        "agent.goldshore.workers.dev"
+      ],
+      "pathPatterns": [],
+      "allowedIdps": [
+        "12fe6296-fb0c-495f-98ce-8ed022b9e13f",
+        "8a93fc78-a057-4e9e-bde4-c6515ef4b9c4",
+        "b05ff0c1-08de-4b34-83a7-0eb427fed15b"
+      ],
+      "policies": [
+        {
+          "id": "8dc68cc9-0ef4-4676-9b19-871a65201b08",
+          "name": "gs-agent - Production",
+          "decision": "allow",
+          "precedence": 1,
+          "include": [
+            {
+              "email": {
+                "email": "marstonr6@gmail.com"
+              }
+            },
+            {
+              "email": {
+                "email": "goldshorelabs@gmail.com"
+              }
+            }
+          ],
+          "exclude": [],
+          "require": []
+        }
+      ]
+    },
+    {
+      "id": "a046def5-c1ba-41d3-b1ea-1b98748bd1fa",
+      "name": "gs-api - Cloudflare Workers",
+      "type": "self_hosted",
+      "aud": "1aeaef79b62df71d59ad0af52da92a9de9382d37f54ff9c2bb8a4f699d9fe5f6",
+      "domains": [
+        "gs-api.goldshore.workers.dev"
+      ],
+      "hostPatterns": [
+        "gs-api.goldshore.workers.dev"
+      ],
+      "pathPatterns": [],
+      "allowedIdps": [
+        "12fe6296-fb0c-495f-98ce-8ed022b9e13f"
+      ],
+      "policies": [
+        {
+          "id": "b7d6ac55-4aa4-490e-b270-a7abfa04bbed",
+          "name": "gs-api - Production",
+          "decision": "non_identity",
+          "precedence": 1,
+          "include": [
+            {
+              "device_posture": {
+                "integration_uid": "859e5606-d6c8-44e2-9936-83e7ff050226"
+              }
+            },
+            {
+              "service_token": {
+                "token_id": "c5bd2271-e7a8-429f-bc1e-95147d8927a2"
+              }
+            },
+            {
+              "linked_app_token": {
+                "app_uid": "a046def5-c1ba-41d3-b1ea-1b98748bd1fa"
+              }
+            },
+            {
+              "linked_app_token": {
+                "app_uid": "045494b2-e525-47f1-b839-67ca44be45df"
+              }
+            },
+            {
+              "linked_app_token": {
+                "app_uid": "8cce9500-6833-4302-b0e6-307fce2fe9c9"
+              }
+            },
+            {
+              "linked_app_token": {
+                "app_uid": "425ad606-eca8-4b14-85db-5383c443b10e"
+              }
+            },
+            {
+              "linked_app_token": {
+                "app_uid": "be576bef-6316-4c86-9b0b-2d44f85b45a2"
+              }
+            },
+            {
+              "any_valid_service_token": {}
+            }
+          ],
+          "exclude": [],
+          "require": []
+        }
+      ]
+    },
+    {
+      "id": "be576bef-6316-4c86-9b0b-2d44f85b45a2",
+      "name": "gs-mail - Cloudflare Workers",
+      "type": "self_hosted",
+      "aud": "ac22e6f95382ab4734296d2df71ce8aa38583cf55396632e11d63f4003f94aae",
+      "domains": [
+        "gs-mail.goldshore.workers.dev"
+      ],
+      "hostPatterns": [
+        "gs-mail.goldshore.workers.dev"
+      ],
+      "pathPatterns": [],
+      "allowedIdps": [
+        "12fe6296-fb0c-495f-98ce-8ed022b9e13f"
+      ],
+      "policies": [
+        {
+          "id": "36561c97-14e0-4f90-aae5-1e1bcb46e9f4",
+          "name": "gs-mail - Production",
+          "decision": "allow",
+          "precedence": 1,
+          "include": [
+            {
+              "email": {
+                "email": "marstonr6@gmail.com"
+              }
+            },
+            {
+              "email": {
+                "email": "goldshorelabs@gmail.com"
+              }
+            },
+            {
+              "email": {
+                "email": "nickburzo@gmail.com"
+              }
+            }
+          ],
+          "exclude": [],
+          "require": []
+        }
+      ]
+    },
+    {
+      "id": "08cc627c-8944-42c8-ad89-dfad0182ef84",
+      "name": "SSO App",
+      "type": "dash_sso",
+      "aud": "14fe63cce321f681a596e04ca0ac0df291d09587a51c0188063f390b2c7eb85d",
+      "domains": [
+        "goldshore.cloudflareaccess.com/cdn-cgi/access/sso/saml/14fe63cce321f681a596e04ca0ac0df291d09587a51c0188063f390b2c7eb85d"
+      ],
+      "hostPatterns": [
+        "goldshore.cloudflareaccess.com"
+      ],
+      "pathPatterns": [
+        "/cdn-cgi/access/sso/saml/14fe63cce321f681a596e04ca0ac0df291d09587a51c0188063f390b2c7eb85d"
+      ],
+      "allowedIdps": [],
+      "policies": [
+        {
+          "id": "da10f15d-0f0c-4955-8fb0-f72f3225664c",
+          "name": "Allow email domain goldshore.ai",
+          "decision": "allow",
+          "precedence": 1,
+          "include": [
+            {
+              "email_domain": {
+                "domain": "goldshore.ai"
+              }
+            }
+          ],
+          "exclude": [],
+          "require": []
+        }
+      ]
+    },
+    {
+      "id": "ff186452-63b3-4bbe-a502-8d5d491b7c97",
+      "name": "Temp HP Laptop SSH",
+      "type": "ssh",
+      "aud": "d3f80a696e1a498c3f21eedb404e17b66b894e6ab6118b4e99e92e8782735c62",
+      "domains": [
+        "ssh-laptop.goldshore.ai"
+      ],
+      "hostPatterns": [
+        "ssh-laptop.goldshore.ai"
+      ],
+      "pathPatterns": [],
+      "allowedIdps": [],
+      "policies": [
+        {
+          "id": "d7306f97-dc00-4c67-9cf4-08f1e4fe9b2a",
+          "name": "Allow marstonr6 only",
+          "decision": "allow",
+          "precedence": 1,
+          "include": [
+            {
+              "email": {
+                "email": "marstonr6@gmail.com"
+              }
+            }
+          ],
+          "exclude": [],
+          "require": []
+        }
+      ]
+    },
+    {
+      "id": "b1e9744f-9d8d-4813-818a-0ba627ac9cd1",
+      "name": "Warp Login App",
+      "type": "warp",
+      "aud": "3878ea30f76495257a4881573f15e38ea5704298c8f1d523eadb4f7fff7026b8",
+      "domains": [
+        "goldshore.cloudflareaccess.com/warp"
+      ],
+      "hostPatterns": [
+        "goldshore.cloudflareaccess.com"
+      ],
+      "pathPatterns": [
+        "/warp"
+      ],
+      "allowedIdps": [],
+      "policies": [
+        {
+          "id": "b5695f01-d7ed-404e-9514-ca6c17ef7c6c",
+          "name": "marstonr6@gmail.com",
+          "decision": "allow",
+          "precedence": 1,
+          "include": [
+            {
+              "email": {
+                "email": "marstonr6@gmail.com"
+              }
+            }
+          ],
+          "exclude": [],
+          "require": []
+        },
+        {
+          "id": "0d8c3e29-2c9d-4193-9c04-fbb6b0e83992",
+          "name": "Allow emails: 6/26/2026",
+          "decision": "allow",
+          "precedence": 2,
+          "include": [
+            {
+              "email": {
+                "email": "marstonr6@gmail.com"
+              }
+            }
+          ],
+          "exclude": [],
+          "require": []
+        }
+      ]
+    }
+  ]
+}

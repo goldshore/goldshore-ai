@@ -7,15 +7,20 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: required-merge-checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   workspace-install:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@f520eceda224fe1a4aed5a2a27a194379a409996 # v6
         with:
           run_install: false
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           cache: pnpm
@@ -24,50 +29,81 @@ jobs:
 
   gs-api-build-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: workspace-install
     steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@f520eceda224fe1a4aed5a2a27a194379a409996 # v6
         with:
           run_install: false
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Build gs-api
-        run: pnpm --filter ./apps/gs-api... build
+        run: pnpm --filter @goldshore/gs-api build
       - name: Test gs-api
         run: pnpm --filter ./apps/gs-api... test
 
   gs-web-build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: workspace-install
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@f520eceda224fe1a4aed5a2a27a194379a409996 # v6
         with:
           run_install: false
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Build gs-web
         run: pnpm --dir apps/gs-web build
+      # gs-web's "test" script runs Playwright only, so tests/unit never ran in
+      # CI. That let a syntax error disable a whole unit-test file unnoticed.
+      # Invoke test:unit explicitly; the e2e suite needs a served build and is
+      # covered by the release quality gate below.
+      - name: Test gs-web (unit)
+        run: pnpm --dir apps/gs-web test:unit
       - name: Detect gs-web release-impact changes
         id: gs-web-changes
         shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          BEFORE_SHA: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            RANGE="origin/${{ github.base_ref }}...HEAD"
+          set -euo pipefail
+
+          # Fail open: if we cannot compute a trustworthy diff base (first push
+          # to a branch, force-push, shallow clone), run the gate rather than
+          # silently skipping it.
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            git fetch --no-tags origin "$BASE_REF" >/dev/null 2>&1 || true
+            RANGE="origin/${BASE_REF}...HEAD"
+          elif git cat-file -e "${BEFORE_SHA}^{commit}" 2>/dev/null; then
+            RANGE="${BEFORE_SHA}...${HEAD_SHA}"
           else
-            RANGE="${{ github.event.before }}...${{ github.sha }}"
+            echo "No usable diff base (${BEFORE_SHA:-unset}); running the release gate."
+            echo "release_impact=true" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
 
-          if git diff --name-only "$RANGE" | grep -Eq '^(apps/gs-web/|packages/|package.json|pnpm-lock.yaml|pnpm-workspace.yaml|turbo.json)$'; then
+          CHANGED="$(git diff --name-only "$RANGE")"
+          echo "Changed files in $RANGE:"
+          echo "$CHANGED"
+
+          # Directory entries are prefix matches; root files are exact matches.
+          # The previous single-group pattern anchored every alternative with $,
+          # so 'apps/gs-web/' could only match a line that was literally
+          # 'apps/gs-web/' — no real path ever matched and the gate never ran.
+          if printf '%s\n' "$CHANGED" | grep -Eq '^(apps/gs-web/|packages/)|^(package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|turbo\.json)$'; then
             echo "release_impact=true" >> "$GITHUB_OUTPUT"
           else
             echo "release_impact=false" >> "$GITHUB_OUTPUT"
@@ -78,42 +114,37 @@ jobs:
           LH_MIN_PERFORMANCE: "0.60"
         run: pnpm --dir apps/gs-web check:release
 
-  gs-admin-build:
-    runs-on: ubuntu-latest
-    needs: workspace-install
-    steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-        with:
-          run_install: false
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - name: Build gs-admin
-        run: pnpm --dir apps/gs-admin build
+  # gs-admin-build removed: apps/gs-admin is not a member of pnpm-workspace.yaml
+  # (the workspace was narrowed to apps/gs-web + apps/gs-api during the two-app
+  # consolidation — see AGENTS.md). `pnpm --dir apps/gs-admin build` cannot
+  # resolve gs-admin's workspace:* dependencies (e.g. @goldshore/auth) outside
+  # the workspace, so this job failed unconditionally on every PR. It was also
+  # a required branch-protection status check, so it blocked every merge to
+  # main regardless of PR content. If gs-admin regains workspace membership,
+  # re-add a build check for it then — not before, since a required check that
+  # cannot pass is equivalent to disabling merges rather than protecting them.
 
   deployment-dry-run:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs:
       - gs-api-build-test
       - gs-web-build
-      - gs-admin-build
     steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@f520eceda224fe1a4aed5a2a27a194379a409996 # v6
         with:
           run_install: false
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: API deploy dry-run
         working-directory: apps/gs-api
-        run: pnpm exec wrangler deploy --dry-run --outdir .wrangler-dry-run
+        run: pnpm exec wrangler deploy --env prod --dry-run --outdir .wrangler-dry-run
       - name: Web deploy dry-run (build)
-        run: pnpm --dir apps/gs-web build
-      - name: Admin deploy dry-run (build)
-        run: pnpm --dir apps/gs-admin build
+        working-directory: apps/gs-web
+        run: |
+          pnpm build
+          pnpm exec wrangler deploy --env prod --dry-run --outdir .wrangler-dry-run

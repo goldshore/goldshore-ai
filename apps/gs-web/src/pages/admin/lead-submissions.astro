@@ -1,5 +1,5 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import AdminLayout from "../../layouts/AdminLayout.astro";
 
 export const prerender = false;
 
@@ -23,17 +23,6 @@ type LeadSubmission = {
   user_agent: string | null;
 };
 
-const runtime = Astro.locals.runtime as {
-  env?: {
-    PLATFORM_DB?: {
-      prepare(query: string): {
-        bind(...values: string[]): { all(): Promise<{ results?: LeadSubmission[] }> };
-        all(): Promise<{ results?: LeadSubmission[] }>;
-      };
-    };
-  };
-} | undefined;
-const db = runtime?.env?.PLATFORM_DB;
 const url = new URL(Astro.request.url);
 const statusFilter = url.searchParams.get('status');
 const allowedStatuses = ['new', 'read', 'archived'] as const;
@@ -71,7 +60,7 @@ const buildMailto = (email: string | null, name: string | null) => {
 };
 ---
 
-<BaseLayout title="Lead Submissions | GoldShore" description="Admin review for inbound leads">
+<AdminLayout title="Lead Submissions | GoldShore">
   <section class="gs-section">
     <div class="gs-grid columns-2">
       <div>
@@ -166,4 +155,4 @@ const buildMailto = (email: string | null, name: string | null) => {
       </div>
     )}
   </section>
-</BaseLayout>
+</AdminLayout>

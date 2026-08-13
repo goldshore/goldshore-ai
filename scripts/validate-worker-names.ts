@@ -1,19 +1,37 @@
-import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import { join } from "node:path";
 
 const APPS_DIR = path.resolve(process.cwd(), "apps");
+const CANONICAL_APPS = ["gs-api", "gs-web"];
 const WRANGLER_NAME_PATTERN = /^\s*name\s*=\s*["']([^"']+)["']/m;
 const ROUTE_PATTERN = /pattern\s*=\s*["']([^"']+)["']/g;
 const SINGLE_ROUTE_PATTERN = /^\s*route\s*=\s*["']([^"']+)["']/gm;
-const EXPECTED_HOST_OWNERS: Record<string, string> = {};
+const EXPECTED_HOST_OWNERS: Record<string, string> = {
+  "goldshore.ai": "gs-web",
+  "goldshore.org": "gs-web",
+  "admin.goldshore.ai": "gs-web",
+  "admin.goldshore.org": "gs-web",
+  "risk.goldshore.ai": "gs-web",
+  "risk.goldshore.org": "gs-web",
+  "api.goldshore.ai": "gs-api",
+  "agent.goldshore.ai": "gs-api",
+  "mail.goldshore.ai": "gs-api",
+  "ops.goldshore.ai": "gs-api",
+  "trading.goldshore.ai": "gs-api",
+  "dashboard.goldshore.ai": "gs-api",
+  "dash.goldshore.ai": "gs-api",
+  "gw.goldshore.ai": "gs-api",
+  "api.goldshore.org": "gs-api",
+  "agent.goldshore.org": "gs-api",
+  "mail.goldshore.org": "gs-api",
+  "trading.goldshore.org": "gs-api",
+};
 
 function getWorkerDirectories(): string[] {
-  return readdirSync(APPS_DIR)
-    .map((entry) => path.join(APPS_DIR, entry))
-    .filter((fullPath) => statSync(fullPath).isDirectory())
-    .filter((fullPath) => existsSync(path.join(fullPath, "wrangler.toml")))
-    .filter((fullPath) => !fullPath.includes(`${path.sep}legacy${path.sep}`));
+  return CANONICAL_APPS.map((entry) => path.join(APPS_DIR, entry)).filter((fullPath) =>
+    existsSync(path.join(fullPath, "wrangler.toml")),
+  );
 }
 
 function extractHostnames(wranglerRaw: string): string[] {
@@ -117,7 +135,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     failed = true;
   }
 
-  const CANONICAL_WORKERS = ["gs-api"];
+  const CANONICAL_WORKERS = ["gs-api", "gs-web"];
   const appsDirStr = "apps";
 
   for (const worker of CANONICAL_WORKERS) {

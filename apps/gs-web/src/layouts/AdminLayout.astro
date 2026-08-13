@@ -1,0 +1,95 @@
+---
+import Sidebar from '../components/Sidebar.astro';
+import '../styles/admin.css';
+import { hasAdminPermission, type AdminPermission } from '@goldshore/auth';
+
+interface Props {
+  title: string;
+  requiredPermission?: AdminPermission;
+}
+
+const { title, requiredPermission } = Astro.props;
+const session = Astro.locals.adminSession;
+
+if (!session?.isAuthenticated || session.roles.length === 0) {
+  return Astro.redirect('/login?next=' + encodeURIComponent(Astro.url.pathname));
+}
+
+if (requiredPermission && !hasAdminPermission(session.permissions, requiredPermission)) {
+  return new Response('Forbidden', { status: 403 });
+}
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{title}</title>
+    <link rel="icon" href="/favicon.ico" />
+  </head>
+  <body class="gs-admin-body">
+    <div class="gs-admin-shell">
+      <Sidebar permissions={session.permissions} />
+      <main class="gs-admin-main">
+        <button class="gs-admin-menu-toggle" id="admin-menu-toggle" type="button" aria-label="Open admin navigation">Menu</button>
+        <slot />
+      </main>
+    </div>
+  </body>
+</html>
+
+<style>
+  :root {
+    color-scheme: dark;
+  }
+
+  body.gs-admin-body {
+    margin: 0;
+    background: #050b14;
+    color: rgba(226, 232, 240, 0.92);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    min-height: 100dvh;
+  }
+
+  .gs-admin-shell {
+    display: flex;
+    min-height: 100dvh;
+  }
+
+  .gs-admin-main {
+    flex: 1;
+    min-width: 0;
+    overflow-x: hidden;
+    padding: 0;
+  }
+
+  .gs-admin-menu-toggle { display: none; }
+
+  @media (max-width: 900px) {
+    .gs-admin-menu-toggle {
+      display: inline-flex;
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 35;
+      border: 1px solid rgba(90, 162, 255, 0.25);
+      border-radius: 7px;
+      background: #0a1724;
+      color: #c4d5e2;
+      padding: 8px 10px;
+      font-weight: 700;
+    }
+  }
+</style>
+
+<script>
+  const openButton = document.querySelector<HTMLButtonElement>('#admin-menu-toggle');
+  const closeButton = document.querySelector<HTMLButtonElement>('#sidebar-close');
+  const closeSidebar = () => document.body.classList.remove('gs-sidebar-open');
+  openButton?.addEventListener('click', () => document.body.classList.add('gs-sidebar-open'));
+  closeButton?.addEventListener('click', closeSidebar);
+  document.querySelector('#admin-sidebar')?.addEventListener('click', (event) => {
+    if ((event.target as HTMLElement).closest('a')) closeSidebar();
+  });
+</script>

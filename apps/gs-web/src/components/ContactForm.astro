@@ -1,11 +1,13 @@
 ---
 const { heading = 'Contact operations', compact = false } = Astro.props;
+const turnstileSiteKey = Astro.locals.TURNSTILE_SITE_KEY || import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || '';
 ---
 
 <form data-contact-form class:list={['contact-form', compact && 'contact-form--compact']} action="/api/contact" method="post">
   <input type="hidden" name="formType" value="contact" />
   <input type="hidden" name="redirectTo" value="/thank-you" />
   <input type="hidden" name="formStartedAt" value="" />
+  <input type="hidden" name="cf-turnstile-response" value="" />
 
   <div class="contact-form__header">
     <p class="gs-eyebrow">Direct channel</p>
@@ -53,6 +55,12 @@ const { heading = 'Contact operations', compact = false } = Astro.props;
     </label>
   </div>
 
+  {turnstileSiteKey && (
+    <div class="contact-form__turnstile" data-contact-form-turnstile>
+      <div class="cf-turnstile" data-sitekey={turnstileSiteKey} data-theme="dark"></div>
+    </div>
+  )}
+
   <div class="contact-form__footer">
     <div data-contact-form-status class="contact-form__status" aria-live="polite" role="status"></div>
     <button type="submit" class="contact-form__submit">
@@ -75,12 +83,19 @@ const { heading = 'Contact operations', compact = false } = Astro.props;
   </div>
 </form>
 
-<script>
-  const contactFormGlobal = window as typeof window & {
-    __gsContactFormsBound?: boolean;
-  };
+<script is:inline define:vars={{turnstileSiteKey}}>
+  const contactFormGlobal = window;
 
-  const initContactForm = (form: HTMLFormElement) => {
+  // Load Turnstile script if site key is configured
+  if (turnstileSiteKey && !window.turnstile) {
+    const script = document.createElement('script');
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+    script.async = true;
+    script.defer = true;
+    document.head.appendChild(script);
+  }
+
+  const initContactForm = (form) => {
     if (form.dataset.contactFormBound === 'true') return;
     form.dataset.contactFormBound = 'true';
 
@@ -91,7 +106,7 @@ const { heading = 'Contact operations', compact = false } = Astro.props;
     const resetBtn = form.querySelector('[data-contact-form-reset]');
     if (!(button instanceof HTMLButtonElement)) return;
 
-    const setStatus = (message: string, type: string | null) => {
+    const setStatus = (message, type) => {
       if (!(status instanceof HTMLElement)) return;
       status.textContent = message;
       status.className = 'contact-form__status';
@@ -138,6 +153,19 @@ const { heading = 'Contact operations', compact = false } = Astro.props;
         return;
       }
 
+      // Verify Turnstile if enabled
+      if (turnstileSiteKey && window.turnstile) {
+        const turnstileToken = window.turnstile.getResponse();
+        if (!turnstileToken) {
+          setStatus('Please complete the Turnstile verification.', 'error');
+          return;
+        }
+        const tokenInput = form.querySelector('[name="cf-turnstile-response"]');
+        if (tokenInput instanceof HTMLInputElement) {
+          tokenInput.value = turnstileToken;
+        }
+      }
+
       const originalText = submitText instanceof HTMLElement ? submitText.textContent ?? 'Send brief' : 'Send brief';
       button.disabled = true;
       button.setAttribute('aria-busy', 'true');
@@ -155,19 +183,29 @@ const { heading = 'Contact operations', compact = false } = Astro.props;
           throw new Error(`Submission failed: ${response.status}`);
         }
 
-        const data = await response.json() as { ok: boolean; error?: { message?: string } };
+        const data = await response.json();
         if (!data.ok) {
           throw new Error(data.error?.message || 'Submission failed');
         }
 
         setStatus('', null);
         showSuccess();
+
+        // Reset Turnstile if enabled
+        if (turnstileSiteKey && window.turnstile) {
+          window.turnstile.reset();
+        }
       } catch (error) {
         console.error(error);
         button.disabled = false;
         button.removeAttribute('aria-busy');
         if (submitText instanceof HTMLElement) submitText.textContent = originalText;
         setStatus('Unable to send right now. Please email hello@goldshore.ai.', 'error');
+
+        // Reset Turnstile on error
+        if (turnstileSiteKey && window.turnstile) {
+          window.turnstile.reset();
+        }
       }
     });
   };
@@ -270,6 +308,12 @@ const { heading = 'Contact operations', compact = false } = Astro.props;
 
   .contact-form__message {
     grid-column: 1 / -1;
+  }
+
+  .contact-form__turnstile {
+    display: flex;
+    justify-content: center;
+    margin: 0.5rem 0;
   }
 
   .contact-form__footer {
