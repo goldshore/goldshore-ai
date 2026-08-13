@@ -42,7 +42,8 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   );
 
   if (adminRule) {
-    const runtimeEnv = context.locals.runtime?.env as Env | undefined;
+    const { env: cloudflareEnv } = await import('cloudflare:workers');
+    const runtimeEnv = cloudflareEnv as Env;
     const allowLocalAdminBypass = import.meta.env.DEV || runtimeEnv?.DEV_AUTH_BYPASS === '1';
 
     if (allowLocalAdminBypass) {

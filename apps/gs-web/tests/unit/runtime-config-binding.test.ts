@@ -9,6 +9,31 @@ const repoRelative = (relativePath: string) =>
 const webWrangler = readFileSync(repoRelative('../../wrangler.toml'), 'utf8');
 const webReadme = readFileSync(repoRelative('../../README.md'), 'utf8');
 const astroConfig = readFileSync(repoRelative('../../astro.config.mjs'), 'utf8');
+const workerEntrypoint = readFileSync(repoRelative('../../src/worker.ts'), 'utf8');
+const deployWorkflow = readFileSync(
+  repoRelative('../../../../.github/workflows/deploy-gs-web.yml'),
+  'utf8',
+);
+
+test('gs-web retains its Astro SSR Worker-with-Assets deployment contract', () => {
+  assert.match(webWrangler, /^main = "\.\/src\/worker\.ts"$/m);
+  assert.match(
+    webWrangler,
+    /^\[assets\]\r?\ndirectory = "\.\/dist"\r?\nbinding = "ASSETS"\r?\nrun_worker_first = true$/m,
+  );
+
+  // The checked-in entrypoint delegates requests to Astro's SSR handler. A
+  // static-assets-only deployment would make non-prerendered auth routes 404.
+  assert.match(workerEntrypoint, /from '@astrojs\/cloudflare\/handler'/);
+  assert.match(workerEntrypoint, /async fetch\(request: Request, env: unknown, ctx: unknown\)/);
+  assert.match(workerEntrypoint, /return handle\(request, env as any, ctx as any\)/);
+
+  // CI must build the same SSR release rather than publishing dist as a Pages
+  // site or bypassing the manifest through a different Wrangler entrypoint.
+  assert.match(deployWorkflow, /CLOUDFLARE_ENV: prod/);
+  assert.match(deployWorkflow, /run: pnpm build:pages/);
+  assert.doesNotMatch(deployWorkflow, /^\s*run:.*wrangler pages deploy/m);
+});
 
 test('gs-web has no direct operational bindings beyond its session store', () => {
   assert.match(webWrangler, /\[assets\][\s\S]*?binding = "ASSETS"/);
@@ -24,8 +49,8 @@ test('gs-web has no direct operational bindings beyond its session store', () =>
   // inherit bindings, so dropping either one lets Cloudflare auto-provision a
   // replacement namespace at deploy time.
   const sessionId = '805bff3293c2483facc5225e6ff9af60';
-  assert.match(webWrangler, new RegExp(`\\[\\[kv_namespaces\\]\\]\\nbinding = "SESSION"\\nid = "${sessionId}"`));
-  assert.match(webWrangler, new RegExp(`\\[\\[env\\.prod\\.kv_namespaces\\]\\]\\nbinding = "SESSION"\\nid = "${sessionId}"`));
+  assert.match(webWrangler, new RegExp(`\\[\\[kv_namespaces\\]\\]\\r?\\nbinding = "SESSION"\\r?\\nid = "${sessionId}"`));
+  assert.match(webWrangler, new RegExp(`\\[\\[env\\.prod\\.kv_namespaces\\]\\]\\r?\\nbinding = "SESSION"\\r?\\nid = "${sessionId}"`));
 
   // No session driver override: the Cloudflare adapter supplies its KV driver
   // when none is set, which is what emits the SESSION binding.
