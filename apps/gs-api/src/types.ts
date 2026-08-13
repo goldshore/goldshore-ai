@@ -35,12 +35,9 @@ type RuntimeSecrets = {
   ANTHROPIC_GATEWAY_ID?: string;
   ANTHROPIC_GATEWAY_VERIFIED?: string;
   API_VERSION?: string;
-  CF_AIG_TOKEN?: string;
-  CF_WEBHOOK_TOKEN?: string;
   CF_VERSION_METADATA?: { id: string };
   CLOUDFLARE_ACCOUNT_ID?: string;
   CLOUDFLARE_API_TOKEN?: string;
-  CLOUDFLARE_BUILD_API_TOKEN?: string;
   CLOUDFLARE_PAGES_PROJECT?: string;
   CLOUDFLARE_ZONE_ID?: string;
   CLOUDFLARE_ZONE_NAME?: string;
@@ -71,7 +68,6 @@ type RuntimeSecrets = {
   GOOGLE_GSC_REFRESH_TOKEN?: string;
   GOOGLE_GSC_SITE_URL?: string;
   GOOGLE_OAUTH_CLIENT_SECRET?: string;
-  GOOGLE_WEBHOOK_TOKEN?: string;
   GOLDCLAW_SANDBOX_API_TOKEN?: string;
   GOLDCLAW_SANDBOX_API_URL?: string;
   GOLDCLAW_SANDBOX_PROVIDER?: string;
