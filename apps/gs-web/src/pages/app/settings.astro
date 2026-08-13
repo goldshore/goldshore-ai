@@ -1,4 +1,5 @@
 ---
+import { env as cloudflareEnv } from 'cloudflare:workers';
 import AdminLayout from "../../layouts/AdminLayout.astro";
 import { authorizeAdminRequest, getAdminRouteRule } from '../../utils/admin-access';
 
@@ -15,7 +16,7 @@ type SiteSettings = {
   updatedAt: string;
 };
 
-const env = Astro.locals.runtime?.env as Env | undefined;
+const env = cloudflareEnv as Env;
 const rule = getAdminRouteRule('/app/settings', 'GET');
 
 let authError: { status: number; message: string } | null = null;
