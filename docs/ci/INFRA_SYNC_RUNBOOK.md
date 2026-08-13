@@ -40,7 +40,9 @@ Use this checklist when Cloudflare Worker Builds reports that the selected build
 For each Worker/Pages project involved in the deploy chain:
 
 1. Open **Cloudflare Dashboard** → **Workers & Pages**.
-2. Open the project/service (`gs-api`, `gs-gateway`, `gs-control`; include `gs-agent` too if its preview workflow is being retried in the same window).
+2. Open the active project/service (`gs-api` or `gs-web`). Historical satellite
+   projects, including `gs-agent`, are not deploy targets and must not be
+   recreated during credential recovery.
 3. Go to **Settings** → **Builds & deployments** → **Build watch paths / Worker Builds token**.
 4. Generate or select the replacement build token.
 5. Save the change and verify the project is now pointing at the intended active token.
@@ -64,8 +66,6 @@ Rotate the GitHub Actions secrets in the same maintenance window so preview and 
 | `.github/workflows/deploy-gs-gateway.yml` | `main` → production deploy for `gs-gateway` | `CLOUDFLARE_BUILD_API_TOKEN`, plus `CLOUDFLARE_ACCOUNT_ID` | Keep the production gateway token aligned with preview because both use the same build token. |
 | `.github/workflows/preview-gs-gateway.yml` | PR preview deploy for `gs-gateway` | `CLOUDFLARE_BUILD_API_TOKEN`, plus `CLOUDFLARE_ACCOUNT_ID` | Update the single build token during rotation so behavior is deterministic. |
 | `.github/workflows/deploy-gs-control.yml` | `main` → production deploy for `gs-control` | `CLOUDFLARE_BUILD_API_TOKEN`, plus `CLOUDFLARE_ACCOUNT_ID` | Active production deploy; rotate the single build token in the same window as the other worker deploys. |
-| `.github/workflows/preview-gs-agent.yml` | PR preview deploy for `gs-agent` | `CLOUDFLARE_BUILD_API_TOKEN`, plus `CLOUDFLARE_ACCOUNT_ID` | Include when agent preview retries share the same maintenance window. |
-| `.github/workflows/deploy-gs-agent.yml` | `main` → production deploy for `gs-agent` | `CLOUDFLARE_BUILD_API_TOKEN`, plus `CLOUDFLARE_ACCOUNT_ID` | Active production deploy; keep it in sync with the preview workflow because both use the same build token model. |
 | `.github/workflows/maintenance.yml` | manual infra reconciliation after rotation | `CLOUDFLARE_BUILD_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `GS_KV_NAMESPACE_ID` | Run after secret updates to confirm the repo can still reconcile Cloudflare state; steps may expose `CLOUDFLARE_API_TOKEN` from the build-token secret for Wrangler/script compatibility. |
 
 ### 3. Reconcile preview worker environments and service names in Cloudflare
@@ -73,7 +73,8 @@ Rotate the GitHub Actions secrets in the same maintenance window so preview and 
 Before rerunning failed jobs, verify that the preview environment names documented in the repo still exist in Cloudflare and point to the correct services/projects:
 
 - `infra/Cloudflare/gs-api.wrangler.toml` defines the preview worker environment name `gs-api-preview` for `api-preview.goldshore.ai`.
-- `infra/Cloudflare/gs-agent.wrangler.toml` defines the preview worker environment name `gs-agent-preview`.
+- `gs-agent-preview` is a retired historical name. Do not create it or derive
+  dashboard configuration from `infra/Cloudflare/legacy/gs-agent.wrangler.toml`.
 - Preview hostnames already referenced elsewhere in the repo include `api-preview.goldshore.ai`, `gw-preview.goldshore.ai`, and `ops-preview.goldshore.ai`.
 
 If the Cloudflare dashboard still uses older service names such as `astro-gs-api`, `astro-gs-gateway`, or `goldshore-control-worker`, reconcile them with the canonical `gs-*` names before retrying preview/prod jobs. This avoids build-token rotation succeeding while the deploy still targets the wrong worker/service.
