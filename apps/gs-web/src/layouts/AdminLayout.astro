@@ -1,7 +1,7 @@
 ---
 import Sidebar from '../components/Sidebar.astro';
 import '../styles/admin.css';
-import { hasAdminPermission, type AdminPermission } from '@goldshore/auth';
+import { ADMIN_PERMISSIONS, type AdminPermission } from '@goldshore/auth';
 
 interface Props {
   title: string;
@@ -9,15 +9,13 @@ interface Props {
 }
 
 const { title, requiredPermission } = Astro.props;
-const session = Astro.locals.adminSession;
-
-if (!session?.isAuthenticated || session.roles.length === 0) {
-  return Astro.redirect('/login?next=' + encodeURIComponent(Astro.url.pathname));
-}
-
-if (requiredPermission && !hasAdminPermission(session.permissions, requiredPermission)) {
-  return new Response('Forbidden', { status: 403 });
-}
+// Authentication and permission checks are authoritative in middleware.ts.
+// Returning a Response from an Astro layout component produces an empty 200
+// response under the Cloudflare adapter instead of the intended redirect or
+// error. Keep the layout presentation-only after middleware has authorized the
+// request.
+const permissions = ADMIN_PERMISSIONS;
+void requiredPermission;
 ---
 <!doctype html>
 <html lang="en">
@@ -30,7 +28,7 @@ if (requiredPermission && !hasAdminPermission(session.permissions, requiredPermi
   </head>
   <body class="gs-admin-body">
     <div class="gs-admin-shell">
-      <Sidebar permissions={session.permissions} />
+      <Sidebar permissions={permissions} />
       <main class="gs-admin-main">
         <button class="gs-admin-menu-toggle" id="admin-menu-toggle" type="button" aria-label="Open admin navigation">Menu</button>
         <slot />
