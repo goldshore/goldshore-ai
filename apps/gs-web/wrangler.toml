@@ -13,6 +13,22 @@ main = "./src/worker.ts"
 directory = "./dist"
 binding = "ASSETS"
 
+# SESSION: KV namespace backing Astro sessions for auth state. The Cloudflare
+# adapter emits this binding whenever no session driver is configured, and
+# auto-provisions a namespace at deploy time if none is bound — pinning the
+# already-provisioned `goldshore-ai-session` keeps that inside the checked-in
+# binding contract instead of letting deploys create new stores.
+#
+# Declared at the top level as well as under env.prod because Astro builds the
+# deployment manifest before a Wrangler environment is selected, and
+# environments do not inherit bindings.
+#
+# This is session state only. gs-web still declares no D1, R2, queue or
+# Workflow bindings — transactional data stays behind gs-api.
+[[kv_namespaces]]
+binding = "SESSION"
+id = "805bff3293c2483facc5225e6ff9af60"
+
 [vars]
 ENV = "production"
 PUBLIC_ENV = "production"
@@ -44,6 +60,13 @@ routes = [
 
 [env.prod.images]
 binding = "IMAGES"
+
+# SESSION: see the top-level declaration. Repeated here because environments do
+# not inherit bindings — without it gs-web-prod deploys without a session store
+# and Cloudflare provisions a replacement namespace.
+[[env.prod.kv_namespaces]]
+binding = "SESSION"
+id = "805bff3293c2483facc5225e6ff9af60"
 
 [env.prod.vars]
 ENV = "production"
