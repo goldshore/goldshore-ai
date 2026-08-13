@@ -1,8 +1,10 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { getPublicSiteUrl } from '../utils/public-site';
 
 const { path = Astro.url.pathname } = Astro.props;
 const title = 'Page Not Found | GoldShore';
+const publicHomeUrl = getPublicSiteUrl(Astro.url.hostname);
 ---
 
 <!-- Dedicated not-found fallback for unresolved CMS/page routes. -->
@@ -13,7 +15,7 @@ const title = 'Page Not Found | GoldShore';
       We can't find the page you're looking for at: <code class="bg-[var(--gs-surface)] px-2 py-1 rounded text-[var(--gs-text-primary)]">{path}</code>
     </p>
     <p class="text-[var(--gs-text-secondary)]">
-      Please check the URL or navigate back to the <a href="/" class="text-[var(--gs-brand-gold)] hover:underline">GoldShore Home Page</a>.
+      Please check the URL or navigate back to the <a href={publicHomeUrl} class="text-[var(--gs-brand-gold)] hover:underline">GoldShore Home Page</a>.
     </p>
   </section>
 </BaseLayout>

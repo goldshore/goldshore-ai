@@ -1,9 +1,12 @@
 import { test } from 'node:test';
 import * as assert from 'node:assert/strict';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 
 import {
   ALTERNATE_ADMIN_DASHBOARD_URL,
   CANONICAL_ADMIN_DASHBOARD_URL,
+  CLEAN_ADMIN_PAGE_PREFIXES,
+  MIGRATED_ADMIN_PAGE_RULES,
   buildCloudflareAccessAdminSession,
   getAdminLoginDestination,
   getAdminHostRewritePath,
@@ -12,6 +15,17 @@ import {
   getAdminRouteRule,
   getCanonicalAdminUrl,
 } from '../../src/utils/admin-access.ts';
+
+/**
+ * Admin links whose target page has not been built yet. Each needs a real page
+ * or the link removed; until then this list keeps the count from growing
+ * silently. Do not add to it to make a test pass — build the page instead.
+ */
+const KNOWN_UNBUILT_ADMIN_ROUTES = [
+  '/admin/pii-scans',
+  '/admin/repo-health/findings',
+  '/admin/users/list',
+];
 
 test('routes dashboard traffic to the admin host with system read access', () => {
   const rule = getAdminRouteRule('/app/dashboard', 'GET', 'goldshore.ai');
@@ -158,6 +172,79 @@ test('maps clean admin hostname URLs into the Astro admin route tree', () => {
   );
   assert.equal(getAdminHostRewritePath('/domains'), '/admin/domains');
   assert.equal(getAdminHostRewritePath('/leads'), '/admin/leads');
+});
+
+test('every path the rewrite can emit resolves to a page that exists', () => {
+  // The bare section prefixes were the gap: the suite only exercised child
+  // paths like /workers/status and /integrations/keys, so /workers and
+  // /integrations rewrote to directories with no index and served a 404.
+  const pagesRoot = new URL('../../src/pages', import.meta.url);
+  const resolves = (route: string) => {
+    const relative = route.replace(/^\//, '');
+    return (
+      existsSync(new URL(`${pagesRoot.pathname}/${relative}.astro`, import.meta.url)) ||
+      existsSync(new URL(`${pagesRoot.pathname}/${relative}/index.astro`, import.meta.url))
+    );
+  };
+
+  for (const prefix of CLEAN_ADMIN_PAGE_PREFIXES) {
+    const rewritten = getAdminHostRewritePath(prefix);
+    assert.equal(rewritten, `/admin${prefix}`, `${prefix} should rewrite under /admin`);
+    assert.ok(resolves(rewritten), `${rewritten} has no page — ${prefix} would 404`);
+  }
+});
+
+test('rewrite exemptions only cover pages gs-web actually serves', () => {
+  // Listing a prefix in MIGRATED_ADMIN_PAGE_RULES exempts it from the rewrite so
+  // Astro serves it as-is. When no such page exists the exemption yields a 404
+  // instead of falling through to the dashboard — which is what /infrastructure
+  // did before it was removed.
+  const pagesRoot = new URL('../../src/pages', import.meta.url).pathname;
+  for (const { prefix } of MIGRATED_ADMIN_PAGE_RULES) {
+    const relative = prefix.replace(/^\//, '');
+    assert.ok(
+      existsSync(new URL(`${pagesRoot}/${relative}.astro`, import.meta.url)) ||
+        existsSync(new URL(`${pagesRoot}/${relative}/index.astro`, import.meta.url)),
+      `${prefix} is exempted from the rewrite but gs-web has no page for it`,
+    );
+  }
+});
+
+test('a prefix is never in both rewrite tables', () => {
+  // getAdminHostRewritePath consults MIGRATED_ADMIN_PAGE_RULES first, so any
+  // prefix in both lists makes its CLEAN_ADMIN_PAGE_PREFIXES entry unreachable.
+  const migrated = new Set(MIGRATED_ADMIN_PAGE_RULES.map(({ prefix }) => prefix));
+  const overlap = CLEAN_ADMIN_PAGE_PREFIXES.filter((prefix) => migrated.has(prefix));
+  assert.deepEqual(overlap, [], `unreachable clean-prefix entries: ${overlap.join(', ')}`);
+});
+
+test('every /admin link in the site resolves to a page', () => {
+  const srcRoot = new URL('../../src', import.meta.url).pathname;
+  const linked = new Set<string>();
+  const walk = (dir: string) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = `${dir}/${entry.name}`;
+      if (entry.isDirectory()) {
+        walk(full);
+      } else if (/\.(astro|ts)$/.test(entry.name)) {
+        for (const [, href] of readFileSync(full, 'utf8').matchAll(/href="(\/admin\/[^"?]*)/g)) {
+          linked.add(href.replace(/\/$/, ''));
+        }
+      }
+    }
+  };
+  walk(srcRoot);
+
+  const pagesRoot = new URL('../../src/pages', import.meta.url).pathname;
+  const broken = [...linked].filter((route) => {
+    const relative = route.replace(/^\//, '');
+    return !(
+      existsSync(new URL(`${pagesRoot}/${relative}.astro`, import.meta.url)) ||
+      existsSync(new URL(`${pagesRoot}/${relative}/index.astro`, import.meta.url))
+    );
+  });
+
+  assert.deepEqual(broken.sort(), KNOWN_UNBUILT_ADMIN_ROUTES, 'broken /admin links changed');
 });
 
 test('keeps migrated gs-admin pages reachable from the admin hostname', () => {
