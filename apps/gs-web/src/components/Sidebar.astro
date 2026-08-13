@@ -1,5 +1,6 @@
 ---
 import { SharedHeader } from '@goldshore/ui';
+import { getPublicSiteOrigin } from '../utils/public-site';
 
 const workerLinks: Array<{ href: string; label: string }> = [
   { href: '/admin/workers/status', label: 'Status' },
@@ -39,9 +40,7 @@ const { logo, permissions = [] } = Astro.props;
 
 // Send operators back to the public site on the same TLD they administer, so
 // admin.goldshore.org returns to goldshore.org rather than goldshore.ai.
-const PUBLIC_SITE_ORIGIN = Astro.url.hostname.toLowerCase().endsWith('goldshore.org')
-  ? 'https://goldshore.org'
-  : 'https://goldshore.ai';
+const PUBLIC_SITE_ORIGIN = getPublicSiteOrigin(Astro.url.hostname);
 const can = (permission: string) => permissions.includes(permission);
 
 const isActive = (href: string) => {
@@ -55,7 +54,7 @@ const isActive = (href: string) => {
 <aside class="gs-admin-sidebar" id="admin-sidebar" aria-label="Admin navigation">
   <SharedHeader
     class="sidebar-header"
-    href="/"
+    href={PUBLIC_SITE_ORIGIN}
     logoSrc={logo?.src || logo || '/logo.svg'}
     logoAlt="GoldShore logo"
   >
