@@ -1,0 +1,13 @@
+---
+// Section landing page for /admin/integrations.
+//
+// CLEAN_ADMIN_PAGE_PREFIXES rewrites the admin-host path /integrations to
+// /admin/integrations, but the directory only held all/keys/meta/stripe/zapier,
+// so the rewrite produced a 404. `all` is the catalogue view and the natural
+// landing page for the section.
+//
+// Matches the existing section-index pattern (admin/leads → lead-submissions).
+export const prerender = false;
+
+return Astro.redirect('/admin/integrations/all', 302);
+---
