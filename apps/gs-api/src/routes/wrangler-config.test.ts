@@ -26,8 +26,18 @@ describe('two-app Cloudflare binding contract', () => {
 
   it('keeps databases, object storage, queues, Workflows, and mail off gs-web', () => {
     assert.match(webConfig, /\[assets\][\s\S]*?binding = "ASSETS"/);
-    assert.doesNotMatch(webConfig, /^binding = "(?:KV|SESSION|PLATFORM_DB|GS_ASSETS|MAIL_JOBS_QUEUE|EMAIL)"$/m);
-    assert.doesNotMatch(webConfig, /\[\[env\.prod\.(?:kv_namespaces|d1_databases|r2_buckets|queues|services|workflows|send_email)/);
+
+    // SESSION is deliberately absent from this list: gs-web binds a KV
+    // namespace for Astro session/auth state. Everything transactional still
+    // belongs to gs-api.
+    assert.doesNotMatch(webConfig, /^binding = "(?:KV|PLATFORM_DB|GS_ASSETS|MAIL_JOBS_QUEUE|EMAIL)"$/m);
+    assert.doesNotMatch(webConfig, /\[\[env\.prod\.(?:d1_databases|r2_buckets|queues|services|workflows|send_email)/);
+
+    // gs-web's only permitted KV binding is the session store.
+    const webKvBindings = [...webConfig.matchAll(/^binding = "(\w+)"$/gm)]
+      .map((m) => m[1])
+      .filter((b) => b !== 'ASSETS' && b !== 'IMAGES');
+    assert.deepEqual([...new Set(webKvBindings)], ['SESSION']);
   });
 
   it('declares no dedicated preview Worker environments', () => {
