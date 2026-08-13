@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import * as assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
@@ -240,8 +241,8 @@ test('every /admin link in the site resolves to a page', () => {
   const broken = [...linked].filter((route) => {
     const relative = route.replace(/^\//, '');
     return !(
-      existsSync(new URL(`${pagesRoot}/${relative}.astro`, import.meta.url)) ||
-      existsSync(new URL(`${pagesRoot}/${relative}/index.astro`, import.meta.url))
+      existsSync(join(pagesRoot, `${relative}.astro`)) ||
+      existsSync(join(pagesRoot, relative, 'index.astro'))
     );
   });
 
