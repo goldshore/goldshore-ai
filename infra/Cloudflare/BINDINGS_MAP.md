@@ -51,11 +51,21 @@ the current Wrangler contract.
 ### 2. MCP Access Surface
 
 - Host: `mcp.goldshore.ai`
+- Worker: `gs-api-prod` (route `mcp.goldshore.ai/*`), handler at `/mcp`
 - Purpose: private MCP endpoint for approved humans and approved agents
 - Access: Cloudflare Access required before any private tool loads
+- Transport: Streamable HTTP — JSON-RPC 2.0 over `POST /mcp`. `GET` returns 405;
+  the surface is stateless, so it issues no `Mcp-Session-Id` and needs no KV or
+  Durable Object binding.
+- Bindings consumed: `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` (read-only
+  Cloudflare API access for the four inventory tools).
 - Notes:
   - Keep anonymous prompts and changes out of the surface.
   - Use a dedicated service identity path for agent automation.
+  - There is no standalone MCP Worker. The former `goldshore-mcp` app in
+    `marzton/goldshore` is superseded; it never ran in production because its
+    `MCP_SESSIONS` namespace shipped `id = "placeholder_kv_id"` and it declared
+    no `durable_objects` block for the `McpAgent` Durable Object it used.
 
 ---
 
