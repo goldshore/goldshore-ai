@@ -1,11 +1,6 @@
 import { Hono } from 'hono';
 import { type Account } from '@goldshore/core-schema';
-
-type Env = {
-  PLATFORM_DB: D1Database;
-  // Note: in the future, we will transition DB connections to Postgres
-  // for complex relational queries, but the API edge worker remains the same.
-};
+import type { Env } from '../types';
 
 const app = new Hono<{ Bindings: Env }>();
 

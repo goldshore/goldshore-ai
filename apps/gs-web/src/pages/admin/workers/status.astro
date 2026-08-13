@@ -1,101 +1,87 @@
 ---
-import BaseLayout from '../../../layouts/BaseLayout.astro';
-import { authorizeAdminRequest, getAdminRouteRule } from '../../../utils/admin-access';
-
-export const prerender = false;
-
-const env = Astro.locals.runtime?.env as Env | undefined;
-const rule = getAdminRouteRule('/admin/workers/status', 'GET');
-
-let authError: { status: number; message: string } | null = null;
-if (!rule) {
-  authError = { status: 404, message: 'Not found.' };
-} else {
-  const authResult = await authorizeAdminRequest(Astro.request, env as never, rule);
-  if (!authResult.ok) {
-    authError = { status: authResult.status, message: authResult.error };
-  }
-}
+import AdminLayout from "../../../layouts/AdminLayout.astro";
 ---
+<AdminLayout title="Worker Status | GoldShore Admin">
+    <section class="max-w-5xl mx-auto py-24 px-6 space-y-6">
+        <div class="flex items-center justify-between gap-4">
+            <h1 class="text-3xl gs-heading mb-4">Worker Status</h1>
+            <button id="refresh-btn" class="gs-btn-secondary text-sm px-4 py-2">Refresh</button>
+        </div>
+        <p class="text-[var(--gs-text-secondary)]">
+            Live status of all Cloudflare Workers in your account.
+        </p>
 
-<BaseLayout title="Worker Status | GoldShore Admin" description="Live status of all Cloudflare Workers in your account">
-  <section class="gs-section">
-    <div class="gs-grid columns-2">
-      <div>
-        <h1>Worker status</h1>
-        <p class="gs-text-lg">Live status of all Cloudflare Workers in your account.</p>
-      </div>
-      <div class="gs-card">
-        <h2 class="section-title"><span>◆</span>Actions</h2>
-        <ul>
-          <li><a href="/admin/api-status">API status</a></li>
-          <li><a href="/admin/workers/routes">Worker routes</a></li>
-          <li><a href="/admin/workers/bindings">Worker bindings</a></li>
-        </ul>
-      </div>
-    </div>
+        <div class="gs-card space-y-4">
+            <h2 class="text-xl font-semibold">Deployed Workers</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="text-sm gs-text-subtle border-b border-[var(--gs-color-border)]">
+                            <th class="pb-2">Worker Name</th>
+                            <th class="pb-2">Last Modified</th>
+                            <th class="pb-2">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="workers-table-body">
+                        <tr><td class="py-3 text-sm gs-text-subtle" colspan="3">Loading workers…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
 
-    {authError ? (
-      <div class="gs-card" style="margin-top: 2rem;">
-        <p class="gs-text-lg">{authError.message}</p>
-      </div>
-    ) : (
-      <div class="gs-card" style="margin-top: 2rem; overflow-x: auto;">
-        <table class="gs-table">
-          <thead>
-            <tr><th>Worker name</th><th>Last modified</th><th>Status</th></tr>
-          </thead>
-          <tbody id="workers-table-body">
-            <tr><td colspan="3">Loading workers…</td></tr>
-          </tbody>
-        </table>
-      </div>
-    )}
-  </section>
+    <script>
+        const tableBody = document.getElementById('workers-table-body');
 
-  <script>
-    const tableBody = document.getElementById('workers-table-body');
-
-    function renderError(message: string) {
-      if (tableBody) {
-        tableBody.innerHTML = `<tr><td colspan="3">${message}</td></tr>`;
-      }
-    }
-
-    async function loadWorkers() {
-      try {
-        const res = await fetch('/api/admin/cf/workers');
-        const data = await res.json();
-
-        if (!res.ok || !data.success) {
-          renderError(data.error ?? 'Failed to load workers.');
-          return;
+        function renderError(message: string) {
+            if (tableBody) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td class="py-3 text-sm gs-text-danger" colspan="3">
+                            ${message}<br/>
+                            <span class="gs-text-subtle text-xs">Set <code>CF_ACCOUNT_ID</code> and <code>CF_API_TOKEN</code> in your environment to enable this page.</span>
+                        </td>
+                    </tr>`;
+            }
         }
 
-        const workers: Array<{ id: string; modified_on: string }> = data.workers ?? [];
+        async function loadWorkers() {
+            if (tableBody) {
+                tableBody.innerHTML = '<tr><td class="py-3 text-sm gs-text-subtle" colspan="3">Loading workers…</td></tr>';
+            }
 
-        if (!workers.length) {
-          renderError('No workers found in this account.');
-          return;
+            try {
+                const res = await fetch('/api/cf/workers');
+                const data = await res.json();
+
+                if (!res.ok || data.error) {
+                    renderError(data.error ?? 'Failed to load workers.');
+                    return;
+                }
+
+                const workers: Array<{ id: string; modified_on: string }> = data.result ?? [];
+
+                if (!workers.length) {
+                    if (tableBody) {
+                        tableBody.innerHTML = '<tr><td class="py-3 text-sm gs-text-subtle" colspan="3">No workers found in this account.</td></tr>';
+                    }
+                    return;
+                }
+
+                if (tableBody) {
+                    tableBody.innerHTML = workers.map((w) => `
+                        <tr class="border-b border-[var(--gs-color-border)]/50">
+                            <td class="py-2 font-mono text-sm">${w.id}</td>
+                            <td class="py-2 text-sm gs-text-subtle">${w.modified_on ? new Date(w.modified_on).toLocaleString() : 'N/A'}</td>
+                            <td class="py-2"><span class="gs-pill gs-pill--success">active</span></td>
+                        </tr>`).join('');
+                }
+            } catch {
+                renderError('Network error — could not reach /api/cf/workers.');
+            }
         }
 
-        if (tableBody) {
-          tableBody.innerHTML = workers
-            .map(
-              (w) => `
-                <tr>
-                  <td>${w.id}</td>
-                  <td class="gs-text-sm">${w.modified_on ? new Date(w.modified_on).toLocaleString() : 'N/A'}</td>
-                  <td><span class="gs-badge success">active</span></td>
-                </tr>`,
-            )
-            .join('');
-        }
-      } catch {
-        renderError('Network error — could not reach /api/admin/cf/workers.');
-      }
-    }
-
-    loadWorkers();
-  </script>
-</BaseLayout>
+        document.getElementById('refresh-btn')?.addEventListener('click', loadWorkers);
+        loadWorkers();
+    </script>
+</AdminLayout>

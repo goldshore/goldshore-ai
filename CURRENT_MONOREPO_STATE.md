@@ -99,7 +99,7 @@ These workflow files currently exist in the repository root workflow directory:
 The following names should be treated as stale references unless they appear in historical context:
 
 - `apps/web` → stale compatibility path; canonical app path is `apps/gs-web`
-- `apps/admin` → stale compatibility path; canonical app path is `apps/gs-admin`
+- `apps/admin` → stale compatibility path; the admin UI lives under `apps/gs-web/src/pages/app/` and `apps/gs-web/src/pages/admin/`
 - `apps/api-worker` → not present in the current `apps/` directory
 - `apps/control-worker` → not present in the current `apps/` directory
 - `apps/goldshore-agent` → not present in the current `apps/` directory

@@ -159,7 +159,6 @@ Require:
 Add `CODEOWNERS` so key areas require review:
 - `apps/gs-api/**` → infra reviewer
 - `apps/gs-web/**` → web reviewer
-- `apps/gs-admin/**` → admin reviewer
 - `.github/workflows/**` → ops reviewer
 - `packages/theme/**` → design system reviewer
 

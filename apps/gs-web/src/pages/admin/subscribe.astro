@@ -1,0 +1,76 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+
+const { redirect } = Astro;
+if (!Astro.locals.adminSession?.isAuthenticated) {
+  redirect('/login');
+}
+---
+
+<AdminLayout title="Subscribe CTA" requiredPermission="forms:read">
+  <div class="admin-page-header">
+    <h1>Subscribe CTA Management</h1>
+    <p>Manage subscription call-to-action campaigns</p>
+  </div>
+
+  <div class="admin-content">
+    <section class="admin-section">
+      <h2>Active Campaigns</h2>
+      <div class="loading-state">
+        <p>Loading campaigns...</p>
+      </div>
+    </section>
+
+    <section class="admin-section">
+      <h2>Conversion Metrics</h2>
+      <div class="loading-state">
+        <p>Loading conversion data...</p>
+      </div>
+    </section>
+
+    <section class="admin-section">
+      <h2>A/B Tests</h2>
+      <div class="loading-state">
+        <p>Loading A/B test results...</p>
+      </div>
+    </section>
+  </div>
+</AdminLayout>
+
+<style>
+  .admin-page-header {
+    padding: 24px;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.1);
+  }
+
+  .admin-page-header h1 {
+    margin: 0 0 8px;
+    font-size: 28px;
+  }
+
+  .admin-page-header p {
+    margin: 0;
+    color: rgba(226, 232, 240, 0.7);
+  }
+
+  .admin-content {
+    padding: 24px;
+  }
+
+  .admin-section {
+    margin-bottom: 32px;
+  }
+
+  .admin-section h2 {
+    font-size: 18px;
+    margin: 0 0 16px;
+  }
+
+  .loading-state {
+    padding: 24px;
+    background: rgba(226, 232, 240, 0.05);
+    border-radius: 8px;
+    text-align: center;
+    color: rgba(226, 232, 240, 0.6);
+  }
+</style>

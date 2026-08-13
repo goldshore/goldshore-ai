@@ -1,11 +1,19 @@
 ---
+import {
+  ALTERNATE_ADMIN_DASHBOARD_URL,
+  CANONICAL_ADMIN_DASHBOARD_URL,
+  getAdminLoginDestination,
+} from '../utils/admin-access';
+
 const requested = Astro.url.searchParams.get('to') ?? 'dashboard';
-const destinations: Record<string, string> = {
-  dashboard: 'https://admin.goldshore.org/dashboard',
-  admin: 'https://admin.goldshore.org',
-  ai: 'https://admin.goldshore.ai',
-};
-const destination = destinations[requested] ?? destinations.dashboard;
+const loginType = Astro.url.searchParams.get('type') ?? 'admin';
+const destination = getAdminLoginDestination(requested);
+const apiOrigin = Astro.locals.PUBLIC_API || import.meta.env.PUBLIC_API || 'https://api.goldshore.ai';
+const redirectUri = `${Astro.url.origin}/auth/callback`;
+
+if (loginType !== 'github') {
+  return Astro.redirect(destination, 302);
+}
 ---
 
 <!doctype html>
@@ -14,25 +22,133 @@ const destination = destinations[requested] ?? destinations.dashboard;
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex, nofollow" />
-    <meta http-equiv="refresh" content={`2;url=${destination}`} />
-    <title>Gold Shore Admin Login</title>
+    <title>{loginType === 'github' ? 'Gold Shore GitHub Login' : 'Gold Shore Admin Login'}</title>
   </head>
   <body>
     <main>
-      <div class="mark" aria-hidden="true">GS</div>
-      <p class="eyebrow">Gold Shore Identity Gateway</p>
-      <h1>Continue to the protected admin workspace.</h1>
-      <p>Cloudflare Access will verify your identity before loading the dashboard.</p>
-      <a href={destination}>Continue with Cloudflare Access</a>
-      <nav aria-label="Admin destinations">
-        <a href="https://admin.goldshore.org/dashboard">Dashboard</a>
-        <a href="https://admin.goldshore.org">Admin</a>
-        <a href="https://admin.goldshore.ai">Admin AI</a>
-      </nav>
+      <div class="brand" aria-hidden="true">
+        <img src="/brand/goldshore-labs.jpg" alt="" />
+      </div>
+      <p class="eyebrow">Gold Shore Identity</p>
+      {loginType === 'github' ? (
+        <>
+          <h1>Sign in with GitHub</h1>
+          <p>Use your GitHub identity to continue into Gold Shore.</p>
+          <a
+            href={`${apiOrigin}/auth/github/login?redirect_uri=${encodeURIComponent(redirectUri)}`}
+            class="button button--primary"
+          >
+            Sign in with GitHub
+          </a>
+          <p class="footer-text">
+            Or <a href={`/login?type=admin`}>sign in to admin workspace</a>
+          </p>
+        </>
+      ) : (
+        <>
+          <h1>Continue to the protected admin workspace.</h1>
+          <p>Cloudflare Access will verify your identity before loading the dashboard.</p>
+          <a href={destination} class="button button--primary">Continue with Cloudflare Access</a>
+          <nav aria-label="Admin destinations">
+            <a href={CANONICAL_ADMIN_DASHBOARD_URL}>Dashboard</a>
+            <a href={CANONICAL_ADMIN_DASHBOARD_URL}>Admin AI</a>
+            <a href={ALTERNATE_ADMIN_DASHBOARD_URL}>Admin Org</a>
+          </nav>
+          <p class="footer-text">
+            Or <a href={`/login?type=github`}>sign in with GitHub</a>
+          </p>
+        </>
+      )}
     </main>
   </body>
 </html>
 
 <style>
-  :root{color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#050b14;color:#eef5ff}body{margin:0;min-height:100vh;display:grid;place-items:center;background:radial-gradient(circle at 70% 20%,rgba(245,158,11,.13),transparent 35%),linear-gradient(145deg,#050b14,#091827)}main{width:min(620px,calc(100% - 3rem));padding:clamp(1.5rem,5vw,3.5rem);border:1px solid #213b58;border-radius:1.4rem;background:rgba(7,17,29,.9);box-shadow:0 30px 100px rgba(0,0,0,.35)}.mark{width:3.5rem;height:3.5rem;display:grid;place-items:center;border-radius:.9rem;background:#d97706;color:#07101a;font-weight:900;letter-spacing:-.08em}.eyebrow{margin-top:2rem;text-transform:uppercase;letter-spacing:.16em;font-size:.72rem;color:#f3a62c;font-weight:800}h1{font-size:clamp(2rem,7vw,4.5rem);line-height:.95;letter-spacing:-.05em;margin:.65rem 0 1.1rem}p{color:#9db0c5;line-height:1.6}main>a{display:inline-block;margin-top:1rem;padding:.85rem 1rem;border-radius:.7rem;background:#d97706;color:#08111c;text-decoration:none;font-weight:800}nav{display:flex;gap:1rem;flex-wrap:wrap;margin-top:2rem;padding-top:1rem;border-top:1px solid #213b58}nav a{color:#8dccff;text-decoration:none;font-size:.82rem}
+  :root {
+    color-scheme: dark;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #050b14;
+    color: #eef5ff;
+  }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    background:
+      radial-gradient(circle at 70% 20%, rgba(245, 158, 11, 0.13), transparent 35%),
+      linear-gradient(145deg, #050b14, #091827);
+  }
+  main {
+    width: min(680px, calc(100% - 3rem));
+    padding: clamp(1.5rem, 5vw, 3.5rem);
+    border: 1px solid #213b58;
+    border-radius: 1.4rem;
+    background: rgba(7, 17, 29, 0.9);
+    box-shadow: 0 30px 100px rgba(0, 0, 0, 0.35);
+  }
+  .brand {
+    overflow: hidden;
+    border: 1px solid #213b58;
+    border-radius: 1rem;
+    background: #07111d;
+  }
+  .brand img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .eyebrow {
+    margin-top: 1.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-size: 0.72rem;
+    color: #f3a62c;
+    font-weight: 800;
+  }
+  h1 {
+    font-size: clamp(2rem, 7vw, 4rem);
+    line-height: 0.98;
+    letter-spacing: -0.05em;
+    margin: 0.65rem 0 1rem;
+  }
+  p {
+    color: #9db0c5;
+    line-height: 1.6;
+  }
+  .button {
+    display: inline-block;
+    margin-top: 1rem;
+    padding: 0.85rem 1rem;
+    border-radius: 0.7rem;
+    text-decoration: none;
+    font-weight: 800;
+    transition: all 160ms ease;
+  }
+  .button--primary {
+    background: #d97706;
+    color: #08111c;
+  }
+  .button--primary:hover {
+    background: #f59e0b;
+    transform: translateY(-1px);
+  }
+  .footer-text {
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+    text-align: center;
+  }
+  nav {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #213b58;
+  }
+  nav a {
+    color: #8dccff;
+    text-decoration: none;
+    font-size: 0.82rem;
+  }
 </style>
