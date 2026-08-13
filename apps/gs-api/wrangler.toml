@@ -14,6 +14,16 @@ workers_dev = false
 # ══════════════════════════════════════════════════════════════════════════════
 
 [env.prod]
+# Pin the Worker name. Wrangler otherwise derives `<top-level name>-<env>` and
+# would target `gs-api-prod`; the production Worker was renamed to `gs-api` in
+# the dashboard (same script id, a5322bde…). Without this, `wrangler deploy
+# --env prod` recreates `gs-api-prod` and moves the routes below onto it.
+#
+# NOTE: this makes the default (top-level) environment and env.prod resolve to
+# the same Worker. The top level declares no bindings, so a bare `wrangler
+# deploy` without `--env prod` would replace live gs-api with a bindingless
+# build. Every deploy path in this repo passes `--env prod`; keep it that way.
+name = "gs-api"
 routes = [
   { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "api.goldshore.org/*", zone_name = "goldshore.org" },
