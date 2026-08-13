@@ -104,7 +104,7 @@ Important files:
 - `apps/gs-web/public/_headers` — static route security headers.
 - `apps/gs-web/public/_routes.json` — static routing hints.
 - `apps/gs-web/wrangler.toml` — Worker name, routes, KV, D1, R2, and environment variables.
-- `.github/workflows/deploy-gs-web.yml` — immutable build verification; it does not deploy.
+- `.github/workflows/deploy-gs-web.yml` — build validation and the human-approved production deployment.
 - `.github/workflows/verify-gs-web-deployment.yml` — mirror verification after the
   Cloudflare Workers Builds deployment event.
 
@@ -118,13 +118,18 @@ Bindings to check in `wrangler.toml`:
 - R2 bucket binding.
 - Environment variables.
 
-Secrets must never be committed. Keep tokens, API keys, R2 credentials, dashboard secrets, and OpenAI keys only in Cloudflare secrets, GitHub Actions secrets, or the appropriate platform secret manager.
-Expected production deploy command:
+Secrets must never be committed. Production secret values, DNS, routes, bindings,
+Access, and email routing are configured by a human in the Cloudflare dashboard.
+Validate the deployable manifests locally without mutating Cloudflare:
 
 ```bash
-pnpm --filter @goldshore/gs-web build
-pnpm --filter @goldshore/gs-web exec wrangler deploy --env prod
+cd apps/gs-web && pnpm exec wrangler deploy --env prod --dry-run
+cd apps/gs-api && pnpm exec wrangler deploy --env prod --dry-run
 ```
+
+Actual production deployments run only through `.github/workflows/deploy-gs-web.yml`
+and `.github/workflows/deploy-gs-api.yml`. Both require approval from the protected
+GitHub `production` environment; do not deploy a production Worker from a local shell.
 
 The production environment is `env.prod`. Do not accidentally deploy a route-free or differently named environment and then assume the public route changed.
 
