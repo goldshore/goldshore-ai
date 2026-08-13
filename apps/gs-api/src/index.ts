@@ -16,6 +16,7 @@ import mcp from './routes/mcp';
 import media from './routes/media';
 import pages from './routes/pages';
 import internal from './routes/internal';
+import integrations from './routes/integrations';
 import products from './routes/products';
 import domains from './routes/domains';
 import sites from './routes/sites';
@@ -297,6 +298,7 @@ app.route('/webhooks', webhooks);
 app.route('/media', media);
 app.route('/pages', pages);
 app.route('/internal', internal);
+app.route('/integrations', integrations);
 app.route('/products', products);
 app.route('/services', services);
 // Host aliases are rewritten into these shared route modules above. They do
