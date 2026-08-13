@@ -4,7 +4,6 @@ import type { SessionUser } from './lib/sessions';
 type ResourceBindings = {
   KV: KVNamespace;
   CONTROL_LOGS?: KVNamespace;
-  RISK_RADAR_CACHE?: KVNamespace;
   TRADING_KV?: KVNamespace;
   PLATFORM_DB: D1Database;
   AUDIT_DB?: D1Database;

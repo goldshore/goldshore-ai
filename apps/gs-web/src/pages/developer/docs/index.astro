@@ -1,23 +1,179 @@
 ---
 import DocsLayout from '../../../layouts/DocsLayout.astro';
-import MDXCodeBlock from '../../../components/MDXCodeBlock.astro';
+
 export const prerender = false;
+
+const groups = [
+  {
+    title: 'Application identity',
+    description: 'Public identifiers used when configuring Cloudflare, GitHub, Google, and MCP clients.',
+    values: [
+      ['Organization', 'Gold Shore Labs'],
+      ['Repository', 'https://github.com/marzton/goldshore-ai'],
+      ['Cloudflare account ID', 'f77de112d2019e5456a3198a8bb50bd2'],
+      ['Cloudflare Access team domain', 'https://goldshore.cloudflareaccess.com'],
+      ['Admin Access application name', 'Gold Shore Admin Production'],
+      ['Admin Access application ID', '1976d353-4683-4977-9f49-052ac217d85b'],
+      ['Cloudflare OAuth client name', 'GoldShore Secret Sync'],
+      ['Cloudflare OAuth client ID', '91d893bc7f74869c9913d3820d0697f2'],
+      ['Cloudflare OAuth publisher ID', '94a68f151cb5ee9c6e761629716bccdc'],
+      ['Google OAuth client ID', '1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com'],
+    ],
+  },
+  {
+    title: 'Canonical application URLs',
+    description: 'Use these origins for app homepages, allowed origins, documentation links, and API clients.',
+    values: [
+      ['Public application URL', 'https://goldshore.ai'],
+      ['Organization URL', 'https://goldshore.org'],
+      ['Admin origin', 'https://admin.goldshore.ai'],
+      ['Admin dashboard', 'https://admin.goldshore.ai/app/dashboard'],
+      ['API origin', 'https://api.goldshore.ai'],
+      ['API health', 'https://api.goldshore.ai/health'],
+      ['API readiness', 'https://api.goldshore.ai/ready'],
+      ['Agent origin', 'https://agent.goldshore.ai'],
+      ['Agent MCP endpoint', 'https://agent.goldshore.ai/mcp'],
+      ['Canonical MCP origin', 'https://mcp.goldshore.ai'],
+      ['Canonical MCP endpoint', 'https://mcp.goldshore.ai/mcp'],
+      ['Developer hub', 'https://goldshore.ai/developer/'],
+      ['Developer documentation', 'https://goldshore.ai/developer/docs/'],
+    ],
+  },
+  {
+    title: 'OAuth and login callbacks',
+    description: 'Redirect URIs are exact values. Do not add wildcards, trailing paths, or substitute an admin page for a callback.',
+    values: [
+      ['Cloudflare Access IdP callback', 'https://goldshore.cloudflareaccess.com/cdn-cgi/access/callback'],
+      ['GitHub OAuth callback', 'https://api.goldshore.ai/auth/github/callback'],
+      ['GoldClaw Google callback', 'https://api.goldshore.ai/goldclaw/oauth/google/callback'],
+      ['Google Business Profile callback', 'https://api.goldshore.ai/admin/google/oauth/callback'],
+      ['Schwab callback', 'https://trading.goldshore.ai/oauth/schwab/callback'],
+      ['Robinhood callback', 'https://trading.goldshore.ai/oauth/robinhood/callback'],
+      ['Post-login admin destination', 'https://admin.goldshore.ai/app/dashboard'],
+    ],
+  },
+  {
+    title: 'Cloudflare Access SAML IdP',
+    description: 'Values parsed from the signed Cloudflare metadata document. The service provider must sign authentication requests.',
+    values: [
+      ['Entity ID / Issuer', 'https://goldshore.cloudflareaccess.com/14fe63cce321f681a596e04ca0ac0df291d09587a51c0188063f390b2c7eb85d'],
+      ['SSO URL (HTTP-Redirect)', 'https://goldshore.cloudflareaccess.com/cdn-cgi/access/sso/saml/14fe63cce321f681a596e04ca0ac0df291d09587a51c0188063f390b2c7eb85d'],
+      ['SSO URL (HTTP-POST)', 'https://goldshore.cloudflareaccess.com/cdn-cgi/access/sso/saml/14fe63cce321f681a596e04ca0ac0df291d09587a51c0188063f390b2c7eb85d'],
+      ['Single logout URL', 'https://goldshore.cloudflareaccess.com/cdn-cgi/access/logout'],
+      ['Name ID format', 'urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified'],
+      ['Authentication requests signed', 'true'],
+      ['Signing algorithm', 'RSA-SHA256'],
+      ['Metadata certificate valid until', '2035-11-05T19:46:45.000Z'],
+    ],
+  },
+  {
+    title: 'Webhook endpoints',
+    description: 'Configure only the event-specific endpoint needed by the provider. Every production webhook must use its matching signature secret.',
+    values: [
+      ['GitHub push', 'https://api.goldshore.ai/webhooks/github/push'],
+      ['GitHub pull requests', 'https://api.goldshore.ai/webhooks/github/pull_request'],
+      ['GitHub issues', 'https://api.goldshore.ai/webhooks/github/issues'],
+      ['GitHub workflow runs', 'https://api.goldshore.ai/webhooks/github/workflow_run'],
+      ['Stripe', 'https://api.goldshore.ai/webhooks/stripe'],
+      ['Google', 'https://api.goldshore.ai/webhooks/google'],
+      ['Cloudflare', 'https://api.goldshore.ai/webhooks/cloudflare'],
+    ],
+  },
+  {
+    title: 'MCP client values',
+    description: 'The canonical transport is Streamable HTTP behind Cloudflare Access. Prefer mcp.goldshore.ai for new clients; agent.goldshore.ai remains an API alias.',
+    values: [
+      ['Server name', 'goldshore-mcp'],
+      ['Transport', 'streamable-http'],
+      ['Server URL', 'https://mcp.goldshore.ai/mcp'],
+      ['Authorization header', 'Bearer ${MCP_GOLDSHORE_TOKEN}'],
+      ['Token environment variable', 'MCP_GOLDSHORE_TOKEN'],
+      ['Access client ID header', 'CF-Access-Client-Id'],
+      ['Access client secret header', 'CF-Access-Client-Secret'],
+    ],
+  },
+];
 ---
 
-<DocsLayout title="GoldShore Documentation" page={{ slug: 'index' }}>
-  <h1>Overview</h1>
-  <p>Everything begins with the API.</p>
+<DocsLayout title="GoldShore Integration Registry" page={{ slug: 'index' }}>
+  <p class="registry-lead">
+    Canonical, copy-ready public values for GoldShore application integrations. This page never
+    publishes client secrets, API tokens, signing secrets, private keys, refresh tokens, or Access
+    service-token values.
+  </p>
 
-  <h2 id="api">API Base</h2>
-  <MDXCodeBlock>
-    GET {String(import.meta.env.PUBLIC_API || 'https://api.goldshore.ai')}/system/info
-  </MDXCodeBlock>
+  <div class="registry-alert" role="note">
+    <strong>Secret boundary:</strong> values ending in <code>_SECRET</code>, <code>_TOKEN</code>,
+    <code>_KEY</code>, or <code>PRIVATE_KEY</code> belong in Cloudflare Worker secrets or the provider's
+    encrypted secret store—not in source, Builder.io, documentation, KV, query strings, or chat.
+  </div>
 
-  <h2 id="gateway">Gateway</h2>
-  <MDXCodeBlock>
-    {import.meta.env.PUBLIC_GATEWAY || 'https://gw.goldshore.ai'}/api/* &rarr; gs-api
-  </MDXCodeBlock>
+  <nav class="registry-jump" aria-label="Integration registry sections">
+    {groups.map((group, index) => <a href={`#registry-${index + 1}`}>{group.title}</a>)}
+  </nav>
 
-  <h2 id="auth">Auth</h2>
-  <p>Uses Cloudflare Access JWT (aud: goldshore-admin).</p>
+  {groups.map((group, index) => (
+    <section class="registry-section" id={`registry-${index + 1}`}>
+      <div class="registry-heading">
+        <h2>{group.title}</h2>
+        <p>{group.description}</p>
+      </div>
+      <div class="registry-values">
+        {group.values.map(([label, value]) => (
+          <div class="registry-row">
+            <div>
+              <span class="registry-label">{label}</span>
+              <code>{value}</code>
+            </div>
+            <button type="button" class="copy-value" data-copy={value} aria-label={`Copy ${label}`}>
+              Copy
+            </button>
+          </div>
+        ))}
+      </div>
+    </section>
+  ))}
+
+  <section class="registry-section" id="client-example">
+    <div class="registry-heading">
+      <h2>MCP client example</h2>
+      <p>Copy this template, then provide the bearer token through the named environment variable.</p>
+    </div>
+    <pre><code>{`[mcp_servers."mcp.goldshore.ai"]
+url = "https://mcp.goldshore.ai/mcp"
+bearer_token_env_var = "MCP_GOLDSHORE_TOKEN"`}</code></pre>
+  </section>
+
+  <script>
+    document.querySelectorAll<HTMLButtonElement>('.copy-value').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const value = button.dataset.copy;
+        if (!value) return;
+        await navigator.clipboard.writeText(value);
+        const original = button.textContent;
+        button.textContent = 'Copied';
+        window.setTimeout(() => { button.textContent = original; }, 1400);
+      });
+    });
+  </script>
 </DocsLayout>
+
+<style>
+  .registry-lead { max-width: 72ch; color: var(--gs-text-dim); line-height: 1.75; }
+  .registry-alert { margin: 1.5rem 0; padding: 1rem 1.1rem; border: 1px solid rgba(234, 164, 94, .35); border-radius: 14px; background: rgba(234, 164, 94, .08); line-height: 1.65; }
+  .registry-jump { display: flex; flex-wrap: wrap; gap: .6rem; margin: 1.5rem 0 2rem; }
+  .registry-jump a { padding: .55rem .8rem; border: 1px solid var(--gs-border); border-radius: 999px; color: var(--gs-text); text-decoration: none; background: rgba(255,255,255,.025); }
+  .registry-section { scroll-margin-top: 7rem; margin: 0 0 2rem; }
+  .registry-heading h2 { margin-bottom: .35rem; }
+  .registry-heading p { margin-top: 0; color: var(--gs-text-dim); line-height: 1.65; }
+  .registry-values { overflow: hidden; border: 1px solid var(--gs-border); border-radius: 16px; }
+  .registry-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem; align-items: center; padding: .9rem 1rem; background: rgba(255,255,255,.02); }
+  .registry-row + .registry-row { border-top: 1px solid var(--gs-border); }
+  .registry-row > div { min-width: 0; display: grid; gap: .3rem; }
+  .registry-label { color: var(--gs-text-dim); font-size: .82rem; letter-spacing: .04em; }
+  .registry-row code { overflow-wrap: anywhere; color: var(--gs-text); }
+  .copy-value { min-width: 4.5rem; padding: .5rem .75rem; border: 1px solid rgba(234,164,94,.45); border-radius: 9px; background: rgba(234,164,94,.1); color: var(--gs-text); cursor: pointer; }
+  .copy-value:hover, .copy-value:focus-visible { background: rgba(234,164,94,.2); }
+  pre { overflow-x: auto; padding: 1rem; border: 1px solid var(--gs-border); border-radius: 14px; background: rgba(0,0,0,.25); }
+  @media (max-width: 640px) { .registry-row { grid-template-columns: 1fr; } .copy-value { justify-self: start; } }
+</style>
