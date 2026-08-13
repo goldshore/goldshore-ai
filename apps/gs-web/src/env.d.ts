@@ -43,11 +43,12 @@ interface Env {
   GOOGLE_GSC_SITE_URL?: string;
 }
 
+declare module 'cloudflare:workers' {
+  export const env: Env;
+}
+
 declare namespace App {
   interface Locals {
-    runtime?: {
-      env?: Env;
-    };
     securityPolicySource?: 'response-header' | 'platform-config';
     adminSession?: {
       roles: string[];
