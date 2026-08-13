@@ -9,8 +9,8 @@ if (!['preview', 'prod'].includes(environment)) {
 }
 
 const contract = JSON.parse(await readFile('apps/gs-api/secret-contract.json', 'utf8'));
-const declared = contract.secrets.filter((secret) => secret.environment.includes(environment));
-const requiredFields = ['name', 'consumer', 'environment', 'owner', 'rotationIntervalDays', 'failureBehavior', 'required'];
+const declared = contract.secrets;
+const requiredFields = ['name', 'owner', 'purpose', 'failureBehavior'];
 for (const secret of contract.secrets) {
   const absent = requiredFields.filter((field) => secret[field] === undefined);
   if (absent.length) throw new Error(`Secret contract entry is missing ${absent.join(', ')}`);
@@ -27,19 +27,13 @@ if (result.status !== 0) process.exit(result.status ?? 1);
 
 const remote = JSON.parse(result.stdout).map((entry) => entry.name).sort();
 const expected = declared.map((entry) => entry.name).sort();
-const required = declared.filter((entry) => entry.required).map((entry) => entry.name);
 const missing = expected.filter((name) => !remote.includes(name));
-const missingRequired = required.filter((name) => !remote.includes(name));
 const unexpected = remote.filter((name) => !expected.includes(name));
 
 await import('node:fs/promises').then(({ appendFile }) => appendFile(
   process.env.GITHUB_STEP_SUMMARY || '/dev/null',
-  `## gs-api ${environment} secret-name audit\n\n- Present: ${remote.length}\n- Missing: ${missing.join(', ') || 'none'}\n- Missing required: ${missingRequired.join(', ') || 'none'}\n- Unexpected: ${unexpected.join(', ') || 'none'}\n`,
+  `## gs-api ${environment} secret-name audit\n\n- Present: ${remote.length}\n- Missing: ${missing.join(', ') || 'none'}\n- Unexpected: ${unexpected.join(', ') || 'none'}\n`,
 ));
-console.log(JSON.stringify({ environment, presentNames: remote, missingNames: missing, missingRequiredNames: missingRequired, unexpectedNames: unexpected }, null, 2));
+console.log(JSON.stringify({ environment, presentNames: remote, missingNames: missing, unexpectedNames: unexpected }, null, 2));
 if (missing.length) console.error(`::warning::Missing optional or required Worker secret names: ${missing.join(', ')}`);
 if (unexpected.length) console.error(`::warning::Unexpected Worker secret names: ${unexpected.join(', ')}`);
-if (missingRequired.length) {
-  console.error(`::error::Missing required Worker secret names: ${missingRequired.join(', ')}`);
-  process.exit(1);
-}

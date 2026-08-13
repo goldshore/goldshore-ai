@@ -2,6 +2,20 @@
 
 > Living handoff document for cross-agent continuity on deployment and D1 integration work.
 
+## Cloudflare live-state verification hold
+
+**Handoff status: UNVERIFIED REPORT.** No DNS record, Worker route, Access
+policy, or dashboard binding named by this handoff is verified live. Historical
+audits, public DNS/HTTP behavior, comments in configuration, and inferred
+wildcard coverage are not authoritative Cloudflare account evidence.
+
+The current operator handoff and manifest comparison is
+[`reports/cloudflare-live-state-handoff.md`](reports/cloudflare-live-state-handoff.md).
+An authorized operator must perform the documented read-only Cloudflare queries
+and record the query timestamp and method before changing an individual row to
+`verified`. Record drift; do not automatically reconcile the dashboard or either
+canonical Wrangler manifest.
+
 ## Canonical Repository
 
 - **Repo:** `goldshore-ai`

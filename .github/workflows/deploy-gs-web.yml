@@ -3,7 +3,7 @@ name: Deploy Goldshore Web
 on:
   pull_request:
     branches: [main]
-    paths:
+    paths: &web-paths
       - 'apps/gs-web/**'
       - 'packages/**'
       - 'scripts/build-openapi.mjs'
@@ -16,17 +16,7 @@ on:
       - '.github/workflows/deploy-gs-web.yml'
   push:
     branches: [main]
-    paths:
-      - 'apps/gs-web/**'
-      - 'packages/**'
-      - 'scripts/build-openapi.mjs'
-      - 'scripts/verify-web-dist.mjs'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'
-      - '.node-version'
-      - '.nvmrc'
-      - '.github/workflows/deploy-gs-web.yml'
+    paths: *web-paths
   workflow_dispatch:
 
 concurrency:
@@ -54,26 +44,46 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    permissions:
-      contents: read
     env:
-      # Astro emits a flattened redirected Wrangler config during the build.
-      # Select the environment before building or preview will inherit prod.
       CLOUDFLARE_ENV: prod
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
       - uses: pnpm/action-setup@f520eceda224fe1a4aed5a2a27a194379a409996 # v6
         with:
           version: 9.15.4
-
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .node-version
           cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
+      - run: pnpm install --frozen-lockfile
       - name: Build gs-web Worker output
         run: pnpm build:pages
+      - name: Validate the production manifest without mutating Cloudflare
+        working-directory: apps/gs-web
+        run: pnpm exec wrangler deploy --env prod --dry-run
+
+  production:
+    name: Approve and deploy production
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
+      CLOUDFLARE_ENV: prod
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@f520eceda224fe1a4aed5a2a27a194379a409996 # v6
+        with:
+          version: 9.15.4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build:pages
+      - name: Deploy production Worker
+        working-directory: apps/gs-web
+        run: pnpm exec wrangler deploy --env prod
