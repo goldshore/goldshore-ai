@@ -242,7 +242,20 @@ test('middleware routes the admin hostname through its resolved dashboard path',
   assert.match(source, /const routedPath = adminRewritePath \?\? url\.pathname/);
   assert.match(source, /getAdminRouteRule\(\s*routedPath,\s*context\.request\.method,\s*host/);
   assert.match(source, /Response\.redirect\(new URL\(ADMIN_DASHBOARD_PATH, url\.origin\), 302\)/);
+  assert.match(source, /cloudflareEnv as Env\)\.ASSETS\.fetch\(context\.request\)/);
   assert.match(source, /await context\.rewrite\(adminRewritePath\)/);
+  assert.match(source, /if \(adminRule\?\.kind === 'page'\)/);
+  assert.match(source, /X-GoldShore-Rendered-Bytes/);
+});
+
+test('admin layout does not return HTTP responses from component rendering', async () => {
+  const source = await import('node:fs/promises').then(({ readFile }) =>
+    readFile(new URL('../../src/layouts/AdminLayout.astro', import.meta.url), 'utf8'),
+  );
+
+  assert.doesNotMatch(source, /return Astro\.redirect/);
+  assert.doesNotMatch(source, /return new Response/);
+  assert.match(source, /const permissions = ADMIN_PERMISSIONS/);
 });
 
 test('admin sidebar points at reachable gs-web destinations', async () => {
