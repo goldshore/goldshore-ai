@@ -44,3 +44,62 @@ export const companyLinks: NavLink[] = [
   { href: '/status/', label: 'Status' },
   { href: '/contact/', label: 'Contact' },
 ];
+
+export const adminLinks: NavLink[] = [
+  { href: 'https://admin.goldshore.ai/app/dashboard', label: 'Admin Dashboard', external: true },
+  { href: 'https://admin.goldshore.ai/login', label: 'Admin Login', external: true },
+];
+
+export type PublicMenuGroup = {
+  label: string;
+  links: NavLink[];
+};
+
+export const publicMenuGroups: PublicMenuGroup[] = [
+  {
+    label: 'Platform',
+    links: [
+      { href: '/platform/', label: 'Platform Overview' },
+      ...platformLinks,
+      { href: '/apps/risk-radar/', label: 'Risk Radar Live Demo' },
+    ],
+  },
+  {
+    label: 'Services',
+    links: [
+      { href: '/services/', label: 'Services Overview' },
+      { href: '/solutions/', label: 'Solutions' },
+      ...serviceLinks,
+    ],
+  },
+  {
+    label: 'Resources',
+    links: [
+      { href: '/developer/', label: 'Developer Hub' },
+      { href: '/developer/docs/', label: 'Documentation' },
+      { href: '/developer/api/', label: 'API Reference' },
+      { href: '/developer/sdk/', label: 'SDK' },
+      { href: '/developer/mcp/', label: 'MCP Access' },
+      { href: '/features/', label: 'Features' },
+      { href: '/templates/', label: 'Templates' },
+      { href: '/blog/', label: 'Signals' },
+      { href: '/status/', label: 'System Status' },
+    ],
+  },
+  {
+    label: 'Company',
+    links: [
+      { href: '/about/', label: 'About' },
+      { href: '/team/', label: 'Team' },
+      { href: '/contact/', label: 'Contact' },
+      { href: '/intake/', label: 'Project Intake' },
+      { href: '/legal/', label: 'Security & Legal' },
+      { href: '/legal/privacy/', label: 'Privacy' },
+      { href: '/legal/terms/', label: 'Terms' },
+    ],
+  },
+  {
+    label: 'Access',
+    links: authLinks,
+  },
+];

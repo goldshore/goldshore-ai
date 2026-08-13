@@ -16,6 +16,7 @@
     "check:docs-consistency": "node scripts/check-doc-consistency.mjs",
     "check:pr-triage": "node --test scripts/pr-triage-rules.test.mjs",
     "check:theme-exports": "node scripts/check-theme-exports.mjs",
+    "check:workflows": "node scripts/validate-workflows.mjs",
     "check:naming": "node scripts/lint-naming.mjs",
     "check:workspace-protocol": "node scripts/check-workspace-protocol.mjs",
     "validate:structure": "tsx scripts/validate-worker-structure.ts",

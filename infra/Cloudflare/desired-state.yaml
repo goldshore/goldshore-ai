@@ -27,10 +27,6 @@ cloudflare:
         type: CNAME
         content: "gs-www-redirect-prod.goldshore.workers.dev"
         proxied: true
-      - name: "preview.goldshore.ai"
-        type: CNAME
-        content: "gs-web-preview.goldshore.workers.dev"
-        proxied: true
       - name: "risk.goldshore.ai"
         type: CNAME
         content: "gs-web-prod.goldshore.workers.dev"
@@ -55,35 +51,12 @@ cloudflare:
         content: "gs-web-prod.goldshore.workers.dev"
         proxied: true
         zone: goldshore.ai
-      - name: "admin-preview"
-        type: CNAME
-        content: "gs-web-preview.goldshore.workers.dev"
-        proxied: true
-        zone: goldshore.ai
-      - name: "admin-preview"
-        type: CNAME
-        content: "gs-web-prod.goldshore.workers.dev"
-      # apps/gs-web/wrangler.toml). admin.goldshore.org is out of scope here
-      # pending the separate goldshore.org ownership conflict
-      # (policy/ROUTE_POLICY.md vs docs/architecture/domain-ownership.md) --
-      # still points at the legacy gs-admin app until that's resolved.
       - name: "admin"
-      - name: "risk.goldshore.org"
         type: CNAME
         content: "gs-web-prod.goldshore.workers.dev"
         proxied: true
         zone: goldshore.org
-
-      # B. Admin browser surfaces owned by gs-web.
-      - name: "admin.goldshore.ai"
-        type: CNAME
-        content: "gs-web-prod.goldshore.workers.dev"
-        proxied: true
-      - name: "admin-preview.goldshore.ai"
-        type: CNAME
-        content: "gs-web-prod.goldshore.workers.dev"
-        proxied: true
-      - name: "admin.goldshore.org"
+      - name: "risk"
         type: CNAME
         content: "gs-web-prod.goldshore.workers.dev"
         proxied: true
@@ -93,10 +66,6 @@ cloudflare:
       - name: "api.goldshore.ai"
         type: CNAME
         content: "gs-api-prod.goldshore.workers.dev"
-        proxied: true
-      - name: "api-preview.goldshore.ai"
-        type: CNAME
-        content: "gs-api-preview.goldshore.workers.dev"
         proxied: true
       - name: "api.goldshore.org"
         type: AAAA
@@ -192,14 +161,11 @@ cloudflare:
         domains:
           - "admin.goldshore.ai"
           - "admin.goldshore.org"
-          - "admin-preview.goldshore.ai"
-          - "admin-preview.goldshore.org"
         action: "allow"
         rules:
           include:
-            - email_domain: "goldshore.ai"
-            - email_domain: "goldshore.org"
             - email: "marstonr6@gmail.com"
+            - email: "admin@goldshore.org"
           allowed_identity_providers:
             - "google_workspace"
             - "github_goldshore_deploy"
@@ -307,19 +273,6 @@ cloudflare:
             - "github"
             - "email_otp"
 
-      - name: "GoldShore-Web-Preview"
-        domain: "preview.goldshore.ai"
-        action: "allow"
-        rules:
-          include:
-            - email_domain: "goldshore.ai"
-            - email: "marstonr6@gmail.com"
-          allowed_identity_providers:
-            - "google_workspace"
-            - "github_goldshore_deploy"
-            - "github"
-            - "email_otp"
-
       # Previously only defined in setup-cf-agent-access.yml; mirrored here so
       # this file stays the single declarative source of Access intent.
       - name: "Signals"
@@ -385,15 +338,17 @@ cloudflare:
         script_path: "apps/gs-api/dist/index.js"
         routes:
           - pattern: "api.goldshore.ai/*"
-          - pattern: "api-preview.goldshore.ai/*"
+          - pattern: "api.goldshore.org/*"
           - pattern: "agent.goldshore.ai/*"
+          - pattern: "agent.goldshore.org/*"
           - pattern: "mail.goldshore.ai/*"
+          - pattern: "mail.goldshore.org/*"
           - pattern: "ops.goldshore.ai/*"
           - pattern: "trading.goldshore.ai/*"
+          - pattern: "trading.goldshore.org/*"
           - pattern: "dashboard.goldshore.ai/*"
           - pattern: "dash.goldshore.ai/*"
           - pattern: "gw.goldshore.ai/*"
-          - pattern: "api.goldshore.org/*"
         bindings:
           kv:
             - name: "KV"
@@ -404,32 +359,40 @@ cloudflare:
           r2:
             - name: "GS_ASSETS"
               bucket_name: "gs-assets"
+            - name: "MAIL_ARCHIVE"
+              bucket_name: "gs-assets"
+            - name: "TELEMETRY"
+              bucket_name: "gs-telemetry-storage"
+            - name: "RISK_RADAR_R2"
+              bucket_name: "gs-risk-radar-raw"
           ai:
             - name: "AI"
               gateway: "goldshore-ai-gateway"
+          queues:
+            - name: "JOBS_QUEUE"
+              queue: "goldshore-jobs"
+            - name: "EVENTS_QUEUE"
+              queue: "gs-events"
+            - name: "MAIL_JOBS_QUEUE"
+              queue: "gs-mail-jobs"
+          workflows:
+            - name: "GS_SIGNALS"
+              workflow: "gs-signals-evaluator"
+          email:
+            - name: "EMAIL"
 
       - name: "gs-web"
         script_path: "apps/gs-web/dist/_worker.js/index.js"
         routes:
           - pattern: "goldshore.ai/*"
           - pattern: "goldshore.org/*"
+          - pattern: "www.goldshore.ai/*"
+          - pattern: "www.goldshore.org/*"
           - pattern: "admin.goldshore.ai/*"
           - pattern: "admin.goldshore.org/*"
-          - pattern: "preview.goldshore.ai/*"
           - pattern: "risk.goldshore.ai/*"
           - pattern: "risk.goldshore.org/*"
-        bindings:
-          kv:
-            - name: "KV"
-              namespace: "GOLDSHORE-AI"
-            - name: "SESSION"
-              namespace: "KV_SESSIONS"
-          d1:
-            - name: "PLATFORM_DB"
-              database_name: "gs_platform_db"
-          r2:
-            - name: "GS_ASSETS"
-              bucket_name: "gs-assets"
+        bindings: {}
 
   email:
     routing:

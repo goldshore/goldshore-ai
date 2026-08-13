@@ -15,28 +15,17 @@ const getRequestHostname = (request: Request, url: URL) =>
 export const onRequest: MiddlewareHandler = async (context, next) => {
   // Redirect risk.goldshore.ai root → /risk-radar (subdomain alias for the product page).
   const host = getRequestHostname(context.request, context.url);
+  // Astro prerenders static routes against localhost during the production
+  // build. Do not invoke Cloudflare runtime bindings in that build-only pass;
+  // the deployed request still traverses the full admin authorization path.
+  if (host === 'localhost' || host === '127.0.0.1') {
+    return next();
+  }
   if (
     (host === 'risk.goldshore.ai' || host === 'risk.goldshore.org') &&
     context.url.pathname === '/'
   ) {
     return context.redirect('/risk-radar', 301);
-  }
-
-  // JWT cookie-based authentication gate for the admin surface.
-  // Verifies JWT from 'auth' cookie to allow admin access.
-  if (isProtectedAdminRequest(context.request, context.url)) {
-    const runtimeEnv = context.locals.runtime?.env as Env | undefined;
-    const allowLocalAdminBypass = import.meta.env.DEV || runtimeEnv?.DEV_AUTH_BYPASS === '1';
-
-    if (!allowLocalAdminBypass) {
-      const claims = await verifyJWTCookie(context.request, runtimeEnv ?? {});
-      if (!claims) {
-        return new Response('Unauthorized', {
-          status: 401,
-          headers: { 'content-type': 'text/plain; charset=utf-8' },
-        });
-      }
-    }
   }
 
   // The admin hostname is a first-class alias for gs-web's existing admin
@@ -59,7 +48,8 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   );
 
   if (adminRule) {
-    const runtimeEnv = context.locals.runtime?.env as Env | undefined;
+    const { env: cloudflareEnv } = await import('cloudflare:workers');
+    const runtimeEnv = cloudflareEnv as Env;
     const allowLocalAdminBypass = import.meta.env.DEV || runtimeEnv?.DEV_AUTH_BYPASS === '1';
 
     if (allowLocalAdminBypass) {
@@ -107,9 +97,33 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
     }
   }
 
-  const response = adminRewritePath
-    ? await context.rewrite(adminRewritePath)
-    : await next();
+  let response: Response;
+  if (
+    adminRule?.kind === 'page' &&
+    adminRule.canonicalPath === ADMIN_DASHBOARD_PATH &&
+    url.pathname === ADMIN_DASHBOARD_PATH
+  ) {
+    const { env: cloudflareEnv } = await import('cloudflare:workers');
+    response = await (cloudflareEnv as Env).ASSETS.fetch(context.request);
+  } else {
+    response = adminRewritePath
+      ? await context.rewrite(adminRewritePath)
+      : await next();
+  }
+
+  // Cloudflare's streamed Astro response can collapse to an empty 200 for
+  // authenticated SSR layout routes. Normalize protected admin page responses
+  // into a fresh Response before adding security headers. API and static asset
+  // responses remain streaming and untouched.
+  if (adminRule?.kind === 'page') {
+    const renderedHtml = await response.text();
+    response = new Response(renderedHtml, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers,
+    });
+    response.headers.set('X-GoldShore-Rendered-Bytes', String(renderedHtml.length));
+  }
   response.headers.set('Content-Security-Policy', HTML_CONTENT_SECURITY_POLICY);
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');

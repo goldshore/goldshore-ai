@@ -1,7 +1,8 @@
 ---
 export const prerender = false;
 
-import AdminLayout from '../../layouts/AdminLayout.astro';
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { env as cloudflareEnv } from 'cloudflare:workers';
 import { GSButton } from '@goldshore/ui';
 import scanResults from '../../data/pii-scan-results.json';
 import InboxDashboard from '../../components/InboxDashboard.astro';
@@ -12,9 +13,7 @@ const formattedScanDate = new Date(generatedAt).toLocaleString('en-US', {
   dateStyle: 'medium',
   timeStyle: 'short',
 });
-const runtime = (Astro.locals as Record<string, unknown>)['runtime'] as
-  | { env?: Record<string, unknown> }
-  | undefined;
+const runtimeEnv = cloudflareEnv as Record<string, unknown>;
 const recentDeploys: Array<{ label: string; time: string; env: string; ok: boolean }> = [];
 ---
 <AdminLayout title="Admin | Operational Overview">
@@ -110,16 +109,16 @@ const recentDeploys: Array<{ label: string; time: string; env: string; ok: boole
             <td><code>KV</code></td>
             <td>KV Namespace</td>
             <td>gs_admin_kv_001</td>
-            <td class={runtime?.env?.['KV'] ? 'gs-status--ok' : 'gs-status--warn'}>
-              {runtime?.env?.['KV'] ? 'Bound' : 'Not bound'}
+            <td class={runtimeEnv['KV'] ? 'gs-status--ok' : 'gs-status--warn'}>
+              {runtimeEnv['KV'] ? 'Bound' : 'Not bound'}
             </td>
           </tr>
           <tr>
             <td><code>API_SERVICE</code></td>
             <td>Service binding</td>
             <td>gs-api (prod)</td>
-            <td class={runtime?.env?.['API_SERVICE'] ? 'gs-status--ok' : 'gs-status--warn'}>
-              {runtime?.env?.['API_SERVICE'] ? 'Bound' : 'Not bound'}
+            <td class={runtimeEnv['API_SERVICE'] ? 'gs-status--ok' : 'gs-status--warn'}>
+              {runtimeEnv['API_SERVICE'] ? 'Bound' : 'Not bound'}
             </td>
           </tr>
           <tr>

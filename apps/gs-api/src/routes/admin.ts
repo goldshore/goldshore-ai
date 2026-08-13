@@ -4,6 +4,8 @@ import { getActor, logAdminAction, requirePermission } from "../auth";
 import { Env, Variables } from "../types";
 import deploy from "./admin/index";
 import repoHealth from "./admin/repo-health";
+import mergeCockpit from "./admin/merge-cockpit";
+import mcpAssistant from "./admin/mcp-assistant";
 
 type UserRow = {
   id: string; email: string; display_name: string | null; status: string;
@@ -11,6 +13,7 @@ type UserRow = {
 };
 
 const admin = new Hono<{ Bindings: Env; Variables: Variables }>();
+admin.route('/mcp-assistant', mcpAssistant);
 const validStatus = new Set(["active", "invited", "disabled"]);
 const sensitiveOperations: Record<string, AdminPermission> = {
   "secret-rotation": "secret_metadata:rotate",
@@ -186,5 +189,6 @@ admin.route("/deploy", deploy);
 
 // Mount repo health routes
 admin.route("/repo-health", repoHealth);
+admin.route("/merge-cockpit", mergeCockpit);
 
 export default admin;

@@ -24,8 +24,8 @@ CREATE TABLE IF NOT EXISTS access_service_roles (
 );
 
 INSERT INTO access_service_roles (id, name, status, application, role) VALUES
-  ('service-goldshore-production', 'goldshore-services-production', 'active', 'service-production', 'service')
-ON CONFLICT(name) DO UPDATE SET status = 'active', application = excluded.application, role = excluded.role;
+  ('service-goldshore-production', 'goldshore-agents', 'active', 'service-production', 'service')
+ON CONFLICT(id) DO UPDATE SET name = excluded.name, status = 'active', application = excluded.application, role = excluded.role;
 
 INSERT INTO access_users (id, email, status) VALUES
   ('owner-marstonr6', 'marstonr6@gmail.com', 'active'),

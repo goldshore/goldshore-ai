@@ -3,6 +3,12 @@
 Inventory date: 2026-08-09. Scope: `apps/`, `.github/workflows/`, and `infra/`.
 This snapshot intentionally excludes this inventory file from its own results.
 
+> **Historical static snapshot:** paths in the table below describe the search
+> results at inventory time, not deploy inputs. `pnpm-workspace.yaml` now defines
+> the active boundary. `apps/gs-agent` and its archived Wrangler material are
+> non-deployable legacy reference; all agent capabilities and asynchronous
+> resources are owned by `apps/gs-api`.
+
 ## Static reference inventory
 
 | Search term | Files containing the term before this consolidation |
@@ -10,7 +16,7 @@ This snapshot intentionally excludes this inventory file from its own results.
 | `gs-mail` | `apps/gs-api/README.md`; `apps/gs-api/wrangler.toml`; `apps/gs-mail/package.json`; `apps/gs-mail/src/index.ts`; `apps/gs-mail/wrangler.toml`; `apps/gs-platform/src/index.ts`; `apps/gs-web/src/components/InboxTable.astro`; `apps/gs-web/src/pages/index.astro`; `infra/AGENT_CANONICAL_STATE.json`; `infra/Cloudflare/AUDIT_2026-04-04.md`; `infra/Cloudflare/BINDINGS_MAP.md`; `infra/Cloudflare/GS-WEB-PROD-SOURCE-OF-TRUTH.md`; `infra/Cloudflare/README.md`; `infra/Cloudflare/WORKFLOWS_ROUTES_BINDINGS.md`; `infra/Cloudflare/config.yaml`; `infra/Cloudflare/gs-api.wrangler.toml`; `infra/Cloudflare/gs-platform.wrangler.toml`; `infra/Cloudflare/legacy-archive-resources.yaml`; `infra/Cloudflare/runbooks/MODULE_B2_RUNTIME_WIRING.md`; `infra/INFRASTRUCTURE.md` |
 | `gs-signals` | `.github/workflows/cf-discover.yml`; `.github/workflows/setup-cf-agent-access.yml`; `apps/gs-api/wrangler.toml`; `apps/gs-platform/src/index.ts`; `infra/Cloudflare/BINDINGS_MAP.md`; `infra/Cloudflare/GS-WEB-PROD-SOURCE-OF-TRUTH.md`; `infra/Cloudflare/WORKFLOWS_ROUTES_BINDINGS.md`; `infra/Cloudflare/desired-state.yaml`; `infra/Cloudflare/gs-api.wrangler.toml`; `infra/Cloudflare/gs-platform.wrangler.toml`; `infra/INFRASTRUCTURE.md` |
 | `signals-evaluator` | `apps/gs-api/src/index.ts`; `apps/gs-api/wrangler.toml`; `infra/Cloudflare/GS-WEB-PROD-SOURCE-OF-TRUTH.md`; `infra/Cloudflare/WORKFLOWS_ROUTES_BINDINGS.md`; `infra/Cloudflare/gs-api.wrangler.toml` |
-| `goldshore-jobs` | `apps/gs-agent/wrangler.toml`; `apps/gs-api/wrangler.toml`; `infra/Cloudflare/GS-WEB-PROD-SOURCE-OF-TRUTH.md`; `infra/Cloudflare/WORKFLOWS_ROUTES_BINDINGS.md`; `infra/Cloudflare/gs-admin.wrangler.toml`; `infra/Cloudflare/gs-agent.wrangler.toml`; `infra/Cloudflare/gs-api.wrangler.toml`; `infra/Cloudflare/legacy/goldshore-admin.wrangler.toml` |
+| `goldshore-jobs` | Historical search results included the retired `apps/gs-agent/wrangler.toml` and `infra/Cloudflare/gs-agent.wrangler.toml`; the active contract is only `apps/gs-api/wrangler.toml`. |
 | `gs-events` | `apps/gs-api/wrangler.toml`; `infra/Cloudflare/GS-WEB-PROD-SOURCE-OF-TRUTH.md`; `infra/Cloudflare/WORKFLOWS_ROUTES_BINDINGS.md`; `infra/Cloudflare/gs-api.wrangler.toml` |
 | `gs-mail-jobs` | `apps/gs-api/wrangler.toml`; `infra/Cloudflare/BINDINGS_MAP.md`; `infra/Cloudflare/GS-WEB-PROD-SOURCE-OF-TRUTH.md`; `infra/Cloudflare/WORKFLOWS_ROUTES_BINDINGS.md`; `infra/Cloudflare/gs-api.wrangler.toml` |
 | `gs-mail-dead-letter` | `apps/gs-api/wrangler.toml`; `infra/Cloudflare/GS-WEB-PROD-SOURCE-OF-TRUTH.md`; `infra/Cloudflare/WORKFLOWS_ROUTES_BINDINGS.md`; `infra/Cloudflare/gs-api.wrangler.toml`; `infra/Cloudflare/legacy-archive-resources.yaml` |
@@ -70,4 +76,3 @@ Workflow ownership, and recent traffic before deletion. After deployment, the
 operator must also provision the four preview queues, set 14-day retention on all
 eight production/preview queue resources, move Email Routing to `gs-api-prod`,
 and confirm each production queue has only the `gs-api-prod` push consumer.
-

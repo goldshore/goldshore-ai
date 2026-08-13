@@ -150,7 +150,7 @@ fi
 # ──────────────────────────────────────────────────────────────────────────
 echo -e "\n${YELLOW}7. Repository Structure${NC}"
 
-EXPECTED_DIRS=("apps/gs-web" "apps/gs-admin" "apps/gs-api" "apps/gs-gateway" "apps/gs-mail" "infra/Cloudflare" "packages/auth")
+EXPECTED_DIRS=("apps/gs-web" "apps/gs-api" "infra/Cloudflare" "packages/auth")
 for dir in "${EXPECTED_DIRS[@]}"; do
   if [[ -d "$dir" ]]; then
     echo -e "${GREEN}✓${NC} $dir exists"

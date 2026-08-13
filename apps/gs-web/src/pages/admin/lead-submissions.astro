@@ -1,5 +1,5 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import AdminLayout from "../../layouts/AdminLayout.astro";
 
 export const prerender = false;
 
@@ -60,7 +60,7 @@ const buildMailto = (email: string | null, name: string | null) => {
 };
 ---
 
-<BaseLayout title="Lead Submissions | GoldShore" description="Admin review for inbound leads">
+<AdminLayout title="Lead Submissions | GoldShore">
   <section class="gs-section">
     <div class="gs-grid columns-2">
       <div>
@@ -155,4 +155,4 @@ const buildMailto = (email: string | null, name: string | null) => {
       </div>
     )}
   </section>
-</BaseLayout>
+</AdminLayout>

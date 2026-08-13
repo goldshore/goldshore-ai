@@ -9,6 +9,7 @@ export interface Env {
     JWT_SECRET?: string;
     PLATFORM_DB?: AuthorizationDatabase;
     CLOUDFLARE_ACCESS_APPLICATION?: string;
+    ADMIN_OWNER_EMAILS?: string;
 }
 
 // Sentinel: Default to existing hardcoded values if not provided in Env
@@ -61,7 +62,7 @@ export type AuthorizationDatabase = {
 export type AuthorizedAccessUser = {
   id: string;
   email: string;
-  role: "admin" | "editor" | "viewer";
+  role: "owner" | "admin" | "editor" | "viewer";
   application: string;
 };
 
@@ -91,7 +92,7 @@ export async function authorizeAccessUser(
      WHERE lower(u.email) = ?1
        AND u.status = 'active'
        AND ar.application = ?2
-       AND ar.role IN ('admin', 'editor', 'viewer')
+       AND ar.role IN ('owner', 'admin', 'editor', 'viewer')
      LIMIT 1
   `).bind(email, env.CLOUDFLARE_ACCESS_APPLICATION).first<AuthorizedAccessUser>();
 }

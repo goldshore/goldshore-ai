@@ -153,7 +153,7 @@ Recommended sender identity:
 | `ops.goldshore.ai` | `gs-api-prod` | control plane APIs |
 | `trading.goldshore.ai` | `gs-api-prod` and/or web routes by path | trading integration |
 | `dashboard.goldshore.ai` | canonical web/API pair by path | protected dashboard alias |
-| `mcp.goldshore.ai` | explicit external MCP service until folded into `gs-api`; the live worker must be bound on `mcp.goldshore.ai/*` so OAuthProvider-owned paths like `/authorize`, `/token`, `/register`, and `/callback` reach the worker | agent tooling |
+| `mcp.goldshore.ai` | `gs-api-prod` — folded in; served by `gs-api` at `/mcp`. No separate MCP Worker and no OAuthProvider paths (`/authorize`, `/token`, `/register`, `/callback`) exist any more: the surface is stateless JSON-RPC gated by Cloudflare Access on the hostname | agent tooling |
 
 A hostname is a route, not proof that a separate Worker should exist.
 
@@ -210,7 +210,7 @@ Canonical human designation:
 - **GitHub secret names:** `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET`
 - **Cloudflare API management token title:** `Gold Shore Labs — Cloudflare — Access Automation — Production — GitHub Actions`
 - **GitHub workflow:** `Setup CF Agent Access`
-- **MCP hostname:** `mcp.goldshore.ai`
+- **MCP hostname:** `mcp.goldshore.ai` — routed to `gs-api-prod`, handled at `/mcp` (see §5)
 
 The current workflow-created service-token name `goldshore-agents` is a legacy machine title. Keep it operational until the next controlled rotation, then create the replacement using the canonical service-token name above and propagate its credentials atomically.
 

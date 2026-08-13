@@ -17,6 +17,8 @@ Public marketing site, documentation hub, and customer-facing Astro app for Gold
 Assets. `astro.config.mjs` keeps `output: 'server'` and the Cloudflare adapter;
 `src/worker.ts` is the Wrangler `main`; and `wrangler.toml` uploads `dist` through
 the `ASSETS` binding. Selecting `env.prod` produces the `gs-web-prod` release.
+Astro sessions are disabled: admin identity comes from Cloudflare Access and all
+durable application state is owned by `gs-api`.
 
 The same production release owns these four canonical UI hosts:
 
@@ -100,10 +102,12 @@ pnpm --filter @goldshore/gs-web test:e2e
 
 ## Deployment
 
-- Build verification workflow: `.github/workflows/deploy-gs-web.yml`.
-- Authoritative deployer: the Cloudflare Workers Build git integration.
-- Production command: `wrangler deploy --env prod` from `apps/gs-web` after the
-  Astro production build.
+- Canonical deploy workflow: `.github/workflows/deploy-gs-web.yml`.
+- Production deployment requires approval from the GitHub `production` environment.
+- Local static validation (from this directory):
+  `pnpm exec wrangler deploy --env prod --dry-run`.
+- Do not deploy from a local shell or mutate production DNS, routes, bindings,
+  Access, or secrets outside the human-approved production process.
 - Output directory: `dist` (SSR server output plus static assets).
 - Deployable manifest: `apps/gs-web/wrangler.toml`.
 - Reference manifest: `infra/Cloudflare/gs-web.wrangler.toml`.
@@ -111,13 +115,11 @@ pnpm --filter @goldshore/gs-web test:e2e
 For domain, preview, and Access details, see
 [`docs/domains-and-auth.md`](../../docs/domains-and-auth.md).
 
-## Preview authentication
+## Pull-request previews
 
-Preview environments are not public.
-
-- Preview builds reuse the centralized GitHub App callback flow instead of per-branch callbacks.
-- Cloudflare Access protects preview hostnames.
-- Non-interactive checks against preview environments should use Cloudflare Access service-token headers.
+Pull requests build the same production manifest without a dedicated preview Worker,
+custom preview hostname, or preview storage. Cloudflare Worker Version URLs may be
+used for read-only visual review; mutation paths remain disabled there.
 
 ## Contact form and lead administration
 
@@ -126,7 +128,6 @@ Preview environments are not public.
 Set `PUBLIC_API` in the `gs-web` Worker environment to the matching API origin:
 
 - Production: `https://api.goldshore.ai`
-- Preview: `https://api-preview.goldshore.ai`
 
 Do not add `GS_CONFIG` or other data bindings to `gs-web` unless a specific SSR endpoint needs a public, request-time, read-only lookup that cannot be served by `gs-api`.
 

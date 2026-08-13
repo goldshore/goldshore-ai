@@ -1,0 +1,61 @@
+name: Cloudflare operator change
+
+on:
+  workflow_dispatch:
+    inputs:
+      change_ticket:
+        description: Approved issue or change-ticket URL
+        required: true
+        type: string
+      confirmation:
+        description: Type APPLY-CLOUDFLARE-CHANGE
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-production-operator
+  cancel-in-progress: false
+
+jobs:
+  operator-gate:
+    name: Record approved operator handoff
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: cloudflare-production-operator
+    steps:
+      - name: Validate operator request
+        shell: bash
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+          CHANGE_TICKET: ${{ inputs.change_ticket }}
+        run: |
+          set -euo pipefail
+          test "$CONFIRMATION" = "APPLY-CLOUDFLARE-CHANGE" || {
+            echo "::error::Confirmation phrase did not match"; exit 1;
+          }
+          [[ "$CHANGE_TICKET" =~ ^https://github.com/[^/]+/[^/]+/(issues|pull)/[0-9]+$ ]] || {
+            echo "::error::change_ticket must be a GitHub issue or pull-request URL"; exit 1;
+          }
+
+      - name: Operator runbook
+        shell: bash
+        env:
+          CHANGE_TICKET: ${{ inputs.change_ticket }}
+        run: |
+          set -euo pipefail
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+          ## Cloudflare operator approval recorded
+          - Change ticket: $CHANGE_TICKET
+          - Approver gate: \`cloudflare-production-operator\`
+          - Automated mutation: **disabled by design**
+
+          Apply the ticket's reviewed change in the Cloudflare dashboard using a named
+          human account. Capture before/after state, dashboard audit-log event IDs, and
+          rollback evidence in the ticket. Production Worker routes and Access policies
+          must be changed together under this single approval; no deploy workflow owns them.
+          Run **Cloudflare read-only audit** afterward and attach its artifact to the ticket.
+          EOF
+
