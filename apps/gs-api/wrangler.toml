@@ -102,10 +102,6 @@ id = "e0b8b807191346c3b0afc25fe716d2cd"
 binding = "CONTROL_LOGS"
 id = "a52e94cb331c4e3db08f2aa507e6df09"
 
-[[env.prod.kv_namespaces]]
-binding = "RISK_RADAR_CACHE"
-id = "0b56873b6d7b451f9279481920a15447"
-
 # TRADING_KV remains shared with the default environment until a dedicated
 # production namespace is provisioned in the Cloudflare dashboard.
 [[env.prod.kv_namespaces]]
