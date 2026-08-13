@@ -1,5 +1,6 @@
 ---
 import MarketingLayout from '../../layouts/MarketingLayout.astro';
+import { CANONICAL_ADMIN_ORIGIN } from '../../utils/admin-access';
 
 export const prerender = false;
 
@@ -25,7 +26,7 @@ const cards = [
   {
     title: 'Admin Dashboard',
     body: 'Enter the operator workspace for internal reviews, submissions, and controls.',
-    href: 'https://admin.goldshore.ai/leads',
+    href: `${CANONICAL_ADMIN_ORIGIN}/admin/lead-submissions`,
     cta: 'Go to admin',
   },
   {
@@ -89,7 +90,7 @@ const cards = [
       <article class="developer-card">
         <h2>Admin Dashboard</h2>
         <p>Enter the operator workspace for internal reviews, submissions, and controls.</p>
-        <a href="https://admin.goldshore.ai/lead-submissions" class="developer-card__link">Go to admin &rarr;</a>
+        <a href={`${CANONICAL_ADMIN_ORIGIN}/admin/lead-submissions`} class="developer-card__link">Go to admin &rarr;</a>
       </article>
     </div>
   </section>

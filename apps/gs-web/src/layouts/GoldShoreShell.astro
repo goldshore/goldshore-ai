@@ -77,7 +77,6 @@ const isCurrent = (href: string) => {
       <header class="topbar" data-menu-open="false">
         <div class="topbar-inner">
           <a class="brand-text" href="/" aria-label="GoldShore home">
-            <img src="/assets/penrose-logo.png" alt="GS Labs" class="brand-logo" />
             <span class="brand-text-label">GOLDSHORE</span>
           </a>
           <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="mobile-navigation" aria-label="Toggle menu"><span></span><span></span><span></span></button>
@@ -199,12 +198,6 @@ const isCurrent = (href: string) => {
         font-size: 0.95rem;
         letter-spacing: 0.1em;
         text-transform: uppercase;
-      }
-
-      .brand-logo {
-        width: 45px;
-        height: 45px;
-        object-fit: contain;
       }
 
       .brand-text-label {
@@ -466,7 +459,7 @@ const isCurrent = (href: string) => {
         color: var(--gs-text);
       }
 
-      @media (max-width: 960px) {
+      @media (max-width: 1023px) {
         .main-nav {
           display: none;
         }
