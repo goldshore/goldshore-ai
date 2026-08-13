@@ -84,10 +84,7 @@ const turnstileSiteKey = Astro.locals.TURNSTILE_SITE_KEY || import.meta.env.PUBL
 </form>
 
 <script is:inline define:vars={{turnstileSiteKey}}>
-  const contactFormGlobal = window as typeof window & {
-    __gsContactFormsBound?: boolean;
-    turnstile?: any;
-  };
+  const contactFormGlobal = window;
 
   // Load Turnstile script if site key is configured
   if (turnstileSiteKey && !window.turnstile) {
@@ -98,7 +95,7 @@ const turnstileSiteKey = Astro.locals.TURNSTILE_SITE_KEY || import.meta.env.PUBL
     document.head.appendChild(script);
   }
 
-  const initContactForm = (form: HTMLFormElement) => {
+  const initContactForm = (form) => {
     if (form.dataset.contactFormBound === 'true') return;
     form.dataset.contactFormBound = 'true';
 
@@ -109,7 +106,7 @@ const turnstileSiteKey = Astro.locals.TURNSTILE_SITE_KEY || import.meta.env.PUBL
     const resetBtn = form.querySelector('[data-contact-form-reset]');
     if (!(button instanceof HTMLButtonElement)) return;
 
-    const setStatus = (message: string, type: string | null) => {
+    const setStatus = (message, type) => {
       if (!(status instanceof HTMLElement)) return;
       status.textContent = message;
       status.className = 'contact-form__status';
@@ -186,7 +183,7 @@ const turnstileSiteKey = Astro.locals.TURNSTILE_SITE_KEY || import.meta.env.PUBL
           throw new Error(`Submission failed: ${response.status}`);
         }
 
-        const data = await response.json() as { ok: boolean; error?: { message?: string } };
+        const data = await response.json();
         if (!data.ok) {
           throw new Error(data.error?.message || 'Submission failed');
         }
