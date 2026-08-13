@@ -170,7 +170,7 @@ Admin configuration is set in `apps/gs-web/wrangler.toml`:
 [vars]
 # Admin hosts served by gs-web-prod
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-CLOUDFLARE_ACCESS_AUDIENCE = "f491d88d991e90b66fcec2ca644537309319387b08e46136984f27a078c786f2"
+CLOUDFLARE_ACCESS_AUDIENCE = "c520a7647223b49b20fbe5be240772863eb684b97b57c08955b6104c58170db9"
 CLOUDFLARE_ACCESS_APPLICATION = "admin-production"
 ```
 
