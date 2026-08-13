@@ -52,7 +52,7 @@ const isAdminHostPublicPath = (pathname: string) =>
     (candidate) => pathname === candidate || pathname.startsWith(`${candidate}/`),
   );
 
-const CLEAN_ADMIN_PAGE_PREFIXES = [
+export const CLEAN_ADMIN_PAGE_PREFIXES = [
   '/api-status',
   '/crawler',
   '/domains',
@@ -60,14 +60,16 @@ const CLEAN_ADMIN_PAGE_PREFIXES = [
   '/integrations',
   '/leads',
   '/lead-submissions',
-  '/monetization',
+  // NOTE: /monetization is deliberately absent. It is a migrated page (see
+  // MIGRATED_ADMIN_PAGE_RULES), and getAdminHostRewritePath checks that list
+  // first, so a clean-prefix entry here could never be reached.
   '/products',
   '/search-console',
   '/services',
   '/workers',
 ];
 
-const MIGRATED_ADMIN_PAGE_RULES: Array<{
+export const MIGRATED_ADMIN_PAGE_RULES: Array<{
   prefix: string;
   permission: AdminPermission;
 }> = [
