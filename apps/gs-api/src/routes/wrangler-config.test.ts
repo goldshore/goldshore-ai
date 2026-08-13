@@ -49,6 +49,8 @@ describe('two-app Cloudflare binding contract', () => {
       { pattern: 'dashboard.goldshore.ai/*', zoneName: 'goldshore.ai' },
       { pattern: 'dash.goldshore.ai/*', zoneName: 'goldshore.ai' },
       { pattern: 'gw.goldshore.ai/*', zoneName: 'goldshore.ai' },
+      // MCP surface folded in from the standalone goldshore-mcp Worker.
+      { pattern: 'mcp.goldshore.ai/*', zoneName: 'goldshore.ai' },
     ]);
   });
 
