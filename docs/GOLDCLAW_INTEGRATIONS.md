@@ -40,20 +40,11 @@ service-account key.
 
 ## Required secrets
 
-Set these with `wrangler secret put` for `gs-api` before enabling live OAuth or
-provider reads:
-
-```bash
-cd apps/gs-api
-
-npx wrangler secret put GOOGLE_OAUTH_CLIENT_SECRET --env prod
-npx wrangler secret put OAUTH_TOKEN_ENCRYPTION_KEY --env prod
-npx wrangler secret put GOOGLE_ADS_DEVELOPER_TOKEN --env prod
-npx wrangler secret put META_APP_SECRET --env prod
-npx wrangler secret put X_CLIENT_SECRET --env prod
-npx wrangler secret put CLOUDFLARE_API_TOKEN --env prod
-npx wrangler secret put GOLDCLAW_SANDBOX_API_TOKEN --env prod
-```
+Before enabling live OAuth or provider reads, a human operator must enter the
+following `gs-api` values in the Cloudflare dashboard. Do not set production
+secrets with a local command or repository script: `GOOGLE_OAUTH_CLIENT_SECRET`,
+`OAUTH_TOKEN_ENCRYPTION_KEY`, `GOOGLE_ADS_DEVELOPER_TOKEN`, `META_APP_SECRET`,
+`X_CLIENT_SECRET`, `CLOUDFLARE_API_TOKEN`, and `GOLDCLAW_SANDBOX_API_TOKEN`.
 
 Recommended production vars/secrets:
 
