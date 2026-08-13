@@ -1,5 +1,5 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import AdminLayout from "../../layouts/AdminLayout.astro";
 import { authorizeAdminRequest, getAdminAuthError, getAdminRouteRule } from '../../utils/admin-access';
 
 export const prerender = false;
@@ -16,7 +16,7 @@ if (!rule) {
 }
 ---
 
-<BaseLayout title="Search Console | GoldShore Admin" description="Organic search performance from Google Search Console">
+<AdminLayout title="Search Console | GoldShore Admin">
   <section class="gs-section">
     <div class="gs-grid columns-2">
       <div>
@@ -158,4 +158,4 @@ if (!rule) {
     document.getElementById('refresh-gsc')?.addEventListener('click', loadSearchConsoleData);
     loadSearchConsoleData();
   </script>
-</BaseLayout>
+</AdminLayout>

@@ -292,7 +292,6 @@ apps/gs-gateway/    @marzton
 
 # Frontend
 apps/gs-web/        @marzton
-apps/gs-admin/      @marzton
 
 # Auth (security-sensitive)
 packages/auth/      @marzton
