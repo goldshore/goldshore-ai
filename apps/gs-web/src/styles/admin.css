@@ -221,13 +221,13 @@
 }
 
 .gs-public-site-btn {
-  color: rgba(90, 162, 255, 0.85) !important;
+  color: rgba(114, 185, 255, 0.85) !important;
   font-size: 0.85rem;
 }
 
 .gs-public-site-btn:hover {
-  color: rgba(226, 232, 240, 0.95) !important;
-  background: rgba(90, 162, 255, 0.08) !important;
+  color: #ffffff !important;
+  background: rgba(114, 185, 255, 0.08) !important;
 }
 
 .gs-logout-btn {
