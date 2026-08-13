@@ -44,11 +44,12 @@ MAILCHANNELS_SENDER_NAME = "GoldShore"
 routes = [
   { pattern = "goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "www.goldshore.org/*", zone_name = "goldshore.org" },
   { pattern = "admin.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "admin.goldshore.org/*", zone_name = "goldshore.org" },
   { pattern = "admin-preview.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "risk.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "risk.goldshore.org/*", zone_name = "goldshore.org" }
+  { pattern = "preview.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "preview.goldshore.org/*", zone_name = "goldshore.org" }
 ]
 
 [[env.prod.kv_namespaces]]

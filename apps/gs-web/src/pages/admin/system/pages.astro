@@ -1,0 +1,76 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+
+const { redirect } = Astro;
+if (!Astro.locals.adminSession?.isAuthenticated) {
+  redirect('/login');
+}
+---
+
+<AdminLayout title="Pages Configuration" requiredPermission="cloudflare_inventory:read">
+  <div class="admin-page-header">
+    <h1>Pages Configuration</h1>
+    <p>Manage Cloudflare Pages deployments</p>
+  </div>
+
+  <div class="admin-content">
+    <section class="admin-section">
+      <h2>Pages Projects</h2>
+      <div class="loading-state">
+        <p>Loading Pages projects...</p>
+      </div>
+    </section>
+
+    <section class="admin-section">
+      <h2>Deployments</h2>
+      <div class="loading-state">
+        <p>Loading recent deployments...</p>
+      </div>
+    </section>
+
+    <section class="admin-section">
+      <h2>Build Settings</h2>
+      <div class="loading-state">
+        <p>Loading build configuration...</p>
+      </div>
+    </section>
+  </div>
+</AdminLayout>
+
+<style>
+  .admin-page-header {
+    padding: 24px;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.1);
+  }
+
+  .admin-page-header h1 {
+    margin: 0 0 8px;
+    font-size: 28px;
+  }
+
+  .admin-page-header p {
+    margin: 0;
+    color: rgba(226, 232, 240, 0.7);
+  }
+
+  .admin-content {
+    padding: 24px;
+  }
+
+  .admin-section {
+    margin-bottom: 32px;
+  }
+
+  .admin-section h2 {
+    font-size: 18px;
+    margin: 0 0 16px;
+  }
+
+  .loading-state {
+    padding: 24px;
+    background: rgba(226, 232, 240, 0.05);
+    border-radius: 8px;
+    text-align: center;
+    color: rgba(226, 232, 240, 0.6);
+  }
+</style>
