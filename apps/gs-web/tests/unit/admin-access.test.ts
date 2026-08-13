@@ -7,7 +7,6 @@ import {
   buildCloudflareAccessAdminSession,
   getAdminLoginDestination,
   getAdminHostRewritePath,
-  getAdminDashboardRedirect,
   getAdminLogoutUrl,
   getAdminRouteRule,
   getCanonicalAdminUrl,
@@ -247,36 +246,6 @@ test('middleware routes the admin hostname through its resolved dashboard path',
   assert.match(source, /await context\.rewrite\(adminRewritePath\)/);
   assert.match(source, /if \(adminRule\?\.kind === 'page'\)/);
   assert.match(source, /X-GoldShore-Rendered-Bytes/);
-});
-
-test('canonicalizes legacy admin dashboard aliases on ai hosts', () => {
-  assert.equal(
-    getAdminDashboardRedirect('/app/dashboard/admin', 'admin.goldshore.ai'),
-    'https://admin.goldshore.ai/app/dashboard',
-  );
-  assert.equal(
-    getAdminDashboardRedirect('/app/dashboard/admin/', 'admin.goldshore.ai'),
-    'https://admin.goldshore.ai/app/dashboard',
-  );
-  assert.equal(
-    getAdminDashboardRedirect('/admin/', 'goldshore.ai'),
-    'https://admin.goldshore.ai/app/dashboard',
-  );
-  assert.equal(
-    getAdminDashboardRedirect('/admin', 'admin.goldshore.ai'),
-    'https://admin.goldshore.ai/app/dashboard',
-  );
-});
-
-test('preserves real nested admin tools instead of folding them into dashboard', () => {
-  assert.equal(
-    getAdminDashboardRedirect('/admin/platform', 'admin.goldshore.ai'),
-    null,
-  );
-  assert.equal(
-    getAdminDashboardRedirect('/admin/workers/status', 'goldshore.ai'),
-    null,
-  );
 });
 
 test('admin layout does not return HTTP responses from component rendering', async () => {

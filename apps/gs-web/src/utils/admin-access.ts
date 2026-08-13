@@ -19,11 +19,6 @@ export const ALTERNATE_ADMIN_DASHBOARD_URL =
   `${ALTERNATE_ADMIN_ORIGIN}${ADMIN_DASHBOARD_PATH}`;
 export const CLOUDFLARE_ACCESS_LOGOUT_PATH = '/cdn-cgi/access/logout';
 
-const LEGACY_ADMIN_DASHBOARD_PATHS = new Set([
-  '/admin',
-  '/app/dashboard/admin',
-]);
-
 const ADMIN_HOSTS = new Set([
   'admin.goldshore.ai',
   'admin.goldshore.org',
@@ -115,23 +110,6 @@ export type AdminAuthError = {
 const normalizePathname = (pathname: string) => {
   if (!pathname || pathname === '/') return '/';
   return pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
-};
-
-export const getAdminDashboardRedirect = (
-  pathname: string,
-  hostname: string,
-) => {
-  const normalizedPath = normalizePathname(pathname);
-  if (!LEGACY_ADMIN_DASHBOARD_PATHS.has(normalizedPath)) return null;
-
-  const normalizedHost = hostname.toLowerCase();
-  const origin = normalizedHost === 'goldshore.org' ||
-    normalizedHost === 'www.goldshore.org' ||
-    normalizedHost === 'admin.goldshore.org'
-    ? ALTERNATE_ADMIN_ORIGIN
-    : CANONICAL_ADMIN_ORIGIN;
-
-  return new URL(ADMIN_DASHBOARD_PATH, origin).toString();
 };
 
 export const isAdminHost = (hostname: string) => ADMIN_HOSTS.has(hostname.toLowerCase());
