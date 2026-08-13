@@ -6,30 +6,44 @@ cloudflare:
 
   dns:
     records:
-      # A. Web App (gs-web)
-      # No DNS record previously existed for the apex at all -- it is not a
-      # Workers Custom Domain (verified via the account-level Custom Domains
-      # API: goldshore.ai apex is absent from that list, unlike
-      # preview.goldshore.ai/core.goldshore.ai/agent.goldshore.ai/
-      # signals.goldshore.ai which are real Custom Domains). The zone-level
-      # Worker Route (goldshore.ai/* -> gs-web-prod) had nothing to activate
-      # it, so the hostname didn't resolve at all -- same failure mode as
-      # api.goldshore.ai above. Content points at the real live worker
-      # (gs-web-prod), and the admin hostnames are routed through the same
-      # gs-web Worker so the host-level rewrite middleware can mount the
-      # authenticated admin tree consistently in prod and preview.
-      # A. Web app and browser-facing aliases.
-      - name: "goldshore.ai"
+      # A. Live goldshore.ai Worker and tunnel routing records.
+      # Synchronized from the Cloudflare DNS dashboard on 2026-08-13. These
+      # records document live DNS; Worker route ownership remains canonical in
+      # the app-local Wrangler manifests. Do not manufacture DNS records for
+      # Wrangler routes that currently have no live record.
+      - name: "admin.goldshore.ai"
         type: CNAME
-        content: "gs-web-prod.goldshore.workers.dev"
+        content: "gs-web.goldshore.workers.dev"
         proxied: true
-      - name: "www.goldshore.ai"
+      - name: "admin-preview.goldshore.ai"
         type: CNAME
-        content: "gs-www-redirect-prod.goldshore.workers.dev"
+        content: "gs-web.goldshore.workers.dev"
         proxied: true
-      - name: "risk.goldshore.ai"
+      - name: "preview.goldshore.ai"
         type: CNAME
-        content: "gs-web-prod.goldshore.workers.dev"
+        content: "gs-web.goldshore.workers.dev"
+        proxied: true
+      # This four-w spelling is the verified live record, not a normalization
+      # of www. Do not silently rename it without an approved DNS migration.
+      - name: "wwww.goldshore.ai"
+        type: CNAME
+        content: "gs-web.goldshore.workers.dev"
+        proxied: true
+      - name: "lacie.goldshore.ai"
+        type: CNAME
+        content: "ff3af5ef-fa24-4111-9e3b-96e4e4c78925.cfargotunnel.com"
+        proxied: true
+      - name: "www-lacie.goldshore.ai"
+        type: CNAME
+        content: "ff3af5ef-fa24-4111-9e3b-96e4e4c78925.cfargotunnel.com"
+        proxied: true
+      - name: "preview-lacie.goldshore.ai"
+        type: CNAME
+        content: "ff3af5ef-fa24-4111-9e3b-96e4e4c78925.cfargotunnel.com"
+        proxied: true
+      - name: "risk-lacie.goldshore.ai"
+        type: CNAME
+        content: "ff3af5ef-fa24-4111-9e3b-96e4e4c78925.cfargotunnel.com"
         proxied: true
       - name: "goldshore.org"
         type: AAAA
@@ -42,15 +56,7 @@ cloudflare:
         proxied: true
         zone: goldshore.org
 
-      # B. Admin (mounted Worker app)
-      # Keep admin hostnames on the canonical gs-web Worker so host-level
-      # rewrite middleware can serve the protected /app dashboard and admin
-      # sub-routes without a separate legacy Pages surface.
-      - name: "admin"
-        type: CNAME
-        content: "gs-web-prod.goldshore.workers.dev"
-        proxied: true
-        zone: goldshore.ai
+      # B. Secondary-zone web records (not part of this live .ai sync).
       - name: "admin"
         type: CNAME
         content: "gs-web-prod.goldshore.workers.dev"
@@ -65,50 +71,66 @@ cloudflare:
       # C. Consolidated API Worker and backend aliases.
       - name: "api.goldshore.ai"
         type: CNAME
-        content: "gs-api-prod.goldshore.workers.dev"
+        content: "gs-api.goldshore.workers.dev"
+        proxied: true
+      - name: "api-preview.goldshore.ai"
+        type: CNAME
+        content: "gs-api.goldshore.workers.dev"
         proxied: true
       - name: "api.goldshore.org"
         type: AAAA
         content: "100::"
         proxied: true
         zone: goldshore.org
-      - name: "gw.goldshore.ai"
-        type: CNAME
-        content: "gs-api-prod.goldshore.workers.dev"
-        proxied: true
       - name: "agent.goldshore.ai"
         type: CNAME
-        content: "gs-api-prod.goldshore.workers.dev"
+        content: "gs-api.goldshore.workers.dev"
         proxied: true
       - name: "mail.goldshore.ai"
         type: CNAME
-        content: "gs-api-prod.goldshore.workers.dev"
-        proxied: true
-      - name: "ops.goldshore.ai"
-        type: CNAME
-        content: "gs-api-prod.goldshore.workers.dev"
+        content: "gs-api.goldshore.workers.dev"
         proxied: true
       - name: "trading.goldshore.ai"
         type: CNAME
-        content: "gs-api-prod.goldshore.workers.dev"
+        content: "gs-api.goldshore.workers.dev"
         proxied: true
-      - name: "dashboard.goldshore.ai"
+      - name: "mail-lacie.goldshore.ai"
         type: CNAME
-        content: "gs-api-prod.goldshore.workers.dev"
+        content: "ff3af5ef-fa24-4111-9e3b-96e4e4c78925.cfargotunnel.com"
         proxied: true
-      - name: "dash.goldshore.ai"
+      - name: "ops-lacie.goldshore.ai"
         type: CNAME
-        content: "gs-api-prod.goldshore.workers.dev"
+        content: "ff3af5ef-fa24-4111-9e3b-96e4e4c78925.cfargotunnel.com"
+        proxied: true
+      - name: "trading-lacie.goldshore.ai"
+        type: CNAME
+        content: "ff3af5ef-fa24-4111-9e3b-96e4e4c78925.cfargotunnel.com"
+        proxied: true
+      - name: "dashboard-lacie.goldshore.ai"
+        type: CNAME
+        content: "ff3af5ef-fa24-4111-9e3b-96e4e4c78925.cfargotunnel.com"
+        proxied: true
+      - name: "dash-lacie.goldshore.ai"
+        type: CNAME
+        content: "ff3af5ef-fa24-4111-9e3b-96e4e4c78925.cfargotunnel.com"
+        proxied: true
+      - name: "gw-lacie.goldshore.ai"
+        type: CNAME
+        content: "ff3af5ef-fa24-4111-9e3b-96e4e4c78925.cfargotunnel.com"
         proxied: true
 
       # D. External or separately deployed platform surfaces.
       - name: "mcp.goldshore.ai"
         type: CNAME
-        content: "goldshore-mcp-prod.goldshore.workers.dev"
+        content: "gateway.agents.cloudflare.com"
         proxied: true
-      - name: "signals.goldshore.ai"
+      - name: "platform.goldshore.ai"
         type: CNAME
-        content: "gs-signals-prod.goldshore.workers.dev"
+        content: "gs-gateway-prod.goldshore.workers.dev"
+        proxied: true
+      - name: "production.goldshore.ai"
+        type: CNAME
+        content: "goldshore-production.cfargotunnel.com"
         proxied: true
 
       # E. SendGrid domain authentication and DMARC.
