@@ -36,7 +36,10 @@ routes = [
   { pattern = "trading.goldshore.org/*", zone_name = "goldshore.org" },
   { pattern = "dashboard.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "dash.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "gw.goldshore.ai/*", zone_name = "goldshore.ai" }
+  { pattern = "gw.goldshore.ai/*", zone_name = "goldshore.ai" },
+  # MCP surface, folded in from the standalone goldshore-mcp Worker. Served by
+  # the /mcp route; Cloudflare Access gates the hostname.
+  { pattern = "mcp.goldshore.ai/*", zone_name = "goldshore.ai" }
 ]
 
 [env.prod.vars]
