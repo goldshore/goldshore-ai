@@ -4,7 +4,8 @@
   "canonicalApps": ["gs-web", "gs-api"],
   "allowedDeployWorkflows": [
     ".github/workflows/deploy-gs-api.yml",
-    ".github/workflows/deploy-gs-web.yml"
+    ".github/workflows/deploy-gs-web.yml",
+    ".github/workflows/deploy-workers.yml"
   ],
   "maxChangedFiles": 40,
   "approvalLabels": {
