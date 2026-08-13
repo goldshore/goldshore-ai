@@ -3,7 +3,6 @@
 interface __BaseEnv_Env {
 	KV: KVNamespace;
 	CONTROL_LOGS: KVNamespace;
-	RISK_RADAR_CACHE: KVNamespace;
 	TRADING_KV: KVNamespace;
 	GS_ASSETS: R2Bucket;
 	MAIL_ARCHIVE: R2Bucket;
