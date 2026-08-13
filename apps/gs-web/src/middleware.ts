@@ -22,6 +22,7 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   if (host === 'localhost' || host === '127.0.0.1') {
     return next();
   }
+
   const canonicalAdminRedirect = getAdminDashboardRedirect(
     context.url.pathname,
     host,
