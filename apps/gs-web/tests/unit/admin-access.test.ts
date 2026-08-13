@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import * as assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 import {
   ALTERNATE_ADMIN_DASHBOARD_URL,
@@ -219,7 +220,7 @@ test('a prefix is never in both rewrite tables', () => {
 });
 
 test('every /admin link in the site resolves to a page', () => {
-  const srcRoot = new URL('../../src', import.meta.url).pathname;
+  const srcRoot = fileURLToPath(new URL('../../src', import.meta.url));
   const linked = new Set<string>();
   const walk = (dir: string) => {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -235,7 +236,7 @@ test('every /admin link in the site resolves to a page', () => {
   };
   walk(srcRoot);
 
-  const pagesRoot = new URL('../../src/pages', import.meta.url).pathname;
+  const pagesRoot = fileURLToPath(new URL('../../src/pages', import.meta.url));
   const broken = [...linked].filter((route) => {
     const relative = route.replace(/^\//, '');
     return !(
