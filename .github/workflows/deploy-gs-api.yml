@@ -124,9 +124,7 @@ jobs:
           
           echo "::error::gs-api failed health check after $max_retries attempts"
           exit 1
-          name: cloudflare-inventory-${{ github.run_id }}-deploy-gs-api
-          path: cloudflare-inventory.json
-          retention-days: 30
+
       - name: Stamp release identity into the selected environment
         working-directory: apps/gs-api
         run: pnpm exec wrangler deploy --env prod
