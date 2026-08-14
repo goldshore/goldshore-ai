@@ -44,9 +44,8 @@ export default function EntriesManager({ jwtToken, initialEntries }: EntriesMana
         ...filters,
       });
 
-      const response = await fetch(`https://api.goldshore.ai/admin/entries?${params}`, {
+      const response = await fetch(`/api/admin/entries?${params}`, {
         headers: {
-          'CF-Authorization': jwtToken,
           'Content-Type': 'application/json',
         },
       });
@@ -67,10 +66,9 @@ export default function EntriesManager({ jwtToken, initialEntries }: EntriesMana
   const handleMarkResponded = async (entryId: string) => {
     setResponding(entryId);
     try {
-      const response = await fetch(`https://api.goldshore.ai/admin/entries/contacts/${entryId}/respond`, {
+      const response = await fetch(`/api/admin/entries/contacts/${entryId}/respond`, {
         method: 'POST',
         headers: {
-          'CF-Authorization': jwtToken,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ notes: 'Responded' }),
@@ -92,10 +90,9 @@ export default function EntriesManager({ jwtToken, initialEntries }: EntriesMana
 
     try {
       const endpoint = type === 'contact' ? 'contacts' : 'leads';
-      const response = await fetch(`https://api.goldshore.ai/admin/entries/${endpoint}/${entryId}`, {
+      const response = await fetch(`/api/admin/entries/${endpoint}/${entryId}`, {
         method: 'DELETE',
         headers: {
-          'CF-Authorization': jwtToken,
           'Content-Type': 'application/json',
         },
       });
