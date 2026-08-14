@@ -19,7 +19,7 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   // Astro prerenders static routes against localhost during the production
   // build. Do not invoke Cloudflare runtime bindings in that build-only pass;
   // the deployed request still traverses the full admin authorization path.
-  if (host === 'localhost' || host === '127.0.0.1') {
+  if (import.meta.env.PROD && (host === 'localhost' || host === '127.0.0.1')) {
     return next();
   }
   const canonicalAdminRedirect = getAdminDashboardRedirect(
@@ -56,9 +56,12 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   );
 
   if (adminRule) {
-    const { env: cloudflareEnv } = await import('cloudflare:workers');
-    const runtimeEnv = cloudflareEnv as Env;
-    const allowLocalAdminBypass = import.meta.env.DEV || runtimeEnv?.DEV_AUTH_BYPASS === '1';
+    let runtimeEnv = {} as Env;
+    if (!import.meta.env.DEV) {
+      const { env: cloudflareEnv } = await import('cloudflare:workers');
+      runtimeEnv = cloudflareEnv as Env;
+    }
+    const allowLocalAdminBypass = import.meta.env.DEV || runtimeEnv.DEV_AUTH_BYPASS === '1';
 
     if (allowLocalAdminBypass) {
       context.locals.adminSession = {

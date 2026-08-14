@@ -20,6 +20,11 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
                     CF Dashboard ↗
                 </a>
             </div>
+            <form id="route-form" class="flex items-end gap-3 flex-wrap">
+                <label class="space-y-1 flex-1"><span class="block text-sm">New route pattern</span><input id="route-pattern" class="gs-input w-full" required placeholder="api.goldshore.ai/*" /></label>
+                <button class="gs-btn-primary px-4 py-2" type="submit">Add confirmed route</button>
+            </form>
+            <p id="route-status" class="text-sm gs-text-subtle" role="status"></p>
         </div>
 
         <div id="routes-section" class="gs-card space-y-4" style="display: none;">
@@ -30,11 +35,11 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
                         <tr class="text-sm gs-text-subtle border-b border-[var(--gs-color-border)]">
                             <th class="pb-2">Pattern</th>
                             <th class="pb-2">Zone</th>
-                            <th class="pb-2">Created</th>
+                            <th class="pb-2">Created</th><th class="pb-2">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="routes-table-body">
-                        <tr><td class="py-3 text-sm gs-text-subtle" colspan="3">Select a worker to view routes.</td></tr>
+                        <tr><td class="py-3 text-sm gs-text-subtle" colspan="4">Select a worker to view routes.</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -58,6 +63,8 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
 
         let cfAccountId = '';
 
+        const routeStatus = document.getElementById('route-status');
+        const escapeHtml = (value: unknown) => String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' })[character] ?? character);
         function showError(msg: string) {
             if (routesSection) routesSection.style.display = 'none';
             if (routesError) routesError.style.display = 'block';
@@ -81,7 +88,7 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
 
         async function loadWorkerList() {
             try {
-                const res = await fetch('/api/cf/workers');
+                const res = await fetch('/api/admin/cf/workers');
                 const data = await res.json();
 
                 if (!res.ok || data.error) {
@@ -92,14 +99,14 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
 
                 cfAccountId = data.accountId ?? '';
 
-                const workers: Array<{ id: string }> = data.result ?? [];
+                const workers: Array<{ id: string }> = data.workers ?? [];
                 if (workerSelect) {
                     workerSelect.innerHTML = '<option value="">— choose a worker —</option>' +
                         workers.map((w) => `<option value="${w.id}">${w.id}</option>`).join('');
                 }
             } catch {
                 if (workerSelect) workerSelect.innerHTML = '<option value="">Network error</option>';
-                showError('Network error — could not reach /api/cf/workers.');
+                showError('Network error — could not reach the Worker inventory API.');
             }
         }
 
@@ -110,12 +117,12 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
             if (!name) return;
 
             if (routesTableBody) {
-                routesTableBody.innerHTML = '<tr><td class="py-3 text-sm gs-text-subtle" colspan="3">Loading routes…</td></tr>';
+                routesTableBody.innerHTML = '<tr><td class="py-3 text-sm gs-text-subtle" colspan="4">Loading routes…</td></tr>';
             }
             if (routesSection) routesSection.style.display = 'block';
 
             try {
-                const res = await fetch(`/api/cf/worker-detail?name=${encodeURIComponent(name)}`);
+                const res = await fetch(`/api/admin/cf/worker-detail?name=${encodeURIComponent(name)}`);
                 const data = await res.json();
 
                 if (!res.ok || data.error) {
@@ -124,11 +131,11 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
                     return;
                 }
 
-                const routes: Array<{ pattern: string; zone_name?: string; created_on?: string }> = data.routes ?? [];
+                const routes: Array<{ id?: string; pattern: string; zone_name?: string; created_on?: string }> = data.routes ?? [];
 
                 if (!routes.length) {
                     if (routesTableBody) {
-                        routesTableBody.innerHTML = '<tr><td class="py-3 text-sm gs-text-subtle" colspan="3">No routes found for this worker on goldshore.ai.</td></tr>';
+                        routesTableBody.innerHTML = '<tr><td class="py-3 text-sm gs-text-subtle" colspan="4">No routes found for this worker on GoldShore zones.</td></tr>';
                     }
                     return;
                 }
@@ -136,9 +143,10 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
                 if (routesTableBody) {
                     routesTableBody.innerHTML = routes.map((r) => `
                         <tr class="border-b border-[var(--gs-color-border)]/50">
-                            <td class="py-2 font-mono text-sm">${r.pattern}</td>
-                            <td class="py-2 text-sm gs-text-subtle">${r.zone_name ?? 'goldshore.ai'}</td>
+                            <td class="py-2 font-mono text-sm">${escapeHtml(r.pattern)}</td>
+                            <td class="py-2 text-sm gs-text-subtle">${escapeHtml(r.zone_name ?? 'goldshore.ai')}</td>
                             <td class="py-2 text-sm gs-text-subtle">${r.created_on ? new Date(r.created_on).toLocaleString() : '—'}</td>
+                            <td class="py-2">${r.id ? `<button class="gs-btn-secondary px-2 py-1" data-delete-route="${escapeHtml(r.id)}">Delete</button>` : '—'}</td>
                         </tr>`).join('');
                 }
             } catch {
@@ -149,6 +157,23 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
 
         workerSelect?.addEventListener('change', () => {
             loadRoutes(workerSelect.value);
+        });
+
+        document.getElementById('route-form')?.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const pattern = (document.getElementById('route-pattern') as HTMLInputElement).value.trim();
+            if (!workerSelect?.value) { if (routeStatus) routeStatus.textContent = 'Choose a Worker first.'; return; }
+            if (!confirm(`Route ${pattern} to ${workerSelect.value}? This changes live Cloudflare traffic.`)) return;
+            const response = await fetch('/api/admin/cf/routes', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({ pattern, script:workerSelect.value, confirm:true }) });
+            const payload = await response.json().catch(() => ({})); if (routeStatus) routeStatus.textContent = response.ok ? 'Route created.' : payload.error ?? 'Route creation failed.';
+            if (response.ok) { (document.getElementById('route-pattern') as HTMLInputElement).value=''; await loadRoutes(workerSelect.value); }
+        });
+        routesTableBody?.addEventListener('click', async (event) => {
+            const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-delete-route]'); if (!button || !workerSelect?.value) return;
+            if (!confirm('Delete this live Worker route? Traffic will stop matching immediately.')) return;
+            const response = await fetch(`/api/admin/cf/routes/${encodeURIComponent(button.dataset.deleteRoute!)}?confirm=true`, { method:'DELETE' });
+            if (routeStatus) routeStatus.textContent = response.ok ? 'Route deleted.' : (await response.json().catch(()=>({}))).error ?? 'Route deletion failed.';
+            if (response.ok) await loadRoutes(workerSelect.value);
         });
 
         loadWorkerList();

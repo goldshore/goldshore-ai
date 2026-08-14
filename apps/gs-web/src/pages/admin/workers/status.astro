@@ -51,7 +51,7 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
             }
 
             try {
-                const res = await fetch('/api/cf/workers');
+                const res = await fetch('/api/admin/cf/workers');
                 const data = await res.json();
 
                 if (!res.ok || data.error) {
@@ -59,7 +59,7 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
                     return;
                 }
 
-                const workers: Array<{ id: string; modified_on: string }> = data.result ?? [];
+                const workers: Array<{ id: string; modified_on: string }> = data.workers ?? [];
 
                 if (!workers.length) {
                     if (tableBody) {
@@ -77,7 +77,7 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
                         </tr>`).join('');
                 }
             } catch {
-                renderError('Network error — could not reach /api/cf/workers.');
+                renderError('Network error — could not reach the Worker inventory API.');
             }
         }
 
