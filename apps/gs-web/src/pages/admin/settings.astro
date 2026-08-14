@@ -1,0 +1,48 @@
+---
+export const prerender = false;
+
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import SettingsManager from "../../components/admin/SettingsManager";
+
+const jwtToken = Astro.cookies.get('CF-Authorization')?.value || '';
+
+const apiBaseUrl = 'https://api.goldshore.ai/admin';
+
+let settings = { settings: {}, error: null as string | null };
+
+try {
+  const response = await fetch(`${apiBaseUrl}/settings`, {
+    headers: {
+      'CF-Authorization': jwtToken,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (response.ok) {
+    settings = await response.json();
+  } else if (response.status === 401 || response.status === 403) {
+    settings.error = 'Authentication required. Please ensure you are logged in with the correct credentials.';
+  }
+} catch (error) {
+  settings.error = error instanceof Error ? error.message : 'Failed to load settings';
+}
+---
+
+<AdminLayout title="Admin | Settings">
+  <div class="max-w-7xl mx-auto p-8 space-y-8">
+    <div class="space-y-2">
+      <h1 class="text-4xl gs-heading gs-text-accent">Settings</h1>
+      <p class="text-lg gs-text-subtle">Configure global application settings and preferences.</p>
+    </div>
+
+    {settings.error && (
+      <div class="p-4 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+        {settings.error}
+      </div>
+    )}
+
+    <div class="gs-card">
+      <SettingsManager client:load jwtToken={jwtToken} initialSettings={settings.settings} />
+    </div>
+  </div>
+</AdminLayout>
