@@ -17,7 +17,7 @@ const repoHealth = new Hono<{
  * Cache repo health in D1 with TTL
  */
 async function getCachedHealth(
-  db: D1Database,
+  db: any,
   cacheKey: string,
   ttlSeconds: number
 ): Promise<RepoHealth | null> {
@@ -44,7 +44,7 @@ async function getCachedHealth(
 /**
  * Store repo health in D1 cache
  */
-async function cacheHealth(db: D1Database, cacheKey: string, health: RepoHealth): Promise<void> {
+async function cacheHealth(db: any, cacheKey: string, health: RepoHealth): Promise<void> {
   try {
     await db
       .prepare(
@@ -66,6 +66,7 @@ async function cacheHealth(db: D1Database, cacheKey: string, health: RepoHealth)
 repoHealth.get('/', requirePermission('admin:repo-health:read'), async (c) => {
   const actor = getActor(c.get('accessClaims'), c.req.raw);
   const githubToken = c.env.GITHUB_API_TOKEN;
+  const db = c.env.DB;
 
   if (!githubToken) {
     await logAdminAction(c.env, {
@@ -82,12 +83,12 @@ repoHealth.get('/', requirePermission('admin:repo-health:read'), async (c) => {
 
   try {
     // Try to get cached version
-    let health = await getCachedHealth(c.env.PLATFORM_DB, cacheKey, ttl);
+    let health = await getCachedHealth(db, cacheKey, ttl);
 
     // If not cached or expired, fetch fresh data
     if (!health) {
       health = await buildRepoHealth('marzton', 'goldshore-ai', githubToken);
-      await cacheHealth(c.env.PLATFORM_DB, cacheKey, health);
+      await cacheHealth(db, cacheKey, health);
     }
 
     await logAdminAction(c.env, {
@@ -95,15 +96,15 @@ repoHealth.get('/', requirePermission('admin:repo-health:read'), async (c) => {
       actor,
       status: 'success',
       metadata: {
-        health_score: health.health_score,
-        critical_issues: health.security_summary.critical_issues,
+        health_score: health?.health_score || 0,
+        critical_issues: health?.security_summary?.critical_issues || 0,
       },
     });
 
     return c.json({
       success: true,
-      data: health,
-      cached: Boolean(health), // Simplified; could improve to track cache hit
+      data: health || { error: 'Unable to fetch repo health' },
+      cached: Boolean(health),
     });
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
@@ -129,6 +130,7 @@ repoHealth.get('/findings', requirePermission('admin:repo-health:read'), async (
 
   const actor = getActor(c.get('accessClaims'), c.req.raw);
   const githubToken = c.env.GITHUB_API_TOKEN;
+  const db = c.env.DB;
 
   if (!githubToken) {
     return c.json({ error: 'GitHub API token not configured' }, 503);
@@ -138,14 +140,16 @@ repoHealth.get('/findings', requirePermission('admin:repo-health:read'), async (
   const ttl = 300;
 
   try {
-    let health = await getCachedHealth(c.env.PLATFORM_DB, cacheKey, ttl);
+    let health = await getCachedHealth(db, cacheKey, ttl);
 
     if (!health) {
       health = await buildRepoHealth('marzton', 'goldshore-ai', githubToken);
-      await cacheHealth(c.env.PLATFORM_DB, cacheKey, health);
+      if (health) {
+        await cacheHealth(db, cacheKey, health);
+      }
     }
 
-    let findings = health.findings;
+    let findings = health?.findings || [];
 
     if (severity) {
       findings = findings.filter((f) => f.severity === severity);

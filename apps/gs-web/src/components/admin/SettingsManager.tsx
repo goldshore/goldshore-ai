@@ -14,13 +14,12 @@ export default function SettingsManager({ jwtToken, initialSettings }: SettingsM
 
   const handleSaveSetting = async (key: string, value: any) => {
     try {
-      const response = await fetch(`https://api.goldshore.ai/admin/settings/${key}`, {
+      const response = await fetch(`/api/admin/settings`, {
         method: 'POST',
         headers: {
-          'CF-Authorization': jwtToken,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ value }),
+        body: JSON.stringify({ key, value }),
       });
 
       if (response.ok) {
@@ -40,10 +39,9 @@ export default function SettingsManager({ jwtToken, initialSettings }: SettingsM
     if (!confirm(`Are you sure you want to delete the setting "${key}"?`)) return;
 
     try {
-      const response = await fetch(`https://api.goldshore.ai/admin/settings/${key}`, {
+      const response = await fetch(`/api/admin/settings?key=${encodeURIComponent(key)}`, {
         method: 'DELETE',
         headers: {
-          'CF-Authorization': jwtToken,
           'Content-Type': 'application/json',
         },
       });
