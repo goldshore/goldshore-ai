@@ -8,6 +8,9 @@ import email from './email';
 import entries from './entries';
 import users from './users';
 import settings from './settings';
+import secrets from './secrets';
+import cockpit from './merge-cockpit';
+import repoHealth from './repo-health';
 
 const admin = new Hono<{
   Bindings: Env;
@@ -19,6 +22,9 @@ admin.route('/email', email);
 admin.route('/entries', entries);
 admin.route('/users', users);
 admin.route('/settings', settings);
+admin.route('/secrets', secrets);
+admin.route('/merge-cockpit', cockpit);
+admin.route('/repo-health', repoHealth);
 // admin.route('/workers', workers); // TODO: Phase 2 - Cloudflare Worker management
 
 // Deployment routes (existing)
