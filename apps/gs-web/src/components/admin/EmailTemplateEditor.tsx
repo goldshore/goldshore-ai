@@ -17,7 +17,7 @@ interface EmailTemplateEditorProps {
   onCancel?: () => void;
 }
 
-export const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
+const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
   template = {
     name: '',
     subject: '',
@@ -229,3 +229,5 @@ export const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
     </motion.div>
   );
 };
+
+export default EmailTemplateEditor;

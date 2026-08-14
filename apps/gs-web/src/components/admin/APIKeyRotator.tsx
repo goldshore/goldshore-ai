@@ -19,7 +19,7 @@ interface APIKeyRotatorProps {
   keys?: APIKey[];
 }
 
-export const APIKeyRotator: React.FC<APIKeyRotatorProps> = ({
+const APIKeyRotator: React.FC<APIKeyRotatorProps> = ({
   onRotate,
   onRevoke,
   keys = []
@@ -334,3 +334,5 @@ function generateAPIKey(): string {
   }
   return prefix + key;
 }
+
+export default APIKeyRotator;

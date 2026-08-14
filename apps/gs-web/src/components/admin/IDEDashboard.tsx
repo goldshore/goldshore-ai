@@ -2,13 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { PanelLayout, PanelConfig } from './PanelLayout';
 import { CommandPalette, type Command } from './CommandPalette';
 import { Panel } from './Panel';
-import { EmailTemplateEditor } from './EmailTemplateEditor';
-import { SecretCreator } from './SecretCreator';
-import { APIKeyRotator } from './APIKeyRotator';
-import { EmailManager } from './EmailManager';
-import { EntriesManager } from './EntriesManager';
-import { UsersManager } from './UsersManager';
-import { SettingsManager } from './SettingsManager';
+import EmailTemplateEditor from './EmailTemplateEditor';
+import SecretCreator from './SecretCreator';
+import APIKeyRotator from './APIKeyRotator';
+import EmailManager from './EmailManager';
+import EntriesManager from './EntriesManager';
+import UsersManager from './UsersManager';
+import SettingsManager from './SettingsManager';
 
 interface IDEDashboardProps {
   jwtToken: string;

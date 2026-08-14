@@ -17,7 +17,7 @@ interface SecretCreatorProps {
   existingSecret?: Secret;
 }
 
-export const SecretCreator: React.FC<SecretCreatorProps> = ({
+const SecretCreator: React.FC<SecretCreatorProps> = ({
   onSave,
   onCancel,
   existingSecret
@@ -219,3 +219,5 @@ function getStrengthLabel(score: number): string {
   if (score < 7) return 'Good';
   return 'Very Strong';
 }
+
+export default SecretCreator;
