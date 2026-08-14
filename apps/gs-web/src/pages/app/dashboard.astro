@@ -1,50 +1,29 @@
 ---
 export const prerender = true;
 
-import AdminLayout from "../../layouts/AdminLayout.astro";
+import AdminLayout from '../../layouts/AdminLayout.astro';
 
-const tools = [
-  {
-    eyebrow: 'Website operations',
-    title: 'Content studio',
-    description: 'Update articles, announcements, and structured content.',
-    href: '/content',
-    action: 'Open content studio',
-    tone: 'gold',
-  },
-  {
-    eyebrow: 'Website operations',
-    title: 'Site settings',
-    description: 'Control navigation, feature flags, forms, and publishing behavior.',
-    href: '/app/settings',
-    action: 'Open settings',
-    tone: 'blue',
-  },
-  {
-    eyebrow: 'Platform controls',
-    title: 'Domains & routes',
-    description: 'Review domains, traffic rules, workers, and production destinations.',
-    href: '/admin/platform',
-    action: 'Review platform',
-    tone: 'blue',
-  },
-  {
-    eyebrow: 'Platform controls',
-    title: 'Integrations',
-    description: 'Connect analytics, ads, payments, and automation services.',
-    href: '/admin/integrations/all',
-    action: 'Configure integrations',
-    tone: 'blue',
-  },
+const primaryTools = [
+  { number: '01', title: 'Content studio', description: 'Create, edit, and publish content across the public site.', href: '/content', action: 'Open studio' },
+  { number: '02', title: 'Site settings', description: 'Control navigation, feature flags, forms, and publishing behavior.', href: '/app/settings', action: 'Open settings' },
+  { number: '03', title: 'Domains & routes', description: 'Review production domains, traffic rules, and Worker destinations.', href: '/admin/platform', action: 'Review platform' },
+  { number: '04', title: 'Integrations', description: 'Connect analytics, ads, payments, and automation services.', href: '/admin/integrations/all', action: 'Configure' },
+];
+
+const architecture = [
+  { label: 'Frontend', title: 'gs-web', description: 'Public pages and protected admin workspace' },
+  { label: 'Backend', title: 'gs-api', description: 'API, mail, queue, cron, and integration handlers' },
+  { label: 'Admin access', title: 'Protected', description: 'Cloudflare Access identity and application role required' },
+  { label: 'Deployments', title: 'Review-gated', description: 'Production changes move through reviewed pull requests' },
 ];
 
 const quickLinks = [
-  ['Worker status', '/admin/workers/status'],
-  ['Lead submissions', '/admin/lead-submissions'],
-  ['Products', '/admin/products'],
-  ['Services', '/admin/services'],
-  ['Search console', '/admin/search-console'],
-  ['API status', '/admin/api-status'],
+  ['Worker status', 'Health, requests, and routes', '/admin/workers/status'],
+  ['Lead submissions', 'Review incoming leads', '/admin/lead-submissions'],
+  ['Products', 'Manage product catalog', '/admin/products'],
+  ['Services', 'Manage service offerings', '/admin/services'],
+  ['Search console', 'Review search performance', '/admin/search-console'],
+  ['API status', 'Check API health', '/admin/api-status'],
 ] as const;
 ---
 
@@ -52,120 +31,104 @@ const quickLinks = [
   <div class="admin-dashboard">
     <header class="dashboard-header">
       <div>
-        <p class="dashboard-kicker">Gold Shore Admin / Control plane</p>
         <h1>Good morning, operator.</h1>
-        <p class="dashboard-lede">Manage the public site, content, domains, integrations, and platform systems from one protected workspace.</p>
+        <p>Manage the public site, content, domains, integrations, and platform systems from one protected workspace.</p>
       </div>
-      <span class="session-pill"><i></i> Authenticated session</span>
+      <div class="session-state" aria-label="Authenticated session"><i></i><span>Authenticated session</span><strong>Protected</strong></div>
     </header>
 
-    <section class="tool-section" aria-labelledby="edit-publish-title">
-      <div class="section-heading">
-        <div>
-          <p class="dashboard-kicker">Website operations</p>
-          <h2 id="edit-publish-title">Edit and publish</h2>
+    <main class="dashboard-content">
+      <section class="primary-tools" aria-labelledby="primary-tools-title">
+        <div class="section-heading">
+          <div><span>Workspace</span><h2 id="primary-tools-title">Primary controls</h2></div>
+          <a href="/content">View content studio <span aria-hidden="true">→</span></a>
         </div>
-        <a href="/content">View content studio →</a>
-      </div>
-
-      <div class="tool-grid">
-        {tools.map((tool, index) => (
-          <a class={`tool-card tool-card--${tool.tone}`} href={tool.href}>
-            <span class="tool-index">0{index + 1}</span>
-            <span class="tool-eyebrow">{tool.eyebrow}</span>
-            <strong>{tool.title}</strong>
-            <span class="tool-description">{tool.description}</span>
-            <span class="tool-action">{tool.action} →</span>
-          </a>
-        ))}
-      </div>
-    </section>
-
-    <section class="status-section" aria-labelledby="system-status-title">
-      <div class="section-heading">
-        <div>
-          <p class="dashboard-kicker">Canonical architecture</p>
-          <h2 id="system-status-title">Service ownership</h2>
+        <div class="tool-list">
+          {primaryTools.map((tool) => (
+            <a class="tool-row" href={tool.href}>
+              <span class="tool-number">{tool.number}</span>
+              <span class="tool-copy"><strong>{tool.title}</strong><small>{tool.description}</small></span>
+              <span class="tool-action">{tool.action}<b aria-hidden="true">→</b></span>
+            </a>
+          ))}
         </div>
-        <span class="status-label"><i></i> Two-app contract</span>
-      </div>
+      </section>
 
-      <div class="status-grid">
-        <article class="status-card">
-          <span>Frontend</span>
-          <strong>gs-web</strong>
-          <small>Public pages and protected admin workspace</small>
-        </article>
-        <article class="status-card">
-          <span>Backend</span>
-          <strong>gs-api</strong>
-          <small>API, mail, queue, cron, and integration handlers</small>
-        </article>
-        <article class="status-card">
-          <span>Admin access</span>
-          <strong>Protected</strong>
-          <small>Cloudflare Access identity and application role required</small>
-        </article>
-        <article class="status-card">
-          <span>Deployments</span>
-          <strong>Review-gated</strong>
-          <small>Live health remains visible on the status page</small>
-        </article>
-      </div>
-    </section>
-
-    <section class="quick-section" aria-labelledby="quick-links-title">
-      <div class="section-heading">
-        <div>
-          <p class="dashboard-kicker">Operator shortcuts</p>
-          <h2 id="quick-links-title">Quick links</h2>
+      <section class="architecture" aria-labelledby="architecture-title">
+        <div class="section-heading">
+          <div><span>Canonical architecture</span><h2 id="architecture-title">Service ownership</h2></div>
+          <span class="contract-state"><i></i> Two-app contract</span>
         </div>
-      </div>
-      <nav class="quick-links" aria-label="Admin shortcuts">
-        {quickLinks.map(([label, href]) => <a href={href}>{label}<span>↗</span></a>)}
-      </nav>
-    </section>
+        <div class="architecture-flow">
+          {architecture.map((item, index) => (
+            <>
+              <article><span>{item.label}</span><strong>{item.title}</strong><small>{item.description}</small></article>
+              {index < architecture.length - 1 && <span class="flow-arrow" aria-hidden="true">→</span>}
+            </>
+          ))}
+        </div>
+      </section>
+
+      <section class="shortcuts" aria-labelledby="shortcuts-title">
+        <div class="section-heading"><div><span>Operator shortcuts</span><h2 id="shortcuts-title">Quick access</h2></div></div>
+        <nav class="shortcut-list" aria-label="Admin shortcuts">
+          {quickLinks.map(([label, description, href]) => (
+            <a href={href}><span><strong>{label}</strong><small>{description}</small></span><b aria-hidden="true">↗</b></a>
+          ))}
+        </nav>
+      </section>
+    </main>
   </div>
 </AdminLayout>
 
 <style>
-  .admin-dashboard {
-    min-height: 100vh;
-    padding: clamp(2rem, 5vw, 4.5rem) clamp(1.25rem, 5vw, 5rem);
-    color: #e8eef5;
-    background: radial-gradient(circle at 82% 0%, rgba(216, 164, 74, .11), transparent 31rem), #050b14;
+  .admin-dashboard { min-height: 100vh; color: var(--admin-text); background: var(--admin-bg); }
+  .dashboard-header { min-height: 218px; box-sizing: border-box; display: flex; align-items: end; justify-content: space-between; gap: 3rem; padding: 56px clamp(28px, 5vw, 76px) 38px; border-bottom: 1px solid var(--admin-line); }
+  .dashboard-header h1 { margin: 0 0 14px; color: #f4f1ec; font: 650 clamp(2.35rem, 4.5vw, 4.7rem)/.98 var(--admin-display); letter-spacing: -.055em; }
+  .dashboard-header p { max-width: 670px; margin: 0; color: var(--admin-muted); font-size: .95rem; line-height: 1.65; }
+  .session-state { min-width: 205px; display: grid; grid-template-columns: 8px 1fr; gap: 5px 9px; padding: 13px 15px; border: 1px solid var(--admin-line-strong); background: rgba(8,18,28,.7); font: .66rem/1.25 var(--admin-mono); }
+  .session-state i { grid-row: 1 / 3; align-self: center; width: 7px; height: 7px; border-radius: 50%; background: var(--admin-success); }
+  .session-state span { color: var(--admin-faint); text-transform: uppercase; letter-spacing: .06em; }
+  .session-state strong { color: #c2d9c7; font-weight: 600; }
+  .dashboard-content { max-width: 1460px; padding: 34px clamp(28px, 5vw, 76px) 72px; }
+  section { margin-bottom: 36px; }
+  .section-heading { display: flex; align-items: end; justify-content: space-between; gap: 1.5rem; margin-bottom: 13px; }
+  .section-heading > div > span { display: block; margin-bottom: 5px; color: var(--admin-accent); font: 700 .61rem/1 var(--admin-mono); letter-spacing: .13em; text-transform: uppercase; }
+  .section-heading h2 { margin: 0; color: #e8e8e5; font: 600 1.05rem/1.2 var(--admin-display); letter-spacing: -.015em; }
+  .section-heading > a { color: var(--admin-muted); font: 600 .7rem/1 var(--admin-ui); text-decoration: none; }
+  .section-heading > a span { margin-left: 8px; color: var(--admin-accent); }
+  .tool-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--admin-line-strong); border-left: 1px solid var(--admin-line-strong); }
+  .tool-row { min-height: 122px; box-sizing: border-box; display: grid; grid-template-columns: 40px minmax(0,1fr) auto; align-items: center; gap: 18px; padding: 22px 24px; border-right: 1px solid var(--admin-line-strong); border-bottom: 1px solid var(--admin-line-strong); color: inherit; text-decoration: none; transition: background 150ms ease; }
+  .tool-row:hover { background: rgba(224,139,72,.055); }
+  .tool-number { color: var(--admin-accent); font: 600 .7rem/1 var(--admin-mono); }
+  .tool-copy { display: flex; flex-direction: column; gap: 8px; }
+  .tool-copy strong { color: #f0efeb; font-size: .93rem; }
+  .tool-copy small { max-width: 390px; color: var(--admin-muted); font-size: .73rem; line-height: 1.5; }
+  .tool-action { align-self: end; color: var(--admin-faint); font: 600 .66rem/1 var(--admin-ui); }
+  .tool-action b { margin-left: 9px; color: var(--admin-accent); font-size: .9rem; }
+  .contract-state { display: inline-flex; align-items: center; gap: 8px; color: #adcbb4; font: 600 .66rem/1 var(--admin-mono); }
+  .contract-state i { width: 6px; height: 6px; border-radius: 50%; background: var(--admin-success); }
+  .architecture-flow { display: grid; grid-template-columns: minmax(0,1fr) 28px minmax(0,1fr) 28px minmax(0,1fr) 28px minmax(0,1fr); align-items: stretch; border: 1px solid var(--admin-line-strong); background: #09141f; }
+  .architecture-flow article { min-height: 150px; display: flex; flex-direction: column; justify-content: center; padding: 24px; }
+  .architecture-flow article > span { color: var(--admin-faint); font: 600 .62rem/1 var(--admin-mono); text-transform: uppercase; letter-spacing: .09em; }
+  .architecture-flow strong { margin: 12px 0 9px; color: var(--admin-accent); font: 650 1.18rem/1 var(--admin-mono); }
+  .architecture-flow small { color: var(--admin-muted); font-size: .7rem; line-height: 1.5; }
+  .flow-arrow { display: flex; align-items: center; justify-content: center; color: var(--admin-accent); font-size: 1.2rem; }
+  .shortcut-list { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); border-top: 1px solid var(--admin-line); border-left: 1px solid var(--admin-line); }
+  .shortcut-list a { min-height: 76px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 18px; border-right: 1px solid var(--admin-line); border-bottom: 1px solid var(--admin-line); color: inherit; text-decoration: none; transition: background 150ms ease; }
+  .shortcut-list a:hover { background: rgba(255,255,255,.025); }
+  .shortcut-list a > span { display: flex; flex-direction: column; gap: 6px; }
+  .shortcut-list strong { color: #dfe3e4; font-size: .78rem; }
+  .shortcut-list small { color: var(--admin-faint); font-size: .67rem; }
+  .shortcut-list b { color: var(--admin-accent); font-size: .9rem; }
+  @media (max-width: 1120px) { .architecture-flow { grid-template-columns: repeat(2, minmax(0,1fr)); } .flow-arrow { display: none; } .architecture-flow article { min-height: 125px; border-bottom: 1px solid var(--admin-line); } .architecture-flow article:nth-of-type(odd) { border-right: 1px solid var(--admin-line); } }
+  @media (max-width: 720px) {
+    .dashboard-header { min-height: auto; align-items: flex-start; flex-direction: column; padding-top: 78px; gap: 24px; }
+    .session-state { width: 100%; box-sizing: border-box; }
+    .tool-list, .shortcut-list, .architecture-flow { grid-template-columns: 1fr; }
+    .tool-row { grid-template-columns: 30px minmax(0,1fr); padding: 19px 17px; }
+    .tool-action { grid-column: 2; justify-self: start; }
+    .architecture-flow article:nth-of-type(odd) { border-right: 0; }
+    .section-heading { align-items: flex-start; }
   }
-  .dashboard-header, .section-heading { max-width: 1180px; margin: 0 auto; }
-  .dashboard-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 2rem; padding-bottom: clamp(2.5rem, 6vw, 5rem); }
-  .dashboard-kicker { margin: 0 0 .65rem; color: #d8a44a; font: 700 .68rem/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .16em; text-transform: uppercase; }
-  h1, h2, p { margin-top: 0; }
-  h1 { max-width: 720px; margin-bottom: 1rem; font-size: clamp(2.5rem, 6vw, 5.4rem); line-height: .98; letter-spacing: -.065em; }
-  h2 { margin-bottom: 0; color: rgba(232, 238, 245, .96); font-size: clamp(1.35rem, 2.2vw, 1.8rem); letter-spacing: -.035em; }
-  .dashboard-lede { max-width: 650px; margin-bottom: 0; color: rgba(174, 190, 207, .72); font-size: 1rem; line-height: 1.65; }
-  .session-pill, .status-label { display: inline-flex; align-items: center; gap: .5rem; padding: .55rem .75rem; border: 1px solid rgba(52, 211, 153, .2); border-radius: 999px; color: rgba(187, 247, 208, .82); font: 600 .7rem ui-monospace, monospace; white-space: nowrap; }
-  .session-pill i, .status-label i { width: .45rem; height: .45rem; border-radius: 50%; background: #34d399; box-shadow: 0 0 12px rgba(52, 211, 153, .75); }
-  .tool-section, .status-section, .quick-section { max-width: 1180px; margin: 0 auto 3.75rem; }
-  .section-heading { display: flex; justify-content: space-between; align-items: end; gap: 1rem; margin-bottom: 1rem; }
-  .section-heading a { color: #72b9ff; font-size: .78rem; text-decoration: none; }
-  .section-heading a:hover { color: #fff; }
-  .tool-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .8rem; }
-  .tool-card { position: relative; display: flex; flex-direction: column; min-height: 190px; padding: 1.15rem; border: 1px solid rgba(114, 185, 255, .15); border-radius: .9rem; background: rgba(10, 22, 39, .76); color: inherit; text-decoration: none; transition: transform .16s ease, border-color .16s ease, background .16s ease; }
-  .tool-card:hover { transform: translateY(-3px); border-color: rgba(114, 185, 255, .42); background: rgba(18, 36, 62, .92); }
-  .tool-card--gold { border-color: rgba(216, 164, 74, .34); background: linear-gradient(145deg, rgba(75, 55, 21, .48), rgba(10, 22, 39, .8)); }
-  .tool-index { position: absolute; top: 1rem; right: 1rem; color: rgba(174, 190, 207, .38); font: .7rem ui-monospace, monospace; }
-  .tool-eyebrow { margin-bottom: 2rem; color: rgba(174, 190, 207, .62); font: .63rem ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase; }
-  .tool-card strong { color: #f1f5f9; font-size: 1rem; }
-  .tool-description { margin-top: .5rem; color: rgba(174, 190, 207, .68); font-size: .78rem; line-height: 1.5; }
-  .tool-action { margin-top: auto; padding-top: 1.1rem; color: #72b9ff; font-size: .72rem; }
-  .tool-card--gold .tool-action { color: #e8bd6a; }
-  .status-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .8rem; }
-  .status-card { padding: 1rem; border: 1px solid rgba(114, 185, 255, .1); border-radius: .75rem; background: rgba(10, 22, 39, .54); }
-  .status-card span, .status-card small { display: block; color: rgba(174, 190, 207, .56); font-size: .72rem; }
-  .status-card strong { display: block; margin: .55rem 0 .35rem; color: #d7f8e7; font: 700 1.3rem ui-monospace, monospace; }
-  .quick-links { display: flex; flex-wrap: wrap; gap: .6rem; }
-  .quick-links a { display: inline-flex; gap: .75rem; align-items: center; padding: .7rem .85rem; border: 1px solid rgba(114, 185, 255, .13); border-radius: .55rem; color: rgba(214, 226, 239, .76); font-size: .78rem; text-decoration: none; }
-  .quick-links a:hover { border-color: rgba(114, 185, 255, .4); color: #fff; }
-  .quick-links span { color: #72b9ff; }
-  @media (max-width: 900px) { .tool-grid, .status-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  @media (max-width: 640px) { .dashboard-header, .section-heading { align-items: flex-start; flex-direction: column; } .tool-grid, .status-grid { grid-template-columns: 1fr; } .session-pill { margin-top: .25rem; } }
 </style>
