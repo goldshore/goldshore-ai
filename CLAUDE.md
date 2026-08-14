@@ -1,6 +1,6 @@
 # CLAUDE.md — goldshore-ai
 
-> Updated: 2026-07-03 · Active branch: `claude/risk-radar-fra-epo-2wk5mk`
+> Updated: 2026-08-14 · Active branch: `claude/mcp-gs-api-worker-migration-0g51br`
 
 ## Platform overview
 
@@ -141,12 +141,35 @@ For Claude/Codex assistance with Google API integration: provide the API name, s
 
 ---
 
-## Active branch: `claude/risk-radar-fra-epo-2wk5mk`
+## Active branch: `claude/mcp-gs-api-worker-migration-0g51br`
 
-What's on this branch:
-- `apps/gs-web/src/pages/index.astro` — nav links → real page routes, access modal (`<dialog>`), hamburger nav toggle, contact form fix
-- `apps/gs-web/src/styles/home-theme.css` — mobile nav, modal, honeypot CSS
-- `.github/workflows/manage-cf-tokens.yml` — dual Cloudflare auth (Bearer token + Global API Key), verify step
+### Initiative: Enterprise Admin Platform Build-Out
+
+**Objective**: Build comprehensive admin dashboard with 30+ features for operations, automation, and infrastructure management.
+
+**Phase 1 (Current Sprint — In Progress)**:
+- ✅ Fix CF Access login panel (JWT auth, edge Access Application)
+- ✅ Set Cloudflare API credentials (CF_ACCOUNT_ID, CF_API_TOKEN)
+- 🔄 Core admin infrastructure:
+  - Email management (queue, logs, templates)
+  - Worker management (bindings, routes, secrets UI)
+  - Contact forms & leads CRUD (entries display, pagination)
+  - User sign-up management
+  - Settings panel
+  - API routes: `/api/admin/{email,workers,entries,users,settings}/*`
+  - Frontend pages: `/admin/{dashboard,email,workers,entries,users,settings}`
+
+**Phase 2 (Week 2)**: WYSIWYG editors, secret creator, API key rotator, permission updater
+
+**Phase 3 (Week 3)**: Workflows (leads generator, list scraper, data collector, email sender, CF Tunnel manager)
+
+**Phase 4 (Week 4+)**: Enterprise features (PR manager, AI search, ad integrator, site builder, plugin installer, SQL sync, mailbox management)
+
+**Tech Stack**:
+- Backend: Hono (gs-api)
+- Frontend: Astro + React (gs-web)
+- Storage: D1 (schema), KV (cache), R2 (uploads)
+- Auth: Cloudflare Access + session tokens
 
 ---
 
