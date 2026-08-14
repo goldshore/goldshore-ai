@@ -1,0 +1,155 @@
+---
+export const prerender = false;
+
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import DashboardClient from "../../components/admin/DashboardClient";
+
+const jwtToken = Astro.cookies.get('CF-Authorization')?.value || '';
+const apiBaseUrl = 'https://api.goldshore.ai/admin';
+
+let dashboardData = {
+  emailStats: { queued: 0, sent: 0, failed: 0 },
+  entriesStats: { total: 0, pending: 0 },
+  usersStats: { total: 0, active: 0 },
+  error: null as string | null,
+};
+
+try {
+  // Fetch email stats
+  const emailRes = await fetch(`${apiBaseUrl}/email/status`, {
+    headers: {
+      'CF-Authorization': jwtToken,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (emailRes.ok) {
+    dashboardData.emailStats = await emailRes.json();
+  }
+
+  // Fetch entries stats (first page only for summary)
+  const entriesRes = await fetch(`${apiBaseUrl}/entries?offset=0&limit=1`, {
+    headers: {
+      'CF-Authorization': jwtToken,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (entriesRes.ok) {
+    const data = await entriesRes.json();
+    dashboardData.entriesStats = {
+      total: data.total || 0,
+      pending: data.items?.filter((e: any) => e.status === 'new').length || 0,
+    };
+  }
+
+  // Fetch users stats (first page only for summary)
+  const usersRes = await fetch(`${apiBaseUrl}/users?offset=0&limit=1`, {
+    headers: {
+      'CF-Authorization': jwtToken,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (usersRes.ok) {
+    const data = await usersRes.json();
+    dashboardData.usersStats = {
+      total: data.total || 0,
+      active: data.items?.filter((u: any) => u.status === 'active').length || 0,
+    };
+  }
+} catch (error) {
+  dashboardData.error = error instanceof Error ? error.message : 'Failed to load dashboard data';
+}
+---
+
+<AdminLayout title="Admin | Dashboard">
+  <div class="max-w-7xl mx-auto p-8 space-y-8">
+    <h1 class="text-4xl gs-heading gs-text-accent">Admin Dashboard</h1>
+    <p class="text-lg gs-text-subtle">Welcome to the Goldshore admin platform. Manage your operations from here.</p>
+
+    {dashboardData.error && (
+      <div class="p-4 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+        {dashboardData.error}
+      </div>
+    )}
+
+    <div class="grid md:grid-cols-4 gap-6">
+      <div class="gs-card space-y-3">
+        <h2 class="text-xl font-semibold">Email Queue</h2>
+        <p class="text-3xl font-bold gs-text-info">{dashboardData.emailStats.queued}</p>
+        <p class="text-sm gs-text-subtle">Messages queued for delivery</p>
+        <a href="/admin/email" class="text-sm gs-text-primary hover:underline">View details →</a>
+      </div>
+
+      <div class="gs-card space-y-3">
+        <h2 class="text-xl font-semibold">Emails Sent</h2>
+        <p class="text-3xl font-bold gs-text-success">{dashboardData.emailStats.sent}</p>
+        <p class="text-sm gs-text-subtle">Total delivered</p>
+        <a href="/admin/email" class="text-sm gs-text-primary hover:underline">View logs →</a>
+      </div>
+
+      <div class="gs-card space-y-3">
+        <h2 class="text-xl font-semibold">Failed Emails</h2>
+        <p class="text-3xl font-bold gs-text-danger">{dashboardData.emailStats.failed}</p>
+        <p class="text-sm gs-text-subtle">Requiring attention</p>
+        <a href="/admin/email" class="text-sm gs-text-primary hover:underline">Retry failed →</a>
+      </div>
+
+      <div class="gs-card space-y-3">
+        <h2 class="text-xl font-semibold">Pending Entries</h2>
+        <p class="text-3xl font-bold gs-text-warning">{dashboardData.entriesStats.pending}</p>
+        <p class="text-sm gs-text-subtle">Forms & leads new</p>
+        <a href="/admin/entries" class="text-sm gs-text-primary hover:underline">Review all →</a>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="gs-card space-y-3">
+        <h2 class="text-xl font-semibold">Total Entries</h2>
+        <p class="text-3xl font-bold gs-text-info">{dashboardData.entriesStats.total}</p>
+        <p class="text-sm gs-text-subtle">Contacts & leads combined</p>
+      </div>
+
+      <div class="gs-card space-y-3">
+        <h2 class="text-xl font-semibold">Team Members</h2>
+        <p class="text-3xl font-bold gs-text-info">{dashboardData.usersStats.total}</p>
+        <p class="text-sm gs-text-subtle">{dashboardData.usersStats.active} active</p>
+        <a href="/admin/users" class="text-sm gs-text-primary hover:underline">Manage team →</a>
+      </div>
+
+      <div class="gs-card space-y-3">
+        <h2 class="text-xl font-semibold">Quick Actions</h2>
+        <p class="text-sm gs-text-subtle">Get started with admin features</p>
+        <div class="space-y-2 pt-2">
+          <a href="/admin/email" class="block text-sm gs-text-primary hover:underline">→ Email management</a>
+          <a href="/admin/settings" class="block text-sm gs-text-primary hover:underline">→ Settings</a>
+          <a href="/admin/users" class="block text-sm gs-text-primary hover:underline">→ Team settings</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="gs-card space-y-4">
+      <h2 class="text-2xl font-semibold">Getting Started</h2>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div>
+          <h3 class="font-semibold mb-2">📧 Email Management</h3>
+          <p class="text-sm gs-text-subtle mb-3">Send transactional emails, manage templates, and track delivery logs.</p>
+          <a href="/admin/email" class="text-sm gs-text-primary hover:underline">Go to Email →</a>
+        </div>
+        <div>
+          <h3 class="font-semibold mb-2">📝 Entries & Forms</h3>
+          <p class="text-sm gs-text-subtle mb-3">View and manage contact submissions and lead submissions with pagination and filters.</p>
+          <a href="/admin/entries" class="text-sm gs-text-primary hover:underline">Go to Entries →</a>
+        </div>
+        <div>
+          <h3 class="font-semibold mb-2">👥 Team Management</h3>
+          <p class="text-sm gs-text-subtle mb-3">Invite team members, manage roles and permissions, control access.</p>
+          <a href="/admin/users" class="text-sm gs-text-primary hover:underline">Go to Users →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <DashboardClient client:load />
+</AdminLayout>
