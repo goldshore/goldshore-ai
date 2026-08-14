@@ -18,6 +18,56 @@ const admin = new Hono<{ Bindings: Env; Variables: Variables }>();
 admin.route('/mcp-assistant', mcpAssistant);
 const validStatus = new Set(["active", "invited", "disabled"]);
 const workspaceTypes = new Set(['governance', 'projects', 'workflows', 'email_templates', 'subscribe_ctas']);
+const settingsProviders = new Set(['claude', 'openai', 'openclaw', 'gemini']);
+type SiteSettings = {
+  apiUrl: string; contactNotificationEmails: string; llmProvider: string;
+  riskRadarEnabled: boolean; briefingFormEnabled: boolean;
+  maintenanceMode: boolean; analyticsEnabled: boolean; updatedAt: string;
+};
+
+const defaultSettings = (env: Env): SiteSettings => ({
+  apiUrl: env.API_ORIGIN || 'https://api.goldshore.ai',
+  contactNotificationEmails: env.CONTACT_NOTIFICATION_EMAILS || '',
+  llmProvider: env.LLM_PROVIDER || 'claude',
+  riskRadarEnabled: true,
+  briefingFormEnabled: true,
+  maintenanceMode: false,
+  analyticsEnabled: true,
+  updatedAt: '',
+});
+
+admin.get('/settings', requirePermission('api_configuration:read'), async (c) => {
+  const row = await c.env.PLATFORM_DB.prepare("SELECT data,last_updated FROM admin_cache WHERE id='site-settings' AND entity_type='settings' LIMIT 1")
+    .first<{ data: string; last_updated: string }>();
+  const settings = row ? { ...defaultSettings(c.env), ...JSON.parse(row.data), updatedAt: row.last_updated } : defaultSettings(c.env);
+  return c.json({ success: true, settings });
+});
+
+admin.put('/settings', requirePermission('api_configuration:update'), async (c) => {
+  const payload = await c.req.json<Partial<SiteSettings>>().catch(() => null);
+  if (!payload) return c.json({ error: 'Invalid JSON payload.' }, 400);
+  let apiUrl: URL;
+  try { apiUrl = new URL(payload.apiUrl ?? ''); } catch { return c.json({ error: 'A valid API URL is required.' }, 400); }
+  if (apiUrl.protocol !== 'https:') return c.json({ error: 'The API URL must use HTTPS.' }, 400);
+  if (!settingsProviders.has(payload.llmProvider ?? '')) return c.json({ error: 'Invalid LLM provider.' }, 400);
+  const emails = (payload.contactNotificationEmails ?? '').split(',').map((email) => email.trim()).filter(Boolean);
+  if (emails.some((email) => !isValidEmail(email))) return c.json({ error: 'One or more notification emails are invalid.' }, 400);
+  const settings = {
+    apiUrl: apiUrl.toString().replace(/\/$/, ''),
+    contactNotificationEmails: emails.join(', '),
+    llmProvider: payload.llmProvider,
+    riskRadarEnabled: Boolean(payload.riskRadarEnabled),
+    briefingFormEnabled: Boolean(payload.briefingFormEnabled),
+    maintenanceMode: Boolean(payload.maintenanceMode),
+    analyticsEnabled: Boolean(payload.analyticsEnabled),
+  };
+  await c.env.PLATFORM_DB.prepare(`INSERT INTO admin_cache(id,entity_type,entity_id,data,last_updated,ttl_seconds,cached_at)
+    VALUES('site-settings','settings','site-settings',?,datetime('now'),31536000,datetime('now'))
+    ON CONFLICT(id) DO UPDATE SET data=excluded.data,last_updated=datetime('now'),cached_at=datetime('now')`)
+    .bind(JSON.stringify(settings)).run();
+  await audit(c, 'admin.settings.update', 'success', { fields: Object.keys(settings) });
+  return c.json({ success: true, settings: { ...settings, updatedAt: new Date().toISOString() } });
+});
 
 admin.get('/workspaces/:type', requirePermission('system:read'), async (c) => {
   const type = c.req.param('type');
@@ -104,9 +154,30 @@ admin.get("/session", async (c) => {
 });
 
 admin.get("/users", requirePermission("users:read"), async (c) => {
-  const users = await c.env.PLATFORM_DB.prepare(`${userSelect} ORDER BY u.created_at DESC`).all<UserRow>();
+  const page = Math.max(1, Number.parseInt(c.req.query('page') ?? '1', 10) || 1);
+  const pageSize = Math.min(100, Math.max(10, Number.parseInt(c.req.query('pageSize') ?? '25', 10) || 25));
+  const users = await c.env.PLATFORM_DB.prepare(`${userSelect} ORDER BY u.created_at DESC LIMIT ? OFFSET ?`).bind(pageSize, (page - 1) * pageSize).all<UserRow>();
+  const count = await c.env.PLATFORM_DB.prepare('SELECT COUNT(*) total FROM users WHERE deleted_at IS NULL').first<{ total: number }>();
+  const total = Number(count?.total ?? 0);
   await audit(c, "admin.users.list", "success", { count: users.results.length });
-  return c.json(users.results);
+  return c.json({ items: users.results, pagination: { page, pageSize, total, pages: Math.max(1, Math.ceil(total / pageSize)) } });
+});
+
+admin.get('/email/jobs', requirePermission('system:read'), async (c) => {
+  const allowedMailStatuses = new Set(['queued', 'processing', 'retrying', 'sent', 'failed']);
+  const status = c.req.query('status');
+  const page = Math.max(1, Number.parseInt(c.req.query('page') ?? '1', 10) || 1);
+  const pageSize = Math.min(100, Math.max(10, Number.parseInt(c.req.query('pageSize') ?? '25', 10) || 25));
+  const filtered = Boolean(status && allowedMailStatuses.has(status));
+  const where = filtered ? 'WHERE status = ?' : '';
+  const values: unknown[] = filtered ? [status] : [];
+  values.push(pageSize, (page - 1) * pageSize);
+  const result = await c.env.PLATFORM_DB.prepare(`SELECT id,event_type,status,recipient_count,attempts,message_id,last_error_code,created_at,updated_at,sent_at FROM mail_jobs ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`)
+    .bind(...values).all();
+  const countStatement = c.env.PLATFORM_DB.prepare(`SELECT COUNT(*) total FROM mail_jobs ${where}`);
+  const count = filtered ? await countStatement.bind(status).first<{ total: number }>() : await countStatement.first<{ total: number }>();
+  const total = Number(count?.total ?? 0);
+  return c.json({ items: result.results, pagination: { page, pageSize, total, pages: Math.max(1, Math.ceil(total / pageSize)) } });
 });
 
 admin.post("/users", requirePermission("users:create"), async (c) => {

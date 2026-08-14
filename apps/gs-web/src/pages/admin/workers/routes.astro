@@ -81,7 +81,7 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
 
         async function loadWorkerList() {
             try {
-                const res = await fetch('/api/cf/workers');
+                const res = await fetch('/api/admin/cf/workers');
                 const data = await res.json();
 
                 if (!res.ok || data.error) {
@@ -92,14 +92,14 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
 
                 cfAccountId = data.accountId ?? '';
 
-                const workers: Array<{ id: string }> = data.result ?? [];
+                const workers: Array<{ id: string }> = data.workers ?? [];
                 if (workerSelect) {
                     workerSelect.innerHTML = '<option value="">— choose a worker —</option>' +
                         workers.map((w) => `<option value="${w.id}">${w.id}</option>`).join('');
                 }
             } catch {
                 if (workerSelect) workerSelect.innerHTML = '<option value="">Network error</option>';
-                showError('Network error — could not reach /api/cf/workers.');
+                showError('Network error — could not reach the Worker inventory API.');
             }
         }
 
@@ -115,7 +115,7 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
             if (routesSection) routesSection.style.display = 'block';
 
             try {
-                const res = await fetch(`/api/cf/worker-detail?name=${encodeURIComponent(name)}`);
+                const res = await fetch(`/api/admin/cf/worker-detail?name=${encodeURIComponent(name)}`);
                 const data = await res.json();
 
                 if (!res.ok || data.error) {
