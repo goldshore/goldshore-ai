@@ -26,7 +26,6 @@ import {
 const KNOWN_UNBUILT_ADMIN_ROUTES = [
   '/admin/pii-scans',
   '/admin/repo-health/findings',
-  '/admin/users/list',
 ];
 
 test('routes dashboard traffic to the admin host with system read access', () => {
