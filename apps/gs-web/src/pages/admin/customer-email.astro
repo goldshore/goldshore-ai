@@ -1,76 +1,28 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
-
-const { redirect } = Astro;
-if (!Astro.locals.adminSession?.isAuthenticated) {
-  redirect('/login');
-}
+import AdminWorkspaceManager from '../../components/AdminWorkspaceManager.astro';
+if (!Astro.locals.adminSession?.isAuthenticated) return Astro.redirect('/login');
 ---
-
 <AdminLayout title="Customer Email" requiredPermission="system:read">
-  <div class="admin-page-header">
-    <h1>Customer Email</h1>
-    <p>Manage customer communication templates</p>
-  </div>
-
-  <div class="admin-content">
-    <section class="admin-section">
-      <h2>Email Templates</h2>
-      <div class="loading-state">
-        <p>Loading email templates...</p>
-      </div>
-    </section>
-
-    <section class="admin-section">
-      <h2>Send History</h2>
-      <div class="loading-state">
-        <p>Loading send history...</p>
-      </div>
-    </section>
-
-    <section class="admin-section">
-      <h2>Bounce & Complaint Rate</h2>
-      <div class="loading-state">
-        <p>Loading metrics...</p>
-      </div>
-    </section>
-  </div>
+  <AdminWorkspaceManager type="email_templates" title="Customer Email" description="Manage approved templates and queue transactional messages; provider credentials remain server-side." fields={['template_key','subject','from_address','reply_to','status']}/>
+  <section class="gs-section" style="padding-top: 0;">
+    <form id="email-sender" class="gs-card" style="max-width: 760px;">
+      <h2>Send customer email</h2>
+      <p>Messages are placed on the production mail queue and recorded without storing recipient addresses in audit metadata.</p>
+      <div class="gs-input-group"><label for="email-to">Recipient</label><input id="email-to" type="email" required /></div>
+      <div class="gs-input-group"><label for="email-subject">Subject</label><input id="email-subject" maxlength="200" required /></div>
+      <div class="gs-input-group"><label for="email-message">Message</label><textarea id="email-message" rows="10" maxlength="20000" required></textarea></div>
+      <p id="send-status" role="status"></p><button class="gs-button" type="submit">Queue email</button>
+    </form>
+  </section>
 </AdminLayout>
-
-<style>
-  .admin-page-header {
-    padding: 24px;
-    border-bottom: 1px solid rgba(226, 232, 240, 0.1);
-  }
-
-  .admin-page-header h1 {
-    margin: 0 0 8px;
-    font-size: 28px;
-  }
-
-  .admin-page-header p {
-    margin: 0;
-    color: rgba(226, 232, 240, 0.7);
-  }
-
-  .admin-content {
-    padding: 24px;
-  }
-
-  .admin-section {
-    margin-bottom: 32px;
-  }
-
-  .admin-section h2 {
-    font-size: 18px;
-    margin: 0 0 16px;
-  }
-
-  .loading-state {
-    padding: 24px;
-    background: rgba(226, 232, 240, 0.05);
-    border-radius: 8px;
-    text-align: center;
-    color: rgba(226, 232, 240, 0.6);
-  }
-</style>
+<script>
+  const form = document.getElementById('email-sender') as HTMLFormElement;
+  const status = document.getElementById('send-status') as HTMLElement;
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault(); status.textContent = 'Queuing…';
+    const response = await fetch('/api/admin/email/send', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ to: (document.getElementById('email-to') as HTMLInputElement).value, subject: (document.getElementById('email-subject') as HTMLInputElement).value, text: (document.getElementById('email-message') as HTMLTextAreaElement).value }) });
+    status.textContent = response.ok ? 'Email queued.' : (await response.json().catch(() => ({ error: 'Unable to queue email.' }))).error;
+    if (response.ok) form.reset();
+  });
+</script>

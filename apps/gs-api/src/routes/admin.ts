@@ -6,6 +6,8 @@ import deploy from "./admin/index";
 import repoHealth from "./admin/repo-health";
 import mergeCockpit from "./admin/merge-cockpit";
 import mcpAssistant from "./admin/mcp-assistant";
+import { escapeHtml, isValidEmail } from '@goldshore/utils';
+import { enqueueMailJob } from '../lib/mail-queue';
 
 type UserRow = {
   id: string; email: string; display_name: string | null; status: string;
@@ -15,6 +17,52 @@ type UserRow = {
 const admin = new Hono<{ Bindings: Env; Variables: Variables }>();
 admin.route('/mcp-assistant', mcpAssistant);
 const validStatus = new Set(["active", "invited", "disabled"]);
+const workspaceTypes = new Set(['governance', 'projects', 'workflows', 'email_templates', 'subscribe_ctas']);
+
+admin.get('/workspaces/:type', requirePermission('system:read'), async (c) => {
+  const type = c.req.param('type');
+  if (!workspaceTypes.has(type)) return c.json({ error: 'Unsupported workspace.' }, 404);
+  const rows = await c.env.PLATFORM_DB.prepare('SELECT id,entity_id,data,last_updated FROM admin_cache WHERE entity_type=? ORDER BY last_updated DESC').bind(type).all<{ id: string; entity_id: string | null; data: string; last_updated: string }>();
+  return c.json({ items: rows.results.map((row) => ({ id: row.id, key: row.entity_id, ...JSON.parse(row.data), updatedAt: row.last_updated })) });
+});
+
+admin.put('/workspaces/:type/:id', requirePermission('system:write'), async (c) => {
+  const type = c.req.param('type');
+  if (!workspaceTypes.has(type)) return c.json({ error: 'Unsupported workspace.' }, 404);
+  const payload = await c.req.json<Record<string, unknown>>().catch(() => null);
+  if (!payload || typeof payload.title !== 'string' || !payload.title.trim()) return c.json({ error: 'A title is required.' }, 400);
+  const id = c.req.param('id');
+  await c.env.PLATFORM_DB.prepare(`INSERT INTO admin_cache(id,entity_type,entity_id,data,last_updated,ttl_seconds,cached_at)
+    VALUES(?,?,?,?,datetime('now'),31536000,datetime('now')) ON CONFLICT(id) DO UPDATE SET data=excluded.data,last_updated=datetime('now'),cached_at=datetime('now')`)
+    .bind(id, type, typeof payload.key === 'string' ? payload.key : id, JSON.stringify(payload)).run();
+  await audit(c, `admin.workspace.${type}.save`, 'success', { id });
+  return c.json({ id, ...payload });
+});
+
+admin.delete('/workspaces/:type/:id', requirePermission('system:write'), async (c) => {
+  const type = c.req.param('type');
+  if (!workspaceTypes.has(type)) return c.json({ error: 'Unsupported workspace.' }, 404);
+  await c.env.PLATFORM_DB.prepare('DELETE FROM admin_cache WHERE id=? AND entity_type=?').bind(c.req.param('id'), type).run();
+  await audit(c, `admin.workspace.${type}.delete`, 'success', { id: c.req.param('id') });
+  return c.body(null, 204);
+});
+
+admin.post('/email/send', requirePermission('system:write'), async (c) => {
+  const payload = await c.req.json<{ to?: string; subject?: string; text?: string }>().catch(() => null);
+  const to = payload?.to?.trim() ?? '';
+  const subject = payload?.subject?.trim() ?? '';
+  const text = payload?.text?.trim() ?? '';
+  if (!isValidEmail(to) || !subject || !text) return c.json({ error: 'A valid recipient, subject, and message are required.' }, 400);
+  if (subject.length > 200 || text.length > 20_000) return c.json({ error: 'Message exceeds the allowed size.' }, 400);
+  const delivery = await enqueueMailJob(c.env, {
+    to: [{ email: to }], subject, text,
+    html: `<p>${escapeHtml(text).replace(/\n/g, '<br>')}</p>`,
+  });
+  await audit(c, 'admin.email.queue', delivery.attempted && delivery.ok ? 'success' : 'failure', { recipientDomain: to.split('@')[1] });
+  return delivery.attempted && delivery.ok
+    ? c.json({ ok: true, jobId: delivery.body }, 202)
+    : c.json({ error: 'Mail queue is unavailable.' }, 503);
+});
 const sensitiveOperations: Record<string, AdminPermission> = {
   "secret-rotation": "secret_metadata:rotate",
   "production-promotion": "deployments:promote",
