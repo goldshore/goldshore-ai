@@ -8,6 +8,7 @@ import mergeCockpit from "./admin/merge-cockpit";
 import mcpAssistant from "./admin/mcp-assistant";
 import mailOperations from './admin/mail-operations';
 import sqlSync from './admin/sql-sync';
+import adIntegrations from './admin/ad-integrations';
 import { escapeHtml, isValidEmail } from '@goldshore/utils';
 import { enqueueMailJob } from '../lib/mail-queue';
 
@@ -20,6 +21,7 @@ const admin = new Hono<{ Bindings: Env; Variables: Variables }>();
 admin.route('/mcp-assistant', mcpAssistant);
 admin.route('/', mailOperations);
 admin.route('/', sqlSync);
+admin.route('/ads', adIntegrations);
 const validStatus = new Set(["active", "invited", "disabled"]);
 const workspaceTypes = new Set(['governance', 'projects', 'workflows', 'email_templates', 'subscribe_ctas']);
 const settingsProviders = new Set(['claude', 'openai', 'openclaw', 'gemini']);
