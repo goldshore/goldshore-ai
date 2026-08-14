@@ -88,10 +88,7 @@ try {
     </div>
 
     <div class="gs-card space-y-4">
-      <div class="flex items-center justify-between">
-        <h2 class="text-2xl font-semibold">Email Logs</h2>
-        <a href="/admin/email/templates" class="text-sm gs-text-primary hover:underline">Manage templates →</a>
-      </div>
+      <h2 class="text-2xl font-semibold">Email Logs</h2>
 
       <EmailManager client:load jwtToken={jwtToken} initialLogs={emailLogs} />
     </div>

@@ -61,13 +61,11 @@ const leads = entries.items?.filter((e: any) => e.type === 'lead') || [];
         <h2 class="text-xl font-semibold">Contact Submissions</h2>
         <p class="text-3xl font-bold gs-text-info">{contacts.length}</p>
         <p class="text-sm gs-text-subtle">From contact forms</p>
-        <a href="/admin/entries/contacts" class="text-sm gs-text-primary hover:underline">View contacts →</a>
       </div>
       <div class="gs-card space-y-3">
         <h2 class="text-xl font-semibold">Lead Submissions</h2>
         <p class="text-3xl font-bold gs-text-info">{leads.length}</p>
         <p class="text-sm gs-text-subtle">From lead forms</p>
-        <a href="/admin/entries/leads" class="text-sm gs-text-primary hover:underline">View leads →</a>
       </div>
     </div>
 
