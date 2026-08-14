@@ -15,7 +15,7 @@ export const normalizeDomains = (value: unknown): string[] | null => {
 export const isAutomationQueueJob = (value: unknown): value is AutomationQueueJob =>
   Boolean(value && typeof value === 'object' && (value as any).type === AUTOMATION_EVENT && typeof (value as any).jobId === 'string');
 
-const decodeEntities = (value: string) => value.replace(/&amp;/g, '&').replace(/&#64;/g, '@').replace(/&#x40;/gi, '@');
+const decodeEntities = (value: string) => value.replace(/&#64;/g, '@').replace(/&#x40;/gi, '@').replace(/&amp;/g, '&');
 export const extractAutomationPage = (html: string, sourceUrl: string) => {
   const text = decodeEntities(html.slice(0, 1_000_000));
   const emails = [...new Set((text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,63}/gi) ?? [])
