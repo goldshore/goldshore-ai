@@ -4,7 +4,21 @@ import { Env, Variables } from '../../types';
 import { searchGitHubFrameworks } from '../../lib/github-framework-search';
 import { rankFrameworksWithClaude } from '../../lib/claude-framework-ranker';
 import { validateWranglerConfig } from '../../lib/wrangler-validator';
+import email from './email';
 
+const admin = new Hono<{
+  Bindings: Env;
+  Variables: Variables;
+}>();
+
+// Mount sub-routers
+admin.route('/email', email);
+// admin.route('/workers', workers); // TODO: Phase 1
+// admin.route('/entries', entries); // TODO: Phase 1
+// admin.route('/users', users);     // TODO: Phase 1
+// admin.route('/settings', settings); // TODO: Phase 1
+
+// Deployment routes (existing)
 const deploy = new Hono<{
   Bindings: Env;
   Variables: Variables;
@@ -283,4 +297,7 @@ deploy.post('/create-pr', async (c) => {
   });
 });
 
-export default deploy;
+// Mount deployment routes
+admin.route('/deployments', deploy);
+
+export default admin;
