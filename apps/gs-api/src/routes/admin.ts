@@ -6,6 +6,8 @@ import deploy from "./admin/index";
 import repoHealth from "./admin/repo-health";
 import mergeCockpit from "./admin/merge-cockpit";
 import mcpAssistant from "./admin/mcp-assistant";
+import mailOperations from './admin/mail-operations';
+import sqlSync from './admin/sql-sync';
 import { escapeHtml, isValidEmail } from '@goldshore/utils';
 import { enqueueMailJob } from '../lib/mail-queue';
 
@@ -16,6 +18,8 @@ type UserRow = {
 
 const admin = new Hono<{ Bindings: Env; Variables: Variables }>();
 admin.route('/mcp-assistant', mcpAssistant);
+admin.route('/', mailOperations);
+admin.route('/', sqlSync);
 const validStatus = new Set(["active", "invited", "disabled"]);
 const workspaceTypes = new Set(['governance', 'projects', 'workflows', 'email_templates', 'subscribe_ctas']);
 const settingsProviders = new Set(['claude', 'openai', 'openclaw', 'gemini']);

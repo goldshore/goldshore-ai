@@ -13,6 +13,7 @@ type ResourceBindings = {
   RISK_RADAR_DB?: D1Database;
   TELEMETRY_DB?: D1Database;
   GS_ASSETS: R2Bucket;
+  HOSTGATOR_DB?: Hyperdrive;
   MAIL_ARCHIVE?: R2Bucket;
   RISK_RADAR_R2?: R2Bucket;
   TELEMETRY?: R2Bucket;
