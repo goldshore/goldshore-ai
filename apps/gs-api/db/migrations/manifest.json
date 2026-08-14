@@ -12,5 +12,10 @@
   "0007_google_workspace_rbac.sql": "PLATFORM_DB",
   "0007_github_webhooks.sql": "AUDIT_DB",
   "0008_access_owner_role.sql": "PLATFORM_DB",
-  "0009_infrastructure_baseline.sql": "PLATFORM_DB"
+  "0009_infrastructure_baseline.sql": "PLATFORM_DB",
+  "0010_automation_jobs.sql": "PLATFORM_DB",
+  "0011_managed_sites.sql": "PLATFORM_DB",
+  "0012_mailboxes_audiences.sql": "PLATFORM_DB",
+  "0013_sql_sync_control.sql": "PLATFORM_DB",
+  "0014_ad_integrations.sql": "PLATFORM_DB"
 }
