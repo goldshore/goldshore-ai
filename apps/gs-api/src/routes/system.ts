@@ -257,6 +257,112 @@ const allowedRouteHost = (pattern: string) => {
   return host === 'goldshore.ai' || host.endsWith('.goldshore.ai') || host === 'goldshore.org' || host.endsWith('.goldshore.org');
 };
 
+const tunnelIdPattern = /^[a-f0-9-]{36}$/i;
+const tunnelNamePattern = /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/;
+type TunnelIngress = { hostname?: string; path?: string; service: string; originRequest?: Record<string, unknown> };
+const allowedTunnelHostname = (hostname: string) => {
+  const normalized = hostname.toLowerCase();
+  return normalized === 'goldshore.ai' || normalized.endsWith('.goldshore.ai') || normalized === 'goldshore.org' || normalized.endsWith('.goldshore.org');
+};
+export const validateTunnelIngress = (value: unknown): value is TunnelIngress[] => {
+  if (!Array.isArray(value) || value.length < 1 || value.length > 50) return false;
+  return value.every((rule, index) => {
+    if (!rule || typeof rule !== 'object') return false;
+    const ingress = rule as TunnelIngress;
+    if (typeof ingress.service !== 'string' || ingress.service.length > 2048) return false;
+    const serviceAllowed = /^(https?|tcp|ssh):\/\//i.test(ingress.service) || /^http_status:(404|403|503)$/i.test(ingress.service);
+    if (!serviceAllowed) return false;
+    if (index === value.length - 1) return !ingress.hostname && /^http_status:(404|403|503)$/i.test(ingress.service);
+    return typeof ingress.hostname === 'string' && allowedTunnelHostname(ingress.hostname);
+  });
+};
+const publicTunnel = (tunnel: Record<string, unknown>) => ({
+  id: tunnel.id,
+  name: tunnel.name,
+  status: tunnel.status,
+  configSrc: tunnel.config_src,
+  createdAt: tunnel.created_at,
+  activeAt: tunnel.conns_active_at,
+  inactiveAt: tunnel.conns_inactive_at,
+});
+
+system.get('/cf/tunnels', requirePermission('cloudflare_inventory:read'), async (c) => {
+  if (!c.env.CLOUDFLARE_ACCOUNT_ID) return c.json({ error: 'Missing CLOUDFLARE_ACCOUNT_ID.' }, 503);
+  const page = Math.max(1, Number(c.req.query('page')) || 1);
+  const perPage = Math.min(100, Math.max(1, Number(c.req.query('perPage')) || 25));
+  try {
+    const data = await cloudflareRequest(c.env, `/accounts/${c.env.CLOUDFLARE_ACCOUNT_ID}/cfd_tunnel?is_deleted=false&page=${page}&per_page=${perPage}`);
+    return c.json({ success: true, tunnels: (data.result ?? []).map(publicTunnel), pagination: data.result_info ?? { page, per_page: perPage } });
+  } catch (error) {
+    return c.json({ error: error instanceof Error ? error.message : 'Failed to list tunnels.' }, 502);
+  }
+});
+
+system.get('/cf/tunnels/:id/configuration', requirePermission('cloudflare_inventory:read'), async (c) => {
+  const id = c.req.param('id');
+  if (!c.env.CLOUDFLARE_ACCOUNT_ID) return c.json({ error: 'Missing CLOUDFLARE_ACCOUNT_ID.' }, 503);
+  if (!tunnelIdPattern.test(id)) return c.json({ error: 'Invalid tunnel identifier.' }, 400);
+  try {
+    const [tunnel, configuration] = await Promise.all([
+      cloudflareRequest(c.env, `/accounts/${c.env.CLOUDFLARE_ACCOUNT_ID}/cfd_tunnel/${id}`),
+      cloudflareRequest(c.env, `/accounts/${c.env.CLOUDFLARE_ACCOUNT_ID}/cfd_tunnel/${id}/configurations`),
+    ]);
+    return c.json({ success: true, tunnel: publicTunnel(tunnel.result ?? {}), config: configuration.result?.config ?? { ingress: [] } });
+  } catch (error) {
+    return c.json({ error: error instanceof Error ? error.message : 'Failed to load tunnel configuration.' }, 502);
+  }
+});
+
+system.post('/cf/tunnels', requirePermission('cloudflare_inventory:manage'), async (c) => {
+  if (!c.env.CLOUDFLARE_ACCOUNT_ID) return c.json({ error: 'Missing CLOUDFLARE_ACCOUNT_ID.' }, 503);
+  const body = await c.req.json<{ name?: string; confirm?: boolean }>().catch(() => null);
+  const name = body?.name?.trim() ?? '';
+  if (!body?.confirm) return c.json({ error: 'Explicit confirmation is required.' }, 409);
+  if (!tunnelNamePattern.test(name)) return c.json({ error: 'Tunnel name must contain only letters, numbers, dots, underscores, and hyphens.' }, 400);
+  try {
+    const data = await cloudflareRequest(c.env, `/accounts/${c.env.CLOUDFLARE_ACCOUNT_ID}/cfd_tunnel`, { method: 'POST', body: JSON.stringify({ name, config_src: 'cloudflare' }) });
+    await logAdminAction(c.env, { action: 'cloudflare.tunnel.create', actor: getActor(c.get('accessClaims'), c.req.raw), status: 'success', metadata: { name, tunnelId: data.result?.id } });
+    return c.json({ success: true, tunnel: publicTunnel(data.result ?? {}) }, 201);
+  } catch (error) {
+    return c.json({ error: error instanceof Error ? error.message : 'Failed to create tunnel.' }, 502);
+  }
+});
+
+system.put('/cf/tunnels/:id/configuration', requirePermission('cloudflare_inventory:manage'), async (c) => {
+  const id = c.req.param('id');
+  if (!c.env.CLOUDFLARE_ACCOUNT_ID) return c.json({ error: 'Missing CLOUDFLARE_ACCOUNT_ID.' }, 503);
+  const body = await c.req.json<{ ingress?: unknown; confirm?: boolean }>().catch(() => null);
+  if (!body?.confirm) return c.json({ error: 'Explicit confirmation is required.' }, 409);
+  if (!tunnelIdPattern.test(id) || !validateTunnelIngress(body.ingress)) return c.json({ error: 'A valid tunnel and GoldShore-only ingress rules ending in a safe catch-all are required.' }, 400);
+  try {
+    const tunnel = await cloudflareRequest(c.env, `/accounts/${c.env.CLOUDFLARE_ACCOUNT_ID}/cfd_tunnel/${id}`);
+    if (tunnel.result?.config_src !== 'cloudflare') return c.json({ error: 'Locally managed tunnel configuration must be changed on its host.' }, 409);
+    const data = await cloudflareRequest(c.env, `/accounts/${c.env.CLOUDFLARE_ACCOUNT_ID}/cfd_tunnel/${id}/configurations`, { method: 'PUT', body: JSON.stringify({ config: { ingress: body.ingress } }) });
+    await logAdminAction(c.env, { action: 'cloudflare.tunnel.configure', actor: getActor(c.get('accessClaims'), c.req.raw), status: 'success', metadata: { tunnelId: id, ingressRules: body.ingress.length } });
+    return c.json({ success: true, config: data.result?.config ?? { ingress: body.ingress } });
+  } catch (error) {
+    return c.json({ error: error instanceof Error ? error.message : 'Failed to configure tunnel.' }, 502);
+  }
+});
+
+system.delete('/cf/tunnels/:id', requirePermission('cloudflare_inventory:manage'), async (c) => {
+  const id = c.req.param('id');
+  const expectedName = c.req.query('name')?.trim() ?? '';
+  if (!c.env.CLOUDFLARE_ACCOUNT_ID) return c.json({ error: 'Missing CLOUDFLARE_ACCOUNT_ID.' }, 503);
+  if (c.req.query('confirm') !== 'true') return c.json({ error: 'Explicit confirmation is required.' }, 409);
+  if (!tunnelIdPattern.test(id) || !tunnelNamePattern.test(expectedName)) return c.json({ error: 'Valid tunnel ID and name confirmation are required.' }, 400);
+  try {
+    const tunnel = await cloudflareRequest(c.env, `/accounts/${c.env.CLOUDFLARE_ACCOUNT_ID}/cfd_tunnel/${id}`);
+    if (tunnel.result?.name !== expectedName) return c.json({ error: 'Tunnel name confirmation does not match.' }, 409);
+    if (!['inactive', 'down'].includes(tunnel.result?.status)) return c.json({ error: 'Only inactive or down tunnels can be deleted from admin.' }, 409);
+    await cloudflareRequest(c.env, `/accounts/${c.env.CLOUDFLARE_ACCOUNT_ID}/cfd_tunnel/${id}`, { method: 'DELETE' });
+    await logAdminAction(c.env, { action: 'cloudflare.tunnel.delete', actor: getActor(c.get('accessClaims'), c.req.raw), status: 'success', metadata: { tunnelId: id, name: expectedName } });
+    return c.body(null, 204);
+  } catch (error) {
+    return c.json({ error: error instanceof Error ? error.message : 'Failed to delete tunnel.' }, 502);
+  }
+});
+
 const bindingNamePattern = /^[A-Za-z_$][A-Za-z0-9_$]{0,63}$/;
 system.put('/cf/workers/:name/bindings/:binding', requirePermission('cloudflare_inventory:manage'), async (c) => {
   const script = c.req.param('name');
