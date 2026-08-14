@@ -1,0 +1,13 @@
+---
+// Section landing page for /infrastructure.
+//
+// /infrastructure is exempted from the admin-host rewrite (see
+// MIGRATED_ADMIN_PAGE_RULES) so Astro serves it directly, but the directory
+// only held cloudflare.astro — so the bare path 404'd while its child worked.
+// Cloudflare is the only view in the section, so it is the landing page.
+//
+// Matches the existing section-index pattern (admin/leads → lead-submissions).
+export const prerender = false;
+
+return Astro.redirect('/infrastructure/cloudflare', 302);
+---

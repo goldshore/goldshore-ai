@@ -19,7 +19,7 @@ The admin dashboard uses three layers of authentication and authorization:
 ### Authentication Flow
 
 ```
-User → Cloudflare Access (Google or GitHub identity)
+User → Cloudflare Access (GitHub identity)
      → gs-web audience + owner-email verification
      → gs-api D1 role lookup
      → Permission Check (feature authorization)
@@ -39,7 +39,8 @@ an API reconciliation or hidden Wrangler policy mutation:
    production self-hosted Access application whose audience is configured on
    `gs-web`.
 2. Add an Allow policy containing only `marstonr6@gmail.com` and
-   `admin@goldshore.org` through the configured Google and GitHub IdPs.
+   `admin@goldshore.org` through the configured GitHub IdP. The deleted Google
+   OAuth client is intentionally excluded until a replacement client is provisioned.
 3. In each `gs-web` production and preview dashboard environment, set the
    visible `ADMIN_OWNER_EMAILS` variable to
    `marstonr6@gmail.com,admin@goldshore.org`. Do not put it in Wrangler files.
@@ -169,7 +170,7 @@ Admin configuration is set in `apps/gs-web/wrangler.toml`:
 [vars]
 # Admin hosts served by gs-web-prod
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-CLOUDFLARE_ACCESS_AUDIENCE = "9b97506a6f0d65a060dda7fa33aa66f6cee4112898fd45e5cf4da1d25db996c0"
+CLOUDFLARE_ACCESS_AUDIENCE = "c520a7647223b49b20fbe5be240772863eb684b97b57c08955b6104c58170db9"
 CLOUDFLARE_ACCESS_APPLICATION = "admin-production"
 ```
 

@@ -1,0 +1,14 @@
+---
+// Section landing page for /admin/workers.
+//
+// CLEAN_ADMIN_PAGE_PREFIXES in utils/admin-access.ts rewrites the admin-host
+// path /workers to /admin/workers, and admin/overview.astro links there
+// directly, but the directory only held bindings/routes/status — so both
+// resolved to a 404. Redirect to bindings, which is what the overview's
+// "View Bindings" button means by /admin/workers.
+//
+// Matches the existing section-index pattern (admin/leads → lead-submissions).
+export const prerender = false;
+
+return Astro.redirect('/admin/workers/bindings', 302);
+---

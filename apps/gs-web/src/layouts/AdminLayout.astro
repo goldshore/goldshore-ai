@@ -1,7 +1,7 @@
 ---
 import Sidebar from '../components/Sidebar.astro';
 import '../styles/admin.css';
-import { hasAdminPermission, type AdminPermission } from '@goldshore/auth';
+import { ADMIN_PERMISSIONS, type AdminPermission } from '@goldshore/auth';
 
 interface Props {
   title: string;
@@ -9,15 +9,13 @@ interface Props {
 }
 
 const { title, requiredPermission } = Astro.props;
-const session = Astro.locals.adminSession;
-
-if (!session?.isAuthenticated || session.roles.length === 0) {
-  return Astro.redirect('/login?next=' + encodeURIComponent(Astro.url.pathname));
-}
-
-if (requiredPermission && !hasAdminPermission(session.permissions, requiredPermission)) {
-  return new Response('Forbidden', { status: 403 });
-}
+// Authentication and permission checks are authoritative in middleware.ts.
+// Returning a Response from an Astro layout component produces an empty 200
+// response under the Cloudflare adapter instead of the intended redirect or
+// error. Keep the layout presentation-only after middleware has authorized the
+// request.
+const permissions = ADMIN_PERMISSIONS;
+void requiredPermission;
 ---
 <!doctype html>
 <html lang="en">
@@ -30,9 +28,11 @@ if (requiredPermission && !hasAdminPermission(session.permissions, requiredPermi
   </head>
   <body class="gs-admin-body">
     <div class="gs-admin-shell">
-      <Sidebar permissions={session.permissions} />
+      <Sidebar permissions={permissions} />
       <main class="gs-admin-main">
-        <button class="gs-admin-menu-toggle" id="admin-menu-toggle" type="button" aria-label="Open admin navigation">Menu</button>
+        <button class="gs-admin-menu-toggle" id="admin-menu-toggle" type="button" aria-label="Open admin navigation">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg><span>Menu</span>
+        </button>
         <slot />
       </main>
     </div>
@@ -42,13 +42,25 @@ if (requiredPermission && !hasAdminPermission(session.permissions, requiredPermi
 <style>
   :root {
     color-scheme: dark;
+    --admin-bg: #050d15;
+    --admin-surface: #09141f;
+    --admin-line: rgba(171, 190, 202, .12);
+    --admin-line-strong: rgba(171, 190, 202, .19);
+    --admin-text: #e8ecec;
+    --admin-muted: #91a0aa;
+    --admin-faint: #63727d;
+    --admin-accent: #e08b48;
+    --admin-success: #52c878;
+    --admin-display: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --admin-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --admin-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   }
 
   body.gs-admin-body {
     margin: 0;
-    background: #050b14;
-    color: rgba(226, 232, 240, 0.92);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--admin-bg);
+    color: var(--admin-text);
+    font-family: var(--admin-ui);
     min-height: 100dvh;
   }
 
@@ -70,16 +82,19 @@ if (requiredPermission && !hasAdminPermission(session.permissions, requiredPermi
     .gs-admin-menu-toggle {
       display: inline-flex;
       position: fixed;
-      top: 10px;
-      right: 10px;
+      top: 14px;
+      left: 14px;
       z-index: 35;
-      border: 1px solid rgba(90, 162, 255, 0.25);
-      border-radius: 7px;
-      background: #0a1724;
-      color: #c4d5e2;
-      padding: 8px 10px;
-      font-weight: 700;
+      gap: 8px;
+      align-items: center;
+      border: 1px solid var(--admin-line-strong);
+      background: #09141f;
+      color: var(--admin-text);
+      padding: 9px 12px;
+      font: 650 .7rem var(--admin-ui);
     }
+    .gs-admin-menu-toggle svg { width: 15px; fill: none; stroke: var(--admin-accent); stroke-width: 1.5; }
+    body.gs-sidebar-open::after { content: ''; position: fixed; inset: 0; z-index: 30; background: rgba(0,0,0,.58); }
   }
 </style>
 

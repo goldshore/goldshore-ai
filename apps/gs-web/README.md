@@ -102,10 +102,12 @@ pnpm --filter @goldshore/gs-web test:e2e
 
 ## Deployment
 
-- Build verification workflow: `.github/workflows/deploy-gs-web.yml`.
-- Authoritative deployer: the Cloudflare Workers Build git integration.
-- Production command: `wrangler deploy --env prod` from `apps/gs-web` after the
-  Astro production build.
+- Canonical deploy workflow: `.github/workflows/deploy-gs-web.yml`.
+- Production deployment requires approval from the GitHub `production` environment.
+- Local static validation (from this directory):
+  `pnpm exec wrangler deploy --env prod --dry-run`.
+- Do not deploy from a local shell or mutate production DNS, routes, bindings,
+  Access, or secrets outside the human-approved production process.
 - Output directory: `dist` (SSR server output plus static assets).
 - Deployable manifest: `apps/gs-web/wrangler.toml`.
 - Reference manifest: `infra/Cloudflare/gs-web.wrangler.toml`.
