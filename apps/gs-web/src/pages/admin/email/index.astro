@@ -1,0 +1,99 @@
+---
+export const prerender = false;
+
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import EmailManager from "../../../components/admin/EmailManager";
+
+const jwtToken = Astro.cookies.get('CF-Authorization')?.value || '';
+const offset = parseInt(new URL(Astro.request.url).searchParams.get('offset') || '0');
+const limit = parseInt(new URL(Astro.request.url).searchParams.get('limit') || '25');
+const status = new URL(Astro.request.url).searchParams.get('status') || '';
+
+const apiBaseUrl = 'https://api.goldshore.ai/admin';
+
+let emailLogs = { items: [], total: 0, offset, limit, error: null as string | null };
+let emailStats = { queued: 0, sent: 0, failed: 0, total: 0 };
+
+try {
+  // Fetch email stats
+  const statsRes = await fetch(`${apiBaseUrl}/email/status`, {
+    headers: {
+      'CF-Authorization': jwtToken,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (statsRes.ok) {
+    emailStats = await statsRes.json();
+  }
+
+  // Fetch email logs
+  const params = new URLSearchParams({
+    offset: String(offset),
+    limit: String(limit),
+    ...(status && { status }),
+  });
+
+  const logsRes = await fetch(`${apiBaseUrl}/email/logs?${params}`, {
+    headers: {
+      'CF-Authorization': jwtToken,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (logsRes.ok) {
+    emailLogs = await logsRes.json();
+  } else if (logsRes.status === 401 || logsRes.status === 403) {
+    emailLogs.error = 'Authentication required. Please ensure you are logged in with the correct credentials.';
+  }
+} catch (error) {
+  emailLogs.error = error instanceof Error ? error.message : 'Failed to load email logs';
+}
+---
+
+<AdminLayout title="Admin | Email Management">
+  <div class="max-w-7xl mx-auto p-8 space-y-8">
+    <div class="space-y-2">
+      <h1 class="text-4xl gs-heading gs-text-accent">Email Management</h1>
+      <p class="text-lg gs-text-subtle">Monitor and manage your email queue, logs, and templates.</p>
+    </div>
+
+    {emailLogs.error && (
+      <div class="p-4 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+        {emailLogs.error}
+      </div>
+    )}
+
+    <div class="grid md:grid-cols-4 gap-6">
+      <div class="gs-card space-y-3">
+        <h2 class="text-xl font-semibold">Queued</h2>
+        <p class="text-3xl font-bold gs-text-warning">{emailStats.queued}</p>
+        <p class="text-sm gs-text-subtle">Waiting to send</p>
+      </div>
+      <div class="gs-card space-y-3">
+        <h2 class="text-xl font-semibold">Sent</h2>
+        <p class="text-3xl font-bold gs-text-success">{emailStats.sent}</p>
+        <p class="text-sm gs-text-subtle">Successfully delivered</p>
+      </div>
+      <div class="gs-card space-y-3">
+        <h2 class="text-xl font-semibold">Failed</h2>
+        <p class="text-3xl font-bold gs-text-danger">{emailStats.failed}</p>
+        <p class="text-sm gs-text-subtle">Require attention</p>
+      </div>
+      <div class="gs-card space-y-3">
+        <h2 class="text-xl font-semibold">Total</h2>
+        <p class="text-3xl font-bold gs-text-info">{emailStats.total}</p>
+        <p class="text-sm gs-text-subtle">All emails</p>
+      </div>
+    </div>
+
+    <div class="gs-card space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-2xl font-semibold">Email Logs</h2>
+        <a href="/admin/email/templates" class="text-sm gs-text-primary hover:underline">Manage templates →</a>
+      </div>
+
+      <EmailManager client:load jwtToken={jwtToken} initialLogs={emailLogs} />
+    </div>
+  </div>
+</AdminLayout>
