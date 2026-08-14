@@ -5,18 +5,21 @@ import { searchGitHubFrameworks } from '../../lib/github-framework-search';
 import { rankFrameworksWithClaude } from '../../lib/claude-framework-ranker';
 import { validateWranglerConfig } from '../../lib/wrangler-validator';
 import email from './email';
+import entries from './entries';
+import users from './users';
+import settings from './settings';
 
 const admin = new Hono<{
   Bindings: Env;
   Variables: Variables;
 }>();
 
-// Mount sub-routers
+// Mount admin feature sub-routers
 admin.route('/email', email);
-// admin.route('/workers', workers); // TODO: Phase 1
-// admin.route('/entries', entries); // TODO: Phase 1
-// admin.route('/users', users);     // TODO: Phase 1
-// admin.route('/settings', settings); // TODO: Phase 1
+admin.route('/entries', entries);
+admin.route('/users', users);
+admin.route('/settings', settings);
+// admin.route('/workers', workers); // TODO: Phase 2 - Cloudflare Worker management
 
 // Deployment routes (existing)
 const deploy = new Hono<{
