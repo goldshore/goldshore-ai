@@ -107,6 +107,34 @@ const cloudflareRequest = async (env: Env, path: string, init: RequestInit = {})
   return payload;
 };
 
+type WorkerBinding = { name: string; type: string; [key: string]: unknown };
+export const buildBindingPatch = (current: WorkerBinding[], bindingName: string, replacement?: WorkerBinding) => [
+  ...current.filter((binding) => binding.name !== bindingName).map((binding) => ({ name: binding.name, type: 'inherit', version_id: 'latest' })),
+  ...(replacement ? [replacement] : []),
+];
+const bindingRevision = async (bindings: WorkerBinding[]) => {
+  const normalized = [...bindings].sort((a, b) => a.name.localeCompare(b.name));
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(normalized)));
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+};
+const publicBinding = (binding: WorkerBinding) => {
+  const safeFields = ['namespace_id', 'database_id', 'bucket_name', 'service', 'environment', 'queue_name', 'dataset', 'class_name', 'script_name', 'instance_name'];
+  const resource = safeFields.map((field) => binding[field]).find((value) => typeof value === 'string') ??
+    (binding.type === 'plain_text' ? 'Configured text value' : binding.type === 'json' ? 'Configured JSON value' : 'Configured');
+  return { name: binding.name, type: binding.type, resource, editable: binding.type === 'plain_text' || binding.type === 'json' };
+};
+const patchWorkerBindings = async (env: Env, script: string, bindings: WorkerBinding[]) => {
+  if (!env.CLOUDFLARE_API_TOKEN || !env.CLOUDFLARE_ACCOUNT_ID) throw new Error('Cloudflare credentials are not configured.');
+  const form = new FormData();
+  form.set('settings', JSON.stringify({ bindings }));
+  const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/workers/scripts/${encodeURIComponent(script)}/settings`, {
+    method: 'PATCH', headers: { Authorization: `Bearer ${env.CLOUDFLARE_API_TOKEN}` }, body: form,
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok || payload?.success === false) throw new Error(payload?.errors?.[0]?.message ?? `Cloudflare request failed: ${response.status}`);
+  return payload;
+};
+
 const executeAutomation = async (c: any, action: string, operation: () => Promise<unknown>) => {
   const claims = c.get('accessClaims');
   const timestamp = new Date().toISOString();
@@ -202,7 +230,8 @@ system.get('/cf/workers/:name', requirePermission('system:read'), async (c) => {
       c.env,
       `/accounts/${c.env.CLOUDFLARE_ACCOUNT_ID}/workers/scripts/${encodeURIComponent(name)}/settings`,
     );
-    const bindings = settings.result?.bindings ?? [];
+    const bindings = (settings.result?.bindings ?? []) as WorkerBinding[];
+    const bindingsRevision = await bindingRevision(bindings);
 
     let routes: Array<{ pattern: string }> = [];
     if (c.env.CLOUDFLARE_ZONE_ID) {
@@ -216,7 +245,7 @@ system.get('/cf/workers/:name', requirePermission('system:read'), async (c) => {
       }
     }
 
-    return c.json({ success: true, name, bindings, routes });
+    return c.json({ success: true, name, bindings: bindings.map(publicBinding), bindingsRevision, routes });
   } catch (error) {
     return c.json({ success: false, error: error instanceof Error ? error.message : 'Failed to load worker detail' }, 502);
   }
@@ -227,6 +256,58 @@ const allowedRouteHost = (pattern: string) => {
   const host = pattern.split('/')[0].replace(/^\*\./, '').toLowerCase();
   return host === 'goldshore.ai' || host.endsWith('.goldshore.ai') || host === 'goldshore.org' || host.endsWith('.goldshore.org');
 };
+
+const bindingNamePattern = /^[A-Za-z_$][A-Za-z0-9_$]{0,63}$/;
+system.put('/cf/workers/:name/bindings/:binding', requirePermission('cloudflare_inventory:manage'), async (c) => {
+  const script = c.req.param('name');
+  const bindingName = c.req.param('binding');
+  if (!c.env.CLOUDFLARE_ACCOUNT_ID) return c.json({ error: 'Missing CLOUDFLARE_ACCOUNT_ID.' }, 503);
+  const body = await c.req.json<{ type?: 'plain_text' | 'json'; value?: unknown; expectedRevision?: string; confirm?: boolean }>().catch(() => null);
+  if (!body?.confirm) return c.json({ error: 'Explicit confirmation is required.' }, 409);
+  if (!workerNamePattern.test(script) || !bindingNamePattern.test(bindingName) || !['plain_text', 'json'].includes(body.type ?? '')) return c.json({ error: 'Invalid Worker, binding name, or binding type.' }, 400);
+  const serialized = typeof body.value === 'string' ? body.value : JSON.stringify(body.value);
+  if (!serialized || serialized.length > 16_384) return c.json({ error: 'Binding values must be between 1 and 16384 characters.' }, 400);
+  try {
+    const settings = await cloudflareRequest(c.env, `/accounts/${c.env.CLOUDFLARE_ACCOUNT_ID}/workers/scripts/${encodeURIComponent(script)}/settings`);
+    const current = (settings.result?.bindings ?? []) as WorkerBinding[];
+    const revision = await bindingRevision(current);
+    if (!body.expectedRevision || body.expectedRevision !== revision) return c.json({ error: 'Worker bindings changed since this page loaded. Refresh before retrying.', currentRevision: revision }, 409);
+    const existing = current.find((binding) => binding.name === bindingName);
+    if (existing && !['plain_text', 'json'].includes(existing.type)) return c.json({ error: 'Resource and secret bindings cannot be replaced from this editor.' }, 409);
+    const replacement: WorkerBinding = body.type === 'json'
+      ? { name: bindingName, type: 'json', json: body.value }
+      : { name: bindingName, type: 'plain_text', text: String(body.value) };
+    const result = await patchWorkerBindings(c.env, script, buildBindingPatch(current, bindingName, replacement));
+    const next = (result.result?.bindings ?? []) as WorkerBinding[];
+    await logAdminAction(c.env, { action: 'cloudflare.binding.save', actor: getActor(c.get('accessClaims'), c.req.raw), status: 'success', metadata: { script, bindingName, bindingType: body.type } });
+    return c.json({ success: true, binding: publicBinding(replacement), bindingsRevision: await bindingRevision(next) });
+  } catch (error) {
+    return c.json({ error: error instanceof Error ? error.message : 'Failed to save binding.' }, 502);
+  }
+});
+
+system.delete('/cf/workers/:name/bindings/:binding', requirePermission('cloudflare_inventory:manage'), async (c) => {
+  const script = c.req.param('name');
+  const bindingName = c.req.param('binding');
+  const expectedRevision = c.req.query('expectedRevision');
+  if (!c.env.CLOUDFLARE_ACCOUNT_ID) return c.json({ error: 'Missing CLOUDFLARE_ACCOUNT_ID.' }, 503);
+  if (c.req.query('confirm') !== 'true') return c.json({ error: 'Explicit confirmation is required.' }, 409);
+  if (!workerNamePattern.test(script) || !bindingNamePattern.test(bindingName)) return c.json({ error: 'Invalid Worker or binding name.' }, 400);
+  try {
+    const settings = await cloudflareRequest(c.env, `/accounts/${c.env.CLOUDFLARE_ACCOUNT_ID}/workers/scripts/${encodeURIComponent(script)}/settings`);
+    const current = (settings.result?.bindings ?? []) as WorkerBinding[];
+    const revision = await bindingRevision(current);
+    if (!expectedRevision || expectedRevision !== revision) return c.json({ error: 'Worker bindings changed since this page loaded. Refresh before retrying.', currentRevision: revision }, 409);
+    const existing = current.find((binding) => binding.name === bindingName);
+    if (!existing) return c.json({ error: 'Binding not found.' }, 404);
+    if (!['plain_text', 'json'].includes(existing.type)) return c.json({ error: 'Only plain text and JSON bindings can be deleted from this editor.' }, 409);
+    await patchWorkerBindings(c.env, script, buildBindingPatch(current, bindingName));
+    await logAdminAction(c.env, { action: 'cloudflare.binding.delete', actor: getActor(c.get('accessClaims'), c.req.raw), status: 'success', metadata: { script, bindingName, bindingType: existing.type } });
+    return c.body(null, 204);
+  } catch (error) {
+    return c.json({ error: error instanceof Error ? error.message : 'Failed to delete binding.' }, 502);
+  }
+});
 
 system.post('/cf/routes', requirePermission('cloudflare_inventory:manage'), async (c) => {
   if (!c.env.CLOUDFLARE_ZONE_ID) return c.json({ error: 'Missing CLOUDFLARE_ZONE_ID.' }, 503);
