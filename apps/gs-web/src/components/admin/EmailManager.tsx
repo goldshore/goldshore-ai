@@ -42,9 +42,8 @@ export default function EmailManager({ jwtToken, initialLogs }: EmailManagerProp
         ...filters,
       });
 
-      const response = await fetch(`https://api.goldshore.ai/admin/email/logs?${params}`, {
+      const response = await fetch(`/api/admin/email/logs?${params}`, {
         headers: {
-          'CF-Authorization': jwtToken,
           'Content-Type': 'application/json',
         },
       });
@@ -65,10 +64,9 @@ export default function EmailManager({ jwtToken, initialLogs }: EmailManagerProp
   const handleResendEmail = async (emailId: string) => {
     setResending(emailId);
     try {
-      const response = await fetch(`https://api.goldshore.ai/admin/email/logs/${emailId}/resend`, {
+      const response = await fetch(`/api/admin/email/logs/${emailId}/resend`, {
         method: 'POST',
         headers: {
-          'CF-Authorization': jwtToken,
           'Content-Type': 'application/json',
         },
       });
@@ -91,10 +89,9 @@ export default function EmailManager({ jwtToken, initialLogs }: EmailManagerProp
     if (!confirm('Are you sure you want to delete this email log?')) return;
 
     try {
-      const response = await fetch(`https://api.goldshore.ai/admin/email/logs/${emailId}`, {
+      const response = await fetch(`/api/admin/email/logs/${emailId}`, {
         method: 'DELETE',
         headers: {
-          'CF-Authorization': jwtToken,
           'Content-Type': 'application/json',
         },
       });

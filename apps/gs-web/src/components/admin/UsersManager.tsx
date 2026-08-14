@@ -45,9 +45,8 @@ export default function UsersManager({ jwtToken, initialUsers }: UsersManagerPro
         limit: String(limit),
       });
 
-      const response = await fetch(`https://api.goldshore.ai/admin/users?${params}`, {
+      const response = await fetch(`/api/admin/users?${params}`, {
         headers: {
-          'CF-Authorization': jwtToken,
           'Content-Type': 'application/json',
         },
       });
@@ -67,11 +66,10 @@ export default function UsersManager({ jwtToken, initialUsers }: UsersManagerPro
 
   const handleAddUser = async (data: Record<string, any>) => {
     try {
-      const response = await fetch(`https://api.goldshore.ai/admin/users`, {
+      const response = await fetch(`/api/admin/users`, {
         method: 'POST',
         headers: {
-          'CF-Authorization': jwtToken,
-          'Content-Type': 'application/json',
+            'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           email: data.email,
@@ -97,11 +95,10 @@ export default function UsersManager({ jwtToken, initialUsers }: UsersManagerPro
     if (!confirm('Are you sure you want to remove this user?')) return;
 
     try {
-      const response = await fetch(`https://api.goldshore.ai/admin/users/${userId}`, {
+      const response = await fetch(`/api/admin/users/${userId}`, {
         method: 'DELETE',
         headers: {
-          'CF-Authorization': jwtToken,
-          'Content-Type': 'application/json',
+            'Content-Type': 'application/json',
         },
       });
 
@@ -116,11 +113,10 @@ export default function UsersManager({ jwtToken, initialUsers }: UsersManagerPro
 
   const handleResendInvite = async (userId: string) => {
     try {
-      const response = await fetch(`https://api.goldshore.ai/admin/users/${userId}/resend-invite`, {
+      const response = await fetch(`/api/admin/users/${userId}/resend-invite`, {
         method: 'POST',
         headers: {
-          'CF-Authorization': jwtToken,
-          'Content-Type': 'application/json',
+            'Content-Type': 'application/json',
         },
       });
 
