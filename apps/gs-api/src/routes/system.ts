@@ -4,7 +4,7 @@ import {
   ServiceStatusSchema,
   parseSystemSyncWritePayload,
 } from '@goldshore/schema';
-import { requirePermission } from '../auth';
+import { getActor, logAdminAction, requirePermission } from '../auth';
 import { Env, Variables } from '../types';
 import { getRuntimeVersion, withContractHeaders } from './contract';
 import { parseConfig, resolveServiceStatusWithConfig } from './system.config';
@@ -208,9 +208,9 @@ system.get('/cf/workers/:name', requirePermission('system:read'), async (c) => {
     if (c.env.CLOUDFLARE_ZONE_ID) {
       try {
         const routesData = await cloudflareRequest(c.env, `/zones/${c.env.CLOUDFLARE_ZONE_ID}/workers/routes`);
-        routes = ((routesData.result ?? []) as Array<{ pattern: string; script?: string }>)
+        routes = ((routesData.result ?? []) as Array<{ id?: string; pattern: string; script?: string }>)
           .filter((route) => route.script === name)
-          .map((route) => ({ pattern: route.pattern }));
+          .map((route) => ({ id: route.id, pattern: route.pattern, zone_name: c.env.CLOUDFLARE_ZONE_NAME ?? 'goldshore.ai' }));
       } catch {
         // Zone routes are best-effort; a Worker can still be shown without them.
       }
@@ -219,6 +219,47 @@ system.get('/cf/workers/:name', requirePermission('system:read'), async (c) => {
     return c.json({ success: true, name, bindings, routes });
   } catch (error) {
     return c.json({ success: false, error: error instanceof Error ? error.message : 'Failed to load worker detail' }, 502);
+  }
+});
+
+const workerNamePattern = /^[a-z0-9][a-z0-9-]{0,62}$/;
+const allowedRouteHost = (pattern: string) => {
+  const host = pattern.split('/')[0].replace(/^\*\./, '').toLowerCase();
+  return host === 'goldshore.ai' || host.endsWith('.goldshore.ai') || host === 'goldshore.org' || host.endsWith('.goldshore.org');
+};
+
+system.post('/cf/routes', requirePermission('cloudflare_inventory:manage'), async (c) => {
+  if (!c.env.CLOUDFLARE_ZONE_ID) return c.json({ error: 'Missing CLOUDFLARE_ZONE_ID.' }, 503);
+  const body = await c.req.json<{ pattern?: string; script?: string; confirm?: boolean }>().catch(() => null);
+  const pattern = body?.pattern?.trim() ?? '';
+  const script = body?.script?.trim() ?? '';
+  if (!body?.confirm) return c.json({ error: 'Explicit confirmation is required.' }, 409);
+  if (!workerNamePattern.test(script) || !pattern || pattern.length > 253 || !allowedRouteHost(pattern)) {
+    return c.json({ error: 'A valid Worker and GoldShore route pattern are required.' }, 400);
+  }
+  try {
+    const result = await cloudflareRequest(c.env, `/zones/${c.env.CLOUDFLARE_ZONE_ID}/workers/routes`, {
+      method: 'POST', body: JSON.stringify({ pattern, script }),
+    });
+    await logAdminAction(c.env, { action: 'cloudflare.route.create', actor: getActor(c.get('accessClaims'), c.req.raw), status: 'success', metadata: { pattern, script, routeId: result.result?.id } });
+    return c.json({ success: true, route: { id: result.result?.id, pattern, script } }, 201);
+  } catch (error) {
+    return c.json({ error: error instanceof Error ? error.message : 'Failed to create route.' }, 502);
+  }
+});
+
+system.delete('/cf/routes/:id', requirePermission('cloudflare_inventory:manage'), async (c) => {
+  if (!c.env.CLOUDFLARE_ZONE_ID) return c.json({ error: 'Missing CLOUDFLARE_ZONE_ID.' }, 503);
+  const confirm = c.req.query('confirm') === 'true';
+  const routeId = c.req.param('id');
+  if (!confirm) return c.json({ error: 'Explicit confirmation is required.' }, 409);
+  if (!/^[a-f0-9]{16,64}$/i.test(routeId)) return c.json({ error: 'Invalid route identifier.' }, 400);
+  try {
+    await cloudflareRequest(c.env, `/zones/${c.env.CLOUDFLARE_ZONE_ID}/workers/routes/${encodeURIComponent(routeId)}`, { method: 'DELETE' });
+    await logAdminAction(c.env, { action: 'cloudflare.route.delete', actor: getActor(c.get('accessClaims'), c.req.raw), status: 'success', metadata: { routeId } });
+    return c.body(null, 204);
+  } catch (error) {
+    return c.json({ error: error instanceof Error ? error.message : 'Failed to delete route.' }, 502);
   }
 });
 

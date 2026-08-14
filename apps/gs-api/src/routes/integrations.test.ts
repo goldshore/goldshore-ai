@@ -109,4 +109,20 @@ describe('Integration Management API security', () => {
     assert.equal(mockKV.put.mock.callCount(), 0);
     assert.equal(auditRun.mock.callCount(), 1);
   });
+
+  it('uses dedicated secret permissions for credential mutations', async () => {
+    const viewer = createTestApp({ roles: ['viewer'], email: 'viewer@example.com' });
+    const denied = await viewer.app.request('/integrations/keys', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ integration_id: 'openai', key_type: 'apiKey', value: 'not-a-real-secret' }),
+    });
+    assert.equal(denied.status, 403);
+
+    const owner = createTestApp({ roles: ['owner'], email: 'owner@example.com' });
+    const invalid = await owner.app.request('/integrations/keys', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ integration_id: 'openai', key_type: 'apiKey', value: 'short' }),
+    });
+    assert.equal(invalid.status, 400);
+  });
 });
