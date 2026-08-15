@@ -34,7 +34,8 @@ import googleWorkspace from './routes/google-workspace';
 import oauth from './routes/oauth';
 import webhooks from './routes/webhooks';
 import automation from './routes/automation';
-import subscriptions from './routes/subscriptions';
+// TODO: Resolve Wrangler module resolution issue with @goldshore packages before re-enabling
+// import subscriptions from './routes/subscriptions';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
 import type { Env, Variables } from './types';
@@ -205,7 +206,7 @@ const requiredRouteBindings = (path: string): CapabilityBinding[] => {
   if (path.startsWith('/mail/contact')) return ['PLATFORM_DB', 'MAIL_JOBS_QUEUE'];
   if (path.startsWith('/mail/inbox')) return ['PLATFORM_DB'];
   if (path.startsWith('/v1/forms')) return ['PLATFORM_DB', 'MAIL_JOBS_QUEUE'];
-  if (/^\/(?:users?|pages|services|admin|subscriptions)(?:\/|$)/.test(path)) return ['PLATFORM_DB'];
+  if (/^\/(?:users?|pages|services|admin)(?:\/|$)/.test(path)) return ['PLATFORM_DB'];
   if (/^\/(?:system|internal|products|auth|oauth|webhooks)(?:\/|$)/.test(path)) return ['KV'];
   return [];
 };
@@ -303,7 +304,8 @@ app.route('/admin/google', googleBusiness);
 app.route('/admin/workspace', googleWorkspace);
 app.route('/auth', oauth);
 app.route('/oauth', oauth);
-app.route('/subscriptions', subscriptions);
+// TODO: Re-enable once module resolution issue is fixed
+// app.route('/subscriptions', subscriptions);
 app.route('/webhooks', webhooks);
 app.route('/media', media);
 app.route('/pages', pages);
