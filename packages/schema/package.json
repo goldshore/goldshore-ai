@@ -9,6 +9,11 @@
       "types": "./src/index.ts",
       "import": "./src/index.ts",
       "default": "./src/index.ts"
+    },
+    "./subscription": {
+      "types": "./src/subscription.ts",
+      "import": "./src/subscription.ts",
+      "default": "./src/subscription.ts"
     }
   },
   "scripts": {
