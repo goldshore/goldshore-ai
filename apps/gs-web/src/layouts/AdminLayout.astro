@@ -1,5 +1,6 @@
 ---
 import Sidebar from '../components/Sidebar.astro';
+import FloatingChatWidget from '../components/admin/FloatingChatWidget';
 import '../styles/admin.css';
 import { ADMIN_PERMISSIONS, type AdminPermission } from '@goldshore/auth';
 
@@ -42,6 +43,7 @@ void requiredPermission;
         </button>
         <slot />
       </main>
+      <FloatingChatWidget client:load />
     </div>
   </body>
 </html>
