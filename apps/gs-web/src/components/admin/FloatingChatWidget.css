@@ -1,202 +1,268 @@
-.gs-chat-fab {
+/* WordPress Admin Style Chat Widget */
+
+.wp-chat-fab {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: var(--admin-accent, #3b82f6);
+  bottom: 20px;
+  right: 20px;
+  width: 48px;
+  height: 48px;
+  border-radius: 4px;
+  background: #0073aa;
   color: white;
   border: none;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
-  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
   z-index: 999;
+  font-size: 0;
 }
 
-.gs-chat-fab:hover {
-  transform: scale(1.1);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+.wp-chat-fab:hover {
+  background: #005a87;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-.gs-chat-widget {
+.wp-chat-fab:active {
+  transform: translateY(1px);
+}
+
+/* Widget Container */
+.wp-chat-widget {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
-  width: 400px;
+  bottom: 20px;
+  right: 20px;
+  width: 380px;
   height: 600px;
-  background: var(--admin-bg, #ffffff);
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   display: flex;
   flex-direction: column;
   z-index: 999;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  font-size: 13px;
+  color: #333;
 }
 
-.gs-chat-widget.minimized {
-  height: 60px;
-}
-
-.gs-chat-header {
-  padding: 16px;
-  background: var(--admin-accent, #3b82f6);
-  color: white;
-  border-radius: 12px 12px 0 0;
+/* Header */
+.wp-chat-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #ddd;
+  background: #f9f9f9;
   flex-shrink: 0;
 }
 
-.gs-chat-header h3 {
+.wp-chat-title {
   margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.gs-chat-controls {
-  display: flex;
-  gap: 8px;
-}
-
-.gs-chat-btn-icon {
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  color: white;
-  cursor: pointer;
-  padding: 6px 10px;
-  border-radius: 6px;
   font-size: 14px;
-  transition: background 0.2s ease;
+  font-weight: 600;
+  color: #000;
+  letter-spacing: 0.3px;
 }
 
-.gs-chat-btn-icon:hover {
-  background: rgba(255, 255, 255, 0.3);
+.wp-chat-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 24px;
+  color: #666;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
 }
 
-.gs-chat-sidebar {
+.wp-chat-close:hover {
+  color: #000;
+}
+
+/* Main Content Container */
+.wp-chat-main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Sidebar */
+.wp-chat-sidebar {
   width: 140px;
-  background: var(--admin-bg-secondary, #f9fafb);
-  border-right: 1px solid var(--admin-border, #e5e7eb);
+  border-right: 1px solid #ddd;
+  background: #fafafa;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   overflow-y: auto;
 }
 
-.gs-chat-new-btn {
-  padding: 12px;
-  background: var(--admin-accent, #3b82f6);
+.wp-chat-new-btn {
+  padding: 8px 12px;
+  background: #0073aa;
   color: white;
   border: none;
   cursor: pointer;
   font-size: 12px;
   font-weight: 600;
-  transition: opacity 0.2s ease;
-  border-radius: 6px;
-  margin: 8px;
-}
-
-.gs-chat-new-btn:hover {
-  opacity: 0.9;
-}
-
-.gs-chat-history {
-  flex: 1;
-  overflow-y: auto;
-  padding: 8px;
-}
-
-.gs-chat-session {
-  padding: 10px 8px;
-  cursor: pointer;
-  border-radius: 6px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
   gap: 6px;
-  margin-bottom: 4px;
   transition: background 0.2s ease;
-  background: var(--admin-bg, #ffffff);
-  border: 1px solid var(--admin-border, #e5e7eb);
+  margin: 8px;
+  border-radius: 3px;
 }
 
-.gs-chat-session:hover {
-  background: var(--admin-bg-hover, #f3f4f6);
+.wp-chat-new-btn:hover {
+  background: #005a87;
 }
 
-.gs-chat-session.active {
-  background: var(--admin-accent, #3b82f6);
-  color: white;
-  border-color: var(--admin-accent, #3b82f6);
+.wp-chat-new-icon {
+  font-size: 16px;
+  font-weight: 700;
 }
 
-.gs-chat-session-title {
+.wp-chat-sessions-list {
   flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.wp-chat-empty-list {
+  padding: 12px;
+  color: #999;
+  text-align: center;
   font-size: 12px;
+  margin: 8px 0 0 0;
+}
+
+.wp-chat-session-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 8px;
+  margin: 0 4px;
+  background: white;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  cursor: pointer;
+  width: calc(100% - 8px);
+  text-align: left;
+  font-size: 12px;
+  transition: all 0.2s ease;
+  color: #555;
+}
+
+.wp-chat-session-item:hover {
+  background: #f5f5f5;
+  border-color: #ddd;
+}
+
+.wp-chat-session-item.active {
+  background: #0073aa;
+  color: white;
+  border-color: #0073aa;
+}
+
+.wp-chat-session-text {
+  flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.gs-chat-delete-btn {
-  background: transparent;
+.wp-chat-delete-session {
+  background: none;
   border: none;
   cursor: pointer;
-  font-size: 12px;
-  opacity: 0.6;
-  transition: opacity 0.2s ease;
+  font-size: 18px;
+  color: #999;
   padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  transition: all 0.2s ease;
   flex-shrink: 0;
 }
 
-.gs-chat-delete-btn:hover {
-  opacity: 1;
+.wp-chat-delete-session:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #333;
 }
 
-.gs-chat-container {
+.wp-chat-session-item.active .wp-chat-delete-session {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.wp-chat-session-item.active .wp-chat-delete-session:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+/* Content Area */
+.wp-chat-content {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  min-width: 0;
 }
 
-.gs-chat-messages {
+.wp-chat-no-selection {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  text-align: center;
+  color: #999;
+  font-size: 13px;
+}
+
+/* Messages */
+.wp-chat-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: 12px 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  background: var(--admin-bg, #ffffff);
+  background: white;
 }
 
-.gs-chat-empty {
+.wp-chat-start {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: var(--admin-text-secondary, #6b7280);
-  text-align: center;
-  font-size: 14px;
-  padding: 20px;
+  color: #999;
+  font-size: 13px;
 }
 
-.gs-chat-message {
+.wp-chat-start p {
+  margin: 0;
+}
+
+.wp-chat-message {
   display: flex;
-  gap: 8px;
-  animation: slideIn 0.3s ease;
+  flex-direction: column;
+  gap: 4px;
+  animation: fadeIn 0.3s ease;
 }
 
-@keyframes slideIn {
+@keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(4px);
   }
   to {
     opacity: 1;
@@ -204,57 +270,66 @@
   }
 }
 
-.gs-chat-message-user {
-  justify-content: flex-end;
+.wp-chat-message-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.gs-chat-message-user .gs-chat-message-content {
-  background: var(--admin-accent, #3b82f6);
-  color: white;
-  border-radius: 12px 4px 12px 12px;
+.wp-chat-message.user .wp-chat-message-label {
+  color: #0073aa;
 }
 
-.gs-chat-message-assistant {
-  justify-content: flex-start;
-}
-
-.gs-chat-message-assistant .gs-chat-message-content {
-  background: var(--admin-bg-secondary, #f3f4f6);
-  color: var(--admin-text, #111827);
-  border-radius: 4px 12px 12px 12px;
-}
-
-.gs-chat-message-content {
-  padding: 10px 14px;
-  max-width: 85%;
+.wp-chat-message-body {
+  padding: 8px 12px;
+  border-radius: 3px;
+  line-height: 1.5;
   word-wrap: break-word;
-  line-height: 1.4;
-  font-size: 14px;
 }
 
-.gs-chat-loading {
+.wp-chat-message.user .wp-chat-message-body {
+  background: #0073aa;
+  color: white;
+  margin-left: auto;
+  max-width: 85%;
+}
+
+.wp-chat-message.assistant .wp-chat-message-body {
+  background: #f1f1f1;
+  color: #333;
+  border-left: 3px solid #ddd;
+}
+
+.wp-chat-message.loading .wp-chat-message-body {
+  background: #f1f1f1;
+  border-left: 3px solid #0073aa;
+}
+
+.wp-chat-loading-dots {
   display: flex;
   gap: 4px;
   align-items: center;
 }
 
-.gs-chat-loading span {
+.wp-chat-loading-dots span {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: currentColor;
-  animation: pulse 1.4s infinite;
+  background: #0073aa;
+  animation: loading 1.4s infinite;
 }
 
-.gs-chat-loading span:nth-child(2) {
+.wp-chat-loading-dots span:nth-child(2) {
   animation-delay: 0.2s;
 }
 
-.gs-chat-loading span:nth-child(3) {
+.wp-chat-loading-dots span:nth-child(3) {
   animation-delay: 0.4s;
 }
 
-@keyframes pulse {
+@keyframes loading {
   0%, 100% {
     opacity: 0.3;
   }
@@ -263,70 +338,110 @@
   }
 }
 
-.gs-chat-input-area {
-  padding: 12px;
-  border-top: 1px solid var(--admin-border, #e5e7eb);
-  background: var(--admin-bg, #ffffff);
+/* Footer / Input */
+.wp-chat-footer {
+  padding: 12px 16px;
+  border-top: 1px solid #ddd;
+  background: #fafafa;
   flex-shrink: 0;
 }
 
-.gs-chat-input-wrapper {
+.wp-chat-input-group {
   display: flex;
-  gap: 8px;
+  gap: 6px;
+  align-items: stretch;
 }
 
-.gs-chat-input {
+.wp-chat-input {
   flex: 1;
-  padding: 10px 12px;
-  border: 1px solid var(--admin-border, #e5e7eb);
-  border-radius: 6px;
-  font-size: 14px;
-  color: var(--admin-text, #111827);
-  background: var(--admin-bg, #ffffff);
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  font-size: 13px;
   font-family: inherit;
+  color: #333;
+  background: white;
   transition: border-color 0.2s ease;
 }
 
-.gs-chat-input:focus {
+.wp-chat-input:focus {
   outline: none;
-  border-color: var(--admin-accent, #3b82f6);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: #0073aa;
+  box-shadow: 0 0 0 2px rgba(0, 115, 170, 0.1);
 }
 
-.gs-chat-input:disabled {
-  background: var(--admin-bg-secondary, #f9fafb);
-  color: var(--admin-text-secondary, #6b7280);
+.wp-chat-input:disabled {
+  background: #f1f1f1;
+  color: #999;
 }
 
-.gs-chat-send-btn {
-  padding: 10px 14px;
-  background: var(--admin-accent, #3b82f6);
+.wp-chat-submit {
+  padding: 8px 12px;
+  background: #0073aa;
   color: white;
-  border: none;
-  border-radius: 6px;
+  border: 1px solid #0073aa;
+  border-radius: 3px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
-  transition: opacity 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
   flex-shrink: 0;
 }
 
-.gs-chat-send-btn:hover:not(:disabled) {
-  opacity: 0.9;
+.wp-chat-submit:hover:not(:disabled) {
+  background: #005a87;
+  border-color: #005a87;
 }
 
-.gs-chat-send-btn:disabled {
-  opacity: 0.5;
+.wp-chat-submit:disabled {
+  background: #ccc;
+  border-color: #ccc;
   cursor: not-allowed;
 }
 
-@media (max-width: 768px) {
-  .gs-chat-widget {
-    width: calc(100% - 32px);
+.wp-chat-submit:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+/* Scrollbar */
+.wp-chat-sidebar::-webkit-scrollbar,
+.wp-chat-sessions-list::-webkit-scrollbar,
+.wp-chat-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.wp-chat-sidebar::-webkit-scrollbar-track,
+.wp-chat-sessions-list::-webkit-scrollbar-track,
+.wp-chat-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.wp-chat-sidebar::-webkit-scrollbar-thumb,
+.wp-chat-sessions-list::-webkit-scrollbar-thumb,
+.wp-chat-messages::-webkit-scrollbar-thumb {
+  background: #ddd;
+  border-radius: 3px;
+}
+
+.wp-chat-sidebar::-webkit-scrollbar-thumb:hover,
+.wp-chat-sessions-list::-webkit-scrollbar-thumb:hover,
+.wp-chat-messages::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .wp-chat-widget {
+    width: calc(100vw - 20px);
+    height: calc(100vh - 40px);
     max-width: 100%;
+    max-height: 100%;
   }
 
-  .gs-chat-sidebar {
+  .wp-chat-sidebar {
     display: none;
   }
 }
