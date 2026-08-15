@@ -18,7 +18,6 @@ interface ChatSession {
 
 const FloatingChatWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [isMinimized, setIsMinimized] = useState(false);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
@@ -46,8 +45,9 @@ const FloatingChatWidget: React.FC = () => {
   useEffect(() => {
     if (sessions.length > 0) {
       localStorage.setItem('gs-chat-sessions', JSON.stringify(sessions));
+      localStorage.setItem('gs-chat-last-session', currentSessionId || '');
     }
-  }, [sessions]);
+  }, [sessions, currentSessionId]);
 
   // Auto-scroll to latest message
   useEffect(() => {
@@ -56,9 +56,12 @@ const FloatingChatWidget: React.FC = () => {
 
   const createNewSession = () => {
     const sessionId = `session-${Date.now()}`;
+    const timestamp = new Date();
+    const title = timestamp.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
     const newSession: ChatSession = {
       id: sessionId,
-      title: 'New Chat',
+      title,
       messages: [],
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -118,7 +121,7 @@ const FloatingChatWidget: React.FC = () => {
       const errorMessage: ChatMessage = {
         id: `msg-${Date.now()}`,
         role: 'assistant',
-        content: 'Sorry, there was an error processing your message.',
+        content: 'Error: Could not get response. Please try again.',
         timestamp: Date.now(),
       };
       setSessions(sessions.map(s =>
@@ -131,22 +134,24 @@ const FloatingChatWidget: React.FC = () => {
     }
   };
 
-  const deleteSession = (sessionId: string) => {
+  const deleteSession = (sessionId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
     setSessions(sessions.filter(s => s.id !== sessionId));
     if (currentSessionId === sessionId) {
-      setCurrentSessionId(sessions.length > 1 ? sessions[0].id : null);
+      const remaining = sessions.filter(s => s.id !== sessionId);
+      setCurrentSessionId(remaining.length > 0 ? remaining[0].id : null);
     }
   };
 
   if (!isOpen) {
     return (
       <button
-        className="gs-chat-fab"
+        className="wp-chat-fab"
         onClick={() => setIsOpen(true)}
-        title="Open AI Assistant"
+        title="AI Assistant"
         aria-label="Open AI Assistant"
       >
-        <svg viewBox="0 0 24 24" fill="currentColor">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
           <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
         </svg>
       </button>
@@ -154,85 +159,98 @@ const FloatingChatWidget: React.FC = () => {
   }
 
   return (
-    <div className={`gs-chat-widget ${isMinimized ? 'minimized' : ''}`}>
-      <div className="gs-chat-header">
-        <h3>AI Assistant</h3>
-        <div className="gs-chat-controls">
-          <button
-            onClick={() => setIsMinimized(!isMinimized)}
-            className="gs-chat-btn-icon"
-            title={isMinimized ? 'Expand' : 'Minimize'}
-          >
-            {isMinimized ? '▲' : '▼'}
-          </button>
-          <button
-            onClick={() => setIsOpen(false)}
-            className="gs-chat-btn-icon"
-            title="Close"
-          >
-            ✕
-          </button>
-        </div>
+    <div className="wp-chat-widget">
+      {/* Header */}
+      <div className="wp-chat-header">
+        <h2 className="wp-chat-title">AI Assistant</h2>
+        <button
+          className="wp-chat-close"
+          onClick={() => setIsOpen(false)}
+          aria-label="Close"
+          title="Close"
+        >
+          ×
+        </button>
       </div>
 
-      {!isMinimized && (
-        <>
-          <div className="gs-chat-sidebar">
-            <button
-              className="gs-chat-new-btn"
-              onClick={createNewSession}
-            >
-              + New Chat
-            </button>
-            <div className="gs-chat-history">
-              {sessions.map(session => (
-                <div
+      {/* Main Content */}
+      <div className="wp-chat-main">
+        {/* Sidebar */}
+        <div className="wp-chat-sidebar">
+          <button className="wp-chat-new-btn" onClick={createNewSession}>
+            <span className="wp-chat-new-icon">+</span>
+            <span>New Chat</span>
+          </button>
+
+          <div className="wp-chat-sessions-list">
+            {sessions.length === 0 ? (
+              <p className="wp-chat-empty-list">No conversations yet</p>
+            ) : (
+              sessions.map(session => (
+                <button
                   key={session.id}
-                  className={`gs-chat-session ${currentSessionId === session.id ? 'active' : ''}`}
+                  className={`wp-chat-session-item ${currentSessionId === session.id ? 'active' : ''}`}
                   onClick={() => setCurrentSessionId(session.id)}
+                  title={session.title}
                 >
-                  <span className="gs-chat-session-title">{session.title}</span>
+                  <span className="wp-chat-session-text">{session.title}</span>
                   <button
-                    className="gs-chat-delete-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteSession(session.id);
-                    }}
+                    className="wp-chat-delete-session"
+                    onClick={(e) => deleteSession(session.id, e)}
+                    aria-label="Delete conversation"
+                    title="Delete"
                   >
-                    🗑
+                    ×
                   </button>
-                </div>
-              ))}
-            </div>
+                </button>
+              ))
+            )}
           </div>
+        </div>
 
-          <div className="gs-chat-container">
-            <div className="gs-chat-messages">
-              {!currentSession && (
-                <div className="gs-chat-empty">
-                  <p>No chat selected. Create a new one to start.</p>
-                </div>
-              )}
-              {messages.map(msg => (
-                <div key={msg.id} className={`gs-chat-message gs-chat-message-${msg.role}`}>
-                  <div className="gs-chat-message-content">{msg.content}</div>
-                </div>
-              ))}
-              {isLoading && (
-                <div className="gs-chat-message gs-chat-message-assistant">
-                  <div className="gs-chat-message-content gs-chat-loading">
-                    <span></span><span></span><span></span>
-                  </div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
+        {/* Chat Area */}
+        <div className="wp-chat-content">
+          {!currentSession ? (
+            <div className="wp-chat-no-selection">
+              <p>Select a conversation or create a new one to begin.</p>
             </div>
+          ) : (
+            <>
+              <div className="wp-chat-messages">
+                {messages.length === 0 && (
+                  <div className="wp-chat-start">
+                    <p>Start a conversation</p>
+                  </div>
+                )}
+                {messages.map(msg => (
+                  <div
+                    key={msg.id}
+                    className={`wp-chat-message ${msg.role === 'user' ? 'user' : 'assistant'}`}
+                  >
+                    <div className="wp-chat-message-label">
+                      {msg.role === 'user' ? 'You' : 'Assistant'}
+                    </div>
+                    <div className="wp-chat-message-body">{msg.content}</div>
+                  </div>
+                ))}
+                {isLoading && (
+                  <div className="wp-chat-message assistant loading">
+                    <div className="wp-chat-message-label">Assistant</div>
+                    <div className="wp-chat-message-body">
+                      <div className="wp-chat-loading-dots">
+                        <span></span><span></span><span></span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
 
-            {currentSession && (
-              <div className="gs-chat-input-area">
-                <div className="gs-chat-input-wrapper">
+              <div className="wp-chat-footer">
+                <div className="wp-chat-input-group">
                   <input
                     type="text"
+                    className="wp-chat-input"
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={(e) => {
@@ -241,23 +259,26 @@ const FloatingChatWidget: React.FC = () => {
                         sendMessage();
                       }
                     }}
-                    placeholder="Ask Claude..."
+                    placeholder="Type your message..."
                     disabled={isLoading}
-                    className="gs-chat-input"
                   />
                   <button
+                    className="wp-chat-submit"
                     onClick={sendMessage}
                     disabled={isLoading || !inputValue.trim()}
-                    className="gs-chat-send-btn"
+                    aria-label="Send message"
+                    title="Send"
                   >
-                    {isLoading ? '⌛' : '→'}
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                      <path d="M16.6915026,12.4744748 L3.50612381,13.2599618 C3.19218622,13.2599618 3.03521743,13.4170592 3.03521743,13.5741566 L1.15159189,20.0151496 C0.8376543,20.8006365 0.99,21.89 1.77946707,22.52 C2.41,22.99 3.50612381,23.1 4.13399899,22.8429026 L21.714504,14.0454487 C22.6563168,13.5741566 23.1272231,12.6315722 22.9702544,11.6889879 L4.13399899,2.89 C3.34915502,2.40 2.40734225,2.50636533 1.77946707,3.0776575 C0.994623095,3.6489497 0.837654326,4.73742330 1.15159189,5.52291022 L3.03521743,11.9639032 C3.03521743,12.1210006 3.19218622,12.2780980 3.50612381,12.2780980 L16.6915026,13.0635849 C16.6915026,13.0635849 17.1624089,13.0635849 17.1624089,12.5923188 L17.1624089,12.0210267 C17.1624089,11.5497606 16.6915026,11.4744748 16.6915026,12.4744748 Z" />
+                    </svg>
                   </button>
                 </div>
               </div>
-            )}
-          </div>
-        </>
-      )}
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
