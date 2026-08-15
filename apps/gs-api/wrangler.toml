@@ -25,6 +25,10 @@ workers_dev = false
 # deploy` without `--env prod` would replace live gs-api with a bindingless
 # build. Every deploy path in this repo passes `--env prod`; keep it that way.
 name = "gs-api"
+
+# Explicit aliases for monorepo package imports to resolve package.json exports
+# Wrangler's esbuild bundler needs help resolving deep package imports
+alias = { "@goldshore/schema/subscription" = "../../packages/schema/src/subscription.ts", "@goldshore/auth/subscription-rbac" = "../../packages/auth/subscription-rbac.ts" }
 routes = [
   { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "api.goldshore.org/*", zone_name = "goldshore.org" },
