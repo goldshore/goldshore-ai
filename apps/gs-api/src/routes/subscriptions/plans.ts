@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { TIER_DEFINITIONS, SUBSCRIPTION_TIERS } from "../../../../packages/schema/src/subscription";
+import { TIER_DEFINITIONS, SUBSCRIPTION_TIERS } from "@packages/schema/src/subscription";
 import type { Env, Variables } from "../../types";
 
 const plans = new Hono<{
