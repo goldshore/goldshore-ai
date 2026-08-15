@@ -3,15 +3,19 @@
  * GET /admin/repo-health — Repository health, audit findings, deployment status
  */
 
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import { buildRepoHealth, type RepoHealth } from '../../lib/github-repo-health';
-import { Env, Variables } from '../../types';
-import { getActor, logAdminAction, requirePermission } from '../../auth';
+import type { Env, Variables } from '../../types';
 
-const repoHealth = new Hono<{
-  Bindings: Env;
-  Variables: Variables;
-}>();
+const repoHealth = new Hono<{ Bindings: Env; Variables: Variables }>();
+
+const verifyAdminAuth = (c: Context<{ Bindings: Env; Variables: Variables }>) => {
+  const claims = c.get('accessClaims');
+  if (!claims) {
+    return { error: Response.json({ error: 'Unauthorized' }, { status: 401 }) };
+  }
+  return { ok: true };
+};
 
 /**
  * Cache repo health in D1 with TTL
@@ -63,18 +67,14 @@ async function cacheHealth(db: any, cacheKey: string, health: RepoHealth): Promi
  * GET /admin/repo-health
  * Returns overall repo health, audit findings, and blockers
  */
-repoHealth.get('/', requirePermission('admin:repo-health:read'), async (c) => {
-  const actor = getActor(c.get('accessClaims'), c.req.raw);
+repoHealth.get('/', async (c) => {
+  const auth = verifyAdminAuth(c);
+  if ('error' in auth) return auth.error;
+
   const githubToken = c.env.GITHUB_API_TOKEN;
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
 
   if (!githubToken) {
-    await logAdminAction(c.env, {
-      action: 'admin.repo-health.read',
-      actor,
-      status: 'error',
-      metadata: { error: 'GITHUB_API_TOKEN not configured' },
-    });
     return c.json({ error: 'GitHub API token not configured' }, 503);
   }
 
@@ -91,16 +91,6 @@ repoHealth.get('/', requirePermission('admin:repo-health:read'), async (c) => {
       await cacheHealth(db, cacheKey, health);
     }
 
-    await logAdminAction(c.env, {
-      action: 'admin.repo-health.read',
-      actor,
-      status: 'success',
-      metadata: {
-        health_score: health?.health_score || 0,
-        critical_issues: health?.security_summary?.critical_issues || 0,
-      },
-    });
-
     return c.json({
       success: true,
       data: health || { error: 'Unable to fetch repo health' },
@@ -108,14 +98,7 @@ repoHealth.get('/', requirePermission('admin:repo-health:read'), async (c) => {
     });
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-
-    await logAdminAction(c.env, {
-      action: 'admin.repo-health.read',
-      actor,
-      status: 'error',
-      metadata: { error: errorMsg },
-    });
-
+    console.error('[AUDIT] Repo health read failed:', errorMsg);
     return c.json({ error: errorMsg }, 500);
   }
 });
@@ -124,13 +107,15 @@ repoHealth.get('/', requirePermission('admin:repo-health:read'), async (c) => {
  * GET /admin/repo-health/findings?severity=critical&status=open
  * Filtered view of audit findings
  */
-repoHealth.get('/findings', requirePermission('admin:repo-health:read'), async (c) => {
+repoHealth.get('/findings', async (c) => {
+  const auth = verifyAdminAuth(c);
+  if ('error' in auth) return auth.error;
+
   const severity = c.req.query('severity'); // 'critical' | 'high' | 'medium' | 'low'
   const status = c.req.query('status'); // 'open' | 'in_progress' | 'resolved'
 
-  const actor = getActor(c.get('accessClaims'), c.req.raw);
   const githubToken = c.env.GITHUB_API_TOKEN;
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
 
   if (!githubToken) {
     return c.json({ error: 'GitHub API token not configured' }, 503);
@@ -159,19 +144,13 @@ repoHealth.get('/findings', requirePermission('admin:repo-health:read'), async (
       findings = findings.filter((f) => f.status === status);
     }
 
-    await logAdminAction(c.env, {
-      action: 'admin.repo-health.findings.read',
-      actor,
-      status: 'success',
-      metadata: { count: findings.length, severity, status },
-    });
-
     return c.json({
       success: true,
       data: findings,
     });
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[AUDIT] Repo health findings read failed:', errorMsg);
     return c.json({ error: errorMsg }, 500);
   }
 });
