@@ -16,7 +16,7 @@ interface ChatSession {
   updatedAt: number;
 }
 
-export const FloatingChatWidget: React.FC = () => {
+const FloatingChatWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
@@ -261,3 +261,5 @@ export const FloatingChatWidget: React.FC = () => {
     </div>
   );
 };
+
+export default FloatingChatWidget;
