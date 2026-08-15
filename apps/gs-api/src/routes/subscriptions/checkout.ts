@@ -1,6 +1,6 @@
 import { Hono } from "hono";
-import { TIER_DEFINITIONS, SUBSCRIPTION_TIERS } from "@packages/schema/src/subscription";
-import { recordSubscriptionEvent } from "@packages/auth/subscription-rbac";
+import { TIER_DEFINITIONS, SUBSCRIPTION_TIERS } from "@goldshore/schema/subscription";
+import { recordSubscriptionEvent } from "@goldshore/auth/subscription-rbac";
 import type { Env, Variables } from "../../types";
 
 const checkout = new Hono<{

@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { buildSubscriptionSession } from "@packages/auth/subscription-rbac";
+import { buildSubscriptionSession } from "@goldshore/auth/subscription-rbac";
 import type { Env, Variables } from "../../types";
 import plans from "./plans";
 import checkout from "./checkout";
