@@ -1,5 +1,5 @@
-import type { SubscriptionTier } from "@goldshore/schema/subscription";
-import { TIER_DEFINITIONS } from "@goldshore/schema/subscription";
+import type { SubscriptionTier } from "../schema/src/subscription";
+import { TIER_DEFINITIONS } from "../schema/src/subscription";
 import type { AccessTokenPayload } from "./verify";
 import type { AdminPermission } from "./rbac";
 
