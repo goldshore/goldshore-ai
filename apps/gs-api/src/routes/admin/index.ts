@@ -12,6 +12,7 @@ import secrets from './secrets';
 import tokens from './tokens';
 import cockpit from './merge-cockpit';
 import repoHealth from './repo-health';
+import piiScans from './pii-scans';
 import chat from './chat';
 import analytics from './analytics';
 
@@ -29,6 +30,7 @@ admin.route('/secrets', secrets);
 admin.route('/tokens', tokens);
 admin.route('/merge-cockpit', cockpit);
 admin.route('/repo-health', repoHealth);
+admin.route('/pii-scans', piiScans);
 admin.route('/chat', chat);
 admin.route('/analytics', analytics);
 // admin.route('/workers', workers); // TODO: Phase 2 - Cloudflare Worker management

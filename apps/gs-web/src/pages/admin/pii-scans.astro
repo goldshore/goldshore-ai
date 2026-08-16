@@ -41,9 +41,9 @@ try {
 
   const response = await fetch(`${apiUrl}/admin/pii-scans?${params}`, {
     headers: {
-      'Authorization': `Bearer ${Astro.cookies.get('auth_token')?.value}`,
       'Accept': 'application/json',
     },
+    credentials: 'include',
   });
 
   if (!response.ok) {
