@@ -128,11 +128,10 @@ binding = "TRADING_KV"
 id = "9b3314c3b7af40a284a8c9b6e2990709"
 
 # MCP Workers Prompt Storage — for storing model context protocol worker
-# prompts, templates, and system instructions. Namespace ID to be verified
-# in Cloudflare dashboard and linked to corresponding preview namespace.
+# prompts, templates, and system instructions.
 [[env.prod.kv_namespaces]]
 binding = "MCP_WORKERS_PROMPT"
-id = "TODO_LOOKUP_MCP_WORKERS_PROMPT_PROD_ID"
+id = "e8f02d97140b4e1daba2e88078fcf5c8"
 
 # ── R2 ──────────────────────────────────────────────────────────────────────────────────────
 [[env.prod.r2_buckets]]
