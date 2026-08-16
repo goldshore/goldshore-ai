@@ -264,3 +264,101 @@ export async function deleteEntry(db: any, id: string, type?: 'contacts' | 'lead
     throw new Error(`Failed to delete entry: ${err}`);
   }
 }
+
+export async function bulkUpdateLeadStatus(
+  db: any,
+  ids: string[],
+  status: string,
+  metadata?: Record<string, any>
+) {
+  try {
+    if (ids.length === 0) return { success: true, updated: 0 };
+
+    const placeholders = ids.map(() => '?').join(',');
+    const fields: string[] = ['status = ?', 'updated_at = CURRENT_TIMESTAMP'];
+    const params: any[] = [status, ...ids];
+
+    if (metadata?.assignedTo) {
+      fields.push('assigned_to = ?');
+      params.unshift(metadata.assignedTo);
+    }
+
+    if (metadata?.qualificationReason && status === 'qualified') {
+      fields.push('metadata = json_set(COALESCE(metadata, "{}"), "$.qualification_reason", ?)');
+      params.unshift(metadata.qualificationReason);
+    }
+
+    const query = `UPDATE admin_leads SET ${fields.join(', ')} WHERE id IN (${placeholders})`;
+    const result = await db.prepare(query).bind(...params).run();
+
+    return { success: true, updated: result.meta.duration };
+  } catch (err) {
+    throw new Error(`Failed to bulk update leads: ${err}`);
+  }
+}
+
+export async function bulkDeleteEntries(db: any, ids: string[], type?: 'contacts' | 'leads') {
+  try {
+    if (ids.length === 0) return { success: true, deleted: 0 };
+
+    const table = type === 'leads' ? 'admin_leads' : 'admin_contact_submissions';
+    const placeholders = ids.map(() => '?').join(',');
+    const query = `DELETE FROM ${table} WHERE id IN (${placeholders})`;
+
+    const result = await db.prepare(query).bind(...ids).run();
+    return { success: true, deleted: ids.length };
+  } catch (err) {
+    throw new Error(`Failed to bulk delete entries: ${err}`);
+  }
+}
+
+export async function qualifyLead(
+  db: any,
+  id: string,
+  reason: string,
+  qualifiedBy: string
+) {
+  try {
+    return await db.prepare(
+      `UPDATE admin_leads
+       SET status = 'qualified',
+           metadata = json_set(COALESCE(metadata, "{}"), "$.qualification_reason", ?),
+           metadata = json_set(metadata, "$.qualified_by", ?),
+           metadata = json_set(metadata, "$.qualified_at", datetime('now')),
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?`
+    ).bind(reason, qualifiedBy, id).run();
+  } catch (err) {
+    throw new Error(`Failed to qualify lead: ${err}`);
+  }
+}
+
+export async function getLeadsByStatus(
+  db: any,
+  status: 'new' | 'qualified' | 'rejected' | 'contacted',
+  options?: {
+    offset?: number;
+    limit?: number;
+  }
+) {
+  try {
+    const offset = options?.offset || 0;
+    const limit = options?.limit || 100;
+
+    const query = 'SELECT * FROM admin_leads WHERE status = ? ORDER BY created_at DESC LIMIT ? OFFSET ?';
+    const countQuery = 'SELECT COUNT(*) as total FROM admin_leads WHERE status = ?';
+
+    const total = await db.prepare(countQuery).bind(status).first();
+    const leads = await db.prepare(query).bind(status, limit, offset).all();
+
+    return {
+      items: leads.results || [],
+      total: total?.total || 0,
+      offset,
+      limit,
+      page: Math.floor(offset / limit) + 1,
+    };
+  } catch (err) {
+    throw new Error(`Failed to get leads by status: ${err}`);
+  }
+}

@@ -175,4 +175,89 @@ entries.delete('/contacts/:id', errorHandler(async (c) => {
   return c.json({ success: true, message: 'Contact deleted' });
 }));
 
+/**
+ * POST /api/admin/entries/leads/bulk-update
+ * Bulk update leads status
+ */
+entries.post('/leads/bulk-update', errorHandler(async (c) => {
+  const db = c.env.PLATFORM_DB;
+  const user = c.get('user');
+  const body = await c.req.json();
+
+  const { ids, status, metadata } = body;
+
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return c.json({ error: 'ids array required' }, 400);
+  }
+
+  if (!status) {
+    return c.json({ error: 'status required' }, 400);
+  }
+
+  await entriesDb.bulkUpdateLeadStatus(db, ids, status, metadata);
+
+  console.log(`[AUDIT] ${user.email} bulk updated ${ids.length} leads to status: ${status}`);
+
+  return c.json({ success: true, message: `Updated ${ids.length} leads` });
+}));
+
+/**
+ * POST /api/admin/entries/leads/bulk-delete
+ * Bulk delete leads
+ */
+entries.post('/leads/bulk-delete', errorHandler(async (c) => {
+  const db = c.env.PLATFORM_DB;
+  const user = c.get('user');
+  const body = await c.req.json();
+
+  const { ids } = body;
+
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return c.json({ error: 'ids array required' }, 400);
+  }
+
+  await entriesDb.bulkDeleteEntries(db, ids, 'leads');
+
+  console.log(`[AUDIT] ${user.email} bulk deleted ${ids.length} leads`);
+
+  return c.json({ success: true, message: `Deleted ${ids.length} leads` });
+}));
+
+/**
+ * POST /api/admin/entries/leads/:id/qualify
+ * Qualify a lead with reason
+ */
+entries.post('/leads/:id/qualify', errorHandler(async (c) => {
+  const db = c.env.PLATFORM_DB;
+  const id = c.req.param('id');
+  const user = c.get('user');
+  const body = await c.req.json();
+
+  const { reason } = body;
+
+  if (!reason) {
+    return c.json({ error: 'qualification reason required' }, 400);
+  }
+
+  await entriesDb.qualifyLead(db, id, reason, user.email);
+
+  console.log(`[AUDIT] ${user.email} qualified lead ${id}: ${reason}`);
+
+  return c.json({ success: true, message: 'Lead qualified' });
+}));
+
+/**
+ * GET /api/admin/entries/leads/by-status/:status
+ * Get leads filtered by status
+ */
+entries.get('/leads/by-status/:status', errorHandler(async (c) => {
+  const db = c.env.PLATFORM_DB;
+  const status = c.req.param('status') as 'new' | 'qualified' | 'rejected' | 'contacted';
+  const { offset, limit } = c.get('pagination');
+
+  const result = await entriesDb.getLeadsByStatus(db, status, { offset, limit });
+
+  return c.json(result);
+}));
+
 export default entries;

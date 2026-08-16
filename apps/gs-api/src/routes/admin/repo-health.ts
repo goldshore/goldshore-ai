@@ -123,8 +123,8 @@ repoHealth.get('/', async (c) => {
 });
 
 /**
- * GET /admin/repo-health/findings?severity=critical&status=open
- * Filtered view of audit findings
+ * GET /admin/repo-health/findings?severity=critical&status=open&page=1&limit=25
+ * Paginated, filtered view of audit findings
  */
 repoHealth.get('/findings', async (c) => {
   const auth = verifyAdminAuth(c);
@@ -133,6 +133,8 @@ repoHealth.get('/findings', async (c) => {
   const claims = c.get('accessClaims');
   const severity = c.req.query('severity'); // 'critical' | 'high' | 'medium' | 'low'
   const status = c.req.query('status'); // 'open' | 'in_progress' | 'resolved'
+  const page = Math.max(1, parseInt(c.req.query('page') || '1', 10));
+  const limit = Math.min(100, parseInt(c.req.query('limit') || '25', 10));
 
   const githubToken = c.env.GITHUB_API_TOKEN;
   const db = c.env.PLATFORM_DB;
@@ -156,6 +158,11 @@ repoHealth.get('/findings', async (c) => {
 
     let findings = health?.findings || [];
 
+    // Build summary counts before filtering
+    const criticalCount = findings.filter(f => f.severity === 'critical').length;
+    const highCount = findings.filter(f => f.severity === 'high').length;
+
+    // Apply filters
     if (severity) {
       findings = findings.filter((f) => f.severity === severity);
     }
@@ -164,16 +171,39 @@ repoHealth.get('/findings', async (c) => {
       findings = findings.filter((f) => f.status === status);
     }
 
+    // Sort by severity (critical first) then by status (open first)
+    const severityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+    const statusOrder = { open: 0, in_progress: 1, resolved: 2 };
+    findings.sort((a, b) => {
+      const sevDiff = severityOrder[a.severity as keyof typeof severityOrder] - severityOrder[b.severity as keyof typeof severityOrder];
+      if (sevDiff !== 0) return sevDiff;
+      return statusOrder[a.status as keyof typeof statusOrder] - statusOrder[b.status as keyof typeof statusOrder];
+    });
+
+    const total = findings.length;
+    const offset = (page - 1) * limit;
+    const paginatedFindings = findings.slice(offset, offset + limit);
+
     console.info('[AUDIT] admin.repo-health.findings.read SUCCESS', {
       actor: claims?.email || 'unknown',
-      count: findings.length,
+      total: total,
+      returned: paginatedFindings.length,
+      page,
       severity,
       status,
     });
 
     return c.json({
       success: true,
-      data: findings,
+      data: paginatedFindings,
+      total: total,
+      page: page,
+      limit: limit,
+      totalPages: Math.ceil(total / limit),
+      summary: {
+        critical: criticalCount,
+        high: highCount,
+      },
     });
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
