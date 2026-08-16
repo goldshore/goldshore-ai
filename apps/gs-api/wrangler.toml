@@ -25,6 +25,7 @@ workers_dev = false
 # deploy` without `--env prod` would replace live gs-api with a bindingless
 # build. Every deploy path in this repo passes `--env prod`; keep it that way.
 name = "gs-api"
+
 routes = [
   { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "api.goldshore.org/*", zone_name = "goldshore.org" },
@@ -70,6 +71,7 @@ MAIL_FORWARD_TO = "marstonr6@gmail.com"
 PUBLIC_SITE_URL = "https://goldshore.ai"
 MAIL_FROM_EMAIL = "noreply@goldshore.ai"
 MAIL_FROM_NAME = "GoldShore"
+TURNSTILE_SITEKEY = "0x4AAAAAAEOjS4lrG1IT_-Fs"
 
 # GITHUB_API_TOKEN is a secret for Phase 2 Admin Deployment Assistant.
 #   Value: <personal access token with public_repo scope>
@@ -107,6 +109,13 @@ id = "a52e94cb331c4e3db08f2aa507e6df09"
 [[env.prod.kv_namespaces]]
 binding = "TRADING_KV"
 id = "9b3314c3b7af40a284a8c9b6e2990709"
+
+# MCP Workers Prompt Storage — for storing model context protocol worker
+# prompts, templates, and system instructions. Namespace ID to be verified
+# in Cloudflare dashboard and linked to corresponding preview namespace.
+[[env.prod.kv_namespaces]]
+binding = "MCP_WORKERS_PROMPT"
+id = "TODO_LOOKUP_MCP_WORKERS_PROMPT_PROD_ID"
 
 # ── R2 ──────────────────────────────────────────────────────────────────────────────────────
 [[env.prod.r2_buckets]]

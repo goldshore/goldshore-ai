@@ -34,6 +34,8 @@ import googleWorkspace from './routes/google-workspace';
 import oauth from './routes/oauth';
 import webhooks from './routes/webhooks';
 import automation from './routes/automation';
+// TODO: Resolve Wrangler module resolution issue with @goldshore packages before re-enabling
+// import subscriptions from './routes/subscriptions';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
 import type { Env, Variables } from './types';
@@ -302,6 +304,8 @@ app.route('/admin/google', googleBusiness);
 app.route('/admin/workspace', googleWorkspace);
 app.route('/auth', oauth);
 app.route('/oauth', oauth);
+// TODO: Re-enable once module resolution issue is fixed
+// app.route('/subscriptions', subscriptions);
 app.route('/webhooks', webhooks);
 app.route('/media', media);
 app.route('/pages', pages);
