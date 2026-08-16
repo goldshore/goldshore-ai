@@ -23,25 +23,70 @@ function EmailManagerContent({ jwtToken: _jwtToken }: Props) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({ to: '', subject: '', template: '' });
   const [isSending, setIsSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const { token } = useAuthToken();
 
+  const validateEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
   const handleSendEmail = async () => {
+    setError(null);
+    setSuccess(null);
+
+    if (!formData.to.trim()) {
+      setError('Recipient email is required');
+      return;
+    }
+
+    if (!validateEmail(formData.to)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    if (!formData.subject.trim()) {
+      setError('Subject is required');
+      return;
+    }
+
     setIsSending(true);
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
       const response = await fetch('/api/admin/email/send', {
         method: 'POST',
+        signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         },
         body: JSON.stringify(formData),
       });
+
+      clearTimeout(timeoutId);
+
       if (response.ok) {
         setFormData({ to: '', subject: '', template: '' });
-        setIsModalOpen(false);
-        window.location.reload();
+        setSuccess('Email queued successfully');
+        setTimeout(() => {
+          setIsModalOpen(false);
+          window.location.reload();
+        }, 1000);
       } else if (response.status === 401) {
-        alert('Authentication expired. Please refresh the page.');
+        setError('Authentication expired. Please refresh the page.');
+      } else if (response.status === 400) {
+        const err = await response.json().catch(() => ({}));
+        setError(err.message || 'Invalid email data');
+      } else {
+        setError(`Failed to send email (HTTP ${response.status})`);
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        setError('Request timed out. Please try again.');
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to send email');
       }
     } finally {
       setIsSending(false);
@@ -98,11 +143,25 @@ function EmailManagerContent({ jwtToken: _jwtToken }: Props) {
 
       <Modal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setError(null);
+          setSuccess(null);
+        }}
         title="Send Email"
         onSubmit={handleSendEmail}
         isLoading={isSending}
       >
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
+            {success}
+          </div>
+        )}
         <FormField
           label="Recipient Email"
           name="to"

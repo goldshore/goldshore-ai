@@ -26,25 +26,80 @@ function EntriesManagerContent({ jwtToken: _jwtToken }: Props) {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', company: '', message: '' });
   const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const { token } = useAuthToken();
 
+  const validateEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
   const handleSaveEntry = async () => {
+    setError(null);
+    setSuccess(null);
+
+    if (!formData.name.trim()) {
+      setError('Full name is required');
+      return;
+    }
+
+    if (!formData.email.trim()) {
+      setError('Email address is required');
+      return;
+    }
+
+    if (!validateEmail(formData.email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    if (!formData.message.trim()) {
+      setError('Message is required');
+      return;
+    }
+
+    if (formData.message.length < 10) {
+      setError('Message must be at least 10 characters');
+      return;
+    }
+
     setIsSaving(true);
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
       const response = await fetch('/api/admin/entries', {
         method: 'POST',
+        signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         },
         body: JSON.stringify(formData),
       });
+
+      clearTimeout(timeoutId);
+
       if (response.ok) {
         setFormData({ name: '', email: '', company: '', message: '' });
-        setIsModalOpen(false);
-        window.location.reload();
+        setSuccess('Entry created successfully');
+        setTimeout(() => {
+          setIsModalOpen(false);
+          window.location.reload();
+        }, 1000);
       } else if (response.status === 401) {
-        alert('Authentication expired. Please refresh the page.');
+        setError('Authentication expired. Please refresh the page.');
+      } else if (response.status === 400) {
+        const err = await response.json().catch(() => ({}));
+        setError(err.message || 'Invalid entry data');
+      } else {
+        setError(`Failed to create entry (HTTP ${response.status})`);
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        setError('Request timed out. Please try again.');
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to create entry');
       }
     } finally {
       setIsSaving(false);
@@ -94,11 +149,25 @@ function EntriesManagerContent({ jwtToken: _jwtToken }: Props) {
 
       <Modal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setError(null);
+          setSuccess(null);
+        }}
         title="New Lead Entry"
         onSubmit={handleSaveEntry}
         isLoading={isSaving}
       >
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
+            {success}
+          </div>
+        )}
         <FormField
           label="Full Name"
           name="name"
