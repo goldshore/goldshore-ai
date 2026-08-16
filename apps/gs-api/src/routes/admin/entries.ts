@@ -1,8 +1,12 @@
+import type { Env, Variables } from '../../types';
 import { Hono } from 'hono';
 import { verifyAdminAuth, parsePagination, errorHandler } from './middleware/auth';
 import * as entriesDb from './db/entries';
 
-const entries = new Hono();
+const entries = new Hono<{
+  Bindings: Env;
+  Variables: Variables;
+}>();
 
 // Apply auth middleware
 entries.use('*', verifyAdminAuth);
@@ -13,7 +17,7 @@ entries.use('*', parsePagination);
  * List all entries (contacts + leads combined)
  */
 entries.get('/', errorHandler(async (c) => {
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
   const { offset, limit } = c.get('pagination');
 
   const contacts = await entriesDb.getContacts(db, { offset: 0, limit: 1000 });
@@ -39,7 +43,7 @@ entries.get('/', errorHandler(async (c) => {
  * List contact form submissions
  */
 entries.get('/contacts', errorHandler(async (c) => {
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
   const { offset, limit } = c.get('pagination');
 
   const result = await entriesDb.getContacts(db, {
@@ -58,7 +62,7 @@ entries.get('/contacts', errorHandler(async (c) => {
  * Get single contact submission
  */
 entries.get('/contacts/:id', errorHandler(async (c) => {
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
   const id = c.req.param('id');
 
   const contact = await entriesDb.getEntryById(db, id, 'contacts');
@@ -74,7 +78,7 @@ entries.get('/contacts/:id', errorHandler(async (c) => {
  * Mark contact as responded
  */
 entries.post('/contacts/:id/respond', errorHandler(async (c) => {
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
   const id = c.req.param('id');
   const user = c.get('user');
   const body = await c.req.json();
@@ -91,7 +95,7 @@ entries.post('/contacts/:id/respond', errorHandler(async (c) => {
  * List lead submissions
  */
 entries.get('/leads', errorHandler(async (c) => {
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
   const { offset, limit } = c.get('pagination');
 
   const result = await entriesDb.getLeads(db, {
@@ -111,7 +115,7 @@ entries.get('/leads', errorHandler(async (c) => {
  * Get single lead
  */
 entries.get('/leads/:id', errorHandler(async (c) => {
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
   const id = c.req.param('id');
 
   const lead = await entriesDb.getEntryById(db, id, 'leads');
@@ -127,7 +131,7 @@ entries.get('/leads/:id', errorHandler(async (c) => {
  * Update lead status
  */
 entries.post('/leads/:id', errorHandler(async (c) => {
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
   const id = c.req.param('id');
   const user = c.get('user');
   const body = await c.req.json();
@@ -144,7 +148,7 @@ entries.post('/leads/:id', errorHandler(async (c) => {
  * Delete lead
  */
 entries.delete('/leads/:id', errorHandler(async (c) => {
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
   const id = c.req.param('id');
   const user = c.get('user');
 
@@ -160,7 +164,7 @@ entries.delete('/leads/:id', errorHandler(async (c) => {
  * Delete contact submission
  */
 entries.delete('/contacts/:id', errorHandler(async (c) => {
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
   const id = c.req.param('id');
   const user = c.get('user');
 

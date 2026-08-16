@@ -1,8 +1,12 @@
+import type { Env, Variables } from '../../types';
 import { Hono } from 'hono';
 import { verifyAdminAuth, parsePagination, errorHandler } from './middleware/auth';
 import * as secretsDb from './db/secrets';
 
-const secrets = new Hono();
+const secrets = new Hono<{
+  Bindings: Env;
+  Variables: Variables;
+}>();
 
 // Apply auth middleware
 secrets.use('*', verifyAdminAuth);
@@ -13,7 +17,7 @@ secrets.use('*', parsePagination);
  * List all secrets (metadata only, no values)
  */
 secrets.get('/', errorHandler(async (c) => {
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
   const { offset, limit } = c.get('pagination');
 
   const result = await secretsDb.getSecrets(db, {
@@ -31,7 +35,7 @@ secrets.get('/', errorHandler(async (c) => {
  * Get secret metadata (no encrypted value)
  */
 secrets.get('/:id', errorHandler(async (c) => {
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
   const id = c.req.param('id');
 
   const secret = await secretsDb.getSecretById(db, id);
@@ -47,7 +51,7 @@ secrets.get('/:id', errorHandler(async (c) => {
  * Create new secret (value encrypted by INTEGRATION_MASTER_KEY)
  */
 secrets.post('/', errorHandler(async (c) => {
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
   const currentUser = c.get('user');
   const body = await c.req.json();
 
@@ -85,7 +89,7 @@ secrets.post('/', errorHandler(async (c) => {
  * Rotate secret (generate new value, revoke old)
  */
 secrets.post('/:id/rotate', errorHandler(async (c) => {
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
   const id = c.req.param('id');
   const currentUser = c.get('user');
   const body = await c.req.json();
@@ -114,7 +118,7 @@ secrets.post('/:id/rotate', errorHandler(async (c) => {
  * Revoke secret (set is_active = 0)
  */
 secrets.post('/:id/revoke', errorHandler(async (c) => {
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
   const id = c.req.param('id');
   const currentUser = c.get('user');
 
@@ -138,7 +142,7 @@ secrets.post('/:id/revoke', errorHandler(async (c) => {
  * Delete secret permanently
  */
 secrets.delete('/:id', errorHandler(async (c) => {
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
   const id = c.req.param('id');
   const currentUser = c.get('user');
 

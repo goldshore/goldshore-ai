@@ -32,9 +32,11 @@ export default function EmailManager({ jwtToken, initialLogs }: EmailManagerProp
   const [loading, setLoading] = useState(false);
   const [selectedLog, setSelectedLog] = useState<EmailLog | null>(null);
   const [resending, setResending] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchLogs = async (newOffset: number, filters: Record<string, string> = {}) => {
     setLoading(true);
+    setError(null);
     try {
       const params = new URLSearchParams({
         offset: String(newOffset),
@@ -53,9 +55,21 @@ export default function EmailManager({ jwtToken, initialLogs }: EmailManagerProp
         setLogs(data.items || []);
         setTotal(data.total || 0);
         setOffset(newOffset);
+      } else {
+        const errorMsg = `HTTP ${response.status}: Failed to fetch email logs`;
+        console.error(`[EmailManager] ${errorMsg}`);
+        try {
+          const errorData = await response.json();
+          console.error('[EmailManager] Error details:', errorData);
+          setError(errorData.message || errorMsg);
+        } catch {
+          setError(errorMsg);
+        }
       }
-    } catch (error) {
-      console.error('Failed to fetch logs:', error);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error fetching logs';
+      console.error('[EmailManager] Network error:', err);
+      setError(`Connection failed: ${message}`);
     } finally {
       setLoading(false);
     }
@@ -63,6 +77,7 @@ export default function EmailManager({ jwtToken, initialLogs }: EmailManagerProp
 
   const handleResendEmail = async (emailId: string) => {
     setResending(emailId);
+    setError(null);
     try {
       const response = await fetch(`/api/admin/email/logs/${emailId}/resend`, {
         method: 'POST',
@@ -72,14 +87,23 @@ export default function EmailManager({ jwtToken, initialLogs }: EmailManagerProp
       });
 
       if (response.ok) {
-        // Refresh logs after resend
         await fetchLogs(offset);
         setSelectedLog(null);
       } else {
-        console.error('Failed to resend email');
+        const errorMsg = `HTTP ${response.status}: Failed to resend email`;
+        console.error(`[EmailManager] ${errorMsg}`, { emailId });
+        try {
+          const errorData = await response.json();
+          console.error('[EmailManager] Error details:', errorData);
+          setError(errorData.message || errorMsg);
+        } catch {
+          setError(errorMsg);
+        }
       }
-    } catch (error) {
-      console.error('Error resending email:', error);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      console.error('[EmailManager] Resend failed:', err, { emailId });
+      setError(`Connection failed: ${message}`);
     } finally {
       setResending(null);
     }
@@ -88,6 +112,7 @@ export default function EmailManager({ jwtToken, initialLogs }: EmailManagerProp
   const handleDeleteEmail = async (emailId: string) => {
     if (!confirm('Are you sure you want to delete this email log?')) return;
 
+    setError(null);
     try {
       const response = await fetch(`/api/admin/email/logs/${emailId}`, {
         method: 'DELETE',
@@ -99,9 +124,21 @@ export default function EmailManager({ jwtToken, initialLogs }: EmailManagerProp
       if (response.ok) {
         await fetchLogs(offset);
         setSelectedLog(null);
+      } else {
+        const errorMsg = `HTTP ${response.status}: Failed to delete email`;
+        console.error(`[EmailManager] ${errorMsg}`, { emailId });
+        try {
+          const errorData = await response.json();
+          console.error('[EmailManager] Error details:', errorData);
+          setError(errorData.message || errorMsg);
+        } catch {
+          setError(errorMsg);
+        }
       }
-    } catch (error) {
-      console.error('Error deleting email:', error);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      console.error('[EmailManager] Delete failed:', err, { emailId });
+      setError(`Connection failed: ${message}`);
     }
   };
 
@@ -120,6 +157,20 @@ export default function EmailManager({ jwtToken, initialLogs }: EmailManagerProp
 
   return (
     <div className="space-y-4">
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded text-red-700 text-sm flex items-center justify-between">
+          <div>
+            <strong>Error:</strong> {error}
+          </div>
+          <button
+            onClick={() => setError(null)}
+            className="ml-2 text-red-700 hover:text-red-900 font-bold"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       <FilterBar
         filters={filters}
         onFilter={(filters) => fetchLogs(0, filters)}

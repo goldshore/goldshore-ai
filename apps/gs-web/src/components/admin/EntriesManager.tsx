@@ -34,9 +34,11 @@ export default function EntriesManager({ jwtToken, initialEntries }: EntriesMana
   const [loading, setLoading] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
   const [responding, setResponding] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchEntries = async (newOffset: number, filters: Record<string, string> = {}) => {
     setLoading(true);
+    setError(null);
     try {
       const params = new URLSearchParams({
         offset: String(newOffset),
@@ -55,9 +57,21 @@ export default function EntriesManager({ jwtToken, initialEntries }: EntriesMana
         setEntries(data.items || []);
         setTotal(data.total || 0);
         setOffset(newOffset);
+      } else {
+        const errorMsg = `HTTP ${response.status}: Failed to fetch entries`;
+        console.error(`[EntriesManager] ${errorMsg}`);
+        try {
+          const errorData = await response.json();
+          console.error('[EntriesManager] Error details:', errorData);
+          setError(errorData.message || errorMsg);
+        } catch {
+          setError(errorMsg);
+        }
       }
-    } catch (error) {
-      console.error('Failed to fetch entries:', error);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      console.error('[EntriesManager] Network error:', err);
+      setError(`Connection failed: ${message}`);
     } finally {
       setLoading(false);
     }
@@ -65,6 +79,7 @@ export default function EntriesManager({ jwtToken, initialEntries }: EntriesMana
 
   const handleMarkResponded = async (entryId: string) => {
     setResponding(entryId);
+    setError(null);
     try {
       const response = await fetch(`/api/admin/entries/contacts/${entryId}/respond`, {
         method: 'POST',
@@ -77,9 +92,21 @@ export default function EntriesManager({ jwtToken, initialEntries }: EntriesMana
       if (response.ok) {
         await fetchEntries(offset);
         setSelectedEntry(null);
+      } else {
+        const errorMsg = `HTTP ${response.status}: Failed to mark as responded`;
+        console.error(`[EntriesManager] ${errorMsg}`, { entryId });
+        try {
+          const errorData = await response.json();
+          console.error('[EntriesManager] Error details:', errorData);
+          setError(errorData.message || errorMsg);
+        } catch {
+          setError(errorMsg);
+        }
       }
-    } catch (error) {
-      console.error('Error marking responded:', error);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      console.error('[EntriesManager] Mark responded failed:', err, { entryId });
+      setError(`Connection failed: ${message}`);
     } finally {
       setResponding(null);
     }
@@ -88,6 +115,7 @@ export default function EntriesManager({ jwtToken, initialEntries }: EntriesMana
   const handleDeleteEntry = async (entryId: string, type: 'contact' | 'lead') => {
     if (!confirm('Are you sure you want to delete this entry?')) return;
 
+    setError(null);
     try {
       const endpoint = type === 'contact' ? 'contacts' : 'leads';
       const response = await fetch(`/api/admin/entries/${endpoint}/${entryId}`, {
@@ -100,9 +128,21 @@ export default function EntriesManager({ jwtToken, initialEntries }: EntriesMana
       if (response.ok) {
         await fetchEntries(offset);
         setSelectedEntry(null);
+      } else {
+        const errorMsg = `HTTP ${response.status}: Failed to delete entry`;
+        console.error(`[EntriesManager] ${errorMsg}`, { entryId, type });
+        try {
+          const errorData = await response.json();
+          console.error('[EntriesManager] Error details:', errorData);
+          setError(errorData.message || errorMsg);
+        } catch {
+          setError(errorMsg);
+        }
       }
-    } catch (error) {
-      console.error('Error deleting entry:', error);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      console.error('[EntriesManager] Delete failed:', err, { entryId, type });
+      setError(`Connection failed: ${message}`);
     }
   };
 
@@ -121,6 +161,20 @@ export default function EntriesManager({ jwtToken, initialEntries }: EntriesMana
 
   return (
     <div className="space-y-4">
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded text-red-700 text-sm flex items-center justify-between">
+          <div>
+            <strong>Error:</strong> {error}
+          </div>
+          <button
+            onClick={() => setError(null)}
+            className="ml-2 text-red-700 hover:text-red-900 font-bold"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       <FilterBar
         filters={filters}
         onFilter={(filters) => fetchEntries(0, filters)}
