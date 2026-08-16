@@ -1,31 +1,55 @@
 ---
-import { platformLinks, serviceLinks, companyLinks, adminLinks } from '../config/navigation';
+import { publicMenuGroups } from '../config/navigation';
+import { getPublicSiteUrl } from '../utils/public-site';
 
-const footerColumns = [
-  { title: 'Platform', links: platformLinks },
-  { title: 'Services', links: serviceLinks },
-  { title: 'Company', links: companyLinks },
-  { title: 'Admin', links: adminLinks },
-];
+const publicUrl = (href: string) => getPublicSiteUrl(Astro.url.hostname, href);
 ---
 
-<footer class="site-footer">
-  <div class="footer-main">
-    <div class="footer-brand">
-      <img src="/assets/penrose-logo.png" alt="GS Labs" class="footer-brand-logo" />
-      <div><h2>GOLDSHORE</h2><p>Applied Intelligence · Digital Systems · Consulting</p></div>
+<footer class="gs-theme-footer" data-tiered-footer>
+  <div class="gs-theme-footer__inner">
+    <div class="gs-theme-footer__brand">
+      <a href={publicUrl('/')} class="gs-theme-footer__lockup" aria-label="GoldShore home">
+        <img src="/assets/penrose-logo.png" alt="" class="gs-theme-footer__logo" />
+        <span>
+          <strong>GOLDSHORE</strong>
+          <small>Applied Intelligence · Digital Systems · Consulting</small>
+        </span>
+      </a>
+      <p>Infrastructure for high-trust AI, risk tooling, and resilient operator systems.</p>
+      <a href={publicUrl('/contact/')} class="gs-theme-footer__cta">Get a Briefing</a>
     </div>
-    <div class="footer-columns">
-      {footerColumns.map((column) => (
-        <div class="footer-column">
-          <h3>{column.title}</h3>
-          {column.links.map((link) => <p><a href={link.href} target={link.external ? '_blank' : undefined} rel={link.external ? 'noopener noreferrer' : undefined}>{link.label}</a></p>)}
-        </div>
+
+    <nav class="gs-theme-footer__menu" aria-label="Footer navigation">
+      {publicMenuGroups.map((column) => (
+        <details class="gs-theme-footer__tier" name="footer-tier">
+          <summary>{column.label}<span aria-hidden="true">+</span></summary>
+          <div class="gs-theme-footer__submenu">
+            {column.links.map((link) => (
+              <a href={link.external ? link.href : publicUrl(link.href)} target={link.external ? '_blank' : undefined} rel={link.external ? 'noopener noreferrer' : undefined}>{link.label}</a>
+            ))}
+          </div>
+        </details>
       ))}
-    </div>
-    <div class="footer-meta-block"><div>40°42′45″N</div><div>74°00′21″W</div></div>
+    </nav>
   </div>
-  <div class="footer-credits">
-    <small>© 2026 Gold Shore Labs. All rights reserved. goldshore.ai · <a href="/legal/privacy">Privacy</a> · <a href="/legal/">Security</a> · <a href="/legal/terms">Terms</a></small>
+  <div class="gs-theme-footer__credits">
+    <small>© 2026 Gold Shore Labs. All rights reserved.</small>
+    <div><a href={publicUrl('/legal/privacy/')}>Privacy</a><a href={publicUrl('/legal/')}>Security</a><a href={publicUrl('/legal/terms/')}>Terms</a></div>
   </div>
 </footer>
+
+<script>
+  const initializeTieredFooter = () => {
+    document.querySelectorAll('[data-tiered-footer]').forEach((footer) => {
+      if (!(footer instanceof HTMLElement) || footer.dataset.ready === 'true') return;
+      footer.dataset.ready = 'true';
+      const tiers = [...footer.querySelectorAll('details')];
+      tiers.forEach((tier) => tier.addEventListener('toggle', () => {
+        if (!tier.open) return;
+        tiers.forEach((other) => { if (other !== tier) other.open = false; });
+      }));
+    });
+  };
+  initializeTieredFooter();
+  document.addEventListener('astro:page-load', initializeTieredFooter);
+</script>

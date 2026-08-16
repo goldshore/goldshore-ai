@@ -4,7 +4,6 @@ import type { SessionUser } from './lib/sessions';
 type ResourceBindings = {
   KV: KVNamespace;
   CONTROL_LOGS?: KVNamespace;
-  RISK_RADAR_CACHE?: KVNamespace;
   TRADING_KV?: KVNamespace;
   PLATFORM_DB: D1Database;
   AUDIT_DB?: D1Database;
@@ -14,6 +13,7 @@ type ResourceBindings = {
   RISK_RADAR_DB?: D1Database;
   TELEMETRY_DB?: D1Database;
   GS_ASSETS: R2Bucket;
+  HOSTGATOR_DB?: Hyperdrive;
   MAIL_ARCHIVE?: R2Bucket;
   RISK_RADAR_R2?: R2Bucket;
   TELEMETRY?: R2Bucket;
@@ -35,25 +35,32 @@ type RuntimeSecrets = {
   ANTHROPIC_GATEWAY_ID?: string;
   ANTHROPIC_GATEWAY_VERIFIED?: string;
   API_VERSION?: string;
-  CF_AIG_TOKEN?: string;
-  CF_WEBHOOK_TOKEN?: string;
-  CF_VERSION_METADATA?: { id: string };
+  DEPLOY_SHA?: string;
+  GIT_SHA?: string;
+  CONTROL_ADMIN_ROLES?: string;
+  MAIL_FORWARD_TO?: string;
+  FORWARD_TO?: string;
+  MAIL_BLOCKED_SENDERS?: string;
+  MAIL_ALLOWED_RECIPIENTS?: string;
+  AGENT?: Fetcher;
+  API_ORIGIN?: string;
+  CLOUDFLARE_API_TOKEN?: string;
+  GITHUB_TOKEN?: string;
+  GITHUB_API_TOKEN?: string;
+  GH_TOKEN?: string;
   CLOUDFLARE_ACCOUNT_ID?: string;
   CLOUDFLARE_API_TOKEN?: string;
-  CLOUDFLARE_BUILD_API_TOKEN?: string;
   CLOUDFLARE_PAGES_PROJECT?: string;
   CLOUDFLARE_ZONE_ID?: string;
   CLOUDFLARE_ZONE_NAME?: string;
-  CONTROL_ADMIN_ROLES?: string;
-  CONTROL_SYNC_TOKEN?: string;
-  DEPLOY_SHA?: string;
+  CLOUDFLARE_PAGES_PROJECT?: string;
+  ADMIN_URL?: string;
+  ENV?: string;
   DEV_AUTH_BYPASS?: string;
-  DISCORD_WEBHOOK_URL?: string;
-  FORWARD_TO?: string;
-  GEMINI_API_KEY?: string;
-  GH_TOKEN?: string;
-  GIT_SHA?: string;
-  GITHUB_API_TOKEN?: string;
+  GOOGLE_OAUTH_CLIENT_ID?: string;
+  GOOGLE_OAUTH_CLIENT_SECRET?: string;
+  GOOGLE_OAUTH_REDIRECT_URI?: string;
+  GOOGLE_BUSINESS_OAUTH_REDIRECT_URI?: string;
   GITHUB_CLIENT_ID?: string;
   GITHUB_CLIENT_SECRET?: string;
   GITHUB_TOKEN?: string;
@@ -71,7 +78,6 @@ type RuntimeSecrets = {
   GOOGLE_GSC_REFRESH_TOKEN?: string;
   GOOGLE_GSC_SITE_URL?: string;
   GOOGLE_OAUTH_CLIENT_SECRET?: string;
-  GOOGLE_WEBHOOK_TOKEN?: string;
   GOLDCLAW_SANDBOX_API_TOKEN?: string;
   GOLDCLAW_SANDBOX_API_URL?: string;
   GOLDCLAW_SANDBOX_PROVIDER?: string;
@@ -125,6 +131,7 @@ type RuntimeSecrets = {
 };
 
 type RuntimeVariables = {
+  AI_SEARCH_PUBLIC_ENDPOINT?: string;
   ADMIN_URL?: string;
   API_ORIGIN?: string;
   CLOUDFLARE_ACCESS_APPLICATION?: string;

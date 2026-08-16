@@ -12,6 +12,7 @@ main = "./src/worker.ts"
 [assets]
 directory = "./dist"
 binding = "ASSETS"
+run_worker_first = true
 
 # SESSION: KV namespace backing Astro sessions for auth state. The Cloudflare
 # adapter emits this binding whenever no session driver is configured, and
@@ -27,14 +28,14 @@ binding = "ASSETS"
 # Workflow bindings — transactional data stays behind gs-api.
 [[kv_namespaces]]
 binding = "SESSION"
-id = "805bff3293c2483facc5225e6ff9af60"
+id = "7bf44b9bf6cd4ca69cd99573bbaffa52"
 
 [vars]
 ENV = "production"
 PUBLIC_ENV = "production"
 PUBLIC_API = "https://api.goldshore.ai"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-CLOUDFLARE_ACCESS_AUDIENCE = "9b97506a6f0d65a060dda7fa33aa66f6cee4112898fd45e5cf4da1d25db996c0"
+CLOUDFLARE_ACCESS_AUDIENCE = "c520a7647223b49b20fbe5be240772863eb684b97b57c08955b6104c58170db9"
 CLOUDFLARE_ACCESS_APPLICATION = "admin-production"
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
 
@@ -66,14 +67,14 @@ binding = "IMAGES"
 # and Cloudflare provisions a replacement namespace.
 [[env.prod.kv_namespaces]]
 binding = "SESSION"
-id = "805bff3293c2483facc5225e6ff9af60"
+id = "7bf44b9bf6cd4ca69cd99573bbaffa52"
 
 [env.prod.vars]
 ENV = "production"
 PUBLIC_ENV = "production"
 PUBLIC_API = "https://api.goldshore.ai"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-CLOUDFLARE_ACCESS_AUDIENCE = "9b97506a6f0d65a060dda7fa33aa66f6cee4112898fd45e5cf4da1d25db996c0"
+CLOUDFLARE_ACCESS_AUDIENCE = "c520a7647223b49b20fbe5be240772863eb684b97b57c08955b6104c58170db9"
 CLOUDFLARE_ACCESS_APPLICATION = "admin-production"
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
 

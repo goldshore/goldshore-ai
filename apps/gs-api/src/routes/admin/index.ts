@@ -4,7 +4,34 @@ import { Env, Variables } from '../../types';
 import { searchGitHubFrameworks } from '../../lib/github-framework-search';
 import { rankFrameworksWithClaude } from '../../lib/claude-framework-ranker';
 import { validateWranglerConfig } from '../../lib/wrangler-validator';
+import email from './email';
+import entries from './entries';
+import users from './users';
+import settings from './settings';
+import secrets from './secrets';
+import tokens from './tokens';
+import cockpit from './merge-cockpit';
+import repoHealth from './repo-health';
+import chat from './chat';
 
+const admin = new Hono<{
+  Bindings: Env;
+  Variables: Variables;
+}>();
+
+// Mount admin feature sub-routers
+admin.route('/email', email);
+admin.route('/entries', entries);
+admin.route('/users', users);
+admin.route('/settings', settings);
+admin.route('/secrets', secrets);
+admin.route('/tokens', tokens);
+admin.route('/merge-cockpit', cockpit);
+admin.route('/repo-health', repoHealth);
+admin.route('/chat', chat);
+// admin.route('/workers', workers); // TODO: Phase 2 - Cloudflare Worker management
+
+// Deployment routes (existing)
 const deploy = new Hono<{
   Bindings: Env;
   Variables: Variables;
@@ -283,4 +310,7 @@ deploy.post('/create-pr', async (c) => {
   });
 });
 
-export default deploy;
+// Mount deployment routes
+admin.route('/deployments', deploy);
+
+export default admin;

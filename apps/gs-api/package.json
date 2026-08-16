@@ -21,16 +21,17 @@
     "@goldshore/shared": "workspace:^",
     "@goldshore/utils": "workspace:^",
     "@types/sanitize-html": "^2.16.0",
-    "hono": "^4.12.34",
+    "hono": "^4.13.2",
+    "mysql2": "3.23.3",
     "openai": "^7.4.0",
     "postal-mime": "^3.0.0",
     "safe-stable-stringify": "^2.5.0",
-    "sanitize-html": "^2.17.6"
+    "sanitize-html": "^2.17.7"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20260726.1",
+    "@cloudflare/workers-types": "^5.20260813.1",
     "tsx": "^4.7.1",
-    "typescript": "^5.4.0",
-    "wrangler": "^4.112.0"
+    "typescript": "^7.0.2",
+    "wrangler": "^4.123.0"
   }
 }

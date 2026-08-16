@@ -36,7 +36,7 @@ describe('mcp route', () => {
     assert.equal(body.result.serverInfo.name, 'goldshore-mcp');
   });
 
-  it('tools/list advertises the four Cloudflare read tools with object schemas', async () => {
+  it('tools/list advertises Cloudflare inventory and GoldShore knowledge tools with object schemas', async () => {
     const body = (await (await rpc({ jsonrpc: '2.0', id: 2, method: 'tools/list' })).json()) as any;
     assert.deepEqual(
       body.result.tools.map((t: { name: string }) => t.name).sort(),
@@ -45,9 +45,22 @@ describe('mcp route', () => {
         'cloudflare_list_kv_namespaces',
         'cloudflare_list_r2_buckets',
         'cloudflare_list_workers',
+        'goldshore_search_knowledge',
       ],
     );
     assert.ok(body.result.tools.every((t: { inputSchema: { type: string } }) => t.inputSchema.type === 'object'));
+  });
+
+  it('searches indexed GoldShore knowledge through the configured AI Search endpoint', async () => {
+    const stub = mock.method(globalThis, 'fetch', async () => new Response(JSON.stringify({
+      success: true,
+      result: { chunks: [{ text: 'gs-api owns email.', score: 0.91, item: { key: 'architecture.md' } }] },
+    }), { status: 200 }));
+    const body = (await (await rpc({ jsonrpc: '2.0', id: 12, method: 'tools/call', params: {
+      name: 'goldshore_search_knowledge', arguments: { query: 'Who owns email?' },
+    } })).json()) as any;
+    assert.match(body.result.content[0].text, /gs-api owns email/);
+    assert.match(String(stub.mock.calls[0].arguments[0]), /search\.ai\.cloudflare\.com\/search/);
   });
 
   for (const [name, expected] of [
