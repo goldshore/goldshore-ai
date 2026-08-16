@@ -39,6 +39,7 @@ export default function UsersManager({ jwtToken, initialUsers }: UsersManagerPro
 
   const fetchUsers = async (newOffset: number) => {
     setLoading(true);
+    setAddError(null);
     try {
       const params = new URLSearchParams({
         offset: String(newOffset),
@@ -56,9 +57,21 @@ export default function UsersManager({ jwtToken, initialUsers }: UsersManagerPro
         setUsers(data.items || []);
         setTotal(data.total || 0);
         setOffset(newOffset);
+      } else {
+        const errorMsg = `HTTP ${response.status}: Failed to fetch users`;
+        console.error(`[UsersManager] ${errorMsg}`);
+        try {
+          const errorData = await response.json();
+          console.error('[UsersManager] Error details:', errorData);
+          setAddError(errorData.message || errorMsg);
+        } catch {
+          setAddError(errorMsg);
+        }
       }
-    } catch (error) {
-      console.error('Failed to fetch users:', error);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      console.error('[UsersManager] Network error:', err);
+      setAddError(`Connection failed: ${message}`);
     } finally {
       setLoading(false);
     }
@@ -94,6 +107,7 @@ export default function UsersManager({ jwtToken, initialUsers }: UsersManagerPro
   const handleDeleteUser = async (userId: string) => {
     if (!confirm('Are you sure you want to remove this user?')) return;
 
+    setAddError(null);
     try {
       const response = await fetch(`/api/admin/users/${userId}`, {
         method: 'DELETE',
@@ -105,13 +119,26 @@ export default function UsersManager({ jwtToken, initialUsers }: UsersManagerPro
       if (response.ok) {
         await fetchUsers(offset);
         setSelectedUser(null);
+      } else {
+        const errorMsg = `HTTP ${response.status}: Failed to delete user`;
+        console.error(`[UsersManager] ${errorMsg}`, { userId });
+        try {
+          const errorData = await response.json();
+          console.error('[UsersManager] Error details:', errorData);
+          setAddError(errorData.message || errorMsg);
+        } catch {
+          setAddError(errorMsg);
+        }
       }
-    } catch (error) {
-      console.error('Error deleting user:', error);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      console.error('[UsersManager] Delete failed:', err, { userId });
+      setAddError(`Connection failed: ${message}`);
     }
   };
 
   const handleResendInvite = async (userId: string) => {
+    setAddError(null);
     try {
       const response = await fetch(`/api/admin/users/${userId}/resend-invite`, {
         method: 'POST',
@@ -122,14 +149,40 @@ export default function UsersManager({ jwtToken, initialUsers }: UsersManagerPro
 
       if (response.ok) {
         await fetchUsers(offset);
+      } else {
+        const errorMsg = `HTTP ${response.status}: Failed to resend invite`;
+        console.error(`[UsersManager] ${errorMsg}`, { userId });
+        try {
+          const errorData = await response.json();
+          console.error('[UsersManager] Error details:', errorData);
+          setAddError(errorData.message || errorMsg);
+        } catch {
+          setAddError(errorMsg);
+        }
       }
-    } catch (error) {
-      console.error('Error resending invite:', error);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      console.error('[UsersManager] Resend invite failed:', err, { userId });
+      setAddError(`Connection failed: ${message}`);
     }
   };
 
   return (
     <div className="space-y-4">
+      {addError && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded text-red-700 text-sm flex items-center justify-between">
+          <div>
+            <strong>Error:</strong> {addError}
+          </div>
+          <button
+            onClick={() => setAddError(null)}
+            className="ml-2 text-red-700 hover:text-red-900 font-bold"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Users ({total})</h3>
         <button

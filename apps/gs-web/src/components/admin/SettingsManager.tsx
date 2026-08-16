@@ -13,6 +13,7 @@ export default function SettingsManager({ jwtToken, initialSettings }: SettingsM
   const [success, setSuccess] = useState<string | null>(null);
 
   const handleSaveSetting = async (key: string, value: any) => {
+    setError(null);
     try {
       const response = await fetch(`/api/admin/settings`, {
         method: 'POST',
@@ -28,16 +29,27 @@ export default function SettingsManager({ jwtToken, initialSettings }: SettingsM
         setSuccess(`Setting "${key}" updated successfully`);
         setTimeout(() => setSuccess(null), 3000);
       } else {
-        setError('Failed to save setting');
+        const errorMsg = `HTTP ${response.status}: Failed to save setting`;
+        console.error(`[SettingsManager] ${errorMsg}`, { key, value });
+        try {
+          const errorData = await response.json();
+          console.error('[SettingsManager] Error details:', errorData);
+          setError(errorData.message || errorMsg);
+        } catch {
+          setError(errorMsg);
+        }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      console.error('[SettingsManager] Save failed:', err, { key, value });
+      setError(`Connection failed: ${message}`);
     }
   };
 
   const handleDeleteSetting = async (key: string) => {
     if (!confirm(`Are you sure you want to delete the setting "${key}"?`)) return;
 
+    setError(null);
     try {
       const response = await fetch(`/api/admin/settings?key=${encodeURIComponent(key)}`, {
         method: 'DELETE',
@@ -54,9 +66,21 @@ export default function SettingsManager({ jwtToken, initialSettings }: SettingsM
         });
         setSuccess(`Setting "${key}" deleted`);
         setTimeout(() => setSuccess(null), 3000);
+      } else {
+        const errorMsg = `HTTP ${response.status}: Failed to delete setting`;
+        console.error(`[SettingsManager] ${errorMsg}`, { key });
+        try {
+          const errorData = await response.json();
+          console.error('[SettingsManager] Error details:', errorData);
+          setError(errorData.message || errorMsg);
+        } catch {
+          setError(errorMsg);
+        }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      console.error('[SettingsManager] Delete failed:', err, { key });
+      setError(`Connection failed: ${message}`);
     }
   };
 
