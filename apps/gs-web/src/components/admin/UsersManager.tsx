@@ -1,329 +1,129 @@
 import React, { useState } from 'react';
-import { Table } from './Table';
-import { Pagination } from './Pagination';
-import { Form } from './Form';
-import { Modal } from './Modal';
+import DataTable from './DataTable';
+import Modal from './Modal';
+import FormField from './FormField';
 
-interface AdminUser {
+interface User {
   id: string;
   email: string;
-  name: string;
-  role: string;
-  status: string;
+  role: 'admin' | 'moderator' | 'viewer';
+  status: 'active' | 'inactive' | 'suspended';
   created_at: string;
-  invited_at?: string;
-  accepted_at?: string;
-  last_login?: string;
 }
 
-interface UsersManagerProps {
-  jwtToken: string;
-  initialUsers: {
-    items: AdminUser[];
-    total: number;
-    offset: number;
-    limit: number;
-    error?: string | null;
-  };
-}
+export default function UsersManager() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({ email: '', role: 'viewer' });
+  const [isSaving, setIsSaving] = useState(false);
 
-export default function UsersManager({ jwtToken, initialUsers }: UsersManagerProps) {
-  const [users, setUsers] = useState<AdminUser[]>(initialUsers.items || []);
-  const [total, setTotal] = useState(initialUsers.total || 0);
-  const [offset, setOffset] = useState(initialUsers.offset || 0);
-  const [limit, setLimit] = useState(initialUsers.limit || 25);
-  const [loading, setLoading] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [addError, setAddError] = useState<string | null>(null);
-
-  const fetchUsers = async (newOffset: number) => {
-    setLoading(true);
-    setAddError(null);
+  const handleAddUser = async () => {
+    setIsSaving(true);
     try {
-      const params = new URLSearchParams({
-        offset: String(newOffset),
-        limit: String(limit),
+      const response = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
       });
-
-      const response = await fetch(`/api/admin/users?${params}`, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
       if (response.ok) {
-        const data = await response.json();
-        setUsers(data.items || []);
-        setTotal(data.total || 0);
-        setOffset(newOffset);
-      } else {
-        const errorMsg = `HTTP ${response.status}: Failed to fetch users`;
-        console.error(`[UsersManager] ${errorMsg}`);
-        try {
-          const errorData = await response.json();
-          console.error('[UsersManager] Error details:', errorData);
-          setAddError(errorData.message || errorMsg);
-        } catch {
-          setAddError(errorMsg);
-        }
+        setFormData({ email: '', role: 'viewer' });
+        setIsModalOpen(false);
+        window.location.reload();
       }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
-      console.error('[UsersManager] Network error:', err);
-      setAddError(`Connection failed: ${message}`);
     } finally {
-      setLoading(false);
+      setIsSaving(false);
     }
   };
 
-  const handleAddUser = async (data: Record<string, any>) => {
-    try {
-      const response = await fetch(`/api/admin/users`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: data.email,
-          name: data.name,
-          role: data.role || 'moderator',
-        }),
-      });
-
-      if (response.ok) {
-        setShowAddModal(false);
-        setAddError(null);
-        await fetchUsers(offset);
-      } else {
-        const error = await response.json();
-        setAddError(error.error || 'Failed to create user');
-      }
-    } catch (error) {
-      setAddError(error instanceof Error ? error.message : 'An error occurred');
-    }
-  };
-
-  const handleDeleteUser = async (userId: string) => {
-    if (!confirm('Are you sure you want to remove this user?')) return;
-
-    setAddError(null);
-    try {
-      const response = await fetch(`/api/admin/users/${userId}`, {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        await fetchUsers(offset);
-        setSelectedUser(null);
-      } else {
-        const errorMsg = `HTTP ${response.status}: Failed to delete user`;
-        console.error(`[UsersManager] ${errorMsg}`, { userId });
-        try {
-          const errorData = await response.json();
-          console.error('[UsersManager] Error details:', errorData);
-          setAddError(errorData.message || errorMsg);
-        } catch {
-          setAddError(errorMsg);
-        }
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
-      console.error('[UsersManager] Delete failed:', err, { userId });
-      setAddError(`Connection failed: ${message}`);
-    }
-  };
-
-  const handleResendInvite = async (userId: string) => {
-    setAddError(null);
-    try {
-      const response = await fetch(`/api/admin/users/${userId}/resend-invite`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        await fetchUsers(offset);
-      } else {
-        const errorMsg = `HTTP ${response.status}: Failed to resend invite`;
-        console.error(`[UsersManager] ${errorMsg}`, { userId });
-        try {
-          const errorData = await response.json();
-          console.error('[UsersManager] Error details:', errorData);
-          setAddError(errorData.message || errorMsg);
-        } catch {
-          setAddError(errorMsg);
-        }
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
-      console.error('[UsersManager] Resend invite failed:', err, { userId });
-      setAddError(`Connection failed: ${message}`);
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return 'bg-red-100 text-red-800';
+      case 'moderator':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-blue-100 text-blue-800';
     }
   };
 
   return (
-    <div className="space-y-4">
-      {addError && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded text-red-700 text-sm flex items-center justify-between">
-          <div>
-            <strong>Error:</strong> {addError}
-          </div>
-          <button
-            onClick={() => setAddError(null)}
-            className="ml-2 text-red-700 hover:text-red-900 font-bold"
-          >
-            ✕
-          </button>
-        </div>
-      )}
-
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Users ({total})</h3>
+        <h1 className="text-3xl font-bold flex items-center gap-2">
+          <Users size={32} /> User Management
+        </h1>
         <button
-          onClick={() => setShowAddModal(true)}
-          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700"
+          onClick={() => setIsModalOpen(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
         >
-          + Add User
+          <Plus size={20} /> Add User
         </button>
       </div>
 
-      <Table<AdminUser>
+      <DataTable<User>
         columns={[
-          { key: 'name', label: 'Name' },
           { key: 'email', label: 'Email' },
-          {
-            key: 'role',
+          { 
+            key: 'role', 
             label: 'Role',
-            render: (role) => <span className="capitalize font-semibold">{role}</span>,
+            render: (v) => (
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${getRoleColor(v)}`}>
+                {v}
+              </span>
+            ),
           },
           {
             key: 'status',
             label: 'Status',
-            render: (status) => (
-              <span
-                className={`px-2 py-1 text-xs font-semibold rounded ${
-                  status === 'active'
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-yellow-100 text-yellow-800'
-                }`}
-              >
-                {status}
+            render: (v) => (
+              <span className={`px-3 py-1 rounded text-sm font-medium ${v === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                {v}
               </span>
             ),
           },
+          { key: 'created_at', label: 'Joined', render: (v) => new Date(v).toLocaleDateString() },
         ]}
-        data={users}
-        loading={loading}
-        onRowClick={setSelectedUser}
-        emptyMessage="No users found"
-      />
-
-      <Pagination
-        total={total}
-        offset={offset}
-        limit={limit}
-        onOffsetChange={fetchUsers}
-      />
-
-      {selectedUser && (
-        <div className="gs-card space-y-4">
-          <h3 className="text-lg font-semibold">User Details</h3>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <div>
-                <p className="text-sm gs-text-subtle">Name</p>
-                <p className="font-semibold">{selectedUser.name}</p>
-              </div>
-              <div>
-                <p className="text-sm gs-text-subtle">Email</p>
-                <p className="font-mono text-sm">{selectedUser.email}</p>
-              </div>
-              <div>
-                <p className="text-sm gs-text-subtle">Role</p>
-                <p className="font-semibold capitalize">{selectedUser.role}</p>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div>
-                <p className="text-sm gs-text-subtle">Status</p>
-                <p className="font-semibold capitalize">{selectedUser.status}</p>
-              </div>
-              <div>
-                <p className="text-sm gs-text-subtle">Created</p>
-                <p>{new Date(selectedUser.created_at).toLocaleString()}</p>
-              </div>
-              {selectedUser.invited_at && (
-                <div>
-                  <p className="text-sm gs-text-subtle">Invited</p>
-                  <p>{new Date(selectedUser.invited_at).toLocaleString()}</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {selectedUser.status !== 'active' && (
-              <button
-                onClick={() => handleResendInvite(selectedUser.id)}
-                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded hover:bg-green-700"
-              >
-                Resend Invite
-              </button>
-            )}
-            <button
-              onClick={() => handleDeleteUser(selectedUser.id)}
-              className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700"
-            >
-              Remove User
+        endpoint="/api/admin/users"
+        title="Admin Users"
+        actions={(row) => (
+          <div className="flex gap-2">
+            <button className="text-blue-500 hover:text-blue-700" title="Change permissions">
+              <Lock size={18} />
             </button>
-            <button
-              onClick={() => setSelectedUser(null)}
-              className="px-4 py-2 text-sm font-medium border rounded gs-text-subtle hover:bg-opacity-50"
-            >
-              Close
+            <button className="text-red-500 hover:text-red-700" title="Remove user">
+              <Trash2 size={18} />
             </button>
           </div>
-        </div>
-      )}
+        )}
+      />
 
-      <Modal isOpen={showAddModal} title="Add New User" onClose={() => setShowAddModal(false)}>
-        <Form
-          fields={[
-            {
-              name: 'email',
-              label: 'Email',
-              type: 'email',
-              required: true,
-              placeholder: 'user@example.com',
-            },
-            {
-              name: 'name',
-              label: 'Name',
-              type: 'text',
-              required: true,
-              placeholder: 'John Doe',
-            },
-            {
-              name: 'role',
-              label: 'Role',
-              type: 'select',
-              required: true,
-              options: [
-                { label: 'Admin', value: 'admin' },
-                { label: 'Moderator', value: 'moderator' },
-                { label: 'Viewer', value: 'viewer' },
-              ],
-            },
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Add User"
+        onSubmit={handleAddUser}
+        isLoading={isSaving}
+      >
+        <FormField
+          label="Email Address"
+          name="email"
+          type="email"
+          value={formData.email}
+          onChange={(v) => setFormData({ ...formData, email: String(v) })}
+          placeholder="user@example.com"
+          required
+        />
+        <FormField
+          label="Role"
+          name="role"
+          type="select"
+          value={formData.role}
+          onChange={(v) => setFormData({ ...formData, role: String(v) })}
+          options={[
+            { value: 'viewer', label: 'Viewer (read-only)' },
+            { value: 'moderator', label: 'Moderator (limited write)' },
+            { value: 'admin', label: 'Admin (full access)' },
           ]}
-          onSubmit={handleAddUser}
-          submitLabel="Create User"
-          error={addError || undefined}
+          required
         />
       </Modal>
     </div>
