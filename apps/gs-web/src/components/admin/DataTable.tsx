@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Loader } from 'lucide-react';
 
 interface Column<T> {
   key: keyof T;
@@ -16,7 +15,7 @@ interface DataTableProps<T> {
   actions?: (row: T) => React.ReactNode;
 }
 
-export function DataTable<T extends { id?: string }>({
+export default function DataTable<T extends { id?: string }>({
   columns,
   endpoint,
   pageSize = 10,
@@ -62,8 +61,8 @@ export function DataTable<T extends { id?: string }>({
       )}
 
       {loading ? (
-        <div className="flex justify-center py-8">
-          <Loader className="animate-spin text-blue-500" />
+        <div className="flex justify-center py-8 text-blue-500">
+          Loading...
         </div>
       ) : data.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
@@ -112,7 +111,7 @@ export function DataTable<T extends { id?: string }>({
                 disabled={page === 1}
                 className="p-2 hover:bg-gray-100 disabled:opacity-50 rounded"
               >
-                <ChevronLeft size={20} />
+                ← Previous
               </button>
               <span className="px-4 py-2">
                 {page} / {totalPages || 1}
@@ -122,7 +121,7 @@ export function DataTable<T extends { id?: string }>({
                 disabled={page >= totalPages}
                 className="p-2 hover:bg-gray-100 disabled:opacity-50 rounded"
               >
-                <ChevronRight size={20} />
+                Next →
               </button>
             </div>
           </div>
