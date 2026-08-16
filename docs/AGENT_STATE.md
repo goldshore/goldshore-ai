@@ -273,9 +273,9 @@ blockers:
 
 | Commit SHA | Message | Agent | Phase |
 |-----------|---------|-------|-------|
-| (pending) | `fix: add MCP_WORKERS_PROMPT KV binding to gs-api` | claude | 4 |
+| f8adc163 | `fix: add comprehensive error logging to admin frontend` | claude | 4 |
+| e979d247 | `fix: add MCP_WORKERS_PROMPT KV binding to gs-api` | claude | 4 |
 | (pending) | `fix: verify proxyApiRequest target and auth headers` | claude | 4 |
-| (pending) | `fix: add error logging to admin components` | claude | 4 |
 | (pending) | (Codex will add schema cleanup) | codex | 4 |
 
 ---
