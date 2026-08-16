@@ -112,7 +112,7 @@ CREATE TABLE IF NOT EXISTS contractors (
 
 CREATE INDEX idx_contractors_org ON contractors(org_id);
 CREATE INDEX idx_contractors_status ON contractors(status);
-CREATE INDEX idx_contractors_expires ON contractors(expires_at) WHERE status = 'active';
+CREATE INDEX idx_contractors_expires ON contractors(expires_at);
 CREATE INDEX idx_contractors_email ON contractors(email);
 
 -- ==============================================================================
@@ -143,7 +143,7 @@ CREATE TABLE IF NOT EXISTS admin_emails (
 CREATE INDEX idx_admin_emails_recipient ON admin_emails(recipient_email);
 CREATE INDEX idx_admin_emails_status ON admin_emails(status);
 CREATE INDEX idx_admin_emails_created ON admin_emails(created_at DESC);
-CREATE INDEX idx_admin_emails_retry ON admin_emails(retry_at) WHERE status = 'failed';
+CREATE INDEX idx_admin_emails_retry ON admin_emails(retry_at);
 CREATE INDEX idx_admin_emails_message_id ON admin_emails(message_id);
 
 CREATE TABLE IF NOT EXISTS admin_email_templates (
@@ -217,7 +217,7 @@ CREATE TABLE IF NOT EXISTS admin_secrets (
 CREATE INDEX idx_admin_secrets_key_prefix ON admin_secrets(key_prefix);
 CREATE INDEX idx_admin_secrets_status ON admin_secrets(status);
 CREATE INDEX idx_admin_secrets_type ON admin_secrets(type);
-CREATE INDEX idx_admin_secrets_expires ON admin_secrets(expires_at) WHERE status = 'active';
+CREATE INDEX idx_admin_secrets_expires ON admin_secrets(expires_at);
 
 CREATE TABLE IF NOT EXISTS admin_workers (
   id TEXT PRIMARY KEY,
@@ -633,7 +633,7 @@ CREATE TABLE IF NOT EXISTS data_sync_log (
 );
 
 CREATE INDEX idx_data_sync_log_status ON data_sync_log(sync_status);
-CREATE INDEX idx_data_sync_log_created ON data_sync_log(created_at DESC);
+CREATE INDEX idx_data_sync_log_created ON data_sync_log(created_at);
 
 CREATE TABLE IF NOT EXISTS platform_config (
   key TEXT PRIMARY KEY,
@@ -681,26 +681,26 @@ VALUES
 -- Map admin role to all permissions
 INSERT OR IGNORE INTO admin_role_permissions (id, role_id, permission_id)
 SELECT
-  'rolep-' || hex(randomblob(8)),
+  'rolep-admin-' || admin_permissions.id,
   'role-admin',
-  id
+  admin_permissions.id
 FROM admin_permissions;
 
 -- Map moderator to read/limited permissions
 INSERT OR IGNORE INTO admin_role_permissions (id, role_id, permission_id)
 SELECT
-  'rolep-' || hex(randomblob(8)),
+  'rolep-mod-' || admin_permissions.id,
   'role-moderator',
-  id
+  admin_permissions.id
 FROM admin_permissions
-WHERE action LIKE '%.create' OR action = 'read';
+WHERE action LIKE '%.create' OR resource = 'audit';
 
 -- Map viewer to read-only
 INSERT OR IGNORE INTO admin_role_permissions (id, role_id, permission_id)
 SELECT
-  'rolep-' || hex(randomblob(8)),
+  'rolep-viewer-' || admin_permissions.id,
   'role-viewer',
-  id
+  admin_permissions.id
 FROM admin_permissions
 WHERE action = 'read' OR resource = 'audit';
 
