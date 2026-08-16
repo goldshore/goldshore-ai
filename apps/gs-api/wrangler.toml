@@ -74,12 +74,12 @@ MAIL_FROM_NAME = "GoldShore"
 TURNSTILE_SITEKEY = "0x4AAAAAAEOjS4lrG1IT_-Fs"
 
 # ── SECRETS (set in Cloudflare dashboard, not here) ──────────────────────────────────
-# CLOUDFLARE_ACCOUNT_ID is your Cloudflare account ID for API operations.
+# CF_ACCOUNT_ID is your Cloudflare account ID for API operations.
 #   Value: <32-character hex from https://dash.cloudflare.com>
 #   Example: f77de112d2019e5456a3198a8bb50bd2
 # Required for admin dashboard Worker management, DNS operations, KV access.
 
-# CF_API_TOKEN is a secret for Cloudflare API authentication.
+# CF_TOKEN is a secret for Cloudflare API authentication.
 #   Value: <API token from https://dash.cloudflare.com/profile/api-tokens>
 #   Permissions: Workers Scripts (Edit), Worker Routes (Edit), Workers KV (Edit), Zone Settings (Read)
 # Required for admin operations against Cloudflare resources (workers, DNS, KV).

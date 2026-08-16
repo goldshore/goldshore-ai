@@ -105,7 +105,7 @@ const ACCOUNT_ID_SCHEMA = {
   properties: {
     account_id: {
       type: 'string',
-      description: 'Cloudflare account ID (defaults to the CLOUDFLARE_ACCOUNT_ID binding)',
+      description: 'Cloudflare account ID (defaults to the CF_ACCOUNT_ID binding)',
     },
   },
   additionalProperties: false,
@@ -131,16 +131,16 @@ async function callTool(env: Env, tool: Tool, args: Record<string, unknown>) {
   const account =
     typeof args.account_id === 'string' && args.account_id.trim()
       ? args.account_id.trim()
-      : env.CLOUDFLARE_ACCOUNT_ID;
+      : env.CF_ACCOUNT_ID;
 
-  if (!account || !env.CLOUDFLARE_API_TOKEN) {
-    return text('Missing CLOUDFLARE_ACCOUNT_ID or CLOUDFLARE_API_TOKEN.', true);
+  if (!account || !env.CF_TOKEN) {
+    return text('Missing CF_ACCOUNT_ID or CF_TOKEN.', true);
   }
 
   let response: Response;
   try {
     response = await fetch(`${CF_API}/${tool.path(account)}`, {
-      headers: { Authorization: `Bearer ${env.CLOUDFLARE_API_TOKEN}` },
+      headers: { Authorization: `Bearer ${env.CF_TOKEN}` },
     });
   } catch (error) {
     return text(`Cloudflare API request failed: ${(error as Error).message}`, true);

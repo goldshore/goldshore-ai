@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import mcp from './mcp';
 import type { Env } from '../types';
 
-const env = { CLOUDFLARE_ACCOUNT_ID: 'acct123', CLOUDFLARE_API_TOKEN: 'tok' } as unknown as Env;
+const env = { CF_ACCOUNT_ID: 'acct123', CF_TOKEN: 'tok' } as unknown as Env;
 
 const rpc = (body: unknown, bindings: Env = env) =>
   mcp.request(
