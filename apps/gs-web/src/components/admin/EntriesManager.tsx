@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import DataTable from './DataTable';
 import Modal from './Modal';
 import FormField from './FormField';
+import AuthGuard from './AuthGuard';
+import { useAuthToken } from '../../utils/auth';
 
 interface Entry {
   id: string;
@@ -13,25 +15,36 @@ interface Entry {
   created_at: string;
 }
 
-export default function EntriesManager() {
+interface Props {
+  jwtToken?: string;
+  initialEntries?: Entry[];
+}
+
+function EntriesManagerContent({ jwtToken: _jwtToken }: Props) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', company: '', message: '' });
   const [isSaving, setIsSaving] = useState(false);
+  const { token } = useAuthToken();
 
   const handleSaveEntry = async () => {
     setIsSaving(true);
     try {
       const response = await fetch('/api/admin/entries', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify(formData),
       });
       if (response.ok) {
         setFormData({ name: '', email: '', company: '', message: '' });
         setIsModalOpen(false);
         window.location.reload();
+      } else if (response.status === 401) {
+        alert('Authentication expired. Please refresh the page.');
       }
     } finally {
       setIsSaving(false);
@@ -41,14 +54,12 @@ export default function EntriesManager() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <FileText size={32} /> Lead Entries
-        </h1>
+        <h2 className="text-3xl font-bold">Lead Entries</h2>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
         >
-          <Plus size={20} /> New Entry
+          + New Entry
         </button>
       </div>
 
@@ -72,10 +83,10 @@ export default function EntriesManager() {
               className="text-blue-500 hover:text-blue-700"
               title="View details"
             >
-              <Eye size={18} />
+              View
             </button>
             <button className="text-red-500 hover:text-red-700" title="Delete">
-              <Trash2 size={18} />
+              Delete
             </button>
           </div>
         )}
@@ -150,5 +161,13 @@ export default function EntriesManager() {
         </Modal>
       )}
     </div>
+  );
+}
+
+export default function EntriesManager(props: Props) {
+  return (
+    <AuthGuard>
+      <EntriesManagerContent {...props} />
+    </AuthGuard>
   );
 }
