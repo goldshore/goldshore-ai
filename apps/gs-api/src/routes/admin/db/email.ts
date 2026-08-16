@@ -106,7 +106,7 @@ export async function updateEmailStatus(
   }
 }
 
-export async function resendEmail(db: any, id: string) {
+export async function resendEmail(db: any, id: string, queue?: any) {
   try {
     // Mark as queued for retry
     await updateEmailStatus(db, id, 'queued');
@@ -117,7 +117,19 @@ export async function resendEmail(db: any, id: string) {
       throw new Error('Email not found');
     }
 
-    // TODO: Add to Cloudflare Queue for resending
+    // Queue for resending if queue is available
+    if (queue) {
+      await queue.send({
+        type: 'mail.resend',
+        jobId: id,
+        to: email.email_to,
+        subject: email.subject,
+        text: email.template,
+        html: email.template,
+        replyTo: email.email_from,
+      });
+    }
+
     return email;
   } catch (err) {
     throw new Error(`Failed to resend email: ${err}`);
