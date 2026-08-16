@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface Column<T> {
   key: keyof T;
@@ -13,7 +13,18 @@ interface DataTableProps<T> {
   pageSize?: number;
   title: string;
   actions?: (row: T) => React.ReactNode;
+  cacheTime?: number;
 }
+
+interface CacheEntry<T> {
+  data: T[];
+  total: number;
+  timestamp: number;
+}
+
+const requestCache = new Map<string, CacheEntry<any>>();
+const CACHE_TTL = 60000;
+let abortController: AbortController | null = null;
 
 export default function DataTable<T extends { id?: string }>({
   columns,
@@ -21,32 +32,107 @@ export default function DataTable<T extends { id?: string }>({
   pageSize = 10,
   title,
   actions,
+  cacheTime = CACHE_TTL,
 }: DataTableProps<T>) {
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [retryCount, setRetryCount] = useState(0);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
+      const cacheKey = `${endpoint}?page=${page}&limit=${pageSize}`;
+      const cached = requestCache.get(cacheKey);
+      const now = Date.now();
+
+      if (cached && now - cached.timestamp < cacheTime) {
+        if (isMountedRef.current) {
+          setData(cached.data);
+          setTotal(cached.total);
+          setLoading(false);
+          setError(null);
+        }
+        return;
+      }
+
+      abortController = new AbortController();
       setLoading(true);
       setError(null);
+
       try {
         const searchParams = new URLSearchParams({ page: String(page), limit: String(pageSize) });
-        const response = await fetch(`${endpoint}?${searchParams}`);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const response = await Promise.race([
+          fetch(`${endpoint}?${searchParams}`, {
+            signal: abortController.signal,
+          }),
+          new Promise<Response>((_, reject) =>
+            setTimeout(() => reject(new Error('Request timeout')), 10000)
+          ),
+        ]);
+
+        if (!response.ok) {
+          throw new Error(
+            response.status === 401
+              ? 'Authentication expired. Please refresh the page.'
+              : `Failed to load data (HTTP ${response.status})`
+          );
+        }
+
         const result = await response.json();
-        setData(result.data || []);
-        setTotal(result.total || 0);
+        const tableData = result.items || result.data || [];
+        const tableTotal = result.total || 0;
+
+        if (isMountedRef.current) {
+          requestCache.set(cacheKey, {
+            data: tableData,
+            total: tableTotal,
+            timestamp: now,
+          });
+
+          setData(tableData);
+          setTotal(tableTotal);
+          setError(null);
+          setRetryCount(0);
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch data');
+        if (err instanceof Error && err.name === 'AbortError') {
+          return;
+        }
+
+        const errorMsg = err instanceof Error ? err.message : 'Failed to fetch data';
+
+        if (isMountedRef.current) {
+          if (retryCount < 2 && !errorMsg.includes('Authentication')) {
+            setRetryCount((c) => c + 1);
+            setTimeout(fetchData, Math.pow(2, retryCount) * 1000);
+          } else {
+            setError(errorMsg);
+            setData([]);
+            setTotal(0);
+          }
+        }
       } finally {
-        setLoading(false);
+        if (isMountedRef.current) {
+          setLoading(false);
+        }
       }
     };
+
     fetchData();
-  }, [endpoint, page, pageSize]);
+
+    return () => {
+      abortController?.abort();
+    };
+  }, [endpoint, page, pageSize, cacheTime, retryCount]);
 
   const totalPages = Math.ceil(total / pageSize);
 
@@ -61,8 +147,25 @@ export default function DataTable<T extends { id?: string }>({
       )}
 
       {loading ? (
-        <div className="flex justify-center py-8 text-blue-500">
-          Loading...
+        <div className="border rounded-lg overflow-hidden">
+          <div className="w-full text-sm">
+            <div className="bg-gray-50 border-b">
+              <div className="px-4 py-3 flex gap-4">
+                {columns.map((col) => (
+                  <div key={String(col.key)} className="h-4 bg-gray-300 rounded animate-pulse flex-1" />
+                ))}
+                {actions && <div className="h-4 bg-gray-300 rounded animate-pulse w-20" />}
+              </div>
+            </div>
+            {Array.from({ length: Math.min(pageSize, 5) }).map((_, idx) => (
+              <div key={idx} className="border-b px-4 py-3 flex gap-4">
+                {columns.map((col) => (
+                  <div key={String(col.key)} className="h-4 bg-gray-200 rounded animate-pulse flex-1" />
+                ))}
+                {actions && <div className="h-4 bg-gray-200 rounded animate-pulse w-20" />}
+              </div>
+            ))}
+          </div>
         </div>
       ) : data.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
