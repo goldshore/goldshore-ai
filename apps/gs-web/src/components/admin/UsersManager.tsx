@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import DataTable from './DataTable';
 import Modal from './Modal';
 import FormField from './FormField';
+import AuthGuard from './AuthGuard';
+import { useAuthToken } from '../../utils/auth';
 
 interface User {
   id: string;
@@ -11,23 +13,34 @@ interface User {
   created_at: string;
 }
 
-export default function UsersManager() {
+interface Props {
+  jwtToken?: string;
+  initialUsers?: User[];
+}
+
+function UsersManagerContent({ jwtToken: _jwtToken }: Props) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({ email: '', role: 'viewer' });
   const [isSaving, setIsSaving] = useState(false);
+  const { token } = useAuthToken();
 
   const handleAddUser = async () => {
     setIsSaving(true);
     try {
       const response = await fetch('/api/admin/users', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify(formData),
       });
       if (response.ok) {
         setFormData({ email: '', role: 'viewer' });
         setIsModalOpen(false);
         window.location.reload();
+      } else if (response.status === 401) {
+        alert('Authentication expired. Please refresh the page.');
       }
     } finally {
       setIsSaving(false);
@@ -48,22 +61,20 @@ export default function UsersManager() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Users size={32} /> User Management
-        </h1>
+        <h2 className="text-3xl font-bold">User Management</h2>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
         >
-          <Plus size={20} /> Add User
+          + Add User
         </button>
       </div>
 
       <DataTable<User>
         columns={[
           { key: 'email', label: 'Email' },
-          { 
-            key: 'role', 
+          {
+            key: 'role',
             label: 'Role',
             render: (v) => (
               <span className={`px-3 py-1 rounded-full text-sm font-medium ${getRoleColor(v)}`}>
@@ -87,10 +98,10 @@ export default function UsersManager() {
         actions={(row) => (
           <div className="flex gap-2">
             <button className="text-blue-500 hover:text-blue-700" title="Change permissions">
-              <Lock size={18} />
+              Permissions
             </button>
             <button className="text-red-500 hover:text-red-700" title="Remove user">
-              <Trash2 size={18} />
+              Remove
             </button>
           </div>
         )}
@@ -127,5 +138,13 @@ export default function UsersManager() {
         />
       </Modal>
     </div>
+  );
+}
+
+export default function UsersManager(props: Props) {
+  return (
+    <AuthGuard>
+      <UsersManagerContent {...props} />
+    </AuthGuard>
   );
 }
