@@ -99,18 +99,35 @@ active_work_unit:
 
 ## Agreed Repair Plan (Phase 2 Complete)
 
-### Step 1: Verify Frontend → Backend Connection (CLAUDE)
-**Files**: `apps/gs-web/src/lib/api-proxy.ts`  
-**Precondition**: Find and read this file, verify `proxyApiRequest` logic  
-**Action**:
-- Confirm `locals.PUBLIC_API` resolves to `https://api.goldshore.ai`
-- Verify CF Access JWT is included in forwarded headers
-- Check if auth is being stripped somewhere
-- Add console.error for failed requests
+### Step 1: Verify Frontend → Backend Connection (CLAUDE) — 🔍 INVESTIGATING
+**Files**: `apps/gs-web/src/lib/api-proxy.ts`, `apps/gs-web/src/middleware.ts`, `packages/auth/verify.ts`  
+
+**Findings**:
+- ✅ `locals.PUBLIC_API` correctly set to `https://api.goldshore.ai` in wrangler.toml (line 36, 75)
+- ✅ Admin routes at `/api/admin/*` require `CF-Access-Jwt-Assertion` header (packages/auth/verify.ts:121)
+- ✅ Astro middleware validates CF Access JWT and sets `locals.adminSession` (middleware.ts:73-98)
+- ⚠️ **KEY ISSUE**: Frontend fetch requests may not include `CF-Access-Jwt-Assertion` header
+  - Header is added by Cloudflare edge only on authenticated initial request
+  - Subsequent browser fetch() calls must include it via cookie OR explicit forwarding
+  - proxyApiRequest copies all headers from browser request, but CF Access JWT might only be in edge headers
+
+**Action Taken**:
+- Added detailed auth header logging to proxyApiRequest (api-proxy.ts)
+- Logs `CF-Access-JWT-Assertion`, `CF-Access-Client-Id`, `Authorization` presence
+- Logs HTTP status on failures with auth context
+- Added adminSession logging to settings.ts GET/PUT (shows if middleware authorized the route)
+
+**Next Steps to Debug**:
+1. Deploy with logging and check browser console for `[proxyApiRequest]` output
+2. Check if `CF-Access-Jwt-Assertion` is present in logged auth headers
+3. If missing: verify Cloudflare Access policy is attached to admin.goldshore.ai routes
+4. If present but failing: check gs-api auth logs for why JWT verification is failing
+5. If auth headers missing: implement session-token or cookie-based auth fallback
 
 **Success Criteria**: 
-- Frontend requests show in backend logs (enable debug if needed)
-- Auth headers visible in gs-api logs
+- Logging shows CF-Access-Jwt-Assertion present in all admin API requests
+- gs-api auth middleware successfully verifies JWT on proxied requests
+- No 401/403 errors in subsequent admin operations
 
 ---
 
@@ -190,29 +207,21 @@ try {
 
 ---
 
-## Locked Files (Until 2026-08-15 16:00 UTC)
+## Locked Files (Until 2026-08-16 02:00 UTC)
 
 ```yaml
 locked_files:
   - path: "apps/gs-web/src/lib/api-proxy.ts"
     locked_by: "claude"
-    reason: "Investigating frontend→backend connection"
-    expires: "2026-08-15T16:00:00Z"
+    reason: "Investigating frontend→backend connection — auth header forwarding"
+    expires: "2026-08-16T02:00:00Z"
+    status: "debug logging added, ready for review"
     
-  - path: "apps/gs-web/src/components/admin/EmailManager.tsx"
+  - path: "apps/gs-web/src/pages/api/admin/settings.ts"
     locked_by: "claude"
-    reason: "Adding error logging"
-    expires: "2026-08-15T16:00:00Z"
-    
-  - path: "apps/gs-web/src/components/admin/UsersManager.tsx"
-    locked_by: "claude"
-    reason: "Adding error logging"
-    expires: "2026-08-15T16:00:00Z"
-    
-  - path: "apps/gs-web/src/components/admin/SettingsManager.tsx"
-    locked_by: "claude"
-    reason: "Adding error logging"
-    expires: "2026-08-15T16:00:00Z"
+    reason: "Adding adminSession validation logging"
+    expires: "2026-08-16T02:00:00Z"
+    status: "in progress"
 ```
 
 **Rule**: If Codex needs to edit these, post `[status:blocked]` comment in issue and wait for lock to expire (or Claude releases it).
@@ -275,7 +284,8 @@ blockers:
 |-----------|---------|-------|-------|
 | f8adc163 | `fix: add comprehensive error logging to admin frontend` | claude | 4 |
 | e979d247 | `fix: add MCP_WORKERS_PROMPT KV binding to gs-api` | claude | 4 |
-| (pending) | `fix: verify proxyApiRequest target and auth headers` | claude | 4 |
+| c30166ac | `fix: add auth header logging to frontend proxy for debugging API auth failures` | claude | 4 |
+| (pending) | `fix: add adminSession validation logging to admin API routes` | claude | 4 |
 | (pending) | (Codex will add schema cleanup) | codex | 4 |
 
 ---
