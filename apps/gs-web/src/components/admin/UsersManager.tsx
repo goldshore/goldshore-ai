@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Users, Plus, Trash2, Lock } from 'lucide-react';
-import { DataTable } from './DataTable';
-import { Modal } from './Modal';
-import { FormField } from './FormField';
+import DataTable from './DataTable';
+import Modal from './Modal';
+import FormField from './FormField';
 
 interface User {
   id: string;
@@ -12,7 +11,7 @@ interface User {
   created_at: string;
 }
 
-export function UsersManager() {
+export default function UsersManager() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({ email: '', role: 'viewer' });
   const [isSaving, setIsSaving] = useState(false);

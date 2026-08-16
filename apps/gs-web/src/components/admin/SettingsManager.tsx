@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Save, Loader } from 'lucide-react';
-import { FormField } from './FormField';
+import FormField from './FormField';
 
-export function SettingsManager() {
+export default function SettingsManager() {
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

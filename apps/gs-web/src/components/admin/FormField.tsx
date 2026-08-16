@@ -13,7 +13,7 @@ interface FormFieldProps {
   error?: string;
 }
 
-export function FormField({
+export default function FormField({
   label,
   name,
   type = 'text',

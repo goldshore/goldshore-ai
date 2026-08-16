@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { FileText, Plus, Trash2, Eye } from 'lucide-react';
-import { DataTable } from './DataTable';
-import { Modal } from './Modal';
-import { FormField } from './FormField';
+import DataTable from './DataTable';
+import Modal from './Modal';
+import FormField from './FormField';
 
 interface Entry {
   id: string;
@@ -14,7 +13,7 @@ interface Entry {
   created_at: string;
 }
 
-export function EntriesManager() {
+export default function EntriesManager() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);

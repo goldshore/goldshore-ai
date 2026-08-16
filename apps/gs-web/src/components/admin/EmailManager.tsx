@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Mail, Send, Trash2, Plus } from 'lucide-react';
-import { DataTable } from './DataTable';
-import { Modal } from './Modal';
-import { FormField } from './FormField';
+import DataTable from './DataTable';
+import Modal from './Modal';
+import FormField from './FormField';
 
 interface Email {
   id: string;
@@ -13,7 +12,7 @@ interface Email {
   created_at: string;
 }
 
-export function EmailManager() {
+export default function EmailManager() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({ to: '', subject: '', template: '' });
   const [isSending, setIsSending] = useState(false);
