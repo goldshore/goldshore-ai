@@ -73,11 +73,20 @@ MAIL_FROM_EMAIL = "noreply@goldshore.ai"
 MAIL_FROM_NAME = "GoldShore"
 TURNSTILE_SITEKEY = "0x4AAAAAAEOjS4lrG1IT_-Fs"
 
-# GITHUB_API_TOKEN is a secret for Phase 2 Admin Deployment Assistant.
+# ── SECRETS (set in Cloudflare dashboard, not here) ──────────────────────────────────
+# GITHUB_API_TOKEN is a secret for Admin endpoints (merge cockpit, repo health).
 #   Value: <personal access token with public_repo scope>
 # Required for searching GitHub repositories and validating wrangler.toml files.
 
-# ANTHROPIC_API_KEY is a secret for Phase 2 Admin Deployment Assistant Claude ranking.
+# CF_ACCOUNT_ID is a secret for Cloudflare API operations (admin dashboard).
+#   Value: <Cloudflare account ID from https://dash.cloudflare.com>
+# Required for managing workers, bindings, and secrets from admin UI.
+
+# CF_API_TOKEN is a secret for Cloudflare API authentication.
+#   Value: <Cloudflare API token with appropriate scopes>
+# Required for admin operations against Cloudflare resources.
+
+# ANTHROPIC_API_KEY is a secret for AI-powered admin features.
 #   Value: <Anthropic API key>
 # Required for AI-powered framework ranking and recommendations.
 

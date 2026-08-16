@@ -2,13 +2,13 @@
 export const prerender = false;
 
 import AdminLayout from '../../layouts/AdminLayout.astro';
-import { SettingsManager } from '../../components/admin/SettingsManager';
+import { EmailManager } from '../../components/admin/EmailManager';
 ---
 
-<AdminLayout title="Settings">
+<AdminLayout title="Email Management">
   <div class="min-h-screen bg-gray-50 py-8">
     <div class="max-w-6xl mx-auto px-4">
-      <SettingsManager client:load />
+      <EmailManager client:load />
     </div>
   </div>
 </AdminLayout>
