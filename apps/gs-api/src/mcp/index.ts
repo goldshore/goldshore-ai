@@ -5,6 +5,7 @@
 
 export { initGitHubPRManager, startGitHubPRManager } from './github-pr-manager';
 export { initEmailMailboxManager, startEmailMailboxManager } from './email-mailbox-manager';
+export { initCloudflareConfigSync, startCloudflareConfigSync } from './cloudflare-config-sync';
 export { createErrorResponse, createTextResponse, createJsonResponse } from './shared';
 
 /**
@@ -29,6 +30,14 @@ export async function initializeAllMCPServers() {
       const { initEmailMailboxManager } = await import('./email-mailbox-manager');
       const emailServer = await initEmailMailboxManager();
       servers.push({ name: 'email-mailbox-manager', server: emailServer });
+    }
+
+    // Cloudflare Config Sync
+    if (process.env.CLOUDFLARE_API_TOKEN && process.env.CLOUDFLARE_ACCOUNT_ID) {
+      console.log('Initializing Cloudflare Config Sync MCP server...');
+      const { initCloudflareConfigSync } = await import('./cloudflare-config-sync');
+      const cfServer = await initCloudflareConfigSync();
+      servers.push({ name: 'cloudflare-config-sync', server: cfServer });
     }
 
     console.log(`✓ Initialized ${servers.length} MCP servers`);
@@ -58,6 +67,14 @@ export const MCPRegistry = {
     init: async () => {
       const { initEmailMailboxManager } = await import('./email-mailbox-manager');
       return initEmailMailboxManager();
+    },
+  },
+  'cloudflare-config-sync': {
+    description: 'Cloudflare Worker configuration synchronization across environments',
+    requiredEnv: ['CLOUDFLARE_API_TOKEN', 'CLOUDFLARE_ACCOUNT_ID'],
+    init: async () => {
+      const { initCloudflareConfigSync } = await import('./cloudflare-config-sync');
+      return initCloudflareConfigSync();
     },
   },
 } as const;
