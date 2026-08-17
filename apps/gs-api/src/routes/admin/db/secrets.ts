@@ -8,25 +8,24 @@ export async function getSecrets(
   options: {
     offset: number;
     limit: number;
-    integration?: string;
-    isActive?: boolean;
+    integration_id?: string;
+    include_expired?: boolean;
   }
 ) {
   try {
     const where: string[] = [];
     const params: any[] = [];
 
-    if (options.integration) {
-      where.push('integration = ?');
-      params.push(options.integration);
+    if (options.integration_id) {
+      where.push('integration_id = ?');
+      params.push(options.integration_id);
     }
 
-    if (options.isActive !== undefined) {
-      where.push('is_active = ?');
-      params.push(options.isActive ? 1 : 0);
+    if (!options.include_expired) {
+      where.push('(expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)');
     }
 
-    let query = 'SELECT id, name, integration, type, is_active, created_at, updated_at, created_by, updated_by FROM admin_secrets';
+    let query = 'SELECT id, integration_id, key_type, key_prefix, created_at, rotated_at, expires_at, rotation_count FROM admin_secrets';
     let countQuery = 'SELECT COUNT(*) as total FROM admin_secrets';
 
     if (where.length) {
@@ -40,12 +39,14 @@ export async function getSecrets(
       query + ' ORDER BY created_at DESC LIMIT ? OFFSET ?'
     ).bind(...params, options.limit, options.offset).all();
 
+    const pages = Math.ceil((total?.total || 0) / options.limit);
     return {
       items: secrets.results || [],
-      total: total?.total || 0,
-      offset: options.offset,
-      limit: options.limit,
-      page: Math.floor(options.offset / options.limit) + 1,
+      pagination: {
+        page: Math.floor(options.offset / options.limit) + 1,
+        pages,
+        total: total?.total || 0,
+      },
     };
   } catch (err) {
     throw new Error(`Failed to get secrets: ${err}`);
@@ -55,18 +56,8 @@ export async function getSecrets(
 export async function getSecretById(db: any, id: string) {
   try {
     return await db.prepare(
-      'SELECT id, name, integration, type, is_active, created_at, updated_at, created_by, updated_by FROM admin_secrets WHERE id = ?'
+      'SELECT id, integration_id, key_type, key_prefix, created_at, rotated_at, expires_at, rotation_count, is_active FROM admin_secrets WHERE id = ?'
     ).bind(id).first();
-  } catch (err) {
-    throw new Error(`Failed to get secret: ${err}`);
-  }
-}
-
-export async function getSecretByName(db: any, name: string) {
-  try {
-    return await db.prepare(
-      'SELECT id, name, integration, type, is_active, created_at, updated_at, created_by, updated_by FROM admin_secrets WHERE name = ?'
-    ).bind(name).first();
   } catch (err) {
     throw new Error(`Failed to get secret: ${err}`);
   }
@@ -75,24 +66,27 @@ export async function getSecretByName(db: any, name: string) {
 export async function createSecret(
   db: any,
   data: {
-    name: string;
-    integration: string;
+    integration_id: string;
+    key_type: string;
+    key_prefix: string;
     encryptedValue: string;
-    type?: string;
+    expiresAt?: string;
     createdBy?: string;
   }
 ) {
   try {
     const id = crypto.randomUUID();
     return await db.prepare(
-      `INSERT INTO admin_secrets (id, name, integration, encrypted_value, type, created_by, updated_by)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO admin_secrets (id, integration_id, key_type, key_prefix, encrypted_value, expires_at, rotation_count, created_by, updated_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).bind(
       id,
-      data.name,
-      data.integration,
+      data.integration_id,
+      data.key_type,
+      data.key_prefix,
       data.encryptedValue,
-      data.type || 'api_key',
+      data.expiresAt || null,
+      0,
       data.createdBy || 'system',
       data.createdBy || 'system'
     ).run();
@@ -105,28 +99,17 @@ export async function rotateSecret(
   db: any,
   id: string,
   encryptedValue: string,
+  keyPrefix: string,
   updatedBy?: string
 ) {
   try {
     return await db.prepare(
       `UPDATE admin_secrets
-       SET encrypted_value = ?, last_rotated = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP, updated_by = ?
+       SET encrypted_value = ?, key_prefix = ?, rotated_at = CURRENT_TIMESTAMP, rotation_count = rotation_count + 1, updated_by = ?
        WHERE id = ?`
-    ).bind(encryptedValue, updatedBy || 'system', id).run();
+    ).bind(encryptedValue, keyPrefix, updatedBy || 'system', id).run();
   } catch (err) {
     throw new Error(`Failed to rotate secret: ${err}`);
-  }
-}
-
-export async function revokeSecret(db: any, id: string, updatedBy?: string) {
-  try {
-    return await db.prepare(
-      `UPDATE admin_secrets
-       SET is_active = 0, updated_at = CURRENT_TIMESTAMP, updated_by = ?
-       WHERE id = ?`
-    ).bind(updatedBy || 'system', id).run();
-  } catch (err) {
-    throw new Error(`Failed to revoke secret: ${err}`);
   }
 }
 

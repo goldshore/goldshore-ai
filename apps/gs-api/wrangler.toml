@@ -29,6 +29,7 @@ name = "gs-api"
 routes = [
   { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "api.goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "admin.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "agent.goldshore.org/*", zone_name = "goldshore.org" },
   { pattern = "mail.goldshore.ai/*", zone_name = "goldshore.ai" },
@@ -49,6 +50,7 @@ ENV = "production"
 AI_SEARCH_PUBLIC_ENDPOINT = "https://f800ea69-7ef4-4094-ba29-de38736fd22f.search.ai.cloudflare.com"
 CLOUDFLARE_ACCESS_AUDIENCE = "8510d42c31fc791e295427031ffeef7c7ebc0f1b62d8634fbb284bf82562f528"
 CLOUDFLARE_ACCESS_APPLICATION = "api-production"
+ADMIN_PROXY_AUDIENCE = "c520a7647223b49b20fbe5be240772863eb684b97b57c08955b6104c58170db9"
 CLOUDFLARE_SERVICE_ACCESS_AUDIENCE = "7ad07891d7c74cf243bb276b5941a75a3fcdc7301addb662a8b21df3e679c4a1"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 # CONTROL_SYNC_TOKEN is a Worker secret. Keep it out of vars so deploys
@@ -74,12 +76,12 @@ MAIL_FROM_NAME = "GoldShore"
 TURNSTILE_SITEKEY = "0x4AAAAAAEOjS4lrG1IT_-Fs"
 
 # ── SECRETS (set in Cloudflare dashboard, not here) ──────────────────────────────────
-# CLOUDFLARE_ACCOUNT_ID is your Cloudflare account ID for API operations.
+# CF_ACCOUNT_ID is your Cloudflare account ID for API operations.
 #   Value: <32-character hex from https://dash.cloudflare.com>
 #   Example: f77de112d2019e5456a3198a8bb50bd2
 # Required for admin dashboard Worker management, DNS operations, KV access.
 
-# CF_API_TOKEN is a secret for Cloudflare API authentication.
+# CF_TOKEN is a secret for Cloudflare API authentication.
 #   Value: <API token from https://dash.cloudflare.com/profile/api-tokens>
 #   Permissions: Workers Scripts (Edit), Worker Routes (Edit), Workers KV (Edit), Zone Settings (Read)
 # Required for admin operations against Cloudflare resources (workers, DNS, KV).
@@ -128,11 +130,10 @@ binding = "TRADING_KV"
 id = "9b3314c3b7af40a284a8c9b6e2990709"
 
 # MCP Workers Prompt Storage — for storing model context protocol worker
-# prompts, templates, and system instructions. Namespace ID to be verified
-# in Cloudflare dashboard and linked to corresponding preview namespace.
+# prompts, templates, and system instructions.
 [[env.prod.kv_namespaces]]
 binding = "MCP_WORKERS_PROMPT"
-id = "TODO_LOOKUP_MCP_WORKERS_PROMPT_PROD_ID"
+id = "e8f02d97140b4e1daba2e88078fcf5c8"
 
 # ── R2 ──────────────────────────────────────────────────────────────────────────────────────
 [[env.prod.r2_buckets]]

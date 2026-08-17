@@ -38,6 +38,7 @@ import automation from './routes/automation';
 // import subscriptions from './routes/subscriptions';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
+import { ssrfProtectionMiddleware } from './middleware/ssrf-protection';
 import type { Env, Variables } from './types';
 import agent from './routes/agent';
 import mail from './routes/mail';
@@ -144,6 +145,8 @@ app.use(
   }),
 );
 
+app.use('/v1/*', ssrfProtectionMiddleware);
+
 app.use('*', async (c, next) => {
   await next();
   const runtimeVersion = getRuntimeVersion(c.env);
@@ -173,11 +176,19 @@ app.use('*', async (c, next) => {
   }
 
   const serviceRequest = c.req.path === '/internal' || c.req.path.startsWith('/internal/');
+  const adminProxyRequest = c.req.path.startsWith('/api/admin') || c.req.path.startsWith('/admin/');
+
   const accessEnv = serviceRequest
     ? {
         ...c.env,
         CLOUDFLARE_ACCESS_AUDIENCE: c.env.CLOUDFLARE_SERVICE_ACCESS_AUDIENCE,
         CLOUDFLARE_ACCESS_APPLICATION: 'service-production',
+      }
+    : adminProxyRequest
+    ? {
+        ...c.env,
+        // Accept admin-production audience for proxied requests from gs-web
+        CLOUDFLARE_ACCESS_AUDIENCE: c.env.ADMIN_PROXY_AUDIENCE || c.env.CLOUDFLARE_ACCESS_AUDIENCE,
       }
     : c.env;
   if (!accessEnv.CLOUDFLARE_ACCESS_AUDIENCE) {

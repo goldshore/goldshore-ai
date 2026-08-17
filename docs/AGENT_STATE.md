@@ -1,330 +1,127 @@
 # AGENT_STATE.md — Shared Synchronization State
 
-> **Real-time hemispheric brain state machine**  
-> Last Updated: **2026-08-15 14:35:00Z**  
-> Lead Agent: **Claude**  | Review Agent: **Codex (offline)**
+> Current cross-agent work state for Codex and Claude.
+> Updated: 2026-08-16
+> Operating contract: `docs/AGENT_FLOW.md`
 
----
-
-## Current Work Unit
+## Current work unit
 
 ```yaml
 active_work_unit:
-  id: "admin-api-full-repair"
-  status: "in-progress"
-  priority: "critical"  # API data not persisting
-  created: "2026-08-15T14:00:00Z"
-  lead_agent: "claude"
-  review_agent: "codex"  # Will validate when online
-  
-  phases:
-    0_discovery: ✅ COMPLETE
-    1_blocked: ❌ CODEX OFFLINE (no compute)
-    2_plan: ✅ COMPLETE
-    3_ready: 🔄 ACTIVE
-    4_in_progress: 🔄 ACTIVE
-    5_blocked_again: ⏸️ (if needed)
-    6_review: ⏳ (waiting for Codex)
-    7_merged: ⏸️
-    8_qa: ⏸️
-    9_complete: ⏸️
-  
-  current_phase: 4  # IN-PROGRESS
-  phase_started: "2026-08-15T14:15:00Z"
+  id: "agent-flow-feature-resurrection"
+  status: "ready"
+  priority: "high"
+  base: "main@9e25ebef5f65566951a71e3861928da373a6b156"
+  implementing_agent: "codex"
+  review_agent: "claude-or-codex-peer"
+  objective: >
+    Align agent workflow around current main and selectively resurrect
+    stranded high-value features without replaying obsolete branches.
 ```
 
----
+## Current repository interpretation
 
-## Discovery Findings (Phase 0 Complete)
+Recent history is an interleaved Codex/Claude lineage, not two independent products.
 
-### The Problem
-**Symptom**: Admin dashboard forms submit but data doesn't save.  
-**Root Cause**: Three-layer API architecture mismatch.
+### Preserve as canonical operational behavior
 
-### Layer Analysis
+- Current `main` and the two-app architecture (`gs-web` + `gs-api`).
+- Codex operational admin controls for workflows/tunnels, managed sites/plugins, mailboxes/audiences, guarded HostGator SQL, ads/integrations, storage, and authenticated same-origin proxies.
+- Existing mutation safeguards: RBAC/permissions, confirmations, checksums, redaction, audit trails, production approval gates, and fail-closed provider behavior.
+- Current Cloudflare Access perimeter authentication.
 
-#### Layer 1: Frontend Routes (gs-web/src/pages/api/admin/*)
-- **Status**: ✅ Exists and working
-- **Function**: Proxy stubs
-- **Files**: 18+ files like `settings.ts`, `email/send.ts`, `users/[...path].ts`
-- **Pattern**: 
-  ```typescript
-  export const PUT: APIRoute = ({ request, locals }) => 
-    proxyApiRequest(request, '/admin/settings', locals.PUBLIC_API);
-  ```
-- **Issue**: `locals.PUBLIC_API` not verified
+### Claude capabilities worth adapting where absent or disconnected
 
-#### Layer 2: Backend Routes (gs-api/src/routes/admin.ts + sub-routers)
-- **Status**: ✅ Mostly implemented
-- **Function**: Actual API logic
-- **Key Routes**: 
-  - `/admin/settings` (GET|PUT) ✅
-  - `/admin/users` (GET|POST|PATCH|DELETE) ✅
-  - `/admin/email/send` (POST) ✅
-  - `/admin/email/jobs` (GET) ✅
-  - `/admin/approvals` (POST) ✅
-  - Many sub-routers mounted
-- **Issue**: All require `requirePermission()` but auth headers may not be passed from frontend
+- Admin manager UX and network/error handling patterns.
+- MCP-facing admin/agent integration.
+- Floating admin AI assistant concept.
+- Entries/lead qualification and CRM-style workflows.
+- Repo Health / findings / Merge Cockpit operator surfaces.
+- Integration/platform metadata and data-sync concepts.
+- Analytics, SEO, opportunity, subscription, and revenue concepts after schema-use verification.
+- Risk Radar behavior/UX selectively, without restoring old topology or dead bindings.
 
-#### Layer 3: Database
-- **Tables Defined** (Migration 004):
-  - `admin_emails` ❌ (not used by API)
-  - `admin_users` ❌ (API uses `users` instead)
-  - `admin_audit_log` ❌ (API uses `audit_events` instead)
-  - `admin_settings` ❌ (API uses `admin_cache` instead)
-  - `admin_leads` ❌ (defined but no API route)
-  - `admin_contact_submissions` ❌ (defined but no API route)
-  
-- **Tables Actually Used**:
-  - `users` ✅
-  - `audit_events` ✅
-  - `admin_cache` ✅ (settings storage)
-  - `mail_jobs` ✅ (email queue)
-  
-- **Issue**: Schema mismatch — data might write to wrong table
-
-### Blocked Points Identified
-1. **Cloudflare Access JWT**: Does frontend pass it to backend? Unknown
-2. **Environment variable**: What is `locals.PUBLIC_API`? Is it set?
-3. **Error logging**: Frontend components have zero error handlers
-4. **DB schema**: Should drop unused `admin_*` tables
-
-### Evidence Trail
-- Frontend proxy: `apps/gs-web/src/pages/api/admin/settings.ts` (5 lines)
-- Backend settings: `apps/gs-api/src/routes/admin.ts:45-76` (31 lines, includes caching logic)
-- DB schema: `apps/gs-api/src/db/migrations/004-admin-schema.sql` (105 lines, mostly unused)
-- Components: `apps/gs-web/src/components/admin/` (15 React components, no error logging)
-
----
-
-## Agreed Repair Plan (Phase 2 Complete)
-
-### Step 1: Verify Frontend → Backend Connection (CLAUDE) — 🔍 INVESTIGATING
-**Files**: `apps/gs-web/src/lib/api-proxy.ts`, `apps/gs-web/src/middleware.ts`, `packages/auth/verify.ts`  
-
-**Findings**:
-- ✅ `locals.PUBLIC_API` correctly set to `https://api.goldshore.ai` in wrangler.toml (line 36, 75)
-- ✅ Admin routes at `/api/admin/*` require `CF-Access-Jwt-Assertion` header (packages/auth/verify.ts:121)
-- ✅ Astro middleware validates CF Access JWT and sets `locals.adminSession` (middleware.ts:73-98)
-- ⚠️ **KEY ISSUE**: Frontend fetch requests may not include `CF-Access-Jwt-Assertion` header
-  - Header is added by Cloudflare edge only on authenticated initial request
-  - Subsequent browser fetch() calls must include it via cookie OR explicit forwarding
-  - proxyApiRequest copies all headers from browser request, but CF Access JWT might only be in edge headers
-
-**Action Taken**:
-- Added detailed auth header logging to proxyApiRequest (api-proxy.ts)
-- Logs `CF-Access-JWT-Assertion`, `CF-Access-Client-Id`, `Authorization` presence
-- Logs HTTP status on failures with auth context
-- Added adminSession logging to settings.ts GET/PUT (shows if middleware authorized the route)
-
-**Next Steps to Debug**:
-1. Deploy with logging and check browser console for `[proxyApiRequest]` output
-2. Check if `CF-Access-Jwt-Assertion` is present in logged auth headers
-3. If missing: verify Cloudflare Access policy is attached to admin.goldshore.ai routes
-4. If present but failing: check gs-api auth logs for why JWT verification is failing
-5. If auth headers missing: implement session-token or cookie-based auth fallback
-
-**Success Criteria**: 
-- Logging shows CF-Access-Jwt-Assertion present in all admin API requests
-- gs-api auth middleware successfully verifies JWT on proxied requests
-- No 401/403 errors in subsequent admin operations
-
----
-
-### Step 2: Add Error Logging to Frontend Components (CLAUDE)
-**Files**:
-- `apps/gs-web/src/components/admin/EmailManager.tsx`
-- `apps/gs-web/src/components/admin/UsersManager.tsx`
-- `apps/gs-web/src/components/admin/SettingsManager.tsx`
-- `apps/gs-web/src/components/admin/EntriesManager.tsx`
-- `apps/gs-web/src/components/admin/SecretCreator.tsx`
-
-**Action**:
-- Wrap all fetch() calls in try/catch
-- Log errors to console.error (dev) and Sentry (prod)
-- Add human-readable error messages to UI
-- Log HTTP status codes
-
-**Pattern**:
-```typescript
-try {
-  const res = await fetch('/api/admin/email/send', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
-    const error = await res.json();
-    console.error(`[EmailManager] ${res.status}:`, error);
-    throw new Error(error.message || 'Unknown error');
-  }
-} catch (err) {
-  console.error('[EmailManager] Request failed:', err);
-  setErrorMessage(err.message);
-}
-```
-
-**Success Criteria**: 
-- All requests logged to console
-- Dev can see 401/403/500 responses immediately
-
----
-
-### Step 3: Clean Up Database Schema (CODEX)
-**Files**: `apps/gs-api/src/db/migrations/007-drop-admin-schema.sql` (new)
-
-**Action**:
-- Create migration that drops unused tables:
-  - `admin_emails`
-  - `admin_users`
-  - `admin_audit_log`
-  - `admin_leads`
-  - `admin_contact_submissions`
-  - `admin_settings`
-- Keep: `admin_cache`, `admin_secrets`
-- Run in preview env, verify no breakage
-- Codex: Compare with actual table usage in gs-api routes
-
-**Success Criteria**: 
-- Migration runs without error
-- No routes reference dropped tables
-- Schema is now single-source-of-truth
-
----
-
-### Step 4: End-to-End Verification (CLAUDE + CODEX)
-**Test sequence**:
-1. Claude: `/admin/settings` GET — should return current settings
-2. Claude: `/admin/settings` PUT — update settings, verify cache write
-3. Codex: `/admin/email/send` — queue test email, check mail_jobs table
-4. Codex: `/admin/users` GET — list users, verify pagination
-5. Both: Check browser console for errors
-6. Both: Check gs-api logs for auth failures
-
-**Success Criteria**: 
-- All requests return 200/201
-- No 401/403 errors
-- Data persists across page reload
-
----
-
-## Locked Files (Until 2026-08-16 02:00 UTC)
+## Resurrection queue
 
 ```yaml
-locked_files:
-  - path: "apps/gs-web/src/lib/api-proxy.ts"
-    locked_by: "claude"
-    reason: "Investigating frontend→backend connection — auth header forwarding"
-    expires: "2026-08-16T02:00:00Z"
-    status: "debug logging added, ready for review"
-    
-  - path: "apps/gs-web/src/pages/api/admin/settings.ts"
-    locked_by: "claude"
-    reason: "Adding adminSession validation logging"
-    expires: "2026-08-16T02:00:00Z"
-    status: "in progress"
+resurrection_queue:
+  - id: "admin-ai-copilot"
+    priority: 1
+    strategy: "PORT_BEHAVIOR"
+    source_reference: "Claude PR #6561"
+    target: "Current gs-web admin shell + gs-api/MCP operations"
+    constraint: "Do not hard-code historical Claude model/provider path"
+
+  - id: "lead-crm-convergence"
+    priority: 2
+    strategy: "MERGE_CONCEPT"
+    target: "Entries/qualification UX over current submissions, audiences, and lead workflows"
+
+  - id: "repo-health-merge-cockpit"
+    priority: 3
+    strategy: "WIRE_UP"
+    target: "Complete operator pages over existing backend contracts"
+
+  - id: "integration-platform-registry"
+    priority: 4
+    strategy: "MERGE_CONCEPT"
+    target: "Unify metadata/status around existing ads/mail/sql/tunnel/site/storage implementations"
+
+  - id: "analytics-monetization"
+    priority: 5
+    strategy: "MERGE_CONCEPT"
+    constraint: "Verify current migrations and references before adding or changing schema"
+
+  - id: "risk-radar"
+    priority: 6
+    strategy: "PORT_BEHAVIOR"
+    constraint: "No wholesale historical branch merge; no dead binding restoration"
 ```
 
-**Rule**: If Codex needs to edit these, post `[status:blocked]` comment in issue and wait for lock to expire (or Claude releases it).
+## Immediate next action
 
----
+The next implementation PR should start with the highest-priority queue item that is not already present on current `main`.
 
-## Handoff Checkpoint (When Claude Completes Steps 1–2)
+Before coding, the implementing agent must:
 
-**Trigger**: Claude pushes PR with error logging fixes  
-**Handoff To**: Codex  
-**Action Required**:
+1. inspect current files/routes/contracts for the target capability;
+2. inspect the relevant historical PR/branch only as reference;
+3. classify each historical piece using `KEEP_CURRENT`, `WIRE_UP`, `PORT_BEHAVIOR`, `MERGE_CONCEPT`, or `DROP`;
+4. preserve current safety/auth contracts;
+5. add regression coverage for the recovered behavior.
 
-```markdown
-[agent:codex] PLEASE READ:
+## Handoff to Claude
 
-Claude completed frontend diagnostics + error logging.
-Your turn: implement Step 3 (DB schema cleanup).
+Copy or point Claude to the following:
 
-What to do:
-1. Read this AGENT_STATE.md fully
-2. Check the pushed PR #XXXXX (link below)
-3. Verify no routes use dropped tables
-4. Create migration 007-drop-admin-schema.sql
-5. Test in preview env
-6. Reply: [agent:codex] [status:review] PR ready for merge
-
-Files you'll touch:
-- apps/gs-api/src/db/migrations/007-drop-admin-schema.sql (new)
-
-Files to AVOID (locked by Claude):
-- apps/gs-web/src/lib/api-proxy.ts (until lock expires)
-- EmailManager, UsersManager, SettingsManager (locked)
-
-Questions? Reply to this issue.
+```text
+[agent:claude] [status:review]
+Work unit: agent-flow-feature-resurrection
+Base: main@9e25ebef5f65566951a71e3861928da373a6b156
+Read first: docs/AGENT_FLOW.md and docs/AGENT_STATE.md
+Canonical behavior preserved: current main, two-app architecture, Cloudflare Access, guarded Codex operational controls
+Resurrection rule: historical branches are reference material; port behavior into current contracts instead of merging old topology
+Priority queue: admin AI copilot -> lead/CRM -> repo health/merge cockpit -> integration registry -> analytics/monetization -> Risk Radar
+Next action: review this flow and use the same classification protocol on any Claude-origin feature you propose to recover
 ```
 
----
+## Removed stale assumptions
 
-## Blockers (Currently: 1)
+The previous state file is intentionally superseded. Do not rely on its expired assumptions that:
+
+- Codex is offline;
+- old file locks remain active;
+- the admin repair is still blocked on JWT discovery;
+- unused-looking `admin_*` tables should automatically be dropped;
+- Claude must implement while Codex waits to review.
+
+Current repository history after PRs through #6584 must be inspected before any destructive cleanup.
+
+## PR state
 
 ```yaml
-blockers:
-  - id: "codex-offline"
-    severity: "high"
-    status: "active"
-    description: "Codex out of compute — cannot validate schema cleanup"
-    impact: "Step 3 (DB schema) blocked"
-    unblock_condition: "Codex online"
-    unblock_owner: "Codex"
-    created: "2026-08-15T14:00:00Z"
+agent_flow_pr:
+  branch: "codex/agent-flow-alignment"
+  purpose: "Establish one shared collaboration and feature-resurrection protocol"
+  status: "opening"
 ```
-
-**Action**: Waiting for Codex to come online. Claude will continue with Steps 1–2.
-
----
-
-## Commit History (This Session)
-
-| Commit SHA | Message | Agent | Phase |
-|-----------|---------|-------|-------|
-| f8adc163 | `fix: add comprehensive error logging to admin frontend` | claude | 4 |
-| e979d247 | `fix: add MCP_WORKERS_PROMPT KV binding to gs-api` | claude | 4 |
-| c30166ac | `fix: add auth header logging to frontend proxy for debugging API auth failures` | claude | 4 |
-| (pending) | `fix: add adminSession validation logging to admin API routes` | claude | 4 |
-| (pending) | (Codex will add schema cleanup) | codex | 4 |
-
----
-
-## Next State Transitions
-
-```
-Current: Phase 4 (IN-PROGRESS)
-    ↓ When Claude pushes PR
-Next: Phase 6 (REVIEW) — waiting for Codex to review
-    ↓ When Codex reviews + approves
-Next: Phase 7 (MERGED) — PR merges to branch
-    ↓ When Codex schema PR merges
-Next: Phase 8 (QA) — human tests in preview
-    ↓ When smoke tests pass
-Final: Phase 9 (COMPLETE) — ready to promote to stage
-```
-
----
-
-## Context for Codex (When Online)
-
-Codex, when you read this:
-
-1. **What happened**: Claude found that admin API has 3 misaligned layers
-2. **What's needed**: Backend and database schema cleanup
-3. **Your role**: 
-   - Validate the findings (review Layer 2+3 code)
-   - Implement database migration (drop unused admin_* tables)
-   - Test in preview
-4. **What's blocked**: You're waiting on this file + Claude's PR
-5. **Your starting point**: Step 3 of the repair plan above
-
-**Link to issue**: [TBD — post GitHub issue URL here]
-
-No rush — work at your pace once compute is available.
-
----
-
-**State Machine Validator**: This file is source-of-truth. Update it before every commit.  
-**Last Sync Time**: 2026-08-15 14:35:00Z  
-**Next Sync Due**: 2026-08-15 15:05:00Z (30-min interval)

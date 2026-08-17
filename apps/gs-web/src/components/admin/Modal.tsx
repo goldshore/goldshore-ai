@@ -29,10 +29,11 @@ export default function Modal({
           <h2 className="text-xl font-bold">{title}</h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-gray-500 hover:text-gray-700 font-bold text-2xl leading-none"
             aria-label="Close"
+            title="Close (Esc)"
           >
-            <X size={24} />
+            ×
           </button>
         </div>
 
