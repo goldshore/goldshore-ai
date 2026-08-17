@@ -1,8 +1,12 @@
+import type { Env, Variables } from '../../types';
 import { Hono } from 'hono';
 import { verifyAdminAuth, errorHandler } from './middleware/auth';
 import * as settingsDb from './db/settings';
 
-const settings = new Hono();
+const settings = new Hono<{
+  Bindings: Env;
+  Variables: Variables;
+}>();
 
 // Apply auth middleware
 settings.use('*', verifyAdminAuth);
@@ -12,7 +16,7 @@ settings.use('*', verifyAdminAuth);
  * Get all settings
  */
 settings.get('/', errorHandler(async (c) => {
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
   const allSettings = await settingsDb.getAllSettings(db);
   return c.json({ settings: allSettings });
 }));
@@ -22,7 +26,7 @@ settings.get('/', errorHandler(async (c) => {
  * Get single setting
  */
 settings.get('/:key', errorHandler(async (c) => {
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
   const key = c.req.param('key');
 
   const value = await settingsDb.getSetting(db, key);
@@ -38,7 +42,7 @@ settings.get('/:key', errorHandler(async (c) => {
  * Set single setting
  */
 settings.post('/:key', errorHandler(async (c) => {
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
   const key = c.req.param('key');
   const currentUser = c.get('user');
   const body = await c.req.json();
@@ -68,7 +72,7 @@ settings.post('/:key', errorHandler(async (c) => {
  * Batch update settings
  */
 settings.post('/', errorHandler(async (c) => {
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
   const currentUser = c.get('user');
   const body = await c.req.json();
 
@@ -91,7 +95,7 @@ settings.post('/', errorHandler(async (c) => {
  * Delete setting
  */
 settings.delete('/:key', errorHandler(async (c) => {
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
   const key = c.req.param('key');
   const currentUser = c.get('user');
 

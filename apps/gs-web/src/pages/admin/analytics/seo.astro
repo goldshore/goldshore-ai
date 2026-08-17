@@ -1,0 +1,273 @@
+---
+export const prerender = false;
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="SEO Metrics | GoldShore Admin">
+  <main class="container">
+    <header>
+      <h1>SEO Metrics</h1>
+      <p>Keyword rankings, traffic potential, and search volume analysis</p>
+    </header>
+
+    <section class="panel">
+      <div class="head">
+        <div>
+          <h2>Rankings</h2>
+          <p>Top keywords by traffic potential</p>
+        </div>
+        <div class="controls">
+          <input type="text" id="domain" placeholder="Filter by domain" />
+          <button id="refresh" type="button">Refresh</button>
+        </div>
+      </div>
+      <div id="seo" class="table-wrapper">
+        <table class="gs-table">
+          <thead>
+            <tr>
+              <th>Domain</th>
+              <th>Keyword</th>
+              <th>Ranking</th>
+              <th>Volume</th>
+              <th>Difficulty</th>
+              <th>Traffic Potential</th>
+            </tr>
+          </thead>
+          <tbody id="seo-tbody">
+            <tr><td colspan="6">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Summary</h2>
+      <div id="summary" class="metrics">Loading…</div>
+    </section>
+
+    <p id="error" role="alert" style="display: none; color: #d96a32; margin-top: 1rem;"></p>
+  </main>
+
+  <script is:inline>
+    async function loadSEOMetrics() {
+      try {
+        const domain = document.getElementById('domain').value.trim();
+        const query = domain ? `?domain=${encodeURIComponent(domain)}` : '';
+
+        const response = await fetch(
+          `/api/admin/analytics/seo-metrics${query}`,
+          { credentials: 'same-origin' }
+        );
+
+        if (!response.ok) throw new Error(`Request failed (${response.status})`);
+
+        const data = await response.json();
+        if (!data || !data.items) throw new Error('Invalid response');
+
+        const items = data.items || [];
+
+        const tbody = items.map(item => {
+          const traffic = item.traffic_potential || 0;
+          const ranking = item.ranking_position || 999;
+          const volume = item.volume || 0;
+          const difficulty = item.difficulty || 0;
+
+          return `
+            <tr>
+              <td>${item.domain || 'N/A'}</td>
+              <td><strong>${item.keyword || 'N/A'}</strong></td>
+              <td class="number">${ranking > 100 ? 'N/A' : ranking}</td>
+              <td class="number">${volume.toLocaleString()}</td>
+              <td class="number">${difficulty}/100</td>
+              <td class="number" data-traffic="${traffic}">${traffic.toFixed(1)}</td>
+            </tr>
+          `;
+        }).join('') || '<tr><td colspan="6">No SEO metrics available</td></tr>';
+
+        document.getElementById('seo-tbody').innerHTML = tbody;
+
+        // Summary
+        const domains = new Set(items.map(i => i.domain));
+        const totalVolume = items.reduce((sum, i) => sum + (i.volume || 0), 0);
+        const avgTraffic = items.length > 0
+          ? items.reduce((sum, i) => sum + (i.traffic_potential || 0), 0) / items.length
+          : 0;
+        const avgRanking = items.filter(i => i.ranking_position && i.ranking_position <= 100)
+          .reduce((sum, i, _, arr) => sum + (i.ranking_position || 0), 0) / Math.max(items.filter(i => i.ranking_position && i.ranking_position <= 100).length, 1);
+
+        const summaryHtml = `
+          <article>
+            <b>${domains.size}</b>
+            <span>Tracked Domains</span>
+          </article>
+          <article>
+            <b>${items.length}</b>
+            <span>Keywords</span>
+          </article>
+          <article>
+            <b>${avgRanking > 100 ? 'N/A' : avgRanking.toFixed(0)}</b>
+            <span>Avg Ranking</span>
+          </article>
+          <article>
+            <b>${avgTraffic.toFixed(0)}</b>
+            <span>Avg Traffic Potential</span>
+          </article>
+        `;
+        document.getElementById('summary').innerHTML = summaryHtml;
+
+        document.getElementById('error').style.display = 'none';
+      } catch (err) {
+        const errorEl = document.getElementById('error');
+        errorEl.textContent = err.message;
+        errorEl.style.display = 'block';
+      }
+    }
+
+    document.getElementById('refresh').addEventListener('click', loadSEOMetrics);
+    document.getElementById('domain').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') loadSEOMetrics();
+    });
+    loadSEOMetrics();
+  </script>
+
+  <style>
+    .container {
+      max-width: 78rem;
+      margin: auto;
+      padding: 2rem;
+      display: grid;
+      gap: 1.5rem;
+    }
+    header {
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    h1 {
+      font-size: 2rem;
+      margin: 0;
+    }
+    header p {
+      opacity: 0.7;
+      margin: 0.5rem 0 0 0;
+    }
+    .panel {
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 1rem;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 1.2rem;
+    }
+    .head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    .head div {
+      flex: 1;
+      min-width: 200px;
+    }
+    .head h2 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+    .head p {
+      margin: 0.3rem 0 0 0;
+      opacity: 0.7;
+      font-size: 0.9rem;
+    }
+    .controls {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+    input, button {
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 0.65rem;
+      padding: 0.65rem 0.9rem;
+      background: #101014;
+      color: inherit;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    input {
+      flex: 1;
+      min-width: 150px;
+    }
+    input::placeholder {
+      opacity: 0.5;
+    }
+    button:hover,
+    input:focus {
+      border-color: #d96a32;
+    }
+    .table-wrapper {
+      overflow-x: auto;
+    }
+    .gs-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    .gs-table th,
+    .gs-table td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .gs-table th {
+      background: rgba(255, 255, 255, 0.05);
+      font-weight: 600;
+    }
+    .gs-table td.number {
+      text-align: right;
+      font-family: 'Courier New', monospace;
+    }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+    }
+    .metrics article {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 0.65rem;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .metrics b {
+      display: block;
+      font-size: 1.5rem;
+    }
+    .metrics span {
+      display: block;
+      opacity: 0.7;
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+    }
+    @media (max-width: 850px) {
+      .metrics {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    @media (max-width: 560px) {
+      .metrics {
+        grid-template-columns: 1fr;
+      }
+      .controls {
+        flex-direction: column;
+        width: 100%;
+      }
+      input, button {
+        width: 100%;
+      }
+      .gs-table {
+        font-size: 0.8rem;
+      }
+      .gs-table th,
+      .gs-table td {
+        padding: 0.5rem;
+      }
+    }
+  </style>
+</AdminLayout>

@@ -1,228 +1,205 @@
 import React, { useState } from 'react';
-import { Table } from './Table';
-import { Pagination } from './Pagination';
-import { FilterBar } from './FilterBar';
+import DataTable from './DataTable';
+import Modal from './Modal';
+import FormField from './FormField';
+import AuthGuard from './AuthGuard';
+import { useAuthToken } from '../../utils/auth';
 
-interface EmailLog {
+interface Email {
   id: string;
-  recipient: string;
+  to: string;
   subject: string;
-  status: string;
+  template?: string;
+  status: 'pending' | 'sent' | 'failed';
   created_at: string;
-  sent_at?: string;
-  error_message?: string;
 }
 
-interface EmailManagerProps {
-  jwtToken: string;
-  initialLogs: {
-    items: EmailLog[];
-    total: number;
-    offset: number;
-    limit: number;
-    error?: string | null;
+interface Props {
+  jwtToken?: string;
+  initialEmails?: Email[];
+}
+
+function EmailManagerContent({ jwtToken: _jwtToken }: Props) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({ to: '', subject: '', template: '' });
+  const [isSending, setIsSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const { token } = useAuthToken();
+
+  const validateEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
-}
 
-export default function EmailManager({ jwtToken, initialLogs }: EmailManagerProps) {
-  const [logs, setLogs] = useState<EmailLog[]>(initialLogs.items || []);
-  const [total, setTotal] = useState(initialLogs.total || 0);
-  const [offset, setOffset] = useState(initialLogs.offset || 0);
-  const [limit, setLimit] = useState(initialLogs.limit || 25);
-  const [loading, setLoading] = useState(false);
-  const [selectedLog, setSelectedLog] = useState<EmailLog | null>(null);
-  const [resending, setResending] = useState<string | null>(null);
+  const handleSendEmail = async () => {
+    setError(null);
+    setSuccess(null);
 
-  const fetchLogs = async (newOffset: number, filters: Record<string, string> = {}) => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({
-        offset: String(newOffset),
-        limit: String(limit),
-        ...filters,
-      });
-
-      const response = await fetch(`https://api.goldshore.ai/admin/email/logs?${params}`, {
-        headers: {
-          'CF-Authorization': jwtToken,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setLogs(data.items || []);
-        setTotal(data.total || 0);
-        setOffset(newOffset);
-      }
-    } catch (error) {
-      console.error('Failed to fetch logs:', error);
-    } finally {
-      setLoading(false);
+    if (!formData.to.trim()) {
+      setError('Recipient email is required');
+      return;
     }
-  };
 
-  const handleResendEmail = async (emailId: string) => {
-    setResending(emailId);
+    if (!validateEmail(formData.to)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    if (!formData.subject.trim()) {
+      setError('Subject is required');
+      return;
+    }
+
+    setIsSending(true);
     try {
-      const response = await fetch(`https://api.goldshore.ai/admin/email/logs/${emailId}/resend`, {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      const response = await fetch('/api/admin/email/send', {
         method: 'POST',
+        signal: controller.signal,
         headers: {
-          'CF-Authorization': jwtToken,
           'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         },
+        body: JSON.stringify(formData),
       });
 
+      clearTimeout(timeoutId);
+
       if (response.ok) {
-        // Refresh logs after resend
-        await fetchLogs(offset);
-        setSelectedLog(null);
+        setFormData({ to: '', subject: '', template: '' });
+        setSuccess('Email queued successfully');
+        setTimeout(() => {
+          setIsModalOpen(false);
+          window.location.reload();
+        }, 1000);
+      } else if (response.status === 401) {
+        setError('Authentication expired. Please refresh the page.');
+      } else if (response.status === 400) {
+        const err = await response.json().catch(() => ({}));
+        setError(err.message || 'Invalid email data');
       } else {
-        console.error('Failed to resend email');
+        setError(`Failed to send email (HTTP ${response.status})`);
       }
-    } catch (error) {
-      console.error('Error resending email:', error);
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        setError('Request timed out. Please try again.');
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to send email');
+      }
     } finally {
-      setResending(null);
+      setIsSending(false);
     }
   };
-
-  const handleDeleteEmail = async (emailId: string) => {
-    if (!confirm('Are you sure you want to delete this email log?')) return;
-
-    try {
-      const response = await fetch(`https://api.goldshore.ai/admin/email/logs/${emailId}`, {
-        method: 'DELETE',
-        headers: {
-          'CF-Authorization': jwtToken,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        await fetchLogs(offset);
-        setSelectedLog(null);
-      }
-    } catch (error) {
-      console.error('Error deleting email:', error);
-    }
-  };
-
-  const filters = [
-    {
-      key: 'status',
-      label: 'Status',
-      type: 'select' as const,
-      options: [
-        { label: 'Queued', value: 'queued' },
-        { label: 'Sent', value: 'sent' },
-        { label: 'Failed', value: 'failed' },
-      ],
-    },
-  ];
 
   return (
-    <div className="space-y-4">
-      <FilterBar
-        filters={filters}
-        onFilter={(filters) => fetchLogs(0, filters)}
-      />
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold">Email Management</h2>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+        >
+          + Send Email
+        </button>
+      </div>
 
-      <Table<EmailLog>
+      <DataTable<Email>
         columns={[
-          { key: 'recipient', label: 'Recipient' },
+          { key: 'to', label: 'To' },
           { key: 'subject', label: 'Subject' },
           {
             key: 'status',
             label: 'Status',
-            render: (status) => (
+            render: (v) => (
               <span
-                className={`px-2 py-1 text-xs font-semibold rounded ${
-                  status === 'sent'
+                className={`px-2 py-1 rounded text-sm font-medium ${
+                  v === 'sent'
                     ? 'bg-green-100 text-green-800'
-                    : status === 'failed'
-                      ? 'bg-red-100 text-red-800'
-                      : 'bg-yellow-100 text-yellow-800'
+                    : v === 'failed'
+                    ? 'bg-red-100 text-red-800'
+                    : 'bg-yellow-100 text-yellow-800'
                 }`}
               >
-                {status}
+                {v}
               </span>
             ),
           },
-          { key: 'created_at', label: 'Created', width: '180px' },
+          {
+            key: 'created_at',
+            label: 'Sent',
+            render: (v) => new Date(v).toLocaleString(),
+          },
         ]}
-        data={logs}
-        loading={loading}
-        onRowClick={setSelectedLog}
-        emptyMessage="No email logs found"
+        endpoint="/api/admin/email"
+        title="Email History"
+        actions={() => (
+          <button className="text-red-500 hover:text-red-700" title="Delete">
+            Delete
+          </button>
+        )}
       />
 
-      <Pagination
-        total={total}
-        offset={offset}
-        limit={limit}
-        onOffsetChange={fetchLogs}
-      />
-
-      {selectedLog && (
-        <div className="gs-card space-y-4">
-          <h3 className="text-lg font-semibold">Email Details</h3>
-          <div className="space-y-2">
-            <div>
-              <p className="text-sm gs-text-subtle">Recipient</p>
-              <p className="font-mono text-sm">{selectedLog.recipient}</p>
-            </div>
-            <div>
-              <p className="text-sm gs-text-subtle">Subject</p>
-              <p>{selectedLog.subject}</p>
-            </div>
-            <div>
-              <p className="text-sm gs-text-subtle">Status</p>
-              <p className="font-semibold capitalize">{selectedLog.status}</p>
-            </div>
-            <div>
-              <p className="text-sm gs-text-subtle">Created</p>
-              <p>{new Date(selectedLog.created_at).toLocaleString()}</p>
-            </div>
-            {selectedLog.sent_at && (
-              <div>
-                <p className="text-sm gs-text-subtle">Sent</p>
-                <p>{new Date(selectedLog.sent_at).toLocaleString()}</p>
-              </div>
-            )}
-            {selectedLog.error_message && (
-              <div>
-                <p className="text-sm gs-text-subtle">Error</p>
-                <p className="text-red-600 font-mono text-xs">{selectedLog.error_message}</p>
-              </div>
-            )}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setError(null);
+          setSuccess(null);
+        }}
+        title="Send Email"
+        onSubmit={handleSendEmail}
+        isLoading={isSending}
+      >
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
+            {error}
           </div>
-
-          <div className="flex gap-2">
-            {selectedLog.status === 'failed' && (
-              <button
-                onClick={() => handleResendEmail(selectedLog.id)}
-                disabled={resending === selectedLog.id}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50"
-              >
-                {resending === selectedLog.id ? 'Resending...' : 'Resend Email'}
-              </button>
-            )}
-            <button
-              onClick={() => handleDeleteEmail(selectedLog.id)}
-              className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700"
-            >
-              Delete
-            </button>
-            <button
-              onClick={() => setSelectedLog(null)}
-              className="px-4 py-2 text-sm font-medium border rounded gs-text-subtle hover:bg-opacity-50"
-            >
-              Close
-            </button>
+        )}
+        {success && (
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
+            {success}
           </div>
-        </div>
-      )}
+        )}
+        <FormField
+          label="Recipient Email"
+          name="to"
+          type="email"
+          value={formData.to}
+          onChange={(v) => setFormData({ ...formData, to: String(v) })}
+          placeholder="recipient@example.com"
+          required
+        />
+        <FormField
+          label="Subject"
+          name="subject"
+          value={formData.subject}
+          onChange={(v) => setFormData({ ...formData, subject: String(v) })}
+          placeholder="Email subject"
+          required
+        />
+        <FormField
+          label="Template"
+          name="template"
+          type="select"
+          value={formData.template}
+          onChange={(v) => setFormData({ ...formData, template: String(v) })}
+          options={[
+            { value: 'welcome', label: 'Welcome Email' },
+            { value: 'password_reset', label: 'Password Reset' },
+            { value: 'notification', label: 'Notification' },
+          ]}
+        />
+      </Modal>
     </div>
+  );
+}
+
+export default function EmailManager(props: Props) {
+  return (
+    <AuthGuard>
+      <EmailManagerContent {...props} />
+    </AuthGuard>
   );
 }
