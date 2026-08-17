@@ -1,0 +1,268 @@
+---
+export const prerender = false;
+
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { GSButton } from '@goldshore/ui';
+
+interface ScanResult {
+  id: string;
+  scan_id: string;
+  timestamp: string;
+  status: 'completed' | 'in_progress' | 'failed';
+  total_items_scanned: number;
+  pii_found: number;
+  categories: {
+    email: number;
+    phone: number;
+    ssn: number;
+    credit_card: number;
+    api_key: number;
+    other: number;
+  };
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  details?: string;
+}
+
+let scans: ScanResult[] = [];
+let error: string | null = null;
+let lastScanTime: string | null = null;
+let totalPiiDetected = 0;
+
+const page = Number(Astro.url.searchParams.get('page')) || 1;
+const severity = Astro.url.searchParams.get('severity') || '';
+const pageSize = 15;
+
+try {
+  const apiUrl = process.env.PUBLIC_API_URL || 'https://api.goldshore.ai';
+  const params = new URLSearchParams();
+  params.append('page', String(page));
+  params.append('limit', String(pageSize));
+  if (severity) params.append('severity', severity);
+
+  const response = await fetch(`${apiUrl}/admin/pii-scans?${params}`, {
+    headers: {
+      'Accept': 'application/json',
+    },
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    error = `Failed to fetch PII scans: ${response.status} ${response.statusText}`;
+  } else {
+    const data = await response.json();
+    scans = data.data || [];
+    lastScanTime = data.last_scan_time || null;
+    totalPiiDetected = data.total_pii_detected || 0;
+  }
+} catch (e) {
+  error = e instanceof Error ? e.message : 'Unknown error fetching PII scans';
+}
+
+const totalPages = Math.ceil((scans.length > 0 ? scans.length * 5 : 1) / pageSize);
+const severityColors = {
+  critical: 'gs-severity-critical',
+  high: 'gs-severity-high',
+  medium: 'gs-severity-medium',
+  low: 'gs-severity-low',
+};
+
+const buildQueryString = (newParams: Record<string, string>) => {
+  const params = new URLSearchParams();
+  params.append('page', String(newParams.page || 1));
+  if (newParams.severity) params.append('severity', newParams.severity);
+  return params.toString();
+};
+---
+
+<AdminLayout title="PII Scans | GoldShore Admin">
+  <div class="max-w-7xl mx-auto p-8 space-y-8">
+    <div class="flex justify-between items-start">
+      <div>
+        <h1 class="text-4xl gs-heading gs-text-accent">PII Scans</h1>
+        <p class="text-lg gs-text-subtle mt-2">Security scanning results for personally identifiable information across systems.</p>
+      </div>
+      <GSButton variant="secondary" href="/admin">← Back to Admin</GSButton>
+    </div>
+
+    {error && (
+      <div class="gs-card border-l-4 border-red-500 bg-red-50">
+        <p class="gs-text-danger font-semibold">Error loading scans</p>
+        <p class="text-sm gs-text-subtle mt-1">{error}</p>
+      </div>
+    )}
+
+    {!error && (
+      <>
+        {/* Summary Stats */}
+        <div class="grid md:grid-cols-4 gap-6">
+          <div class="gs-card space-y-3">
+            <h2 class="text-sm font-semibold gs-text-muted uppercase tracking-wider">Last Scan</h2>
+            <p class="text-lg font-bold gs-text-accent">
+              {lastScanTime ? new Date(lastScanTime).toLocaleDateString() : 'Never'}
+            </p>
+            <p class="text-xs gs-text-subtle">Most recent scan date</p>
+          </div>
+
+          <div class="gs-card space-y-3">
+            <h2 class="text-sm font-semibold gs-text-muted uppercase tracking-wider">Total PII Found</h2>
+            <p class={`text-5xl font-bold ${totalPiiDetected > 0 ? 'gs-text-critical' : 'gs-text-accent'}`}>
+              {totalPiiDetected}
+            </p>
+            <p class="text-xs gs-text-subtle">Across all scans</p>
+          </div>
+
+          <div class="gs-card space-y-3">
+            <h2 class="text-sm font-semibold gs-text-muted uppercase tracking-wider">Recent Scans</h2>
+            <p class="text-5xl font-bold gs-text-accent">{scans.length}</p>
+            <p class="text-xs gs-text-subtle">On this page</p>
+          </div>
+
+          <div class="gs-card space-y-3">
+            <h2 class="text-sm font-semibold gs-text-muted uppercase tracking-wider">Status</h2>
+            <p class="text-lg font-semibold gs-text-accent">Active</p>
+            <p class="text-xs gs-text-subtle">Continuous monitoring</p>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div class="gs-card space-y-4">
+          <h2 class="text-lg font-semibold">Filters</h2>
+          <div class="flex flex-wrap gap-4">
+            <div>
+              <label class="text-sm font-medium gs-text-muted block mb-2">Severity</label>
+              <select class="px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm"
+                onchange={`window.location.href='?${buildQueryString({ ...Object.fromEntries(new URLSearchParams(window.location.search)), severity: this.value || '' })}'`}>
+                <option value="">All severities</option>
+                <option value="critical" selected={severity === 'critical'}>Critical</option>
+                <option value="high" selected={severity === 'high'}>High</option>
+                <option value="medium" selected={severity === 'medium'}>Medium</option>
+                <option value="low" selected={severity === 'low'}>Low</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Scans List */}
+        <div class="gs-card space-y-4">
+          <h2 class="text-lg font-semibold">Scans ({scans.length})</h2>
+
+          {scans.length === 0 ? (
+            <p class="gs-text-muted py-8 text-center">No scan results available.</p>
+          ) : (
+            <div class="space-y-3">
+              {scans.map((scan) => (
+                <div class="p-4 border border-gray-200 rounded hover:bg-gray-50 transition-colors">
+                  <div class="flex justify-between items-start gap-4 mb-3">
+                    <div class="flex items-center gap-2">
+                      <span class={`inline-block px-2 py-0.5 text-xs font-semibold rounded ${severityColors[scan.severity]}`}>
+                        {scan.severity.toUpperCase()}
+                      </span>
+                      <span class="text-xs gs-text-muted font-mono">
+                        #{scan.scan_id}
+                      </span>
+                    </div>
+                    <span class={`text-xs font-semibold px-2 py-1 rounded whitespace-nowrap ${
+                      scan.status === 'completed' ? 'bg-green-100 text-green-700' :
+                      scan.status === 'in_progress' ? 'bg-yellow-100 text-yellow-700' :
+                      'bg-red-100 text-red-700'
+                    }`}>
+                      {scan.status === 'completed' ? 'Completed' :
+                       scan.status === 'in_progress' ? 'In Progress' :
+                       'Failed'}
+                    </span>
+                  </div>
+
+                  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
+                    <div>
+                      <p class="text-xs gs-text-muted">Items Scanned</p>
+                      <p class="font-semibold">{scan.total_items_scanned}</p>
+                    </div>
+                    <div>
+                      <p class="text-xs gs-text-muted">PII Found</p>
+                      <p class="font-semibold text-red-600">{scan.pii_found}</p>
+                    </div>
+                    <div>
+                      <p class="text-xs gs-text-muted">Email Addresses</p>
+                      <p class="font-semibold">{scan.categories.email}</p>
+                    </div>
+                    <div>
+                      <p class="text-xs gs-text-muted">Phone Numbers</p>
+                      <p class="font-semibold">{scan.categories.phone}</p>
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-3 md:grid-cols-5 gap-2 mb-3 text-xs">
+                    <div class="bg-gray-50 p-2 rounded">
+                      <p class="text-gray-600">SSNs: <span class="font-semibold">{scan.categories.ssn}</span></p>
+                    </div>
+                    <div class="bg-gray-50 p-2 rounded">
+                      <p class="text-gray-600">Cards: <span class="font-semibold">{scan.categories.credit_card}</span></p>
+                    </div>
+                    <div class="bg-gray-50 p-2 rounded">
+                      <p class="text-gray-600">Keys: <span class="font-semibold">{scan.categories.api_key}</span></p>
+                    </div>
+                    <div class="bg-gray-50 p-2 rounded">
+                      <p class="text-gray-600">Other: <span class="font-semibold">{scan.categories.other}</span></p>
+                    </div>
+                    <div class="bg-gray-50 p-2 rounded">
+                      <p class="text-gray-600">Scanned: {new Date(scan.timestamp).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+
+                  {scan.details && (
+                    <p class="text-sm gs-text-subtle">{scan.details}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div class="gs-card flex justify-center items-center gap-2">
+            {page > 1 && (
+              <a href={`?${buildQueryString({ ...Object.fromEntries(new URLSearchParams(window.location.search)), page: String(page - 1) })}`}
+                class="px-3 py-2 border border-gray-300 rounded hover:bg-gray-50">
+                ← Previous
+              </a>
+            )}
+
+            <span class="text-sm gs-text-muted">
+              Page {page} of {totalPages}
+            </span>
+
+            {page < totalPages && (
+              <a href={`?${buildQueryString({ ...Object.fromEntries(new URLSearchParams(window.location.search)), page: String(page + 1) })}`}
+                class="px-3 py-2 border border-gray-300 rounded hover:bg-gray-50">
+                Next →
+              </a>
+            )}
+          </div>
+        )}
+      </>
+    )}
+  </div>
+</AdminLayout>
+
+<style>
+  .gs-severity-critical {
+    @apply bg-red-100 text-red-700 font-semibold;
+  }
+
+  .gs-severity-high {
+    @apply bg-orange-100 text-orange-700 font-semibold;
+  }
+
+  .gs-severity-medium {
+    @apply bg-yellow-100 text-yellow-700 font-semibold;
+  }
+
+  .gs-severity-low {
+    @apply bg-blue-100 text-blue-700 font-semibold;
+  }
+
+  .gs-text-critical {
+    @apply text-red-600;
+  }
+</style>
