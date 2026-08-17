@@ -145,6 +145,21 @@ app.use(
   }),
 );
 
+// Ensure CORS headers are applied to all error responses (401, 403, etc)
+app.use('*', async (c, next) => {
+  await next();
+  // If CORS headers weren't set by previous middleware, add them for admin/protected routes
+  if (!c.res.headers.get('Access-Control-Allow-Origin')) {
+    const origin = c.req.header('Origin');
+    if (origin && (origin.includes('goldshore.ai') || origin.includes('goldshore.org') || origin.includes('localhost'))) {
+      c.header('Access-Control-Allow-Origin', origin);
+      c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+      c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Goldshore-Client, X-Goldshore-Request-Id, CF-Access-Jwt-Assertion');
+      c.header('Access-Control-Allow-Credentials', 'true');
+    }
+  }
+});
+
 app.use('/v1/*', ssrfProtectionMiddleware);
 
 app.use('*', async (c, next) => {
