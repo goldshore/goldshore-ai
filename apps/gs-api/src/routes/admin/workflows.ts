@@ -4,7 +4,6 @@ import { requireRbacPermission } from '../../middleware/requireRbacPermission';
 import { errorHandler, parsePagination } from './middleware/auth';
 import * as workflowsDb from './db/workflows';
 import * as auditDb from './db/rbac-audit';
-import { nanoid } from 'nanoid';
 
 const workflows = new Hono<{
   Bindings: Env;
@@ -12,6 +11,16 @@ const workflows = new Hono<{
 }>();
 
 workflows.use('*', parsePagination);
+
+// Generate random ID suffix for unique resource IDs
+const randomId = (length: number) => {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let id = '';
+  for (let i = 0; i < length; i++) {
+    id += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return id;
+};
 
 /**
  * GET /api/admin/workflows
@@ -81,7 +90,7 @@ workflows.post(
       );
     }
 
-    const workflowId = `wf_${body.type}_${nanoid(8)}`;
+    const workflowId = `wf_${body.type}_${randomId(8)}`;
     await workflowsDb.createWorkflow(db, {
       id: workflowId,
       name: body.name,
@@ -210,7 +219,7 @@ workflows.post(
       return c.json({ error: 'Workflow not found' }, 404);
     }
 
-    const runId = `run_${nanoid(12)}`;
+    const runId = `run_${randomId(12)}`;
     await workflowsDb.createWorkflowRun(db, {
       id: runId,
       workflow_id: workflowId,
