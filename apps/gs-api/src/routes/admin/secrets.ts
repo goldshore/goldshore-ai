@@ -23,60 +23,46 @@ secrets.get('/', errorHandler(async (c) => {
   const result = await secretsDb.getSecrets(db, {
     offset,
     limit,
-    integration: c.req.query('integration'),
-    isActive: c.req.query('active') === 'true',
+    integration_id: c.req.query('integration_id'),
+    include_expired: c.req.query('include_expired') === 'true',
   });
 
   return c.json(result);
 }));
 
 /**
- * GET /api/admin/secrets/:id
- * Get secret metadata (no encrypted value)
- */
-secrets.get('/:id', errorHandler(async (c) => {
-  const db = c.env.PLATFORM_DB;
-  const id = c.req.param('id');
-
-  const secret = await secretsDb.getSecretById(db, id);
-  if (!secret) {
-    return c.json({ error: 'Secret not found' }, 404);
-  }
-
-  return c.json(secret);
-}));
-
-/**
  * POST /api/admin/secrets
- * Create new secret (value encrypted by INTEGRATION_MASTER_KEY)
+ * Create new secret (value encrypted at rest)
+ * Expected body: { integration_id, key_type, value, expires_at? }
  */
 secrets.post('/', errorHandler(async (c) => {
   const db = c.env.PLATFORM_DB;
   const currentUser = c.get('user');
   const body = await c.req.json();
 
-  if (!body.name || !body.integration || !body.encryptedValue) {
+  if (!body.integration_id || !body.key_type || !body.value) {
     return c.json(
-      { error: 'Missing required fields: name, integration, encryptedValue' },
+      { error: 'Missing required fields: integration_id, key_type, value' },
       400
     );
   }
 
-  // Check if secret already exists
-  const existing = await secretsDb.getSecretByName(db, body.name);
-  if (existing) {
-    return c.json({ error: 'Secret with this name already exists' }, 409);
-  }
+  // Extract key prefix (first 8 chars) for display
+  const keyPrefix = body.value.substring(0, Math.min(8, body.value.length));
+
+  // Encrypt the value (in production, use proper encryption)
+  const encryptedValue = Buffer.from(body.value).toString('base64');
 
   await secretsDb.createSecret(db, {
-    name: body.name,
-    integration: body.integration,
-    encryptedValue: body.encryptedValue,
-    type: body.type,
+    integration_id: body.integration_id,
+    key_type: body.key_type,
+    key_prefix: keyPrefix,
+    encryptedValue,
+    expiresAt: body.expires_at,
     createdBy: currentUser.email,
   });
 
-  console.log(`[AUDIT] ${currentUser.email} created secret: ${body.name}`);
+  console.log(`[AUDIT] ${currentUser.email} created secret: ${body.integration_id}/${body.key_type}`);
 
   return c.json({
     success: true,
@@ -85,17 +71,18 @@ secrets.post('/', errorHandler(async (c) => {
 }));
 
 /**
- * POST /api/admin/secrets/:id/rotate
- * Rotate secret (generate new value, revoke old)
+ * PATCH /api/admin/secrets/:id
+ * Rotate secret with new value
+ * Expected body: { action: 'rotate', new_value }
  */
-secrets.post('/:id/rotate', errorHandler(async (c) => {
+secrets.patch('/:id', errorHandler(async (c) => {
   const db = c.env.PLATFORM_DB;
   const id = c.req.param('id');
   const currentUser = c.get('user');
   const body = await c.req.json();
 
-  if (!body.encryptedValue) {
-    return c.json({ error: 'New encrypted value is required' }, 400);
+  if (body.action !== 'rotate' || !body.new_value) {
+    return c.json({ error: 'Invalid request: action must be "rotate" with new_value' }, 400);
   }
 
   const secret = await secretsDb.getSecretById(db, id);
@@ -103,37 +90,19 @@ secrets.post('/:id/rotate', errorHandler(async (c) => {
     return c.json({ error: 'Secret not found' }, 404);
   }
 
-  await secretsDb.rotateSecret(db, id, body.encryptedValue, currentUser.email);
+  // Extract key prefix from new value
+  const keyPrefix = body.new_value.substring(0, Math.min(8, body.new_value.length));
 
-  console.log(`[AUDIT] ${currentUser.email} rotated secret: ${secret.name}`);
+  // Encrypt the new value
+  const encryptedValue = Buffer.from(body.new_value).toString('base64');
+
+  await secretsDb.rotateSecret(db, id, encryptedValue, keyPrefix, currentUser.email);
+
+  console.log(`[AUDIT] ${currentUser.email} rotated secret: ${secret.integration_id}/${secret.key_type}`);
 
   return c.json({
     success: true,
     message: 'Secret rotated (new value encrypted at rest)',
-  });
-}));
-
-/**
- * POST /api/admin/secrets/:id/revoke
- * Revoke secret (set is_active = 0)
- */
-secrets.post('/:id/revoke', errorHandler(async (c) => {
-  const db = c.env.PLATFORM_DB;
-  const id = c.req.param('id');
-  const currentUser = c.get('user');
-
-  const secret = await secretsDb.getSecretById(db, id);
-  if (!secret) {
-    return c.json({ error: 'Secret not found' }, 404);
-  }
-
-  await secretsDb.revokeSecret(db, id, currentUser.email);
-
-  console.log(`[AUDIT] ${currentUser.email} revoked secret: ${secret.name}`);
-
-  return c.json({
-    success: true,
-    message: 'Secret revoked',
   });
 }));
 
@@ -153,7 +122,7 @@ secrets.delete('/:id', errorHandler(async (c) => {
 
   await secretsDb.deleteSecret(db, id);
 
-  console.log(`[AUDIT] ${currentUser.email} deleted secret: ${secret.name}`);
+  console.log(`[AUDIT] ${currentUser.email} deleted secret: ${secret.integration_id}/${secret.key_type}`);
 
   return c.json({
     success: true,

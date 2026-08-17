@@ -1,8 +1,14 @@
 ---
-import { CANONICAL_ADMIN_DASHBOARD_URL } from '../utils/admin-access';
+import {
+  CANONICAL_ADMIN_DASHBOARD_URL,
+  CANONICAL_ADMIN_ORIGIN,
+  CLOUDFLARE_ACCESS_LOGOUT_PATH,
+} from '../utils/admin-access';
 import { publicMenuGroups } from '../config/navigation';
 import { getPublicSiteUrl } from '../utils/public-site';
 import '../styles/global.css';
+
+const adminLogoutUrl = `${CANONICAL_ADMIN_ORIGIN}${CLOUDFLARE_ACCESS_LOGOUT_PATH}`;
 
 const { currentPath = Astro.url.pathname } = Astro.props;
 const normalizePath = (path: string) => {
@@ -36,11 +42,36 @@ const isCurrent = (href: string) => {
         </details>
       ))}
     </div>
-    <a href={CANONICAL_ADMIN_DASHBOARD_URL} class="nav-login" data-admin-access-link>Log in</a>
+    <a
+      href={CANONICAL_ADMIN_DASHBOARD_URL}
+      class="nav-login"
+      data-admin-access-link
+      data-login-href={CANONICAL_ADMIN_DASHBOARD_URL}
+      data-logout-href={adminLogoutUrl}
+    >Log in</a>
     <a href={publicUrl('/contact/')} class="nav-cta">Request Briefing</a>
   </nav>
 </header>
 
 <script>
   import '../scripts/theme-navigation';
+  import { useAuthToken } from '../utils/auth';
+
+  // Reflects the existing staff Cloudflare Access session in the header CTA.
+  // This is a cosmetic label only — the admin/app routes remain the actual
+  // authorization boundary (enforced server-side in middleware.ts) regardless
+  // of what this link displays or is clicked while unauthenticated.
+  const loginLink = document.querySelector<HTMLAnchorElement>('[data-admin-access-link]');
+  if (loginLink) {
+    try {
+      const { isValid } = useAuthToken();
+      if (isValid) {
+        loginLink.textContent = 'Logout';
+        loginLink.href = loginLink.dataset.logoutHref ?? loginLink.href;
+      }
+    } catch {
+      // No CF-Authorization cookie readable client-side (e.g. cross-subdomain
+      // cookie scoping) — leave the default "Log in" state in place.
+    }
+  }
 </script>

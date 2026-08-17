@@ -29,6 +29,7 @@ name = "gs-api"
 routes = [
   { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "api.goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "admin.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "agent.goldshore.org/*", zone_name = "goldshore.org" },
   { pattern = "mail.goldshore.ai/*", zone_name = "goldshore.ai" },
@@ -49,6 +50,7 @@ ENV = "production"
 AI_SEARCH_PUBLIC_ENDPOINT = "https://f800ea69-7ef4-4094-ba29-de38736fd22f.search.ai.cloudflare.com"
 CLOUDFLARE_ACCESS_AUDIENCE = "8510d42c31fc791e295427031ffeef7c7ebc0f1b62d8634fbb284bf82562f528"
 CLOUDFLARE_ACCESS_APPLICATION = "api-production"
+ADMIN_PROXY_AUDIENCE = "c520a7647223b49b20fbe5be240772863eb684b97b57c08955b6104c58170db9"
 CLOUDFLARE_SERVICE_ACCESS_AUDIENCE = "7ad07891d7c74cf243bb276b5941a75a3fcdc7301addb662a8b21df3e679c4a1"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 # CONTROL_SYNC_TOKEN is a Worker secret. Keep it out of vars so deploys
