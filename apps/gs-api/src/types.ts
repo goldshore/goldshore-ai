@@ -145,6 +145,7 @@ type RuntimeSecrets = {
 
 type RuntimeVariables = {
   AI_SEARCH_PUBLIC_ENDPOINT?: string;
+  ADMIN_PROXY_AUDIENCE?: string;
   ADMIN_URL?: string;
   API_ORIGIN?: string;
   CLOUDFLARE_ACCESS_APPLICATION?: string;
