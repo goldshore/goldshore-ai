@@ -173,11 +173,19 @@ app.use('*', async (c, next) => {
   }
 
   const serviceRequest = c.req.path === '/internal' || c.req.path.startsWith('/internal/');
+  const adminProxyRequest = c.req.path.startsWith('/api/admin') || c.req.path.startsWith('/admin/');
+
   const accessEnv = serviceRequest
     ? {
         ...c.env,
         CLOUDFLARE_ACCESS_AUDIENCE: c.env.CLOUDFLARE_SERVICE_ACCESS_AUDIENCE,
         CLOUDFLARE_ACCESS_APPLICATION: 'service-production',
+      }
+    : adminProxyRequest
+    ? {
+        ...c.env,
+        // Accept admin-production audience for proxied requests from gs-web
+        CLOUDFLARE_ACCESS_AUDIENCE: c.env.ADMIN_PROXY_AUDIENCE || c.env.CLOUDFLARE_ACCESS_AUDIENCE,
       }
     : c.env;
   if (!accessEnv.CLOUDFLARE_ACCESS_AUDIENCE) {

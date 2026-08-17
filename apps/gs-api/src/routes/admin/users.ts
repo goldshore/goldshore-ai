@@ -107,6 +107,34 @@ users.post('/:id', errorHandler(async (c) => {
 }));
 
 /**
+ * PATCH /api/admin/users/:id
+ * Quickly update user role
+ */
+users.patch('/:id', errorHandler(async (c) => {
+  const db = c.env.PLATFORM_DB;
+  const id = c.req.param('id');
+  const currentUser = c.get('user');
+  const body = await c.req.json();
+
+  if (!body.role) {
+    return c.json({ error: 'Role is required' }, 400);
+  }
+
+  const user = await usersDb.getUserById(db, id);
+  if (!user) {
+    return c.json({ error: 'User not found' }, 404);
+  }
+
+  await usersDb.updateUser(db, id, {
+    role: body.role,
+  });
+
+  console.log(`[AUDIT] ${currentUser.email} updated user ${id} role to ${body.role}`);
+
+  return c.json({ success: true, message: 'User role updated' });
+}));
+
+/**
  * DELETE /api/admin/users/:id
  * Remove user (revoke access)
  */
