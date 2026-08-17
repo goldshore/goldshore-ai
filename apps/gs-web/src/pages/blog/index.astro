@@ -1,223 +1,97 @@
 ---
-import PublicHeader from '../../components/PublicHeader.astro';
-import PublicFooter from '../../components/PublicFooter.astro';
+import { GSButton } from '@goldshore/ui';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FlowSection from '../../components/FlowSection.astro';
 
-// Mock blog posts - in production, fetch from CMS or database
-const blogPosts = [
-  {
-    id: 1,
-    title: 'Getting Started with Automated Trading',
-    excerpt: 'Learn how to set up your first automated trading strategy on GoldShore.',
-    category: 'Tutorial',
-    date: '2026-08-10',
-    author: 'Sarah Chen',
-    slug: 'getting-started-automated-trading'
-  },
-  {
-    id: 2,
-    title: 'Market Analysis: Q3 Trends',
-    excerpt: 'Deep dive into the key market trends shaping Q3 2026.',
-    category: 'Market Analysis',
-    date: '2026-08-08',
-    author: 'Michael Torres',
-    slug: 'q3-market-trends'
-  },
-  {
-    id: 3,
-    title: 'Advanced Risk Management Strategies',
-    excerpt: 'Explore sophisticated risk management techniques for professional traders.',
-    category: 'Strategy',
-    date: '2026-08-05',
-    author: 'Emma Watson',
-    slug: 'advanced-risk-management'
-  },
-];
+export const prerender = false;
 ---
 
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Read the latest articles, tutorials, and insights from GoldShore." />
-    <title>Blog - GoldShore</title>
-    <link rel="stylesheet" href="../../styles/public.css" />
-    <link rel="stylesheet" href="../../styles/blog.css" />
-  </head>
-  <body class="gs-public-page">
-    <PublicHeader />
-    
-    <main class="gs-blog-page">
-      <section class="gs-hero-section">
-        <div class="gs-container">
-          <div class="gs-hero-content">
-            <h1>Blog</h1>
-            <p class="gs-hero-subtitle">Trading insights, tutorials, and market analysis</p>
-          </div>
-        </div>
-      </section>
+<BaseLayout
+  title="Signals | GoldShore"
+  description="Field notes on risk intelligence, AI operations, and resilient systems from the GoldShore team."
+  canonicalPath="/blog"
+>
+  <FlowSection variant="hero">
+    <div>
+      <p class="gs-eyebrow">Signals</p>
+      <h1>Signals</h1>
+      <p class="gs-text-lg">Field notes on risk intelligence, AI operations, and resilient systems — coming soon.</p>
+    </div>
+    <div class="gs-card">
+      <h3 class="section-title">Temporary intro</h3>
+      <p>This placeholder keeps navigation live while we finalize our first round of published Signals posts.</p>
+    </div>
+  </FlowSection>
 
-      <section class="gs-blog-section">
-        <div class="gs-container">
-          <div class="gs-blog-grid">
-            {blogPosts.map((post) => (
-              <article class="gs-blog-card">
-                <div class="gs-blog-category">{post.category}</div>
-                <h2><a href={`/blog/${post.slug}`}>{post.title}</a></h2>
-                <p class="gs-blog-excerpt">{post.excerpt}</p>
-                <div class="gs-blog-meta">
-                  <span class="gs-blog-author">{post.author}</span>
-                  <span class="gs-blog-date">{new Date(post.date).toLocaleDateString()}</span>
-                </div>
-                <a href={`/blog/${post.slug}`} class="gs-blog-link">Read More →</a>
-              </article>
-            ))}
-          </div>
+  <FlowSection>
+    <div class="gs-card">
+      <h2 class="section-title">Get notified when Signals launches</h2>
+      <p>Leave your email and we'll let you know when the first posts go live.</p>
+      <form id="newsletter-form">
+        <div class="gs-form-group">
+          <label for="newsletter-email">Email</label>
+          <input type="email" id="newsletter-email" name="email" placeholder="you@company.com" required />
         </div>
-      </section>
+        <GSButton type="submit">Notify me</GSButton>
+      </form>
+      <p id="newsletter-status" role="status"></p>
+    </div>
+  </FlowSection>
+</BaseLayout>
 
-      <section class="gs-newsletter-section">
-        <div class="gs-container">
-          <h2>Subscribe to Our Newsletter</h2>
-          <p>Get the latest market insights and trading tips delivered to your inbox.</p>
-          <form class="gs-newsletter-form">
-            <input 
-              type="email" 
-              placeholder="Enter your email" 
-              required 
-            />
-            <button type="submit" class="gs-btn gs-btn-primary">Subscribe</button>
-          </form>
-        </div>
-      </section>
-    </main>
+<script>
+  const form = document.getElementById('newsletter-form') as HTMLFormElement | null;
+  const status = document.getElementById('newsletter-status');
 
-    <PublicFooter />
-  </body>
-</html>
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = (document.getElementById('newsletter-email') as HTMLInputElement)?.value;
+    if (!email || !status) return;
+
+    status.textContent = 'Submitting…';
+    try {
+      const response = await fetch('/api/leads/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, source: 'blog-signals' }),
+      });
+      status.textContent = response.ok
+        ? "Thanks — we'll let you know when Signals launches."
+        : 'Something went wrong. Please try again.';
+      if (response.ok) form.reset();
+    } catch {
+      status.textContent = 'Something went wrong. Please try again.';
+    }
+  });
+</script>
 
 <style>
-  .gs-blog-page {
-    background: linear-gradient(135deg, #050b14 0%, #0f1622 100%);
-    color: rgba(226, 232, 240, 0.92);
+  .gs-form-group {
+    margin-bottom: 1.25rem;
   }
 
-  .gs-blog-section {
-    padding: 80px 20px;
+  .gs-form-group label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
   }
 
-  .gs-blog-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 32px;
-  }
-
-  .gs-blog-card {
-    padding: 32px;
-    background: rgba(15, 22, 34, 0.5);
-    border: 1px solid rgba(226, 232, 240, 0.1);
-    border-radius: 12px;
-    backdrop-filter: blur(10px);
-    transition: all 0.3s ease;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .gs-blog-card:hover {
-    border-color: rgba(59, 130, 246, 0.3);
-    transform: translateY(-4px);
-  }
-
-  .gs-blog-category {
-    display: inline-block;
-    font-size: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
-    color: #3b82f6;
-    margin-bottom: 12px;
-    width: fit-content;
-  }
-
-  .gs-blog-card h2 {
-    font-size: 20px;
-    line-height: 1.4;
-    margin-bottom: 12px;
-  }
-
-  .gs-blog-card h2 a {
-    color: rgba(226, 232, 240, 0.92);
-    text-decoration: none;
-  }
-
-  .gs-blog-card h2 a:hover {
-    color: #3b82f6;
-  }
-
-  .gs-blog-excerpt {
-    color: rgba(226, 232, 240, 0.6);
-    font-size: 14px;
-    line-height: 1.6;
-    margin-bottom: 16px;
-    flex-grow: 1;
-  }
-
-  .gs-blog-meta {
-    display: flex;
-    justify-content: space-between;
-    font-size: 12px;
-    color: rgba(226, 232, 240, 0.5);
-    margin-bottom: 16px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid rgba(226, 232, 240, 0.1);
-  }
-
-  .gs-blog-link {
-    color: #3b82f6;
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: 600;
-  }
-
-  .gs-blog-link:hover {
-    color: #8b5cf6;
-  }
-
-  .gs-newsletter-section {
-    padding: 80px 20px;
-    text-align: center;
-    background: rgba(15, 22, 34, 0.3);
-  }
-
-  .gs-newsletter-section h2 {
-    font-size: 36px;
-    margin-bottom: 12px;
-  }
-
-  .gs-newsletter-section p {
-    font-size: 16px;
-    color: rgba(226, 232, 240, 0.7);
-    margin-bottom: 32px;
-  }
-
-  .gs-newsletter-form {
-    display: flex;
-    gap: 12px;
-    max-width: 500px;
-    margin: 0 auto;
-  }
-
-  .gs-newsletter-form input {
-    flex: 1;
-    padding: 12px 16px;
-    background: rgba(15, 22, 34, 0.5);
-    border: 1px solid rgba(226, 232, 240, 0.2);
+  .gs-form-group input {
+    width: 100%;
+    max-width: 24rem;
+    padding: 0.75rem 1rem;
+    background: var(--gs-surface-2, rgba(255, 255, 255, 0.04));
+    border: 1px solid var(--gs-border-color, rgba(255, 255, 255, 0.12));
     border-radius: 8px;
-    color: rgba(226, 232, 240, 0.92);
-    font-size: 14px;
+    color: inherit;
+    font-family: inherit;
+    font-size: 0.9rem;
   }
 
-  .gs-newsletter-form input:focus {
-    outline: none;
-    border-color: #3b82f6;
+  #newsletter-status {
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    opacity: 0.8;
   }
 </style>

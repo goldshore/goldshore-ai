@@ -1,7 +1,14 @@
 ---
-import { CANONICAL_ADMIN_DASHBOARD_URL } from '../utils/admin-access';
+import {
+  CANONICAL_ADMIN_DASHBOARD_URL,
+  CANONICAL_ADMIN_ORIGIN,
+  CLOUDFLARE_ACCESS_LOGOUT_PATH,
+} from '../utils/admin-access';
 import { publicMenuGroups } from '../config/navigation';
+import { getPublicSiteUrl } from '../utils/public-site';
 import '../styles/global.css';
+
+const adminLogoutUrl = `${CANONICAL_ADMIN_ORIGIN}${CLOUDFLARE_ACCESS_LOGOUT_PATH}`;
 
 const { currentPath = Astro.url.pathname } = Astro.props;
 const normalizePath = (path: string) => {
@@ -9,6 +16,7 @@ const normalizePath = (path: string) => {
   return normalized === '/' ? '/' : `${normalized.replace(/\/+$/, '')}/`;
 };
 const activePath = normalizePath(currentPath);
+const publicUrl = (href: string) => getPublicSiteUrl(Astro.url.hostname, href);
 const isCurrent = (href: string) => {
   const normalizedHref = normalizePath(href);
   return normalizedHref === '/'
@@ -18,7 +26,7 @@ const isCurrent = (href: string) => {
 ---
 
 <header class="topbar" data-menu-open="false" data-theme-header>
-  <a class="brand brand-text" href="/" aria-label="GoldShore home">
+  <a class="brand brand-text" href={publicUrl('/')} aria-label="GoldShore home">
     <img src="/assets/penrose-logo.png" alt="" class="brand-logo" />
     <span class="brand-wordmark brand-text-label">GOLDSHORE</span>
   </a>
@@ -29,16 +37,41 @@ const isCurrent = (href: string) => {
         <details class="main-nav__tier" name="header-tier">
           <summary>{group.label}</summary>
           <div class="main-nav__submenu">
-            {group.links.map((link) => <a href={link.href} aria-current={isCurrent(link.href) ? 'page' : undefined}>{link.label}</a>)}
+            {group.links.map((link) => <a href={publicUrl(link.href)} aria-current={isCurrent(link.href) ? 'page' : undefined}>{link.label}</a>)}
           </div>
         </details>
       ))}
     </div>
-    <a href={CANONICAL_ADMIN_DASHBOARD_URL} class="nav-login" data-admin-access-link>Log in</a>
-    <a href="/contact/" class="nav-cta">Request Briefing</a>
+    <a
+      href={CANONICAL_ADMIN_DASHBOARD_URL}
+      class="nav-login"
+      data-admin-access-link
+      data-login-href={CANONICAL_ADMIN_DASHBOARD_URL}
+      data-logout-href={adminLogoutUrl}
+    >Log in</a>
+    <a href={publicUrl('/contact/')} class="nav-cta">Request Briefing</a>
   </nav>
 </header>
 
 <script>
   import '../scripts/theme-navigation';
+  import { useAuthToken } from '../utils/auth';
+
+  // Reflects the existing staff Cloudflare Access session in the header CTA.
+  // This is a cosmetic label only — the admin/app routes remain the actual
+  // authorization boundary (enforced server-side in middleware.ts) regardless
+  // of what this link displays or is clicked while unauthenticated.
+  const loginLink = document.querySelector<HTMLAnchorElement>('[data-admin-access-link]');
+  if (loginLink) {
+    try {
+      const { isValid } = useAuthToken();
+      if (isValid) {
+        loginLink.textContent = 'Logout';
+        loginLink.href = loginLink.dataset.logoutHref ?? loginLink.href;
+      }
+    } catch {
+      // No CF-Authorization cookie readable client-side (e.g. cross-subdomain
+      // cookie scoping) — leave the default "Log in" state in place.
+    }
+  }
 </script>
