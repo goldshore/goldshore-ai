@@ -15,6 +15,13 @@ import repoHealth from './repo-health';
 import piiScans from './pii-scans';
 import chat from './chat';
 import analytics from './analytics';
+import rbacRoles from './rbac-roles';
+import rbacUsers from './rbac-users';
+import rbacPermissions from './rbac-permissions';
+import rbacAudit from './rbac-audit';
+import workflows from './workflows';
+import aiSearch from './ai-search';
+import prManager from './pr-manager';
 
 const admin = new Hono<{
   Bindings: Env;
@@ -34,6 +41,19 @@ admin.route('/pii-scans', piiScans);
 admin.route('/chat', chat);
 admin.route('/analytics', analytics);
 // admin.route('/workers', workers); // TODO: Phase 2 - Cloudflare Worker management
+
+// Phase 2a: RBAC access control routes
+admin.route('/rbac/roles', rbacRoles);
+admin.route('/rbac/users', rbacUsers);
+admin.route('/rbac/permissions', rbacPermissions);
+admin.route('/rbac/audit', rbacAudit);
+
+// Phase 3: Workflow management
+admin.route('/workflows', workflows);
+
+// Phase 4: Enterprise features
+admin.route('/ai-search', aiSearch);
+admin.route('/pr-manager', prManager);
 
 // Deployment routes (existing)
 const deploy = new Hono<{
