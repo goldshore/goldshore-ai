@@ -1,9 +1,9 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import AdminLayout from '../../layouts/AdminLayout.astro';
 import WorkflowsClient from '../../components/admin/WorkflowsClient';
 ---
 
-<BaseLayout title="Workflows & Automation">
+<AdminLayout title="Workflows & Automation">
   <div class="py-8">
     <div class="max-w-6xl mx-auto px-4">
       <div class="mb-8">
@@ -13,4 +13,4 @@ import WorkflowsClient from '../../components/admin/WorkflowsClient';
       <WorkflowsClient client:load />
     </div>
   </div>
-</BaseLayout>
+</AdminLayout>

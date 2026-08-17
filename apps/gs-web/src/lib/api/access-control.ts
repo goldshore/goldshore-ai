@@ -1,149 +1,112 @@
-const API_BASE = '/api/admin/rbac';
-
-export async function listRoles(offset = 0, limit = 50) {
-  const res = await fetch(`${API_BASE}/roles?offset=${offset}&limit=${limit}`);
-  if (!res.ok) throw new Error(`Failed to list roles: ${res.statusText}`);
-  return res.json();
-}
-
-export async function getRoleById(roleId: string) {
-  const res = await fetch(`${API_BASE}/roles/${roleId}`);
-  if (!res.ok) throw new Error(`Failed to get role: ${res.statusText}`);
-  return res.json();
-}
-
-export async function createRole(data: {
+export interface Role {
+  id: string;
   name: string;
   description?: string;
-  permission_ids: string[];
-  reason?: string;
-}) {
-  const res = await fetch(`${API_BASE}/roles`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error(`Failed to create role: ${res.statusText}`);
-  return res.json();
+  permissions: string[];
+  is_default?: boolean;
 }
 
-export async function updateRole(
-  roleId: string,
-  data: {
-    description?: string;
-    permission_ids?: string[];
-    reason?: string;
-  }
-) {
-  const res = await fetch(`${API_BASE}/roles/${roleId}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error(`Failed to update role: ${res.statusText}`);
-  return res.json();
+export interface Permission {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
 }
 
-export async function deleteRole(roleId: string, reason?: string) {
-  const params = new URLSearchParams();
-  if (reason) params.set('reason', reason);
-
-  const res = await fetch(`${API_BASE}/roles/${roleId}?${params}`, {
-    method: 'DELETE',
-  });
-  if (!res.ok) throw new Error(`Failed to delete role: ${res.statusText}`);
-  return res.json();
-}
-
-export async function listUsers(offset = 0, limit = 50, filters?: { status?: string; roleId?: string }) {
-  const params = new URLSearchParams({
-    offset: String(offset),
-    limit: String(limit),
-  });
-  if (filters?.status) params.set('status', filters.status);
-  if (filters?.roleId) params.set('roleId', filters.roleId);
-
-  const res = await fetch(`${API_BASE}/users?${params}`);
-  if (!res.ok) throw new Error(`Failed to list users: ${res.statusText}`);
-  return res.json();
-}
-
-export async function getUserById(userId: string) {
-  const res = await fetch(`${API_BASE}/users/${userId}`);
-  if (!res.ok) throw new Error(`Failed to get user: ${res.statusText}`);
-  return res.json();
-}
-
-export async function inviteUser(data: {
+export interface User {
+  id: string;
   email: string;
   name?: string;
-  roleId: string;
-  reason?: string;
-}) {
-  const res = await fetch(`${API_BASE}/users`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error(`Failed to invite user: ${res.statusText}`);
-  return res.json();
+  role_id: string;
+  status: 'active' | 'suspended' | 'pending';
+  created_at: string;
 }
 
-export async function updateUser(
-  userId: string,
-  data: {
-    name?: string;
-    roleId?: string;
-    status?: 'active' | 'suspended' | 'revoked';
-    reason?: string;
-  }
-) {
-  const res = await fetch(`${API_BASE}/users/${userId}`, {
+export async function listRoles(): Promise<Role[]> {
+  const response = await fetch('/api/admin/roles', {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) throw new Error('Failed to list roles');
+  return response.json();
+}
+
+export async function createRole(role: Omit<Role, 'id'>): Promise<Role> {
+  const response = await fetch('/api/admin/roles', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(role),
+  });
+  if (!response.ok) throw new Error('Failed to create role');
+  return response.json();
+}
+
+export async function updateRole(id: string, role: Partial<Role>): Promise<Role> {
+  const response = await fetch(`/api/admin/roles/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+    body: JSON.stringify(role),
   });
-  if (!res.ok) throw new Error(`Failed to update user: ${res.statusText}`);
-  return res.json();
+  if (!response.ok) throw new Error('Failed to update role');
+  return response.json();
 }
 
-export async function suspendUser(userId: string, reason?: string) {
-  const res = await fetch(`${API_BASE}/users/${userId}/suspend`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ reason }),
-  });
-  if (!res.ok) throw new Error(`Failed to suspend user: ${res.statusText}`);
-  return res.json();
-}
-
-export async function restoreUser(userId: string) {
-  const res = await fetch(`${API_BASE}/users/${userId}/restore`, {
-    method: 'POST',
-  });
-  if (!res.ok) throw new Error(`Failed to restore user: ${res.statusText}`);
-  return res.json();
-}
-
-export async function deleteUser(userId: string, reason?: string) {
-  const params = new URLSearchParams();
-  if (reason) params.set('reason', reason);
-
-  const res = await fetch(`${API_BASE}/users/${userId}?${params}`, {
+export async function deleteRole(id: string): Promise<void> {
+  const response = await fetch(`/api/admin/roles/${id}`, {
     method: 'DELETE',
   });
-  if (!res.ok) throw new Error(`Failed to delete user: ${res.statusText}`);
-  return res.json();
+  if (!response.ok) throw new Error('Failed to delete role');
 }
 
-export async function listPermissions() {
-  const res = await fetch(`${API_BASE}/permissions`);
-  if (!res.ok) throw new Error(`Failed to list permissions: ${res.statusText}`);
-  return res.json();
+export async function listUsers(): Promise<User[]> {
+  const response = await fetch('/api/admin/users', {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) throw new Error('Failed to list users');
+  return response.json();
 }
 
-export async function getPermissionById(permId: string) {
-  const res = await fetch(`${API_BASE}/permissions/${permId}`);
-  if (!res.ok) throw new Error(`Failed to get permission: ${res.statusText}`);
-  return res.json();
+export async function inviteUser(email: string, roleId: string): Promise<User> {
+  const response = await fetch('/api/admin/users/invite', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, role_id: roleId }),
+  });
+  if (!response.ok) throw new Error('Failed to invite user');
+  return response.json();
+}
+
+export async function updateUser(id: string, updates: Partial<User>): Promise<User> {
+  const response = await fetch(`/api/admin/users/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updates),
+  });
+  if (!response.ok) throw new Error('Failed to update user');
+  return response.json();
+}
+
+export async function suspendUser(id: string): Promise<User> {
+  return updateUser(id, { status: 'suspended' });
+}
+
+export async function restoreUser(id: string): Promise<User> {
+  return updateUser(id, { status: 'active' });
+}
+
+export async function deleteUser(id: string): Promise<void> {
+  const response = await fetch(`/api/admin/users/${id}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) throw new Error('Failed to delete user');
+}
+
+export async function listPermissions(): Promise<Permission[]> {
+  const response = await fetch('/api/admin/permissions', {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) throw new Error('Failed to list permissions');
+  return response.json();
 }
