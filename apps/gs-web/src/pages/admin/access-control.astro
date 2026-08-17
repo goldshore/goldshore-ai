@@ -1,9 +1,9 @@
 ---
-import AdminLayout from '../../layouts/AdminLayout.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
 import AccessControlClient from '../../components/admin/AccessControlClient';
 ---
 
-<AdminLayout title="Access Control & Roles">
+<BaseLayout title="Access Control & Roles">
   <div class="py-8">
     <div class="max-w-7xl mx-auto px-4">
       <div class="mb-8">
@@ -13,4 +13,4 @@ import AccessControlClient from '../../components/admin/AccessControlClient';
       <AccessControlClient client:load />
     </div>
   </div>
-</AdminLayout>
+</BaseLayout>
