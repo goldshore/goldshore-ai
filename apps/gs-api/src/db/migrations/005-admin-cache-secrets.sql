@@ -18,18 +18,20 @@ CREATE INDEX IF NOT EXISTS idx_admin_cache_cached_at ON admin_cache(cached_at DE
 -- Secrets table for integration credentials
 CREATE TABLE IF NOT EXISTS admin_secrets (
   id TEXT PRIMARY KEY,
-  name TEXT UNIQUE NOT NULL, -- STRIPE_SECRET_KEY, META_ACCESS_TOKEN, etc
-  integration TEXT NOT NULL, -- 'stripe', 'meta', 'openai', 'google', 'cloudflare'
+  integration_id TEXT NOT NULL, -- 'stripe', 'meta', 'openai', 'google', 'cloudflare'
+  key_type TEXT NOT NULL, -- 'apiKey', 'apiSecret', 'webhook_secret', 'oauth_token'
+  key_prefix TEXT NOT NULL, -- First few chars of secret (for display)
   encrypted_value TEXT NOT NULL, -- AES-256-GCM encrypted secret
-  type TEXT DEFAULT 'api_key', -- 'api_key', 'access_token', 'connection_string', 'webhook_secret'
+  rotation_count INTEGER DEFAULT 0,
   is_active BOOLEAN DEFAULT 1,
-  last_rotated DATETIME,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  rotated_at DATETIME,
+  expires_at DATETIME,
   created_by TEXT,
   updated_by TEXT
 );
 
-CREATE INDEX IF NOT EXISTS idx_admin_secrets_integration ON admin_secrets(integration);
+CREATE INDEX IF NOT EXISTS idx_admin_secrets_integration_id ON admin_secrets(integration_id);
 CREATE INDEX IF NOT EXISTS idx_admin_secrets_is_active ON admin_secrets(is_active);
 CREATE INDEX IF NOT EXISTS idx_admin_secrets_created_at ON admin_secrets(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_admin_secrets_expires_at ON admin_secrets(expires_at);
