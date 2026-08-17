@@ -13,6 +13,7 @@ type ResourceBindings = {
   RISK_RADAR_DB?: D1Database;
   TELEMETRY_DB?: D1Database;
   GS_ASSETS: R2Bucket;
+  HOSTGATOR_DB?: Hyperdrive;
   MAIL_ARCHIVE?: R2Bucket;
   RISK_RADAR_R2?: R2Bucket;
   TELEMETRY?: R2Bucket;
@@ -43,14 +44,12 @@ type RuntimeSecrets = {
   MAIL_ALLOWED_RECIPIENTS?: string;
   AGENT?: Fetcher;
   API_ORIGIN?: string;
-  CLOUDFLARE_API_TOKEN?: string;
+  CF_TOKEN?: string;
   GITHUB_TOKEN?: string;
   GITHUB_API_TOKEN?: string;
   GH_TOKEN?: string;
-  CLOUDFLARE_ACCOUNT_ID?: string;
-  CLOUDFLARE_API_TOKEN?: string;
-  CLOUDFLARE_PAGES_PROJECT?: string;
-  CLOUDFLARE_ZONE_ID?: string;
+  CF_ACCOUNT_ID?: string;
+  CF_ZONE_ID?: string;
   CLOUDFLARE_ZONE_NAME?: string;
   CLOUDFLARE_PAGES_PROJECT?: string;
   ADMIN_URL?: string;
@@ -105,6 +104,21 @@ type RuntimeSecrets = {
   OAUTH_TOKEN_ENCRYPTION_KEY?: string;
   OPENAI_API_KEY?: string;
   OPENCLAW_API_KEY?: string;
+  // ────────────────────────────────────────────────────────────────────────────
+  // DEPRECATED SECRETS — Do not use in new code. Use primary names only.
+  // ────────────────────────────────────────────────────────────────────────────
+  CLOUDFLARE_API_TOKEN?: string; // Use CF_TOKEN instead
+  CLOUDFLARE_ACCOUNT_ID?: string; // Use CF_ACCOUNT_ID instead
+  CLOUDFLARE_ZONE_ID?: string; // Use CF_ZONE_ID or CLOUDFLARE_GOLDSHORE_AI_ZONE_ID instead
+  CF_AUTH_KEY?: string; // Deprecated: legacy global API key auth
+  CF_ACCOUNT_KEY?: string; // Deprecated: legacy account-level API key auth
+  GOLDSHORE_CF_TOKEN?: string; // Use CF_TOKEN instead
+  OPENAI_API_TOKEN?: string; // Use OPENAI_API_KEY instead
+  CLOUDFLARE_BUILD_TOKEN?: string; // Use CLOUDFLARE_BUILD_API_TOKEN instead
+  CF_WORKERS_BUILDS?: string; // Use CLOUDFLARE_BUILD_API_TOKEN instead
+  GOLDSHORE_CF_TOKEN_SECRET_ACCESS_KEY?: string; // Unclear purpose — audit for removal
+  GS_DISPATCH_TOKEN?: string; // Stale: last rotated 2+ months ago
+  CLOUDFLARE_CA_ORIGIN_KEY?: string; // Stale: last verified 2+ months ago
   OPENCLAW_BASE_URL?: string;
   PORT?: string;
   ROBINHOOD_ACCOUNT_ID?: string;
@@ -131,6 +145,7 @@ type RuntimeSecrets = {
 
 type RuntimeVariables = {
   AI_SEARCH_PUBLIC_ENDPOINT?: string;
+  ADMIN_PROXY_AUDIENCE?: string;
   ADMIN_URL?: string;
   API_ORIGIN?: string;
   CLOUDFLARE_ACCESS_APPLICATION?: string;

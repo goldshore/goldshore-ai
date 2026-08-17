@@ -1,0 +1,77 @@
+---
+export const prerender = false;
+
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import EntriesManager from "../../../components/admin/EntriesManager";
+
+const jwtToken = Astro.cookies.get('CF-Authorization')?.value || '';
+const offset = parseInt(new URL(Astro.request.url).searchParams.get('offset') || '0');
+const limit = parseInt(new URL(Astro.request.url).searchParams.get('limit') || '25');
+
+const apiBaseUrl = 'https://api.goldshore.ai/admin';
+
+let entries = { items: [], total: 0, offset, limit, error: null as string | null };
+
+try {
+  const params = new URLSearchParams({
+    offset: String(offset),
+    limit: String(limit),
+  });
+
+  const response = await fetch(`${apiBaseUrl}/entries?${params}`, {
+    headers: {
+      'CF-Authorization': jwtToken,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (response.ok) {
+    entries = await response.json();
+  } else if (response.status === 401 || response.status === 403) {
+    entries.error = 'Authentication required. Please ensure you are logged in with the correct credentials.';
+  }
+} catch (error) {
+  entries.error = error instanceof Error ? error.message : 'Failed to load entries';
+}
+
+const contacts = entries.items?.filter((e: any) => e.type === 'contact') || [];
+const leads = entries.items?.filter((e: any) => e.type === 'lead') || [];
+---
+
+<AdminLayout title="Admin | Entries">
+  <div class="max-w-7xl mx-auto p-8 space-y-8">
+    <div class="space-y-2">
+      <h1 class="text-4xl gs-heading gs-text-accent">Entries Management</h1>
+      <p class="text-lg gs-text-subtle">Manage contact form submissions and lead submissions.</p>
+    </div>
+
+    {entries.error && (
+      <div class="p-4 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+        {entries.error}
+      </div>
+    )}
+
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="gs-card space-y-3">
+        <h2 class="text-xl font-semibold">Total Entries</h2>
+        <p class="text-3xl font-bold gs-text-info">{entries.total}</p>
+        <p class="text-sm gs-text-subtle">Contacts and leads combined</p>
+      </div>
+      <div class="gs-card space-y-3">
+        <h2 class="text-xl font-semibold">Contact Submissions</h2>
+        <p class="text-3xl font-bold gs-text-info">{contacts.length}</p>
+        <p class="text-sm gs-text-subtle">From contact forms</p>
+      </div>
+      <div class="gs-card space-y-3">
+        <h2 class="text-xl font-semibold">Lead Submissions</h2>
+        <p class="text-3xl font-bold gs-text-info">{leads.length}</p>
+        <p class="text-sm gs-text-subtle">From lead forms</p>
+      </div>
+    </div>
+
+    <div class="gs-card space-y-4">
+      <h2 class="text-2xl font-semibold">All Entries</h2>
+      <EntriesManager client:load jwtToken={jwtToken} initialEntries={entries.items} />
+    </div>
+  </div>
+</AdminLayout>

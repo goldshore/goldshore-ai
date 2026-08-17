@@ -1,0 +1,27 @@
+---
+interface Props { type: string; title: string; description: string; fields?: string[] }
+const { type, title, description, fields = ['owner', 'status', 'notes'] } = Astro.props;
+---
+<section class="manager" data-type={type} data-fields={JSON.stringify(fields)}>
+  <header><div><p class="eyebrow">Live D1 workspace</p><h1>{title}</h1><p>{description}</p></div><button id="new-item" type="button">New item</button></header>
+  <div class="layout"><aside><h2>Saved items</h2><div id="items"><p class="muted">Loading…</p></div></aside><form id="editor">
+    <input type="hidden" name="id"/><label>Title<input name="title" required maxlength="160"/></label>
+    {fields.map((field) => <label>{field.replaceAll('_',' ')}<input name={field} maxlength="500"/></label>)}
+    <label>Details<textarea name="details" rows="8" maxlength="5000"></textarea></label>
+    <div class="actions"><button class="danger" id="delete-item" type="button" disabled>Delete</button><button type="submit">Save</button></div><p id="status" class="muted"></p>
+  </form></div>
+</section>
+<script>
+  const root = document.querySelector<HTMLElement>('.manager')!; const type = root.dataset.type!; const fields = JSON.parse(root.dataset.fields || '[]');
+  const list = document.querySelector<HTMLElement>('#items')!; const form = document.querySelector<HTMLFormElement>('#editor')!; const status = document.querySelector<HTMLElement>('#status')!; const del = document.querySelector<HTMLButtonElement>('#delete-item')!;
+  let records: any[] = []; const esc=(v:string)=>v.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
+  const edit=(item:any={})=>{ (form.elements.namedItem('id') as HTMLInputElement).value=item.id||''; (form.elements.namedItem('title') as HTMLInputElement).value=item.title||''; (form.elements.namedItem('details') as HTMLTextAreaElement).value=item.details||''; fields.forEach((f:string)=>(form.elements.namedItem(f) as HTMLInputElement).value=item[f]||''); del.disabled=!item.id; };
+  const render=()=>{ list.innerHTML=records.length?records.map(i=>`<button type="button" data-id="${esc(i.id)}"><strong>${esc(i.title)}</strong><small>${esc(i.status||i.updatedAt||'Saved')}</small></button>`).join(''):'<p class="muted">No items yet.</p>'; list.querySelectorAll<HTMLButtonElement>('button').forEach(b=>b.onclick=()=>edit(records.find(i=>i.id===b.dataset.id))); };
+  const load=async()=>{ const r=await fetch(`/api/admin/workspaces/${type}`); const p=await r.json(); if(!r.ok)throw new Error(p.error||'Load failed'); records=p.items||[]; render(); };
+  form.onsubmit=async(e)=>{e.preventDefault(); const data=Object.fromEntries(new FormData(form)); const id=String(data.id||crypto.randomUUID()); delete data.id; status.textContent='Saving…'; const r=await fetch(`/api/admin/workspaces/${type}/${id}`,{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(data)}); const p=await r.json(); if(!r.ok){status.textContent=p.error||'Save failed';return;} status.textContent='Saved.'; await load(); edit(records.find(i=>i.id===id));};
+  del.onclick=async()=>{const id=(form.elements.namedItem('id') as HTMLInputElement).value;if(!id||!confirm('Delete this item?'))return;const r=await fetch(`/api/admin/workspaces/${type}/${id}`,{method:'DELETE'});if(r.ok){edit();await load();status.textContent='Deleted.';}};
+  document.querySelector<HTMLButtonElement>('#new-item')!.onclick=()=>edit(); load().catch(e=>list.innerHTML=`<p class="error">${esc(e.message)}</p>`);
+</script>
+<style>
+  .manager{padding:2rem}.manager header{display:flex;justify-content:space-between;gap:2rem;align-items:end;margin-bottom:1rem}.eyebrow{color:#f5b942;text-transform:uppercase;letter-spacing:.12em;font-size:.72rem}.layout{display:grid;grid-template-columns:minmax(240px,.7fr) minmax(360px,1.3fr);gap:1rem}aside,form{border:1px solid #23364d;border-radius:12px;background:#081522;padding:1rem}#items{display:grid;gap:.5rem}#items button{text-align:left;background:#0c1c2c;color:#e5edf7;border:1px solid #29425f;border-radius:8px;padding:.8rem}#items small{display:block;color:#8ea2b8;margin-top:.25rem}form{display:grid;gap:.8rem}label{display:grid;gap:.3rem;text-transform:capitalize;color:#9fb1c5}input,textarea{background:#07111d;color:#fff;border:1px solid #29425f;border-radius:7px;padding:.7rem}button{background:#d99a20;color:#07111d;border:0;border-radius:7px;padding:.7rem 1rem;font-weight:700}.actions{display:flex;justify-content:flex-end;gap:.6rem}.danger{background:#401c24;color:#fecaca}.muted{color:#8ea2b8}.error{color:#fca5a5}@media(max-width:760px){.layout{grid-template-columns:1fr}.manager header{align-items:start;flex-direction:column}}
+</style>

@@ -1,0 +1,16 @@
+---
+export const prerender = false;
+
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import IDEDashboard from "../../components/admin/IDEDashboard";
+
+const jwtToken = Astro.cookies.get('CF-Authorization')?.value || '';
+---
+
+<AdminLayout title="Admin | IDE Dashboard">
+  <IDEDashboard client:load jwtToken={jwtToken} />
+</AdminLayout>
+
+<style>
+  @import '../../styles/admin-phase2.css';
+</style>

@@ -1,14 +1,17 @@
 ---
 import Sidebar from '../components/Sidebar.astro';
+import FloatingChatWidget from '../components/admin/FloatingChatWidget';
 import '../styles/admin.css';
 import { ADMIN_PERMISSIONS, type AdminPermission } from '@goldshore/auth';
 
 interface Props {
   title: string;
   requiredPermission?: AdminPermission;
+  description?: string;
 }
 
-const { title, requiredPermission } = Astro.props;
+const { title, requiredPermission, description = 'Protected GoldShore operations workspace for content, infrastructure, integrations, and customer workflows.' } = Astro.props;
+const canonicalUrl = new URL(Astro.url.pathname, 'https://admin.goldshore.ai').toString();
 // Authentication and permission checks are authoritative in middleware.ts.
 // Returning a Response from an Astro layout component produces an empty 200
 // response under the Cloudflare adapter instead of the intended redirect or
@@ -24,6 +27,11 @@ void requiredPermission;
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex, nofollow" />
     <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
     <link rel="icon" href="/favicon.ico" />
   </head>
   <body class="gs-admin-body">
@@ -35,6 +43,7 @@ void requiredPermission;
         </button>
         <slot />
       </main>
+      <FloatingChatWidget client:load />
     </div>
   </body>
 </html>

@@ -23,11 +23,7 @@ import {
  * or the link removed; until then this list keeps the count from growing
  * silently. Do not add to it to make a test pass — build the page instead.
  */
-const KNOWN_UNBUILT_ADMIN_ROUTES = [
-  '/admin/pii-scans',
-  '/admin/repo-health/findings',
-  '/admin/users/list',
-];
+const KNOWN_UNBUILT_ADMIN_ROUTES: string[] = [];
 
 test('routes dashboard traffic to the admin host with system read access', () => {
   const rule = getAdminRouteRule('/app/dashboard', 'GET', 'goldshore.ai');

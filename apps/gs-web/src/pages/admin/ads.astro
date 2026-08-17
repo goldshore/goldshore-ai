@@ -1,0 +1,39 @@
+---
+export const prerender = false;
+import AdminLayout from '../../layouts/AdminLayout.astro';
+---
+<AdminLayout title="Ad Integrator" requiredPermission="system:read">
+  <main class="ads-shell">
+    <header><p class="eyebrow">Operations</p><h1>Ad Integrator</h1><p>Register provider accounts, attach encrypted credentials, and import read-only campaign performance.</p></header>
+    <section class="cards" id="readiness"><article><strong>Google Ads</strong><span>Checking…</span></article><article><strong>Meta Ads</strong><span>Checking…</span></article><article><strong>Credential safety</strong><span>Encrypted references only</span></article></section>
+    <section class="panel">
+      <div class="section-head"><div><h2>Add account</h2><p>First create the OAuth token in System → Secrets, then paste its secret ID here. Values are never returned.</p></div><a href="/admin/system/secrets">Open Secrets</a></div>
+      <form id="account-form" class="form-grid">
+        <label>Provider<select name="provider"><option value="google_ads">Google Ads</option><option value="meta_ads">Meta Ads (setup only)</option></select></label>
+        <label>Display name<input name="displayName" maxlength="120" required /></label>
+        <label>External account ID<input name="externalAccountId" inputmode="numeric" placeholder="123-456-7890" required /></label>
+        <label>Credential secret ID<input name="credentialSecretId" placeholder="secret_…" /></label>
+        <label>Currency<input name="currency" value="USD" maxlength="3" /></label>
+        <label>Timezone<input name="timezone" value="America/New_York" /></label>
+        <button type="submit">Register account</button><p id="message" role="status"></p>
+      </form>
+    </section>
+    <section class="panel"><div class="section-head"><div><h2>Accounts</h2><p>Provider changes are disabled; sync only imports reporting data.</p></div><button id="refresh" type="button">Refresh</button></div><div id="accounts">Loading…</div><nav><button id="prev" type="button">Previous</button><span id="page-label"></span><button id="next" type="button">Next</button></nav></section>
+    <section class="panel"><h2>Campaign snapshots</h2><p id="campaign-help">Select an account to view imported metrics.</p><div id="campaigns"></div></section>
+  </main>
+  <script is:inline>
+    const state = { page: 1, pages: 1, selected: null };
+    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const request = async (path, options) => { const response = await fetch(`/api/admin/ads/${path}`, { credentials:'same-origin', headers:{accept:'application/json', ...(options?.body ? {'content-type':'application/json'} : {})}, ...options }); const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.error || `Request failed (${response.status})`); return data; };
+    async function readiness() { const data = await request('readiness'); const cards = document.querySelectorAll('#readiness article span'); cards[0].textContent = data.providers.google_ads.developerTokenConfigured ? 'Read-only sync ready' : 'Developer token required'; cards[1].textContent = data.providers.meta_ads.message; }
+    async function loadAccounts() { const data = await request(`accounts?page=${state.page}&pageSize=10`); state.pages=data.pagination.pages; document.getElementById('page-label').textContent=`Page ${state.page} of ${state.pages}`; document.getElementById('prev').disabled=state.page<=1; document.getElementById('next').disabled=state.page>=state.pages; document.getElementById('accounts').innerHTML = data.items.length ? data.items.map((a)=>`<article class="account"><div><strong>${esc(a.display_name)}</strong><small>${esc(a.provider)} · ${esc(a.external_account_id)} · ${a.credential?'credential attached':'credential missing'}</small><small>${esc(a.status)}${a.last_sync_at?` · synced ${esc(new Date(a.last_sync_at).toLocaleString())}`:''}</small></div><div><button data-view="${esc(a.id)}">Campaigns</button><button data-sync="${esc(a.id)}" ${a.provider!=='google_ads'?'disabled':''}>Sync read-only</button></div></article>`).join('') : '<p>No ad accounts registered.</p>'; }
+    async function campaigns(id) { state.selected=id; const data=await request(`accounts/${encodeURIComponent(id)}/campaigns?page=1&pageSize=25`); document.getElementById('campaign-help').textContent=`${data.pagination.total} campaign snapshots`; document.getElementById('campaigns').innerHTML=data.items.length?`<div class="table"><b>Campaign</b><b>Impressions</b><b>Clicks</b><b>Cost</b>${data.items.map((x)=>`<span>${esc(x.campaign_name)}</span><span>${Number(x.impressions).toLocaleString()}</span><span>${Number(x.clicks).toLocaleString()}</span><span>$${(Number(x.cost_micros)/1000000).toFixed(2)}</span>`).join('')}</div>`:'<p>No snapshots yet. Run a sync after provider setup.</p>'; }
+    document.getElementById('account-form').addEventListener('submit', async (event)=>{ event.preventDefault(); const form=new FormData(event.currentTarget); const body=Object.fromEntries(form.entries()); const message=document.getElementById('message'); try { await request('accounts',{method:'POST',body:JSON.stringify(body)}); message.textContent='Account registered.'; event.currentTarget.reset(); state.page=1; await loadAccounts(); } catch(error){ message.textContent=error.message; } });
+    document.getElementById('accounts').addEventListener('click',async(event)=>{ const button=event.target.closest('button'); if(!button)return; try { if(button.dataset.view) await campaigns(button.dataset.view); if(button.dataset.sync){ button.disabled=true; button.textContent='Syncing…'; await request(`accounts/${encodeURIComponent(button.dataset.sync)}/sync`,{method:'POST'}); await loadAccounts(); await campaigns(button.dataset.sync); } } catch(error){ document.getElementById('message').textContent=error.message; } });
+    document.getElementById('refresh').onclick=loadAccounts; document.getElementById('prev').onclick=()=>{state.page--;loadAccounts()}; document.getElementById('next').onclick=()=>{state.page++;loadAccounts()};
+    Promise.all([readiness(),loadAccounts()]).catch((error)=>document.getElementById('accounts').textContent=error.message);
+  </script>
+</AdminLayout>
+<style>
+  .ads-shell{max-width:78rem;margin:auto;padding:2rem;display:grid;gap:1.5rem}.eyebrow{color:#d96a32;font-weight:800;text-transform:uppercase;letter-spacing:.12em}h1{font-size:2.5rem;margin:.2rem 0}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}.cards article,.panel{border:1px solid rgba(255,255,255,.14);border-radius:1rem;background:rgba(255,255,255,.04);padding:1.25rem}.cards span,.account small{display:block;opacity:.72;margin-top:.45rem}.section-head,.account{display:flex;justify-content:space-between;align-items:center;gap:1rem}.form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:1rem}label{display:grid;gap:.35rem;font-size:.85rem}input,select,button{border:1px solid rgba(255,255,255,.2);border-radius:.65rem;padding:.7rem;background:#101014;color:inherit}button{cursor:pointer;font-weight:700}button:disabled{opacity:.45;cursor:not-allowed}.account{padding:1rem 0;border-bottom:1px solid rgba(255,255,255,.1)}nav{display:flex;justify-content:flex-end;align-items:center;gap:1rem;margin-top:1rem}.table{display:grid;grid-template-columns:2fr repeat(3,1fr);gap:.7rem;margin-top:1rem}@media(max-width:800px){.cards,.form-grid{grid-template-columns:1fr}.section-head,.account{align-items:flex-start;flex-direction:column}.table{grid-template-columns:1fr 1fr}}
+</style>

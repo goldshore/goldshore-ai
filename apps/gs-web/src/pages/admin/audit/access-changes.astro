@@ -1,0 +1,16 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import AuditLogClient from '../../../components/admin/AuditLogClient';
+---
+
+<BaseLayout title="Access Changes Audit">
+  <div class="py-8">
+    <div class="max-w-5xl mx-auto px-4">
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Access Changes</h1>
+        <p class="text-gray-600">View all role and user permission modifications</p>
+      </div>
+      <AuditLogClient client:load />
+    </div>
+  </div>
+</BaseLayout>
