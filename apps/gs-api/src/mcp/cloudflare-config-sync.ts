@@ -561,6 +561,34 @@ export async function initCloudflareConfigSync() {
     }
   );
 
+  // List all R2 buckets
+  server.registerTool(
+    'cf_list_r2_buckets',
+    {
+      description: 'List all R2 buckets in the account',
+      inputSchema: z.object({}),
+    },
+    async () => {
+      const result = await safeApiCall(
+        () => client.listR2Buckets(),
+        'list_r2'
+      );
+
+      if (!result) {
+        return createErrorResponse('Failed to list R2 buckets');
+      }
+
+      const buckets = (result as any).result || [];
+      return createJsonResponse(
+        buckets.map((bucket: any) => ({
+          name: bucket.name,
+          creation_date: bucket.creation_date,
+          region: bucket.region,
+        }))
+      );
+    }
+  );
+
   return server;
 }
 
