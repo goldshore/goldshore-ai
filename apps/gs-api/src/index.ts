@@ -38,6 +38,7 @@ import automation from './routes/automation';
 // import subscriptions from './routes/subscriptions';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
+import { ssrfProtectionMiddleware } from './middleware/ssrf-protection';
 import type { Env, Variables } from './types';
 import agent from './routes/agent';
 import mail from './routes/mail';
@@ -143,6 +144,8 @@ app.use(
     allowLocalhost: true,
   }),
 );
+
+app.use('/v1/*', ssrfProtectionMiddleware);
 
 app.use('*', async (c, next) => {
   await next();
