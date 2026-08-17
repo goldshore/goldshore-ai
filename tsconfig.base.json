@@ -45,6 +45,9 @@
       ],
       "@goldshore/integrations/*": [
         "./packages/integrations/*"
+      ],
+      "@lib/*": [
+        "./apps/gs-web/src/lib/*"
       ]
     }
   }
