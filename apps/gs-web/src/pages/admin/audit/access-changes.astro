@@ -1,9 +1,9 @@
 ---
-import BaseLayout from '../../../layouts/BaseLayout.astro';
+import AdminLayout from '../../../layouts/AdminLayout.astro';
 import AuditLogClient from '../../../components/admin/AuditLogClient';
 ---
 
-<BaseLayout title="Access Changes Audit">
+<AdminLayout title="Access Changes Audit">
   <div class="py-8">
     <div class="max-w-5xl mx-auto px-4">
       <div class="mb-8">
@@ -13,4 +13,4 @@ import AuditLogClient from '../../../components/admin/AuditLogClient';
       <AuditLogClient client:load />
     </div>
   </div>
-</BaseLayout>
+</AdminLayout>

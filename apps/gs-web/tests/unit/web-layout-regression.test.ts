@@ -40,7 +40,7 @@ test('public header supplies the responsive navigation shared with the homepage'
   ]);
 
   assert.equal(source.match(/>Log in<\/a>/g)?.length, 1);
-  assert.match(source, /import \{ CANONICAL_ADMIN_DASHBOARD_URL \}/);
+  assert.match(source, /import\s*\{[^}]*CANONICAL_ADMIN_DASHBOARD_URL[^}]*\}/s);
   assert.match(source, /href=\{CANONICAL_ADMIN_DASHBOARD_URL\}/);
   assert.match(source, /import \{ publicMenuGroups \}/);
   assert.match(source, /id="main-nav" class="main-nav"/);

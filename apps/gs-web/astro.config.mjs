@@ -41,6 +41,7 @@ export default defineConfig({
         ...baseConfig.vite?.resolve?.alias,
         '@goldshore/theme': path.resolve(__dirname, '../../packages/theme/src'),
         '@goldshore/ui': path.resolve(__dirname, '../../packages/ui'),
+        '@lib': path.resolve(__dirname, './src/lib'),
       },
     },
   },
