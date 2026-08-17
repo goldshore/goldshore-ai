@@ -213,7 +213,28 @@ app.use('*', async (c, next) => {
     );
   }
 
-  const verifiedClaims = await verifyAccessWithClaims(c.req.raw, accessEnv);
+  // Try CF Access JWT first, then fall back to Bearer token from Authorization header
+  let verifiedClaims = await verifyAccessWithClaims(c.req.raw, accessEnv);
+
+  // For admin proxy requests, also accept Bearer tokens (CF_Authorization from frontend)
+  if (!verifiedClaims && adminProxyRequest) {
+    const authHeader = c.req.header('Authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.slice(7); // Remove 'Bearer ' prefix
+      try {
+        // Treat bearer token as a direct CF Access JWT
+        const response = new Request(c.req.url, {
+          headers: new Headers({
+            'CF-Access-JWT-Assertion': token,
+          }),
+        });
+        verifiedClaims = await verifyAccessWithClaims(response, accessEnv);
+      } catch (error) {
+        console.warn('[auth] Bearer token verification failed:', error instanceof Error ? error.message : String(error));
+      }
+    }
+  }
+
   const claims = verifiedClaims
     ? await authorizeAccessClaims(verifiedClaims, accessEnv)
     : null;
