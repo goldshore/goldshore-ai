@@ -61,11 +61,4 @@ environment = "prod"
 # gs-core-worker is no longer proxied through gs-platform.
 # armsway-com worker binds directly to gs-core-worker for its own needs.
 
-# ─── Preview ───────────────────────────────────────────────────────────────
-
-[env.preview]
-routes = []
-
-[env.preview.vars]
-ENV = "preview"
-CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
+# Preview environments consolidated into prod-only deployment per architecture-sop.md Phase 0.

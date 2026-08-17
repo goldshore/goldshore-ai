@@ -37,19 +37,4 @@ binding = "GATEWAY"
 service = "gs-gateway"
 environment = "prod"
 
-[env.preview]
-# Consolidated into gs-api. Preview control traffic should route through gs-api
-# once a preview hostname is explicitly approved.
-routes = []
-
-[env.preview.vars]
-ENV = "preview"
-CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-
-[[env.preview.kv_namespaces]]
-binding = "GS_CONFIG"
-id = "dddc8b83775c41e58208bf8de87b7052"
-
-[[env.preview.kv_namespaces]]
-binding = "CONTROL_LOGS"
-id = "09e43cb8bd4749fdaaed0dc9d4ff2284"
+# Preview environment consolidated into prod-only deployment per architecture-sop.md Phase 0.
