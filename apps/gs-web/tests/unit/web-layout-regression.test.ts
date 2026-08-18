@@ -17,7 +17,7 @@ test('WebLayout retains the established public theme contract', async () => {
   for (const contract of [
     "import '../styles/goldshore-shell.css'",
     "import '../styles/global.css'",
-    'class="gs-page-shell"',
+    'class="gs-page-shell gs-shell-v284"',
     'import PublicHeader',
     'import PublicFooter',
     '<PublicHeader currentPath={Astro.url.pathname} />',
