@@ -22,6 +22,7 @@ import rbacAudit from './rbac-audit';
 import workflows from './workflows';
 import aiSearch from './ai-search';
 import prManager from './pr-manager';
+import workers from './workers';
 
 const admin = new Hono<{
   Bindings: Env;
@@ -40,7 +41,7 @@ admin.route('/repo-health', repoHealth);
 admin.route('/pii-scans', piiScans);
 admin.route('/chat', chat);
 admin.route('/analytics', analytics);
-// admin.route('/workers', workers); // TODO: Phase 2 - Cloudflare Worker management
+admin.route('/workers', workers);
 
 // Phase 2a: RBAC access control routes
 admin.route('/rbac/roles', rbacRoles);
