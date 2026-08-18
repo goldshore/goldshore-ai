@@ -78,10 +78,6 @@ CLOUDFLARE_ACCESS_AUDIENCE = "c520a7647223b49b20fbe5be240772863eb684b97b57c08955
 CLOUDFLARE_ACCESS_APPLICATION = "admin-production"
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
 
-[env.prod.observability]
-enabled = true
-head_sampling_rate = 1
-
 # gs-web owns no transactional database, sensitive object storage, Durable
 # Object, queue, Workflow, or provider-secret bindings. Contact, form, CMS,
 # media, and admin operations are authenticated and persisted by gs-api.
