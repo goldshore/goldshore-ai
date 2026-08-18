@@ -136,6 +136,26 @@ export async function resendEmail(db: any, id: string, queue?: any) {
   }
 }
 
+export async function createEmail(
+  db: any,
+  data: {
+    id?: string;
+    recipient: string;
+    subject: string;
+    template?: string;
+    status?: string;
+  }
+) {
+  try {
+    const id = data.id || crypto.randomUUID();
+    return await db.prepare(
+      'INSERT INTO admin_emails (id, type, recipient, subject, template, status, created_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)'
+    ).bind(id, 'log', data.recipient, data.subject, data.template || '', data.status || 'queued').run();
+  } catch (err) {
+    throw new Error(`Failed to create email: ${err}`);
+  }
+}
+
 export async function getEmailTemplates(db: any) {
   try {
     return await db.prepare(
