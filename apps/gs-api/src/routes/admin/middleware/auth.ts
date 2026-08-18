@@ -44,7 +44,7 @@ export async function parsePagination(
   next: () => Promise<void>
 ) {
   let offset = Math.max(0, parseInt(c.req.query('offset') || '0'));
-  let limit = Math.min(1000, Math.max(1, parseInt(c.req.query('limit') || c.req.query('pageSize') || '50')));
+  const limit = Math.min(1000, Math.max(1, parseInt(c.req.query('limit') || c.req.query('pageSize') || '50')));
 
   // If page is provided, convert to offset
   const page = c.req.query('page');
