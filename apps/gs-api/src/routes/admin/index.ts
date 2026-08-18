@@ -41,7 +41,7 @@ admin.route('/repo-health', repoHealth);
 admin.route('/pii-scans', piiScans);
 admin.route('/chat', chat);
 admin.route('/analytics', analytics);
-admin.route('/workers', workers);
+admin.route('/cf', workers);
 
 // Phase 2a: RBAC access control routes
 admin.route('/rbac/roles', rbacRoles);

@@ -14,7 +14,7 @@ workers.use('*', verifyAdminAuth);
  * GET /api/admin/cf/workers
  * List all Cloudflare Workers in the account
  */
-workers.get('/cf/workers', errorHandler(async (c) => {
+workers.get('/workers', errorHandler(async (c) => {
   const cf_token = c.env.CLOUDFLARE_API_TOKEN;
   const cf_account_id = c.env.CLOUDFLARE_ACCOUNT_ID;
 
@@ -62,7 +62,7 @@ workers.get('/cf/workers', errorHandler(async (c) => {
  * GET /api/admin/cf/workers/:name
  * Get single worker details
  */
-workers.get('/cf/workers/:name', errorHandler(async (c) => {
+workers.get('/workers/:name', errorHandler(async (c) => {
   const cf_token = c.env.CLOUDFLARE_API_TOKEN;
   const cf_account_id = c.env.CLOUDFLARE_ACCOUNT_ID;
   const workerName = c.req.param('name');
@@ -102,7 +102,7 @@ workers.get('/cf/workers/:name', errorHandler(async (c) => {
  * GET /api/admin/cf/workers/:name/content
  * Get worker script content
  */
-workers.get('/cf/workers/:name/content', errorHandler(async (c) => {
+workers.get('/workers/:name/content', errorHandler(async (c) => {
   const cf_token = c.env.CLOUDFLARE_API_TOKEN;
   const cf_account_id = c.env.CLOUDFLARE_ACCOUNT_ID;
   const workerName = c.req.param('name');
@@ -144,7 +144,7 @@ workers.get('/cf/workers/:name/content', errorHandler(async (c) => {
  * POST /api/admin/cf/workers/:name/publish
  * Deploy/publish worker code
  */
-workers.post('/cf/workers/:name/publish', errorHandler(async (c) => {
+workers.post('/workers/:name/publish', errorHandler(async (c) => {
   const cf_token = c.env.CLOUDFLARE_API_TOKEN;
   const cf_account_id = c.env.CLOUDFLARE_ACCOUNT_ID;
   const workerName = c.req.param('name');
