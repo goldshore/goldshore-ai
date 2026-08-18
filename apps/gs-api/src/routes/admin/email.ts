@@ -129,6 +129,60 @@ email.post('/templates', errorHandler(async (c) => {
 }));
 
 /**
+ * POST /api/admin/email/send
+ * Send a test/admin email immediately
+ */
+email.post('/send', errorHandler(async (c) => {
+  const db = c.env.PLATFORM_DB;
+  const queue = c.env.MAIL_JOBS_QUEUE;
+  const user = c.get('user');
+  const body = await c.req.json();
+
+  if (!body.to || !body.subject) {
+    return c.json({
+      error: 'Missing required fields: to, subject'
+    }, 400);
+  }
+
+  if (!queue) {
+    return c.json({ error: 'Mail queue not configured' }, 503);
+  }
+
+  const id = crypto.randomUUID();
+
+  // Store email log
+  await emailDb.createEmail(db, {
+    id,
+    recipient: body.to,
+    subject: body.subject,
+    template: body.template || '',
+    status: 'queued',
+  });
+
+  // Queue for sending
+  await queue.send({
+    type: 'send',
+    emailId: id,
+    to: body.to,
+    subject: body.subject,
+    template: body.template || '',
+  });
+
+  console.log('[AUDIT] Admin email sent', {
+    user: user.email,
+    to: body.to,
+    subject: body.subject,
+    timestamp: new Date().toISOString(),
+  });
+
+  return c.json({
+    success: true,
+    message: 'Email queued for sending',
+    id,
+  }, 201);
+}));
+
+/**
  * DELETE /api/admin/email/logs/:id
  * Delete email log entry
  */
