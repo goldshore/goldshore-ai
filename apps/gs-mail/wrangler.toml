@@ -33,42 +33,5 @@ queue = "gs-platform-contact-events-prod"
 max_batch_size = 10
 max_batch_timeout = 30
 
-# ── Preview ──────────────────────────────────────────────────────────────────
-[env.preview]
-
-[env.preview.vars]
-ENV = "preview"
-
-[[env.preview.kv_namespaces]]
-binding = "GS_CONFIG"
-id = "5f13370575784c9dacff522121104cb3"
-
-[[env.preview.queues.consumers]]
-queue = "gs-platform-checkout-events-preview"
-max_batch_size = 10
-max_batch_timeout = 30
-
-[[env.preview.queues.consumers]]
-queue = "gs-platform-contact-events-preview"
-max_batch_size = 10
-max_batch_timeout = 30
-
-# ── Dev ──────────────────────────────────────────────────────────────────────
-[env.dev]
-
-[env.dev.vars]
-ENV = "development"
-
-[[env.dev.kv_namespaces]]
-binding = "GS_CONFIG"
-id = "5f13370575784c9dacff522121104cb3"
-
-[[env.dev.queues.consumers]]
-queue = "gs-platform-checkout-events-dev"
-max_batch_size = 10
-max_batch_timeout = 30
-
-[[env.dev.queues.consumers]]
-queue = "gs-platform-contact-events-dev"
-max_batch_size = 10
-max_batch_timeout = 30
+# Preview and dev environments consolidated into prod-only deployment per architecture-sop.md Phase 0.
+# Local development uses wrangler dev without explicit env selection.

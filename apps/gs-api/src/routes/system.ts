@@ -88,14 +88,14 @@ system.post('/pages/deploy', requirePermission('system:write'), (c) => automatio
 system.post('/access/audit', requirePermission('system:write'), (c) => automationAccepted(c, 'access_audit'));
 
 const cloudflareRequest = async (env: Env, path: string, init: RequestInit = {}) => {
-  if (!env.CLOUDFLARE_API_TOKEN) {
-    throw new Error('Missing CLOUDFLARE_API_TOKEN');
+  if (!env.CF_TOKEN) {
+    throw new Error('Missing CF_TOKEN');
   }
 
   const response = await fetch(`https://api.cloudflare.com/client/v4${path}`, {
     ...init,
     headers: {
-      Authorization: `Bearer ${env.CLOUDFLARE_API_TOKEN}`,
+      Authorization: `Bearer ${env.CF_TOKEN}`,
       'Content-Type': 'application/json',
       ...(init.headers ?? {}),
     },
@@ -124,11 +124,11 @@ const publicBinding = (binding: WorkerBinding) => {
   return { name: binding.name, type: binding.type, resource, editable: binding.type === 'plain_text' || binding.type === 'json' };
 };
 const patchWorkerBindings = async (env: Env, script: string, bindings: WorkerBinding[]) => {
-  if (!env.CLOUDFLARE_API_TOKEN || !env.CLOUDFLARE_ACCOUNT_ID) throw new Error('Cloudflare credentials are not configured.');
+  if (!env.CF_TOKEN || !env.CF_ACCOUNT_ID) throw new Error('Cloudflare credentials are not configured.');
   const form = new FormData();
   form.set('settings', JSON.stringify({ bindings }));
-  const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/workers/scripts/${encodeURIComponent(script)}/settings`, {
-    method: 'PATCH', headers: { Authorization: `Bearer ${env.CLOUDFLARE_API_TOKEN}` }, body: form,
+  const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${env.CF_ACCOUNT_ID}/workers/scripts/${encodeURIComponent(script)}/settings`, {
+    method: 'PATCH', headers: { Authorization: `Bearer ${env.CF_TOKEN}` }, body: form,
   });
   const payload = await response.json().catch(() => null);
   if (!response.ok || payload?.success === false) throw new Error(payload?.errors?.[0]?.message ?? `Cloudflare request failed: ${response.status}`);

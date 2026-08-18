@@ -70,7 +70,7 @@ const activeUsers = users.items?.filter((u: any) => u.status === 'active').lengt
 
     <div class="gs-card space-y-4">
       <h2 class="text-2xl font-semibold">Team Members</h2>
-      <UsersManager client:load jwtToken={jwtToken} initialUsers={users} />
+      <UsersManager client:load jwtToken={jwtToken} initialUsers={users.items} />
     </div>
   </div>
 </AdminLayout>

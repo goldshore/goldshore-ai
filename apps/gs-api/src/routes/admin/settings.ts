@@ -1,20 +1,33 @@
+import type { Env, Variables } from '../../types';
 import { Hono } from 'hono';
 import { verifyAdminAuth, errorHandler } from './middleware/auth';
 import * as settingsDb from './db/settings';
 
-const settings = new Hono();
+const settings = new Hono<{
+  Bindings: Env;
+  Variables: Variables;
+}>();
 
 // Apply auth middleware
 settings.use('*', verifyAdminAuth);
 
 /**
  * GET /api/admin/settings
- * Get all settings
+ * Get all settings as key-value pairs
  */
 settings.get('/', errorHandler(async (c) => {
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
   const allSettings = await settingsDb.getAllSettings(db);
-  return c.json({ settings: allSettings });
+
+  // Convert array of settings to key-value object for frontend
+  const settingsObject: Record<string, any> = {};
+  if (Array.isArray(allSettings)) {
+    allSettings.forEach((setting: any) => {
+      settingsObject[setting.key] = setting.value;
+    });
+  }
+
+  return c.json({ data: settingsObject });
 }));
 
 /**
@@ -22,7 +35,7 @@ settings.get('/', errorHandler(async (c) => {
  * Get single setting
  */
 settings.get('/:key', errorHandler(async (c) => {
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
   const key = c.req.param('key');
 
   const value = await settingsDb.getSetting(db, key);
@@ -38,7 +51,7 @@ settings.get('/:key', errorHandler(async (c) => {
  * Set single setting
  */
 settings.post('/:key', errorHandler(async (c) => {
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
   const key = c.req.param('key');
   const currentUser = c.get('user');
   const body = await c.req.json();
@@ -65,10 +78,10 @@ settings.post('/:key', errorHandler(async (c) => {
 
 /**
  * POST /api/admin/settings
- * Batch update settings
+ * Batch update settings (legacy)
  */
 settings.post('/', errorHandler(async (c) => {
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
   const currentUser = c.get('user');
   const body = await c.req.json();
 
@@ -87,11 +100,36 @@ settings.post('/', errorHandler(async (c) => {
 }));
 
 /**
+ * PUT /api/admin/settings
+ * Update all settings at once (frontend compatible)
+ */
+settings.put('/', errorHandler(async (c) => {
+  const db = c.env.PLATFORM_DB;
+  const currentUser = c.get('user');
+  const body = await c.req.json();
+
+  // Accept direct key-value pairs (not nested in .settings)
+  if (typeof body !== 'object' || Object.keys(body).length === 0) {
+    return c.json({ error: 'Settings object is required' }, 400);
+  }
+
+  await settingsDb.updateSettings(db, body, currentUser.email);
+
+  console.log(`[AUDIT] ${currentUser.email} batch updated ${Object.keys(body).length} settings`);
+
+  return c.json({
+    success: true,
+    message: `${Object.keys(body).length} settings updated`,
+    data: body,
+  });
+}));
+
+/**
  * DELETE /api/admin/settings/:key
  * Delete setting
  */
 settings.delete('/:key', errorHandler(async (c) => {
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
   const key = c.req.param('key');
   const currentUser = c.get('user');
 

@@ -1,278 +1,206 @@
 import React, { useState } from 'react';
-import { Table } from './Table';
-import { Pagination } from './Pagination';
-import { Form } from './Form';
-import { Modal } from './Modal';
+import DataTable from './DataTable';
+import Modal from './Modal';
+import FormField from './FormField';
+import AuthGuard from './AuthGuard';
+import { useAuthToken } from '../../utils/auth';
 
-interface AdminUser {
+interface User {
   id: string;
   email: string;
-  name: string;
-  role: string;
-  status: string;
+  role: 'admin' | 'moderator' | 'viewer';
+  status: 'active' | 'inactive' | 'suspended';
   created_at: string;
-  invited_at?: string;
-  accepted_at?: string;
-  last_login?: string;
 }
 
-interface UsersManagerProps {
-  jwtToken: string;
-  initialUsers: {
-    items: AdminUser[];
-    total: number;
-    offset: number;
-    limit: number;
-    error?: string | null;
+interface Props {
+  jwtToken?: string;
+  initialUsers?: User[];
+}
+
+function UsersManagerContent({ jwtToken: _jwtToken }: Props) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({ email: '', role: 'viewer' });
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const { token } = useAuthToken();
+
+  const validateEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
-}
 
-export default function UsersManager({ jwtToken, initialUsers }: UsersManagerProps) {
-  const [users, setUsers] = useState<AdminUser[]>(initialUsers.items || []);
-  const [total, setTotal] = useState(initialUsers.total || 0);
-  const [offset, setOffset] = useState(initialUsers.offset || 0);
-  const [limit, setLimit] = useState(initialUsers.limit || 25);
-  const [loading, setLoading] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [addError, setAddError] = useState<string | null>(null);
+  const handleAddUser = async () => {
+    setError(null);
+    setSuccess(null);
 
-  const fetchUsers = async (newOffset: number) => {
-    setLoading(true);
+    if (!formData.email.trim()) {
+      setError('Email address is required');
+      return;
+    }
+
+    if (!validateEmail(formData.email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    setIsSaving(true);
     try {
-      const params = new URLSearchParams({
-        offset: String(newOffset),
-        limit: String(limit),
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-      const response = await fetch(`/api/admin/users?${params}`, {
+      const response = await fetch('/api/admin/users', {
+        method: 'POST',
+        signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         },
+        body: JSON.stringify(formData),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setUsers(data.items || []);
-        setTotal(data.total || 0);
-        setOffset(newOffset);
-      }
-    } catch (error) {
-      console.error('Failed to fetch users:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAddUser = async (data: Record<string, any>) => {
-    try {
-      const response = await fetch(`/api/admin/users`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: data.email,
-          name: data.name,
-          role: data.role || 'moderator',
-        }),
-      });
+      clearTimeout(timeoutId);
 
       if (response.ok) {
-        setShowAddModal(false);
-        setAddError(null);
-        await fetchUsers(offset);
+        setFormData({ email: '', role: 'viewer' });
+        setSuccess('User added successfully');
+        setTimeout(() => {
+          setIsModalOpen(false);
+          window.location.reload();
+        }, 1000);
+      } else if (response.status === 401) {
+        setError('Authentication expired. Please refresh the page.');
+      } else if (response.status === 409) {
+        setError('This email address is already registered');
+      } else if (response.status === 400) {
+        const err = await response.json().catch(() => ({}));
+        setError(err.message || 'Invalid user data');
       } else {
-        const error = await response.json();
-        setAddError(error.error || 'Failed to create user');
+        setError(`Failed to add user (HTTP ${response.status})`);
       }
-    } catch (error) {
-      setAddError(error instanceof Error ? error.message : 'An error occurred');
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        setError('Request timed out. Please try again.');
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to add user');
+      }
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const handleDeleteUser = async (userId: string) => {
-    if (!confirm('Are you sure you want to remove this user?')) return;
-
-    try {
-      const response = await fetch(`/api/admin/users/${userId}`, {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        await fetchUsers(offset);
-        setSelectedUser(null);
-      }
-    } catch (error) {
-      console.error('Error deleting user:', error);
-    }
-  };
-
-  const handleResendInvite = async (userId: string) => {
-    try {
-      const response = await fetch(`/api/admin/users/${userId}/resend-invite`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        await fetchUsers(offset);
-      }
-    } catch (error) {
-      console.error('Error resending invite:', error);
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return 'bg-red-100 text-red-800';
+      case 'moderator':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-blue-100 text-blue-800';
     }
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Users ({total})</h3>
+        <h2 className="text-3xl font-bold">User Management</h2>
         <button
-          onClick={() => setShowAddModal(true)}
-          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700"
+          onClick={() => setIsModalOpen(true)}
+          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
         >
           + Add User
         </button>
       </div>
 
-      <Table<AdminUser>
+      <DataTable<User>
         columns={[
-          { key: 'name', label: 'Name' },
           { key: 'email', label: 'Email' },
           {
             key: 'role',
             label: 'Role',
-            render: (role) => <span className="capitalize font-semibold">{role}</span>,
+            render: (v) => (
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${getRoleColor(v)}`}>
+                {v}
+              </span>
+            ),
           },
           {
             key: 'status',
             label: 'Status',
-            render: (status) => (
-              <span
-                className={`px-2 py-1 text-xs font-semibold rounded ${
-                  status === 'active'
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-yellow-100 text-yellow-800'
-                }`}
-              >
-                {status}
+            render: (v) => (
+              <span className={`px-3 py-1 rounded text-sm font-medium ${v === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                {v}
               </span>
             ),
           },
+          { key: 'created_at', label: 'Joined', render: (v) => new Date(v).toLocaleDateString() },
         ]}
-        data={users}
-        loading={loading}
-        onRowClick={setSelectedUser}
-        emptyMessage="No users found"
-      />
-
-      <Pagination
-        total={total}
-        offset={offset}
-        limit={limit}
-        onOffsetChange={fetchUsers}
-      />
-
-      {selectedUser && (
-        <div className="gs-card space-y-4">
-          <h3 className="text-lg font-semibold">User Details</h3>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <div>
-                <p className="text-sm gs-text-subtle">Name</p>
-                <p className="font-semibold">{selectedUser.name}</p>
-              </div>
-              <div>
-                <p className="text-sm gs-text-subtle">Email</p>
-                <p className="font-mono text-sm">{selectedUser.email}</p>
-              </div>
-              <div>
-                <p className="text-sm gs-text-subtle">Role</p>
-                <p className="font-semibold capitalize">{selectedUser.role}</p>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div>
-                <p className="text-sm gs-text-subtle">Status</p>
-                <p className="font-semibold capitalize">{selectedUser.status}</p>
-              </div>
-              <div>
-                <p className="text-sm gs-text-subtle">Created</p>
-                <p>{new Date(selectedUser.created_at).toLocaleString()}</p>
-              </div>
-              {selectedUser.invited_at && (
-                <div>
-                  <p className="text-sm gs-text-subtle">Invited</p>
-                  <p>{new Date(selectedUser.invited_at).toLocaleString()}</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {selectedUser.status !== 'active' && (
-              <button
-                onClick={() => handleResendInvite(selectedUser.id)}
-                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded hover:bg-green-700"
-              >
-                Resend Invite
-              </button>
-            )}
-            <button
-              onClick={() => handleDeleteUser(selectedUser.id)}
-              className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700"
-            >
-              Remove User
+        endpoint="/api/admin/users"
+        title="Admin Users"
+        actions={(row) => (
+          <div className="flex gap-2">
+            <button className="text-blue-500 hover:text-blue-700" title="Change permissions">
+              Permissions
             </button>
-            <button
-              onClick={() => setSelectedUser(null)}
-              className="px-4 py-2 text-sm font-medium border rounded gs-text-subtle hover:bg-opacity-50"
-            >
-              Close
+            <button className="text-red-500 hover:text-red-700" title="Remove user">
+              Remove
             </button>
           </div>
-        </div>
-      )}
+        )}
+      />
 
-      <Modal isOpen={showAddModal} title="Add New User" onClose={() => setShowAddModal(false)}>
-        <Form
-          fields={[
-            {
-              name: 'email',
-              label: 'Email',
-              type: 'email',
-              required: true,
-              placeholder: 'user@example.com',
-            },
-            {
-              name: 'name',
-              label: 'Name',
-              type: 'text',
-              required: true,
-              placeholder: 'John Doe',
-            },
-            {
-              name: 'role',
-              label: 'Role',
-              type: 'select',
-              required: true,
-              options: [
-                { label: 'Admin', value: 'admin' },
-                { label: 'Moderator', value: 'moderator' },
-                { label: 'Viewer', value: 'viewer' },
-              ],
-            },
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setError(null);
+          setSuccess(null);
+        }}
+        title="Add User"
+        onSubmit={handleAddUser}
+        isLoading={isSaving}
+      >
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
+            {success}
+          </div>
+        )}
+        <FormField
+          label="Email Address"
+          name="email"
+          type="email"
+          value={formData.email}
+          onChange={(v) => setFormData({ ...formData, email: String(v) })}
+          placeholder="user@example.com"
+          required
+        />
+        <FormField
+          label="Role"
+          name="role"
+          type="select"
+          value={formData.role}
+          onChange={(v) => setFormData({ ...formData, role: String(v) })}
+          options={[
+            { value: 'viewer', label: 'Viewer (read-only)' },
+            { value: 'moderator', label: 'Moderator (limited write)' },
+            { value: 'admin', label: 'Admin (full access)' },
           ]}
-          onSubmit={handleAddUser}
-          submitLabel="Create User"
-          error={addError || undefined}
+          required
         />
       </Modal>
     </div>
+  );
+}
+
+export default function UsersManager(props: Props) {
+  return (
+    <AuthGuard>
+      <UsersManagerContent {...props} />
+    </AuthGuard>
   );
 }

@@ -3,15 +3,24 @@
  * GET /admin/repo-health — Repository health, audit findings, deployment status
  */
 
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import { buildRepoHealth, type RepoHealth } from '../../lib/github-repo-health';
-import { Env, Variables } from '../../types';
-import { getActor, logAdminAction, requirePermission } from '../../auth';
+import { buildAdminSession } from '@goldshore/auth';
+import type { Env, Variables } from '../../types';
 
-const repoHealth = new Hono<{
-  Bindings: Env;
-  Variables: Variables;
-}>();
+const repoHealth = new Hono<{ Bindings: Env; Variables: Variables }>();
+
+const verifyAdminAuth = (c: Context<{ Bindings: Env; Variables: Variables }>): { error: Response } | { ok: true } => {
+  const claims = c.get('accessClaims');
+  if (!claims) {
+    return { error: Response.json({ error: 'Unauthorized' }, { status: 401 }) };
+  }
+  const session = buildAdminSession(claims);
+  if (!session.permissions.includes('admin:repo-health:read')) {
+    return { error: Response.json({ error: 'Insufficient permissions' }, { status: 403 }) };
+  }
+  return { ok: true };
+};
 
 /**
  * Cache repo health in D1 with TTL
@@ -63,17 +72,17 @@ async function cacheHealth(db: any, cacheKey: string, health: RepoHealth): Promi
  * GET /admin/repo-health
  * Returns overall repo health, audit findings, and blockers
  */
-repoHealth.get('/', requirePermission('admin:repo-health:read'), async (c) => {
-  const actor = getActor(c.get('accessClaims'), c.req.raw);
+repoHealth.get('/', async (c) => {
+  const auth = verifyAdminAuth(c);
+  if ('error' in auth) return auth.error;
+
+  const claims = c.get('accessClaims');
   const githubToken = c.env.GITHUB_API_TOKEN;
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
 
   if (!githubToken) {
-    await logAdminAction(c.env, {
-      action: 'admin.repo-health.read',
-      actor,
-      status: 'error',
-      metadata: { error: 'GITHUB_API_TOKEN not configured' },
+    console.warn('[AUDIT] admin.repo-health.read FAILED - GITHUB_API_TOKEN not configured', {
+      actor: claims?.email || 'unknown'
     });
     return c.json({ error: 'GitHub API token not configured' }, 503);
   }
@@ -91,14 +100,11 @@ repoHealth.get('/', requirePermission('admin:repo-health:read'), async (c) => {
       await cacheHealth(db, cacheKey, health);
     }
 
-    await logAdminAction(c.env, {
-      action: 'admin.repo-health.read',
-      actor,
-      status: 'success',
-      metadata: {
-        health_score: health?.health_score || 0,
-        critical_issues: health?.security_summary?.critical_issues || 0,
-      },
+    console.info('[AUDIT] admin.repo-health.read SUCCESS', {
+      actor: claims?.email || 'unknown',
+      health_score: health?.health_score || 0,
+      critical_issues: health?.security_summary?.critical_issues || 0,
+      cached: Boolean(health),
     });
 
     return c.json({
@@ -108,29 +114,30 @@ repoHealth.get('/', requirePermission('admin:repo-health:read'), async (c) => {
     });
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-
-    await logAdminAction(c.env, {
-      action: 'admin.repo-health.read',
-      actor,
-      status: 'error',
-      metadata: { error: errorMsg },
+    console.error('[AUDIT] admin.repo-health.read FAILED', {
+      actor: claims?.email || 'unknown',
+      error: errorMsg,
     });
-
     return c.json({ error: errorMsg }, 500);
   }
 });
 
 /**
- * GET /admin/repo-health/findings?severity=critical&status=open
- * Filtered view of audit findings
+ * GET /admin/repo-health/findings?severity=critical&status=open&page=1&limit=25
+ * Paginated, filtered view of audit findings
  */
-repoHealth.get('/findings', requirePermission('admin:repo-health:read'), async (c) => {
+repoHealth.get('/findings', async (c) => {
+  const auth = verifyAdminAuth(c);
+  if ('error' in auth) return auth.error;
+
+  const claims = c.get('accessClaims');
   const severity = c.req.query('severity'); // 'critical' | 'high' | 'medium' | 'low'
   const status = c.req.query('status'); // 'open' | 'in_progress' | 'resolved'
+  const page = Math.max(1, parseInt(c.req.query('page') || '1', 10));
+  const limit = Math.min(100, parseInt(c.req.query('limit') || '25', 10));
 
-  const actor = getActor(c.get('accessClaims'), c.req.raw);
   const githubToken = c.env.GITHUB_API_TOKEN;
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
 
   if (!githubToken) {
     return c.json({ error: 'GitHub API token not configured' }, 503);
@@ -151,6 +158,11 @@ repoHealth.get('/findings', requirePermission('admin:repo-health:read'), async (
 
     let findings = health?.findings || [];
 
+    // Build summary counts before filtering
+    const criticalCount = findings.filter(f => f.severity === 'critical').length;
+    const highCount = findings.filter(f => f.severity === 'high').length;
+
+    // Apply filters
     if (severity) {
       findings = findings.filter((f) => f.severity === severity);
     }
@@ -159,19 +171,46 @@ repoHealth.get('/findings', requirePermission('admin:repo-health:read'), async (
       findings = findings.filter((f) => f.status === status);
     }
 
-    await logAdminAction(c.env, {
-      action: 'admin.repo-health.findings.read',
-      actor,
-      status: 'success',
-      metadata: { count: findings.length, severity, status },
+    // Sort by severity (critical first) then by status (open first)
+    const severityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+    const statusOrder = { open: 0, in_progress: 1, resolved: 2 };
+    findings.sort((a, b) => {
+      const sevDiff = severityOrder[a.severity as keyof typeof severityOrder] - severityOrder[b.severity as keyof typeof severityOrder];
+      if (sevDiff !== 0) return sevDiff;
+      return statusOrder[a.status as keyof typeof statusOrder] - statusOrder[b.status as keyof typeof statusOrder];
+    });
+
+    const total = findings.length;
+    const offset = (page - 1) * limit;
+    const paginatedFindings = findings.slice(offset, offset + limit);
+
+    console.info('[AUDIT] admin.repo-health.findings.read SUCCESS', {
+      actor: claims?.email || 'unknown',
+      total: total,
+      returned: paginatedFindings.length,
+      page,
+      severity,
+      status,
     });
 
     return c.json({
       success: true,
-      data: findings,
+      data: paginatedFindings,
+      total: total,
+      page: page,
+      limit: limit,
+      totalPages: Math.ceil(total / limit),
+      summary: {
+        critical: criticalCount,
+        high: highCount,
+      },
     });
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[AUDIT] admin.repo-health.findings.read FAILED', {
+      actor: claims?.email || 'unknown',
+      error: errorMsg,
+    });
     return c.json({ error: errorMsg }, 500);
   }
 });

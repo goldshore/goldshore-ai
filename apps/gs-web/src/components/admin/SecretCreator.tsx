@@ -31,6 +31,7 @@ const SecretCreator: React.FC<SecretCreatorProps> = ({
   const [showValue, setShowValue] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleGenerateSecret = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
@@ -48,15 +49,44 @@ const SecretCreator: React.FC<SecretCreatorProps> = ({
   };
 
   const handleSave = async () => {
+    setError(null);
     if (!secret.name || !secret.value) {
-      alert('Please fill in all required fields');
+      const errorMsg = 'Please fill in all required fields';
+      console.error(`[SecretCreator] ${errorMsg}`);
+      setError(errorMsg);
       return;
     }
 
     setIsSaving(true);
     try {
+      console.log('[SecretCreator] Saving secret:', {
+        name: secret.name,
+        category: secret.category,
+        hasValue: !!secret.value,
+        nameLength: secret.name.length
+      });
+
       await new Promise(resolve => setTimeout(resolve, 500));
-      onSave?.(secret);
+
+      if (!onSave) {
+        const msg = 'No save handler provided';
+        console.error(`[SecretCreator] ${msg}`);
+        setError(msg);
+        return;
+      }
+
+      try {
+        onSave(secret);
+        console.log('[SecretCreator] Secret saved successfully:', { name: secret.name });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error in save handler';
+        console.error('[SecretCreator] Save handler error:', err);
+        setError(`Failed to save secret: ${message}`);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      console.error('[SecretCreator] Save failed:', err);
+      setError(`Connection failed: ${message}`);
     } finally {
       setIsSaving(false);
     }
@@ -77,6 +107,20 @@ const SecretCreator: React.FC<SecretCreatorProps> = ({
           Securely create and manage API keys, passwords, and other secrets.
         </p>
       </div>
+
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded text-red-700 text-sm flex items-center justify-between mb-4">
+          <div>
+            <strong>Error:</strong> {error}
+          </div>
+          <button
+            onClick={() => setError(null)}
+            className="ml-2 text-red-700 hover:text-red-900 font-bold"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       <div className="gs-form-group">
         <label className="gs-form-label">

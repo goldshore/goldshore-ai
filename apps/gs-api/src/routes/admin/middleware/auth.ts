@@ -1,127 +1,87 @@
-import { Context, Next } from 'hono';
+import type { Context } from 'hono';
+import type { Env, Variables } from '../../../types';
 
-/**
- * Verify Cloudflare Access JWT and extract user claims
- * Returns 401 if JWT is missing or invalid
- * Returns 403 if user is not in ADMIN_OWNER_EMAILS
- */
-export async function verifyAdminAuth(c: Context, next: Next) {
-  const jwt = c.req.header('CF-Authorization');
-
-  if (!jwt) {
-    return c.json({ error: 'CF-Authorization header missing' }, 401);
-  }
-
-  try {
-    // Cloudflare Access provides the JWT in CF-Authorization header
-    // Extract claims from JWT (in production, validate signature)
-    const claims = parseJWT(jwt);
-
-    if (!claims.email) {
-      return c.json({ error: 'No email in JWT claims' }, 401);
-    }
-
-    // Get allowed admin emails from environment
-    const adminEmails = (c.env.ADMIN_OWNER_EMAILS || '')
-      .split(',')
-      .map((e: string) => e.trim())
-      .filter(Boolean);
-
-    if (!adminEmails.includes(claims.email)) {
-      return c.json({
-        error: 'User not in admin list',
-        email: claims.email
-      }, 403);
-    }
-
-    // Store user info in context for downstream handlers
-    c.set('user', {
-      email: claims.email,
-      name: claims.name || claims.email,
-      id: claims.sub || claims.email,
-      groups: claims.groups || [],
-    });
-
-    await next();
-  } catch (err) {
-    return c.json({ error: 'Invalid JWT', details: String(err) }, 401);
-  }
+export interface PaginationOptions {
+  offset: number;
+  limit: number;
 }
 
 /**
- * Parse JWT without verification (Cloudflare validates signature)
- * In production, use a JWT library to verify signature
+ * Verify admin authentication via Cloudflare Access JWT
  */
-function parseJWT(token: string): Record<string, any> {
-  try {
-    const parts = token.split('.');
-    if (parts.length !== 3) throw new Error('Invalid JWT format');
-
-    const payload = parts[1];
-    const decoded = atob(payload);
-    return JSON.parse(decoded);
-  } catch (err) {
-    throw new Error(`Failed to parse JWT: ${err}`);
+export async function verifyAdminAuth(
+  c: Context<{
+    Bindings: Env;
+    Variables: Variables;
+  }>,
+  next: () => Promise<void>
+) {
+  const claims = c.get('accessClaims');
+  if (!claims) {
+    return c.json({ error: 'Admin authentication required' }, 401);
   }
-}
 
-/**
- * Pagination middleware — extract offset/limit from query params
- */
-export function parsePagination(c: Context, next: Next) {
-  const offset = parseInt(c.req.query('offset') || '0', 10);
-  const limit = parseInt(c.req.query('limit') || '25', 10);
+  // Extract user info from claims
+  const user = {
+    email: claims.email || 'unknown@goldshore.ai',
+    name: claims.name || 'Unknown User',
+    id: claims.sub || crypto.randomUUID(),
+  };
 
-  const validLimit = Math.min(Math.max(limit, 1), 100);
-  const validOffset = Math.max(offset, 0);
-
-  c.set('pagination', {
-    offset: validOffset,
-    limit: validLimit,
-  });
-
-  return next();
-}
-
-/**
- * Audit logging middleware — log all admin actions
- */
-export async function auditLog(c: Context, next: Next) {
-  const user = c.get('user');
-  const method = c.req.method;
-  const path = new URL(c.req.url).pathname;
-  const startTime = Date.now();
-
+  c.set('user', user);
   await next();
-
-  const duration = Date.now() - startTime;
-  const status = c.res.status;
-
-  // Log to console (in production, log to D1)
-  console.log(JSON.stringify({
-    timestamp: new Date().toISOString(),
-    user: user?.email || 'unknown',
-    method,
-    path,
-    status,
-    duration,
-  }));
 }
 
 /**
- * Error handler wrapper
+ * Parse pagination query parameters with defaults
+ * Supports both page-based and offset-based pagination
  */
-export function errorHandler(handler: (c: Context) => Promise<Response>) {
+export async function parsePagination(
+  c: Context<{
+    Bindings: Env;
+    Variables: Variables;
+  }>,
+  next: () => Promise<void>
+) {
+  let offset = Math.max(0, parseInt(c.req.query('offset') || '0'));
+  const limit = Math.min(1000, Math.max(1, parseInt(c.req.query('limit') || c.req.query('pageSize') || '50')));
+
+  // If page is provided, convert to offset
+  const page = c.req.query('page');
+  if (page) {
+    const pageNum = Math.max(1, parseInt(page));
+    offset = (pageNum - 1) * limit;
+  }
+
+  c.set('pagination', { offset, limit });
+  await next();
+}
+
+/**
+ * Error handler wrapper for async route handlers
+ */
+export function errorHandler(handler: (c: any) => Promise<any>) {
   return async (c: Context) => {
     try {
       return await handler(c);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      console.error('Route error:', errorMessage, err);
-      return c.json({
-        error: 'Internal server error',
-        message: errorMessage
-      }, 500);
+    } catch (error) {
+      const user = c.get('user');
+      const message = error instanceof Error ? error.message : String(error);
+
+      console.error('[Admin Route Error]', {
+        path: c.req.path,
+        user: user?.email,
+        error: message,
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+
+      return c.json(
+        {
+          error: 'Internal server error',
+          message: process.env.ENV === 'development' ? message : undefined,
+        },
+        500
+      );
     }
   };
 }

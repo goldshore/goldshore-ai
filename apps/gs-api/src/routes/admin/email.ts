@@ -1,8 +1,12 @@
 import { Hono } from 'hono';
-import { verifyAdminAuth, parsePagination, errorHandler } from './middleware/auth';
 import * as emailDb from './db/email';
+import { verifyAdminAuth, parsePagination, errorHandler } from './middleware/auth';
+import type { Env, Variables } from '../../types';
 
-const email = new Hono();
+const email = new Hono<{
+  Bindings: Env;
+  Variables: Variables;
+}>();
 
 // Apply auth middleware to all email routes
 email.use('*', verifyAdminAuth);
@@ -13,7 +17,7 @@ email.use('*', parsePagination);
  * Get email queue status (queued, sent, failed counts)
  */
 email.get('/status', errorHandler(async (c) => {
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
   const status = await emailDb.getEmailQueueStatus(db);
   return c.json(status);
 }));
@@ -24,7 +28,7 @@ email.get('/status', errorHandler(async (c) => {
  * Query params: offset, limit, status, dateFrom, dateTo
  */
 email.get('/logs', errorHandler(async (c) => {
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
   const { offset, limit } = c.get('pagination');
 
   const logs = await emailDb.getEmailLogs(db, {
@@ -43,34 +47,43 @@ email.get('/logs', errorHandler(async (c) => {
  * Get single email log entry
  */
 email.get('/logs/:id', errorHandler(async (c) => {
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
   const id = c.req.param('id');
 
-  const email = await emailDb.getEmailById(db, id);
-  if (!email) {
+  const mailLog = await emailDb.getEmailById(db, id);
+  if (!mailLog) {
     return c.json({ error: 'Email not found' }, 404);
   }
 
-  return c.json(email);
+  return c.json(mailLog);
 }));
 
 /**
  * POST /api/admin/email/logs/:id/resend
- * Resend failed email
+ * Resend failed email via queue
  */
 email.post('/logs/:id/resend', errorHandler(async (c) => {
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
+  const queue = c.env.MAIL_JOBS_QUEUE;
   const id = c.req.param('id');
   const user = c.get('user');
 
-  const resent = await emailDb.resendEmail(db, id);
+  if (!queue) {
+    return c.json({ error: 'Mail queue not configured' }, 503);
+  }
+
+  const resent = await emailDb.resendEmail(db, id, queue);
 
   // Log to audit
-  console.log(`[AUDIT] ${user.email} resent email ${id}`);
+  console.log('[AUDIT] Admin email resend', {
+    user: user.email,
+    emailId: id,
+    timestamp: new Date().toISOString(),
+  });
 
   return c.json({
     success: true,
-    message: 'Email marked for resend',
+    message: 'Email marked for resend and queued',
     email: resent,
   });
 }));
@@ -80,7 +93,7 @@ email.post('/logs/:id/resend', errorHandler(async (c) => {
  * List email templates
  */
 email.get('/templates', errorHandler(async (c) => {
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
   const templates = await emailDb.getEmailTemplates(db);
   return c.json({ items: templates || [] });
 }));
@@ -91,7 +104,7 @@ email.get('/templates', errorHandler(async (c) => {
  * Body: { name, subject, template }
  */
 email.post('/templates', errorHandler(async (c) => {
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
   const user = c.get('user');
   const body = await c.req.json();
 
@@ -103,7 +116,11 @@ email.post('/templates', errorHandler(async (c) => {
 
   await emailDb.createEmailTemplate(db, body);
 
-  console.log(`[AUDIT] ${user.email} created email template: ${body.name}`);
+  console.log('[AUDIT] Admin email template created', {
+    user: user.email,
+    template: body.name,
+    timestamp: new Date().toISOString(),
+  });
 
   return c.json({
     success: true,
@@ -112,17 +129,75 @@ email.post('/templates', errorHandler(async (c) => {
 }));
 
 /**
+ * POST /api/admin/email/send
+ * Send a test/admin email immediately
+ */
+email.post('/send', errorHandler(async (c) => {
+  const db = c.env.PLATFORM_DB;
+  const queue = c.env.MAIL_JOBS_QUEUE;
+  const user = c.get('user');
+  const body = await c.req.json();
+
+  if (!body.to || !body.subject) {
+    return c.json({
+      error: 'Missing required fields: to, subject'
+    }, 400);
+  }
+
+  if (!queue) {
+    return c.json({ error: 'Mail queue not configured' }, 503);
+  }
+
+  const id = crypto.randomUUID();
+
+  // Store email log
+  await emailDb.createEmail(db, {
+    id,
+    recipient: body.to,
+    subject: body.subject,
+    template: body.template || '',
+    status: 'queued',
+  });
+
+  // Queue for sending
+  await queue.send({
+    type: 'send',
+    emailId: id,
+    to: body.to,
+    subject: body.subject,
+    template: body.template || '',
+  });
+
+  console.log('[AUDIT] Admin email sent', {
+    user: user.email,
+    to: body.to,
+    subject: body.subject,
+    timestamp: new Date().toISOString(),
+  });
+
+  return c.json({
+    success: true,
+    message: 'Email queued for sending',
+    id,
+  }, 201);
+}));
+
+/**
  * DELETE /api/admin/email/logs/:id
  * Delete email log entry
  */
 email.delete('/logs/:id', errorHandler(async (c) => {
-  const db = c.env.DB;
+  const db = c.env.PLATFORM_DB;
   const id = c.req.param('id');
   const user = c.get('user');
 
   await emailDb.deleteEmail(db, id);
 
-  console.log(`[AUDIT] ${user.email} deleted email ${id}`);
+  console.log('[AUDIT] Admin email deleted', {
+    user: user.email,
+    emailId: id,
+    timestamp: new Date().toISOString(),
+  });
 
   return c.json({
     success: true,
