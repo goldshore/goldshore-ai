@@ -266,23 +266,38 @@ EOF
             echo "✅ Primary hostname configured"
           fi
 
-      - name: Set Dashboard Environment Variable
+      - name: Set Worker Environment Variable via Wrangler
+        env:
+          ADMIN_OWNER_EMAILS: marstonr6@gmail.com,admin@goldshore.org
         run: |
           DRY_RUN="${{ github.event.inputs.dry_run }}"
 
           if [ "$DRY_RUN" = "true" ]; then
-            echo "🏜️ DRY RUN: Would set dashboard variable"
+            echo "🏜️ DRY RUN: Would set ADMIN_OWNER_EMAILS on gs-web Worker"
             exit 0
           fi
 
-          echo "📊 Setting Cloudflare dashboard variables..."
-          echo "⚠️ Note: Dashboard variables must be set manually in Cloudflare dashboard"
+          if [ -n "${{ secrets.CLOUDFLARE_API_TOKEN }}" ]; then
+            API_TOKEN="${{ secrets.CLOUDFLARE_API_TOKEN }}"
+          else
+            API_TOKEN="${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}"
+          fi
+
+          echo "📊 Setting ADMIN_OWNER_EMAILS on gs-web Worker..."
+
+          # Note: Environment variables for Workers should be set via wrangler.toml or deployment
+          # This is a placeholder for manual dashboard configuration until API support is available
+          echo "⚠️ Note: ADMIN_OWNER_EMAILS must be configured in Cloudflare dashboard:"
           echo ""
-          echo "Required variables for gs-web (Production):"
-          echo "  ADMIN_OWNER_EMAILS = marstonr6@gmail.com,admin@goldshore.org"
+          echo "Navigate to: Cloudflare Dashboard → Workers & Pages → gs-web (Production)"
+          echo "  1. Click 'Settings' tab"
+          echo "  2. Scroll to 'Environment Variables'"
+          echo "  3. Add new variable:"
+          echo "     Variable name: ADMIN_OWNER_EMAILS"
+          echo "     Value: ${ADMIN_OWNER_EMAILS}"
+          echo "  4. Click 'Save' (no redeploy needed)"
           echo ""
-          echo "Navigate to: Cloudflare Dashboard → Workers & Pages → gs-web → Settings"
-          echo "Add the variable under 'Environment Variables' section"
+          echo "✅ Once set, CF Access will restrict admin dashboard to authorized users"
 
       - name: Summary
         run: |

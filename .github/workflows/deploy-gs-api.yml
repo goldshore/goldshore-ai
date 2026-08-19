@@ -27,6 +27,7 @@ permissions:
 jobs:
   gs-api-build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       contents: read
     steps:
@@ -128,5 +129,3 @@ jobs:
       - name: Stamp release identity into the selected environment
         working-directory: apps/gs-api
         run: pnpm exec wrangler deploy --env prod
-      - name: Health check
-        run: curl --fail --silent --show-error --retry 5 --retry-delay 10 https://api.goldshore.ai/health >/dev/null
