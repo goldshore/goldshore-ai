@@ -6,6 +6,17 @@ workers_dev = false
 root_dir = "."
 main = "./src/worker.ts"
 
+routes = [
+  { pattern = "goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "www.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "www.goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "admin.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "admin.goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "risk.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "risk.goldshore.org/*", zone_name = "goldshore.org" }
+]
+
 # Deploy the Astro SSR entry point and its static bundle as one Worker release.
 # `astro build` emits the server manifest and assets under dist; Wrangler
 # bundles src/worker.ts as the Worker entry and uploads dist as its assets.
