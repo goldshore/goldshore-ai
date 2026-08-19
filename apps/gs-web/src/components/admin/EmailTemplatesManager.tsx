@@ -8,6 +8,8 @@ interface Template {
   id: string;
   name: string;
   subject: string;
+  body: string;
+  html_body?: string;
   category: string;
   variables: string[];
   is_active: boolean;
@@ -133,8 +135,8 @@ function EmailTemplatesContent({ jwtToken: _jwtToken }: Props) {
     setFormData({
       name: template.name,
       subject: template.subject,
-      body: template.name, // placeholder
-      htmlBody: '',
+      body: template.body,
+      htmlBody: template.html_body || '',
       category: template.category,
       variables: template.variables?.join(', ') || '',
     });

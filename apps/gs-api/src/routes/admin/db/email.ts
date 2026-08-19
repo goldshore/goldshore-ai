@@ -206,8 +206,8 @@ export async function createEmailTemplate(
 export async function getEmailTemplates(db: any, activeOnly = true) {
   try {
     const query = activeOnly
-      ? 'SELECT id, name, subject, category, variables, is_active, created_at FROM email_templates WHERE is_active = 1 ORDER BY created_at DESC'
-      : 'SELECT id, name, subject, category, variables, is_active, created_at FROM email_templates ORDER BY created_at DESC';
+      ? 'SELECT id, name, subject, body, html_body, category, variables, is_active, created_at FROM email_templates WHERE is_active = 1 ORDER BY created_at DESC'
+      : 'SELECT id, name, subject, body, html_body, category, variables, is_active, created_at FROM email_templates ORDER BY created_at DESC';
 
     const result = await db.prepare(query).all();
     return result.results || [];
