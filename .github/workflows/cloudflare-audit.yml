@@ -2,6 +2,15 @@ name: Cloudflare read-only audit
 
 on:
   workflow_dispatch:
+    inputs:
+      include_audit_artifact:
+        description: 'Upload redacted audit artifact to workflow'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
   schedule:
     - cron: "17 8 * * 1"
 

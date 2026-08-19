@@ -13,6 +13,15 @@ on:
         unlabeled,
       ]
   workflow_dispatch:
+    inputs:
+      validate_only:
+        description: 'Validate triage rules without applying labels'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
 
 permissions:
   contents: read

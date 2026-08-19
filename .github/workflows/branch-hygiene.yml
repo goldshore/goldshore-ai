@@ -3,7 +3,16 @@ name: Branch Hygiene — Auto-tag Stale & Archive
 on:
   schedule:
     - cron: '0 2 * * *'  # Daily at 2 AM UTC
-  workflow_dispatch:  # Manual trigger
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Preview changes without modifying branches'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
 
 concurrency:
   group: branch-hygiene
