@@ -145,6 +145,21 @@ app.use(
   }),
 );
 
+// Ensure CORS headers are applied to all error responses (401, 403, etc)
+app.use('*', async (c, next) => {
+  await next();
+  // If CORS headers weren't set by previous middleware, add them for admin/protected routes
+  if (!c.res.headers.get('Access-Control-Allow-Origin')) {
+    const origin = c.req.header('Origin');
+    if (origin && (origin.includes('goldshore.ai') || origin.includes('goldshore.org') || origin.includes('localhost'))) {
+      c.header('Access-Control-Allow-Origin', origin);
+      c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+      c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Goldshore-Client, X-Goldshore-Request-Id, CF-Access-Jwt-Assertion');
+      c.header('Access-Control-Allow-Credentials', 'true');
+    }
+  }
+});
+
 app.use('/v1/*', ssrfProtectionMiddleware);
 
 app.use('*', async (c, next) => {
@@ -198,7 +213,28 @@ app.use('*', async (c, next) => {
     );
   }
 
-  const verifiedClaims = await verifyAccessWithClaims(c.req.raw, accessEnv);
+  // Try CF Access JWT first, then fall back to Bearer token from Authorization header
+  let verifiedClaims = await verifyAccessWithClaims(c.req.raw, accessEnv);
+
+  // For admin proxy requests, also accept Bearer tokens (CF_Authorization from frontend)
+  if (!verifiedClaims && adminProxyRequest) {
+    const authHeader = c.req.header('Authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.slice(7); // Remove 'Bearer ' prefix
+      try {
+        // Treat bearer token as a direct CF Access JWT
+        const response = new Request(c.req.url, {
+          headers: new Headers({
+            'CF-Access-JWT-Assertion': token,
+          }),
+        });
+        verifiedClaims = await verifyAccessWithClaims(response, accessEnv);
+      } catch (error) {
+        console.warn('[auth] Bearer token verification failed:', error instanceof Error ? error.message : String(error));
+      }
+    }
+  }
+
   const claims = verifiedClaims
     ? await authorizeAccessClaims(verifiedClaims, accessEnv)
     : null;
