@@ -23,6 +23,7 @@ import workflows from './workflows';
 import aiSearch from './ai-search';
 import prManager from './pr-manager';
 import workers from './workers';
+import mcpServers from './mcp-servers';
 
 const admin = new Hono<{
   Bindings: Env;
@@ -42,6 +43,7 @@ admin.route('/pii-scans', piiScans);
 admin.route('/chat', chat);
 admin.route('/analytics', analytics);
 admin.route('/cf', workers);
+admin.route('/mcp', mcpServers);
 
 // Phase 2a: RBAC access control routes
 admin.route('/rbac/roles', rbacRoles);
