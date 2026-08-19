@@ -245,6 +245,16 @@ binding = "GS_SIGNALS"
 name = "gs-signals-evaluator"
 class_name = "SignalsEvaluator"
 
+# ── Durable Objects ──────────────────────────────────────────────────────────────
+[env.prod.durable_objects]
+bindings = [
+  { name = "AUTH_SESSION", class_name = "AuthSession" }
+]
+
+[[env.prod.migrations]]
+tag = "v1"
+new_classes = ["AuthSession"]
+
 # Preview deployments use Cloudflare Worker Versions generated from this
 # production manifest. They have no custom preview routes or event triggers;
 # request middleware rejects state-changing requests on workers.dev hosts.
