@@ -1,0 +1,104 @@
+name: ⚙️ Deploy CF Worker (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      worker_name:
+        required: true
+        type: string
+        description: 'Worker app name (gs-api or gs-web)'
+      build_command:
+        required: true
+        type: string
+        description: 'Build command to run'
+      deploy_command:
+        required: true
+        type: string
+        description: 'Deploy command to run'
+      environment_prod:
+        required: false
+        type: string
+        default: prod
+        description: 'Production environment name'
+
+env:
+  PNPM_VERSION: 9.15.4
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: ${{ inputs.build_command }}
+
+  validate:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: ${{ inputs.build_command }}
+      - name: Dry-run deployment
+        working-directory: apps/${{ inputs.worker_name }}
+        run: pnpm exec wrangler deploy --env ${{ inputs.environment_prod }} --dry-run
+
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    environment: production
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: ${{ inputs.build_command }}
+      - name: Deploy to production
+        run: ${{ inputs.deploy_command }}
+      - name: Health check
+        run: |
+          set -euo pipefail
+          max_retries=5
+          retry=0
+
+          while [ $retry -lt $max_retries ]; do
+            echo "Health check attempt $((retry + 1))/$max_retries..."
+            if curl -fsS "https://${{ inputs.worker_name == 'gs-api' && 'api' || '' }}.goldshore.ai/health" >/dev/null 2>&1; then
+              echo "✅ ${{ inputs.worker_name }} is healthy"
+              exit 0
+            fi
+            retry=$((retry + 1))
+            [ $retry -lt $max_retries ] && sleep 10
+          done
+
+          echo "::error::Health check failed after $max_retries attempts"
+          exit 1
