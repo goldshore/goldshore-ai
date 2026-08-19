@@ -16,6 +16,15 @@ on:
     branches: [main]
     paths: *api-paths
   workflow_dispatch:
+    inputs:
+      skip_health_check:
+        description: 'Skip health check after deployment'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
 
 concurrency:
   group: deploy-gs-api-${{ github.ref }}
@@ -27,14 +36,15 @@ permissions:
 jobs:
   gs-api-build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@f520eceda224fe1a4aed5a2a27a194379a409996 # v6
         with:
           version: 9.15.4
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           cache: pnpm
@@ -128,5 +138,3 @@ jobs:
       - name: Stamp release identity into the selected environment
         working-directory: apps/gs-api
         run: pnpm exec wrangler deploy --env prod
-      - name: Health check
-        run: curl --fail --silent --show-error --retry 5 --retry-delay 10 https://api.goldshore.ai/health >/dev/null

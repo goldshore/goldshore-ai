@@ -49,10 +49,20 @@ try {
     submissions = payload.items;
     totalPages = payload.pagination.pages;
   } else {
-    errorMessage = await response.text();
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      try {
+        const error = await response.json() as { error?: string };
+        errorMessage = error.error || `API error: ${response.status} ${response.statusText}`;
+      } catch {
+        errorMessage = `API error: ${response.status} ${response.statusText}`;
+      }
+    } else {
+      errorMessage = `API error: ${response.status} ${response.statusText}. Please contact support if this persists.`;
+    }
   }
-} catch {
-  errorMessage = 'Storage unavailable.';
+} catch (err) {
+  errorMessage = err instanceof Error ? `Connection error: ${err.message}` : 'Connection unavailable.';
 }
 
 const exportUrl = filterStatus
