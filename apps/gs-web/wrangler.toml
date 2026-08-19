@@ -5,11 +5,6 @@ compatibility_flags = ["nodejs_compat"]
 workers_dev = false
 main = "./src/worker.ts"
 
-# Build configuration: Astro must generate dist/ before Wrangler can bundle.
-# This tells both local Wrangler and Cloudflare Workers Builds to run the build.
-[build]
-command = "pnpm install && pnpm build:pages"
-
 # Deploy the Astro SSR entry point and its static bundle as one Worker release.
 # `astro build` emits the server manifest and assets under dist; Wrangler
 # bundles src/worker.ts as the Worker entry and uploads dist as its assets.
