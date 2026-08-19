@@ -3,6 +3,7 @@ compatibility_date = "2026-08-12"
 compatibility_flags = ["nodejs_compat"]
 
 workers_dev = false
+root_dir = "."
 main = "./src/worker.ts"
 
 # Deploy the Astro SSR entry point and its static bundle as one Worker release.
