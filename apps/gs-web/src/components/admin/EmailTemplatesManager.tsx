@@ -3,6 +3,7 @@ import Modal from './Modal';
 import FormField from './FormField';
 import AuthGuard from './AuthGuard';
 import { useAuthToken } from '../../utils/auth';
+import EmailTemplateEditor from './EmailTemplateEditor';
 
 interface Template {
   id: string;
@@ -25,6 +26,7 @@ function EmailTemplatesContent({ jwtToken: _jwtToken }: Props) {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isAdvancedEditorOpen, setIsAdvancedEditorOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -224,27 +226,108 @@ function EmailTemplatesContent({ jwtToken: _jwtToken }: Props) {
     }
   };
 
+  const handleAdvancedEditorSave = async (editorTemplate: any) => {
+    setError(null);
+    setSuccess(null);
+
+    if (!editorTemplate.name?.trim()) {
+      setError('Template name is required');
+      return;
+    }
+
+    if (!editorTemplate.subject?.trim()) {
+      setError('Subject is required');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const isUpdating = selectedTemplate !== null;
+      const endpoint = isUpdating
+        ? `/api/admin/email/templates/${selectedTemplate.id}`
+        : '/api/admin/email/templates';
+      const method = isUpdating ? 'PUT' : 'POST';
+
+      const variables = formData.variables
+        .split(',')
+        .map((v) => v.trim())
+        .filter(Boolean);
+
+      const response = await fetch(endpoint, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          name: editorTemplate.name,
+          subject: editorTemplate.subject,
+          body: editorTemplate.textContent || editorTemplate.htmlContent,
+          htmlBody: editorTemplate.htmlContent,
+          category: formData.category,
+          variables,
+        }),
+      });
+
+      if (response.ok) {
+        setSuccess(`Template ${isUpdating ? 'updated' : 'created'} successfully`);
+        setIsAdvancedEditorOpen(false);
+        setTimeout(() => {
+          loadTemplates();
+        }, 500);
+      } else if (response.status === 401) {
+        setError('Authentication expired. Please refresh the page.');
+      } else {
+        const err = await response.json().catch(() => ({}));
+        setError(err.error || `Failed to ${isUpdating ? 'update' : 'create'} template`);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : `Failed to ${selectedTemplate ? 'update' : 'create'} template`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-semibold">Email Templates</h2>
-        <button
-          onClick={() => {
-            setSelectedTemplate(null);
-            setFormData({
-              name: '',
-              subject: '',
-              body: '',
-              htmlBody: '',
-              category: 'transactional',
-              variables: '',
-            });
-            setIsCreateModalOpen(true);
-          }}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-        >
-          + Create Template
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              setSelectedTemplate(null);
+              setFormData({
+                name: '',
+                subject: '',
+                body: '',
+                htmlBody: '',
+                category: 'transactional',
+                variables: '',
+              });
+              setIsCreateModalOpen(true);
+            }}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          >
+            + Create Template
+          </button>
+          <button
+            onClick={() => {
+              setSelectedTemplate(null);
+              setFormData({
+                name: '',
+                subject: '',
+                body: '',
+                htmlBody: '',
+                category: 'transactional',
+                variables: '',
+              });
+              setIsAdvancedEditorOpen(true);
+            }}
+            className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600"
+          >
+            + WYSIWYG Editor
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -284,13 +367,30 @@ function EmailTemplatesContent({ jwtToken: _jwtToken }: Props) {
               <div className="flex gap-2">
                 <button
                   onClick={() => handleEditTemplate(template)}
-                  className="text-blue-500 hover:text-blue-700 font-medium"
+                  className="text-blue-500 hover:text-blue-700 font-medium text-sm"
                 >
                   Edit
                 </button>
                 <button
+                  onClick={() => {
+                    setSelectedTemplate(template);
+                    setFormData({
+                      name: template.name,
+                      subject: template.subject,
+                      body: template.body,
+                      htmlBody: template.html_body || '',
+                      category: template.category,
+                      variables: template.variables?.join(', ') || '',
+                    });
+                    setIsAdvancedEditorOpen(true);
+                  }}
+                  className="text-indigo-500 hover:text-indigo-700 font-medium text-sm"
+                >
+                  WYSIWYG
+                </button>
+                <button
                   onClick={() => handleDeleteTemplate(template.id)}
-                  className="text-red-500 hover:text-red-700 font-medium"
+                  className="text-red-500 hover:text-red-700 font-medium text-sm"
                 >
                   Delete
                 </button>
@@ -452,6 +552,43 @@ function EmailTemplatesContent({ jwtToken: _jwtToken }: Props) {
           placeholder="e.g., firstName, lastName, confirmationUrl"
         />
       </Modal>
+
+      {isAdvancedEditorOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
+                  {error}
+                </div>
+              )}
+              {success && (
+                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
+                  {success}
+                </div>
+              )}
+              <EmailTemplateEditor
+                template={{
+                  id: selectedTemplate?.id,
+                  name: formData.name,
+                  subject: formData.subject,
+                  textContent: formData.body,
+                  htmlContent: formData.htmlBody || formData.body,
+                  variables: formData.variables.split(',').map(v => v.trim()).filter(Boolean),
+                }}
+                onSave={(template) => {
+                  handleAdvancedEditorSave(template);
+                }}
+                onCancel={() => {
+                  setIsAdvancedEditorOpen(false);
+                  setSelectedTemplate(null);
+                  setError(null);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
