@@ -253,7 +253,7 @@ bindings = [
 
 [[env.prod.migrations]]
 tag = "v1"
-new_classes = ["AuthSession"]
+new_sqlite_classes = ["AuthSession"]
 
 # Preview deployments use Cloudflare Worker Versions generated from this
 # production manifest. They have no custom preview routes or event triggers;
