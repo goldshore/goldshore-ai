@@ -12,6 +12,10 @@ on:
           - 'true'
           - 'false'
 
+concurrency:
+  group: setup-cf-access
+  cancel-in-progress: false
+
 permissions:
   contents: read
 
@@ -25,8 +29,9 @@ jobs:
   setup-access:
     name: Configure CF Access Application
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Check API Token
         run: |
@@ -49,6 +54,7 @@ jobs:
       - name: Create/Verify Access Application
         id: app
         run: |
+          set -euo pipefail
           DRY_RUN="${{ github.event.inputs.dry_run }}"
 
           echo "🔍 Checking for existing Access application..."
@@ -59,6 +65,8 @@ jobs:
           else
             API_TOKEN="${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}"
           fi
+
+          echo "::add-mask::${API_TOKEN}"
 
           # List existing applications
           APP_LIST=$(curl -s -X GET \
@@ -126,8 +134,12 @@ EOF
       - name: Configure Access Policies
         env:
           APP_ID: ${{ steps.app.outputs.app_id }}
+          API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
         run: |
+          set -euo pipefail
           DRY_RUN="${{ github.event.inputs.dry_run }}"
+
+          echo "::add-mask::${API_TOKEN}"
 
           if [ "$DRY_RUN" = "true" ]; then
             echo "🏜️ DRY RUN: Would configure policies"
@@ -237,8 +249,12 @@ EOF
       - name: Add Hostnames to Application
         env:
           APP_ID: ${{ steps.app.outputs.app_id }}
+          API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
         run: |
+          set -euo pipefail
           DRY_RUN="${{ github.event.inputs.dry_run }}"
+
+          echo "::add-mask::${API_TOKEN}"
 
           if [ "$DRY_RUN" = "true" ]; then
             echo "🏜️ DRY RUN: Would add hostnames"
