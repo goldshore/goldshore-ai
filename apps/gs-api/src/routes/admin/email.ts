@@ -50,7 +50,7 @@ email.get('/logs/:id', errorHandler(async (c) => {
   const db = c.env.PLATFORM_DB;
   const id = c.req.param('id');
 
-  const mailLog = await emailDb.getEmailById(db, id);
+  const mailLog = await emailDb.getEmailLogById(db, id);
   if (!mailLog) {
     return c.json({ error: 'Email not found' }, 404);
   }
@@ -101,36 +101,39 @@ email.get('/templates', errorHandler(async (c) => {
 /**
  * POST /api/admin/email/templates
  * Create new email template
- * Body: { name, subject, template }
+ * Body: { name, subject, body, htmlBody?, plainTextBody?, category?, variables? }
  */
 email.post('/templates', errorHandler(async (c) => {
   const db = c.env.PLATFORM_DB;
   const user = c.get('user');
   const body = await c.req.json();
 
-  if (!body.name || !body.subject || !body.template) {
+  if (!body.name || !body.subject || !body.body) {
     return c.json({
-      error: 'Missing required fields: name, subject, template'
+      error: 'Missing required fields: name, subject, body'
     }, 400);
   }
 
-  await emailDb.createEmailTemplate(db, body);
+  const result = await emailDb.createEmailTemplate(db, body, user.id);
 
   console.log('[AUDIT] Admin email template created', {
     user: user.email,
     template: body.name,
+    category: body.category || 'transactional',
     timestamp: new Date().toISOString(),
   });
 
   return c.json({
     success: true,
     message: 'Template created',
+    templateId: result.meta.last_row_id,
   }, 201);
 }));
 
 /**
  * POST /api/admin/email/send
- * Send a test/admin email immediately
+ * Send email using a template
+ * Body: { templateId, toEmail, toName?, variables? }
  */
 email.post('/send', errorHandler(async (c) => {
   const db = c.env.PLATFORM_DB;
@@ -138,9 +141,9 @@ email.post('/send', errorHandler(async (c) => {
   const user = c.get('user');
   const body = await c.req.json();
 
-  if (!body.to || !body.subject) {
+  if (!body.templateId || !body.toEmail) {
     return c.json({
-      error: 'Missing required fields: to, subject'
+      error: 'Missing required fields: templateId, toEmail'
     }, 400);
   }
 
@@ -148,37 +151,40 @@ email.post('/send', errorHandler(async (c) => {
     return c.json({ error: 'Mail queue not configured' }, 503);
   }
 
-  const id = crypto.randomUUID();
+  // Verify template exists
+  const template = await emailDb.getEmailTemplateById(db, body.templateId);
+  if (!template) {
+    return c.json({ error: 'Email template not found' }, 404);
+  }
 
-  // Store email log
-  await emailDb.createEmail(db, {
-    id,
-    recipient: body.to,
-    subject: body.subject,
-    template: body.template || '',
-    status: 'queued',
+  // Queue the email for sending
+  const result = await emailDb.queueEmail(db, {
+    templateId: body.templateId,
+    toEmail: body.toEmail,
+    toName: body.toName,
+    variables: body.variables,
   });
 
-  // Queue for sending
+  // Send to background queue
   await queue.send({
-    type: 'send',
-    emailId: id,
-    to: body.to,
-    subject: body.subject,
-    template: body.template || '',
+    type: 'email.send',
+    templateId: body.templateId,
+    toEmail: body.toEmail,
+    toName: body.toName,
+    variables: body.variables,
   });
 
-  console.log('[AUDIT] Admin email sent', {
+  console.log('[AUDIT] Admin email queued', {
     user: user.email,
-    to: body.to,
-    subject: body.subject,
+    templateId: body.templateId,
+    toEmail: body.toEmail,
     timestamp: new Date().toISOString(),
   });
 
   return c.json({
     success: true,
     message: 'Email queued for sending',
-    id,
+    queueId: result.meta.last_row_id,
   }, 201);
 }));
 
@@ -191,17 +197,76 @@ email.delete('/logs/:id', errorHandler(async (c) => {
   const id = c.req.param('id');
   const user = c.get('user');
 
-  await emailDb.deleteEmail(db, id);
+  await emailDb.deleteEmailLog(db, id);
 
-  console.log('[AUDIT] Admin email deleted', {
+  console.log('[AUDIT] Admin email log deleted', {
     user: user.email,
-    emailId: id,
+    emailLogId: id,
     timestamp: new Date().toISOString(),
   });
 
   return c.json({
     success: true,
-    message: 'Email deleted',
+    message: 'Email log deleted',
+  });
+}));
+
+/**
+ * PUT /api/admin/email/templates/:id
+ * Update email template
+ */
+email.put('/templates/:id', errorHandler(async (c) => {
+  const db = c.env.PLATFORM_DB;
+  const id = c.req.param('id');
+  const user = c.get('user');
+  const body = await c.req.json();
+
+  const template = await emailDb.getEmailTemplateById(db, id);
+  if (!template) {
+    return c.json({ error: 'Template not found' }, 404);
+  }
+
+  await emailDb.updateEmailTemplate(db, id, body);
+
+  console.log('[AUDIT] Admin email template updated', {
+    user: user.email,
+    templateId: id,
+    changes: Object.keys(body),
+    timestamp: new Date().toISOString(),
+  });
+
+  return c.json({
+    success: true,
+    message: 'Template updated',
+  });
+}));
+
+/**
+ * DELETE /api/admin/email/templates/:id
+ * Delete email template
+ */
+email.delete('/templates/:id', errorHandler(async (c) => {
+  const db = c.env.PLATFORM_DB;
+  const id = c.req.param('id');
+  const user = c.get('user');
+
+  const template = await emailDb.getEmailTemplateById(db, id);
+  if (!template) {
+    return c.json({ error: 'Template not found' }, 404);
+  }
+
+  await emailDb.deleteEmailTemplate(db, id);
+
+  console.log('[AUDIT] Admin email template deleted', {
+    user: user.email,
+    templateId: id,
+    templateName: template.name,
+    timestamp: new Date().toISOString(),
+  });
+
+  return c.json({
+    success: true,
+    message: 'Template deleted',
   });
 }));
 
