@@ -98,26 +98,15 @@ jobs:
               exit 0
             fi
 
+            APP_PAYLOAD=$(cat <<'JSON'
+{"name":"admin-production","type":"self_hosted","domain":"admin.goldshore.ai","custom_domain":"admin.goldshore.ai","custom_domain_in_sni_only":false,"cors_allow_credentials":false,"allowed_idps":["github"],"auto_redirect_to_identity":false,"session_duration":"24h","app_launcher_visible":true,"logo_url":"https://goldshore.ai/logo.png"}
+JSON
+)
             APP_RESPONSE=$(curl -s -X POST \
               "https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/access/applications" \
               -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
               -H "Content-Type: application/json" \
-              -d @- << 'EOF'
-{
-  "name": "admin-production",
-  "type": "self_hosted",
-  "domain": "admin.goldshore.ai",
-  "custom_domain": "admin.goldshore.ai",
-  "custom_domain_in_sni_only": false,
-  "cors_allow_credentials": false,
-  "allowed_idps": ["github"],
-  "auto_redirect_to_identity": false,
-  "session_duration": "24h",
-  "app_launcher_visible": true,
-  "logo_url": "https://goldshore.ai/logo.png"
-}
-EOF
-            )
+              -d "$APP_PAYLOAD")
 
             if ! echo "$APP_RESPONSE" | jq -e '.success' > /dev/null 2>&1; then
               echo "❌ Failed to create Access application"
@@ -166,36 +155,15 @@ EOF
           if [ -z "$ALLOW_POLICY" ] || [ "$ALLOW_POLICY" = "null" ]; then
             echo "📝 Creating Allow policy..."
 
+            ALLOW_PAYLOAD=$(cat <<'JSON'
+{"name":"Goldshore Admin Owners","description":"Allow Goldshore admin owners via GitHub","decision":"allow","include":[{"email":{"emails":["marstonr6@gmail.com","admin@goldshore.org"]}},{"identity_provider":{"identity_provider_id":"github"}}],"require":[{"email_verified":{}}],"precedence":1}
+JSON
+)
             ALLOW_RESPONSE=$(curl -s -X POST \
               "https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/access/applications/${APP_ID}/policies" \
               -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
               -H "Content-Type: application/json" \
-              -d @- << 'EOF'
-{
-  "name": "Goldshore Admin Owners",
-  "description": "Allow Goldshore admin owners via GitHub",
-  "decision": "allow",
-  "include": [
-    {
-      "email": {
-        "emails": ["marstonr6@gmail.com", "admin@goldshore.org"]
-      }
-    },
-    {
-      "identity_provider": {
-        "identity_provider_id": "github"
-      }
-    }
-  ],
-  "require": [
-    {
-      "email_verified": {}
-    }
-  ],
-  "precedence": 1
-}
-EOF
-            )
+              -d "$ALLOW_PAYLOAD")
 
             if ! echo "$ALLOW_RESPONSE" | jq -e '.success' > /dev/null 2>&1; then
               echo "❌ Failed to create Allow policy"
@@ -215,24 +183,15 @@ EOF
           if [ -z "$DENY_POLICY" ] || [ "$DENY_POLICY" = "null" ]; then
             echo "📝 Creating Deny policy..."
 
+            DENY_PAYLOAD=$(cat <<'JSON'
+{"name":"Deny Everyone Else","description":"Deny all other access attempts","decision":"deny","include":[{"everyone":{}}],"precedence":2}
+JSON
+)
             DENY_RESPONSE=$(curl -s -X POST \
               "https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/access/applications/${APP_ID}/policies" \
               -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
               -H "Content-Type: application/json" \
-              -d @- << 'EOF'
-{
-  "name": "Deny Everyone Else",
-  "description": "Deny all other access attempts",
-  "decision": "deny",
-  "include": [
-    {
-      "everyone": {}
-    }
-  ],
-  "precedence": 2
-}
-EOF
-            )
+              -d "$DENY_PAYLOAD")
 
             if ! echo "$DENY_RESPONSE" | jq -e '.success' > /dev/null 2>&1; then
               echo "❌ Failed to create Deny policy"
@@ -264,17 +223,15 @@ EOF
           echo "🌐 Configuring hostnames..."
 
           # Update application with hostnames
+          UPDATE_PAYLOAD=$(cat <<'JSON'
+{"custom_domain":"admin.goldshore.ai","custom_domain_in_sni_only":false}
+JSON
+)
           UPDATE_RESPONSE=$(curl -s -X PATCH \
             "https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/access/applications/${APP_ID}" \
             -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
             -H "Content-Type: application/json" \
-            -d @- << 'EOF'
-{
-  "custom_domain": "admin.goldshore.ai",
-  "custom_domain_in_sni_only": false
-}
-EOF
-          )
+            -d "$UPDATE_PAYLOAD")
 
           if ! echo "$UPDATE_RESPONSE" | jq -e '.success' > /dev/null 2>&1; then
             echo "⚠️ Warning: Could not update primary hostname (may already be configured)"
