@@ -3,16 +3,20 @@ compatibility_date = "2026-08-12"
 compatibility_flags = ["nodejs_compat"]
 
 workers_dev = false
-main = "./src/worker.ts"
+main = "./dist/server/entry.mjs"
 
 # Deploy the Astro SSR entry point and its static bundle as one Worker release.
-# `astro build` emits the server manifest and assets under dist; Wrangler
-# bundles src/worker.ts as the Worker entry and uploads dist as its assets.
+# `astro build` emits the server entry at dist/server/entry.mjs and static assets
+# at dist/client. Wrangler bundles the server entry and uploads dist/client as static assets.
 # This is intentionally not a Cloudflare Pages project.
 [assets]
-directory = "./dist"
+directory = "./dist/client"
 binding = "ASSETS"
 run_worker_first = true
+not_found_handling = "404-page"
+
+[images]
+binding = "IMAGES"
 
 # SESSION: KV namespace backing Astro sessions for auth state. The Cloudflare
 # adapter emits this binding whenever no session driver is configured, and
