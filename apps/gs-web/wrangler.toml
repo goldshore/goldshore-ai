@@ -3,7 +3,19 @@ compatibility_date = "2026-08-12"
 compatibility_flags = ["nodejs_compat"]
 
 workers_dev = false
+root_dir = "."
 main = "./src/worker.ts"
+
+routes = [
+  { pattern = "goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "www.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "www.goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "admin.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "admin.goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "risk.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "risk.goldshore.org/*", zone_name = "goldshore.org" }
+]
 
 # Deploy the Astro SSR entry point and its static bundle as one Worker release.
 # `astro build` emits the server manifest and assets under dist; Wrangler
@@ -35,7 +47,7 @@ ENV = "production"
 PUBLIC_ENV = "production"
 PUBLIC_API = "https://api.goldshore.ai"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-CLOUDFLARE_ACCESS_AUDIENCE = "c520a7647223b49b20fbe5be240772863eb684b97b57c08955b6104c58170db9"
+CLOUDFLARE_ACCESS_AUDIENCE = "1e5fd93203b17aa6533c31b664b23da576c897ee2201c3b7ba2214d9dd1d0581"
 CLOUDFLARE_ACCESS_APPLICATION = "admin-production"
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
 
@@ -74,7 +86,7 @@ ENV = "production"
 PUBLIC_ENV = "production"
 PUBLIC_API = "https://api.goldshore.ai"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-CLOUDFLARE_ACCESS_AUDIENCE = "c520a7647223b49b20fbe5be240772863eb684b97b57c08955b6104c58170db9"
+CLOUDFLARE_ACCESS_AUDIENCE = "1e5fd93203b17aa6533c31b664b23da576c897ee2201c3b7ba2214d9dd1d0581"
 CLOUDFLARE_ACCESS_APPLICATION = "admin-production"
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
 
