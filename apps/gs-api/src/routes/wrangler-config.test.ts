@@ -35,24 +35,20 @@ describe('two-app Cloudflare binding contract', () => {
     assert.ok(!d1Bindings(apiConfig).includes('GS_SIGNALS'));
   });
 
-  it('keeps every verified production route on the unified API', () => {
+  it('reserves gs-api for API routes only; frontend/admin/operations routes go to gs-web', () => {
     assert.deepEqual(productionRoutes(apiConfig), [
       { pattern: 'api.goldshore.ai/*', zoneName: 'goldshore.ai' },
       { pattern: 'api.goldshore.org/*', zoneName: 'goldshore.org' },
-      { pattern: 'admin.goldshore.ai/*', zoneName: 'goldshore.ai' },
-      { pattern: 'agent.goldshore.ai/*', zoneName: 'goldshore.ai' },
-      { pattern: 'agent.goldshore.org/*', zoneName: 'goldshore.org' },
-      { pattern: 'mail.goldshore.ai/*', zoneName: 'goldshore.ai' },
-      { pattern: 'mail.goldshore.org/*', zoneName: 'goldshore.org' },
-      { pattern: 'ops.goldshore.ai/*', zoneName: 'goldshore.ai' },
-      { pattern: 'trading.goldshore.ai/*', zoneName: 'goldshore.ai' },
-      { pattern: 'trading.goldshore.org/*', zoneName: 'goldshore.org' },
-      { pattern: 'dashboard.goldshore.ai/*', zoneName: 'goldshore.ai' },
-      { pattern: 'dash.goldshore.ai/*', zoneName: 'goldshore.ai' },
-      { pattern: 'gw.goldshore.ai/*', zoneName: 'goldshore.ai' },
-      // MCP surface folded in from the standalone goldshore-mcp Worker.
-      { pattern: 'mcp.goldshore.ai/*', zoneName: 'goldshore.ai' },
     ]);
+
+    // Admin, risk, and marketing routes are on gs-web. Legacy satellite
+    // workers (agent, mail, ops, trading, dashboard, mcp) have been
+    // consolidated into gs-api's event handlers or decommissioned.
+    const webRoutes = productionRoutes(webConfig);
+    assert.ok(webRoutes.some(r => r.pattern === 'admin.goldshore.ai/*'));
+    assert.ok(webRoutes.some(r => r.pattern === 'admin.goldshore.org/*'));
+    assert.ok(webRoutes.some(r => r.pattern === 'risk.goldshore.ai/*'));
+    assert.ok(webRoutes.some(r => r.pattern === 'goldshore.ai/*'));
   });
 
   it('declares the cron consumed by the scheduled module handler', () => {
