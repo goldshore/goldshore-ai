@@ -128,6 +128,76 @@ function EmailTemplatesContent({ jwtToken: _jwtToken }: Props) {
     }
   };
 
+  const handleEditTemplate = (template: Template) => {
+    setSelectedTemplate(template);
+    setFormData({
+      name: template.name,
+      subject: template.subject,
+      body: template.name, // placeholder
+      htmlBody: '',
+      category: template.category,
+      variables: template.variables?.join(', ') || '',
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateTemplate = async () => {
+    if (!selectedTemplate) return;
+
+    setError(null);
+    setSuccess(null);
+
+    if (!formData.name.trim()) {
+      setError('Template name is required');
+      return;
+    }
+
+    if (!formData.subject.trim()) {
+      setError('Subject is required');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const variables = formData.variables
+        .split(',')
+        .map((v) => v.trim())
+        .filter(Boolean);
+
+      const response = await fetch(`/api/admin/email/templates/${selectedTemplate.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          subject: formData.subject,
+          body: formData.body,
+          htmlBody: formData.htmlBody || undefined,
+          category: formData.category,
+          variables,
+        }),
+      });
+
+      if (response.ok) {
+        setSuccess('Template updated successfully');
+        setIsEditModalOpen(false);
+        setSelectedTemplate(null);
+        loadTemplates();
+      } else if (response.status === 401) {
+        setError('Authentication expired. Please refresh the page.');
+      } else {
+        const err = await response.json().catch(() => ({}));
+        setError(err.error || 'Failed to update template');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update template');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleDeleteTemplate = async (id: string) => {
     if (!confirm('Are you sure you want to delete this template?')) return;
 
@@ -211,6 +281,12 @@ function EmailTemplatesContent({ jwtToken: _jwtToken }: Props) {
               </div>
               <div className="flex gap-2">
                 <button
+                  onClick={() => handleEditTemplate(template)}
+                  className="text-blue-500 hover:text-blue-700 font-medium"
+                >
+                  Edit
+                </button>
+                <button
                   onClick={() => handleDeleteTemplate(template.id)}
                   className="text-red-500 hover:text-red-700 font-medium"
                 >
@@ -231,6 +307,83 @@ function EmailTemplatesContent({ jwtToken: _jwtToken }: Props) {
         }}
         title="Create Email Template"
         onSubmit={handleCreateTemplate}
+        isLoading={isSaving}
+      >
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
+            {success}
+          </div>
+        )}
+        <FormField
+          label="Template Name"
+          name="name"
+          value={formData.name}
+          onChange={(v) => setFormData({ ...formData, name: String(v) })}
+          placeholder="e.g., Welcome Email"
+          required
+        />
+        <FormField
+          label="Category"
+          name="category"
+          type="select"
+          value={formData.category}
+          onChange={(v) => setFormData({ ...formData, category: String(v) })}
+          options={[
+            { value: 'transactional', label: 'Transactional' },
+            { value: 'marketing', label: 'Marketing' },
+            { value: 'notification', label: 'Notification' },
+            { value: 'campaign', label: 'Campaign' },
+          ]}
+        />
+        <FormField
+          label="Subject Line"
+          name="subject"
+          value={formData.subject}
+          onChange={(v) => setFormData({ ...formData, subject: String(v) })}
+          placeholder="Email subject"
+          required
+        />
+        <FormField
+          label="Email Body (Plain Text)"
+          name="body"
+          type="textarea"
+          value={formData.body}
+          onChange={(v) => setFormData({ ...formData, body: String(v) })}
+          placeholder="Email body content"
+          required
+        />
+        <FormField
+          label="HTML Body (Optional)"
+          name="htmlBody"
+          type="textarea"
+          value={formData.htmlBody}
+          onChange={(v) => setFormData({ ...formData, htmlBody: String(v) })}
+          placeholder="HTML formatted email body"
+        />
+        <FormField
+          label="Variables (Comma-separated)"
+          name="variables"
+          value={formData.variables}
+          onChange={(v) => setFormData({ ...formData, variables: String(v) })}
+          placeholder="e.g., firstName, lastName, confirmationUrl"
+        />
+      </Modal>
+
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedTemplate(null);
+          setError(null);
+          setSuccess(null);
+        }}
+        title={`Edit Template: ${selectedTemplate?.name}`}
+        onSubmit={handleUpdateTemplate}
         isLoading={isSaving}
       >
         {error && (
