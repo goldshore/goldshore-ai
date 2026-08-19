@@ -7,11 +7,8 @@ main = "./src/worker.ts"
 
 # Build configuration: Astro must generate dist/ before Wrangler can bundle.
 # This tells both local Wrangler and Cloudflare Workers Builds to run the build.
-# The cwd is set to ../.., the monorepo root, since pnpm build:pages must run
-# from there to resolve workspace dependencies correctly.
 [build]
-cwd = "../.."
-command = "pnpm build:pages"
+command = "pnpm install && pnpm build:pages"
 
 # Deploy the Astro SSR entry point and its static bundle as one Worker release.
 # `astro build` emits the server manifest and assets under dist; Wrangler
