@@ -61,12 +61,21 @@ jobs:
     # Restored with the job header. This is the protected-environment approval
     # gate added by #6470; without it production deploys need no approval.
     environment: production
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      TARGET_ENV: prod
+      HEALTH_ORIGIN: https://api.goldshore.ai
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: pnpm/action-setup@f520eceda224fe1a4aed5a2a27a194379a409996 # v6
         with:
           version: 9.15.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: ./.github/actions/normalize-cf-token
+        id: cf-token
         with:
           raw_token: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
           token_name: CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN
