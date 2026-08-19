@@ -1,9 +1,9 @@
-name: Deploy gs-web
+name: Deploy Goldshore Web
 
 on:
   pull_request:
     branches: [main]
-    paths:
+    paths: &web-paths
       - 'apps/gs-web/**'
       - 'packages/**'
       - 'scripts/build-openapi.mjs'
@@ -16,56 +16,69 @@ on:
       - '.github/workflows/deploy-gs-web.yml'
   push:
     branches: [main]
-    paths:
-      - 'apps/gs-web/**'
-      - 'packages/**'
-      - 'scripts/build-openapi.mjs'
-      - 'scripts/verify-web-dist.mjs'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'
-      - '.node-version'
-      - '.nvmrc'
-      - '.github/workflows/deploy-gs-web.yml'
+    paths: *web-paths
   workflow_dispatch:
+    inputs:
+      skip_validation:
+        description: 'Skip validation step before deployment'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
 
 concurrency:
   group: deploy-gs-web-${{ github.ref }}
   cancel-in-progress: true
 
-jobs:
-  # Build verification only — this job does NOT deploy.
-  #
-  # gs-web is an SSR Astro app (`main = ./src/worker.ts`, `output: server`) whose
-  # entrypoint is emitted to dist/server. Cloudflare Workers Builds deploys the
-  # production `env.prod` manifest as the `gs-web` Worker, which is the single
-  # authoritative deploy path.
-  #
-  # This job previously also ran `wrangler pages deploy apps/gs-web/dist/client
-  # --project-name=gs-web-pages`. That uploaded only the static client assets —
-  # dist/client contains no _worker.js — so it published a static shell in which
-  # every `prerender = false` route (all of /api/admin/*, [...path].astro, ...)
-  # 404'd, racing the Worker for the same hostnames. Removed rather than fixed:
-  # one app, one deploy path.
-  deploy:
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v7.0.1
+permissions:
+  contents: read
 
-      - uses: pnpm/action-setup@v6
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CLOUDFLARE_ENV: prod
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@f520eceda224fe1a4aed5a2a27a194379a409996 # v6
         with:
           version: 9.15.4
-
-      - uses: actions/setup-node@v7.0.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .node-version
           cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
-
+      - run: pnpm install --frozen-lockfile
       - name: Build gs-web Worker output
         run: pnpm build:pages
+      - name: Validate the production manifest without mutating Cloudflare
+        working-directory: apps/gs-web
+        run: pnpm exec wrangler deploy --env prod --dry-run
+
+  production:
+    name: Approve and deploy production
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
+      CLOUDFLARE_ENV: prod
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@f520eceda224fe1a4aed5a2a27a194379a409996 # v6
+        with:
+          version: 9.15.4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build:pages
+      - name: Deploy production Worker
+        working-directory: apps/gs-web
+        run: pnpm exec wrangler deploy --env prod

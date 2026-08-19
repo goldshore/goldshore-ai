@@ -165,7 +165,7 @@ Authenticated user portal:
 └── settings
 ```
 
-### 2) `apps/gs-admin` — Admin Dashboard (Astro SSR)
+### 2) `apps/gs-web/src/pages/admin` — Admin Dashboard (Astro SSR)
 
 Protected by **Cloudflare Access**.
 
@@ -394,7 +394,6 @@ Run individual apps:
 
 ```bash
 pnpm --filter ./apps/gs-web dev
-pnpm --filter ./apps/gs-admin dev
 pnpm --filter ./apps/gs-api dev
 pnpm --filter ./apps/gs-gateway dev
 pnpm --filter ./apps/gs-agent dev
@@ -411,7 +410,6 @@ pnpm build
 Playwright tests live in:
 
 ```
-apps/gs-admin/tests
 apps/gs-web/tests
 ```
 
@@ -452,7 +450,7 @@ All rights reserved.
 | App | CF Worker/Pages | Domain | Status |
 |-----|----------------|--------|--------|
 | `apps/gs-web` | `gs-web` Pages | `goldshore.ai`, `www.goldshore.ai` | ✅ Production |
-| `apps/gs-admin` | `goldshore-admin` Pages | `admin.goldshore.ai` | ✅ CF Access protected |
+| `apps/gs-web` (admin routes) | `gs-web` Worker | `admin.goldshore.ai`, `admin.goldshore.org` | ✅ CF Access protected |
 | `apps/gs-api` | `gs-api` Worker | `api.goldshore.ai` | ✅ Live |
 | `apps/gs-gateway` | `gs-platform` Worker | `gw.goldshore.ai` | ✅ Live |
 | `apps/gs-agent` | `gs-agent` Worker | internal (queue consumer) | ✅ Live |
@@ -464,16 +462,12 @@ All rights reserved.
 - **D1:** `gs_platform_db` (9703574e) · `gs_audit_db` (1ae71d76)
 
 ## Deploy
-```bash
-# gs-web (goldshore.ai)
-cd apps/gs-web && pnpm build && wrangler pages deploy dist
 
-# gs-api
-cd apps/gs-api && wrangler deploy
-
-# gs-gateway (gs-platform)
-cd apps/gs-gateway && wrangler deploy
-```
+Use `.github/workflows/deploy-gs-web.yml` and
+`.github/workflows/deploy-gs-api.yml`. Production jobs require approval through
+the GitHub `production` environment. Local validation uses
+`pnpm exec wrangler deploy --env prod --dry-run` from the relevant canonical app;
+do not deploy directly or restore a satellite Worker.
 
 ## Secrets needed
 - `CLOUDFLARE_API_TOKEN` · `CLOUDFLARE_ACCOUNT_ID` (GitHub Actions)

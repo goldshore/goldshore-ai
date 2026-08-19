@@ -1,7 +1,7 @@
 ---
 import '../styles/global.css';
 import '../styles/public-theme.css';
-import { primaryNavLinks, platformLinks, serviceLinks, companyLinks } from '../config/navigation';
+import { primaryNavLinks, authLinks, platformLinks, serviceLinks, companyLinks } from '../config/navigation';
 
 const navLinks = primaryNavLinks;
 
@@ -77,21 +77,30 @@ const isCurrent = (href: string) => {
       <header class="topbar" data-menu-open="false">
         <div class="topbar-inner">
           <a class="brand-text" href="/" aria-label="GoldShore home">
-            <img src="/assets/penrose-logo.png" alt="GS Labs" class="brand-logo" />
             <span class="brand-text-label">GOLDSHORE</span>
           </a>
           <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="mobile-navigation" aria-label="Toggle menu"><span></span><span></span><span></span></button>
           <nav class="main-nav" aria-label="Primary navigation">
             {navLinks.map((link) => <a href={link.href} aria-current={isCurrent(link.href) ? 'page' : undefined}>{link.label}</a>)}
-            <a href="https://dashboard.goldshore.ai" class="nav-login">Dashboard →</a>
-            <a href="https://admin.goldshore.ai" class="nav-login" data-admin-access-link>Admin →</a>
+            <div class="nav-auth-group">
+              {authLinks.map((link) => (
+                <a href={link.href} class="nav-login" data-admin-access-link={link.href.includes('admin') ? '' : undefined}>
+                  {link.label} →
+                </a>
+              ))}
+            </div>
             <a href="/contact/" class="nav-cta">Request Briefing</a>
           </nav>
         </div>
         <nav id="mobile-navigation" class="mobile-nav" aria-label="Mobile navigation">
           {navLinks.map((link) => <a href={link.href} aria-current={isCurrent(link.href) ? 'page' : undefined}>{link.label}</a>)}
-          <a href="https://dashboard.goldshore.ai">Dashboard →</a>
-          <a href="https://admin.goldshore.ai" data-admin-access-link>Admin →</a>
+          <div class="mobile-auth-group">
+            {authLinks.map((link) => (
+              <a href={link.href} data-admin-access-link={link.href.includes('admin') ? '' : undefined}>
+                {link.label} →
+              </a>
+            ))}
+          </div>
           <a href="/contact/">Request Briefing</a>
         </nav>
       </header>
@@ -191,12 +200,6 @@ const isCurrent = (href: string) => {
         text-transform: uppercase;
       }
 
-      .brand-logo {
-        width: 45px;
-        height: 45px;
-        object-fit: contain;
-      }
-
       .brand-text-label {
         white-space: nowrap;
       }
@@ -291,6 +294,41 @@ const isCurrent = (href: string) => {
         border-radius: 999px;
         background: var(--gs-text);
         transition: transform 160ms ease, opacity 160ms ease;
+      }
+
+      .nav-auth-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-left: auto;
+      }
+
+      .mobile-auth-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .mobile-auth-group a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        padding: 0.72rem 1rem;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        color: var(--gs-text-dim);
+        font-weight: 500;
+        transition: all 160ms ease;
+        text-decoration: none;
+      }
+
+      .mobile-auth-group a:hover {
+        color: var(--gs-text);
+        border-color: rgba(220, 120, 60, 0.6);
+        background: rgba(220, 120, 60, 0.08);
       }
 
       .topbar[data-menu-open='true'] .nav-toggle span:nth-child(1) {
@@ -421,7 +459,7 @@ const isCurrent = (href: string) => {
         color: var(--gs-text);
       }
 
-      @media (max-width: 960px) {
+      @media (max-width: 1023px) {
         .main-nav {
           display: none;
         }

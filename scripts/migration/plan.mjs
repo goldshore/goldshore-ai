@@ -10,7 +10,7 @@ const cls={A:[],B:[],C:[],D:[],E:[]};
 function mapTo(from){
   const rel=from.replace(/^astro-goldshore\//,'');
   if(rel.startsWith('.github/')) return ['.github/'+rel.slice(8),'E','github consolidation'];
-  if(rel.startsWith('apps/admin/')) return ['apps/gs-admin/'+rel.slice('apps/admin/'.length),'A','admin app alignment'];
+  if(rel.startsWith('apps/admin/')) return ['apps/gs-web/'+rel.slice('apps/admin/'.length),'A','admin UI consolidation'];
   if(rel.startsWith('apps/web/')) return ['apps/gs-web/'+rel.slice('apps/web/'.length),'A','web app alignment'];
   if(rel.startsWith('apps/gateway/')) return ['apps/gs-gateway/'+rel.slice('apps/gateway/'.length),'A','gateway alignment'];
   if(rel.startsWith('apps/api-worker/')) return ['apps/gs-api/'+rel.slice('apps/api-worker/'.length),'A','api worker alignment'];

@@ -1,9 +1,9 @@
 name: Deploy Goldshore API
 
 on:
-  push:
-    branches: [main, stage]
-    paths:
+  pull_request:
+    branches: [main]
+    paths: &api-paths
       - 'apps/gs-api/**'
       - 'packages/**'
       - 'package.json'
@@ -13,6 +13,9 @@ on:
       - '.nvmrc'
       - '.github/actions/**'
       - '.github/workflows/deploy-gs-api.yml'
+  push:
+    branches: [main]
+    paths: *api-paths
   workflow_dispatch:
 
 concurrency:
@@ -20,10 +23,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  gs-api-build:
     runs-on: ubuntu-latest
-    environment:
-      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
+    timeout-minutes: 20
     permissions:
       contents: read
     env:
@@ -40,14 +42,31 @@ jobs:
       - uses: pnpm/action-setup@v6
         with:
           version: 9.15.4
-
-      - uses: actions/setup-node@v7.0.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build gs-api
+        run: pnpm --filter @goldshore/gs-api build
 
-      - uses: ./.github/actions/normalize-cf-token
-        id: cf-token
+  deploy:
+    name: Approve and deploy production
+    # Restored with the job header. Without it the secret-provisioning steps
+    # below run on every pull_request event, which this workflow triggers on.
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: gs-api-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Restored with the job header. This is the protected-environment approval
+    # gate added by #6470; without it production deploys need no approval.
+    environment: production
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@f520eceda224fe1a4aed5a2a27a194379a409996 # v6
+        with:
+          version: 9.15.4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           raw_token: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
           token_name: CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN

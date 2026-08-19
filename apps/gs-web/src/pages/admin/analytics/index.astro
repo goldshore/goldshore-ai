@@ -1,0 +1,114 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="Analytics Hub | GoldShore Admin">
+  <main class="hub">
+    <header>
+      <p class="eyebrow">Operations</p>
+      <h1>Analytics Hub</h1>
+      <p>Real-time events, revenue tracking, market data, and performance metrics across the platform.</p>
+    </header>
+
+    <section class="routes">
+      <a href="/admin/analytics/revenue">
+        <b>Revenue Summary</b>
+        <span>Track earnings by channel, type, and status (last 30 days)</span>
+      </a>
+      <a href="/admin/analytics/subscriptions">
+        <b>Subscription Analytics</b>
+        <span>Subscriber counts, tier distribution, and churn metrics</span>
+      </a>
+      <a href="/admin/analytics/events">
+        <b>Event Tracking</b>
+        <span>User events with configurable time granularity (hourly/daily/monthly)</span>
+      </a>
+      <a href="/admin/analytics/market">
+        <b>Market Data</b>
+        <span>Real-time market data feeds by symbol</span>
+      </a>
+      <a href="/admin/analytics/seo">
+        <b>SEO Metrics</b>
+        <span>Keyword rankings, traffic potential, search volume analysis</span>
+      </a>
+      <a href="/admin/analytics/risk">
+        <b>Risk Events</b>
+        <span>Flagged risk events sorted by severity (critical, high, medium, low)</span>
+      </a>
+      <a href="/admin/analytics/opportunities">
+        <b>Business Opportunities</b>
+        <span>Pipeline view of open, in-progress, and closed opportunities</span>
+      </a>
+    </section>
+
+    <section class="info">
+      <p><strong>Note:</strong> All analytics data is aggregated from production systems and updated in real-time. Revenue events are tracked across 20+ monetization models including subscriptions, API usage, and partnerships.</p>
+    </section>
+  </main>
+
+  <style>
+    .hub {
+      max-width: 78rem;
+      margin: auto;
+      padding: 2rem;
+      display: grid;
+      gap: 1.5rem;
+    }
+    .eyebrow {
+      color: #d96a32;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+    h1 {
+      font-size: 2.5rem;
+      margin: 0.2rem 0;
+    }
+    .routes {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .routes a {
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 1rem;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 1.2rem;
+      color: inherit;
+      text-decoration: none;
+      display: block;
+      transition: border-color 0.2s;
+    }
+    .routes a:hover {
+      border-color: #d96a32;
+    }
+    .routes b {
+      display: block;
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+    }
+    .routes span {
+      display: block;
+      opacity: 0.72;
+      font-size: 0.9rem;
+    }
+    .info {
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 1rem;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 1.2rem;
+      opacity: 0.8;
+    }
+    @media (max-width: 850px) {
+      .routes {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    @media (max-width: 560px) {
+      .routes {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</AdminLayout>

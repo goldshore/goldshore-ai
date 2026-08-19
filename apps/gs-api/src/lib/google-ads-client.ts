@@ -78,7 +78,7 @@ export async function fetchGoogleAdsCampaigns(
       ORDER BY metrics.cost_micros DESC
     `;
 
-    const response = await fetch('https://googleads.googleapis.com/v18/customers/' + customerId + '/googleAds:search', {
+    const response = await fetch('https://googleads.googleapis.com/v25/customers/' + customerId + '/googleAds:search', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,

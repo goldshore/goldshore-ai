@@ -1,0 +1,5 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro'; import AdminWorkspaceManager from '../../components/AdminWorkspaceManager.astro';
+if (!Astro.locals.adminSession?.isAuthenticated) return Astro.redirect('/login');
+---
+<AdminLayout title="Projects" requiredPermission="system:read"><AdminWorkspaceManager type="projects" title="Projects" description="Track active initiatives, owners, delivery state, and source links." fields={['owner','status','repository','target_date']}/></AdminLayout>

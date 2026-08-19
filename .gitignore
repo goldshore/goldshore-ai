@@ -2,18 +2,26 @@
 node_modules
 .pnpm-store
 
-# Production
+# Build output
 dist
 build
+coverage/
+htmlcov/
 
-# Frameworks & Tooling
+# Frameworks & tooling caches
 .astro
+.astro/
 .turbo
 .wrangler
 .vercel
 .netlify
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.synchronized
 
-# Environment
+# Environment & secrets
 .env
 .env.*
 !.env.example
@@ -23,39 +31,43 @@ build
 # Logs
 *.log
 npm-debug.log*
+pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.astro/
-.cache/
-pnpm-debug.log*
+
+# Test artifacts
 **/test-results/
 **/trace.zip
-**/*.log
 
-# Caches & temp outputs
+# Temp
 *.tmp
 *.temp
 *.cache
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
+.tmp/
+tmp/
 
-# Generated local reports/artifacts
+# Generated local reports & verification artifacts
 reports/*.txt
 verification/*.png
 .jules/verification/*.png
 .Jules/verification/*.png
-*.legacy-*.astro
-*.legacy-*.mjs
-*.legacy-*.ts
-*.legacy-*.toml
-*.legacy-*.json
+*.diff
+*.png
+!public/favicon.png
+!public/apple-touch-icon.png
+
+# Legacy snapshots left by migration tooling
+**/*.legacy-*.astro
+**/*.legacy-*.mjs
+**/*.legacy-*.json
+**/*.legacy-*.toml
+**/*.legacy-*.ts
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Editor
+# Editors
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
@@ -64,36 +76,10 @@ Thumbs.db
 .idea
 *.swp
 *.swo
-# Test artifacts
-**/test-results/
-**/trace.zip
-**/*.log
 
-# Verification
-*.png
-!public/favicon.png
-!public/apple-touch-icon.png
-*.diff
-
-# Repo hygiene: generated logs, caches, and snapshots
-*.log
-.cache/
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-coverage/
-htmlcov/
-.tmp/
-tmp/
-**/*.legacy-*.astro
-**/*.legacy-*.mjs
-**/*.legacy-*.json
-**/*.legacy-*.toml
-**/*.legacy-*.ts
-reports/*.txt
-
-# Claude local settings (contains secrets)
+# Agent tooling local state
 .claude/settings.local.json
-.codex-remote-attachments/
 .codex/
+.codex-remote-attachments/
+.jules/
 .mcp.json

@@ -1,154 +1,156 @@
 ---
-import BaseLayout from '../../../layouts/BaseLayout.astro';
-import { authorizeAdminRequest, getAdminAuthError, getAdminRouteRule } from '../../../utils/admin-access';
-
-export const prerender = false;
-
-const env = Astro.locals.runtime?.env as Env | undefined;
-const rule = getAdminRouteRule('/admin/workers/bindings', 'GET');
-
-let authError: { status: number; message: string } | null = null;
-if (!rule) {
-  authError = { status: 404, message: 'Not found.' };
-} else {
-  const authResult = await authorizeAdminRequest(Astro.request, env as never, rule);
-  authError = getAdminAuthError(authResult);
-}
+import AdminLayout from "../../../layouts/AdminLayout.astro";
 ---
+<AdminLayout title="Worker Bindings | GoldShore Admin">
+    <section class="max-w-5xl mx-auto py-24 px-6 space-y-6">
+        <h1 class="text-3xl gs-heading mb-4">Worker Bindings</h1>
+        <p class="text-[var(--gs-text-secondary)]">
+            Resource bindings, environment variables, and secrets mapped to each worker.
+        </p>
 
-<BaseLayout title="Worker Bindings | GoldShore Admin" description="Resource bindings mapped to each Worker">
-  <section class="gs-section">
-    <div class="gs-grid columns-2">
-      <div>
-        <h1>Worker bindings</h1>
-        <p class="gs-text-lg">Resource bindings mapped to each deployed Worker.</p>
-      </div>
-      <div class="gs-card">
-        <h2 class="section-title"><span>◆</span>Actions</h2>
-        <ul>
-          <li><a href="/admin/workers/status">Worker status</a></li>
-          <li><a href="/admin/workers/routes">Worker routes</a></li>
-        </ul>
-      </div>
-    </div>
-
-    {authError ? (
-      <div class="gs-card" style="margin-top: 2rem;">
-        <p class="gs-text-lg">{authError.message}</p>
-      </div>
-    ) : (
-      <>
-        <div class="gs-card" style="margin-top: 2rem;">
-          <div class="gs-input-group">
-            <label for="worker-select">Select worker</label>
-            <select id="worker-select">
-              <option value="">Loading workers…</option>
-            </select>
-          </div>
+        <div class="gs-card space-y-4">
+            <div class="flex items-center gap-4 flex-wrap">
+                <label for="worker-select" class="text-sm font-medium gs-text-subtle whitespace-nowrap">Select worker:</label>
+                <select id="worker-select" class="gs-input text-sm" style="min-width: 220px;">
+                    <option value="">Loading workers…</option>
+                </select>
+            </div>
         </div>
 
-        <div id="bindings-section" class="gs-card" style="margin-top: 2rem; display: none; overflow-x: auto;">
-          <table class="gs-table">
-            <thead>
-              <tr><th>Binding name</th><th>Type</th><th>Resource</th></tr>
-            </thead>
-            <tbody id="bindings-table-body">
-              <tr><td colspan="3">Select a worker to view bindings.</td></tr>
-            </tbody>
-          </table>
+        <div id="bindings-section" class="gs-card space-y-4" style="display: none;">
+            <h2 class="text-xl font-semibold">Bindings</h2>
+            <form id="binding-form" class="grid gap-3 md:grid-cols-4 items-end">
+                <label class="space-y-1"><span class="block text-sm">Variable name</span><input id="binding-name" class="gs-input w-full font-mono" required pattern="[A-Za-z_$][A-Za-z0-9_$]{0,63}" placeholder="FEATURE_FLAG" /></label>
+                <label class="space-y-1"><span class="block text-sm">Type</span><select id="binding-type" class="gs-input w-full"><option value="plain_text">Plain text</option><option value="json">JSON</option></select></label>
+                <label class="space-y-1"><span class="block text-sm">Value</span><textarea id="binding-value" class="gs-input w-full font-mono" required maxlength="16384" rows="2"></textarea></label>
+                <button class="gs-btn-primary px-4 py-2" type="submit">Save confirmed binding</button>
+            </form>
+            <p class="text-xs gs-text-subtle">Secret and resource bindings are read-only here. Use Secrets Management or Wrangler for those types.</p>
+            <p id="binding-status" class="text-sm gs-text-subtle" role="status"></p>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="text-sm gs-text-subtle border-b border-[var(--gs-color-border)]">
+                            <th class="pb-2">Binding Name</th>
+                            <th class="pb-2">Type</th>
+                            <th class="pb-2">Resource</th><th class="pb-2">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bindings-table-body">
+                        <tr><td class="py-3 text-sm gs-text-subtle" colspan="4">Select a worker to view bindings.</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-        <div id="bindings-error" class="gs-card" style="margin-top: 2rem; display: none;">
-          <p id="bindings-error-msg" class="gs-text-lg"></p>
+        <div id="bindings-error" class="gs-card" style="display: none;">
+            <p id="bindings-error-msg" class="text-sm gs-text-danger"></p>
+            <p class="gs-text-subtle text-xs mt-1">Ensure <code>CLOUDFLARE_ACCOUNT_ID</code> and <code>CLOUDFLARE_API_TOKEN</code> are configured on gs-api.</p>
         </div>
-      </>
-    )}
-  </section>
+    </section>
 
-  <script>
-    const workerSelect = document.getElementById('worker-select') as HTMLSelectElement | null;
-    const bindingsSection = document.getElementById('bindings-section');
-    const bindingsTableBody = document.getElementById('bindings-table-body');
-    const bindingsError = document.getElementById('bindings-error');
-    const bindingsErrorMsg = document.getElementById('bindings-error-msg');
+    <script>
+        const workerSelect = document.getElementById('worker-select') as HTMLSelectElement | null;
+        const bindingsSection = document.getElementById('bindings-section');
+        const bindingsTableBody = document.getElementById('bindings-table-body');
+        const bindingsError = document.getElementById('bindings-error');
+        const bindingsErrorMsg = document.getElementById('bindings-error-msg');
+        const bindingStatus = document.getElementById('binding-status');
+        let bindingsRevision = '';
+        const escapeHtml = (value: unknown) => String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' })[character] ?? character);
 
-    function showError(msg: string) {
-      if (bindingsSection) bindingsSection.style.display = 'none';
-      if (bindingsError) bindingsError.style.display = 'block';
-      if (bindingsErrorMsg) bindingsErrorMsg.textContent = msg;
-    }
-
-    function hideError() {
-      if (bindingsError) bindingsError.style.display = 'none';
-    }
-
-    async function loadWorkerList() {
-      try {
-        const res = await fetch('/api/admin/cf/workers');
-        const data = await res.json();
-
-        if (!res.ok || !data.success) {
-          if (workerSelect) workerSelect.innerHTML = '<option value="">Failed to load workers</option>';
-          showError(data.error ?? 'Could not load worker list.');
-          return;
+        function showError(msg: string) {
+            if (bindingsSection) bindingsSection.style.display = 'none';
+            if (bindingsError) bindingsError.style.display = 'block';
+            if (bindingsErrorMsg) bindingsErrorMsg.textContent = msg;
         }
 
-        const workers: Array<{ id: string }> = data.workers ?? [];
-        if (workerSelect) {
-          workerSelect.innerHTML =
-            '<option value="">— choose a worker —</option>' +
-            workers.map((w) => `<option value="${w.id}">${w.id}</option>`).join('');
-        }
-      } catch {
-        if (workerSelect) workerSelect.innerHTML = '<option value="">Network error</option>';
-        showError('Network error — could not reach /api/admin/cf/workers.');
-      }
-    }
-
-    async function loadBindings(name: string) {
-      hideError();
-      if (bindingsSection) bindingsSection.style.display = 'none';
-      if (!name) return;
-
-      if (bindingsTableBody) {
-        bindingsTableBody.innerHTML = '<tr><td colspan="3">Loading bindings…</td></tr>';
-      }
-      if (bindingsSection) bindingsSection.style.display = 'block';
-
-      try {
-        const res = await fetch(`/api/admin/cf/worker-detail?name=${encodeURIComponent(name)}`);
-        const data = await res.json();
-
-        if (!res.ok || !data.success) {
-          showError(data.error ?? 'Failed to load worker detail.');
-          if (bindingsSection) bindingsSection.style.display = 'none';
-          return;
+        function hideError() {
+            if (bindingsError) bindingsError.style.display = 'none';
         }
 
-        const bindings: Array<{ name?: string; type: string; [key: string]: unknown }> = data.bindings ?? [];
+        async function loadWorkerList() {
+            try {
+                const res = await fetch('/api/admin/cf/workers');
+                const data = await res.json();
 
-        if (!bindings.length) {
-          if (bindingsTableBody) {
-            bindingsTableBody.innerHTML = '<tr><td colspan="3">No bindings found for this worker.</td></tr>';
-          }
-          return;
+                if (!res.ok || data.error) {
+                    if (workerSelect) workerSelect.innerHTML = '<option value="">Failed to load workers</option>';
+                    showError(data.error ?? 'Could not load worker list.');
+                    return;
+                }
+
+                const workers: Array<{ id: string }> = data.workers ?? [];
+                if (workerSelect) {
+                    workerSelect.innerHTML = '<option value="">— choose a worker —</option>' +
+                        workers.map((w) => `<option value="${w.id}">${w.id}</option>`).join('');
+                }
+            } catch {
+                if (workerSelect) workerSelect.innerHTML = '<option value="">Network error</option>';
+                showError('Network error — could not reach the Worker inventory API.');
+            }
         }
 
-        if (bindingsTableBody) {
-          bindingsTableBody.innerHTML = bindings
-            .map((b) => {
-              const resource = b.namespace_id ?? b.bucket_name ?? b.service ?? b.dataset ?? b.class_name ?? '—';
-              return `<tr><td>${b.name ?? '—'}</td><td>${b.type}</td><td class="gs-text-sm">${resource}</td></tr>`;
-            })
-            .join('');
-        }
-      } catch {
-        showError('Network error — could not reach /api/admin/cf/worker-detail.');
-        if (bindingsSection) bindingsSection.style.display = 'none';
-      }
-    }
+        async function loadBindings(name: string) {
+            hideError();
+            if (bindingsSection) bindingsSection.style.display = 'none';
+            if (!name) return;
 
-    workerSelect?.addEventListener('change', () => loadBindings(workerSelect.value));
-    loadWorkerList();
-  </script>
-</BaseLayout>
+            if (bindingsTableBody) {
+                bindingsTableBody.innerHTML = '<tr><td class="py-3 text-sm gs-text-subtle" colspan="4">Loading bindings…</td></tr>';
+            }
+            if (bindingsSection) bindingsSection.style.display = 'block';
+
+            try {
+                const res = await fetch(`/api/admin/cf/worker-detail?name=${encodeURIComponent(name)}`);
+                const data = await res.json();
+
+                if (!res.ok || data.error) {
+                    showError(data.error ?? 'Failed to load worker detail.');
+                    if (bindingsSection) bindingsSection.style.display = 'none';
+                    return;
+                }
+
+                bindingsRevision = data.bindingsRevision ?? '';
+                const bindings: Array<{ name: string; type: string; resource?: string; editable?: boolean }> = data.bindings ?? [];
+
+                if (!bindings.length) {
+                    if (bindingsTableBody) {
+                        bindingsTableBody.innerHTML = '<tr><td class="py-3 text-sm gs-text-subtle" colspan="4">No bindings found for this worker.</td></tr>';
+                    }
+                    return;
+                }
+
+                if (bindingsTableBody) {
+                    bindingsTableBody.innerHTML = bindings.map((b) => {
+                        return `<tr class="border-b border-[var(--gs-color-border)]/50">
+                            <td class="py-2 font-mono text-sm">${escapeHtml(b.name)}</td>
+                            <td class="py-2 text-sm">${escapeHtml(b.type)}</td>
+                            <td class="py-2 text-sm gs-text-subtle">${escapeHtml(b.resource ?? 'Configured')}</td>
+                            <td class="py-2">${b.editable ? `<button class="gs-btn-secondary px-2 py-1 mr-2" data-edit-binding="${escapeHtml(b.name)}" data-binding-type="${escapeHtml(b.type)}">Replace</button><button class="gs-btn-secondary px-2 py-1" data-delete-binding="${escapeHtml(b.name)}">Delete</button>` : 'Protected'}</td>
+                        </tr>`;
+                    }).join('');
+                }
+            } catch {
+                showError('Network error — could not reach the Worker detail API.');
+                if (bindingsSection) bindingsSection.style.display = 'none';
+            }
+        }
+
+        workerSelect?.addEventListener('change', () => {
+            loadBindings(workerSelect.value);
+        });
+
+        document.getElementById('binding-form')?.addEventListener('submit', async (event) => {
+            event.preventDefault(); if (!workerSelect?.value) { if (bindingStatus) bindingStatus.textContent='Choose a Worker first.'; return; }
+            const name=(document.getElementById('binding-name') as HTMLInputElement).value.trim(); const type=(document.getElementById('binding-type') as HTMLSelectElement).value; const raw=(document.getElementById('binding-value') as HTMLTextAreaElement).value;
+            let value: unknown=raw; if(type==='json'){try{value=JSON.parse(raw);}catch{if(bindingStatus)bindingStatus.textContent='JSON value is invalid.';return;}}
+            if(!confirm(`Save ${name} on ${workerSelect.value}? This creates a new Worker configuration version.`))return;
+            const mutationQuery=new URLSearchParams({name:workerSelect.value,binding:name}); const response=await fetch(`/api/admin/cf/worker-detail?${mutationQuery}`,{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({type,value,expectedRevision:bindingsRevision,confirm:true})}); const data=await response.json().catch(()=>({}));
+            if(bindingStatus)bindingStatus.textContent=response.ok?'Binding saved.':data.error??'Binding save failed.'; (document.getElementById('binding-value') as HTMLTextAreaElement).value=''; if(response.ok)await loadBindings(workerSelect.value);
+        });
+        bindingsTableBody?.addEventListener('click',async(event)=>{ const target=event.target as HTMLElement; const edit=target.closest<HTMLButtonElement>('[data-edit-binding]'); if(edit){(document.getElementById('binding-name') as HTMLInputElement).value=edit.dataset.editBinding!;(document.getElementById('binding-type') as HTMLSelectElement).value=edit.dataset.bindingType!;(document.getElementById('binding-value') as HTMLTextAreaElement).focus();return;} const remove=target.closest<HTMLButtonElement>('[data-delete-binding]');if(!remove||!workerSelect?.value)return;if(!confirm(`Delete ${remove.dataset.deleteBinding} from ${workerSelect.value}?`))return;const query=new URLSearchParams({name:workerSelect.value,binding:remove.dataset.deleteBinding!,confirm:'true',expectedRevision:bindingsRevision});const response=await fetch(`/api/admin/cf/worker-detail?${query}`,{method:'DELETE'});if(bindingStatus)bindingStatus.textContent=response.ok?'Binding deleted.':(await response.json().catch(()=>({}))).error??'Binding deletion failed.';if(response.ok)await loadBindings(workerSelect.value);});
+
+        loadWorkerList();
+    </script>
+</AdminLayout>

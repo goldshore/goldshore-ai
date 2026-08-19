@@ -41,7 +41,7 @@ The `CONTROL_SYNC_TOKEN` is used for secure service-to-service communication bet
     - `api-preview.goldshore.ai` (for `gs-api`)
     - `gw-preview.goldshore.ai` (for `gs-gateway`)
     - `ops-preview.goldshore.ai` (for `gs-control`)
-    - `preview.admin.goldshore.ai` (for `gs-admin`)
+    - `admin-preview.goldshore.ai` (served by `gs-web`)
 - [ ] Reconcile service names in the Cloudflare Dashboard with the `[env.preview]` and `[env.prod]` definitions introduced in `wrangler.toml` files.
 - [ ] Verify that preview environment service names follow the pattern `<service>-preview` in Cloudflare if required.
 

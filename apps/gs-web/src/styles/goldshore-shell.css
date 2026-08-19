@@ -37,12 +37,7 @@
   -webkit-backdrop-filter: blur(16px);
   background: rgba(5, 5, 7, 0.82);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.gs-shell-v284 .topbar-inner {
-  width: min(100%, var(--gs-max-width, 1180px));
   min-height: 5rem;
-  margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -165,19 +160,11 @@
   text-transform: uppercase;
 }
 
-/* Footer layout/typography is owned entirely by GoldShoreShell.astro's own
-   embedded <style is:global> block (.site-footer/.footer-main/.footer-brand/
-   .footer-columns/.footer-meta-block/.footer-credits). The rules that used to
-   live here targeted an older footer DOM (before the .footer-main wrapper
-   div existed) — .gs-shell-v284 .site-footer h2/h3 matched via descendant
-   selector regardless of that refactor and, at higher specificity than
-   GoldShoreShell's own .footer-brand h2 rule, blew the "GOLDSHORE" wordmark
-   up to clamp(1.8rem, 4vw, 3.4rem) and overlapped it with the footer nav
-   columns on every page using BaseLayout/MarketingLayout. Removed rather than
-   fixed in place since none of it matches current markup. */
+/* Shared header/footer chrome lives in theme-chrome.css and is composed by
+   PublicHeader/PublicFooter. Avoid competing chrome selectors in this file. */
 
 @media (max-width: 960px) {
   .gs-shell-v284 .main-nav { display: none; }
   .gs-shell-v284 .nav-toggle { display: inline-flex; }
-  .gs-shell-v284 .topbar[data-menu-open='true'] .mobile-nav { display: grid; }
+  .gs-shell-v284 .topbar[data-menu-open='true'] .main-nav { display: grid; }
 }

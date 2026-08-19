@@ -1,88 +1,31 @@
-# gs-platform Deployment Guide
+# Production deployment
 
-## What changed
+The only canonical deployable applications are `apps/gs-web` and `apps/gs-api`.
 
-### 1. packages/auth/verify.ts — CRITICAL FIX
-- Was: fetching JWKS cert but never validating — returned `true` for any token
-- Now: full `jose`-based JWT verification with issuer checks and audience verification when `CLOUDFLARE_ACCESS_AUDIENCE` is set
-- Missing `CLOUDFLARE_ACCESS_AUDIENCE` is not fail-closed here; that enforcement happens in the gs-platform middleware below
+## Local validation
 
-### 2. apps/gs-platform/src/index.ts
-- Auth middleware now hard-fails (503) when audience env var is missing
-- Was silently warning and passing requests through
-
-### 3. apps/gs-platform/wrangler.toml
-- Added D1 (`gs_platform_db`), KV (`GATEWAY_KV` + `GOLDSHORE_KV`), R2 (`gs-assets`) bindings
-- Added routes for all 5 domains (goldshore.ai, www.goldshore.ai, admin.goldshore.ai, armsway.com, www.armsway.com)
-- Service bindings for SECURITY, SIGNALS, MAIL, CORE hub → spoke architecture
-
----
-
-## Steps to deploy
-
-### Step 1 — Install dependencies
-```bash
-cd /path/to/monorepo
-pnpm install
-```
-
-### Step 2 — Set secrets
-```bash
-wrangler secret put CLOUDFLARE_ACCESS_AUDIENCE --name gs-platform
-# Enter: your CF Access audience tag (find in CF Zero Trust → Applications)
-
-wrangler secret put CLOUDFLARE_TEAM_DOMAIN --name gs-platform
-# Enter: goldshore.cloudflareaccess.com
-```
-
-### Step 3 — Deploy
-```bash
-cd apps/gs-platform
-wrangler deploy --env prod
-```
-
----
-
-## Pages cleanup (do manually in CF dashboard)
-
-These Pages projects are dead weight from the org account migration.
-Delete them after clearing deployments:
-
-| Project name         | Why delete |
-|----------------------|------------|
-| gs-admin-pages       | goldshore org repo — dead |
-| goldshore-web-pages  | goldshore org repo — dead |
-| gs-web-pages         | goldshore org repo — dead |
-| gs-admin-page        | goldshore org repo — dead |
-| goldshore-org-pages  | paused, goldshore org repo |
-| archived-gs-pages    | paused, goldshore org repo |
-| goldshore-api-pages  | paused, goldshore org repo |
-
-## Worker cleanup (do in CF dashboard)
-
-| Worker name         | Why delete |
-|---------------------|------------|
-| goldshore-gateway   | No routes, no repo — stub |
-
----
-
-## Branch protection (apply after merge)
+Run Wrangler only in dry-run mode, with the production environment selected explicitly:
 
 ```bash
-gh api repos/marzton/goldshore-ai/branches/main/protection \
-  --method PUT \
-  --input infra/branch-protection.json
+cd apps/gs-web
+pnpm exec wrangler deploy --env prod --dry-run
+
+cd ../gs-api
+pnpm exec wrangler deploy --env prod --dry-run
 ```
 
-This makes CI checks **required** — no PR merges to main unless
-`Manifest integrity check` and `Cloudflare live state audit` both pass.
+These commands validate and bundle locally; they do not mutate Cloudflare.
 
----
+## Production
 
-## Infrastructure source of truth
+Use the canonical workflows:
 
-See `infra/INFRASTRUCTURE.md` for the canonical list of all Cloudflare
-resources (workers, D1, KV, R2, routes) with real IDs.
+- `.github/workflows/deploy-gs-web.yml`
+- `.github/workflows/deploy-gs-api.yml`
 
+Their production jobs require a human reviewer through the protected GitHub
+`production` environment. Do not deploy a Worker directly from a workstation.
 
-For URL route ownership and binding procedure (Pages vs Workers), follow `infra/Cloudflare/runbooks/ROUTING_SOURCE_OF_TRUTH.md`.
+DNS, routes, bindings, Access policies, secret values, and other production
+configuration remain human-operated in the Cloudflare dashboard. Do not create
+or run repository scripts that write production secrets or make those mutations.

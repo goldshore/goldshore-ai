@@ -13,7 +13,7 @@ actually live right now, independent of what any wrangler.toml/CLAUDE.md claims.
 | `www.goldshore.ai` | `401` | Not a redirect — CF Access is gating this host directly. Confirm whether that's intended for a plain `www` redirect, or the Access policy is scoped too broadly. |
 | `goldshore.org` | `200` | Healthy — served by `gs-web-prod` (per `apps/gs-web/wrangler.toml`'s `goldshore.org/*` route). The dedicated `goldshore-org` Worker declared in `marzton/goldshore/wrangler.toml` does **not exist live** in either Cloudflare account these credentials can reach — `goldshore.ai` is the one actually serving `.org` traffic today, not `goldshore-org`. |
 | `www.goldshore.org` | `308` | Healthy redirect |
-| `admin.goldshore.org` | `404` | DNS/proxy resolves but no Worker/Pages route matches — the `.org` alias for `gs-admin` (documented as "same app as admin.goldshore.ai") is **not actually wired up**, unlike the `.ai` version. |
+| `admin.goldshore.org` | `404` | `apps/gs-web/wrangler.toml` declares the `admin.goldshore.org/*` route, but a retired `gs-admin` deployment still holds the hostname and shadows it. Remove that deployment's custom domains so the `gs-web` route takes effect. |
 | `api.goldshore.ai` | `401` | Live (Access-protected as expected) |
 | `api.goldshore.org` | no route | `CONNECT tunnel failed` — no live DNS/route, despite being declared in `apps/gs-api/wrangler.toml`'s own `env.prod.routes` **and** `marzton/goldshore/apps/goldshore-api/wrangler.toml`. Config says two different repos serve this; live, neither actually does. |
 | `api-preview.goldshore.org` | no route | Same — not live, despite **four** separate repos (`rmarston-com/goldshore-core/apps/api-worker`, `goldshore-api/apps/api-worker`, `goldshore-gateway/goldshore-api`, `goldshore/apps/goldshore-api`) all declaring this identical route in git. |
@@ -50,7 +50,7 @@ Cloudflare proxy target exists for that hostname at all, not an app-level error.
 | `api.goldshore.ai` | CNAME/A | Proxied | `gs-api` | Worker route `api.goldshore.ai/*` | none | `/health`, `/version`, `/version.json` |
 | `gw.goldshore.ai` | CNAME/A | Proxied | `gs-gateway` | Worker route `gw.goldshore.ai/*` | none | `/health` and `/version` (may be protected) |
 | `gateway.goldshore.ai` | CNAME | Proxied | `gs-gateway` alias | redirect or alias route | ideally to `gw` | same as gw |
-| `admin.goldshore.ai` | CNAME | Proxied | `gs-admin` | Pages custom domain | none | `/version.json` preferred |
+| `admin.goldshore.ai` | CNAME | Proxied | `gs-web` | Worker route `admin.goldshore.ai/*` | none | `/version.json` preferred |
 | `trading.goldshore.ai` | CNAME | Proxied | `gs-trading-prod` | Worker route | none | `/health` and Access login wall |
 | `dashboard.goldshore.ai` | CNAME | Proxied | `gs-trading-prod` | Worker route alias | none | Access login wall |
 | `dash.goldshore.ai` | CNAME | Proxied | `gs-trading-prod` | Worker route alias | none | Access login wall |

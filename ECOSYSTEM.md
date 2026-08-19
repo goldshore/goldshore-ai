@@ -35,7 +35,7 @@ We recommend the following extensions/tools for maximizing productivity in this 
 
 ## Repository Structure
 *   `apps/gs-web`: Public marketing site (Astro).
-*   `apps/gs-admin`: Internal operations dashboard (Astro).
+*   `apps/gs-web/src/pages/admin`: Internal operations dashboard, served by the same Astro app.
 *   `apps/gs-gateway`: Edge gateway for routing, auth, and rate limiting (Worker).
 *   `apps/gs-api`: Core business logic and data access (Worker).
 *   `apps/goldshore-agent`: AI agent service (Worker).

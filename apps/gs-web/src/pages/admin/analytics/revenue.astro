@@ -1,0 +1,292 @@
+---
+export const prerender = false;
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="Revenue Summary | GoldShore Admin">
+  <main class="container">
+    <header>
+      <h1>Revenue Summary</h1>
+      <p>Track earnings by type, channel, and status (last 30 days)</p>
+    </header>
+
+    <section class="panel">
+      <div class="head">
+        <div>
+          <h2>Revenue Metrics</h2>
+          <p>Aggregated from all transaction channels</p>
+        </div>
+        <button id="refresh" type="button">Refresh</button>
+      </div>
+      <div id="metrics" class="metrics">Loading…</div>
+    </section>
+
+    <section class="panel">
+      <h2>By Type</h2>
+      <div id="by-type" class="table-wrapper">
+        <table class="gs-table">
+          <thead>
+            <tr>
+              <th>Revenue Type</th>
+              <th>Amount</th>
+              <th>Transactions</th>
+              <th>Avg Transaction</th>
+            </tr>
+          </thead>
+          <tbody id="type-tbody">
+            <tr><td colspan="4">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>By Channel</h2>
+      <div id="by-channel" class="table-wrapper">
+        <table class="gs-table">
+          <thead>
+            <tr>
+              <th>Channel</th>
+              <th>Amount</th>
+              <th>Transactions</th>
+              <th>Share</th>
+            </tr>
+          </thead>
+          <tbody id="channel-tbody">
+            <tr><td colspan="4">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>By Status</h2>
+      <div id="by-status" class="table-wrapper">
+        <table class="gs-table">
+          <thead>
+            <tr>
+              <th>Status</th>
+              <th>Amount</th>
+              <th>Transactions</th>
+            </tr>
+          </thead>
+          <tbody id="status-tbody">
+            <tr><td colspan="3">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <p id="error" role="alert" style="display: none; color: #d96a32; margin-top: 1rem;"></p>
+  </main>
+
+  <script is:inline>
+    const formatCurrency = (cents) => `$${(cents / 100).toFixed(2)}`;
+    const formatPercent = (fraction) => `${(fraction * 100).toFixed(1)}%`;
+
+    async function loadRevenue() {
+      try {
+        const response = await fetch('/api/admin/analytics/revenue-summary', {
+          credentials: 'same-origin'
+        });
+
+        if (!response.ok) throw new Error(`Request failed (${response.status})`);
+
+        const data = await response.json();
+        if (!data || !data.items) throw new Error('Invalid response');
+
+        const items = data.items || [];
+
+        // Group by revenue_type
+        const byType = {};
+        const byChannel = {};
+        const byStatus = {};
+        let totalAmount = 0;
+        let totalTransactions = 0;
+
+        items.forEach(item => {
+          totalAmount += item.total_revenue_cents || 0;
+          totalTransactions += item.total_transactions || 0;
+
+          const key = item.revenue_type || 'Unknown';
+          byType[key] = (byType[key] || 0) + (item.total_revenue_cents || 0);
+
+          const chKey = item.channel || 'direct';
+          byChannel[chKey] = (byChannel[chKey] || 0) + (item.total_revenue_cents || 0);
+
+          const stKey = item.status || 'pending';
+          byStatus[stKey] = (byStatus[stKey] || 0) + (item.total_revenue_cents || 0);
+        });
+
+        // Update metrics
+        const metricsHtml = `
+          <article><b>${formatCurrency(totalAmount)}</b><span>Total Revenue</span></article>
+          <article><b>${totalTransactions.toLocaleString()}</b><span>Transactions</span></article>
+          <article><b>${formatCurrency(totalAmount / Math.max(totalTransactions, 1))}</b><span>Avg Transaction</span></article>
+          <article><b>${Object.keys(byChannel).length}</b><span>Channels</span></article>
+        `;
+        document.getElementById('metrics').innerHTML = metricsHtml;
+
+        // By Type
+        document.getElementById('type-tbody').innerHTML = Object.entries(byType)
+          .sort(([, a], [, b]) => b - a)
+          .map(([type, amount]) => `
+            <tr>
+              <td>${type.replace(/_/g, ' ').toUpperCase()}</td>
+              <td>${formatCurrency(amount)}</td>
+              <td>${(amount / (totalAmount || 1) * totalTransactions).toFixed(0)}</td>
+              <td>${formatCurrency(amount / (amount / (totalAmount || 1) / totalTransactions || 1))}</td>
+            </tr>
+          `)
+          .join('') || '<tr><td colspan="4">No data</td></tr>';
+
+        // By Channel
+        document.getElementById('channel-tbody').innerHTML = Object.entries(byChannel)
+          .sort(([, a], [, b]) => b - a)
+          .map(([channel, amount]) => `
+            <tr>
+              <td>${channel.toUpperCase()}</td>
+              <td>${formatCurrency(amount)}</td>
+              <td>${(amount / (totalAmount || 1) * totalTransactions).toFixed(0)}</td>
+              <td>${formatPercent(amount / (totalAmount || 1))}</td>
+            </tr>
+          `)
+          .join('') || '<tr><td colspan="4">No data</td></tr>';
+
+        // By Status
+        document.getElementById('status-tbody').innerHTML = Object.entries(byStatus)
+          .sort(([, a], [, b]) => b - a)
+          .map(([status, amount]) => `
+            <tr>
+              <td>${status.toUpperCase()}</td>
+              <td>${formatCurrency(amount)}</td>
+              <td>${(amount / (totalAmount || 1) * totalTransactions).toFixed(0)}</td>
+            </tr>
+          `)
+          .join('') || '<tr><td colspan="3">No data</td></tr>';
+
+        document.getElementById('error').style.display = 'none';
+      } catch (err) {
+        const errorEl = document.getElementById('error');
+        errorEl.textContent = err.message;
+        errorEl.style.display = 'block';
+      }
+    }
+
+    document.getElementById('refresh').addEventListener('click', loadRevenue);
+    loadRevenue();
+  </script>
+
+  <style>
+    .container {
+      max-width: 78rem;
+      margin: auto;
+      padding: 2rem;
+      display: grid;
+      gap: 1.5rem;
+    }
+    header {
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    h1 {
+      font-size: 2rem;
+      margin: 0;
+    }
+    header p {
+      opacity: 0.7;
+      margin: 0.5rem 0 0 0;
+    }
+    .panel {
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 1rem;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 1.2rem;
+    }
+    .head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .head div {
+      flex: 1;
+    }
+    .head h2 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+    .head p {
+      margin: 0.3rem 0 0 0;
+      opacity: 0.7;
+      font-size: 0.9rem;
+    }
+    button {
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 0.65rem;
+      padding: 0.65rem 0.9rem;
+      background: #101014;
+      color: inherit;
+      cursor: pointer;
+    }
+    button:hover {
+      border-color: #d96a32;
+    }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+    }
+    .metrics article {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 0.65rem;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .metrics b {
+      display: block;
+      font-size: 1.5rem;
+    }
+    .metrics span {
+      display: block;
+      opacity: 0.7;
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+    }
+    .table-wrapper {
+      overflow-x: auto;
+    }
+    .gs-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    .gs-table th,
+    .gs-table td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .gs-table th {
+      background: rgba(255, 255, 255, 0.05);
+      font-weight: 600;
+    }
+    @media (max-width: 850px) {
+      .metrics {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    @media (max-width: 560px) {
+      .metrics {
+        grid-template-columns: 1fr;
+      }
+      .gs-table {
+        font-size: 0.8rem;
+      }
+      .gs-table th,
+      .gs-table td {
+        padding: 0.5rem;
+      }
+    }
+  </style>
+</AdminLayout>

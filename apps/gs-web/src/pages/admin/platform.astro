@@ -1,0 +1,114 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+
+export const prerender = false;
+
+const serviceInventory = [
+  ['Public interface', 'gs-web', 'Marketing site and protected admin routes', 'Operational'],
+  ['Unified backend', 'gs-api', 'API, mail, queues, scheduled work, and integrations', 'Operational'],
+  ['Platform data', 'D1 + KV + R2', 'Application state, configuration, audit data, and assets', 'Review bindings'],
+  ['Operator access', 'Cloudflare Access', 'Identity verification and role-based permissions', 'Protected'],
+] as const;
+
+const controlLinks = [
+  ['Worker status', '/admin/workers/status', 'Review the deployed worker inventory and health.'],
+  ['Domains and routes', '/admin/domains', 'Inspect active service routes and domains.'],
+  ['Integrations', '/admin/integrations/all', 'Review third-party connection health and setup.'],
+  ['Platform settings', '/app/settings', 'Manage site-wide configuration and feature controls.'],
+] as const;
+---
+
+<AdminLayout title="Control Plane | GoldShore Admin" requiredPermission="system:read">
+  <section class="control-plane">
+    <header class="control-plane__header">
+      <div>
+        <p class="control-plane__eyebrow">Operations / System overview</p>
+        <h1>Control Plane</h1>
+        <p>Review the canonical application surface before making any configuration or deployment decision.</p>
+      </div>
+      <span class="control-plane__status"><i></i> Protected workspace</span>
+    </header>
+
+    <section class="control-plane__section" aria-labelledby="service-inventory-title">
+      <div class="control-plane__section-heading">
+        <div>
+          <p class="control-plane__eyebrow">Canonical architecture</p>
+          <h2 id="service-inventory-title">Service ownership</h2>
+        </div>
+        <span>Two-app contract</span>
+      </div>
+      <div class="control-plane__inventory">
+        {serviceInventory.map(([label, value, description, status]) => (
+          <article class="control-plane__service">
+            <span>{label}</span>
+            <strong>{value}</strong>
+            <p>{description}</p>
+            <em>{status}</em>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="control-plane__section" aria-labelledby="controls-title">
+      <div class="control-plane__section-heading">
+        <div>
+          <p class="control-plane__eyebrow">Operations</p>
+          <h2 id="controls-title">Control surfaces</h2>
+        </div>
+      </div>
+      <nav class="control-plane__links" aria-label="Control plane tools">
+        {controlLinks.map(([label, href, description]) => (
+          <a href={href}>
+            <strong>{label}</strong>
+            <span>{description}</span>
+            <b>Open →</b>
+          </a>
+        ))}
+      </nav>
+    </section>
+
+    <section class="control-plane__section" aria-labelledby="deployment-title">
+      <div class="control-plane__section-heading">
+        <div>
+          <p class="control-plane__eyebrow">Deployment posture</p>
+          <h2 id="deployment-title">Production changes stay review-gated</h2>
+        </div>
+      </div>
+      <article class="control-plane__notice">
+        <p>Production bindings, routes, secrets, migrations, and DNS remain controlled by the approved deployment path. Use the inventory pages to review state, and complete production mutations through the configured human approval gate.</p>
+      </article>
+    </section>
+  </section>
+</AdminLayout>
+
+<style>
+  .control-plane { min-height: 100vh; padding: clamp(2rem, 5vw, 4.5rem) clamp(1.25rem, 5vw, 5rem); background: radial-gradient(circle at 82% 0%, rgba(216, 164, 74, .11), transparent 31rem), #050b14; }
+  .control-plane__header, .control-plane__section { max-width: 1180px; margin-right: auto; margin-left: auto; }
+  .control-plane__header { display: flex; justify-content: space-between; gap: 2rem; align-items: start; margin-bottom: 3.5rem; }
+  .control-plane__eyebrow { margin: 0 0 .65rem; color: #d8a44a; font: 700 .68rem/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .16em; text-transform: uppercase; }
+  .control-plane h1, .control-plane h2, .control-plane p { margin-top: 0; }
+  .control-plane h1 { margin-bottom: 1rem; color: #e8eef5; font-size: clamp(2.5rem, 6vw, 5.4rem); line-height: .98; letter-spacing: -.065em; }
+  .control-plane__header > div > p:last-child { max-width: 660px; margin-bottom: 0; color: rgba(174, 190, 207, .72); line-height: 1.65; }
+  .control-plane__status { display: inline-flex; align-items: center; gap: .5rem; padding: .55rem .75rem; border: 1px solid rgba(52, 211, 153, .2); border-radius: 999px; color: rgba(187, 247, 208, .82); font: 600 .7rem ui-monospace, monospace; white-space: nowrap; }
+  .control-plane__status i { width: .45rem; height: .45rem; border-radius: 50%; background: #34d399; box-shadow: 0 0 12px rgba(52, 211, 153, .75); }
+  .control-plane__section { margin-bottom: 3.5rem; }
+  .control-plane__section-heading { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+  .control-plane__section-heading h2 { margin-bottom: 0; color: #e8eef5; font-size: clamp(1.35rem, 2.2vw, 1.8rem); letter-spacing: -.035em; }
+  .control-plane__section-heading > span { color: rgba(174, 190, 207, .55); font: .72rem ui-monospace, monospace; }
+  .control-plane__inventory { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .8rem; }
+  .control-plane__service { display: flex; flex-direction: column; min-height: 175px; padding: 1.1rem; border: 1px solid rgba(114, 185, 255, .1); border-radius: .75rem; background: rgba(10, 22, 39, .54); }
+  .control-plane__service > span, .control-plane__service p { color: rgba(174, 190, 207, .56); font-size: .72rem; }
+  .control-plane__service strong { margin: .55rem 0 .35rem; color: #d7f8e7; font: 700 1.1rem ui-monospace, monospace; }
+  .control-plane__service p { margin-bottom: 0; line-height: 1.5; }
+  .control-plane__service em { margin-top: auto; padding-top: 1rem; color: #72b9ff; font: .68rem ui-monospace, monospace; font-style: normal; }
+  .control-plane__links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; }
+  .control-plane__links a { display: flex; flex-direction: column; min-height: 120px; padding: 1.15rem; border: 1px solid rgba(114, 185, 255, .15); border-radius: .9rem; background: rgba(10, 22, 39, .76); color: inherit; text-decoration: none; transition: transform .16s ease, border-color .16s ease, background .16s ease; }
+  .control-plane__links a:hover { transform: translateY(-3px); border-color: rgba(114, 185, 255, .42); background: rgba(18, 36, 62, .92); }
+  .control-plane__links strong { color: #f1f5f9; font-size: 1rem; }
+  .control-plane__links span { margin-top: .5rem; color: rgba(174, 190, 207, .68); font-size: .78rem; line-height: 1.5; }
+  .control-plane__links b { margin-top: auto; padding-top: 1rem; color: #72b9ff; font-size: .72rem; }
+  .control-plane__notice { padding: 1.2rem; border: 1px solid rgba(216, 164, 74, .25); border-radius: .75rem; background: rgba(75, 55, 21, .22); }
+  .control-plane__notice p { max-width: 850px; margin-bottom: 0; color: rgba(232, 238, 245, .76); line-height: 1.65; }
+  @media (max-width: 900px) { .control-plane__inventory { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 640px) { .control-plane__header { flex-direction: column; } .control-plane__inventory, .control-plane__links { grid-template-columns: 1fr; } }
+</style>
