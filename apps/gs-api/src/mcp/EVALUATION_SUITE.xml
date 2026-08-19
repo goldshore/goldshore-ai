@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+MCP Server Evaluation Suite
+Tests whether LLMs can effectively use GitHub PR Manager, Email Mailbox Manager,
+and Cloudflare Config Sync servers to accomplish realistic workflows.
+
+Questions are designed to:
+- Be independent (not dependent on other questions)
+- Require multiple tool calls and deep API exploration
+- Match realistic use cases
+- Have single, verifiable answers
+- Remain stable (answer won't change over time)
+-->
+
+<evaluation>
+  <!-- GitHub PR Manager Server Questions -->
+
+  <qa_pair>
+    <question>Using the GitHub PR Manager server, find the most recent pull request that was merged into the repository, then identify the total number of days between when it was created and when it was merged. Report the answer as an integer number of days.</question>
+    <answer>Requires PR with creation_date and merge_date metadata to calculate days_elapsed</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Find all open pull requests in the repository that have failing CI checks. For each PR, identify the check that is failing. How many pull requests have at least one failing CI check?</question>
+    <answer>Count of open PRs with status != "success" in CI checks</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Using the server, list all pull requests created in the last 7 days. For each PR, determine whether it has been reviewed. How many of those PRs have zero reviews?</question>
+    <answer>Count of recent PRs with review_count == 0</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Find a pull request with an approved review. Identify the reviewer's GitHub username and the date they approved. Then check: has this reviewer approved any other PRs in the same repository in the past 30 days? If yes, how many distinct PRs has this reviewer approved?</question>
+    <answer>Reviewer username + count of PRs approved by that reviewer in past 30 days</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>List all open pull requests and categorize them by base branch (e.g., main, develop, feature/...). Which base branch has the most open PRs?</question>
+    <answer>Base branch name with highest count of open PRs</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Using the github_list_issues tool, find issues labeled with "bug" that were created in the past 14 days. For each bug, check if there's an associated pull request that mentions fixing it (e.g., "Closes #123"). How many of these recent bugs have an associated fix PR?</question>
+    <answer>Count of recent bug issues with linked PRs</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Find the pull request with the most comments (including review comments). What is the title of that PR, and how many total comments does it have?</question>
+    <answer>PR title + comment count</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Identify a pull request that was closed without being merged. Determine why it was closed (look for reason in state_reason or close description). Is this a common pattern? How many closed, unmerged PRs exist in the repository?</question>
+    <answer>Count of closed, unmerged PRs</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>List all draft pull requests in the repository. For each draft PR, check if it has any reviews. What percentage of draft PRs have at least one review?</question>
+    <answer>Percentage of draft PRs with reviews (e.g., "33%" or "50%")</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Find the pull request that has been open the longest (oldest creation date). Calculate how many days it has been open. If this PR has a draft status, answer "yes-draft". If it's ready for review, answer "no-draft".</question>
+    <answer>Number of days + "yes-draft" or "no-draft"</answer>
+  </qa_pair>
+
+  <!-- Email Mailbox Manager Server Questions -->
+
+  <qa_pair>
+    <question>Using the Email Mailbox Manager server, create a new email template called "welcome" with the text "Welcome {{name}}, your account is ready!" Then send an email using this template to test@example.com with name="Alice". Confirm the email was sent by checking the status. What is the email delivery status?</question>
+    <answer>Status of sent email (e.g., "delivered", "queued", "pending")</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>List all email templates that have been created in the system. For the template with the most recent creation date, extract its name and check how many emails have been sent using it. What is the template name and the send count?</question>
+    <answer>Template name + send count</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Send a batch of 3 emails to different recipients (test1@example.com, test2@example.com, test3@example.com). Each should have the same subject but personalized body with recipient names. Then retrieve the status of all 3 emails. How many of the 3 batch emails have "delivered" status?</question>
+    <answer>Count of delivered emails out of 3</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Using email_list_recent, get the 10 most recent emails sent from the system. Calculate the average time between consecutive email sends (in minutes). Report as integer number of minutes.</question>
+    <answer>Average minutes between consecutive sends</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Find an email template that uses template variables (e.g., {{firstName}}, {{link}}, {{code}}). Send this template to 5 different recipients with different variable values. Then check the delivery status of each. What percentage of the 5 sent emails have been delivered?</question>
+    <answer>Percentage (e.g., "100%" or "80%")</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Create two email templates: "campaign-a" and "campaign-b". Send campaign-a to users [a@test.com, b@test.com, c@test.com] and campaign-b to [d@test.com, e@test.com, f@test.com]. Then filter recent emails by template. How many emails were sent using campaign-a?</question>
+    <answer>Count of emails sent with campaign-a template</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Retrieve all email templates. For templates that have CC or BCC recipients, identify them. How many templates have CC or BCC configured?</question>
+    <answer>Count of templates with CC or BCC</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>List the 20 most recent emails. Identify which one has the subject line containing the word "urgent". Does an urgent email exist? Answer "yes" if found, "no" if not found.</question>
+    <answer>"yes" or "no"</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Create an email template with HTML content that includes a button link. Send this email to test@example.com. Then retrieve the email and confirm it was sent. Verify the HTML contains the button element. Does the sent email contain valid HTML?</question>
+    <answer>"yes" or "no"</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Send 10 batch emails with different statuses (simulate some as pending, some as delivered). Filter recent emails to find those with status != "delivered". How many non-delivered emails exist?</question>
+    <answer>Count of non-delivered emails</answer>
+  </qa_pair>
+
+  <!-- Cloudflare Config Sync Server Questions -->
+
+  <qa_pair>
+    <question>Using the Cloudflare Config Sync server, list all Workers deployed in the Cloudflare account. Identify the Worker with the most recent modification date. What is its name and when was it last modified (date)?</question>
+    <answer>Worker name + last modification date</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>List all KV namespaces in the account. For the namespace with the longest ID (character count), identify its title. What is the KV namespace title with the longest ID?</question>
+    <answer>Namespace title</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>List all D1 databases in the account. Count how many are in "active" status. How many active D1 databases exist?</question>
+    <answer>Count of active D1 databases</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Check the status of Cloudflare Access by verifying that the required Access Application exists and is configured correctly. Does the Cloudflare Access Application exist?</question>
+    <answer>"yes" or "no"</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>List all R2 buckets in the account. For the bucket with the earliest creation date, identify its name. What is the oldest R2 bucket's name?</question>
+    <answer>R2 bucket name</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Verify that key Cloudflare bindings are configured (Workers KV, D1, R2, Queues). Which binding type has the most resources deployed?</question>
+    <answer>Binding type (e.g., "KV", "D1", "R2", or "Queues")</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Check the status of email configuration in Cloudflare (DKIM, SPF, DMARC records). Are all email security records properly configured?</question>
+    <answer>"yes", "no", or "partial"</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>List all Queues in the Cloudflare account. For each queue, determine if there are pending messages. What is the total number of pending messages across all queues?</question>
+    <answer>Total count of pending messages</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Verify that analytics and observability are enabled for production Workers. Are analytics enabled for the primary production Worker (gs-api)?</question>
+    <answer>"yes" or "no"</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Check the configuration of the main production domain routes (goldshore.ai and goldshore.org). How many route patterns are configured across both domains?</question>
+    <answer>Total count of route patterns</answer>
+  </qa_pair>
+
+</evaluation>
