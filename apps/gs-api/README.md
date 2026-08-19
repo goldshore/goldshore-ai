@@ -82,6 +82,27 @@ Do not use:
 
 Cloudflare Worker Builds for API services must use the `gs-control` build token in the Cloudflare Dashboard, but GitHub Actions deployments should use `CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN` as shown above.
 
+## Controlled operations
+
+- `.github/workflows/deploy-gs-api.yml` performs contract preflight checks, uploads a
+  tagged immutable Worker version, checks its preview alias, and promotes that exact
+  version only after it is healthy. Deployments preserve existing remote bindings,
+  variables, and secrets; they never provision secret values.
+- `.github/workflows/migrate-gs-api-d1.yml` is the only automated remote migration
+  path. A dispatch requires approval through the `preview-database` GitHub
+  environment, applies every unapplied SQL file declared in
+  `db/migrations/manifest.json`, and records its checksum in each target database's
+  `_goldshore_migrations` ledger. Production additionally requires the protected
+  `production-database` environment approval and cannot run until preview succeeds.
+- `secret-contract.json` contains names and operational metadata only. Secret values
+  must be created and rotated in the Cloudflare dashboard or an approved Secrets
+  Store. `.github/workflows/audit-gs-api-secrets.yml` only lists remote names and
+  reports required-name drift; it never reads or writes values.
+
+Repository administrators must configure required reviewers on both database GitHub
+environments. Keep preview and production D1 bindings isolated; an environment that
+points both names at the same D1 resource cannot provide a meaningful preview gate.
+
 ## Binding rules
 
 `gs-api` is the only backend app in the canonical two-app monorepo, so route ownership remains direct even when it binds Cloudflare platform resources.

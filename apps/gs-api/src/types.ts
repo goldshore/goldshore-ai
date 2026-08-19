@@ -38,6 +38,7 @@ export type Env = {
   CONTROL_SYNC_TOKEN?: string;
   ALLOWED_ORIGINS?: string;
   API_VERSION?: string;
+<<<<<<< ours
   DEPLOY_SHA?: string;
   GIT_SHA?: string;
   CONTROL_ADMIN_ROLES?: string;
@@ -53,6 +54,15 @@ export type Env = {
   GITHUB_API_TOKEN?: string;
   GH_TOKEN?: string;
   CLOUDFLARE_ACCOUNT_ID?: string;
+=======
+  CF_AIG_TOKEN?: string;
+  CF_WEBHOOK_TOKEN?: string;
+  CF_VERSION_METADATA?: { id: string };
+  CLOUDFLARE_ACCOUNT_ID?: string;
+  CLOUDFLARE_API_TOKEN?: string;
+  CLOUDFLARE_BUILD_API_TOKEN?: string;
+  CLOUDFLARE_PAGES_PROJECT?: string;
+>>>>>>> theirs
   CLOUDFLARE_ZONE_ID?: string;
   CLOUDFLARE_ZONE_NAME?: string;
   CLOUDFLARE_PAGES_PROJECT?: string;
@@ -84,6 +94,37 @@ export type Env = {
   GOOGLE_ADS_DEVELOPER_TOKEN?: string;
   GOOGLE_ADS_LOGIN_CUSTOMER_ID?: string;
   GOOGLE_ANALYTICS_PROPERTY_ID?: string;
+<<<<<<< ours
+=======
+  GOOGLE_BUSINESS_ACCOUNT_IDS?: string;
+  GOOGLE_BUSINESS_LOCATION_IDS?: string;
+  GOOGLE_CLIENT_ID?: string;
+  GOOGLE_CLIENT_SECRET?: string;
+  GOOGLE_GSC_CLIENT_ID?: string;
+  GOOGLE_GSC_CLIENT_SECRET?: string;
+  GOOGLE_GSC_REFRESH_TOKEN?: string;
+  GOOGLE_GSC_SITE_URL?: string;
+  GOOGLE_OAUTH_CLIENT_SECRET?: string;
+  GOOGLE_WEBHOOK_TOKEN?: string;
+  GOLDCLAW_SANDBOX_API_TOKEN?: string;
+  GOLDCLAW_SANDBOX_API_URL?: string;
+  GOLDCLAW_SANDBOX_PROVIDER?: string;
+  GS_GITHUB_WEBHOOK_SECRET?: string;
+  INTEGRATION_MASTER_KEY?: string;
+  INSTAGRAM_BUSINESS_ACCOUNT_ID?: string;
+  JWT_SECRET?: string;
+  LLM_API_KEY?: string;
+  LLM_BASE_URL?: string;
+  LLM_MAX_TOKENS?: string;
+  LLM_MODEL?: string;
+  LLM_PROVIDER?: string;
+  LLM_TEMPERATURE?: string;
+  LOCAL_LLM_API_KEY?: string;
+  LOCAL_LLM_BASE_URL?: string;
+  MAIL_ALLOWED_RECIPIENTS?: string;
+  MAIL_BLOCKED_SENDERS?: string;
+  META_AD_ACCOUNT_ID?: string;
+>>>>>>> theirs
   META_APP_ID?: string;
   META_APP_SECRET?: string;
   META_BUSINESS_ID?: string;

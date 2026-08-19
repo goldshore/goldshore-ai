@@ -37,8 +37,8 @@ jobs:
   # Build verification only — this job does NOT deploy.
   #
   # gs-web is an SSR Astro app (`main = ./src/worker.ts`, `output: server`) whose
-  # entrypoint is emitted to dist/server. It is deployed as the `gs-web-prod`
-  # Worker by the Cloudflare Workers Build git integration, which is the single
+  # entrypoint is emitted to dist/server. Cloudflare Workers Builds deploys the
+  # production `env.prod` manifest as the `gs-web` Worker, which is the single
   # authoritative deploy path.
   #
   # This job previously also ran `wrangler pages deploy apps/gs-web/dist/client
