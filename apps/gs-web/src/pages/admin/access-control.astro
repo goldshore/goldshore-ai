@@ -1,0 +1,16 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import AccessControlClient from '../../components/admin/AccessControlClient';
+---
+
+<AdminLayout title="Access Control & Roles">
+  <div class="py-8">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Access Control</h1>
+        <p class="text-gray-600">Manage team roles, permissions, and access levels</p>
+      </div>
+      <AccessControlClient client:load />
+    </div>
+  </div>
+</AdminLayout>

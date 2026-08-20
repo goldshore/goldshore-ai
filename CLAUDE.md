@@ -1,6 +1,6 @@
 # CLAUDE.md — goldshore-ai
 
-> Updated: 2026-07-03 · Active branch: `claude/risk-radar-fra-epo-2wk5mk`
+> Updated: 2026-08-14 · Active branch: `claude/mcp-gs-api-worker-migration-0g51br`
 
 ## Platform overview
 
@@ -141,12 +141,46 @@ For Claude/Codex assistance with Google API integration: provide the API name, s
 
 ---
 
-## Active branch: `claude/risk-radar-fra-epo-2wk5mk`
+## Active branch: `claude/mcp-gs-api-worker-migration-0g51br`
 
-What's on this branch:
-- `apps/gs-web/src/pages/index.astro` — nav links → real page routes, access modal (`<dialog>`), hamburger nav toggle, contact form fix
-- `apps/gs-web/src/styles/home-theme.css` — mobile nav, modal, honeypot CSS
-- `.github/workflows/manage-cf-tokens.yml` — dual Cloudflare auth (Bearer token + Global API Key), verify step
+### Initiative: Enterprise Admin Platform Build-Out
+
+**Objective**: Build comprehensive admin dashboard with 30+ features for operations, automation, and infrastructure management.
+
+**Phase 1 (Current Sprint — In Progress)**:
+- ✅ App-level CF Access auth verified (middleware.ts, api-proxy.ts, gs-api handlers all correct)
+- ⚠️ Edge-level CF Access Application for admin.goldshore.ai **pending manual dashboard configuration** (see `docs/ADMIN_DASHBOARD_FIX.md`)
+- ✅ Database schema: `github_webhooks` table created for AUDIT_DB (migration: `0002_github_webhooks.sql`)
+- ✅ D1 migration automation: GitHub Actions workflow for applying remote D1 migrations (`apply-d1-migration.yml`)
+- ✅ Admin dashboard diagnostics: Root cause analysis of ~13 failing admin pages documented (CF Access Application missing at edge)
+- 🔄 Core admin infrastructure:
+  - Email management (queue, logs, templates)
+  - Worker management (bindings, routes, secrets UI)
+  - Contact forms & leads CRUD (entries display, pagination)
+  - User sign-up management
+  - Settings panel
+  - API routes: `/api/admin/{email,workers,entries,users,settings}/*`
+  - Frontend pages: `/admin/{dashboard,email,workers,entries,users,settings}`
+
+**Secondary issues identified (separate investigation)**:
+- API Workflows: `/api/admin/workflows` endpoint missing from gs-api (404)
+- Repo Health: Client fetches HTML instead of JSON response
+- Lead Submissions: goldshore.ai returns 522; missing error boundary
+- Dashboard: Stricter CF Access policy required (separate from main admin auth)
+
+**Phase 2 (Week 2)**: WYSIWYG editors, secret creator, API key rotator, permission updater
+
+**Phase 3 (Week 3)**: Workflows (leads generator, list scraper, data collector, email sender, CF Tunnel manager)
+
+**Phase 4 (Week 4+)**: Enterprise features (PR manager, AI search, ad integrator, site builder, plugin installer, SQL sync, mailbox management)
+
+**Tech Stack**:
+- Backend: Hono (gs-api)
+- Frontend: Astro + React (gs-web)
+- Storage: D1 (schema), KV (cache), R2 (uploads)
+- Auth: Cloudflare Access + session tokens
+
+**Next**: Manual Cloudflare dashboard action required — create CF Access Application for `admin.goldshore.ai` subdomain (documented in `docs/ADMIN_DASHBOARD_FIX.md`)
 
 ---
 
@@ -155,7 +189,7 @@ What's on this branch:
 - GitHub Actions: Lighthouse CI threshold `LH_MIN_PERFORMANCE: 0.60`
 - GitHub Actions deploy token: `CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN`
 - Cloudflare Worker Builds token: `CLOUDFLARE_BUILD_API_TOKEN` (managed separately)
-- Workers deploy per-app via `wrangler deploy`
+- Workers deploy only through `.github/workflows/deploy-gs-web.yml` and `.github/workflows/deploy-gs-api.yml`, behind the GitHub `production` environment approval gate. Local Wrangler use is dry-run validation only.
 
 ---
 

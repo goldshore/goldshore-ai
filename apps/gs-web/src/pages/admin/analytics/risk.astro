@@ -1,0 +1,278 @@
+---
+export const prerender = false;
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="Risk Events | GoldShore Admin">
+  <main class="container">
+    <header>
+      <h1>Risk Events</h1>
+      <p>Flagged risk events sorted by severity</p>
+    </header>
+
+    <section class="panel">
+      <div class="head">
+        <div>
+          <h2>Recent Events</h2>
+          <p>Critical incidents and risk alerts</p>
+        </div>
+        <div class="controls">
+          <select id="severity">
+            <option value="">All severities</option>
+            <option value="critical">Critical</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+          <select id="days">
+            <option value="1">Last 1 day</option>
+            <option value="7" selected>Last 7 days</option>
+            <option value="30">Last 30 days</option>
+          </select>
+          <button id="refresh" type="button">Refresh</button>
+        </div>
+      </div>
+      <div id="risks" class="table-wrapper">
+        <table class="gs-table">
+          <thead>
+            <tr>
+              <th>Severity</th>
+              <th>Event Type</th>
+              <th>Description</th>
+              <th>Flagged At</th>
+            </tr>
+          </thead>
+          <tbody id="risks-tbody">
+            <tr><td colspan="4">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Summary</h2>
+      <div id="summary" class="metrics">Loading…</div>
+    </section>
+
+    <p id="error" role="alert" style="display: none; color: #d96a32; margin-top: 1rem;"></p>
+  </main>
+
+  <script is:inline>
+    const severityColors = {
+      critical: '#d32f2f',
+      high: '#f57c00',
+      medium: '#fbc02d',
+      low: '#388e3c'
+    };
+
+    async function loadRiskEvents() {
+      try {
+        const severity = document.getElementById('severity').value;
+        const days = document.getElementById('days').value;
+
+        let query = `?days=${days}`;
+        if (severity) query += `&severity=${severity}`;
+
+        const response = await fetch(
+          `/api/admin/analytics/risk-events${query}`,
+          { credentials: 'same-origin' }
+        );
+
+        if (!response.ok) throw new Error(`Request failed (${response.status})`);
+
+        const data = await response.json();
+        if (!data || !data.items) throw new Error('Invalid response');
+
+        const items = data.items || [];
+
+        const tbody = items.map(item => {
+          const severity = item.severity || 'medium';
+          const color = severityColors[severity] || '#999';
+
+          return `
+            <tr>
+              <td><span class="badge" style="background-color: ${color}; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.85rem;">${severity.toUpperCase()}</span></td>
+              <td><strong>${item.event_type || 'Unknown'}</strong></td>
+              <td>${item.description || 'No description'}</td>
+              <td><small>${new Date(item.flagged_at).toLocaleString()}</small></td>
+            </tr>
+          `;
+        }).join('') || '<tr><td colspan="4">No risk events found</td></tr>';
+
+        document.getElementById('risks-tbody').innerHTML = tbody;
+
+        // Summary
+        const bySeverity = { critical: 0, high: 0, medium: 0, low: 0 };
+        items.forEach(item => {
+          const sev = item.severity || 'medium';
+          if (bySeverity.hasOwnProperty(sev)) bySeverity[sev]++;
+        });
+
+        const summaryHtml = `
+          <article style="border-left: 3px solid #d32f2f;">
+            <b>${bySeverity.critical}</b>
+            <span>Critical</span>
+          </article>
+          <article style="border-left: 3px solid #f57c00;">
+            <b>${bySeverity.high}</b>
+            <span>High</span>
+          </article>
+          <article style="border-left: 3px solid #fbc02d;">
+            <b>${bySeverity.medium}</b>
+            <span>Medium</span>
+          </article>
+          <article style="border-left: 3px solid #388e3c;">
+            <b>${bySeverity.low}</b>
+            <span>Low</span>
+          </article>
+        `;
+        document.getElementById('summary').innerHTML = summaryHtml;
+
+        document.getElementById('error').style.display = 'none';
+      } catch (err) {
+        const errorEl = document.getElementById('error');
+        errorEl.textContent = err.message;
+        errorEl.style.display = 'block';
+      }
+    }
+
+    document.getElementById('refresh').addEventListener('click', loadRiskEvents);
+    document.getElementById('severity').addEventListener('change', loadRiskEvents);
+    document.getElementById('days').addEventListener('change', loadRiskEvents);
+    loadRiskEvents();
+  </script>
+
+  <style>
+    .container {
+      max-width: 78rem;
+      margin: auto;
+      padding: 2rem;
+      display: grid;
+      gap: 1.5rem;
+    }
+    header {
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    h1 {
+      font-size: 2rem;
+      margin: 0;
+    }
+    header p {
+      opacity: 0.7;
+      margin: 0.5rem 0 0 0;
+    }
+    .panel {
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 1rem;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 1.2rem;
+    }
+    .head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    .head div {
+      flex: 1;
+      min-width: 200px;
+    }
+    .head h2 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+    .head p {
+      margin: 0.3rem 0 0 0;
+      opacity: 0.7;
+      font-size: 0.9rem;
+    }
+    .controls {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    select, button {
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 0.65rem;
+      padding: 0.65rem 0.9rem;
+      background: #101014;
+      color: inherit;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    button:hover,
+    select:focus {
+      border-color: #d96a32;
+    }
+    .table-wrapper {
+      overflow-x: auto;
+    }
+    .gs-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    .gs-table th,
+    .gs-table td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .gs-table th {
+      background: rgba(255, 255, 255, 0.05);
+      font-weight: 600;
+    }
+    .gs-table small {
+      opacity: 0.7;
+    }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+    }
+    .metrics article {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 0.65rem;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .metrics b {
+      display: block;
+      font-size: 1.5rem;
+    }
+    .metrics span {
+      display: block;
+      opacity: 0.7;
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+    }
+    @media (max-width: 850px) {
+      .metrics {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    @media (max-width: 560px) {
+      .metrics {
+        grid-template-columns: 1fr;
+      }
+      .controls {
+        flex-direction: column;
+        width: 100%;
+      }
+      select, button {
+        width: 100%;
+      }
+      .gs-table {
+        font-size: 0.8rem;
+      }
+      .gs-table th,
+      .gs-table td {
+        padding: 0.5rem;
+      }
+    }
+  </style>
+</AdminLayout>

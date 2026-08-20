@@ -7,6 +7,7 @@
     "start": "astro dev",
     "prebuild": "node scripts/generate-search-index.js",
     "build": "astro build",
+    "build:pages": "astro build",
     "preview": "astro preview",
     "astro": "astro",
     "check": "astro check",
@@ -15,7 +16,8 @@
     "test:unit": "node --experimental-strip-types --test tests/unit/**/*.test.ts",
     "test:e2e": "playwright test",
     "verify:dist": "node ../../scripts/verify-web-dist.mjs",
-    "check:release": "node scripts/release-quality-gate.mjs"
+    "check:release": "node scripts/release-quality-gate.mjs",
+    "wrangler": "wrangler"
   },
   "dependencies": {
     "@astrojs/react": "^6.0.1",
@@ -29,10 +31,13 @@
     "@react-three/fiber": "^9.5.0",
     "@supabase/supabase-js": "^2.110.7",
     "astro": "^7.2.0",
-    "framer-motion": "^12.38.0",
+    "framer-motion": "^13.1.0",
     "fuse.js": "^7.5.0",
+    "lucide-react": "^0.408.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.6",
+    "react-hotkeys-hook": "^5.3.3",
+    "react-rnd": "^10.4.1",
     "three": "^0.185.1",
     "vanilla-tilt": "^1.8.1"
   },
@@ -40,6 +45,6 @@
     "@astrojs/check": "^0.9.8",
     "@astrojs/cloudflare": "^14.2.0",
     "@playwright/test": "^1.62.0",
-    "typescript": "^5.4.2"
+    "typescript": "^7.0.2"
   }
 }

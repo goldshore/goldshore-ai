@@ -2,7 +2,7 @@
 import '../styles/home-theme.css';
 import { CANONICAL_ADMIN_DASHBOARD_URL } from '../utils/admin-access';
 import PublicHeader from '../components/PublicHeader.astro';
-import { companyLinks, platformLinks, serviceLinks } from '../config/navigation';
+import PublicFooter from '../components/PublicFooter.astro';
 
 export const prerender = false;
 
@@ -28,11 +28,6 @@ const tickers   = [['SPY','S&P 500 ETF','521.84','+1.24%'],['NVDA','Nvidia Corp'
 const principles = [['01','Sector-Agnostic, Systems-First',"We don't specialize in one vertical — we specialize in the architecture that makes any vertical work. Finance, operations, media, healthcare: the discipline is identical."],['02','AI as Infrastructure, Not Feature','Intelligence embedded at the routing layer, not bolted on at the end. Every workflow treats AI as a first-class component with audit trails to match.'],['03','Consulting That Ships','Strategy without delivery is overhead. We provide the advisory and we build the thing — one team, one contract, full accountability from brief to production.']];
 const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Automation','AI Implementation','Digital Strategy','Systems Integration','Design & Development','Enterprise Consulting','Sentiment Analysis','Applied Intelligence','Resilient Infrastructure','Cross-Sector Deployment'];
 const canonicalUrl = new URL('/', Astro.url.origin).toString();
-const footerColumns = [
-  { title: 'Platform', links: platformLinks },
-  { title: 'Services', links: serviceLinks },
-  { title: 'Company', links: companyLinks },
-];
 ---
 <html lang="en">
 <head>
@@ -314,20 +309,7 @@ export async function verifyAccess(req, env) {
 
 </main>
 
-<footer class="site-footer">
-  <div>
-    <h2>GoldShore</h2>
-    <p>Applied Intelligence · Digital Systems · Consulting</p>
-    <p>Institutional AI systems, risk tooling, and resilient operator infrastructure. Cross-sector. Full-stack. Built to last.</p>
-  </div>
-  {footerColumns.map((column) => (
-    <div>
-      <h3>{column.title}</h3>
-      {column.links.map((link) => <p><a href={link.href}>{link.label}</a></p>)}
-    </div>
-  ))}
-  <small>© 2026 Gold Shore Labs. All rights reserved. 40°42′N · 074°00′W · goldshore.ai · <a href="/legal/privacy">Privacy</a> · <a href="/legal/">Security</a> · <a href="/legal/terms">Terms</a></small>
-</footer>
+<PublicFooter />
 
 <!-- ── Access Modal ────────────────────────────────────────────────────────────────── -->
 <dialog id="access-modal" class="access-modal" aria-labelledby="access-modal-title">

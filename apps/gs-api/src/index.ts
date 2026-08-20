@@ -5,6 +5,7 @@ import {
   authorizeAccessClaims,
 } from '@goldshore/auth';
 import { createCorsMiddleware, APPROVED_API_ORIGINS } from '@goldshore/shared';
+import { EmailLogSchema } from '@goldshore/schema';
 import users from './routes/users';
 import health from './routes/health';
 import ai from './routes/ai';
@@ -28,18 +29,21 @@ import core from './routes/core';
 import mail from './routes/mail';
 import trading from './routes/trading';
 import googleBusiness from './routes/google-business';
-import googleWorkspace from './routes/google-workspace';
-import oauth from './routes/oauth';
-import webhooks from './routes/webhooks';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
+import { assertSecuritySecrets } from './securitySecrets';
 import type { Env, Variables } from './types';
 import { getHostRoutePrefix } from './host-routing';
 import { handleTokenRotation } from './workers/token-rotation';
 import { processQueueBatch } from './workers/queue-consumer';
-import { syncGoogleWorkspaceRbac } from './lib/google-workspace-rbac';
-import { archiveInboundEmail } from './lib/inbound-mail';
-import { dependencyDetailsHandler, readinessHandler } from './routes/health';
 export { SignalsEvaluator } from './workers/signals-evaluator';
+
+interface ForwardableEmailMessage {
+  from: string;
+  to: string;
+  headers: Headers;
+  setReject(reason: string): void;
+  forward(to: string): Promise<void>;
+}
 
 type ExecutionContext = {
   waitUntil(promise: Promise<void>): void;
@@ -50,7 +54,15 @@ const app = new Hono<{
   Variables: Variables;
 }>();
 
+const requiredBindings = ['PLATFORM_DB', 'GS_ASSETS', 'AI'] as const;
+const expectedD1Binding = 'PLATFORM_DB' as const;
+
 const DEFAULT_ALLOWED_ORIGINS = [...APPROVED_API_ORIGINS];
+
+const PREVIEW_ORIGIN_PATTERNS = [
+  /^https:\/\/[a-z0-9-]+-preview\.goldshore\.ai$/i,
+  /^https:\/\/[a-z0-9-]+\.goldshore-pages\.dev$/i,
+];
 
 const parseAllowedOrigins = (allowedOrigins?: string) => {
   return (allowedOrigins ? allowedOrigins.split(',') : DEFAULT_ALLOWED_ORIGINS)
@@ -59,7 +71,7 @@ const parseAllowedOrigins = (allowedOrigins?: string) => {
 };
 
 const isPreviewOrigin = (origin: string) => {
-  return /^https:\/\/[a-z0-9-]+-gs-(?:api|web)-prod\.goldshore\.workers\.dev$/i.test(origin);
+  return PREVIEW_ORIGIN_PATTERNS.some((pattern) => pattern.test(origin));
 };
 
 const isAllowedOrigin = (origin: string, allowedOrigins?: string) => {
@@ -73,7 +85,6 @@ const isPublicPath = (path: string, method: string) => {
   return (
     path === '/' ||
     path === '/version' ||
-    path === '/ready' ||
     path === '/health' ||
     path.startsWith('/health/') ||
     (method === 'POST' && /^\/v1\/forms\/[^/]+\/submissions$/.test(path)) ||
@@ -81,48 +92,45 @@ const isPublicPath = (path: string, method: string) => {
     // covered by the /health/ prefix check above.
     /^\/(agent|mail|control|trading|core)\/health\/?$/.test(path) ||
     (method === 'GET' && path === '/admin/google/oauth/callback') ||
-    (method === 'GET' && /^\/auth\/github\/(?:login|callback)$/.test(path)) ||
-    (method === 'POST' && /^\/webhooks\/github\/(?:push|pull_request|issues|workflow_run)$/.test(path)) ||
     path === '/mail/contact'
   );
 };
 
 app.use('*', secureHeaders());
 
-app.use('*', async (c, next) => {
-  const requestId = c.req.header('cf-ray') || crypto.randomUUID();
-  const startedAt = Date.now();
-  c.set('requestId', requestId);
-  try {
-    await next();
-  } finally {
-    c.header('X-Request-ID', requestId);
-    console.info({
-      event: 'http_request',
-      requestId,
-      method: c.req.method,
-      path: c.req.path,
-      status: c.res.status,
-      durationMs: Date.now() - startedAt,
-    });
-  }
-});
-
 const SAFE_PREVIEW_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 const PREVIEW_GET_MUTATION_PATHS = [/\/oauth(?:\/|$)/i];
 
 app.use('*', async (c, next) => {
   if (
-    new URL(c.req.url).hostname.endsWith('.workers.dev') &&
+    c.env.ENV === 'preview' &&
+    c.env.STATE_MUTATIONS_ENABLED !== 'true' &&
     (!SAFE_PREVIEW_METHODS.has(c.req.method.toUpperCase()) ||
       PREVIEW_GET_MUTATION_PATHS.some((pattern) => pattern.test(c.req.path)))
   ) {
     return c.json(
-      { error: 'Version previews are read-only.', requestId: c.get('requestId') },
-      403,
+      { error: 'Preview state mutations are disabled until isolated resources are provisioned.' },
+      503,
     );
   }
 
+  await next();
+});
+
+app.use('*', async (c, next) => {
+  if (c.env.ENV === 'production') {
+    assertSecuritySecrets(c.env as Record<string, unknown>, c.env.ENV);
+  }
+  if (!c.env[expectedD1Binding]) {
+    throw new Error(
+      `CRITICAL_MISSING_D1_BINDING: Expected D1 binding "${expectedD1Binding}" is undefined. Verify [[d1_databases]] binding in wrangler.toml.`,
+    );
+  }
+  for (const key of requiredBindings) {
+    if (!c.env[key]) {
+      throw new Error(`CRITICAL_MISSING: ${key}. Terminating.`);
+    }
+  }
   await next();
 });
 
@@ -184,36 +192,6 @@ app.use('*', async (c, next) => {
     return c.json({ error: 'Unauthorized' }, 401);
   }
   c.set('accessClaims', claims);
-  await next();
-});
-
-type CapabilityBinding = 'KV' | 'PLATFORM_DB' | 'GS_ASSETS' | 'AI' | 'MAIL_JOBS_QUEUE';
-
-const requiredRouteBindings = (path: string): CapabilityBinding[] => {
-  if (path.startsWith('/media')) return ['PLATFORM_DB', 'GS_ASSETS'];
-  if (path.startsWith('/ai') || path.startsWith('/agent')) return ['KV', 'AI'];
-  if (path.startsWith('/mail/contact')) return ['PLATFORM_DB', 'MAIL_JOBS_QUEUE'];
-  if (path.startsWith('/mail/inbox')) return ['PLATFORM_DB'];
-  if (path.startsWith('/v1/forms')) return ['PLATFORM_DB', 'MAIL_JOBS_QUEUE'];
-  if (/^\/(?:users?|pages|services|admin)(?:\/|$)/.test(path)) return ['PLATFORM_DB'];
-  if (/^\/(?:system|internal|products|auth|oauth|webhooks)(?:\/|$)/.test(path)) return ['KV'];
-  return [];
-};
-
-app.use('*', async (c, next) => {
-  const missing = requiredRouteBindings(c.req.path).filter((binding) => !c.env[binding]);
-  if (missing.length > 0) {
-    console.error({
-      event: 'route_capability_missing',
-      requestId: c.get('requestId'),
-      path: c.req.path,
-      missing,
-    });
-    return c.json(
-      { error: 'Service dependency unavailable.', requestId: c.get('requestId') },
-      503,
-    );
-  }
   await next();
 });
 
@@ -279,20 +257,14 @@ app.get('/version.json', (c) =>
   }),
 );
 
-app.get('/ready', readinessHandler);
 app.route('/health', health);
 app.route('/ai', ai);
 app.route('/users', users);
 app.route('/user', user);
 app.route('/system', system);
 app.route('/templates', templates);
-app.get('/admin/system/dependencies', dependencyDetailsHandler);
 app.route('/admin', admin);
 app.route('/admin/google', googleBusiness);
-app.route('/admin/workspace', googleWorkspace);
-app.route('/auth', oauth);
-app.route('/oauth', oauth);
-app.route('/webhooks', webhooks);
 app.route('/media', media);
 app.route('/pages', pages);
 app.route('/internal', internal);
@@ -306,7 +278,7 @@ app.route('/control', control);
 app.route('/trading', trading);
 app.route('/core', core);
 
-const v1 = new Hono<{ Bindings: Env; Variables: Variables }>();
+const v1 = new Hono<{ Bindings: Env }>();
 v1.route('/users', users);
 v1.route('/domains', domains);
 v1.route('/sites', sites);
@@ -345,6 +317,42 @@ const isEmailLike = (email: string): boolean => {
   return afterAt.includes('.') && !afterAt.endsWith('.');
 };
 
+const readInboxLogs = async (kv: KVNamespace) => {
+  try {
+    const stored = await kv.get('EMAIL_INBOX_LOGS');
+    if (!stored) return [];
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+interface Message<T> {
+  id: string;
+  body: T;
+  ack(): void;
+  retry(): void;
+}
+
+interface MessageBatch<T> {
+  messages: Array<Message<T>>;
+}
+
+const processQueueMessage = async (message: Message<any>, _env: Env): Promise<void> => {
+  const body = message.body;
+  const type = typeof body === 'object' && body && 'type' in body ? String((body as { type?: unknown }).type) : 'unknown';
+  const event = type === 'contact' || type === 'checkout'
+    ? 'mail_job_processed'
+    : type === 'trading' || type === 'trading-signal' || type === 'order'
+      ? 'trading_job_processed'
+      : type === 'signal' || type === 'atc'
+        ? 'core_signal_job_processed'
+        : 'agent_job_processed';
+  console.info({ event, id: message.id, type, timestamp: new Date().toISOString() });
+  message.ack();
+};
+
 export default {
   fetch: app.fetch,
 
@@ -354,24 +362,15 @@ export default {
 
   async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
     if (controller.cron === '0 2 * * *') {
-      ctx.waitUntil(
-        Promise.all([
-          handleTokenRotation(env),
-          syncGoogleWorkspaceRbac(env)
-            .then((result) => {
-              console.info({ event: 'google_workspace_sync_complete', ...result });
-            })
-            .catch((error) => {
-              console.error({ event: 'google_workspace_sync_error', error: String(error) });
-            }),
-        ]).then(() => undefined),
-      );
+      ctx.waitUntil(handleTokenRotation(env));
     }
   },
 
   async email(message: ForwardableEmailMessage, env: Env, ctx: ExecutionContext): Promise<void> {
     const sender = message.from;
     const recipient = message.to;
+    const subject = (message.headers.get('subject') || 'No Subject').slice(0, 50);
+
     const normalizedSender = normalizeEmail(sender);
     const normalizedRecipient = normalizeEmail(recipient);
     const blocked = parseEmailList(env.MAIL_BLOCKED_SENDERS);
@@ -386,44 +385,31 @@ export default {
       return;
     }
 
+    const parsedEntry = EmailLogSchema.safeParse({
+      id: crypto.randomUUID(),
+      from: sender,
+      to: recipient,
+      subject,
+      timestamp: new Date().toISOString(),
+    });
+
+    if (parsedEntry.success) {
+      ctx.waitUntil((async () => {
+        const existingLogs = await readInboxLogs(env.KV);
+        const updatedLogs = [parsedEntry.data, ...existingLogs].slice(0, 100);
+        await env.KV.put('EMAIL_INBOX_LOGS', JSON.stringify(updatedLogs));
+      })());
+    }
+
     const forwardTo = (env.MAIL_FORWARD_TO || env.FORWARD_TO)?.trim();
     if (!forwardTo || !isEmailLike(forwardTo)) {
       message.setReject('Mail forwarding is not configured.');
       return;
     }
 
-    let archivedMessageId: string | undefined;
-    try {
-      const archived = await archiveInboundEmail(message, env);
-      archivedMessageId = archived.id;
-      console.info({ event: 'inbound_mail_archived', ...archived });
-    } catch (error) {
-      console.error({ event: 'inbound_mail_archive_failed', error: String(error) });
-    }
-
-    try {
-      await message.forward(normalizeEmail(forwardTo));
-      if (archivedMessageId) {
-        await env.PLATFORM_DB.prepare(
-          `UPDATE inbound_messages SET status = 'forwarded' WHERE id = ?`,
-        ).bind(archivedMessageId).run();
-      }
-    } catch (error) {
-      if (archivedMessageId) {
-        await env.PLATFORM_DB.prepare(
-          `UPDATE inbound_messages SET status = 'failed' WHERE id = ?`,
-        ).bind(archivedMessageId).run().catch(() => undefined);
-      }
-      throw error;
-    }
+    await message.forward(normalizeEmail(forwardTo));
   },
 };
-
-app.onError((error, c) => {
-  const requestId = c.get('requestId') || crypto.randomUUID();
-  console.error({ event: 'unhandled_error', requestId, error: String(error) });
-  return c.json({ error: 'Internal server error.', requestId }, 500);
-});
 export class AuthSession {
   constructor(
     private readonly state: DurableObjectState,
