@@ -1,0 +1,266 @@
+---
+export const prerender = false;
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+
+const requestedTab = Astro.url.searchParams.get('tab');
+const TABS = ['secrets', 'storage', 'dns', 'pages'] as const;
+const initialTab = (TABS as readonly string[]).includes(requestedTab ?? '') ? requestedTab! : 'secrets';
+---
+
+<AdminLayout title="System & Infra | GoldShore Admin" requiredPermission="cloudflare_inventory:read">
+  <section class="max-w-6xl mx-auto py-16 px-6 space-y-6">
+    <div>
+      <p class="gs-eyebrow">Operations</p>
+      <h1 class="text-3xl gs-heading">System &amp; Infra</h1>
+      <p class="gs-text-subtle mt-2">Secrets, media storage, DNS, and Pages — consolidated from four separate pages into one.</p>
+    </div>
+
+    <nav class="gs-tabs" role="tablist" aria-label="System sections">
+      <button type="button" class="gs-tab" data-tab="secrets" role="tab">Secrets</button>
+      <button type="button" class="gs-tab" data-tab="storage" role="tab">Storage</button>
+      <button type="button" class="gs-tab" data-tab="dns" role="tab">DNS</button>
+      <button type="button" class="gs-tab" data-tab="pages" role="tab">Pages</button>
+    </nav>
+
+    <!-- ============================== Secrets ============================== -->
+    <div class="gs-panel" data-panel="secrets">
+      <div class="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h2 class="text-xl font-semibold">Secrets and API Keys</h2>
+          <p class="gs-text-subtle mt-1">Create, rotate, expire, and revoke encrypted integration credentials.</p>
+        </div>
+        <button id="new-secret" class="gs-btn-primary px-4 py-2">Create secret</button>
+      </div>
+
+      <div class="gs-card border-l-4 border-blue-500 text-sm mt-4">
+        Secret values are accepted only for create and rotation requests. They are encrypted by gs-api and are never returned to this page.
+      </div>
+
+      <div class="gs-card flex gap-3 flex-wrap items-end mt-4">
+        <label class="space-y-1"><span class="block text-sm">Integration</span><input id="filter-integration" class="gs-input" placeholder="stripe, meta, openai…" /></label>
+        <label class="space-y-1"><span class="block text-sm">Key type</span><select id="filter-type" class="gs-input"><option value="">All types</option><option value="apiKey">API key</option><option value="apiSecret">API secret</option><option value="webhook_secret">Webhook secret</option><option value="oauth_token">OAuth token</option></select></label>
+        <label class="flex gap-2 items-center pb-2"><input id="include-expired" type="checkbox" /> Include expired</label>
+        <button id="apply-filter" class="gs-btn-secondary px-4 py-2">Apply</button>
+      </div>
+
+      <div id="notice" class="gs-card text-sm mt-4" hidden></div>
+      <div class="gs-card overflow-x-auto mt-4">
+        <table class="w-full text-left text-sm">
+          <thead><tr class="border-b border-[var(--gs-color-border)]"><th class="p-3">Integration</th><th class="p-3">Type</th><th class="p-3">Identifier</th><th class="p-3">Expires</th><th class="p-3">Rotations</th><th class="p-3">Actions</th></tr></thead>
+          <tbody id="secret-rows"><tr><td colspan="6" class="p-6 gs-text-subtle">Loading secret metadata…</td></tr></tbody>
+        </table>
+        <div class="flex justify-between items-center gap-3 p-3 border-t border-[var(--gs-color-border)]">
+          <span id="page-summary" class="text-sm gs-text-subtle"></span>
+          <div class="flex gap-2"><button id="previous-page" class="gs-btn-secondary px-3 py-1">Previous</button><button id="next-page" class="gs-btn-secondary px-3 py-1">Next</button></div>
+        </div>
+      </div>
+    </div>
+
+    <dialog id="secret-dialog" class="gs-card max-w-xl w-full backdrop:bg-black/70">
+      <form id="secret-form" class="space-y-4">
+        <div class="flex justify-between"><h2 id="dialog-title" class="text-xl font-semibold">Create secret</h2><button type="button" id="close-dialog" aria-label="Close">✕</button></div>
+        <input id="secret-id" type="hidden" />
+        <label class="block space-y-1"><span>Integration ID</span><input id="integration-id" class="gs-input w-full" required pattern="[A-Za-z0-9][A-Za-z0-9_-]{1,63}" placeholder="openai" /></label>
+        <label class="block space-y-1"><span>Key type</span><select id="key-type" class="gs-input w-full"><option value="apiKey">API key</option><option value="apiSecret">API secret</option><option value="webhook_secret">Webhook secret</option><option value="oauth_token">OAuth token</option></select></label>
+        <label class="block space-y-1"><span id="value-label">Secret value</span><textarea id="secret-value" class="gs-input w-full font-mono" rows="5" minlength="8" maxlength="16384" required autocomplete="new-password"></textarea></label>
+        <label id="expiry-field" class="block space-y-1"><span>Expires at (optional)</span><input id="expires-at" type="datetime-local" class="gs-input w-full" /></label>
+        <p class="text-xs gs-text-subtle">The value is cleared from this form immediately after the request finishes.</p>
+        <div class="flex justify-end gap-3"><button type="button" id="cancel-dialog" class="gs-btn-secondary px-4 py-2">Cancel</button><button class="gs-btn-primary px-4 py-2" type="submit">Save securely</button></div>
+      </form>
+    </dialog>
+
+    <!-- ============================== Storage ============================== -->
+    <div class="gs-panel" data-panel="storage">
+      <h2 class="text-xl font-semibold">Media Storage</h2>
+      <p class="gs-text-subtle mt-1">Upload sanitized images to the canonical GS_ASSETS bucket and browse durable D1 metadata.</p>
+
+      <div class="gs-card mt-4">
+        <form id="upload" class="flex justify-between items-center gap-4 flex-wrap">
+          <label class="flex items-center gap-4"><span class="text-sm">Image file</span><input id="file" name="file" type="file" accept=".png,.jpg,.jpeg,.svg,image/png,image/jpeg,image/svg+xml" required /></label>
+          <button type="submit" class="gs-btn-primary px-4 py-2">Upload image</button>
+        </form>
+        <p id="message" role="status" class="gs-text-subtle text-sm mt-2">PNG, JPEG, or sanitized SVG; maximum 5 MB.</p>
+      </div>
+
+      <div class="gs-card mt-4">
+        <div class="flex justify-between items-center gap-4 flex-wrap">
+          <div><h3 class="font-semibold">Assets</h3><p class="gs-text-subtle text-sm">Newest first. Open an asset to use its authenticated delivery URL.</p></div>
+          <button id="refresh" type="button" class="gs-btn-secondary px-3 py-1">Refresh</button>
+        </div>
+        <div id="assets" class="gs-asset-grid mt-4">Loading…</div>
+        <nav class="flex justify-end gap-2 mt-4">
+          <button id="previous" type="button" class="gs-btn-secondary px-3 py-1">Previous</button>
+          <span id="page" class="text-sm gs-text-subtle self-center"></span>
+          <button id="next" type="button" class="gs-btn-secondary px-3 py-1">Next</button>
+        </nav>
+      </div>
+    </div>
+
+    <!-- ============================== DNS ============================== -->
+    <div class="gs-panel" data-panel="dns">
+      <h2 class="text-xl font-semibold">DNS Configuration</h2>
+      <p class="gs-text-subtle mt-1">Manage DNS records and zones across Cloudflare.</p>
+      <div class="gs-ghost-card mt-4">
+        <span class="gs-ghost-icon" aria-hidden="true">🔌</span>
+        <h3>Not connected yet</h3>
+        <p>gs-api doesn't have a Cloudflare API token bound for zone/DNS reads, so this can't show real records without faking data. Add a scoped token (Zone:DNS:Read/Edit) as a gs-api secret and wire up <code>/admin/cloudflare/dns</code> to switch this on.</p>
+      </div>
+    </div>
+
+    <!-- ============================== Pages ============================== -->
+    <div class="gs-panel" data-panel="pages">
+      <h2 class="text-xl font-semibold">Pages Configuration</h2>
+      <p class="gs-text-subtle mt-1">Manage Cloudflare Pages projects and deployments.</p>
+      <div class="gs-ghost-card mt-4">
+        <span class="gs-ghost-icon" aria-hidden="true">🔌</span>
+        <h3>Not connected yet</h3>
+        <p>Same gap as DNS — no Cloudflare API token is bound in gs-api for Pages reads. Add one (Account:Cloudflare Pages:Read) and wire up <code>/admin/cloudflare/pages</code> to switch this on.</p>
+      </div>
+    </div>
+  </section>
+
+  <style>
+    .gs-eyebrow { color: var(--gs-color-primary, #d96a32); font-weight: 800; text-transform: uppercase; letter-spacing: .12em; font-size: .8rem; }
+    .gs-tabs { display: flex; gap: 8px; flex-wrap: wrap; border-bottom: 1px solid var(--gs-color-border); padding-bottom: 4px; }
+    .gs-tab {
+      font: 650 .85rem/1 var(--gs-font-body, inherit);
+      padding: 8px 14px; border-radius: var(--gs-radius-pill, 999px) var(--gs-radius-pill, 999px) 0 0;
+      border: 1px solid transparent; background: transparent; color: var(--gs-color-subtle);
+      cursor: pointer;
+    }
+    .gs-tab:hover { color: var(--gs-color-text); }
+    .gs-tab[aria-selected="true"] {
+      color: var(--gs-color-primary, #d96a32);
+      border-color: var(--gs-color-border);
+      border-bottom-color: transparent;
+      background: var(--gs-color-surface);
+    }
+    .gs-panel[hidden] { display: none; }
+    .gs-asset-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+    .gs-asset-grid article { display: grid; gap: .4rem; }
+    .gs-asset-grid img { width: 100%; aspect-ratio: 4/3; object-fit: cover; background: #08080b; border-radius: .7rem; }
+    .gs-asset-grid span, .gs-asset-grid small { opacity: .72; }
+    @media (max-width: 900px) { .gs-asset-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 560px) { .gs-asset-grid { grid-template-columns: 1fr; } }
+
+    .gs-ghost-card {
+      background: var(--gs-color-muted-surface); border: 1px dashed var(--gs-color-border-strong);
+      border-radius: var(--gs-radius-lg, 18px); padding: 1.5rem; text-align: left;
+    }
+    .gs-ghost-card .gs-ghost-icon { font-size: 1.4rem; display: block; margin-bottom: .5rem; }
+    .gs-ghost-card h3 { margin: 0 0 .4rem; font-size: 1rem; font-weight: 600; }
+    .gs-ghost-card p { margin: 0; font-size: .85rem; color: var(--gs-color-subtle); line-height: 1.6; }
+    .gs-ghost-card code { font-family: var(--gs-font-mono, monospace); background: var(--gs-color-surface); padding: .1rem .35rem; border-radius: .3rem; }
+  </style>
+
+  <script define:vars={{ initialTab }}>
+    // ---- Tab switching (client-side, deep-linkable via ?tab=) ----
+    const tabs = Array.from(document.querySelectorAll('.gs-tab'));
+    const panels = Array.from(document.querySelectorAll('.gs-panel'));
+    function activate(tab) {
+      for (const t of tabs) t.setAttribute('aria-selected', String(t.dataset.tab === tab));
+      for (const p of panels) p.hidden = p.dataset.panel !== tab;
+    }
+    for (const t of tabs) {
+      t.addEventListener('click', () => {
+        const tab = t.dataset.tab;
+        activate(tab);
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', tab);
+        window.history.replaceState({}, '', url);
+      });
+    }
+    activate(initialTab);
+  </script>
+
+  <script>
+    // ---- Secrets tab: create/rotate/revoke/paginate (ported from the former secrets.astro) ----
+    type Secret = { id:string; integration_id:string; key_type:string; key_prefix:string; created_at:string; rotated_at:string|null; expires_at:string|null; rotation_count:number };
+    const rows = document.querySelector('#secret-rows') as HTMLTableSectionElement;
+    const notice = document.querySelector('#notice') as HTMLElement;
+    const dialog = document.querySelector('#secret-dialog') as HTMLDialogElement;
+    const form = document.querySelector('#secret-form') as HTMLFormElement;
+    const integrationInput = document.querySelector('#integration-id') as HTMLInputElement;
+    const keyType = document.querySelector('#key-type') as HTMLSelectElement;
+    const valueInput = document.querySelector('#secret-value') as HTMLTextAreaElement;
+    const expiresInput = document.querySelector('#expires-at') as HTMLInputElement;
+    const secretIdInput = document.querySelector('#secret-id') as HTMLInputElement;
+    const summary = document.querySelector('#page-summary') as HTMLElement;
+    let page = 1;
+    let pages = 1;
+
+    const showNotice = (message:string, error = false) => { notice.hidden = false; notice.textContent = message; notice.classList.toggle('gs-text-danger', error); };
+    const cell = (text:string) => { const td = document.createElement('td'); td.className = 'p-3'; td.textContent = text; return td; };
+    const load = async () => {
+      const pageSize = 25;
+      const offset = (page - 1) * pageSize;
+      const query = new URLSearchParams({ offset:String(offset), limit:String(pageSize) });
+      const integration = (document.querySelector('#filter-integration') as HTMLInputElement).value.trim();
+      const type = (document.querySelector('#filter-type') as HTMLSelectElement).value;
+      if (integration) query.set('integration_id', integration); if (type) query.set('key_type', type);
+      if ((document.querySelector('#include-expired') as HTMLInputElement).checked) query.set('include_expired', 'true');
+      const response = await fetch(`/api/admin/secrets?${query}`);
+      const data = await response.json();
+      if (!response.ok) { rows.replaceChildren(); const tr=document.createElement('tr'); tr.append(cell(data.error ?? 'Unable to load secrets.')); rows.append(tr); return; }
+      rows.replaceChildren();
+      for (const secret of data.items as Secret[]) {
+        const tr = document.createElement('tr'); tr.className = 'border-b border-[var(--gs-color-border)]/50';
+        tr.append(cell(secret.integration_id), cell(secret.key_type), cell(`${secret.key_prefix}••••`), cell(secret.expires_at ? new Date(secret.expires_at).toLocaleString() : 'Never'), cell(String(secret.rotation_count)));
+        const actions = cell('');
+        const rotate = document.createElement('button'); rotate.className='gs-btn-secondary px-2 py-1 mr-2'; rotate.textContent='Rotate'; rotate.addEventListener('click',()=>openRotate(secret));
+        const revoke = document.createElement('button'); revoke.className='gs-btn-secondary px-2 py-1'; revoke.textContent='Revoke'; revoke.addEventListener('click',()=>revokeSecret(secret));
+        actions.append(rotate,revoke); tr.append(actions); rows.append(tr);
+      }
+      if (!data.items.length) { const tr=document.createElement('tr'); const td=cell('No secret metadata matches this filter.'); td.colSpan=6; tr.append(td); rows.append(tr); }
+      pages = data.pagination?.pages || 1;
+      summary.textContent = `Page ${data.pagination?.page || 1} of ${pages} · ${data.pagination?.total || 0} secrets`;
+      (document.querySelector('#previous-page') as HTMLButtonElement).disabled = page <= 1;
+      (document.querySelector('#next-page') as HTMLButtonElement).disabled = page >= pages;
+    };
+    const openCreate = () => { form.reset(); secretIdInput.value=''; integrationInput.disabled=false; keyType.disabled=false; document.querySelector('#dialog-title')!.textContent='Create secret'; document.querySelector('#value-label')!.textContent='Secret value'; dialog.showModal(); };
+    const openRotate = (secret:Secret) => { form.reset(); secretIdInput.value=secret.id; integrationInput.value=secret.integration_id; keyType.value=secret.key_type; integrationInput.disabled=true; keyType.disabled=true; document.querySelector('#dialog-title')!.textContent=`Rotate ${secret.integration_id}`; document.querySelector('#value-label')!.textContent='New secret value'; dialog.showModal(); };
+    const close = () => { valueInput.value=''; dialog.close(); };
+    const revokeSecret = async (secret:Secret) => { if (!confirm(`Revoke ${secret.key_type} for ${secret.integration_id}? This cannot be undone.`)) return; const response=await fetch(`/api/admin/secrets/${encodeURIComponent(secret.id)}`,{method:'DELETE'}); showNotice(response.ok?'Secret revoked.':(await response.json()).error ?? 'Revoke failed.',!response.ok); if(response.ok) await load(); };
+    form.addEventListener('submit', async (event) => { event.preventDefault(); const id=secretIdInput.value; const body=id?{action:'rotate',new_value:valueInput.value}:{integration_id:integrationInput.value.trim(),key_type:keyType.value,value:valueInput.value,expires_at:expiresInput.value?new Date(expiresInput.value).toISOString():undefined}; const response=await fetch(id?`/api/admin/secrets/${encodeURIComponent(id)}`:'/api/admin/secrets',{method:id?'PATCH':'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)}); valueInput.value=''; const data=response.status===204?{}:await response.json(); showNotice(response.ok?(id?'Secret rotated.':'Secret created.'):(data.error??'Save failed.'),!response.ok); if(response.ok){close();await load();} });
+    document.querySelector('#new-secret')?.addEventListener('click',openCreate); document.querySelector('#close-dialog')?.addEventListener('click',close); document.querySelector('#cancel-dialog')?.addEventListener('click',close);
+    document.querySelector('#apply-filter')?.addEventListener('click',()=>{page=1;load();}); document.querySelector('#previous-page')?.addEventListener('click',()=>{if(page>1){page--;load();}}); document.querySelector('#next-page')?.addEventListener('click',()=>{if(page<pages){page++;load();}});
+    load().catch(()=>showNotice('The secrets API could not be reached.',true));
+  </script>
+
+  <script is:inline>
+    // ---- Storage tab: upload/browse R2 media (ported from the former storage.astro) ----
+    (function () {
+      const state = { offset: 0, limit: 24, hasNext: false };
+      const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      async function load() {
+        const response = await fetch(`/api/admin/media?limit=${state.limit}&offset=${state.offset}`, { credentials: 'same-origin' });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || 'Asset inventory failed.');
+        state.hasNext = data.items.length === state.limit;
+        document.getElementById('previous').disabled = state.offset === 0;
+        document.getElementById('next').disabled = !state.hasNext;
+        document.getElementById('page').textContent = `Items ${state.offset + 1}–${state.offset + data.items.length}`;
+        document.getElementById('assets').innerHTML = data.items.length
+          ? data.items.map((item) => `<article><a href="/api/admin/media/${encodeURIComponent(item.id)}" target="_blank" rel="noopener"><img src="/api/admin/media/${encodeURIComponent(item.id)}" alt="${esc(item.filename)}" loading="lazy" /></a><b>${esc(item.filename)}</b><span>${esc(item.type)} · ${(Number(item.size) / 1024).toFixed(1)} KB</span><small>${esc(new Date(item.created_at).toLocaleString())}</small></article>`).join('')
+          : '<p>No media assets found.</p>';
+      }
+      document.getElementById('upload').onsubmit = async (event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const message = document.getElementById('message');
+        message.textContent = 'Uploading and sanitizing…';
+        const response = await fetch('/api/admin/media/upload', { method: 'POST', body: new FormData(form), credentials: 'same-origin' });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) { message.textContent = data.error || 'Upload failed.'; return; }
+        message.textContent = `Uploaded ${data.filename}.`;
+        form.reset();
+        state.offset = 0;
+        await load();
+      };
+      document.getElementById('refresh').onclick = () => load().catch((e) => (document.getElementById('message').textContent = e.message));
+      document.getElementById('previous').onclick = () => { state.offset = Math.max(0, state.offset - state.limit); load(); };
+      document.getElementById('next').onclick = () => { state.offset += state.limit; load(); };
+      load().catch((e) => (document.getElementById('assets').textContent = e.message));
+    })();
+  </script>
+</AdminLayout>

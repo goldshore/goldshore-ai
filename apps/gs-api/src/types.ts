@@ -59,6 +59,10 @@ type RuntimeSecrets = {
   GOOGLE_OAUTH_CLIENT_SECRET?: string;
   GOOGLE_OAUTH_REDIRECT_URI?: string;
   GOOGLE_BUSINESS_OAUTH_REDIRECT_URI?: string;
+  EBAY_CLIENT_ID?: string;
+  EBAY_CLIENT_SECRET?: string;
+  EBAY_REDIRECT_URI?: string;
+  EBAY_ENV?: string;
   GITHUB_CLIENT_ID?: string;
   GITHUB_CLIENT_SECRET?: string;
   GITHUB_TOKEN?: string;
