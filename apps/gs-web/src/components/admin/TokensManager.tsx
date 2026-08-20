@@ -18,7 +18,7 @@ interface TokensManagerProps {
 
 export default function TokensManager({
   initialTokens = [],
-  apiBaseUrl = 'https://api.goldshore.ai/admin',
+  apiBaseUrl = '/api/admin',
   jwtToken = ''
 }: TokensManagerProps) {
   const [tokens, setTokens] = useState<Token[]>(initialTokens);

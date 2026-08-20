@@ -5,16 +5,10 @@ import { searchGitHubFrameworks } from '../../lib/github-framework-search';
 import { rankFrameworksWithClaude } from '../../lib/claude-framework-ranker';
 import { validateWranglerConfig } from '../../lib/wrangler-validator';
 import email from './email';
-import entries from './entries';
-import users from './users';
-import settings from './settings';
 import secrets from './secrets';
-import tokens from './tokens';
 import cockpit from './merge-cockpit';
 import repoHealth from './repo-health';
-import piiScans from './pii-scans';
 import chat from './chat';
-import analytics from './analytics';
 import rbacRoles from './rbac-roles';
 import rbacUsers from './rbac-users';
 import rbacPermissions from './rbac-permissions';
@@ -31,17 +25,20 @@ const admin = new Hono<{
 }>();
 
 // Mount admin feature sub-routers
+//
+// entries, users, settings, tokens, pii-scans, and analytics used to be
+// mounted here too, which put them at /admin/deploy/{name} once this whole
+// router is nested under admin.ts's /deploy mount. No frontend code calls
+// that path for any of them: users and settings are shadowed by admin.ts's
+// own live inline handlers (this router's copies were dead code), and
+// entries/tokens/pii-scans/analytics are real, working routers whose only
+// caller expects them directly at /admin/{name} — so they're now mounted
+// there instead, in admin.ts.
 admin.route('/email', email);
-admin.route('/entries', entries);
-admin.route('/users', users);
-admin.route('/settings', settings);
 admin.route('/secrets', secrets);
-admin.route('/tokens', tokens);
 admin.route('/merge-cockpit', cockpit);
 admin.route('/repo-health', repoHealth);
-admin.route('/pii-scans', piiScans);
 admin.route('/chat', chat);
-admin.route('/analytics', analytics);
 admin.route('/cf', workers);
 admin.route('/mcp', mcpServers);
 
