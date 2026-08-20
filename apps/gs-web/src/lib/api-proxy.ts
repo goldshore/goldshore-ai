@@ -80,3 +80,28 @@ export const proxyApiRequest = async (
 
   return new Response(response.body, { status: response.status, headers: response.headers });
 };
+
+// Every admin route proxies to gs-api. Left to call proxyApiRequest directly,
+// every one of them silently fell through to the public-HTTPS branch above,
+// which forwards the visitor's admin.goldshore.ai Access JWT (audience
+// c520a76...) to api.goldshore.ai, whose own Access application checks for a
+// *different* audience (8510d42c...). That JWT is invalid for gs-api's Access
+// app, so Access returns its own HTML login page instead of gs-api's JSON —
+// the "Unexpected token '<'" failures across the admin dashboard. gs-api's
+// Access policy already trusts a Linked App Token from admin-production
+// (see infra/Cloudflare/BINDINGS_MAP.md), and gs-web already has a service
+// binding (`API`) that bypasses Cloudflare Access entirely for this internal
+// hop — exactly like apps/gs-web/src/pages/api/contact.ts already does. This
+// helper is that same pattern, centralized so every admin route uses it.
+export const proxyAdminRequest = async (
+  request: Request,
+  apiPath: string,
+  apiBase?: string
+) => {
+  let serviceBinding: ServiceBinding | undefined;
+  if (!import.meta.env.DEV) {
+    const { env } = await import('cloudflare:workers');
+    serviceBinding = (env as any).API;
+  }
+  return proxyApiRequest(request, apiPath, apiBase, serviceBinding);
+};
