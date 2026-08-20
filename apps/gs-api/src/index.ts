@@ -7,7 +7,7 @@ import {
 import { createCorsMiddleware, APPROVED_API_ORIGINS } from '@goldshore/shared';
 import { EmailLogSchema } from '@goldshore/schema';
 import users from './routes/users';
-import health from './routes/health';
+import health, { readinessHandler } from './routes/health';
 import ai from './routes/ai';
 import user from './routes/user';
 import system from './routes/system';
@@ -86,6 +86,7 @@ const isPublicPath = (path: string, method: string) => {
     path === '/' ||
     path === '/version' ||
     path === '/health' ||
+    path === '/ready' ||
     path.startsWith('/health/') ||
     (method === 'POST' && /^\/v1\/forms\/[^/]+\/submissions$/.test(path)) ||
     // Per-service health probes (/agent/health, /mail/health, …) are not
@@ -258,6 +259,7 @@ app.get('/version.json', (c) =>
 );
 
 app.route('/health', health);
+app.get('/ready', readinessHandler);
 app.route('/ai', ai);
 app.route('/users', users);
 app.route('/user', user);
