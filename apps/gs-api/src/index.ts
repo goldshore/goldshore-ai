@@ -29,6 +29,7 @@ import core from './routes/core';
 import mail from './routes/mail';
 import trading from './routes/trading';
 import googleBusiness from './routes/google-business';
+import ebayOauth from './routes/oauth/ebay';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
 import type { Env, Variables } from './types';
@@ -93,6 +94,7 @@ const isPublicPath = (path: string, method: string) => {
     // covered by the /health/ prefix check above.
     /^\/(agent|mail|control|trading|core)\/health\/?$/.test(path) ||
     (method === 'GET' && path === '/admin/google/oauth/callback') ||
+    (method === 'GET' && path === '/oauth/ebay/callback') ||
     path === '/mail/contact'
   );
 };
@@ -279,6 +281,7 @@ app.route('/mail', mail);
 app.route('/control', control);
 app.route('/trading', trading);
 app.route('/core', core);
+app.route('/oauth/ebay', ebayOauth);
 
 const v1 = new Hono<{ Bindings: Env }>();
 v1.route('/users', users);
