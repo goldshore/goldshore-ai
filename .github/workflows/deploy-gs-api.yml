@@ -136,7 +136,7 @@ jobs:
             --yes
 
       - name: Health check promoted deployment
-        run: scripts/cloudflare/health-check.sh "$HEALTH_ORIGIN/health"
+        run: bash scripts/cloudflare/health-check.sh "$HEALTH_ORIGIN/health"
 
       - name: Apply newsletter subscriber schema
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
