@@ -4,7 +4,7 @@ export const prerender = false;
 import AdminLayout from "../../../layouts/AdminLayout.astro";
 import EntriesManager from "../../../components/admin/EntriesManager";
 
-const jwtToken = Astro.request.headers.get('CF-Authorization') || '';
+const jwtToken = Astro.request.headers.get('CF-Access-JWT-Assertion') || '';
 const offset = parseInt(new URL(Astro.request.url).searchParams.get('offset') || '0');
 const limit = parseInt(new URL(Astro.request.url).searchParams.get('limit') || '25');
 

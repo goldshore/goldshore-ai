@@ -4,7 +4,7 @@ export const prerender = false;
 import AdminLayout from "../../layouts/AdminLayout.astro";
 import IDEDashboard from "../../components/admin/IDEDashboard";
 
-const jwtToken = Astro.request.headers.get('CF-Authorization') || '';
+const jwtToken = Astro.request.headers.get('CF-Access-JWT-Assertion') || '';
 ---
 
 <AdminLayout title="Admin | IDE Dashboard">
