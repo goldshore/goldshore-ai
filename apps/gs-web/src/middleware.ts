@@ -4,6 +4,7 @@ import { HTML_CONTENT_SECURITY_POLICY } from './security/policy';
 import {
   authorizeAdminRequest,
   ADMIN_DASHBOARD_PATH,
+  getAdminDashboardRedirect,
   getAdminRouteRule,
   getAdminHostRewritePath,
   isAdminHost,
@@ -18,8 +19,15 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   // Astro prerenders static routes against localhost during the production
   // build. Do not invoke Cloudflare runtime bindings in that build-only pass;
   // the deployed request still traverses the full admin authorization path.
-  if (host === 'localhost' || host === '127.0.0.1') {
+  if (import.meta.env.PROD && (host === 'localhost' || host === '127.0.0.1')) {
     return next();
+  }
+  const canonicalAdminRedirect = getAdminDashboardRedirect(
+    context.url.pathname,
+    host,
+  );
+  if (canonicalAdminRedirect) {
+    return Response.redirect(canonicalAdminRedirect, 308);
   }
   if (
     (host === 'risk.goldshore.ai' || host === 'risk.goldshore.org') &&
@@ -38,6 +46,7 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   // Response headers are authoritative for Astro-rendered HTML. Static files
   // that can bypass middleware keep their own platform config in public/_headers.
   context.locals.securityPolicySource = 'response-header';
+  context.locals.PUBLIC_API = import.meta.env.PUBLIC_API;
 
   const url = new URL(context.request.url);
   const routedPath = adminRewritePath ?? url.pathname;
@@ -48,9 +57,12 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   );
 
   if (adminRule) {
-    const { env: cloudflareEnv } = await import('cloudflare:workers');
-    const runtimeEnv = cloudflareEnv as Env;
-    const allowLocalAdminBypass = import.meta.env.DEV || runtimeEnv?.DEV_AUTH_BYPASS === '1';
+    let runtimeEnv = {} as Env;
+    if (!import.meta.env.DEV) {
+      const { env: cloudflareEnv } = await import('cloudflare:workers');
+      runtimeEnv = cloudflareEnv as Env;
+    }
+    const allowLocalAdminBypass = import.meta.env.DEV || runtimeEnv.DEV_AUTH_BYPASS === '1';
 
     if (allowLocalAdminBypass) {
       context.locals.adminSession = {
@@ -101,7 +113,8 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   if (
     adminRule?.kind === 'page' &&
     adminRule.canonicalPath === ADMIN_DASHBOARD_PATH &&
-    url.pathname === ADMIN_DASHBOARD_PATH
+    url.pathname === ADMIN_DASHBOARD_PATH &&
+    !isAdminHost(host)
   ) {
     const { env: cloudflareEnv } = await import('cloudflare:workers');
     response = await (cloudflareEnv as Env).ASSETS.fetch(context.request);

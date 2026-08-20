@@ -1,0 +1,57 @@
+---
+export const prerender = false;
+
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import SettingsManager from "../../../components/admin/SettingsManager";
+
+const jwtToken = Astro.request.headers.get('CF-Access-JWT-Assertion') || '';
+
+const apiBaseUrl = 'https://api.goldshore.ai/admin';
+
+let settings = {
+  site_name: '',
+  admin_email: '',
+  support_email: '',
+  api_base_url: '',
+  max_upload_mb: 100,
+  email_provider: 'mailchannels',
+  error: null as string | null
+};
+
+try {
+  const res = await fetch(`${apiBaseUrl}/settings`, {
+    headers: {
+      'CF-Authorization': jwtToken,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (res.ok) {
+    const data = await res.json();
+    settings = { ...settings, ...data };
+  } else if (res.status === 401 || res.status === 403) {
+    settings.error = 'Authentication required. Please ensure you are logged in with the correct credentials.';
+  }
+} catch (error) {
+  settings.error = error instanceof Error ? error.message : 'Failed to load settings';
+}
+---
+
+<AdminLayout title="Admin | Settings">
+  <div class="max-w-7xl mx-auto p-8 space-y-8">
+    <div class="space-y-2">
+      <h1 class="text-4xl gs-heading gs-text-accent">Platform Settings</h1>
+      <p class="text-lg gs-text-subtle">Configure your platform, email, and API settings.</p>
+    </div>
+
+    {settings.error && (
+      <div class="p-4 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+        {settings.error}
+      </div>
+    )}
+
+    <div class="gs-card">
+      <SettingsManager client:load jwtToken={jwtToken} initialSettings={settings} />
+    </div>
+  </div>
+</AdminLayout>

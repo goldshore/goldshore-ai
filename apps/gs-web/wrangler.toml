@@ -5,6 +5,17 @@ compatibility_flags = ["nodejs_compat"]
 workers_dev = false
 main = "./src/worker.ts"
 
+routes = [
+  { pattern = "goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "www.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "www.goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "admin.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "admin.goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "risk.goldshore.ai/*", zone_name = "goldshore.ai" },
+  { pattern = "risk.goldshore.org/*", zone_name = "goldshore.org" }
+]
+
 # Deploy the Astro SSR entry point and its static bundle as one Worker release.
 # `astro build` emits the server manifest and assets under dist; Wrangler
 # bundles src/worker.ts as the Worker entry and uploads dist as its assets.
@@ -30,10 +41,17 @@ run_worker_first = true
 binding = "SESSION"
 id = "7bf44b9bf6cd4ca69cd99573bbaffa52"
 
+# Service binding for gs-api: internal Worker-to-Worker RPC
+# Bypasses Cloudflare Access and avoids network overhead
+[[services]]
+binding = "API"
+service = "gs-api"
+
 [vars]
 ENV = "production"
 PUBLIC_ENV = "production"
 PUBLIC_API = "https://api.goldshore.ai"
+PUBLIC_TURNSTILE_SITE_KEY = "0x4AAAAAAEOjS4lrG1IT_-Fs"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 CLOUDFLARE_ACCESS_AUDIENCE = "c520a7647223b49b20fbe5be240772863eb684b97b57c08955b6104c58170db9"
 CLOUDFLARE_ACCESS_APPLICATION = "admin-production"
@@ -69,10 +87,16 @@ binding = "IMAGES"
 binding = "SESSION"
 id = "7bf44b9bf6cd4ca69cd99573bbaffa52"
 
+# Service binding for gs-api: internal Worker-to-Worker RPC
+[[env.prod.services]]
+binding = "API"
+service = "gs-api"
+
 [env.prod.vars]
 ENV = "production"
 PUBLIC_ENV = "production"
 PUBLIC_API = "https://api.goldshore.ai"
+PUBLIC_TURNSTILE_SITE_KEY = "0x4AAAAAAEOjS4lrG1IT_-Fs"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 CLOUDFLARE_ACCESS_AUDIENCE = "c520a7647223b49b20fbe5be240772863eb684b97b57c08955b6104c58170db9"
 CLOUDFLARE_ACCESS_APPLICATION = "admin-production"

@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import * as assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import {
   ALTERNATE_ADMIN_DASHBOARD_URL,
@@ -10,6 +12,7 @@ import {
   buildCloudflareAccessAdminSession,
   getAdminLoginDestination,
   getAdminHostRewritePath,
+  getAdminDashboardRedirect,
   getAdminLogoutUrl,
   getAdminRouteRule,
   getCanonicalAdminUrl,
@@ -20,11 +23,7 @@ import {
  * or the link removed; until then this list keeps the count from growing
  * silently. Do not add to it to make a test pass — build the page instead.
  */
-const KNOWN_UNBUILT_ADMIN_ROUTES = [
-  '/admin/pii-scans',
-  '/admin/repo-health/findings',
-  '/admin/users/list',
-];
+const KNOWN_UNBUILT_ADMIN_ROUTES: string[] = [];
 
 test('routes dashboard traffic to the admin host with system read access', () => {
   const rule = getAdminRouteRule('/app/dashboard', 'GET', 'goldshore.ai');
@@ -218,7 +217,7 @@ test('a prefix is never in both rewrite tables', () => {
 });
 
 test('every /admin link in the site resolves to a page', () => {
-  const srcRoot = new URL('../../src', import.meta.url).pathname;
+  const srcRoot = fileURLToPath(new URL('../../src', import.meta.url));
   const linked = new Set<string>();
   const walk = (dir: string) => {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -234,12 +233,12 @@ test('every /admin link in the site resolves to a page', () => {
   };
   walk(srcRoot);
 
-  const pagesRoot = new URL('../../src/pages', import.meta.url).pathname;
+  const pagesRoot = fileURLToPath(new URL('../../src/pages', import.meta.url));
   const broken = [...linked].filter((route) => {
     const relative = route.replace(/^\//, '');
     return !(
-      existsSync(new URL(`${pagesRoot}/${relative}.astro`, import.meta.url)) ||
-      existsSync(new URL(`${pagesRoot}/${relative}/index.astro`, import.meta.url))
+      existsSync(join(pagesRoot, `${relative}.astro`)) ||
+      existsSync(join(pagesRoot, relative, 'index.astro'))
     );
   });
 
@@ -333,6 +332,36 @@ test('middleware routes the admin hostname through its resolved dashboard path',
   assert.match(source, /await context\.rewrite\(adminRewritePath\)/);
   assert.match(source, /if \(adminRule\?\.kind === 'page'\)/);
   assert.match(source, /X-GoldShore-Rendered-Bytes/);
+});
+
+test('canonicalizes legacy admin dashboard aliases on ai hosts', () => {
+  assert.equal(
+    getAdminDashboardRedirect('/app/dashboard/admin', 'admin.goldshore.ai'),
+    'https://admin.goldshore.ai/app/dashboard',
+  );
+  assert.equal(
+    getAdminDashboardRedirect('/app/dashboard/admin/', 'admin.goldshore.ai'),
+    'https://admin.goldshore.ai/app/dashboard',
+  );
+  assert.equal(
+    getAdminDashboardRedirect('/admin/', 'goldshore.ai'),
+    'https://admin.goldshore.ai/app/dashboard',
+  );
+  assert.equal(
+    getAdminDashboardRedirect('/admin', 'admin.goldshore.ai'),
+    'https://admin.goldshore.ai/app/dashboard',
+  );
+});
+
+test('preserves real nested admin tools instead of folding them into dashboard', () => {
+  assert.equal(
+    getAdminDashboardRedirect('/admin/platform', 'admin.goldshore.ai'),
+    null,
+  );
+  assert.equal(
+    getAdminDashboardRedirect('/admin/workers/status', 'goldshore.ai'),
+    null,
+  );
 });
 
 test('admin layout does not return HTTP responses from component rendering', async () => {

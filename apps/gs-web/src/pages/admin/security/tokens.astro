@@ -1,0 +1,47 @@
+---
+export const prerender = false;
+
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import TokensManager from "../../../components/admin/TokensManager";
+
+const jwtToken = Astro.request.headers.get('CF-Access-JWT-Assertion') || '';
+const apiBaseUrl = 'https://api.goldshore.ai/admin';
+
+let tokens = { items: [], total: 0, error: null as string | null };
+
+try {
+  const res = await fetch(`${apiBaseUrl}/tokens`, {
+    headers: {
+      'CF-Authorization': jwtToken,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (res.ok) {
+    tokens = await res.json();
+  } else if (res.status === 401 || res.status === 403) {
+    tokens.error = 'Authentication required. Please ensure you are logged in with the correct credentials.';
+  } else if (res.status === 503) {
+    tokens.error = 'Admin API is temporarily unavailable.';
+  }
+} catch (error) {
+  tokens.error = error instanceof Error ? error.message : 'Failed to load tokens';
+}
+---
+
+<AdminLayout title="Admin | API Tokens">
+  <div class="max-w-7xl mx-auto p-8 space-y-8">
+    <div class="space-y-2">
+      <h1 class="text-4xl gs-heading gs-text-accent">API Tokens</h1>
+      <p class="text-lg gs-text-subtle">Generate and manage API tokens for programmatic access to your account.</p>
+    </div>
+
+    {tokens.error && (
+      <div class="p-4 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+        {tokens.error}
+      </div>
+    )}
+
+    <TokensManager client:load jwtToken={jwtToken} initialTokens={tokens.items || []} />
+  </div>
+</AdminLayout>

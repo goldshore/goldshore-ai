@@ -35,23 +35,20 @@ describe('two-app Cloudflare binding contract', () => {
     assert.ok(!d1Bindings(apiConfig).includes('GS_SIGNALS'));
   });
 
-  it('keeps every verified production route on the unified API', () => {
+  it('reserves gs-api for API routes only; frontend/admin/operations routes go to gs-web', () => {
     assert.deepEqual(productionRoutes(apiConfig), [
       { pattern: 'api.goldshore.ai/*', zoneName: 'goldshore.ai' },
       { pattern: 'api.goldshore.org/*', zoneName: 'goldshore.org' },
-      { pattern: 'agent.goldshore.ai/*', zoneName: 'goldshore.ai' },
-      { pattern: 'agent.goldshore.org/*', zoneName: 'goldshore.org' },
-      { pattern: 'mail.goldshore.ai/*', zoneName: 'goldshore.ai' },
-      { pattern: 'mail.goldshore.org/*', zoneName: 'goldshore.org' },
-      { pattern: 'ops.goldshore.ai/*', zoneName: 'goldshore.ai' },
-      { pattern: 'trading.goldshore.ai/*', zoneName: 'goldshore.ai' },
-      { pattern: 'trading.goldshore.org/*', zoneName: 'goldshore.org' },
-      { pattern: 'dashboard.goldshore.ai/*', zoneName: 'goldshore.ai' },
-      { pattern: 'dash.goldshore.ai/*', zoneName: 'goldshore.ai' },
-      { pattern: 'gw.goldshore.ai/*', zoneName: 'goldshore.ai' },
-      // MCP surface folded in from the standalone goldshore-mcp Worker.
-      { pattern: 'mcp.goldshore.ai/*', zoneName: 'goldshore.ai' },
     ]);
+
+    // Admin, risk, and marketing routes are on gs-web. Legacy satellite
+    // workers (agent, mail, ops, trading, dashboard, mcp) have been
+    // consolidated into gs-api's event handlers or decommissioned.
+    const webRoutes = productionRoutes(webConfig);
+    assert.ok(webRoutes.some(r => r.pattern === 'admin.goldshore.ai/*'));
+    assert.ok(webRoutes.some(r => r.pattern === 'admin.goldshore.org/*'));
+    assert.ok(webRoutes.some(r => r.pattern === 'risk.goldshore.ai/*'));
+    assert.ok(webRoutes.some(r => r.pattern === 'goldshore.ai/*'));
   });
 
   it('declares the cron consumed by the scheduled module handler', () => {
@@ -64,14 +61,17 @@ describe('two-app Cloudflare binding contract', () => {
     // SESSION is deliberately absent from this list: gs-web binds a KV
     // namespace for Astro session/auth state. Everything transactional still
     // belongs to gs-api.
+    // API is a service binding for internal RPC to gs-api, bypassing Cloudflare Access.
     assert.doesNotMatch(webConfig, /^binding = "(?:KV|PLATFORM_DB|GS_ASSETS|MAIL_JOBS_QUEUE|EMAIL)"$/m);
-    assert.doesNotMatch(webConfig, /\[\[env\.prod\.(?:d1_databases|r2_buckets|queues|services|workflows|send_email)/);
+    assert.doesNotMatch(webConfig, /\[\[env\.prod\.(?:d1_databases|r2_buckets|queues|workflows|send_email)/);
 
     // gs-web's only permitted KV binding is the session store.
+    // gs-web's only permitted service binding is internal RPC to gs-api.
     const webKvBindings = [...webConfig.matchAll(/^binding = "(\w+)"$/gm)]
       .map((m) => m[1])
       .filter((b) => b !== 'ASSETS' && b !== 'IMAGES');
     assert.deepEqual([...new Set(webKvBindings)], ['SESSION']);
+    assert.match(webConfig, /\[\[env\.prod\.services\]\]\s*binding = "API"\s*service = "gs-api"/);
   });
 
   it('declares no dedicated preview Worker environments', () => {

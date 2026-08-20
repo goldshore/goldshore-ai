@@ -1,0 +1,76 @@
+---
+export const prerender = false;
+
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import UsersManager from "../../../components/admin/UsersManager";
+
+const jwtToken = Astro.request.headers.get('CF-Access-JWT-Assertion') || '';
+const offset = parseInt(new URL(Astro.request.url).searchParams.get('offset') || '0');
+const limit = parseInt(new URL(Astro.request.url).searchParams.get('limit') || '25');
+
+const apiBaseUrl = 'https://api.goldshore.ai/admin';
+
+let users = { items: [], total: 0, offset, limit, error: null as string | null };
+
+try {
+  const params = new URLSearchParams({
+    offset: String(offset),
+    limit: String(limit),
+  });
+
+  const response = await fetch(`${apiBaseUrl}/users?${params}`, {
+    headers: {
+      'CF-Authorization': jwtToken,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (response.ok) {
+    users = await response.json();
+  } else if (response.status === 401 || response.status === 403) {
+    users.error = 'Authentication required. Please ensure you are logged in with the correct credentials.';
+  }
+} catch (error) {
+  users.error = error instanceof Error ? error.message : 'Failed to load users';
+}
+
+const activeUsers = users.items?.filter((u: any) => u.status === 'active').length || 0;
+---
+
+<AdminLayout title="Admin | Users">
+  <div class="max-w-7xl mx-auto p-8 space-y-8">
+    <div class="space-y-2">
+      <h1 class="text-4xl gs-heading gs-text-accent">Team Management</h1>
+      <p class="text-lg gs-text-subtle">Manage admin users, roles, and permissions.</p>
+    </div>
+
+    {users.error && (
+      <div class="p-4 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+        {users.error}
+      </div>
+    )}
+
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="gs-card space-y-3">
+        <h2 class="text-xl font-semibold">Total Users</h2>
+        <p class="text-3xl font-bold gs-text-info">{users.total}</p>
+        <p class="text-sm gs-text-subtle">Team members</p>
+      </div>
+      <div class="gs-card space-y-3">
+        <h2 class="text-xl font-semibold">Active Users</h2>
+        <p class="text-3xl font-bold gs-text-success">{activeUsers}</p>
+        <p class="text-sm gs-text-subtle">Currently active</p>
+      </div>
+      <div class="gs-card space-y-3">
+        <h2 class="text-xl font-semibold">Pending Invites</h2>
+        <p class="text-3xl font-bold gs-text-warning">{users.total - activeUsers}</p>
+        <p class="text-sm gs-text-subtle">Awaiting acceptance</p>
+      </div>
+    </div>
+
+    <div class="gs-card space-y-4">
+      <h2 class="text-2xl font-semibold">Team Members</h2>
+      <UsersManager client:load jwtToken={jwtToken} initialUsers={users.items} />
+    </div>
+  </div>
+</AdminLayout>
