@@ -310,6 +310,40 @@ admin.post("/operations/:operation", async (c, next) => {
   return c.json({ authorized: true, approvalId: approval.id });
 });
 
+admin.get("/workflows", requirePermission("system:read"), async (c) => {
+  const offset = Math.max(0, Number.parseInt(c.req.query('offset') ?? '0', 10) || 0);
+  const limit = Math.min(100, Math.max(1, Number.parseInt(c.req.query('limit') ?? '50', 10) || 50));
+  const rows = await c.env.PLATFORM_DB.prepare('SELECT id,entity_id,data,last_updated FROM admin_cache WHERE entity_type=? ORDER BY last_updated DESC LIMIT ? OFFSET ?')
+    .bind('workflows', limit, offset).all<{ id: string; entity_id: string | null; data: string; last_updated: string }>();
+  const count = await c.env.PLATFORM_DB.prepare('SELECT COUNT(*) total FROM admin_cache WHERE entity_type=?').bind('workflows').first<{ total: number }>();
+  const total = Number(count?.total ?? 0);
+  return c.json({
+    items: rows.results.map((row) => ({ id: row.id, key: row.entity_id, ...JSON.parse(row.data), updatedAt: row.last_updated })),
+    pagination: { offset, limit, total, hasMore: offset + limit < total }
+  });
+});
+
+admin.get("/lead-submissions", requirePermission("system:read"), async (c) => {
+  const page = Math.max(1, Number.parseInt(c.req.query('page') ?? '1', 10) || 1);
+  const pageSize = Math.min(100, Math.max(10, Number.parseInt(c.req.query('pageSize') ?? '25', 10) || 25));
+  const status = c.req.query('status');
+  const whereClause = status && ['new', 'read', 'archived'].includes(status) ? `WHERE status = '${status.replace(/'/g, "''")}'` : '';
+  const paginationClause = ` LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}`;
+  const rows = await c.env.PLATFORM_DB.prepare(`SELECT id, form_type, name, email, company, role, website, team_size, industry, timeline, budget, goals, message, status, received_at, ip_address, user_agent FROM lead_submissions ${whereClause} ORDER BY received_at DESC${paginationClause}`)
+    .all<{ id: string; form_type: string; name: string | null; email: string | null; company: string | null; role: string | null; website: string | null; team_size: string | null; industry: string | null; timeline: string | null; budget: string | null; goals: string | null; message: string | null; status: string; received_at: string; ip_address: string | null; user_agent: string | null }>();
+  const count = await c.env.PLATFORM_DB.prepare(`SELECT COUNT(*) AS total FROM lead_submissions ${whereClause}`).first<{ total: number }>();
+  const total = Number(count?.total ?? 0);
+  return c.json({ items: rows.results, pagination: { page, pageSize, total, pages: Math.max(1, Math.ceil(total / pageSize)) } });
+});
+
+admin.post("/lead-submissions", requirePermission("system:write"), async (c) => {
+  const payload = await c.req.json<{ id?: string; status?: string }>().catch(() => null);
+  if (!payload?.id || !['new', 'read', 'archived'].includes(payload.status ?? '')) return c.json({ error: 'Invalid submission ID or status.' }, 400);
+  await c.env.PLATFORM_DB.prepare('UPDATE lead_submissions SET status = ? WHERE id = ?').bind(payload.status, payload.id).run();
+  await audit(c, 'admin.lead-submission.update', 'success', { submissionId: payload.id, status: payload.status });
+  return c.json({ ok: true, submissionId: payload.id, status: payload.status });
+});
+
 admin.route("/deploy", deploy);
 
 // Mount repo health routes

@@ -8,6 +8,23 @@ export const proxyApiRequest = async (request: Request, apiPath: string, apiBase
   headers.delete('host');
   headers.set('x-forwarded-host', sourceUrl.host);
 
+  // Extract CF Access JWT from cookies if not already in headers
+  // Cloudflare Access stores the JWT in CF_Authorization cookie
+  if (!headers.get('CF-Access-JWT-Assertion')) {
+    const cookieHeader = headers.get('cookie');
+    if (cookieHeader) {
+      const cfAuthCookie = cookieHeader
+        .split(';')
+        .find(c => c.trim().startsWith('CF_Authorization='));
+      if (cfAuthCookie) {
+        const jwtValue = cfAuthCookie.split('=')[1]?.trim();
+        if (jwtValue) {
+          headers.set('CF-Access-JWT-Assertion', jwtValue);
+        }
+      }
+    }
+  }
+
   // Log auth headers for debugging
   const authHeaders = {
     'CF-Access-JWT-Assertion': headers.get('CF-Access-JWT-Assertion') ? '***present***' : 'missing',

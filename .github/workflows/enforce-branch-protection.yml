@@ -2,6 +2,15 @@ name: Enforce Branch Protection
 
 on:
   workflow_dispatch:
+    inputs:
+      force_enforcement:
+        description: 'Force re-apply protection even if already configured'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
   push:
     branches: [main]
     paths:

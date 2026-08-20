@@ -148,8 +148,11 @@ For Claude/Codex assistance with Google API integration: provide the API name, s
 **Objective**: Build comprehensive admin dashboard with 30+ features for operations, automation, and infrastructure management.
 
 **Phase 1 (Current Sprint — In Progress)**:
-- ✅ Fix CF Access login panel (JWT auth, edge Access Application)
-- ✅ Set Cloudflare API credentials (CF_ACCOUNT_ID, CF_API_TOKEN)
+- ✅ App-level CF Access auth verified (middleware.ts, api-proxy.ts, gs-api handlers all correct)
+- ⚠️ Edge-level CF Access Application for admin.goldshore.ai **pending manual dashboard configuration** (see `docs/ADMIN_DASHBOARD_FIX.md`)
+- ✅ Database schema: `github_webhooks` table created for AUDIT_DB (migration: `0002_github_webhooks.sql`)
+- ✅ D1 migration automation: GitHub Actions workflow for applying remote D1 migrations (`apply-d1-migration.yml`)
+- ✅ Admin dashboard diagnostics: Root cause analysis of ~13 failing admin pages documented (CF Access Application missing at edge)
 - 🔄 Core admin infrastructure:
   - Email management (queue, logs, templates)
   - Worker management (bindings, routes, secrets UI)
@@ -158,6 +161,12 @@ For Claude/Codex assistance with Google API integration: provide the API name, s
   - Settings panel
   - API routes: `/api/admin/{email,workers,entries,users,settings}/*`
   - Frontend pages: `/admin/{dashboard,email,workers,entries,users,settings}`
+
+**Secondary issues identified (separate investigation)**:
+- API Workflows: `/api/admin/workflows` endpoint missing from gs-api (404)
+- Repo Health: Client fetches HTML instead of JSON response
+- Lead Submissions: goldshore.ai returns 522; missing error boundary
+- Dashboard: Stricter CF Access policy required (separate from main admin auth)
 
 **Phase 2 (Week 2)**: WYSIWYG editors, secret creator, API key rotator, permission updater
 
@@ -170,6 +179,8 @@ For Claude/Codex assistance with Google API integration: provide the API name, s
 - Frontend: Astro + React (gs-web)
 - Storage: D1 (schema), KV (cache), R2 (uploads)
 - Auth: Cloudflare Access + session tokens
+
+**Next**: Manual Cloudflare dashboard action required — create CF Access Application for `admin.goldshore.ai` subdomain (documented in `docs/ADMIN_DASHBOARD_FIX.md`)
 
 ---
 

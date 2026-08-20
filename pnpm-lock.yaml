@@ -99,6 +99,9 @@ importers:
       '@goldshore/utils':
         specifier: workspace:^
         version: link:../../packages/utils
+      '@modelcontextprotocol/server':
+        specifier: ^2.0.0
+        version: 2.0.0
       '@types/sanitize-html':
         specifier: ^2.16.0
         version: 2.16.1
@@ -110,7 +113,7 @@ importers:
         version: 3.23.3(@types/node@26.2.0)
       openai:
         specifier: ^7.4.0
-        version: 7.4.0(ws@8.21.0)(zod@4.4.3)
+        version: 7.4.0(ws@8.21.0)(zod@3.25.76)
       postal-mime:
         specifier: ^3.0.0
         version: 3.0.0
@@ -120,6 +123,9 @@ importers:
       sanitize-html:
         specifier: ^2.17.7
         version: 2.17.7
+      zod:
+        specifier: ^3.23.8
+        version: 3.25.76
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^5.20260813.1
@@ -1686,6 +1692,14 @@ packages:
 
   '@mediapipe/tasks-vision@0.10.17':
     resolution: {integrity: sha512-CZWV/q6TTe8ta61cZXjfnnHsfWIdFhms03M9T7Cnd5y2mdpylJM0rF1qRq+wsQVRMLz1OYPVEBU9ph2Bx8cxrg==}
+
+  '@modelcontextprotocol/core@2.0.0':
+    resolution: {integrity: sha512-pJCEwGG7Lfr/+PQp9ZTwKXNeO5wzbfKL7H3MYpCorM4oFBoQrdjnBgEoqG+RjhsvS1FKrDbKux+M1HhlnGWqcA==}
+    engines: {node: '>=20'}
+
+  '@modelcontextprotocol/server@2.0.0':
+    resolution: {integrity: sha512-YhHWdHfpFMQfd0prsEnxKeS3Qz3ytIGmsS0sth4KDjnacIT7hxk6hXHkJ9KysxlkvTM+WZAtQbbcUhdoP4Hvtw==}
+    engines: {node: '>=20'}
 
   '@monogrid/gainmap-js@3.4.0':
     resolution: {integrity: sha512-2Z0FATFHaoYJ8b+Y4y4Hgfn3FRFwuU5zRrk+9dFWp4uGAdHGqVEdP7HP+gLA3X469KXHmfupJaUbKo1b/aDKIg==}
@@ -4907,6 +4921,9 @@ packages:
   youch@4.1.0-beta.10:
     resolution: {integrity: sha512-rLfVLB4FgQneDr0dv1oddCVZmKjcJ6yX6mS4pU82Mq/Dt9a3cLZQ62pDBL4AUO+uVrCvtWz3ZFUL2HFAFJ/BXQ==}
 
+  zod@3.25.76:
+    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
+
   zod@4.4.3:
     resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
 
@@ -6147,6 +6164,15 @@ snapshots:
       - supports-color
 
   '@mediapipe/tasks-vision@0.10.17': {}
+
+  '@modelcontextprotocol/core@2.0.0':
+    dependencies:
+      zod: 4.4.3
+
+  '@modelcontextprotocol/server@2.0.0':
+    dependencies:
+      '@modelcontextprotocol/core': 2.0.0
+      zod: 4.4.3
 
   '@monogrid/gainmap-js@3.4.0(three@0.185.1)':
     dependencies:
@@ -8808,10 +8834,10 @@ snapshots:
       regex: 6.1.0
       regex-recursion: 6.0.2
 
-  openai@7.4.0(ws@8.21.0)(zod@4.4.3):
+  openai@7.4.0(ws@8.21.0)(zod@3.25.76):
     optionalDependencies:
       ws: 8.21.0
-      zod: 4.4.3
+      zod: 3.25.76
 
   optionator@0.9.4:
     dependencies:
@@ -9951,6 +9977,8 @@ snapshots:
       '@speed-highlight/core': 1.2.24
       cookie: 1.1.1
       youch-core: 0.3.3
+
+  zod@3.25.76: {}
 
   zod@4.4.3: {}
 
