@@ -12,7 +12,13 @@ export const prerender = false;
  * implementation governs every client.
  */
 const forward: APIRoute = async (context) => {
-  const serviceBinding = (context.locals as any).runtime?.env?.API;
+  // Access the service binding from Cloudflare Workers environment
+  let serviceBinding: any = undefined;
+  if (!import.meta.env.DEV) {
+    const { env } = await import('cloudflare:workers');
+    serviceBinding = (env as any).API;
+  }
+
   return proxyApiRequest(
     context.request,
     `/v1/forms/configs/${encodeURIComponent(context.params.slug || '')}`,

@@ -2,8 +2,12 @@ import type { APIRoute } from 'astro';
 import { proxyApiRequest } from '../../lib/api-proxy';
 
 export const POST: APIRoute = async (context) => {
-  // Access the service binding via runtime context (Cloudflare Workers)
-  const serviceBinding = (context.locals as any).runtime?.env?.API;
+  // Access the service binding from Cloudflare Workers environment
+  let serviceBinding: any = undefined;
+  if (!import.meta.env.DEV) {
+    const { env } = await import('cloudflare:workers');
+    serviceBinding = (env as any).API;
+  }
 
   return proxyApiRequest(
     context.request,
