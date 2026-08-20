@@ -4,7 +4,6 @@ import { Env, Variables } from '../../types';
 import { searchGitHubFrameworks } from '../../lib/github-framework-search';
 import { rankFrameworksWithClaude } from '../../lib/claude-framework-ranker';
 import { validateWranglerConfig } from '../../lib/wrangler-validator';
-import email from './email';
 import secrets from './secrets';
 import cockpit from './merge-cockpit';
 import repoHealth from './repo-health';
@@ -33,8 +32,7 @@ const admin = new Hono<{
 // own live inline handlers (this router's copies were dead code), and
 // entries/tokens/pii-scans/analytics are real, working routers whose only
 // caller expects them directly at /admin/{name} — so they're now mounted
-// there instead, in admin.ts.
-admin.route('/email', email);
+// there instead, in admin.ts. email joined that list too (see admin.ts).
 admin.route('/secrets', secrets);
 admin.route('/merge-cockpit', cockpit);
 admin.route('/repo-health', repoHealth);

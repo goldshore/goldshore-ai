@@ -13,6 +13,7 @@ import entries from './admin/entries';
 import piiScans from './admin/pii-scans';
 import adminAnalytics from './admin/analytics';
 import apiTokens from './admin/tokens';
+import adminEmail from './admin/email';
 import { escapeHtml, isValidEmail } from '@goldshore/utils';
 import { enqueueMailJob } from '../lib/mail-queue';
 
@@ -365,5 +366,14 @@ admin.route("/entries", entries);
 admin.route("/pii-scans", piiScans);
 admin.route("/analytics", adminAnalytics);
 admin.route("/tokens", apiTokens);
+
+// Same story for the email module: EmailManager/EmailTemplatesManager and
+// email/index.astro all call /admin/email/{status,logs,templates}, none of
+// which existed anywhere but /admin/deploy/email/*. Mounted after the
+// existing inline /email/send and /email/jobs handlers above so those keep
+// answering exactly as before; this only adds the paths that were missing
+// (status, logs, logs/:id, templates, templates/:id). admin/index.ts's own
+// mount of this router is removed for the same reason as the four above.
+admin.route("/email", adminEmail);
 
 export default admin;
