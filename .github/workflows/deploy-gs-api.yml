@@ -71,7 +71,7 @@ jobs:
     # gate added by #6470; without it production deploys need no approval.
     environment: production
     env:
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
       TARGET_ENV: prod
       HEALTH_ORIGIN: https://api.goldshore.ai
     steps:
