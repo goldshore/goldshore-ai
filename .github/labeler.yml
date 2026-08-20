@@ -4,10 +4,6 @@ web:
   - changed-files:
     - any-glob-to-any-file: 'apps/gs-web/**'
 
-admin:
-  - changed-files:
-    - any-glob-to-any-file: 'apps/gs-admin/**'
-
 api:
   - changed-files:
     - any-glob-to-any-file: 'apps/gs-api/**'

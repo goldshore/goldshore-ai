@@ -5,7 +5,7 @@ import {execSync} from 'node:child_process';
 
 const out=['from\tto\tstatus'];
 const rew=[];
-const assetDirs=['apps/gs-admin/src/assets','astro-goldshore'];
+const assetDirs=['apps/gs-web/src/assets','astro-goldshore'];
 const exts=/\.(svg|png|jpe?g|webp|woff2?)$/i;
 
 function slug(n){return n.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');}
@@ -43,7 +43,7 @@ function walkText(d, acc = []) {
 const textFiles = [...walkText('apps'), ...walkText('packages'), ...walkText('src')];
 for(const f of textFiles){
   let c=fs.readFileSync(f,'utf8');
-  let o=c;
+  const o=c;
   for(const [from,to] of rew){
     const b=path.basename(from);
     c=c.split(b).join('/'+to.replace(/^public\//,''));

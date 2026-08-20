@@ -1,0 +1,22 @@
+{
+  "0001_initial_schema.sql": "PLATFORM_DB",
+  "0002_integration_secrets.sql": "PLATFORM_DB",
+  "0003_contact_archive_catalog.sql": "PLATFORM_DB",
+  "0004_newsletter_subscribers.sql": "PLATFORM_DB",
+  "0004_paper_trading.sql": "PAPER_DB",
+  "0005_access_authorization.sql": "PLATFORM_DB",
+  "0005_admin_cache.sql": "PLATFORM_DB",
+  "0005_google_business_integration.sql": "PLATFORM_DB",
+  "0005_identity_rbac.sql": "PLATFORM_DB",
+  "0006_github_app_integration.sql": "AUDIT_DB",
+  "0007_google_workspace_rbac.sql": "PLATFORM_DB",
+  "0007_github_webhooks.sql": "AUDIT_DB",
+  "0008_access_owner_role.sql": "PLATFORM_DB",
+  "0009_infrastructure_baseline.sql": "PLATFORM_DB",
+  "0010_automation_jobs.sql": "PLATFORM_DB",
+  "0011_managed_sites.sql": "PLATFORM_DB",
+  "0012_mailboxes_audiences.sql": "PLATFORM_DB",
+  "0013_sql_sync_control.sql": "PLATFORM_DB",
+  "0014_ad_integrations.sql": "PLATFORM_DB",
+  "0015_analytics_and_revenue_tables.sql": "PLATFORM_DB"
+}

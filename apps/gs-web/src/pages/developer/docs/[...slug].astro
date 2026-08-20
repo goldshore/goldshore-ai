@@ -3,6 +3,10 @@ import DocsLayout from '../../../layouts/DocsLayout.astro';
 import MDXCodeBlock from '../../../components/MDXCodeBlock.astro';
 import { getCollection, render } from 'astro:content';
 
+function getDocSlug(id: string) {
+  return id.replace(/\.(md|mdx)$/, '');
+}
+
 export const prerender = true;
 
 export async function getStaticPaths() {

@@ -48,17 +48,10 @@ wrangler deploy --env prod --dry-run --outdir=dist
 
 ## Deploy
 
-From repo root:
-
-```bash
-pnpm --filter @goldshore/gs-api deploy
-```
-
-This runs:
-
-```bash
-wrangler deploy --env prod
-```
+Use `.github/workflows/deploy-gs-api.yml`; its production job is protected by the
+GitHub `production` environment approval gate. For local static validation, run
+`pnpm exec wrangler deploy --env prod --dry-run` from this directory. Do not run
+an actual production deploy locally.
 
 ## Required GitHub Actions secrets
 
@@ -81,6 +74,27 @@ Do not use:
 - Fallback expressions such as `secretA || secretB`
 
 Cloudflare Worker Builds for API services must use the `gs-control` build token in the Cloudflare Dashboard, but GitHub Actions deployments should use `CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN` as shown above.
+
+## Controlled operations
+
+- `.github/workflows/deploy-gs-api.yml` performs contract preflight checks, uploads a
+  tagged immutable Worker version, checks its preview alias, and promotes that exact
+  version only after it is healthy. Deployments preserve existing remote bindings,
+  variables, and secrets; they never provision secret values.
+- `.github/workflows/migrate-gs-api-d1.yml` is the only automated remote migration
+  path. A dispatch requires approval through the `preview-database` GitHub
+  environment, applies every unapplied SQL file declared in
+  `db/migrations/manifest.json`, and records its checksum in each target database's
+  `_goldshore_migrations` ledger. Production additionally requires the protected
+  `production-database` environment approval and cannot run until preview succeeds.
+- `secret-contract.json` contains names and operational metadata only. Secret values
+  must be created and rotated in the Cloudflare dashboard or an approved Secrets
+  Store. `.github/workflows/audit-gs-api-secrets.yml` only lists remote names and
+  reports required-name drift; it never reads or writes values.
+
+Repository administrators must configure required reviewers on both database GitHub
+environments. Keep preview and production D1 bindings isolated; an environment that
+points both names at the same D1 resource cannot provide a meaningful preview gate.
 
 ## Binding rules
 
@@ -163,21 +177,21 @@ pnpm --filter @goldshore/gs-api build
 pnpm --filter @goldshore/gs-api test
 ```
 
-Deployment-oriented scripts exposed by the package:
+Deployment validation and gateway scripts exposed by the package:
 
 ```bash
-pnpm --filter @goldshore/gs-api deploy
+cd apps/gs-api && pnpm exec wrangler deploy --env prod --dry-run
 pnpm --filter @goldshore/gs-api test:gateway
 ```
 
 ## AI Gateway local setup
 
-Install dependencies and populate local secrets before running gateway validation.
+Install dependencies and populate local-only environment values before running
+gateway validation. Production secrets must be entered by a human in the
+Cloudflare dashboard; do not set them from a repository script or local Wrangler.
 
 ```bash
 cp apps/gs-api/.env.example apps/gs-api/.env
-pnpm -C apps/gs-api wrangler secret put CF_AIG_TOKEN
-pnpm -C apps/gs-api wrangler secret put CF_GATEWAY_URL
 pnpm --filter @goldshore/gs-api test:gateway
 ```
 
@@ -185,3 +199,30 @@ Relevant environment variables:
 
 - `CF_AIG_TOKEN`
 - `CF_GATEWAY_URL`
+
+### Anthropic provider path
+
+All product Anthropic calls must go through `src/lib/anthropic-provider.ts`; GitHub
+workflows must not exchange OIDC tokens or pass provider credentials as outputs.
+Cloudflare documents the Anthropic provider-native endpoint as
+`AI.gateway(id).getUrl("anthropic")` from a Worker binding. Worker-binding calls
+are pre-authenticated to AI Gateway, while Anthropic authenticates its Messages
+API with `x-api-key`. There is no documented GitHub workload-identity exchange.
+
+Official protocol references:
+
+- [Cloudflare Anthropic provider](https://developers.cloudflare.com/ai-gateway/usage/providers/anthropic/)
+- [Cloudflare authenticated gateways](https://developers.cloudflare.com/ai-gateway/configuration/authentication/)
+- [Cloudflare Workers AI Gateway binding](https://developers.cloudflare.com/ai-gateway/usage/worker-binding-methods/)
+- [Anthropic Messages API](https://platform.claude.com/docs/en/api/messages)
+
+Provision the credential as a `gs-api` Worker secret in the Cloudflare dashboard,
+not as a GitHub output and not with a local secret-mutation command.
+
+`ANTHROPIC_GATEWAY_ID` selects the gateway. The adapter permits a direct
+Anthropic endpoint only in preview while `ANTHROPIC_GATEWAY_VERIFIED` is not
+`true`. After an operator validates a preview request and its AI Gateway log,
+set the flag to `true`; production already fails closed when the gateway is not
+configured. The adapter enforces model, message, token and tool limits; JSON
+Schema tool definitions; prompt/data boundaries; common PII redaction;
+timeouts and bounded retries; token/cost telemetry; and route-level audit logs.

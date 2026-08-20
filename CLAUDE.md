@@ -1,6 +1,6 @@
 # CLAUDE.md — goldshore-ai
 
-> Updated: 2026-07-03 · Active branch: `claude/risk-radar-fra-epo-2wk5mk`
+> Updated: 2026-08-14 · Active branch: `claude/mcp-gs-api-worker-migration-0g51br`
 
 ## Platform overview
 
@@ -72,6 +72,10 @@ If a task appears to require a separate admin, gateway, MCP, cron, mail, signals
 
 ## AI IDE context: Antigravity + VS Code
 
+### Shared GitHub handoffs
+
+Claude and Codex coordinate through GitHub issues rather than private local context. Use the same issue tags defined in `AGENTS.md`: `[agent:claude]`, `[agent:codex]`, `[env:local]`, `[env:preview]`, `[env:production]`, `[status:ready]`, `[status:blocked]`, and `[handoff:needed]`. Every handoff comment must include the remote branch and commit SHA, completed checks, deployment/run URLs, blockers, and the next owner/action.
+
 **Antigravity** is the primary IDE used to build parts of goldshore and banproof-me. It is a Google IDE with multiple AI agents pre-integrated: Gemini, Codex, Claude, Copilot, and others. Think of it as VS Code with a built-in multi-agent AI layer.
 
 When working in Antigravity or VS Code on this codebase:
@@ -127,22 +131,54 @@ For Claude/Codex assistance with Google API integration: provide the API name, s
 - Secrets Store: `INTEGRATION_MASTER_KEY` is bound as a per-secret Secrets Store binding from store `b9824d3280c54573a24137c7e7143b33`. Do not use the historical `SECRETS.get(...)` store-object shape in Wrangler config.
 - Unclear/live Cloudflare note: if the dashboard still shows legacy service bindings such as `AGENT`, `GS_MAIL`, `GS_WEB PROD`, `API_SERVICE`, or `GOLDSHORE_AI`, treat them as stale until a human confirms a live dependency; do not re-add them to repo-managed `gs-api` config without updating this file and `docs/WORKER_CONFIGURATION.md`.
 
+> **`KV` means a different namespace in each app.** In `gs-api` the `KV` binding
+> resolves to `GS_API_KV` (`e0b8b807…`); in `gs-web` it resolves to
+> `GOLDSHORE-AI` (`5f133705…`). The binding name is identical, the store is not.
+> Any key that both apps need — `PRODUCT_CATALOG` is the one that got this wrong —
+> must have exactly one owning app, with the other reaching it over HTTP. Reading
+> or writing the same key from `env.KV` in both apps forks it into two stores that
+> diverge silently, with no error at build or deploy time.
+
 ---
 
-## Active branch: `claude/risk-radar-fra-epo-2wk5mk`
+## Active branch: `claude/mcp-gs-api-worker-migration-0g51br`
 
-What's on this branch:
-- `apps/gs-web/src/pages/index.astro` — nav links → real page routes, access modal (`<dialog>`), hamburger nav toggle, contact form fix
-- `apps/gs-web/src/styles/home-theme.css` — mobile nav, modal, honeypot CSS
-- `.github/workflows/manage-cf-tokens.yml` — dual Cloudflare auth (Bearer token + Global API Key), verify step
+### Initiative: Enterprise Admin Platform Build-Out
+
+**Objective**: Build comprehensive admin dashboard with 30+ features for operations, automation, and infrastructure management.
+
+**Phase 1 (Current Sprint — In Progress)**:
+- ✅ Fix CF Access login panel (JWT auth, edge Access Application)
+- ✅ Set Cloudflare API credentials (CF_ACCOUNT_ID, CF_API_TOKEN)
+- 🔄 Core admin infrastructure:
+  - Email management (queue, logs, templates)
+  - Worker management (bindings, routes, secrets UI)
+  - Contact forms & leads CRUD (entries display, pagination)
+  - User sign-up management
+  - Settings panel
+  - API routes: `/api/admin/{email,workers,entries,users,settings}/*`
+  - Frontend pages: `/admin/{dashboard,email,workers,entries,users,settings}`
+
+**Phase 2 (Week 2)**: WYSIWYG editors, secret creator, API key rotator, permission updater
+
+**Phase 3 (Week 3)**: Workflows (leads generator, list scraper, data collector, email sender, CF Tunnel manager)
+
+**Phase 4 (Week 4+)**: Enterprise features (PR manager, AI search, ad integrator, site builder, plugin installer, SQL sync, mailbox management)
+
+**Tech Stack**:
+- Backend: Hono (gs-api)
+- Frontend: Astro + React (gs-web)
+- Storage: D1 (schema), KV (cache), R2 (uploads)
+- Auth: Cloudflare Access + session tokens
 
 ---
 
 ## CI / deployment
 
 - GitHub Actions: Lighthouse CI threshold `LH_MIN_PERFORMANCE: 0.60`
-- Deploy token: `CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN` GitHub secret (renew via `manage-cf-tokens.yml` if expired)
-- Workers deploy per-app via `wrangler deploy`
+- GitHub Actions deploy token: `CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN`
+- Cloudflare Worker Builds token: `CLOUDFLARE_BUILD_API_TOKEN` (managed separately)
+- Workers deploy only through `.github/workflows/deploy-gs-web.yml` and `.github/workflows/deploy-gs-api.yml`, behind the GitHub `production` environment approval gate. Local Wrangler use is dry-run validation only.
 
 ---
 

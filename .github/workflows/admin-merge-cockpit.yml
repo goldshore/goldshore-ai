@@ -1,0 +1,50 @@
+name: Admin Merge Cockpit
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request number to salvage
+        required: true
+        type: string
+      expected_base_sha:
+        description: Immutable main SHA observed by the cockpit
+        required: true
+        type: string
+      expected_head_sha:
+        description: Immutable PR head SHA observed by the cockpit
+        required: true
+        type: string
+      resolutions_json:
+        description: Reviewed current/incoming decisions keyed by path
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: merge-cockpit-pr-${{ inputs.pr_number }}
+  cancel-in-progress: false
+
+jobs:
+  create-salvage-pr:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+      - name: Re-verify SHAs and create reviewed salvage branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_API_TOKEN || github.token }}
+          MERGE_COCKPIT_PR_NUMBER: ${{ inputs.pr_number }}
+          MERGE_COCKPIT_BASE_SHA: ${{ inputs.expected_base_sha }}
+          MERGE_COCKPIT_HEAD_SHA: ${{ inputs.expected_head_sha }}
+          MERGE_COCKPIT_RESOLUTIONS: ${{ inputs.resolutions_json }}
+        run: node scripts/merge-cockpit-salvage.mjs

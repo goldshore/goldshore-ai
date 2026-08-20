@@ -1,7 +1,10 @@
 ---
 import '../styles/home-theme.css';
+import { CANONICAL_ADMIN_DASHBOARD_URL } from '../utils/admin-access';
+import PublicHeader from '../components/PublicHeader.astro';
+import PublicFooter from '../components/PublicFooter.astro';
 
-export const prerender = true;
+export const prerender = false;
 
 const services  = ['Digital Strategy','AI Implementation','Systems Integration','Design & Development','Enterprise Consulting'];
 const sectors   = ['Financial Services','Operations & Logistics','Media & Communications','Healthcare Systems','Public Sector'];
@@ -9,26 +12,31 @@ const platform  = [['Risk Radar','Live'],['Financial Signals','Live'],['Workflow
 const metrics   = [['Uptime','99.98%','30-day avg'],['Signal Events','4.8B','Per month'],['Latency P99','<45ms','Gateway'],['Deploys','48/d','Verified']];
 const sectorCards = [['Financial Services','Risk · Signals · Trading'],['Operations & Logistics','Workflow · Automation'],['Media & Comms','Content · Analytics'],['Healthcare Systems','Compliance · AI'],['Public Sector','Gov · Infrastructure'],['Enterprise Tech','Dev · Design · Systems']];
 const telemetry = [['Platform Uptime','99.98%','30-day rolling'],['Signal Events/mo','4.8B','Validated telemetry'],['Operator Latency','<45ms','P99 gateway'],['Deploy Cadence','48/day','Verified releases']];
-const capabilities = [
+const capabilities: Array<[string, string, string[]]> = [
   ['Risk Intelligence & Financial Signals','Continuous surveillance across positions, portfolios, and market conditions. Anomaly detection, threshold alerting, operator-in-loop review — built for institutions that cannot afford surprises.',['Risk Radar','Sentiment Engine','Market Feeds','Alpaca','Bloomberg']],
   ['AI Systems & Workflow Automation',"End-to-end workflow design and execution with AI at every node. Queue-backed, auditable, with fallback paths and operator checkpoints. We don't deploy AI that cannot explain itself.",['Gemini','GPT-4','Workflow Engine','Cloudflare AI']],
   ['Digital Strategy & Systems Consulting','Architecture planning, vendor evaluation, capability mapping — the upstream work that makes everything downstream coherent. Strategy that ships, not slides.',['Strategy','Architecture','Due Diligence','Roadmapping']],
   ['Design, Development & Product','Full-cycle product and software delivery. Brand identity, design systems, Astro frontends, Cloudflare Workers, React Native — shipped on time, built to last.',['Astro','React Native','CF Workers','Design Systems']],
   ['Resilient Infrastructure & Observability','Production-grade infrastructure with full observability. Cloudflare Access, D1 databases, KV audit trails, R2 storage — secure by default, traceable at every layer.',['Cloudflare','D1','Hono','JWKS Auth']],
 ];
-const stackRows = [['gs-gateway','Ingress, CORS, auth, integration routing','Mar 29','Live'],['gs-agent','Autonomous processor, queue consumer','Mar 19','Live'],['gs-api','Core API, data access layer','Mar 22','Live'],['gs-mail','Transactional mail service','Mar 29','Live'],['gs-control','Control plane, operator interface','Mar 22','Live']];
+const stackRows = [
+  ['gs-web','Astro website and authenticated admin routes','Canonical','Frontend'],
+  ['gs-api','Unified API, mail, queue, and integration handlers','Canonical','Backend'],
+];
 const anomalies = [['ALGO-DRIFT — Position delta exceeds 3σ','High','00:42'],['SENTIMENT — NVDA neg. velocity +18%','Med','01:14'],['LATENCY — GW P99 at 42ms','Low','02:07'],['CORRELATION — BTC/SPX decoupling','Med','03:55']];
 const tickers   = [['SPY','S&P 500 ETF','521.84','+1.24%'],['NVDA','Nvidia Corp','887.22','+2.87%'],['BTC','Bitcoin','68,420','−0.43%'],['GLD','Gold ETF','2,391','+0.61%'],['TLT','20Y Treasury','93.14','−0.18%'],['VIX','Volatility Idx','13.82','−3.20%']];
 const principles = [['01','Sector-Agnostic, Systems-First',"We don't specialize in one vertical — we specialize in the architecture that makes any vertical work. Finance, operations, media, healthcare: the discipline is identical."],['02','AI as Infrastructure, Not Feature','Intelligence embedded at the routing layer, not bolted on at the end. Every workflow treats AI as a first-class component with audit trails to match.'],['03','Consulting That Ships','Strategy without delivery is overhead. We provide the advisory and we build the thing — one team, one contract, full accountability from brief to production.']];
 const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Automation','AI Implementation','Digital Strategy','Systems Integration','Design & Development','Enterprise Consulting','Sentiment Analysis','Applied Intelligence','Resilient Infrastructure','Cross-Sector Deployment'];
+const canonicalUrl = new URL('/', Astro.url.origin).toString();
 ---
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="Gold Shore Labs — applied intelligence, digital systems, and consulting." />
+  <link rel="canonical" href={canonicalUrl} />
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://goldshore.ai/" />
+  <meta property="og:url" content={canonicalUrl} />
   <meta property="og:title" content="Gold Shore Labs | Applied Intelligence" />
   <meta property="og:description" content="Applied intelligence for institutions that need clarity under pressure." />
   <title>Gold Shore Labs | Applied Intelligence</title>
@@ -43,23 +51,7 @@ const marquee   = ['Risk Intelligence','Financial Signal Analysis','Workflow Aut
 <a class="skip-nav" href="#main-content">Skip to main content</a>
 <canvas id="starfield" aria-hidden="true"></canvas>
 
-<header class="topbar">
-  <a class="brand" href="/" aria-label="GoldShore home">
-    <span class="brand-wordmark">GOLDSHORE</span>
-  </a>
-  <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
-    <span></span><span></span><span></span>
-  </button>
-  <nav id="main-nav">
-    <a href="/platform/">Platform</a>
-    <a href="/risk-radar/">Risk Radar</a>
-    <a href="/services/">Services</a>
-    <a href="/developer/">Developer</a>
-    <a href="/about/">About</a>
-    <button id="open-access-modal" class="nav-login">Access →</button>
-    <a class="nav-cta" href="#engage">Request Briefing</a>
-  </nav>
-</header>
+<PublicHeader currentPath={Astro.url.pathname} />
 
 <main id="main-content">
 
@@ -182,8 +174,8 @@ export async function verifyAccess(req, env) {
         </div>
       ))}
       <div class="infra">
-        <h4>Infrastructure Resources</h4>
-        <p><b>R2</b> gs-assets · gs-telemetry · user-uploads</p>
+        <h4>Configured Backend Resources</h4>
+        <p><b>R2</b> gs-assets · gs-telemetry-storage</p>
         <p><b>D1</b> gs_platform_db · gs_audit_db</p>
         <p><b>Stack</b> Hono · pnpm · wrangler</p>
       </div>
@@ -317,38 +309,7 @@ export async function verifyAccess(req, env) {
 
 </main>
 
-<footer class="site-footer">
-  <div>
-    <h2>GoldShore</h2>
-    <p>Applied Intelligence · Digital Systems · Consulting</p>
-    <p>Institutional AI systems, risk tooling, and resilient operator infrastructure. Cross-sector. Full-stack. Built to last.</p>
-  </div>
-  <div>
-    <h3>Platform</h3>
-    <p><a href="/risk-radar/">Risk Radar</a></p>
-    <p><a href="/platform/financial-signals">Financial Signals</a></p>
-    <p><a href="/platform/workflow-engine">Workflow Engine</a></p>
-    <p><a href="/platform/sentinel">Sentinel</a></p>
-    <p><a href="/platform/ai-oracle">AI Oracle</a></p>
-  </div>
-  <div>
-    <h3>Services</h3>
-    <p><a href="/services/digital-strategy">Digital Strategy</a></p>
-    <p><a href="/services/ai-implementation">AI Implementation</a></p>
-    <p><a href="/services/systems-integration">Systems Integration</a></p>
-    <p><a href="/services/design-dev">Design &amp; Development</a></p>
-    <p><a href="/services/consulting">Enterprise Consulting</a></p>
-  </div>
-  <div>
-    <h3>Company</h3>
-    <p><a href="/about/">About</a></p>
-    <p><a href="/team/">Team</a></p>
-    <p><a href="/developer/">Developer Hub</a></p>
-    <p><a href="/status/">Status</a></p>
-    <p><a href="/contact/">Contact</a></p>
-  </div>
-  <small>© 2026 Gold Shore Labs. All rights reserved. 40°42′N · 074°00′W · goldshore.ai · <a href="/legal/privacy">Privacy</a> · <a href="/legal/">Security</a> · <a href="/legal/terms">Terms</a></small>
-</footer>
+<PublicFooter />
 
 <!-- ── Access Modal ────────────────────────────────────────────────────────────────── -->
 <dialog id="access-modal" class="access-modal" aria-labelledby="access-modal-title">
@@ -357,25 +318,10 @@ export async function verifyAccess(req, env) {
     <h2 id="access-modal-title">Access Goldshore</h2>
     <p class="modal-lead">Select a destination to continue.</p>
     <div class="modal-grid">
-      <a href="https://admin.goldshore.ai" class="modal-card" rel="noopener noreferrer" target="_blank" data-admin-access-link>
+      <a href={CANONICAL_ADMIN_DASHBOARD_URL} class="modal-card" data-admin-access-link>
         <span class="modal-icon">⬡</span>
         <strong>Admin</strong>
         <span>Operator dashboard</span>
-      </a>
-      <a href="https://admin.goldshore.org" class="modal-card" rel="noopener noreferrer" target="_blank" data-admin-alternate-link>
-        <span class="modal-icon">◈</span>
-        <strong data-admin-alternate-title>Admin .org</strong>
-        <span data-admin-alternate-copy>Protected organisation alias</span>
-      </a>
-      <a href="/developer/mcp" class="modal-card">
-        <span class="modal-icon">⬢</span>
-        <strong>MCP</strong>
-        <span>Model Context Protocol</span>
-      </a>
-      <a href="https://api.goldshore.ai" class="modal-card" rel="noopener noreferrer" target="_blank">
-        <span class="modal-icon">◉</span>
-        <strong>API</strong>
-        <span>Developer access</span>
       </a>
     </div>
     <p class="modal-contact">Need access? <a href="/contact/">Contact us →</a></p>
@@ -409,19 +355,19 @@ document.querySelector('.modal-close')?.addEventListener('click', () => accessMo
 accessModal?.addEventListener('click', e => { if (e.target === accessModal) accessModal.close(); });
 
 /* ── Host-aware admin links ────────────────────────────────────────────────────────────────────── */
-const adminHost = window.location.hostname.endsWith('goldshore.org') ? 'admin.goldshore.org' : 'admin.goldshore.ai';
-const alternateAdminHost = adminHost === 'admin.goldshore.org' ? 'admin.goldshore.ai' : 'admin.goldshore.org';
+const adminHost = 'admin.goldshore.ai';
+const alternateAdminHost = 'admin.goldshore.org';
 document.querySelectorAll('[data-admin-access-link]').forEach(link => {
-  link.setAttribute('href', `https://${adminHost}`);
+  link.setAttribute('href', `https://${adminHost}/app/dashboard`);
 });
 document.querySelectorAll('[data-admin-alternate-link]').forEach(link => {
-  link.setAttribute('href', `https://${alternateAdminHost}`);
+  link.setAttribute('href', `https://${alternateAdminHost}/app/dashboard`);
 });
 document.querySelectorAll('[data-admin-alternate-title]').forEach(el => {
-  el.textContent = alternateAdminHost === 'admin.goldshore.org' ? 'Admin .org' : 'Admin .ai';
+  el.textContent = 'Admin .org';
 });
 document.querySelectorAll('[data-admin-alternate-copy]').forEach(el => {
-  el.textContent = alternateAdminHost === 'admin.goldshore.org' ? 'Protected organisation alias' : 'Protected AI alias';
+  el.textContent = 'Protected organisation alias';
 });
 
 /* ── Quick engage form ───────────────────────────────────────────────────────────────────────── */

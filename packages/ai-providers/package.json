@@ -5,5 +5,8 @@
   "type": "module",
   "scripts": {
     "test": "npx tsx --test **/*.test.ts"
+  },
+  "dependencies": {
+    "@huggingface/inference": "^4.13.26"
   }
 }

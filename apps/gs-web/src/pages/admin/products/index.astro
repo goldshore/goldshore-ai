@@ -1,0 +1,294 @@
+---
+import { env as cloudflareEnv } from 'cloudflare:workers';
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import { authorizeAdminRequest, getAdminRouteRule } from '../../../utils/admin-access';
+
+export const prerender = false;
+
+type ProductPlan = {
+  id: string;
+  name: string;
+  price: number;
+  currency: string;
+  interval: string;
+  features: string[];
+};
+
+type Product = {
+  id: string;
+  name: string;
+  slug: string;
+  status: 'active' | 'beta' | 'coming_soon' | 'deprecated';
+  description: string;
+  features: string[];
+  plans: ProductPlan[];
+  settings: Record<string, unknown>;
+  updatedAt: string;
+};
+
+const env = cloudflareEnv as Env;
+const rule = getAdminRouteRule('/admin/products', 'GET');
+
+let authError: { status: number; message: string } | null = null;
+if (!rule) {
+  authError = { status: 404, message: 'Not found.' };
+} else {
+  const authResult = await authorizeAdminRequest(Astro.request, env as never, rule);
+  if (!authResult.ok) {
+    authError = { status: authResult.status, message: authResult.error };
+  }
+}
+
+let products: Product[] = [];
+let fetchError = '';
+
+if (!authError) {
+  try {
+    const res = await fetch(new URL('/api/admin/products', Astro.request.url), {
+      headers: Astro.request.headers,
+    });
+    if (res.ok) {
+      const data = await res.json() as { success: boolean; products: Product[] };
+      if (data.success) products = data.products;
+    } else {
+      fetchError = `API error: ${res.status}`;
+    }
+  } catch {
+    fetchError = 'Unable to reach storage.';
+  }
+}
+
+const statusBadge = (status: string) => {
+  const map: Record<string, string> = {
+    active: 'success',
+    beta: 'info',
+    coming_soon: '',
+    deprecated: 'error',
+  };
+  return map[status] ?? '';
+};
+
+const fmtPrice = (price: number, currency: string, interval: string) => {
+  if (price === 0) return 'Free';
+  const fmt = new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(price);
+  return `${fmt}/${interval}`;
+};
+---
+
+<AdminLayout
+  title="Product Catalog | GoldShore Admin"
+>
+  <section class="gs-section">
+    <div class="gs-grid columns-2">
+      <div>
+        <h1>Product catalog</h1>
+        <p class="gs-text-lg">Manage product offerings, plans, and feature settings.</p>
+      </div>
+      <div class="gs-card">
+        <h2 class="section-title"><span>◆</span>Quick links</h2>
+        <ul>
+          <li><a href="/admin/services">Service workflows</a></li>
+          <li><a href="/apps/risk-radar">Risk Radar page</a></li>
+          <li><a href="/admin/integrations/all">Integrations</a></li>
+        </ul>
+      </div>
+    </div>
+
+    {authError ? (
+      <div class="gs-card" style="margin-top: 2rem;">
+        <p class="gs-text-lg">{authError.message}</p>
+        {authError.status === 401 && (
+          <p class="gs-text-sm">Sign in via Cloudflare Access to continue.</p>
+        )}
+      </div>
+    ) : fetchError ? (
+      <div class="gs-card" style="margin-top: 2rem;">
+        <p class="gs-text-lg">{fetchError}</p>
+      </div>
+    ) : (
+      <>
+        {products.map((product) => (
+          <div class="gs-card" style="margin-top: 2rem;" data-product-id={product.id}>
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; flex-wrap:wrap;">
+              <div>
+                <h2 class="section-title" style="font-size: 1.25rem;">
+                  <span>◆</span>{product.name}
+                  <span class={`gs-badge ${statusBadge(product.status)}`} style="margin-left:.75rem; font-size:.75rem;">
+                    {product.status.replace('_', ' ')}
+                  </span>
+                </h2>
+                <p class="gs-text-sm" style="margin-top:.25rem;">{product.description}</p>
+              </div>
+              <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
+                <select
+                  class="gs-select"
+                  data-product-status={product.id}
+                  title="Change product status"
+                >
+                  {(['active', 'beta', 'coming_soon', 'deprecated'] as const).map((s) => (
+                    <option value={s} selected={s === product.status}>
+                      {s.replace('_', ' ')}
+                    </option>
+                  ))}
+                </select>
+                <button class="gs-btn gs-btn--primary" data-save-product={product.id} type="button">
+                  Save
+                </button>
+              </div>
+            </div>
+
+            <div class="gs-grid columns-2" style="margin-top:1.5rem; gap:1.5rem;">
+              <div>
+                <h3 class="gs-text-sm" style="font-weight:700; margin-bottom:.5rem;">Features</h3>
+                <ul class="gs-text-sm">
+                  {product.features.map((f) => <li>· {f}</li>)}
+                </ul>
+              </div>
+              <div>
+                <h3 class="gs-text-sm" style="font-weight:700; margin-bottom:.5rem;">Plans</h3>
+                <ul class="gs-text-sm">
+                  {product.plans.map((plan) => (
+                    <li>
+                      <strong>{plan.name}</strong> —{' '}
+                      {fmtPrice(plan.price, plan.currency, plan.interval)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <details style="margin-top:1.25rem;">
+              <summary class="gs-link gs-text-sm" style="cursor:pointer;">Settings</summary>
+              <div style="margin-top:.75rem;">
+                <textarea
+                  class="gs-textarea"
+                  rows={6}
+                  data-product-settings={product.id}
+                  aria-label={`Settings JSON for ${product.name}`}
+                >{JSON.stringify(product.settings, null, 2)}</textarea>
+                <p class="gs-text-sm" style="margin-top:.5rem; opacity:.65;">
+                  Last updated: {new Date(product.updatedAt).toLocaleString()}
+                </p>
+              </div>
+            </details>
+          </div>
+        ))}
+      </>
+    )}
+  </section>
+
+  <div id="toast" class="gs-toast" aria-live="polite"></div>
+
+  <script>
+    const toast = document.getElementById('toast');
+    const showToast = (msg: string, ok = true) => {
+      if (!toast) return;
+      toast.textContent = msg;
+      toast.className = `gs-toast ${ok ? 'gs-toast--ok' : 'gs-toast--err'}`;
+      setTimeout(() => { toast.className = 'gs-toast'; }, 3500);
+    };
+
+    document.querySelectorAll<HTMLButtonElement>('[data-save-product]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.saveProduct!;
+        const statusEl = document.querySelector<HTMLSelectElement>(`[data-product-status="${id}"]`);
+        const settingsEl = document.querySelector<HTMLTextAreaElement>(`[data-product-settings="${id}"]`);
+
+        let settings: Record<string, unknown> | undefined;
+        if (settingsEl?.value) {
+          try {
+            settings = JSON.parse(settingsEl.value);
+          } catch {
+            showToast('Settings JSON is invalid.', false);
+            return;
+          }
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Saving…';
+        try {
+          const res = await fetch(`/api/admin/products?id=${encodeURIComponent(id)}`, {
+            method: 'PUT',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+              status: statusEl?.value,
+              ...(settings !== undefined ? { settings } : {}),
+            }),
+          });
+
+          if (res.ok) {
+            showToast('Product saved.');
+          } else {
+            const err = await res.text();
+            showToast(err || 'Save failed.', false);
+          }
+        } catch {
+          showToast('Network error.', false);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Save';
+        }
+      });
+    });
+  </script>
+</AdminLayout>
+
+<style>
+  .gs-select {
+    background: var(--gs-surface, rgba(255,255,255,.06));
+    border: 1px solid var(--gs-border, rgba(255,255,255,.14));
+    border-radius: .5rem;
+    color: inherit;
+    font-size: .85rem;
+    padding: .4rem .75rem;
+    cursor: pointer;
+  }
+  .gs-btn {
+    border: 0;
+    border-radius: .5rem;
+    cursor: pointer;
+    font-size: .85rem;
+    font-weight: 700;
+    padding: .4rem .9rem;
+  }
+  .gs-btn--primary {
+    background: var(--gs-accent, #d96a32);
+    color: var(--gs-bg, #050507);
+  }
+  .gs-textarea {
+    width: 100%;
+    background: var(--gs-surface, rgba(255,255,255,.05));
+    border: 1px solid var(--gs-border, rgba(255,255,255,.12));
+    border-radius: .5rem;
+    color: inherit;
+    font-family: monospace;
+    font-size: .8rem;
+    padding: .75rem;
+    resize: vertical;
+  }
+  .gs-toast {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    padding: .6rem 1.2rem;
+    border-radius: .5rem;
+    font-size: .85rem;
+    font-weight: 600;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s;
+    z-index: 99;
+  }
+  .gs-toast--ok {
+    background: var(--gs-success-bg, rgba(88,214,141,.15));
+    color: var(--gs-success, #58d68d);
+    border: 1px solid currentColor;
+    opacity: 1;
+  }
+  .gs-toast--err {
+    background: var(--gs-error-bg, rgba(255,100,100,.12));
+    color: var(--gs-error, #ff7a7a);
+    border: 1px solid currentColor;
+    opacity: 1;
+  }
+</style>

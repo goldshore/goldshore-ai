@@ -1,0 +1,5 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro'; import AdminWorkspaceManager from '../../components/AdminWorkspaceManager.astro';
+if (!Astro.locals.adminSession?.isAuthenticated) return Astro.redirect('/login');
+---
+<AdminLayout title="Governance" requiredPermission="system:read"><AdminWorkspaceManager type="governance" title="Governance" description="Maintain policies, controls, owners, and compliance evidence." fields={['owner','status','control','evidence_url']}/></AdminLayout>

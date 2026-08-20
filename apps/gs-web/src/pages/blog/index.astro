@@ -1,0 +1,97 @@
+---
+import { GSButton } from '@goldshore/ui';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FlowSection from '../../components/FlowSection.astro';
+
+export const prerender = false;
+---
+
+<BaseLayout
+  title="Signals | GoldShore"
+  description="Field notes on risk intelligence, AI operations, and resilient systems from the GoldShore team."
+  canonicalPath="/blog"
+>
+  <FlowSection variant="hero">
+    <div>
+      <p class="gs-eyebrow">Signals</p>
+      <h1>Signals</h1>
+      <p class="gs-text-lg">Field notes on risk intelligence, AI operations, and resilient systems — coming soon.</p>
+    </div>
+    <div class="gs-card">
+      <h3 class="section-title">Temporary intro</h3>
+      <p>This placeholder keeps navigation live while we finalize our first round of published Signals posts.</p>
+    </div>
+  </FlowSection>
+
+  <FlowSection>
+    <div class="gs-card">
+      <h2 class="section-title">Get notified when Signals launches</h2>
+      <p>Leave your email and we'll let you know when the first posts go live.</p>
+      <form id="newsletter-form">
+        <div class="gs-form-group">
+          <label for="newsletter-email">Email</label>
+          <input type="email" id="newsletter-email" name="email" placeholder="you@company.com" required />
+        </div>
+        <GSButton type="submit">Notify me</GSButton>
+      </form>
+      <p id="newsletter-status" role="status"></p>
+    </div>
+  </FlowSection>
+</BaseLayout>
+
+<script>
+  const form = document.getElementById('newsletter-form') as HTMLFormElement | null;
+  const status = document.getElementById('newsletter-status');
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = (document.getElementById('newsletter-email') as HTMLInputElement)?.value;
+    if (!email || !status) return;
+
+    status.textContent = 'Submitting…';
+    try {
+      const response = await fetch('/api/leads/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, source: 'blog-signals' }),
+      });
+      status.textContent = response.ok
+        ? "Thanks — we'll let you know when Signals launches."
+        : 'Something went wrong. Please try again.';
+      if (response.ok) form.reset();
+    } catch {
+      status.textContent = 'Something went wrong. Please try again.';
+    }
+  });
+</script>
+
+<style>
+  .gs-form-group {
+    margin-bottom: 1.25rem;
+  }
+
+  .gs-form-group label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+
+  .gs-form-group input {
+    width: 100%;
+    max-width: 24rem;
+    padding: 0.75rem 1rem;
+    background: var(--gs-surface-2, rgba(255, 255, 255, 0.04));
+    border: 1px solid var(--gs-border-color, rgba(255, 255, 255, 0.12));
+    border-radius: 8px;
+    color: inherit;
+    font-family: inherit;
+    font-size: 0.9rem;
+  }
+
+  #newsletter-status {
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    opacity: 0.8;
+  }
+</style>

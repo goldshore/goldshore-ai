@@ -1,0 +1,55 @@
+---
+import { publicMenuGroups } from '../config/navigation';
+import { getPublicSiteUrl } from '../utils/public-site';
+
+const publicUrl = (href: string) => getPublicSiteUrl(Astro.url.hostname, href);
+---
+
+<footer class="gs-theme-footer" data-tiered-footer>
+  <div class="gs-theme-footer__inner">
+    <div class="gs-theme-footer__brand">
+      <a href={publicUrl('/')} class="gs-theme-footer__lockup" aria-label="GoldShore home">
+        <img src="/assets/penrose-logo.png" alt="" class="gs-theme-footer__logo" />
+        <span>
+          <strong>GOLDSHORE</strong>
+          <small>Applied Intelligence · Digital Systems · Consulting</small>
+        </span>
+      </a>
+      <p>Infrastructure for high-trust AI, risk tooling, and resilient operator systems.</p>
+      <a href={publicUrl('/contact/')} class="gs-theme-footer__cta">Get a Briefing</a>
+    </div>
+
+    <nav class="gs-theme-footer__menu" aria-label="Footer navigation">
+      {publicMenuGroups.map((column) => (
+        <details class="gs-theme-footer__tier" name="footer-tier">
+          <summary>{column.label}<span aria-hidden="true">+</span></summary>
+          <div class="gs-theme-footer__submenu">
+            {column.links.map((link) => (
+              <a href={link.external ? link.href : publicUrl(link.href)} target={link.external ? '_blank' : undefined} rel={link.external ? 'noopener noreferrer' : undefined}>{link.label}</a>
+            ))}
+          </div>
+        </details>
+      ))}
+    </nav>
+  </div>
+  <div class="gs-theme-footer__credits">
+    <small>© 2026 Gold Shore Labs. All rights reserved.</small>
+    <div><a href={publicUrl('/legal/privacy/')}>Privacy</a><a href={publicUrl('/legal/')}>Security</a><a href={publicUrl('/legal/terms/')}>Terms</a></div>
+  </div>
+</footer>
+
+<script>
+  const initializeTieredFooter = () => {
+    document.querySelectorAll('[data-tiered-footer]').forEach((footer) => {
+      if (!(footer instanceof HTMLElement) || footer.dataset.ready === 'true') return;
+      footer.dataset.ready = 'true';
+      const tiers = [...footer.querySelectorAll('details')];
+      tiers.forEach((tier) => tier.addEventListener('toggle', () => {
+        if (!tier.open) return;
+        tiers.forEach((other) => { if (other !== tier) other.open = false; });
+      }));
+    });
+  };
+  initializeTieredFooter();
+  document.addEventListener('astro:page-load', initializeTieredFooter);
+</script>

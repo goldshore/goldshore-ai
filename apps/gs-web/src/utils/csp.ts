@@ -6,7 +6,6 @@ type ContentSecurityPolicyDirectives = Record<string, readonly string[]>;
 
 export const GOLDSHORE_API_ORIGINS = [
   'https://api.goldshore.ai',
-  'https://api-preview.goldshore.ai',
 ] as const;
 
 export const WEB_CONNECT_SRC = [SELF, ...GOLDSHORE_API_ORIGINS] as const;

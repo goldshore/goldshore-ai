@@ -1,5 +1,5 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import AdminLayout from "../../layouts/AdminLayout.astro";
 
 export const prerender = false;
 
@@ -23,17 +23,6 @@ type LeadSubmission = {
   user_agent: string | null;
 };
 
-const runtime = Astro.locals.runtime as {
-  env?: {
-    PLATFORM_DB?: {
-      prepare(query: string): {
-        bind(...values: string[]): { all(): Promise<{ results?: LeadSubmission[] }> };
-        all(): Promise<{ results?: LeadSubmission[] }>;
-      };
-    };
-  };
-} | undefined;
-const db = runtime?.env?.PLATFORM_DB;
 const url = new URL(Astro.request.url);
 const statusFilter = url.searchParams.get('status');
 const allowedStatuses = ['new', 'read', 'archived'] as const;
@@ -41,17 +30,24 @@ const filterStatus = allowedStatuses.includes(statusFilter as (typeof allowedSta
   ? statusFilter
   : null;
 const redirectTo = `${url.pathname}${url.search}`;
+const page = Math.max(1, Number.parseInt(url.searchParams.get('page') ?? '1', 10) || 1);
+const pageSize = 25;
 
 let submissions: LeadSubmission[] = [];
+let totalPages = 1;
 let errorMessage = '';
 
 const submissionsUrl = new URL('/api/admin/lead-submissions', url.origin);
 if (filterStatus) submissionsUrl.searchParams.set('status', filterStatus);
+submissionsUrl.searchParams.set('page', String(page));
+submissionsUrl.searchParams.set('pageSize', String(pageSize));
 
 try {
   const response = await fetch(submissionsUrl, { headers: Astro.request.headers });
   if (response.ok) {
-    submissions = (await response.json()) as LeadSubmission[];
+    const payload = await response.json() as { items: LeadSubmission[]; pagination: { pages: number } };
+    submissions = payload.items;
+    totalPages = payload.pagination.pages;
   } else {
     errorMessage = await response.text();
   }
@@ -71,7 +67,7 @@ const buildMailto = (email: string | null, name: string | null) => {
 };
 ---
 
-<BaseLayout title="Lead Submissions | GoldShore" description="Admin review for inbound leads">
+<AdminLayout title="Lead Submissions | GoldShore">
   <section class="gs-section">
     <div class="gs-grid columns-2">
       <div>
@@ -164,6 +160,11 @@ const buildMailto = (email: string | null, name: string | null) => {
           </tbody>
         </table>
       </div>
+      <nav aria-label="Submission pages" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+        <a class="gs-button" aria-disabled={page <= 1} href={`?${new URLSearchParams({ ...(filterStatus ? { status: filterStatus } : {}), page: String(Math.max(1, page - 1)) })}`}>Previous</a>
+        <span>Page {page} of {totalPages}</span>
+        <a class="gs-button" aria-disabled={page >= totalPages} href={`?${new URLSearchParams({ ...(filterStatus ? { status: filterStatus } : {}), page: String(Math.min(totalPages, page + 1)) })}`}>Next</a>
+      </nav>
     )}
   </section>
-</BaseLayout>
+</AdminLayout>
