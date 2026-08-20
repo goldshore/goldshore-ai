@@ -19,7 +19,7 @@ test('gs-web retains its Astro SSR Worker-with-Assets deployment contract', () =
   assert.match(webWrangler, /^main = "\.\/src\/worker\.ts"$/m);
   assert.match(
     webWrangler,
-    /^\[assets\]\r?\ndirectory = "\.\/dist"\r?\nbinding = "ASSETS"$/m,
+    /^\[assets\]\r?\ndirectory = "\.\/dist"\r?\nbinding = "ASSETS"\r?\nrun_worker_first = true$/m,
   );
 
   // The checked-in entrypoint delegates requests to Astro's SSR handler. A
@@ -48,7 +48,7 @@ test('gs-web has no direct operational bindings beyond its session store', () =>
   // deploy manifest before an environment is selected, and environments do not
   // inherit bindings, so dropping either one lets Cloudflare auto-provision a
   // replacement namespace at deploy time.
-  const sessionId = '805bff3293c2483facc5225e6ff9af60';
+  const sessionId = '7bf44b9bf6cd4ca69cd99573bbaffa52';
   assert.match(webWrangler, new RegExp(`\\[\\[kv_namespaces\\]\\]\\r?\\nbinding = "SESSION"\\r?\\nid = "${sessionId}"`));
   assert.match(webWrangler, new RegExp(`\\[\\[env\\.prod\\.kv_namespaces\\]\\]\\r?\\nbinding = "SESSION"\\r?\\nid = "${sessionId}"`));
 

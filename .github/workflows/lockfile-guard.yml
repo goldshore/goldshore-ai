@@ -10,6 +10,15 @@ permissions:
 on:
   pull_request:
   workflow_dispatch:
+    inputs:
+      allow_new_lockfile:
+        description: 'Allow creating pnpm-lock.yaml if it does not exist'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
 
 concurrency:
   group: lockfile-guard-${{ github.workflow }}-${{ github.ref }}

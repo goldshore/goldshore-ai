@@ -6,6 +6,11 @@ import deploy from "./admin/index";
 import repoHealth from "./admin/repo-health";
 import mergeCockpit from "./admin/merge-cockpit";
 import mcpAssistant from "./admin/mcp-assistant";
+import mailOperations from './admin/mail-operations';
+import sqlSync from './admin/sql-sync';
+import adIntegrations from './admin/ad-integrations';
+import { escapeHtml, isValidEmail } from '@goldshore/utils';
+import { enqueueMailJob } from '../lib/mail-queue';
 
 type UserRow = {
   id: string; email: string; display_name: string | null; status: string;
@@ -14,7 +19,106 @@ type UserRow = {
 
 const admin = new Hono<{ Bindings: Env; Variables: Variables }>();
 admin.route('/mcp-assistant', mcpAssistant);
+admin.route('/', mailOperations);
+admin.route('/', sqlSync);
+admin.route('/ads', adIntegrations);
 const validStatus = new Set(["active", "invited", "disabled"]);
+const workspaceTypes = new Set(['governance', 'projects', 'workflows', 'email_templates', 'subscribe_ctas']);
+const settingsProviders = new Set(['claude', 'openai', 'openclaw', 'gemini']);
+type SiteSettings = {
+  apiUrl: string; contactNotificationEmails: string; llmProvider: string;
+  riskRadarEnabled: boolean; briefingFormEnabled: boolean;
+  maintenanceMode: boolean; analyticsEnabled: boolean; updatedAt: string;
+};
+
+const defaultSettings = (env: Env): SiteSettings => ({
+  apiUrl: env.API_ORIGIN || 'https://api.goldshore.ai',
+  contactNotificationEmails: env.CONTACT_NOTIFICATION_EMAILS || '',
+  llmProvider: env.LLM_PROVIDER || 'claude',
+  riskRadarEnabled: true,
+  briefingFormEnabled: true,
+  maintenanceMode: false,
+  analyticsEnabled: true,
+  updatedAt: '',
+});
+
+admin.get('/settings', requirePermission('api_configuration:read'), async (c) => {
+  const row = await c.env.PLATFORM_DB.prepare("SELECT data,last_updated FROM admin_cache WHERE id='site-settings' AND entity_type='settings' LIMIT 1")
+    .first<{ data: string; last_updated: string }>();
+  const settings = row ? { ...defaultSettings(c.env), ...JSON.parse(row.data), updatedAt: row.last_updated } : defaultSettings(c.env);
+  return c.json({ success: true, settings });
+});
+
+admin.put('/settings', requirePermission('api_configuration:update'), async (c) => {
+  const payload = await c.req.json<Partial<SiteSettings>>().catch(() => null);
+  if (!payload) return c.json({ error: 'Invalid JSON payload.' }, 400);
+  let apiUrl: URL;
+  try { apiUrl = new URL(payload.apiUrl ?? ''); } catch { return c.json({ error: 'A valid API URL is required.' }, 400); }
+  if (apiUrl.protocol !== 'https:') return c.json({ error: 'The API URL must use HTTPS.' }, 400);
+  if (!settingsProviders.has(payload.llmProvider ?? '')) return c.json({ error: 'Invalid LLM provider.' }, 400);
+  const emails = (payload.contactNotificationEmails ?? '').split(',').map((email) => email.trim()).filter(Boolean);
+  if (emails.some((email) => !isValidEmail(email))) return c.json({ error: 'One or more notification emails are invalid.' }, 400);
+  const settings = {
+    apiUrl: apiUrl.toString().replace(/\/$/, ''),
+    contactNotificationEmails: emails.join(', '),
+    llmProvider: payload.llmProvider,
+    riskRadarEnabled: Boolean(payload.riskRadarEnabled),
+    briefingFormEnabled: Boolean(payload.briefingFormEnabled),
+    maintenanceMode: Boolean(payload.maintenanceMode),
+    analyticsEnabled: Boolean(payload.analyticsEnabled),
+  };
+  await c.env.PLATFORM_DB.prepare(`INSERT INTO admin_cache(id,entity_type,entity_id,data,last_updated,ttl_seconds,cached_at)
+    VALUES('site-settings','settings','site-settings',?,datetime('now'),31536000,datetime('now'))
+    ON CONFLICT(id) DO UPDATE SET data=excluded.data,last_updated=datetime('now'),cached_at=datetime('now')`)
+    .bind(JSON.stringify(settings)).run();
+  await audit(c, 'admin.settings.update', 'success', { fields: Object.keys(settings) });
+  return c.json({ success: true, settings: { ...settings, updatedAt: new Date().toISOString() } });
+});
+
+admin.get('/workspaces/:type', requirePermission('system:read'), async (c) => {
+  const type = c.req.param('type');
+  if (!workspaceTypes.has(type)) return c.json({ error: 'Unsupported workspace.' }, 404);
+  const rows = await c.env.PLATFORM_DB.prepare('SELECT id,entity_id,data,last_updated FROM admin_cache WHERE entity_type=? ORDER BY last_updated DESC').bind(type).all<{ id: string; entity_id: string | null; data: string; last_updated: string }>();
+  return c.json({ items: rows.results.map((row) => ({ id: row.id, key: row.entity_id, ...JSON.parse(row.data), updatedAt: row.last_updated })) });
+});
+
+admin.put('/workspaces/:type/:id', requirePermission('system:write'), async (c) => {
+  const type = c.req.param('type');
+  if (!workspaceTypes.has(type)) return c.json({ error: 'Unsupported workspace.' }, 404);
+  const payload = await c.req.json<Record<string, unknown>>().catch(() => null);
+  if (!payload || typeof payload.title !== 'string' || !payload.title.trim()) return c.json({ error: 'A title is required.' }, 400);
+  const id = c.req.param('id');
+  await c.env.PLATFORM_DB.prepare(`INSERT INTO admin_cache(id,entity_type,entity_id,data,last_updated,ttl_seconds,cached_at)
+    VALUES(?,?,?,?,datetime('now'),31536000,datetime('now')) ON CONFLICT(id) DO UPDATE SET data=excluded.data,last_updated=datetime('now'),cached_at=datetime('now')`)
+    .bind(id, type, typeof payload.key === 'string' ? payload.key : id, JSON.stringify(payload)).run();
+  await audit(c, `admin.workspace.${type}.save`, 'success', { id });
+  return c.json({ id, ...payload });
+});
+
+admin.delete('/workspaces/:type/:id', requirePermission('system:write'), async (c) => {
+  const type = c.req.param('type');
+  if (!workspaceTypes.has(type)) return c.json({ error: 'Unsupported workspace.' }, 404);
+  await c.env.PLATFORM_DB.prepare('DELETE FROM admin_cache WHERE id=? AND entity_type=?').bind(c.req.param('id'), type).run();
+  await audit(c, `admin.workspace.${type}.delete`, 'success', { id: c.req.param('id') });
+  return c.body(null, 204);
+});
+
+admin.post('/email/send', requirePermission('system:write'), async (c) => {
+  const payload = await c.req.json<{ to?: string; subject?: string; text?: string }>().catch(() => null);
+  const to = payload?.to?.trim() ?? '';
+  const subject = payload?.subject?.trim() ?? '';
+  const text = payload?.text?.trim() ?? '';
+  if (!isValidEmail(to) || !subject || !text) return c.json({ error: 'A valid recipient, subject, and message are required.' }, 400);
+  if (subject.length > 200 || text.length > 20_000) return c.json({ error: 'Message exceeds the allowed size.' }, 400);
+  const delivery = await enqueueMailJob(c.env, {
+    to: [{ email: to }], subject, text,
+    html: `<p>${escapeHtml(text).replace(/\n/g, '<br>')}</p>`,
+  });
+  await audit(c, 'admin.email.queue', delivery.attempted && delivery.ok ? 'success' : 'failure', { recipientDomain: to.split('@')[1] });
+  return delivery.attempted && delivery.ok
+    ? c.json({ ok: true, jobId: delivery.body }, 202)
+    : c.json({ error: 'Mail queue is unavailable.' }, 503);
+});
 const sensitiveOperations: Record<string, AdminPermission> = {
   "secret-rotation": "secret_metadata:rotate",
   "production-promotion": "deployments:promote",
@@ -56,9 +160,30 @@ admin.get("/session", async (c) => {
 });
 
 admin.get("/users", requirePermission("users:read"), async (c) => {
-  const users = await c.env.PLATFORM_DB.prepare(`${userSelect} ORDER BY u.created_at DESC`).all<UserRow>();
+  const page = Math.max(1, Number.parseInt(c.req.query('page') ?? '1', 10) || 1);
+  const pageSize = Math.min(100, Math.max(10, Number.parseInt(c.req.query('pageSize') ?? '25', 10) || 25));
+  const users = await c.env.PLATFORM_DB.prepare(`${userSelect} ORDER BY u.created_at DESC LIMIT ? OFFSET ?`).bind(pageSize, (page - 1) * pageSize).all<UserRow>();
+  const count = await c.env.PLATFORM_DB.prepare('SELECT COUNT(*) total FROM users WHERE deleted_at IS NULL').first<{ total: number }>();
+  const total = Number(count?.total ?? 0);
   await audit(c, "admin.users.list", "success", { count: users.results.length });
-  return c.json(users.results);
+  return c.json({ items: users.results, pagination: { page, pageSize, total, pages: Math.max(1, Math.ceil(total / pageSize)) } });
+});
+
+admin.get('/email/jobs', requirePermission('system:read'), async (c) => {
+  const allowedMailStatuses = new Set(['queued', 'processing', 'retrying', 'sent', 'failed']);
+  const status = c.req.query('status');
+  const page = Math.max(1, Number.parseInt(c.req.query('page') ?? '1', 10) || 1);
+  const pageSize = Math.min(100, Math.max(10, Number.parseInt(c.req.query('pageSize') ?? '25', 10) || 25));
+  const filtered = Boolean(status && allowedMailStatuses.has(status));
+  const where = filtered ? 'WHERE status = ?' : '';
+  const values: unknown[] = filtered ? [status] : [];
+  values.push(pageSize, (page - 1) * pageSize);
+  const result = await c.env.PLATFORM_DB.prepare(`SELECT id,event_type,status,recipient_count,attempts,message_id,last_error_code,created_at,updated_at,sent_at FROM mail_jobs ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`)
+    .bind(...values).all();
+  const countStatement = c.env.PLATFORM_DB.prepare(`SELECT COUNT(*) total FROM mail_jobs ${where}`);
+  const count = filtered ? await countStatement.bind(status).first<{ total: number }>() : await countStatement.first<{ total: number }>();
+  const total = Number(count?.total ?? 0);
+  return c.json({ items: result.results, pagination: { page, pageSize, total, pages: Math.max(1, Math.ceil(total / pageSize)) } });
 });
 
 admin.post("/users", requirePermission("users:create"), async (c) => {
@@ -183,6 +308,40 @@ admin.post("/operations/:operation", async (c, next) => {
   await c.env.PLATFORM_DB.prepare("UPDATE approvals SET status='executed',executed_at=datetime('now') WHERE id=?").bind(approval.id).run();
   await audit(c, `admin.operation.${c.req.param("operation")}`, "success", { approvalId: approval.id });
   return c.json({ authorized: true, approvalId: approval.id });
+});
+
+admin.get("/workflows", requirePermission("system:read"), async (c) => {
+  const offset = Math.max(0, Number.parseInt(c.req.query('offset') ?? '0', 10) || 0);
+  const limit = Math.min(100, Math.max(1, Number.parseInt(c.req.query('limit') ?? '50', 10) || 50));
+  const rows = await c.env.PLATFORM_DB.prepare('SELECT id,entity_id,data,last_updated FROM admin_cache WHERE entity_type=? ORDER BY last_updated DESC LIMIT ? OFFSET ?')
+    .bind('workflows', limit, offset).all<{ id: string; entity_id: string | null; data: string; last_updated: string }>();
+  const count = await c.env.PLATFORM_DB.prepare('SELECT COUNT(*) total FROM admin_cache WHERE entity_type=?').bind('workflows').first<{ total: number }>();
+  const total = Number(count?.total ?? 0);
+  return c.json({
+    items: rows.results.map((row) => ({ id: row.id, key: row.entity_id, ...JSON.parse(row.data), updatedAt: row.last_updated })),
+    pagination: { offset, limit, total, hasMore: offset + limit < total }
+  });
+});
+
+admin.get("/lead-submissions", requirePermission("system:read"), async (c) => {
+  const page = Math.max(1, Number.parseInt(c.req.query('page') ?? '1', 10) || 1);
+  const pageSize = Math.min(100, Math.max(10, Number.parseInt(c.req.query('pageSize') ?? '25', 10) || 25));
+  const status = c.req.query('status');
+  const whereClause = status && ['new', 'read', 'archived'].includes(status) ? `WHERE status = '${status.replace(/'/g, "''")}'` : '';
+  const paginationClause = ` LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}`;
+  const rows = await c.env.PLATFORM_DB.prepare(`SELECT id, form_type, name, email, company, role, website, team_size, industry, timeline, budget, goals, message, status, received_at, ip_address, user_agent FROM lead_submissions ${whereClause} ORDER BY received_at DESC${paginationClause}`)
+    .all<{ id: string; form_type: string; name: string | null; email: string | null; company: string | null; role: string | null; website: string | null; team_size: string | null; industry: string | null; timeline: string | null; budget: string | null; goals: string | null; message: string | null; status: string; received_at: string; ip_address: string | null; user_agent: string | null }>();
+  const count = await c.env.PLATFORM_DB.prepare(`SELECT COUNT(*) AS total FROM lead_submissions ${whereClause}`).first<{ total: number }>();
+  const total = Number(count?.total ?? 0);
+  return c.json({ items: rows.results, pagination: { page, pageSize, total, pages: Math.max(1, Math.ceil(total / pageSize)) } });
+});
+
+admin.post("/lead-submissions", requirePermission("system:write"), async (c) => {
+  const payload = await c.req.json<{ id?: string; status?: string }>().catch(() => null);
+  if (!payload?.id || !['new', 'read', 'archived'].includes(payload.status ?? '')) return c.json({ error: 'Invalid submission ID or status.' }, 400);
+  await c.env.PLATFORM_DB.prepare('UPDATE lead_submissions SET status = ? WHERE id = ?').bind(payload.status, payload.id).run();
+  await audit(c, 'admin.lead-submission.update', 'success', { submissionId: payload.id, status: payload.status });
+  return c.json({ ok: true, submissionId: payload.id, status: payload.status });
 });
 
 admin.route("/deploy", deploy);

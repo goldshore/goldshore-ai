@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { Hono } from 'hono';
 import { IntegrationRegistry } from '../lib/IntegrationRegistry';
 import integrations from './integrations';
+import { buildBindingPatch } from './system';
 import type { Env, Variables } from '../types';
 
 const createTestApp = (claims: any = null) => {
@@ -108,5 +109,43 @@ describe('Integration Management API security', () => {
     assert.equal(mockKV.list.mock.callCount(), 0);
     assert.equal(mockKV.put.mock.callCount(), 0);
     assert.equal(auditRun.mock.callCount(), 1);
+  });
+
+  it('uses dedicated secret permissions for credential mutations', async () => {
+    const viewer = createTestApp({ roles: ['viewer'], email: 'viewer@example.com' });
+    const denied = await viewer.app.request('/integrations/keys', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ integration_id: 'openai', key_type: 'apiKey', value: 'not-a-real-secret' }),
+    });
+    assert.equal(denied.status, 403);
+
+    const owner = createTestApp({ roles: ['owner'], email: 'owner@example.com' });
+    const invalid = await owner.app.request('/integrations/keys', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ integration_id: 'openai', key_type: 'apiKey', value: 'short' }),
+    });
+    assert.equal(invalid.status, 400);
+  });
+});
+
+describe('Worker binding mutation plans', () => {
+  it('inherits every untouched binding and replaces only the selected variable', () => {
+    const result = buildBindingPatch([
+      { name: 'DB', type: 'd1', database_id: 'database-id' },
+      { name: 'TOKEN', type: 'secret_text' },
+      { name: 'FEATURE', type: 'plain_text', text: 'old' },
+    ], 'FEATURE', { name: 'FEATURE', type: 'plain_text', text: 'new' });
+    assert.deepEqual(result, [
+      { name: 'DB', type: 'inherit', version_id: 'latest' },
+      { name: 'TOKEN', type: 'inherit', version_id: 'latest' },
+      { name: 'FEATURE', type: 'plain_text', text: 'new' },
+    ]);
+  });
+
+  it('deletes only the selected binding while inheriting all others', () => {
+    assert.deepEqual(buildBindingPatch([
+      { name: 'KV', type: 'kv_namespace', namespace_id: 'namespace-id' },
+      { name: 'OLD_FLAG', type: 'json', json: true },
+    ], 'OLD_FLAG'), [{ name: 'KV', type: 'inherit', version_id: 'latest' }]);
   });
 });

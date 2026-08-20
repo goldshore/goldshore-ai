@@ -93,6 +93,8 @@ the current Wrangler contract.
   - Namespace: `gs_api_kv_001` _(canonical; historical alias: `goldshore-api-kv`)_
   - Binding: `RISK_RADAR_CACHE`
   - Namespace: `gs-risk-radar-cache` / `gs-risk-radar-cache-preview` _(Risk Radar response and signal cache; API-only)_
+  - Binding: `MCP_WORKERS_PROMPT`
+  - Namespace: `mcp-workers-prompt-prod` / `mcp-workers-prompt-preview` _(MCP worker prompt templates and system instructions)_
 - D1:
   - Binding: `PLATFORM_DB`
   - Database: `gs_platform_db` _(canonical platform database)_

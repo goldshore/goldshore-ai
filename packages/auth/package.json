@@ -9,6 +9,11 @@
       "types": "./index.ts",
       "import": "./index.ts",
       "default": "./index.ts"
+    },
+    "./subscription-rbac": {
+      "types": "./subscription-rbac.ts",
+      "import": "./subscription-rbac.ts",
+      "default": "./subscription-rbac.ts"
     }
   },
   "dependencies": {
