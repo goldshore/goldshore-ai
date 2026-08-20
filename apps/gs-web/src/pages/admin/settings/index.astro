@@ -4,7 +4,7 @@ export const prerender = false;
 import AdminLayout from "../../../layouts/AdminLayout.astro";
 import SettingsManager from "../../../components/admin/SettingsManager";
 
-const jwtToken = Astro.cookies.get('CF-Authorization')?.value || '';
+const jwtToken = Astro.request.headers.get('CF-Authorization') || '';
 
 const apiBaseUrl = 'https://api.goldshore.ai/admin';
 
