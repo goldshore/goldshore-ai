@@ -4,6 +4,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import FlowSection from '../components/FlowSection.astro';
 
 export const prerender = false;
+
+const turnstileSiteKey = Astro.locals.TURNSTILE_SITE_KEY || import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || '';
 ---
 
 <BaseLayout
@@ -22,6 +24,7 @@ export const prerender = false;
       <input type="hidden" name="formType" value="lead-qualification" />
       <input type="hidden" name="redirectTo" value="/thank-you" />
       <input type="hidden" name="formStartedAt" value="" />
+      <input type="hidden" name="cf-turnstile-response" value="" />
       <div class="gs-honeypot" aria-hidden="true">
         <label for="companyWebsite">Company website</label>
         <input id="companyWebsite" name="companyWebsite" type="text" autocomplete="off" tabindex="-1" />
@@ -116,17 +119,48 @@ export const prerender = false;
         <label for="message">Anything else we should know?</label>
         <textarea id="message" name="message" rows="3"></textarea>
       </div>
+      {turnstileSiteKey && (
+        <div style="margin-bottom: 1rem;">
+          <div class="cf-turnstile" data-sitekey={turnstileSiteKey} data-theme="dark"></div>
+        </div>
+      )}
       <GSButton type="submit">Submit intake</GSButton>
     </form>
   </FlowSection>
 
-  <script>
+  <script is:inline define:vars={{turnstileSiteKey}}>
+    // Load Turnstile script if site key is configured
+    if (turnstileSiteKey && !window.turnstile) {
+      const script = document.createElement('script');
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+    }
+
     const form = document.querySelector('form[action="/api/contact"]');
     if (form instanceof HTMLFormElement) {
       const startedAtField = form.querySelector('[name="formStartedAt"]');
       if (startedAtField instanceof HTMLInputElement) {
         startedAtField.value = String(Date.now());
       }
+
+      // Capture Turnstile response before form submission
+      form.addEventListener('submit', (e) => {
+        if (turnstileSiteKey && window.turnstile) {
+          e.preventDefault();
+          const token = window.turnstile.getResponse();
+          if (!token) {
+            alert('Please complete the bot verification.');
+            return;
+          }
+          const responseField = form.querySelector('[name="cf-turnstile-response"]');
+          if (responseField instanceof HTMLInputElement) {
+            responseField.value = token;
+          }
+          form.submit();
+        }
+      });
     }
   </script>
 
