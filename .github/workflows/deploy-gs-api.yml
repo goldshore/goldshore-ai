@@ -82,6 +82,11 @@ jobs:
         working-directory: apps/gs-api
         run: pnpm exec wrangler d1 execute gs_platform_db --remote --file=db/migrations/0004_newsletter_subscribers.sql --env prod
 
+      - name: Reconcile legacy users schema
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        working-directory: apps/gs-api
+        run: bash scripts/reconcile-d1-users-schema.sh gs_platform_db prod
+
       - name: Apply Google Workspace RBAC schema
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         working-directory: apps/gs-api
@@ -106,7 +111,7 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: pnpm --filter @goldshore/gs-api exec wrangler deploy --env prod
 
-      - name: Health check (gs-api)
+      - name: Health and readiness checks (gs-api)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           set -euo pipefail
@@ -114,16 +119,17 @@ jobs:
           retry=0
           
           while [ $retry -lt $max_retries ]; do
-            echo "Health check attempt $((retry + 1))/$max_retries..."
-            if curl -fsS https://api.goldshore.ai/health >/dev/null 2>&1; then
-              echo "✅ gs-api is healthy"
+            echo "Health/readiness attempt $((retry + 1))/$max_retries..."
+            if curl -fsS https://api.goldshore.ai/health >/dev/null 2>&1 \
+              && curl -fsS https://api.goldshore.ai/ready >/dev/null 2>&1; then
+              echo "✅ gs-api is healthy and ready"
               exit 0
             fi
             retry=$((retry + 1))
             sleep 10
           done
           
-          echo "::error::gs-api failed health check after $max_retries attempts"
+          echo "::error::gs-api failed health or readiness checks after $max_retries attempts"
           exit 1
 
       - name: Deployment audit summary
