@@ -1,0 +1,59 @@
+---
+import MarketingLayout from '../../../layouts/MarketingLayout.astro';
+
+// Redirect to documentation page
+export const prerender = false;
+
+const redirectUrl = '/developer/docs/';
+---
+
+<MarketingLayout
+  title="API Reference | GoldShore Developer"
+  description="GoldShore API reference and gateway routing documentation."
+>
+  <meta http-equiv="refresh" content={`0;url=${redirectUrl}`} slot="head" />
+
+  <section class="api-reference-placeholder gs-shell-section">
+    <div class="placeholder-content">
+      <h1>API Reference</h1>
+      <p>Redirecting to documentation...</p>
+      <p><a href={redirectUrl}>Click here if you are not automatically redirected</a></p>
+    </div>
+  </section>
+</MarketingLayout>
+
+<style>
+  .api-reference-placeholder {
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .placeholder-content {
+    text-align: center;
+    max-width: 600px;
+  }
+
+  .placeholder-content h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+    color: var(--gs-text-primary);
+  }
+
+  .placeholder-content p {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    color: var(--gs-text-secondary);
+  }
+
+  .placeholder-content a {
+    color: var(--gs-primary);
+    text-decoration: underline;
+  }
+
+  .placeholder-content a:hover {
+    text-decoration-thickness: 2px;
+  }
+</style>
