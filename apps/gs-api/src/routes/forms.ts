@@ -169,7 +169,7 @@ forms.post('/:formId/submissions', async (c) => {
   }
   const turnstileValidation = await validateFormTurnstile(
     turnstileForm,
-    c.env.TURNSTILE_SECRET_KEY,
+    c.env.TURNSTILE_SECRET,
     c.req.raw,
   );
 
