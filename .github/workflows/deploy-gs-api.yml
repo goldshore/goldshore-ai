@@ -119,24 +119,19 @@ jobs:
             --env "$TARGET_ENV" \
             --tag "$VERSION_TAG" \
             --message "${GITHUB_REPOSITORY}@${GITHUB_SHA}" \
-            --preview-alias health-${GITHUB_RUN_ID} \
             --keep-vars \
             --strict 2>&1 | tee upload.log
-          candidate_url="$(sed -nE 's#.*(https://[^[:space:]]+).*#\1#p' upload.log | grep 'workers.dev' | tail -1 | sed 's/[),.;]*$//')"
-          test -n "$candidate_url" || { echo "::error::Wrangler did not return a candidate preview URL"; exit 1; }
-          echo "candidate_url=$candidate_url" >> "$GITHUB_OUTPUT"
-
-      - name: Health check immutable candidate
-        env:
-          CANDIDATE_URL: ${{ steps.upload.outputs.candidate_url }}
-        run: scripts/cloudflare/health-check.sh "$CANDIDATE_URL/health"
+          version_id="$(sed -nE 's/^Worker Version ID:[[:space:]]*([[:alnum:]-]+).*$/\1/p' upload.log | tail -1)"
+          test -n "$version_id" || { echo "::error::Wrangler did not return an immutable Worker version ID"; exit 1; }
+          echo "version_id=$version_id" >> "$GITHUB_OUTPUT"
 
       - name: Promote candidate to 100 percent traffic
         working-directory: apps/gs-api
         run: |
           pnpm exec wrangler versions deploy \
             --env "$TARGET_ENV" \
-            --version-tag "git-${GITHUB_SHA}@100%" \
+            --version-id "${{ steps.upload.outputs.version_id }}" \
+            --percentage 100 \
             --message "Promote validated ${GITHUB_SHA}" \
             --yes
 
