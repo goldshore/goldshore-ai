@@ -18,6 +18,15 @@ on:
     branches: [main]
     paths: *web-paths
   workflow_dispatch:
+    inputs:
+      skip_validation:
+        description: 'Skip validation step before deployment'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
 
 concurrency:
   group: deploy-gs-web-${{ github.ref }}

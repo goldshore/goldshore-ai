@@ -53,6 +53,34 @@ for (const filename of workflowFiles) {
       failures.push(`${filename}: job ${jobName} requires at least one step`);
     }
   }
+
+  if (filename === 'deploy-gs-api.yml') {
+    const deployJob = workflow.jobs.deploy;
+    const steps = Array.isArray(deployJob?.steps) ? deployJob.steps : [];
+    const stepIndex = (name) => steps.findIndex((step) => step?.name === name);
+    const runFor = (name) => steps.find((step) => step?.name === name)?.run ?? '';
+
+    const reconcileIndex = stepIndex('Reconcile legacy users schema');
+    const ownerMigrationIndex = stepIndex('Apply Google Workspace RBAC schema');
+    if (reconcileIndex < 0 || ownerMigrationIndex < 0 || reconcileIndex >= ownerMigrationIndex) {
+      failures.push(
+        `${filename}: legacy users schema reconciliation must run before the owner-role migration`,
+      );
+    }
+
+    if (!runFor('Reconcile legacy users schema').includes('scripts/reconcile-d1-users-schema.sh')) {
+      failures.push(`${filename}: users schema reconciliation must use the reviewed recovery script`);
+    }
+
+    if (!runFor('Deploy production Worker').includes('wrangler deploy --env prod')) {
+      failures.push(`${filename}: production API deployment must select the prod Wrangler environment`);
+    }
+
+    const readinessRun = runFor('Health and readiness checks (gs-api)');
+    if (!readinessRun.includes('/health') || !readinessRun.includes('/ready')) {
+      failures.push(`${filename}: production verification must check both API liveness and readiness`);
+    }
+  }
 }
 
 if (failures.length) {
