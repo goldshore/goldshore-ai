@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
-import { proxyApiRequest } from '../../../../lib/api-proxy';
+import { proxyAdminRequest } from '../../../../lib/api-proxy';
 
-const forward: APIRoute = ({ request, locals, params }) => proxyApiRequest(request, `/admin/users${params.path ? `/${params.path}` : ''}`, locals.PUBLIC_API);
+const forward: APIRoute = ({ request, locals, params }) => proxyAdminRequest(request, `/admin/users${params.path ? `/${params.path}` : ''}`, locals.PUBLIC_API);
 export const GET = forward;
 export const POST = forward;
 export const PATCH = forward;
