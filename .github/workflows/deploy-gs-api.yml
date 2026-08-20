@@ -11,6 +11,7 @@ on:
       - 'pnpm-workspace.yaml'
       - '.node-version'
       - '.nvmrc'
+      - '.github/actions/**'
       - '.github/workflows/deploy-gs-api.yml'
   push:
     branches: [main]
@@ -26,20 +27,16 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: deploy-gs-api-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-permissions:
-  contents: read
+  group: deploy-gs-api-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  deploy:
+  gs-api-build:
+    name: Validate production candidate
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
       contents: read
-    env:
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -57,25 +54,94 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - uses: ./.github/actions/normalize-cf-token
-        id: cf-token
-        if: github.event_name != 'pull_request'
-        with:
-          raw_token: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
-          token_name: 'CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN'
-
-      - name: Verify Cloudflare secrets
-        if: github.event_name != 'pull_request'
-        env:
-          CF_TOKEN: ${{ steps.cf-token.outputs.token }}
-        run: |
-          test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "::error::Missing CLOUDFLARE_ACCOUNT_ID" && exit 1)
-          test -n "$CF_TOKEN" || (echo "::error::Missing CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN" && exit 1)
-          echo "CLOUDFLARE_API_TOKEN=$CF_TOKEN" >> "$GITHUB_ENV"
-
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @goldshore/gs-api types:check
       - run: pnpm --filter @goldshore/gs-api build
+      - run: pnpm --filter @goldshore/gs-api exec wrangler deploy --env prod --dry-run
+
+  deploy:
+    name: Approve and deploy production
+    # Restored with the job header. Without it the secret-provisioning steps
+    # below run on every pull_request event, which this workflow triggers on.
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: gs-api-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Restored with the job header. This is the protected-environment approval
+    # gate added by #6470; without it production deploys need no approval.
+    environment: production
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      TARGET_ENV: prod
+      HEALTH_ORIGIN: https://api.goldshore.ai
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@f520eceda224fe1a4aed5a2a27a194379a409996 # v6
+        with:
+          version: 9.15.4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: ./.github/actions/normalize-cf-token
+        id: cf-token
+        with:
+          raw_token: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
+          token_name: CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN
+
+      - name: Configure Cloudflare authentication
+        env:
+          CF_TOKEN: ${{ steps.cf-token.outputs.token }}
+        run: |
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "::error::Missing CLOUDFLARE_ACCOUNT_ID"; exit 1; }
+          test -n "$CF_TOKEN" || { echo "::error::Missing deploy token"; exit 1; }
+          echo "CLOUDFLARE_API_TOKEN=$CF_TOKEN" >> "$GITHUB_ENV"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Preflight repository and remote contracts
+        run: |
+          set -euo pipefail
+          pnpm validate:workspace
+          pnpm validate:structure
+          pnpm --filter @goldshore/gs-api build
+          pnpm --filter @goldshore/gs-api exec wrangler whoami
+          node scripts/cloudflare/audit-worker-secrets.mjs --environment "$TARGET_ENV"
+
+      - name: Upload immutable candidate version
+        id: upload
+        working-directory: apps/gs-api
+        env:
+          VERSION_TAG: git-${{ github.sha }}
+        run: |
+          set -euo pipefail
+          pnpm exec wrangler versions upload \
+            --env "$TARGET_ENV" \
+            --tag "$VERSION_TAG" \
+            --message "${GITHUB_REPOSITORY}@${GITHUB_SHA}" \
+            --preview-alias health-${GITHUB_RUN_ID} \
+            --keep-vars \
+            --strict 2>&1 | tee upload.log
+          candidate_url="$(sed -nE 's#.*(https://[^[:space:]]+).*#\1#p' upload.log | grep 'workers.dev' | tail -1 | sed 's/[),.;]*$//')"
+          test -n "$candidate_url" || { echo "::error::Wrangler did not return a candidate preview URL"; exit 1; }
+          echo "candidate_url=$candidate_url" >> "$GITHUB_OUTPUT"
+
+      - name: Health check immutable candidate
+        env:
+          CANDIDATE_URL: ${{ steps.upload.outputs.candidate_url }}
+        run: scripts/cloudflare/health-check.sh "$CANDIDATE_URL/health"
+
+      - name: Promote candidate to 100 percent traffic
+        working-directory: apps/gs-api
+        run: |
+          pnpm exec wrangler versions deploy \
+            --env "$TARGET_ENV" \
+            --version-tag "git-${GITHUB_SHA}@100%" \
+            --message "Promote validated ${GITHUB_SHA}" \
+            --yes
+
+      - name: Health check promoted deployment
+        run: scripts/cloudflare/health-check.sh "$HEALTH_ORIGIN/health"
 
       - name: Apply newsletter subscriber schema
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -106,10 +172,6 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         working-directory: apps/gs-api
         run: pnpm exec wrangler d1 execute gs_platform_db --remote --env prod --file=db/migrations/0009_infrastructure_baseline.sql
-
-      - name: Deploy production Worker
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: pnpm --filter @goldshore/gs-api exec wrangler deploy --env prod
 
       - name: Health and readiness checks (gs-api)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'

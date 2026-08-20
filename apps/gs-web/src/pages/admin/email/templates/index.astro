@@ -4,7 +4,7 @@ export const prerender = false;
 import AdminLayout from "../../../../layouts/AdminLayout.astro";
 import EmailTemplatesManager from "../../../../components/admin/EmailTemplatesManager";
 
-const jwtToken = Astro.cookies.get('CF-Authorization')?.value || '';
+const jwtToken = Astro.request.headers.get('CF-Access-JWT-Assertion') || '';
 const apiBaseUrl = 'https://api.goldshore.ai/admin';
 
 let templates = { items: [], error: null as string | null };
