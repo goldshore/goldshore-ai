@@ -31,17 +31,14 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  gs-api-build:
+    name: Validate production candidate
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
       contents: read
-    env:
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      TARGET_ENV: ${{ github.ref == 'refs/heads/main' && 'prod' || 'preview' }}
-      HEALTH_ORIGIN: ${{ github.ref == 'refs/heads/main' && 'https://api.goldshore.ai' || 'https://api-preview.goldshore.ai' }}
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
@@ -56,6 +53,11 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @goldshore/gs-api types:check
+      - run: pnpm --filter @goldshore/gs-api build
+      - run: pnpm --filter @goldshore/gs-api exec wrangler deploy --env prod --dry-run
 
   deploy:
     name: Approve and deploy production
@@ -140,25 +142,6 @@ jobs:
 
       - name: Health check promoted deployment
         run: scripts/cloudflare/health-check.sh "$HEALTH_ORIGIN/health"
-      - uses: ./.github/actions/normalize-cf-token
-        id: cf-token
-        if: github.event_name != 'pull_request'
-        with:
-          raw_token: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
-          token_name: 'CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN'
-
-      - name: Verify Cloudflare secrets
-        if: github.event_name != 'pull_request'
-        env:
-          CF_TOKEN: ${{ steps.cf-token.outputs.token }}
-        run: |
-          test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "::error::Missing CLOUDFLARE_ACCOUNT_ID" && exit 1)
-          test -n "$CF_TOKEN" || (echo "::error::Missing CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN" && exit 1)
-          echo "CLOUDFLARE_API_TOKEN=$CF_TOKEN" >> "$GITHUB_ENV"
-
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @goldshore/gs-api types:check
-      - run: pnpm --filter @goldshore/gs-api build
 
       - name: Apply newsletter subscriber schema
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -189,10 +172,6 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         working-directory: apps/gs-api
         run: pnpm exec wrangler d1 execute gs_platform_db --remote --env prod --file=db/migrations/0009_infrastructure_baseline.sql
-
-      - name: Deploy production Worker
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: pnpm --filter @goldshore/gs-api exec wrangler deploy --env prod
 
       - name: Health and readiness checks (gs-api)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'

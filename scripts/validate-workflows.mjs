@@ -72,8 +72,8 @@ for (const filename of workflowFiles) {
       failures.push(`${filename}: users schema reconciliation must use the reviewed recovery script`);
     }
 
-    if (!runFor('Deploy production Worker').includes('wrangler deploy --env prod')) {
-      failures.push(`${filename}: production API deployment must select the prod Wrangler environment`);
+    if (!runFor('Promote candidate to 100 percent traffic').includes('wrangler versions deploy')) {
+      failures.push(`${filename}: production API deployment must promote the validated Worker version`);
     }
 
     const readinessRun = runFor('Health and readiness checks (gs-api)');
