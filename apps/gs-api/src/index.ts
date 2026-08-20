@@ -35,7 +35,7 @@ import oauth from './routes/oauth';
 import webhooks from './routes/webhooks';
 import automation from './routes/automation';
 // TODO: Resolve Wrangler module resolution issue with @goldshore packages before re-enabling
-// import subscriptions from './routes/subscriptions';
+import subscriptions from './routes/subscriptions';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
 import { ssrfProtectionMiddleware } from './middleware/ssrf-protection';
@@ -151,7 +151,7 @@ app.use('*', async (c, next) => {
   // If CORS headers weren't set by previous middleware, add them for admin/protected routes
   if (!c.res.headers.get('Access-Control-Allow-Origin')) {
     const origin = c.req.header('Origin');
-    if (origin && (origin.includes('goldshore.ai') || origin.includes('goldshore.org') || origin.includes('localhost'))) {
+    if (origin && (origin.includes('goldshore.*') || origin.includes('localhost'))) {
       c.header('Access-Control-Allow-Origin', origin);
       c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
       c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Goldshore-Client, X-Goldshore-Request-Id, CF-Access-Jwt-Assertion');
@@ -352,7 +352,7 @@ app.route('/admin/workspace', googleWorkspace);
 app.route('/auth', oauth);
 app.route('/oauth', oauth);
 // TODO: Re-enable once module resolution issue is fixed
-// app.route('/subscriptions', subscriptions);
+app.route('/subscriptions', subscriptions);
 app.route('/webhooks', webhooks);
 app.route('/media', media);
 app.route('/pages', pages);
