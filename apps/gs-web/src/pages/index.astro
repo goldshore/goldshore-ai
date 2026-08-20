@@ -6,6 +6,8 @@ import PublicFooter from '../components/PublicFooter.astro';
 
 export const prerender = false;
 
+const turnstileSiteKey = Astro.locals.TURNSTILE_SITE_KEY || import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || '';
+
 const services  = ['Digital Strategy','AI Implementation','Systems Integration','Design & Development','Enterprise Consulting'];
 const sectors   = ['Financial Services','Operations & Logistics','Media & Communications','Healthcare Systems','Public Sector'];
 const platform  = [['Risk Radar','Live'],['Financial Signals','Live'],['Workflow Engine','Live'],['Sentiment Engine','Beta'],['AI Oracle','Soon']];
@@ -284,6 +286,7 @@ export async function verifyAccess(req, env) {
     <input type="hidden" name="redirectTo" value="/thank-you" />
     <input type="hidden" name="formStartedAt" id="qs-form-started" value="" />
     <input type="hidden" name="dedupeKey" id="qs-dedupe-key" value="" />
+    <input type="hidden" name="cf-turnstile-response" value="" />
     <div class="gs-honeypot"><input name="companyWebsite" tabindex="-1" autocomplete="off" /></div>
     <div class="form-row">
       <label>Name<input name="name" required placeholder="Your name" /></label>
@@ -303,6 +306,11 @@ export async function verifyAccess(req, env) {
       <textarea name="message" id="qs-message" required rows="4" placeholder="Tell us about your inquiry (20+ characters)…"></textarea>
     </label>
     <div id="qs-form-status" class="form-status" aria-live="polite"></div>
+    {turnstileSiteKey && (
+      <div style="margin-bottom: 1rem; margin-top: 1rem;">
+        <div class="cf-turnstile" data-sitekey={turnstileSiteKey} data-theme="dark"></div>
+      </div>
+    )}
     <button type="submit" class="btn-form" id="qs-submit">Submit Request →</button>
   </form>
 </section>
