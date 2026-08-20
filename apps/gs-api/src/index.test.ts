@@ -4,8 +4,12 @@ import * as assert from 'node:assert/strict';
 import worker, { app, isAllowedOrigin, isPreviewOrigin, isPublicPath } from './index';
 
 const requiredRuntimeEnv = {
-  PLATFORM_DB: {} as any,
+  KV: { get: async () => null } as any,
+  PLATFORM_DB: { prepare: () => ({ first: async () => ({ ok: 1 }) }) } as any,
   GS_ASSETS: {} as any,
+  MAIL_ARCHIVE: {} as any,
+  MAIL_JOBS_QUEUE: {} as any,
+  EMAIL: {} as any,
   AI: {} as any,
   JWT_SECRET: 'test-jwt-secret',
   ACCESS_CLIENT_SECRET: 'test-access-client-secret',
@@ -24,6 +28,18 @@ test('keeps shallow production health independent of optional provider secrets',
   );
 
   assert.equal(response.status, 200);
+});
+
+test('exposes the dependency readiness summary without Cloudflare Access', async () => {
+  const response = await app.request('/ready', {}, requiredRuntimeEnv as any);
+
+  assert.equal(response.status, 200);
+  const payload = (await response.json()) as {
+    status: string;
+    dependencySummary: { ready: number; total: number };
+  };
+  assert.equal(payload.status, 'ready');
+  assert.equal(payload.dependencySummary.ready, payload.dependencySummary.total);
 });
 
 test('allows documented preview goldshore.ai origins', () => {
