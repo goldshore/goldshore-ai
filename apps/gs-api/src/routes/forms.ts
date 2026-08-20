@@ -203,7 +203,10 @@ forms.post('/:formId/submissions', async (c) => {
           html: `<p><strong>Name:</strong> ${escapeHtml(name || 'N/A')}</p><p><strong>Email:</strong> ${escapeHtml(email || 'N/A')}</p><p>${escapeHtml(message || 'No message provided.').replace(/\n/g, '<br>')}</p>`,
           replyTo: email && isValidEmail(email) ? { email, name } : undefined,
         },
-      )
+      ).catch((err) => {
+        console.error({ event: 'notification_mail_failed', formId, error: String(err) });
+        return { attempted: true, ok: false, status: 500, body: 'NOTIFICATION_ENQUEUE_THREW' };
+      })
     : { attempted: false, reason: 'no_recipients' };
 
   const autoResponder = buildLeadAutoResponder({ name, formType: formId });
@@ -214,6 +217,9 @@ forms.post('/:formId/submissions', async (c) => {
           subject: autoResponder.subject,
           text: autoResponder.text,
           html: autoResponder.html,
+        }).catch((err) => {
+          console.error({ event: 'autoresponder_mail_failed', formId, error: String(err) });
+          return { attempted: true, ok: false, status: 500, body: 'AUTORESPONDER_ENQUEUE_THREW' };
         })
       : { attempted: false, reason: 'missing_submitter_email' };
 
