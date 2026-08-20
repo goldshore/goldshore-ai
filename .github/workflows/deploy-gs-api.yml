@@ -170,15 +170,23 @@ jobs:
 
       - name: Health and readiness checks (gs-api)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
         run: |
           set -euo pipefail
+          test -n "$CF_ACCESS_CLIENT_ID" || { echo "::error::Missing CF_ACCESS_CLIENT_ID"; exit 1; }
+          test -n "$CF_ACCESS_CLIENT_SECRET" || { echo "::error::Missing CF_ACCESS_CLIENT_SECRET"; exit 1; }
           max_retries=5
           retry=0
           
           while [ $retry -lt $max_retries ]; do
             echo "Health/readiness attempt $((retry + 1))/$max_retries..."
             if curl -fsS https://api.goldshore.ai/health >/dev/null 2>&1 \
-              && curl -fsS https://api.goldshore.ai/ready >/dev/null 2>&1; then
+              && curl -fsS \
+                -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" \
+                -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET" \
+                https://api.goldshore.ai/ready >/dev/null 2>&1; then
               echo "✅ gs-api is healthy and ready"
               exit 0
             fi
