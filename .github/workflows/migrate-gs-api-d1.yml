@@ -39,7 +39,7 @@ jobs:
           token_name: CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN
       - name: Apply discovered migrations with ledger
         env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ steps.cf-token.outputs.token }}
           TARGET_ENV: ${{ github.job == 'preview' && 'preview' || 'prod' }}
         run: |
