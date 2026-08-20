@@ -105,3 +105,40 @@ export const proxyAdminRequest = async (
   }
   return proxyApiRequest(request, apiPath, apiBase, serviceBinding);
 };
+
+// Several .astro pages fetch JSON server-side in their frontmatter, outside
+// any pages/api/admin/* route — repo-health.astro, repo-health/findings.astro,
+// entries/detail.astro, leads/detail.astro, and pii-scans.astro all did a raw
+// `fetch(\`${apiUrl}/admin/...\`, { headers: { Authorization: \`Bearer
+// ${Astro.cookies.get('auth_token')?.value}\` } })`. Two bugs stacked there:
+// `auth_token` is not a cookie this app ever sets (admin auth is Cloudflare
+// Access, not a bearer cookie), and the plain fetch defaults to
+// `redirect: 'follow'`, so Access's login-page redirect gets silently
+// followed and returns 200 OK HTML — `response.ok` is true, and the page
+// crashes trying to `.json()` the HTML. This helper fetches through the same
+// service binding as proxyApiRequest/proxyAdminRequest, which bypasses
+// Access entirely for this internal hop, exactly like contact.ts.
+export const fetchAdminJson = async <T = unknown>(
+  apiPath: string,
+  init?: RequestInit
+): Promise<{ ok: boolean; status: number; data: T | null }> => {
+  const headers = { accept: 'application/json', ...(init?.headers ?? {}) };
+  let response: Response;
+
+  if (!import.meta.env.DEV) {
+    const { env } = await import('cloudflare:workers');
+    const serviceBinding = (env as any).API as ServiceBinding;
+    response = await serviceBinding.fetch(
+      new Request(`http://api.internal${apiPath}`, { ...init, headers })
+    );
+  } else {
+    const base = (import.meta.env.PUBLIC_API_URL || 'https://api.goldshore.ai').replace(/\/$/, '');
+    response = await fetch(`${base}${apiPath}`, { ...init, headers });
+  }
+
+  if (!response.ok) {
+    return { ok: false, status: response.status, data: null };
+  }
+  const data = (await response.json()) as T;
+  return { ok: true, status: response.status, data };
+};
