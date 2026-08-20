@@ -39,6 +39,7 @@ describe('two-app Cloudflare binding contract', () => {
     assert.deepEqual(productionRoutes(apiConfig), [
       { pattern: 'api.goldshore.ai/*', zoneName: 'goldshore.ai' },
       { pattern: 'api.goldshore.org/*', zoneName: 'goldshore.org' },
+      { pattern: 'admin.goldshore.ai/*', zoneName: 'goldshore.ai' },
       { pattern: 'agent.goldshore.ai/*', zoneName: 'goldshore.ai' },
       { pattern: 'agent.goldshore.org/*', zoneName: 'goldshore.org' },
       { pattern: 'mail.goldshore.ai/*', zoneName: 'goldshore.ai' },

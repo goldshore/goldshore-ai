@@ -4,7 +4,59 @@ import { Env, Variables } from '../../types';
 import { searchGitHubFrameworks } from '../../lib/github-framework-search';
 import { rankFrameworksWithClaude } from '../../lib/claude-framework-ranker';
 import { validateWranglerConfig } from '../../lib/wrangler-validator';
+import email from './email';
+import entries from './entries';
+import users from './users';
+import settings from './settings';
+import secrets from './secrets';
+import tokens from './tokens';
+import cockpit from './merge-cockpit';
+import repoHealth from './repo-health';
+import piiScans from './pii-scans';
+import chat from './chat';
+import analytics from './analytics';
+import rbacRoles from './rbac-roles';
+import rbacUsers from './rbac-users';
+import rbacPermissions from './rbac-permissions';
+import rbacAudit from './rbac-audit';
+import workflows from './workflows';
+import aiSearch from './ai-search';
+import prManager from './pr-manager';
+import workers from './workers';
 
+const admin = new Hono<{
+  Bindings: Env;
+  Variables: Variables;
+}>();
+
+// Mount admin feature sub-routers
+admin.route('/email', email);
+admin.route('/entries', entries);
+admin.route('/users', users);
+admin.route('/settings', settings);
+admin.route('/secrets', secrets);
+admin.route('/tokens', tokens);
+admin.route('/merge-cockpit', cockpit);
+admin.route('/repo-health', repoHealth);
+admin.route('/pii-scans', piiScans);
+admin.route('/chat', chat);
+admin.route('/analytics', analytics);
+admin.route('/cf', workers);
+
+// Phase 2a: RBAC access control routes
+admin.route('/rbac/roles', rbacRoles);
+admin.route('/rbac/users', rbacUsers);
+admin.route('/rbac/permissions', rbacPermissions);
+admin.route('/rbac/audit', rbacAudit);
+
+// Phase 3: Workflow management
+admin.route('/workflows', workflows);
+
+// Phase 4: Enterprise features
+admin.route('/ai-search', aiSearch);
+admin.route('/pr-manager', prManager);
+
+// Deployment routes (existing)
 const deploy = new Hono<{
   Bindings: Env;
   Variables: Variables;
@@ -283,4 +335,7 @@ deploy.post('/create-pr', async (c) => {
   });
 });
 
-export default deploy;
+// Mount deployment routes
+admin.route('/deployments', deploy);
+
+export default admin;

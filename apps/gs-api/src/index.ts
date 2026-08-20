@@ -33,8 +33,18 @@ import googleBusiness from './routes/google-business';
 import googleWorkspace from './routes/google-workspace';
 import oauth from './routes/oauth';
 import webhooks from './routes/webhooks';
+import automation from './routes/automation';
+// TODO: Resolve Wrangler module resolution issue with @goldshore packages before re-enabling
+// import subscriptions from './routes/subscriptions';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
+import { assertSecuritySecrets } from './securitySecrets';
+import { ssrfProtectionMiddleware } from './middleware/ssrf-protection';
 import type { Env, Variables } from './types';
+import agent from './routes/agent';
+import mail from './routes/mail';
+import control from './routes/control';
+import trading from './routes/trading';
+import core from './routes/core';
 import { getHostRoutePrefix } from './host-routing';
 import { handleTokenRotation } from './workers/token-rotation';
 import { processQueueBatch } from './workers/queue-consumer';
@@ -135,6 +145,23 @@ app.use(
   }),
 );
 
+// Ensure CORS headers are applied to all error responses (401, 403, etc)
+app.use('*', async (c, next) => {
+  await next();
+  // If CORS headers weren't set by previous middleware, add them for admin/protected routes
+  if (!c.res.headers.get('Access-Control-Allow-Origin')) {
+    const origin = c.req.header('Origin');
+    if (origin && (origin.includes('goldshore.ai') || origin.includes('goldshore.org') || origin.includes('localhost'))) {
+      c.header('Access-Control-Allow-Origin', origin);
+      c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+      c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Goldshore-Client, X-Goldshore-Request-Id, CF-Access-Jwt-Assertion');
+      c.header('Access-Control-Allow-Credentials', 'true');
+    }
+  }
+});
+
+app.use('/v1/*', ssrfProtectionMiddleware);
+
 app.use('*', async (c, next) => {
   await next();
   const runtimeVersion = getRuntimeVersion(c.env);
@@ -164,11 +191,19 @@ app.use('*', async (c, next) => {
   }
 
   const serviceRequest = c.req.path === '/internal' || c.req.path.startsWith('/internal/');
+  const adminProxyRequest = c.req.path.startsWith('/api/admin') || c.req.path.startsWith('/admin/');
+
   const accessEnv = serviceRequest
     ? {
         ...c.env,
         CLOUDFLARE_ACCESS_AUDIENCE: c.env.CLOUDFLARE_SERVICE_ACCESS_AUDIENCE,
         CLOUDFLARE_ACCESS_APPLICATION: 'service-production',
+      }
+    : adminProxyRequest
+    ? {
+        ...c.env,
+        // Accept admin-production audience for proxied requests from gs-web
+        CLOUDFLARE_ACCESS_AUDIENCE: c.env.ADMIN_PROXY_AUDIENCE || c.env.CLOUDFLARE_ACCESS_AUDIENCE,
       }
     : c.env;
   if (!accessEnv.CLOUDFLARE_ACCESS_AUDIENCE) {
@@ -178,7 +213,28 @@ app.use('*', async (c, next) => {
     );
   }
 
-  const verifiedClaims = await verifyAccessWithClaims(c.req.raw, accessEnv);
+  // Try CF Access JWT first, then fall back to Bearer token from Authorization header
+  let verifiedClaims = await verifyAccessWithClaims(c.req.raw, accessEnv);
+
+  // For admin proxy requests, also accept Bearer tokens (CF_Authorization from frontend)
+  if (!verifiedClaims && adminProxyRequest) {
+    const authHeader = c.req.header('Authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.slice(7); // Remove 'Bearer ' prefix
+      try {
+        // Treat bearer token as a direct CF Access JWT
+        const response = new Request(c.req.url, {
+          headers: new Headers({
+            'CF-Access-JWT-Assertion': token,
+          }),
+        });
+        verifiedClaims = await verifyAccessWithClaims(response, accessEnv);
+      } catch (error) {
+        console.warn('[auth] Bearer token verification failed:', error instanceof Error ? error.message : String(error));
+      }
+    }
+  }
+
   const claims = verifiedClaims
     ? await authorizeAccessClaims(verifiedClaims, accessEnv)
     : null;
@@ -290,10 +346,13 @@ app.route('/system', system);
 app.route('/templates', templates);
 app.get('/admin/system/dependencies', dependencyDetailsHandler);
 app.route('/admin', admin);
+app.route('/admin/automation', automation);
 app.route('/admin/google', googleBusiness);
 app.route('/admin/workspace', googleWorkspace);
 app.route('/auth', oauth);
 app.route('/oauth', oauth);
+// TODO: Re-enable once module resolution issue is fixed
+// app.route('/subscriptions', subscriptions);
 app.route('/webhooks', webhooks);
 app.route('/media', media);
 app.route('/pages', pages);

@@ -118,8 +118,7 @@ describe('Pages API Security', () => {
     const calls = mockBind.mock.calls;
     // The last call should be the one
     const lastCallArgs = calls[calls.length - 1].arguments;
-    // The bind arguments for INSERT are: [slug, title, body, status]
-    // Check if the body argument (index 2) matches expectedBody
-    assert.strictEqual(lastCallArgs[2], expectedBody);
+    // The canonical schema binds [id, site_id, slug, title, content, metadata, status, status].
+    assert.strictEqual(lastCallArgs[4], expectedBody);
   });
 });

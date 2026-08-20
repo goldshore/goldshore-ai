@@ -1,5 +1,6 @@
 import { defineConfig } from 'astro/config';
 import baseConfig from '@goldshore/config/astro';
+import react from '@astrojs/react';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -9,6 +10,7 @@ const isLocalDev = process.env.NODE_ENV !== 'production';
 
 export default defineConfig({
   ...baseConfig,
+  integrations: [...(baseConfig.integrations || []), react()],
   // gs-web is an SSR Worker, not a static/Pages build. The Cloudflare adapter
   // emits the Worker entry point and its asset bundle together under dist/.
   output: 'server',
@@ -39,6 +41,7 @@ export default defineConfig({
         ...baseConfig.vite?.resolve?.alias,
         '@goldshore/theme': path.resolve(__dirname, '../../packages/theme/src'),
         '@goldshore/ui': path.resolve(__dirname, '../../packages/ui'),
+        '@lib': path.resolve(__dirname, './src/lib'),
       },
     },
   },
