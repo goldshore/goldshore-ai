@@ -14,7 +14,7 @@ let users = { items: [] as any[], total: 0, error: null as string | null };
 try {
   const result = await fetchAdminJson<{ items: any[]; total: number }>(Astro.request, '/admin/users?limit=100');
   if (result.ok && result.data) {
-    users = { ...users, ...result.data };
+    users = { ...users, items: result.data.items, total: result.data.pagination?.total ?? 0 };
   } else {
     users.error = `Failed to load users (${result.status}).`;
   }
