@@ -63,6 +63,7 @@ type RuntimeSecrets = {
   EBAY_CLIENT_SECRET?: string;
   EBAY_REDIRECT_URI?: string;
   EBAY_ENV?: string;
+  GH_PAT?: string;
   GITHUB_CLIENT_ID?: string;
   GITHUB_CLIENT_SECRET?: string;
   GITHUB_TOKEN?: string;
