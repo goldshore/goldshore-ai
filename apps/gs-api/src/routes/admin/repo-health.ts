@@ -77,11 +77,11 @@ repoHealth.get('/', async (c) => {
   if ('error' in auth) return auth.error;
 
   const claims = c.get('accessClaims');
-  const githubToken = c.env.GITHUB_API_TOKEN;
+  const githubToken = c.env.GH_PAT;
   const db = c.env.PLATFORM_DB;
 
   if (!githubToken) {
-    console.warn('[AUDIT] admin.repo-health.read FAILED - GITHUB_API_TOKEN not configured', {
+    console.warn('[AUDIT] admin.repo-health.read FAILED - GH_PAT not configured', {
       actor: claims?.email || 'unknown'
     });
     return c.json({ error: 'GitHub API token not configured' }, 503);
@@ -136,7 +136,7 @@ repoHealth.get('/findings', async (c) => {
   const page = Math.max(1, parseInt(c.req.query('page') || '1', 10));
   const limit = Math.min(100, parseInt(c.req.query('limit') || '25', 10));
 
-  const githubToken = c.env.GITHUB_API_TOKEN;
+  const githubToken = c.env.GH_PAT;
   const db = c.env.PLATFORM_DB;
 
   if (!githubToken) {
