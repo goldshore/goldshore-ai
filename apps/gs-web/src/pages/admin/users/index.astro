@@ -12,10 +12,7 @@ const initialTab = (TABS as readonly string[]).includes(requestedTab ?? '') ? re
 
 let users = { items: [] as any[], total: 0, error: null as string | null };
 try {
-  // /admin/users nests the count under pagination.total (see admin.ts), not
-  // a top-level field, and reads pageSize/page — it ignores an unrecognized
-  // `limit` param entirely, silently falling back to its own default of 25.
-  const result = await fetchAdminJson<{ items: any[]; pagination: { total: number } }>(Astro.request, '/admin/users?pageSize=100');
+  const result = await fetchAdminJson<{ items: any[]; total: number }>(Astro.request, '/admin/users?limit=100');
   if (result.ok && result.data) {
     users = { ...users, items: result.data.items, total: result.data.pagination?.total ?? 0 };
   } else {
