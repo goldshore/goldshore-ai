@@ -10,7 +10,7 @@ const jwtToken = Astro.request.headers.get('CF-Access-JWT-Assertion') || '';
 let tokens = { items: [], total: 0, error: null as string | null };
 
 try {
-  const result = await fetchAdminJson<{ items: any[]; total: number }>('/admin/tokens');
+  const result = await fetchAdminJson<{ items: any[]; total: number }>(Astro.request, '/admin/tokens');
 
   if (result.ok && result.data) {
     tokens = { ...tokens, ...result.data };

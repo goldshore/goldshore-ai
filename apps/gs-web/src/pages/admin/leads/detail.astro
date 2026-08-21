@@ -27,7 +27,7 @@ let lead: Lead | null = null;
 let error: string | null = null;
 
 try {
-  const result = await fetchAdminJson<Lead>(`/admin/entries/leads/${leadId}`);
+  const result = await fetchAdminJson<Lead>(Astro.request, `/admin/entries/leads/${leadId}`);
 
   if (result.ok) {
     lead = result.data;

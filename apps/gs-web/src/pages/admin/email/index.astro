@@ -19,11 +19,11 @@ let emailLogs: { items: any[]; total: number; offset: number; limit: number; err
 let emailStats = { queued: 0, sent: 0, failed: 0, total: 0 };
 
 try {
-  const statsResult = await fetchAdminJson<typeof emailStats>('/admin/email/status');
+  const statsResult = await fetchAdminJson<typeof emailStats>(Astro.request, '/admin/email/status');
   if (statsResult.ok && statsResult.data) emailStats = statsResult.data;
 
   const params = new URLSearchParams({ offset: String(offset), limit: String(limit), ...(status && { status }) });
-  const logsResult = await fetchAdminJson<{ items: any[]; total: number }>(`/admin/email/logs?${params}`);
+  const logsResult = await fetchAdminJson<{ items: any[]; total: number }>(Astro.request, `/admin/email/logs?${params}`);
   if (logsResult.ok && logsResult.data) {
     emailLogs = { ...emailLogs, ...logsResult.data };
   } else if (logsResult.status === 401 || logsResult.status === 403) {
@@ -35,7 +35,7 @@ try {
 
 let templates: { items: any[]; error: string | null } = { items: [], error: null };
 try {
-  const result = await fetchAdminJson<{ items: any[] }>('/admin/email/templates');
+  const result = await fetchAdminJson<{ items: any[] }>(Astro.request, '/admin/email/templates');
   if (result.ok && result.data) {
     templates = { ...templates, ...result.data };
   } else if (result.status === 401 || result.status === 403) {

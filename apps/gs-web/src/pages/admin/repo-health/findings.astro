@@ -37,7 +37,7 @@ try {
   if (severity) params.append('severity', severity);
   if (status) params.append('status', status);
 
-  const result = await fetchAdminJson<any>(`/admin/repo-health/findings?${params}`);
+  const result = await fetchAdminJson<any>(Astro.request, `/admin/repo-health/findings?${params}`);
 
   if (!result.ok) {
     error = `Failed to fetch findings: ${result.status}`;

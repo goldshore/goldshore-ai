@@ -12,7 +12,7 @@ const initialTab = (TABS as readonly string[]).includes(requestedTab ?? '') ? re
 
 let users = { items: [] as any[], total: 0, error: null as string | null };
 try {
-  const result = await fetchAdminJson<{ items: any[]; total: number }>('/admin/users?limit=100');
+  const result = await fetchAdminJson<{ items: any[]; total: number }>(Astro.request, '/admin/users?limit=100');
   if (result.ok && result.data) {
     users = { ...users, ...result.data };
   } else {
