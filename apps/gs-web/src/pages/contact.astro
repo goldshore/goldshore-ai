@@ -49,6 +49,7 @@ export const prerender = false;
           <div class="cf-turnstile" data-sitekey="0x4AAAAAAESEtC0-1kwdI9_7"></div>
 
           <GSButton type="submit">Send message</GSButton>
+          <p id="contact-form-status" class="contact-form-status" role="status" aria-live="polite" hidden></p>
         </form>
       </div>
 
@@ -80,7 +81,18 @@ export const prerender = false;
 </BaseLayout>
 
 <script>
-  document.getElementById('contact-form')?.addEventListener('submit', async (e) => {
+  const contactForm = document.getElementById('contact-form') as HTMLFormElement | null;
+  const formStatus = document.getElementById('contact-form-status');
+  const submitButton = contactForm?.querySelector<HTMLButtonElement>('button[type="submit"]');
+
+  const showStatus = (message: string, state: 'error' | 'success' | 'progress') => {
+    if (!formStatus) return;
+    formStatus.textContent = message;
+    formStatus.dataset.state = state;
+    formStatus.hidden = false;
+  };
+
+  contactForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const formData = new FormData(e.target as HTMLFormElement);
@@ -88,28 +100,34 @@ export const prerender = false;
 
     const token = (window as any).turnstile?.getResponse?.();
     if (!token) {
-      alert('Please complete the bot verification.');
+      showStatus('Please complete the bot verification before sending your message.', 'error');
       return;
     }
 
     data['cf-turnstile-response'] = token;
+    showStatus('Sending your message…', 'progress');
+    if (submitButton) submitButton.disabled = true;
 
     try {
-      const response = await fetch('/api/forms/contact/submissions', {
+      const response = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
 
       if (response.ok) {
-        alert('Thank you! We received your message and will get back to you soon.');
+        showStatus('Thank you! We received your message and will get back to you soon.', 'success');
         (window as any).turnstile?.reset?.();
-        (e.target as HTMLFormElement).reset();
+        contactForm.reset();
       } else {
-        alert('Failed to send message. Please try again.');
+        const payload = await response.json().catch(() => null) as { error?: string | { message?: string } } | null;
+        const serverMessage = typeof payload?.error === 'string' ? payload.error : payload?.error?.message;
+        showStatus(serverMessage || 'Failed to send message. Please try again.', 'error');
       }
     } catch (error) {
-      alert('Error sending message. Please try again later.');
+      showStatus('Unable to reach the message service. Please try again later.', 'error');
+    } finally {
+      if (submitButton) submitButton.disabled = false;
     }
   });
 </script>
@@ -146,5 +164,30 @@ export const prerender = false;
     font-size: 1rem;
     font-weight: 600;
     margin-bottom: 0.4rem;
+  }
+
+  .contact-form-status {
+    margin: 1rem 0 0;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--gs-border-color, rgba(255, 255, 255, 0.12));
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.035);
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+
+  .contact-form-status[data-state='error'] {
+    border-color: rgba(238, 112, 91, 0.55);
+    color: #ffb3a6;
+  }
+
+  .contact-form-status[data-state='success'] {
+    border-color: rgba(82, 200, 120, 0.55);
+    color: #a8e4ba;
+  }
+
+  #contact-form button:disabled {
+    cursor: wait;
+    opacity: 0.65;
   }
 </style>
