@@ -53,45 +53,29 @@ const cards = [
       </p>
       <div class="developer-actions">
         <a href="/developer/docs" class="hero-button hero-button--primary">Open docs</a>
-        <a href="/developer/mcp" class="hero-button hero-button--secondary">Explore MCP access</a>
+        <a href="/developer/api" class="hero-button hero-button--secondary">API reference</a>
       </div>
     </div>
 
     <aside class="developer-hero__panel">
       <p class="gs-eyebrow">At a glance</p>
-      <ul>
-        <li>Public site: strategy, docs, and system visibility.</li>
-        <li>Private MCP: approved humans and agents only.</li>
-        <li>Access gate: Cloudflare Access at the edge.</li>
-      </ul>
+      <p>Public site strategy, documentation, and system visibility.</p>
+      <p>Private MCP for approved humans and agents only.</p>
+      <p>Cloudflare Access enforced at the edge.</p>
+      <strong><span></span> api.goldshore.ai · operational</strong>
     </aside>
   </section>
 
   <section class="gs-section gs-section--padded">
     <div class="developer-grid">
-      <article class="developer-card">
-        <h2>Documentation</h2>
-        <p>Read the API, gateway, and worker notes that back the platform.</p>
-        <a href="/developer/docs" class="developer-card__link">Open docs &rarr;</a>
-      </article>
-
-      <article class="developer-card">
-        <h2>Private MCP Access</h2>
-        <p>Learn how the GoldShore MCP surface stays locked to approved identities and service paths.</p>
-        <a href="/developer/mcp" class="developer-card__link">View MCP access &rarr;</a>
-      </article>
-
-      <article class="developer-card">
-        <h2>System Status</h2>
-        <p>Check the current state of the public site and operational services.</p>
-        <a href="/status" class="developer-card__link">Open status &rarr;</a>
-      </article>
-
-      <article class="developer-card">
-        <h2>Admin Dashboard</h2>
-        <p>Enter the operator workspace for internal reviews, submissions, and controls.</p>
-        <a href={`${CANONICAL_ADMIN_ORIGIN}/admin/lead-submissions`} class="developer-card__link">Go to admin &rarr;</a>
-      </article>
+      {cards.map((card, index) => (
+        <article class="developer-card">
+          <span>{String(index + 1).padStart(2, '0')}</span>
+          <h2>{card.title}</h2>
+          <p>{card.body}</p>
+          <a href={card.href} class="developer-card__link">{card.cta} &rarr;</a>
+        </article>
+      ))}
     </div>
   </section>
 
@@ -99,17 +83,21 @@ const cards = [
     .developer-hero {
       display: grid;
       grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
-      gap: 1.5rem;
-      align-items: start;
-      padding-top: 4.5rem;
+      gap: clamp(2rem, 8vw, 8rem);
+      align-items: center;
+      min-height: 72vh;
+      padding-top: 6rem;
     }
 
     .developer-hero h1 {
       margin: 0.75rem 0 1rem;
-      font-size: clamp(2.6rem, 5vw, 4.8rem);
-      line-height: 0.95;
-      letter-spacing: -0.05em;
-      max-width: 12ch;
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(3rem, 6.2vw, 6.5rem);
+      font-weight: 800;
+      line-height: .88;
+      letter-spacing: -.065em;
+      max-width: 10ch;
+      text-transform: uppercase;
     }
 
     .developer-lead {
@@ -131,60 +119,67 @@ const cards = [
       justify-content: center;
       min-height: 3rem;
       padding: 0.8rem 1.25rem;
-      border-radius: 999px;
+      border-radius: 0;
       text-decoration: none;
-      font-weight: 700;
+      font: 600 .68rem/1 'DM Mono', monospace;
+      letter-spacing: .12em;
+      text-transform: uppercase;
       border: 1px solid transparent;
     }
 
     .hero-button--primary {
-      background: linear-gradient(135deg, #7dd3fc, #2dd4bf);
-      color: #05212b;
+      background: #d3743e;
+      color: #09080d;
     }
 
     .hero-button--secondary {
-      border-color: rgba(148, 163, 184, 0.28);
-      color: #e2e8f0;
-      background: rgba(15, 23, 42, 0.35);
+      border-color: rgba(211, 116, 62, .42);
+      color: #f5f1eb;
+      background: transparent;
     }
 
     .developer-hero__panel {
-      border-radius: 24px;
-      border: 1px solid rgba(148, 163, 184, 0.18);
-      background: rgba(15, 23, 42, 0.72);
-      padding: 1.5rem;
-      box-shadow: 0 32px 60px rgba(0, 0, 0, 0.24);
+      position: relative;
+      border: 1px solid rgba(211, 116, 62, .28);
+      background: #111019;
+      padding: 2rem;
     }
 
-    .developer-hero__panel ul {
-      margin: 0.9rem 0 0;
-      padding-left: 1.2rem;
+    .developer-hero__panel p {
+      margin: 0;
+      padding: .9rem 0;
+      border-bottom: 1px solid rgba(255,255,255,.07);
       color: var(--gs-text-dim);
-      line-height: 1.7;
+      line-height: 1.6;
+    }
+    .developer-hero__panel strong { display:flex; align-items:center; gap:.55rem; margin-top:1.5rem; color:#5ddb9a; font:500 .66rem/1 'DM Mono',monospace; letter-spacing:.1em; text-transform:uppercase; }
+    .developer-hero__panel strong span { width:.45rem; height:.45rem; border-radius:50%; background:#5ddb9a; box-shadow:0 0 12px #5ddb9a; }
     }
 
     .developer-grid {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 1.1rem;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 1px;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.08);
     }
 
     .developer-card {
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
+      gap: .75rem;
       min-height: 100%;
-      padding: 1.25rem;
-      border-radius: 22px;
-      border: 1px solid rgba(148, 163, 184, 0.16);
-      background: rgba(15, 23, 42, 0.58);
-      box-shadow: 0 22px 40px rgba(0, 0, 0, 0.18);
+      padding: 1.5rem;
+      border: 0;
+      border-radius: 0;
+      background: #0d0c13;
     }
 
     .developer-card h2 {
       margin-top: 0;
       margin-bottom: 0.75rem;
-      font-size: 1.4rem;
+      font: 700 1.15rem/1.05 'Syne', sans-serif;
+      text-transform: uppercase;
     }
 
     .developer-card p {
@@ -196,8 +191,10 @@ const cards = [
 
     .developer-card__link {
       align-self: flex-start;
-      color: #b2d7ff;
-      font-weight: 700;
+      color: #d3743e;
+      font: 500 .68rem/1 'DM Mono', monospace;
+      letter-spacing: .08em;
+      text-transform: uppercase;
     }
 
     .developer-card__link:hover,
@@ -206,10 +203,13 @@ const cards = [
     }
 
     @media (max-width: 960px) {
-      .developer-hero,
-      .developer-grid {
+      .developer-hero {
         grid-template-columns: 1fr;
       }
+      .developer-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    }
+    @media (max-width: 620px) {
+      .developer-grid { grid-template-columns: 1fr; }
     }
   </style>
 </MarketingLayout>
