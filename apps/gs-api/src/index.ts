@@ -7,6 +7,7 @@ import {
 import { createCorsMiddleware, APPROVED_API_ORIGINS } from '@goldshore/shared';
 import { EmailLogSchema } from '@goldshore/schema';
 import users from './routes/users';
+import integrationKeys from './routes/integration-keys';
 import health, { readinessHandler } from './routes/health';
 import ai from './routes/ai';
 import user from './routes/user';
@@ -180,7 +181,13 @@ app.use('*', async (c, next) => {
   }
 
   const serviceRequest = c.req.path === '/internal' || c.req.path.startsWith('/internal/');
-  const adminSurfaceRequest = c.req.path === '/admin' || c.req.path.startsWith('/admin/');
+  // Same admin-only surface, reached the same way (gs-web's service binding,
+  // never touching api.goldshore.ai's own Access edge): /admin/* itself, and
+  // /integrations/keys/* — the Secrets UI's backend, which lives outside the
+  // /admin prefix but has no other caller.
+  const adminSurfaceRequest =
+    c.req.path === '/admin' || c.req.path.startsWith('/admin/') ||
+    c.req.path === '/integrations/keys' || c.req.path.startsWith('/integrations/keys/');
   const accessEnv = serviceRequest
     ? {
         ...c.env,
@@ -291,6 +298,12 @@ app.route('/user', user);
 app.route('/system', system);
 app.route('/templates', templates);
 app.route('/admin', admin);
+// The admin Secrets UI (apps/gs-web/src/pages/admin/system/index.astro,
+// Secrets tab) proxies to /integrations/keys/*, not /admin/*. The router for
+// it existed (apps/gs-api/src/routes/integration-keys.ts) but was never
+// mounted anywhere, so every request 404d before even reaching auth -
+// entirely separate from the Access-audience bugs fixed elsewhere today.
+app.route('/integrations/keys', integrationKeys);
 app.route('/admin/google', googleBusiness);
 app.route('/media', media);
 app.route('/pages', pages);
