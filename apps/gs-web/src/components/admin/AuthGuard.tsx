@@ -1,55 +1,25 @@
-import React, { useEffect, useState } from 'react';
-import { useAuthToken, getTokenExpiresIn } from '../../utils/auth';
+import React from 'react';
 
 interface AuthGuardProps {
   children: React.ReactNode;
   fallback?: React.ReactNode;
 }
 
-export default function AuthGuard({ children, fallback }: AuthGuardProps) {
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const { token, isValid } = useAuthToken();
-
-  useEffect(() => {
-    setIsLoading(true);
-    const authorized = !!token && isValid;
-    setIsAuthorized(authorized);
-    setIsLoading(false);
-
-    if (authorized) {
-      const expiresIn = getTokenExpiresIn(token);
-      if (expiresIn && expiresIn > 0) {
-        const timeout = setTimeout(() => {
-          window.location.reload();
-        }, expiresIn * 1000 - 60000);
-
-        return () => clearTimeout(timeout);
-      }
-    }
-  }, [token, isValid]);
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center py-12">
-        <div className="text-gray-500">Checking authentication...</div>
-      </div>
-    );
-  }
-
-  if (!isAuthorized) {
-    return (
-      fallback || (
-        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-6 rounded-lg text-center">
-          <h3 className="font-semibold mb-2">Authentication Required</h3>
-          <p className="text-sm mb-4">Your session is not authenticated. Please log in again.</p>
-          <a href="/" className="text-yellow-700 hover:text-yellow-900 underline">
-            Return to home
-          </a>
-        </div>
-      )
-    );
-  }
-
+// This used to gate `children` on a client-side JWT read from a cookie named
+// "CF-Authorization". Two things made that check impossible to ever pass:
+// Cloudflare Access's real session cookie is "CF_Authorization" (underscore,
+// not hyphen), and Access sets it HttpOnly regardless of name — client-side
+// JS can never read it, by design. Every component wrapped in AuthGuard
+// (EmailManager, UsersManager, EntriesManager, TokensManager, ...) has been
+// permanently stuck on "Authentication Required" as a result, independent of
+// whether the operator was actually logged in.
+//
+// The real auth boundary for this app is server-side: Cloudflare Access at
+// the edge (nothing renders without a valid session), gs-web's own
+// middleware (authorizeAdminRequest), and gs-api's Access verification on
+// every proxied call. A component reaching the browser at all means that
+// chain already passed — there is nothing left for a client-side gate to
+// usefully check, so this just renders its children.
+export default function AuthGuard({ children }: AuthGuardProps) {
   return <>{children}</>;
 }
