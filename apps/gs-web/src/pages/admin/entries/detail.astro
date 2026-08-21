@@ -29,7 +29,7 @@ let error: string | null = null;
 
 try {
   const endpoint = entryType === 'contact' ? 'contacts' : 'leads';
-  const result = await fetchAdminJson<Entry>(`/admin/entries/${endpoint}/${entryId}`);
+  const result = await fetchAdminJson<Entry>(Astro.request, `/admin/entries/${endpoint}/${entryId}`);
 
   if (result.ok) {
     entry = result.data;

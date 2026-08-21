@@ -93,6 +93,13 @@ export const proxyApiRequest = async (
 // binding (`API`) that bypasses Cloudflare Access entirely for this internal
 // hop — exactly like apps/gs-web/src/pages/api/contact.ts already does. This
 // helper is that same pattern, centralized so every admin route uses it.
+//
+// IMPORTANT: fetchAdminJson below went live without ever forwarding the
+// caller's Cf-Access-Jwt-Assertion header, so every page using it sent gs-api
+// zero auth data and always got a 401 back — a bug that stacked underneath
+// (and outlasted) the audience-mismatch fix in gs-api's own middleware. Any
+// new caller of fetchAdminJson MUST pass Astro.request as the first
+// argument, or it will silently repeat this exact failure.
 export const proxyAdminRequest = async (
   request: Request,
   apiPath: string,
@@ -119,10 +126,23 @@ export const proxyAdminRequest = async (
 // service binding as proxyApiRequest/proxyAdminRequest, which bypasses
 // Access entirely for this internal hop, exactly like contact.ts.
 export const fetchAdminJson = async <T = unknown>(
+  request: Request,
   apiPath: string,
   init?: RequestInit
 ): Promise<{ ok: boolean; status: number; data: T | null }> => {
-  const headers = { accept: 'application/json', ...(init?.headers ?? {}) };
+  // Forward the incoming request's own headers first — this is what actually
+  // carries the visitor's Cf-Access-Jwt-Assertion header/cookie through to
+  // gs-api. Losing this (as the original version of this function did) means
+  // gs-api's Access verification always fails with 401, regardless of any
+  // fix on gs-api's own side.
+  const headers = new Headers(request.headers);
+  headers.delete('host');
+  headers.set('accept', 'application/json');
+  if (init?.headers) {
+    for (const [key, value] of Object.entries(init.headers as Record<string, string>)) {
+      headers.set(key, value);
+    }
+  }
   let response: Response;
 
   if (!import.meta.env.DEV) {

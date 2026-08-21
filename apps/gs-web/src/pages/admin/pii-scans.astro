@@ -39,7 +39,7 @@ try {
   params.append('limit', String(pageSize));
   if (severity) params.append('severity', severity);
 
-  const result = await fetchAdminJson<any>(`/admin/pii-scans?${params}`);
+  const result = await fetchAdminJson<any>(Astro.request, `/admin/pii-scans?${params}`);
 
   if (!result.ok) {
     error = `Failed to fetch PII scans: ${result.status}`;

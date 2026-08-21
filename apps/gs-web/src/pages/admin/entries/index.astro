@@ -17,7 +17,7 @@ try {
     limit: String(limit),
   });
 
-  const result = await fetchAdminJson<{ items: any[]; total: number }>(`/admin/entries?${params}`);
+  const result = await fetchAdminJson<{ items: any[]; total: number }>(Astro.request, `/admin/entries?${params}`);
 
   if (result.ok && result.data) {
     entries = { ...entries, ...result.data };

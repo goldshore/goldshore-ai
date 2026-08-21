@@ -29,7 +29,7 @@ let health: RepoHealth | null = null;
 let error: string | null = null;
 
 try {
-  const result = await fetchAdminJson<any>('/admin/repo-health');
+  const result = await fetchAdminJson<any>(Astro.request, '/admin/repo-health');
 
   if (!result.ok) {
     error = `Failed to fetch repo health: ${result.status}`;
