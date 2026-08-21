@@ -43,7 +43,7 @@ interface __BaseEnv_Env {
 	PUBLIC_SITE_URL: "https://goldshore.ai";
 	MAIL_FROM_EMAIL: "noreply@goldshore.ai";
 	MAIL_FROM_NAME: "GoldShore";
-	TURNSTILE_SITEKEY: "0x4AAAAAAEOjS4lrG1IT_-Fs";
+	TURNSTILE_SITEKEY: "0x4AAAAAAESEtC0-1kwdI9_7";
 	AUTH_SESSION: DurableObjectNamespace<import("./src/index").AuthSession>;
 	GS_SIGNALS: Workflow<Parameters<import("./src/index").SignalsEvaluator['run']>[0]['payload']>;
 }
