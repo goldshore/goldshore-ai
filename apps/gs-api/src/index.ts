@@ -58,6 +58,13 @@ const app = new Hono<{
 const requiredBindings = ['PLATFORM_DB', 'GS_ASSETS', 'AI'] as const;
 const expectedD1Binding = 'PLATFORM_DB' as const;
 
+// Audience of the "Gold Shore Admin Production" Cloudflare Access
+// Application (admin.goldshore.ai/*). Not a secret — an Access audience is a
+// public app identifier baked into JWTs, useless without Cloudflare's
+// private signing key to forge one. Referenced by the /admin/* branch of the
+// auth middleware below; see the comment there for why this is needed.
+const ADMIN_PRODUCTION_ACCESS_AUDIENCE = 'c520a7647223b49b20fbe5be240772863eb684b97b57c08955b6104c58170db9';
+
 const DEFAULT_ALLOWED_ORIGINS = [...APPROVED_API_ORIGINS];
 
 const PREVIEW_ORIGIN_PATTERNS = [
@@ -173,11 +180,27 @@ app.use('*', async (c, next) => {
   }
 
   const serviceRequest = c.req.path === '/internal' || c.req.path.startsWith('/internal/');
+  const adminSurfaceRequest = c.req.path === '/admin' || c.req.path.startsWith('/admin/');
   const accessEnv = serviceRequest
     ? {
         ...c.env,
         CLOUDFLARE_ACCESS_AUDIENCE: c.env.CLOUDFLARE_SERVICE_ACCESS_AUDIENCE,
         CLOUDFLARE_ACCESS_APPLICATION: 'service-production',
+      }
+    : adminSurfaceRequest && c.env.CLOUDFLARE_ACCESS_AUDIENCE
+    ? {
+        // gs-web reaches /admin/* through its `API` service binding, which
+        // never touches api.goldshore.ai's own Access-protected edge — so no
+        // fresh api-production-scoped JWT ever gets minted for this hop. The
+        // JWT it forwards is whatever the browser already holds for
+        // admin.goldshore.ai (audience ADMIN_PRODUCTION_ACCESS_AUDIENCE
+        // below), so gs-api's own verification must accept that audience too,
+        // specifically for this path prefix. CLOUDFLARE_ACCESS_APPLICATION
+        // stays api-production — the operators already hold an owner role
+        // for that application in access_application_roles, so authorization
+        // (not just authentication) succeeds once the audience check passes.
+        ...c.env,
+        CLOUDFLARE_ACCESS_AUDIENCE: [c.env.CLOUDFLARE_ACCESS_AUDIENCE, ADMIN_PRODUCTION_ACCESS_AUDIENCE],
       }
     : c.env;
   if (!accessEnv.CLOUDFLARE_ACCESS_AUDIENCE) {
