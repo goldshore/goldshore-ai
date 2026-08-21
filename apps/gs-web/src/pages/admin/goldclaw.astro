@@ -83,6 +83,7 @@ const apiBase = (import.meta.env.PUBLIC_API || 'https://api.goldshore.ai').repla
     const apiBase = page?.dataset.apiBase || 'https://api.goldshore.ai';
 
     const endpoint = (path) => `${apiBase}${path}`;
+    const apiEndpoint = (path) => `/api/admin/goldclaw${path.replace(/^\/goldclaw/, '')}`;
 
     const setText = (id, value) => {
       const el = document.getElementById(id);
@@ -129,7 +130,7 @@ const apiBase = (import.meta.env.PUBLIC_API || 'https://api.goldshore.ai').repla
     };
 
     const loadGoldClaw = async () => {
-      const response = await fetch(endpoint('/goldclaw'), {
+      const response = await fetch(apiEndpoint('/goldclaw'), {
         credentials: 'include',
         headers: { accept: 'application/json' },
       });
@@ -164,7 +165,7 @@ const apiBase = (import.meta.env.PUBLIC_API || 'https://api.goldshore.ai').repla
       if (output) output.textContent = 'Generating...';
 
       try {
-        const response = await fetch(endpoint('/goldclaw/brief'), {
+        const response = await fetch(apiEndpoint('/goldclaw/brief'), {
           method: 'POST',
           credentials: 'include',
           headers: { 'content-type': 'application/json', accept: 'application/json' },
