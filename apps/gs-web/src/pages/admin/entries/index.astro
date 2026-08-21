@@ -3,12 +3,11 @@ export const prerender = false;
 
 import AdminLayout from "../../../layouts/AdminLayout.astro";
 import EntriesManager from "../../../components/admin/EntriesManager";
+import { fetchAdminJson } from "../../../lib/api-proxy";
 
 const jwtToken = Astro.request.headers.get('CF-Access-JWT-Assertion') || '';
 const offset = parseInt(new URL(Astro.request.url).searchParams.get('offset') || '0');
 const limit = parseInt(new URL(Astro.request.url).searchParams.get('limit') || '25');
-
-const apiBaseUrl = 'https://api.goldshore.ai/admin';
 
 let entries = { items: [], total: 0, offset, limit, error: null as string | null };
 
@@ -18,17 +17,14 @@ try {
     limit: String(limit),
   });
 
-  const response = await fetch(`${apiBaseUrl}/entries?${params}`, {
-    headers: {
-      'CF-Authorization': jwtToken,
-      'Content-Type': 'application/json',
-    },
-  });
+  const result = await fetchAdminJson<{ items: any[]; total: number }>(Astro.request, `/admin/entries?${params}`);
 
-  if (response.ok) {
-    entries = await response.json();
-  } else if (response.status === 401 || response.status === 403) {
+  if (result.ok && result.data) {
+    entries = { ...entries, ...result.data };
+  } else if (result.status === 401 || result.status === 403) {
     entries.error = 'Authentication required. Please ensure you are logged in with the correct credentials.';
+  } else {
+    entries.error = `Failed to load entries (${result.status}).`;
   }
 } catch (error) {
   entries.error = error instanceof Error ? error.message : 'Failed to load entries';

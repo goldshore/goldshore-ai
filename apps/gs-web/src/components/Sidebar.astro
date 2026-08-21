@@ -19,6 +19,7 @@ const groups: NavGroup[] = [
     label: 'Operations',
     links: [
       { href: '/admin/platform', label: 'Control Plane' },
+      { href: '/admin/analytics', label: 'Analytics' },
       { href: '/content', label: 'Content Studio' },
       { href: '/admin/integrations/all', label: 'Integrations' },
       { href: '/admin/ads', label: 'Ad Integrator' },
@@ -38,19 +39,13 @@ const groups: NavGroup[] = [
     label: 'Workers',
     permission: 'cloudflare_inventory:read',
     links: [
-      { href: '/admin/workers/status', label: 'Status' },
-      { href: '/admin/workers/bindings', label: 'Bindings' },
-      { href: '/admin/workers/routes', label: 'Routes' },
-      { href: '/admin/workers/tunnels', label: 'Tunnels' },
+      { href: '/admin/workers', label: 'Workers' },
     ],
   },
   {
     label: 'System',
     links: [
-      { href: '/admin/system/dns', label: 'DNS', permission: 'cloudflare_inventory:read' },
-      { href: '/admin/system/secrets', label: 'Secrets', permission: 'secret_metadata:read' },
-      { href: '/admin/system/storage', label: 'Storage', permission: 'cloudflare_inventory:read' },
-      { href: '/admin/system/pages', label: 'Pages', permission: 'cloudflare_inventory:read' },
+      { href: '/admin/system', label: 'System & Infra', permission: 'cloudflare_inventory:read' },
       { href: '/admin/users', label: 'Users', permission: 'users:read' },
     ],
   },

@@ -9,6 +9,11 @@ import mcpAssistant from "./admin/mcp-assistant";
 import mailOperations from './admin/mail-operations';
 import sqlSync from './admin/sql-sync';
 import adIntegrations from './admin/ad-integrations';
+import entries from './admin/entries';
+import piiScans from './admin/pii-scans';
+import adminAnalytics from './admin/analytics';
+import apiTokens from './admin/tokens';
+import adminEmail from './admin/email';
 import { escapeHtml, isValidEmail } from '@goldshore/utils';
 import { enqueueMailJob } from '../lib/mail-queue';
 
@@ -349,5 +354,26 @@ admin.route("/deploy", deploy);
 // Mount repo health routes
 admin.route("/repo-health", repoHealth);
 admin.route("/merge-cockpit", mergeCockpit);
+
+// These four were previously only reachable nested under /deploy (via the
+// admin/index.ts router mounted above), a path no frontend caller actually
+// uses — entries.astro, pii-scans.astro, the analytics pages, and
+// tokens.astro all call /admin/{entries,pii-scans,analytics,tokens}
+// directly, so that's where they need to live. Mounted directly here;
+// removed from admin/index.ts's own mount list to avoid the same router
+// answering at two different paths.
+admin.route("/entries", entries);
+admin.route("/pii-scans", piiScans);
+admin.route("/analytics", adminAnalytics);
+admin.route("/tokens", apiTokens);
+
+// Same story for the email module: EmailManager/EmailTemplatesManager and
+// email/index.astro all call /admin/email/{status,logs,templates}, none of
+// which existed anywhere but /admin/deploy/email/*. Mounted after the
+// existing inline /email/send and /email/jobs handlers above so those keep
+// answering exactly as before; this only adds the paths that were missing
+// (status, logs, logs/:id, templates, templates/:id). admin/index.ts's own
+// mount of this router is removed for the same reason as the four above.
+admin.route("/email", adminEmail);
 
 export default admin;
