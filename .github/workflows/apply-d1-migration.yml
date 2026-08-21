@@ -75,19 +75,19 @@ jobs:
           # Map database alias to D1 binding name
           case "${{ inputs.database }}" in
             audit_db)
-              DB_BINDING="AUDIT_DB"
+              DB_BINDING="gs_audit_db"
               ;;
             platform_db)
-              DB_BINDING="PLATFORM_DB"
+              DB_BINDING="gs_platform_db"
               ;;
             signals_db)
-              DB_BINDING="SIGNALS_DB"
+              DB_BINDING="gs_signals_db"
               ;;
             jobs_db)
-              DB_BINDING="JOBS_DB"
+              DB_BINDING="gs_jobs_db"
               ;;
             risk_radar_db)
-              DB_BINDING="RISK_RADAR_DB"
+              DB_BINDING="risk-radar-db"
               ;;
             *)
               echo "::error::Unknown database: ${{ inputs.database }}"
@@ -128,19 +128,19 @@ jobs:
           # Map database alias to D1 binding name
           case "${{ inputs.database }}" in
             audit_db)
-              DB_BINDING="AUDIT_DB"
+              DB_BINDING="gs_audit_db"
               ;;
             platform_db)
-              DB_BINDING="PLATFORM_DB"
+              DB_BINDING="gs_platform_db"
               ;;
             signals_db)
-              DB_BINDING="SIGNALS_DB"
+              DB_BINDING="gs_signals_db"
               ;;
             jobs_db)
-              DB_BINDING="JOBS_DB"
+              DB_BINDING="gs_jobs_db"
               ;;
             risk_radar_db)
-              DB_BINDING="RISK_RADAR_DB"
+              DB_BINDING="risk-radar-db"
               ;;
           esac
 
