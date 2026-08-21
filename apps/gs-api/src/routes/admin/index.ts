@@ -82,7 +82,7 @@ deploy.post('/search', async (c) => {
     return c.json({ error: 'Query is required.' }, 400);
   }
 
-  const githubToken = c.env.GITHUB_API_TOKEN as string | undefined;
+  const githubToken = c.env.GH_PAT as string | undefined;
   const claudeToken = c.env.ANTHROPIC_API_KEY as string | undefined;
 
   if (!githubToken) {
@@ -178,7 +178,7 @@ deploy.post('/dry-run', async (c) => {
     return c.json({ error: 'Framework and repo are required.' }, 400);
   }
 
-  const githubToken = c.env.GITHUB_API_TOKEN as string | undefined;
+  const githubToken = c.env.GH_PAT as string | undefined;
   if (!githubToken) {
     return c.json({ error: 'GitHub API token not configured.' }, 500);
   }
