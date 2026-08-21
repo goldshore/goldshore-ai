@@ -48,7 +48,7 @@ let fetchError = '';
 
 if (!authError) {
   try {
-    const apiUrl = new URL('/api/admin/services', url.origin);
+    const apiUrl = new URL('/api/admin/services/workflows', url.origin);
     if (typeFilter) apiUrl.searchParams.set('type', typeFilter);
     const res = await fetch(apiUrl, { headers: Astro.request.headers });
     if (res.ok) {
@@ -259,10 +259,10 @@ const fmt = (value: string | null | undefined) =>
 
         btn.disabled = true;
         try {
-          const res = await fetch('/api/admin/services', {
-            method: 'POST',
+          const res = await fetch(`/api/admin/services/workflows/${encodeURIComponent(id)}`, {
+            method: 'PATCH',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ id, status: newStatus }),
+            body: JSON.stringify({ status: newStatus }),
           });
 
           if (res.ok) {
