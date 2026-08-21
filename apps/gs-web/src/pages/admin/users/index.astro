@@ -2,75 +2,185 @@
 export const prerender = false;
 
 import AdminLayout from "../../../layouts/AdminLayout.astro";
-import UsersManager from "../../../components/admin/UsersManager";
+import { Card, Table } from '@goldshore/ui';
+import { ADMIN_ROLES, ROLE_PERMISSIONS, type AdminPermission } from '@goldshore/auth';
+import { fetchAdminJson } from "../../../lib/api-proxy";
 
-const jwtToken = Astro.request.headers.get('CF-Access-JWT-Assertion') || '';
-const offset = parseInt(new URL(Astro.request.url).searchParams.get('offset') || '0');
-const limit = parseInt(new URL(Astro.request.url).searchParams.get('limit') || '25');
+const requestedTab = Astro.url.searchParams.get('tab');
+const TABS = ['overview', 'directory', 'permissions'] as const;
+const initialTab = (TABS as readonly string[]).includes(requestedTab ?? '') ? requestedTab! : 'overview';
 
-const apiBaseUrl = 'https://api.goldshore.ai/admin';
-
-let users = { items: [], total: 0, offset, limit, error: null as string | null };
-
+let users = { items: [] as any[], total: 0, error: null as string | null };
 try {
-  const params = new URLSearchParams({
-    offset: String(offset),
-    limit: String(limit),
-  });
-
-  const response = await fetch(`${apiBaseUrl}/users?${params}`, {
-    headers: {
-      'CF-Authorization': jwtToken,
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (response.ok) {
-    users = await response.json();
-  } else if (response.status === 401 || response.status === 403) {
-    users.error = 'Authentication required. Please ensure you are logged in with the correct credentials.';
+  const result = await fetchAdminJson<{ items: any[]; total: number }>(Astro.request, '/admin/users?limit=100');
+  if (result.ok && result.data) {
+    users = { ...users, items: result.data.items, total: result.data.pagination?.total ?? 0 };
+  } else {
+    users.error = `Failed to load users (${result.status}).`;
   }
 } catch (error) {
   users.error = error instanceof Error ? error.message : 'Failed to load users';
 }
+const activeUsers = users.items.filter((u: any) => u.status === 'active').length;
 
-const activeUsers = users.items?.filter((u: any) => u.status === 'active').length || 0;
+const permissionGroups: Array<{ label: string; permissions: AdminPermission[] }> = [
+  { label: 'Content', permissions: ['content:read', 'content:write', 'content:publish'] },
+  { label: 'Media', permissions: ['media:read', 'media:write', 'media:delete'] },
+  { label: 'Forms', permissions: ['forms:read', 'forms:write', 'forms:publish'] },
+  { label: 'User Management & Audit', permissions: ['users:read', 'users:create', 'users:invite', 'users:update', 'users:disable', 'audit:read'] },
+];
 ---
 
-<AdminLayout title="Admin | Users">
-  <div class="max-w-7xl mx-auto p-8 space-y-8">
+<AdminLayout title="Users | GoldShore Admin" requiredPermission="users:read">
+  <section class="max-w-7xl mx-auto p-8 space-y-6">
     <div class="space-y-2">
-      <h1 class="text-4xl gs-heading gs-text-accent">Team Management</h1>
-      <p class="text-lg gs-text-subtle">Manage admin users, roles, and permissions.</p>
+      <h1 class="text-4xl gs-heading gs-text-accent">Users</h1>
+      <p class="text-lg gs-text-subtle">Team overview, the operator directory, and the role/permission matrix — consolidated from three separate pages into one.</p>
     </div>
 
-    {users.error && (
-      <div class="p-4 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
-        {users.error}
-      </div>
-    )}
+    <nav class="gs-tabs" role="tablist" aria-label="User sections">
+      <button type="button" class="gs-tab" data-tab="overview" role="tab">Overview</button>
+      <button type="button" class="gs-tab" data-tab="directory" role="tab">Directory</button>
+      <button type="button" class="gs-tab" data-tab="permissions" role="tab">Permissions</button>
+    </nav>
 
-    <div class="grid md:grid-cols-3 gap-6">
-      <div class="gs-card space-y-3">
-        <h2 class="text-xl font-semibold">Total Users</h2>
-        <p class="text-3xl font-bold gs-text-info">{users.total}</p>
-        <p class="text-sm gs-text-subtle">Team members</p>
-      </div>
-      <div class="gs-card space-y-3">
-        <h2 class="text-xl font-semibold">Active Users</h2>
-        <p class="text-3xl font-bold gs-text-success">{activeUsers}</p>
-        <p class="text-sm gs-text-subtle">Currently active</p>
-      </div>
-      <div class="gs-card space-y-3">
-        <h2 class="text-xl font-semibold">Pending Invites</h2>
-        <p class="text-3xl font-bold gs-text-warning">{users.total - activeUsers}</p>
-        <p class="text-sm gs-text-subtle">Awaiting acceptance</p>
+    <!-- ============================== Overview ============================== -->
+    <div class="gs-panel" data-panel="overview">
+      {users.error && <div class="p-4 bg-red-50 border border-red-200 rounded text-red-700 text-sm mb-4">{users.error}</div>}
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="gs-card space-y-3">
+          <h2 class="text-xl font-semibold">Total Users</h2>
+          <p class="text-3xl font-bold gs-text-info">{users.total}</p>
+          <p class="text-sm gs-text-subtle">Team members</p>
+        </div>
+        <div class="gs-card space-y-3">
+          <h2 class="text-xl font-semibold">Active Users</h2>
+          <p class="text-3xl font-bold gs-text-success">{activeUsers}</p>
+          <p class="text-sm gs-text-subtle">Currently active</p>
+        </div>
+        <div class="gs-card space-y-3">
+          <h2 class="text-xl font-semibold">Pending Invites</h2>
+          <p class="text-3xl font-bold gs-text-warning">{users.total - activeUsers}</p>
+          <p class="text-sm gs-text-subtle">Awaiting acceptance</p>
+        </div>
       </div>
     </div>
 
-    <div class="gs-card space-y-4">
-      <h2 class="text-2xl font-semibold">Team Members</h2>
-      <UsersManager client:load jwtToken={jwtToken} initialUsers={users.items} />
+    <!-- ============================== Directory ============================== -->
+    <div class="gs-panel" data-panel="directory">
+      <div class="gs-grid columns-2">
+        <div><h2 class="text-2xl font-semibold">User directory</h2><p class="gs-text-lg">Create, invite, update, disable, and review operator access without exposing session credentials.</p></div>
+        <form id="user-create" class="gs-card">
+          <h3 id="form-title">Invite user</h3>
+          <div class="gs-input-group"><label for="user-email">Email</label><input id="user-email" name="email" type="email" required /></div>
+          <div class="gs-input-group"><label for="user-name">Display name</label><input id="user-name" name="displayName" /></div>
+          <div class="gs-input-group"><label for="user-role">Role</label><select id="user-role" name="role"><option>viewer</option><option>editor</option><option>admin</option><option>owner</option></select></div>
+          <label><input id="send-invite" type="checkbox" checked /> Create a pending invitation instead of immediate access</label>
+          <p id="create-status" role="status"></p><button class="gs-button" type="submit">Add user</button>
+        </form>
+      </div>
+
+      <div class="gs-card" style="margin-top:2rem; overflow-x:auto;">
+        <div style="display:flex; justify-content:space-between; gap:1rem; align-items:center;"><h3>Operators and sign-ups</h3><button id="refresh-users" class="gs-button" type="button">Refresh</button></div>
+        <table class="gs-table"><thead><tr><th>User</th><th>Role</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead><tbody id="users-body"><tr><td colspan="5">Loading users…</td></tr></tbody></table>
+        <nav aria-label="User pages" style="display:flex; justify-content:space-between; align-items:center; margin-top:1rem;"><button id="previous-page" class="gs-button" type="button">Previous</button><span id="page-label">Page 1</span><button id="next-page" class="gs-button" type="button">Next</button></nav>
+      </div>
     </div>
-  </div>
+
+    <!-- ============================== Permissions ============================== -->
+    <div class="gs-panel" data-panel="permissions">
+      <p class="text-[var(--gs-text-secondary)] mb-6">
+        Roles map directly to content, media, and forms access. Admins inherit full control, editors
+        can create and update assets, and viewers remain read-only. To change a user's role, use the Directory tab.
+      </p>
+      <Card class="gs-table-card">
+        <Table>
+          <thead>
+            <tr>
+              <th>Permission</th>
+              {ADMIN_ROLES.map((role) => (<th class="capitalize">{role}</th>))}
+            </tr>
+          </thead>
+          <tbody>
+            {permissionGroups.map((group) => (
+              <>
+                <tr>
+                  <td colspan={ADMIN_ROLES.length + 1} class="text-sm uppercase text-[var(--gs-text-secondary)]">{group.label}</td>
+                </tr>
+                {group.permissions.map((permission) => (
+                  <tr>
+                    <td>{permission}</td>
+                    {ADMIN_ROLES.map((role) => (<td>{ROLE_PERMISSIONS[role].includes(permission) ? '✅' : '—'}</td>))}
+                  </tr>
+                ))}
+              </>
+            ))}
+          </tbody>
+        </Table>
+      </Card>
+    </div>
+  </section>
+
+  <style>
+    .gs-tabs { display: flex; gap: 8px; flex-wrap: wrap; border-bottom: 1px solid var(--gs-color-border); padding-bottom: 4px; }
+    .gs-tab { font: 650 .85rem/1 inherit; padding: 8px 14px; border-radius: var(--gs-radius-pill, 999px) var(--gs-radius-pill, 999px) 0 0; border: 1px solid transparent; background: transparent; color: var(--gs-color-subtle); cursor: pointer; }
+    .gs-tab:hover { color: var(--gs-color-text); }
+    .gs-tab[aria-selected="true"] { color: var(--gs-color-primary, #d96a32); border-color: var(--gs-color-border); border-bottom-color: transparent; background: var(--gs-color-surface); }
+    .gs-panel[hidden] { display: none; }
+  </style>
+
+  <script define:vars={{ initialTab }}>
+    const tabs = Array.from(document.querySelectorAll('.gs-tab'));
+    const panels = Array.from(document.querySelectorAll('.gs-panel'));
+    function activate(tab) {
+      for (const t of tabs) t.setAttribute('aria-selected', String(t.dataset.tab === tab));
+      for (const p of panels) p.hidden = p.dataset.panel !== tab;
+    }
+    for (const t of tabs) {
+      t.addEventListener('click', () => {
+        const tab = t.dataset.tab;
+        activate(tab);
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', tab);
+        window.history.replaceState({}, '', url);
+      });
+    }
+    activate(initialTab);
+  </script>
+
+  <script>
+    // ---- Directory (ported from the former list.astro) ----
+    type User = { id:string; email:string; display_name:string|null; role:'owner'|'admin'|'editor'|'viewer'|null; status:string; created_at:string };
+    let page = 1; let pages = 1; const pageSize = 25;
+    const escapeHtml = (value: unknown) => String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' })[character] ?? character);
+    const body = document.getElementById('users-body') as HTMLElement;
+    const status = document.getElementById('create-status') as HTMLElement;
+    const loadUsers = async () => {
+      body.innerHTML = '<tr><td colspan="5">Loading users…</td></tr>';
+      const response = await fetch(`/api/admin/users?page=${page}&pageSize=${pageSize}`);
+      if (!response.ok) { body.innerHTML = `<tr><td colspan="5">${escapeHtml(await response.text())}</td></tr>`; return; }
+      const payload = await response.json() as { items:User[]; pagination:{ pages:number } }; pages = payload.pagination.pages;
+      body.innerHTML = payload.items.length ? payload.items.map((user) => `<tr data-user-id="${escapeHtml(user.id)}"><td><strong>${escapeHtml(user.display_name || 'Unnamed')}</strong><br><small>${escapeHtml(user.email)}</small></td><td><select data-field="role">${['viewer','editor','admin','owner'].map((role) => `<option value="${role}" ${role === user.role ? 'selected' : ''}>${role}</option>`).join('')}</select></td><td><select data-field="status">${['active','invited','disabled'].map((item) => `<option value="${item}" ${item === user.status ? 'selected' : ''}>${item}</option>`).join('')}</select></td><td>${new Date(user.created_at).toLocaleDateString()}</td><td><button class="gs-button" data-action="save" type="button">Save</button> <button class="gs-button" data-action="disable" type="button" ${user.status === 'disabled' ? 'disabled' : ''}>Disable</button></td></tr>`).join('') : '<tr><td colspan="5">No users found.</td></tr>';
+      document.getElementById('page-label')!.textContent = `Page ${page} of ${pages}`;
+      (document.getElementById('previous-page') as HTMLButtonElement).disabled = page <= 1; (document.getElementById('next-page') as HTMLButtonElement).disabled = page >= pages;
+    };
+    body.addEventListener('click', async (event) => {
+      const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-action]'); const row = button?.closest<HTMLTableRowElement>('[data-user-id]'); if (!button || !row) return;
+      const id = row.dataset.userId!; button.disabled = true;
+      const response = button.dataset.action === 'disable'
+        ? await fetch(`/api/admin/users/${encodeURIComponent(id)}/disable`, { method:'POST' })
+        : await fetch(`/api/admin/users/${encodeURIComponent(id)}`, { method:'PATCH', headers:{'content-type':'application/json'}, body:JSON.stringify({ role:(row.querySelector('[data-field="role"]') as HTMLSelectElement).value, status:(row.querySelector('[data-field="status"]') as HTMLSelectElement).value }) });
+      if (!response.ok) alert((await response.json().catch(() => ({error:'Update failed.'}))).error); await loadUsers();
+    });
+    document.getElementById('user-create')!.addEventListener('submit', async (event) => {
+      event.preventDefault(); const form = event.currentTarget as HTMLFormElement; const data = new FormData(form); const invite = (document.getElementById('send-invite') as HTMLInputElement).checked;
+      status.textContent = invite ? 'Creating invitation…' : 'Creating user…';
+      const payload = { email:data.get('email'), displayName:data.get('displayName'), role:data.get('role') };
+      const response = await fetch(invite ? '/api/admin/users/invite' : '/api/admin/users', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(payload) });
+      const result = await response.json().catch(() => ({})); status.textContent = response.ok ? (result.invitation?.token ? `Invitation created. One-time token: ${result.invitation.token}` : 'User created.') : result.error || 'Create failed.';
+      if (response.ok) { form.reset(); (document.getElementById('send-invite') as HTMLInputElement).checked = true; page = 1; await loadUsers(); }
+    });
+    document.getElementById('refresh-users')!.addEventListener('click', loadUsers); document.getElementById('previous-page')!.addEventListener('click', () => { if (page > 1) { page -= 1; loadUsers(); } }); document.getElementById('next-page')!.addEventListener('click', () => { if (page < pages) { page += 1; loadUsers(); } });
+    loadUsers().catch(() => { body.innerHTML = '<tr><td colspan="5">User API unavailable.</td></tr>'; });
+  </script>
 </AdminLayout>

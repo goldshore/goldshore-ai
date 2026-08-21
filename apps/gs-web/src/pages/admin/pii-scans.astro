@@ -3,6 +3,7 @@ export const prerender = false;
 
 import AdminLayout from "../../layouts/AdminLayout.astro";
 import { GSButton } from '@goldshore/ui';
+import { fetchAdminJson } from '../../lib/api-proxy';
 
 interface ScanResult {
   id: string;
@@ -33,23 +34,17 @@ const severity = Astro.url.searchParams.get('severity') || '';
 const pageSize = 15;
 
 try {
-  const apiUrl = process.env.PUBLIC_API_URL || 'https://api.goldshore.ai';
   const params = new URLSearchParams();
   params.append('page', String(page));
   params.append('limit', String(pageSize));
   if (severity) params.append('severity', severity);
 
-  const response = await fetch(`${apiUrl}/admin/pii-scans?${params}`, {
-    headers: {
-      'Authorization': `Bearer ${Astro.cookies.get('auth_token')?.value}`,
-      'Accept': 'application/json',
-    },
-  });
+  const result = await fetchAdminJson<any>(Astro.request, `/admin/pii-scans?${params}`);
 
-  if (!response.ok) {
-    error = `Failed to fetch PII scans: ${response.status} ${response.statusText}`;
+  if (!result.ok) {
+    error = `Failed to fetch PII scans: ${result.status}`;
   } else {
-    const data = await response.json();
+    const data = result.data;
     scans = data.data || [];
     lastScanTime = data.last_scan_time || null;
     totalPiiDetected = data.total_pii_detected || 0;

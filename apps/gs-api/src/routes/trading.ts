@@ -4,6 +4,7 @@ import { agentRoutes } from '../trading/routes/agents';
 import { oauthRoutes } from '../trading/routes/oauth';
 import { paperRoutes } from '../trading/routes/paper';
 import { getDashboardHTML } from '../trading/routes/dashboard';
+import { sentimentRoutes } from '../trading/routes/sentiment';
 import { isEnabled, setFlag, FLAGS } from '../trading/flags';
 
 const trading = new Hono();
@@ -39,5 +40,10 @@ trading.route('/oauth', oauthRoutes as any);
 trading.route('/api/trading', tradingRoutes as any);
 trading.route('/api/agents', agentRoutes as any);
 trading.route('/paper', paperRoutes as any);
+// Public read-only market sentiment (StockTwits trending symbols + per-symbol
+// bullish/bearish tally). No broker credentials required, so this stays
+// available even when the mcp-trading flag is off — it's market context,
+// not a trading action.
+trading.route('/api/sentiment', sentimentRoutes as any);
 
 export default trading;

@@ -7,7 +7,8 @@ import {
 import { createCorsMiddleware, APPROVED_API_ORIGINS } from '@goldshore/shared';
 import { EmailLogSchema } from '@goldshore/schema';
 import users from './routes/users';
-import health from './routes/health';
+import integrationKeys from './routes/integration-keys';
+import health, { readinessHandler } from './routes/health';
 import ai from './routes/ai';
 import user from './routes/user';
 import system from './routes/system';
@@ -29,6 +30,7 @@ import core from './routes/core';
 import mail from './routes/mail';
 import trading from './routes/trading';
 import googleBusiness from './routes/google-business';
+import ebayOauth from './routes/oauth/ebay';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
 import type { Env, Variables } from './types';
@@ -56,6 +58,13 @@ const app = new Hono<{
 
 const requiredBindings = ['PLATFORM_DB', 'GS_ASSETS', 'AI'] as const;
 const expectedD1Binding = 'PLATFORM_DB' as const;
+
+// Audience of the "Gold Shore Admin Production" Cloudflare Access
+// Application (admin.goldshore.ai/*). Not a secret — an Access audience is a
+// public app identifier baked into JWTs, useless without Cloudflare's
+// private signing key to forge one. Referenced by the /admin/* branch of the
+// auth middleware below; see the comment there for why this is needed.
+const ADMIN_PRODUCTION_ACCESS_AUDIENCE = 'c520a7647223b49b20fbe5be240772863eb684b97b57c08955b6104c58170db9';
 
 const DEFAULT_ALLOWED_ORIGINS = [...APPROVED_API_ORIGINS];
 
@@ -86,12 +95,14 @@ const isPublicPath = (path: string, method: string) => {
     path === '/' ||
     path === '/version' ||
     path === '/health' ||
+    path === '/ready' ||
     path.startsWith('/health/') ||
     (method === 'POST' && /^\/v1\/forms\/[^/]+\/submissions$/.test(path)) ||
     // Per-service health probes (/agent/health, /mail/health, …) are not
     // covered by the /health/ prefix check above.
     /^\/(agent|mail|control|trading|core)\/health\/?$/.test(path) ||
     (method === 'GET' && path === '/admin/google/oauth/callback') ||
+    (method === 'GET' && path === '/oauth/ebay/callback') ||
     path === '/mail/contact'
   );
 };
@@ -170,11 +181,33 @@ app.use('*', async (c, next) => {
   }
 
   const serviceRequest = c.req.path === '/internal' || c.req.path.startsWith('/internal/');
+  // Same admin-only surface, reached the same way (gs-web's service binding,
+  // never touching api.goldshore.ai's own Access edge): /admin/* itself, and
+  // /integrations/keys/* — the Secrets UI's backend, which lives outside the
+  // /admin prefix but has no other caller.
+  const adminSurfaceRequest =
+    c.req.path === '/admin' || c.req.path.startsWith('/admin/') ||
+    c.req.path === '/integrations/keys' || c.req.path.startsWith('/integrations/keys/');
   const accessEnv = serviceRequest
     ? {
         ...c.env,
         CLOUDFLARE_ACCESS_AUDIENCE: c.env.CLOUDFLARE_SERVICE_ACCESS_AUDIENCE,
         CLOUDFLARE_ACCESS_APPLICATION: 'service-production',
+      }
+    : adminSurfaceRequest && c.env.CLOUDFLARE_ACCESS_AUDIENCE
+    ? {
+        // gs-web reaches /admin/* through its `API` service binding, which
+        // never touches api.goldshore.ai's own Access-protected edge — so no
+        // fresh api-production-scoped JWT ever gets minted for this hop. The
+        // JWT it forwards is whatever the browser already holds for
+        // admin.goldshore.ai (audience ADMIN_PRODUCTION_ACCESS_AUDIENCE
+        // below), so gs-api's own verification must accept that audience too,
+        // specifically for this path prefix. CLOUDFLARE_ACCESS_APPLICATION
+        // stays api-production — the operators already hold an owner role
+        // for that application in access_application_roles, so authorization
+        // (not just authentication) succeeds once the audience check passes.
+        ...c.env,
+        CLOUDFLARE_ACCESS_AUDIENCE: [c.env.CLOUDFLARE_ACCESS_AUDIENCE, ADMIN_PRODUCTION_ACCESS_AUDIENCE],
       }
     : c.env;
   if (!accessEnv.CLOUDFLARE_ACCESS_AUDIENCE) {
@@ -258,12 +291,19 @@ app.get('/version.json', (c) =>
 );
 
 app.route('/health', health);
+app.get('/ready', readinessHandler);
 app.route('/ai', ai);
 app.route('/users', users);
 app.route('/user', user);
 app.route('/system', system);
 app.route('/templates', templates);
 app.route('/admin', admin);
+// The admin Secrets UI (apps/gs-web/src/pages/admin/system/index.astro,
+// Secrets tab) proxies to /integrations/keys/*, not /admin/*. The router for
+// it existed (apps/gs-api/src/routes/integration-keys.ts) but was never
+// mounted anywhere, so every request 404d before even reaching auth -
+// entirely separate from the Access-audience bugs fixed elsewhere today.
+app.route('/integrations/keys', integrationKeys);
 app.route('/admin/google', googleBusiness);
 app.route('/media', media);
 app.route('/pages', pages);
@@ -277,6 +317,7 @@ app.route('/mail', mail);
 app.route('/control', control);
 app.route('/trading', trading);
 app.route('/core', core);
+app.route('/oauth/ebay', ebayOauth);
 
 const v1 = new Hono<{ Bindings: Env }>();
 v1.route('/users', users);

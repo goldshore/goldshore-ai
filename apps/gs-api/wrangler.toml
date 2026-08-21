@@ -59,7 +59,7 @@ MAIL_FORWARD_TO = "marstonr6@gmail.com"
 PUBLIC_SITE_URL = "https://goldshore.ai"
 MAIL_FROM_EMAIL = "noreply@goldshore.ai"
 MAIL_FROM_NAME = "GoldShore"
-TURNSTILE_SITEKEY = "0x4AAAAAAEOjS4lrG1IT_-Fs"
+TURNSTILE_SITEKEY = "0x4AAAAAAESEtC0-1kwdI9_7"
 
 # ── SECRETS (set in Cloudflare dashboard, not here) ──────────────────────────────────
 # CF_ACCOUNT_ID is your Cloudflare account ID for API operations.
