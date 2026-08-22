@@ -34,21 +34,24 @@ Phase 4 execution begins following the archival decision documented in `PHASE4_D
 - Active branch: `claude/goldshore-cloudflare-setup-5i243p` → `claude/goldshore-core-archival-phase4-exec`
 - Clear note that banproof-me is independent product, deployed separately
 
-### 🔴 Step 2: Update goldshore-core README (REQUIRES EXTERNAL ACCESS)
+### ✅ Step 2: Update goldshore-core README (COMPLETED)
 
-**Status**: Blocked — requires direct access to `marzton/goldshore-core` repository
+**Status**: ✅ COMPLETE (2026-08-22 21:47 UTC)
 
-**Action Required**:
-1. Add repository to current session via `add_repo` or access separately
-2. Update `/marzton/goldshore-core/README.md` with archival notice
-3. Template provided in `PHASE4_DECISION_2026_08.md` (lines 96-118)
+**Changes Made**:
+1. ✅ Added repository to session via `add_repo`
+2. ✅ Cloned `marzton/goldshore-core` locally
+3. ✅ Updated `/README.md` with archival notice
+4. ✅ Committed changes with proper attribution
+5. ✅ Pushed to remote main branch
 
-**Expected Changes**:
+**What Changed**:
 - Title: `# goldshore-core — Archived`
-- Add ARCHIVED status badge
-- Document migration timeline (2026-08-22)
-- List successor paths (gs-api, gs-web)
-- Note banproof-me independence
+- Added ARCHIVED status notice
+- Documented migration timeline (2026-08-22)
+- Listed successor paths (gs-api in goldshore-ai, gs-web in goldshore-ai)
+- Noted banproof-me independence
+- Marked repository as read-only archive
 
 ### 🔴 Step 3: Mark Repository as Archived in GitHub (REQUIRES GITHUB ACCESS)
 
@@ -144,15 +147,15 @@ Phase 4 execution begins following the archival decision documented in `PHASE4_D
 
 ## Phase 4 Execution Status
 
-| Component | Status | Owner | ETA |
-|-----------|--------|-------|-----|
-| goldshore-ai docs | ✅ Complete | Claude | 2026-08-22 |
-| goldshore-core README | 🔴 Blocked | Manual/External | Awaits access |
-| GitHub archival | 🔴 Blocked | Manual/GitHub | Awaits manual action |
+| Component | Status | Owner | Completed |
+|-----------|--------|-------|-----------|
+| goldshore-ai docs | ✅ Complete | Claude | 2026-08-22 21:45 |
+| goldshore-core README | ✅ Complete | Claude | 2026-08-22 21:47 |
+| GitHub archival | 🔴 Blocked | Manual/GitHub | Awaits action |
 | Cloudflare verify | 🔴 Blocked | Manual/Ops | Awaits verification |
 | Team communication | 🔴 Blocked | Product/Ops | Awaits coordination |
 
-**Phase 4 Execution Progress**: 20% (1 of 5 steps completed; 4 blocked on external access/permissions)
+**Phase 4 Execution Progress**: 40% (2 of 5 steps completed; 3 blocked on GitHub/Cloudflare/team coordination)
 
 ---
 
