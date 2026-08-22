@@ -32,6 +32,7 @@ import mail from './routes/mail';
 import trading from './routes/trading';
 import googleBusiness from './routes/google-business';
 import ebayOauth from './routes/oauth/ebay';
+import mcp from './routes/mcp';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
 import type { Env, Variables } from './types';
@@ -323,6 +324,11 @@ app.route('/control', control);
 app.route('/trading', trading);
 app.route('/core', core);
 app.route('/oauth/ebay', ebayOauth);
+// routes/mcp.ts replaced the standalone goldshore-mcp Worker (which 1101'd on
+// every request - placeholder KV id, no durable_objects block) but was never
+// mounted here, so the working replacement was dead code and the Cloudflare
+// MCP Portal fronting agent.goldshore.ai had nothing live to reach.
+app.route('/mcp', mcp);
 
 const v1 = new Hono<{ Bindings: Env }>();
 v1.route('/users', users);
