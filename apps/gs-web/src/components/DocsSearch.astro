@@ -11,6 +11,8 @@ const uniqueId = Math.random().toString(36).slice(2, 11);
       id={`docs-search-input-${uniqueId}`}
       class="docs-search-input"
       placeholder="Search docs..."
+      role="combobox"
+      aria-autocomplete="list"
       aria-controls={`results-${uniqueId}`}
       aria-expanded="false"
       aria-keyshortcuts="Meta+K"
@@ -20,7 +22,7 @@ const uniqueId = Math.random().toString(36).slice(2, 11);
       <kbd>⌘</kbd>K
     </div>
   </div>
-  <ul id={`results-${uniqueId}`} class="docs-search-results" role="list" aria-live="polite"></ul>
+  <ul id={`results-${uniqueId}`} class="docs-search-results" role="listbox" aria-live="polite"></ul>
 </div>
 
 <style>
@@ -192,6 +194,7 @@ const uniqueId = Math.random().toString(36).slice(2, 11);
 
           results.forEach((result) => {
             const li = document.createElement('li');
+            li.setAttribute('role', 'option');
             const link = document.createElement('a');
             const safeUrl =
               typeof result?.url === 'string' &&

@@ -306,9 +306,20 @@
   overflow-y: auto;
   padding: 0.65rem;
   border: 1px solid rgba(217, 106, 50, 0.28);
-  border-radius: 9px;
+  border-radius: 2px;
   background: rgba(10, 10, 15, 0.98);
-  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.48);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+}
+
+/* Public chrome follows the approved near-square control geometry. */
+.topbar :is(a, button, summary),
+.main-nav__submenu a {
+  border-radius: 2px;
+}
+
+.nav-cta,
+.nav-cta:hover {
+  box-shadow: none;
 }
 
 .main-nav__submenu a {

@@ -94,6 +94,9 @@ const isAllowedOrigin = (origin: string, allowedOrigins?: string) => {
 const isPublicPath = (path: string, method: string) => {
   if (method === 'OPTIONS') return true;
   if (method === 'POST' && /^\/v1\/forms\/[a-z0-9-]+\/submissions$/i.test(path)) return true;
+  if (path === '/v1/forms/newsletter/confirm' && (method === 'GET' || method === 'POST')) return true;
+  if (path === '/v1/forms/newsletter/preferences' && (method === 'GET' || method === 'PUT')) return true;
+  if (path === '/v1/forms/newsletter/unsubscribe' && method === 'GET') return true;
   if (method === 'POST' && path === '/invitations/accept') return true;
   if (method === 'GET' && /^\/pages\/public(?:\/slug\/[^/]+)?\/?$/.test(path)) return true;
   return (

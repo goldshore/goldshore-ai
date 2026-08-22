@@ -9,6 +9,7 @@ import { getPublicSiteUrl } from '../utils/public-site';
 import '../styles/global.css';
 
 const adminLogoutUrl = `${CANONICAL_ADMIN_ORIGIN}${CLOUDFLARE_ACCESS_LOGOUT_PATH}`;
+const turnstileSiteKey = Astro.locals.TURNSTILE_SITE_KEY || import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || '';
 
 const { currentPath = Astro.url.pathname } = Astro.props;
 const normalizePath = (path: string) => {
@@ -50,8 +51,7 @@ const isCurrent = (href: string) => {
       data-login-href={CANONICAL_ADMIN_DASHBOARD_URL}
       data-logout-href={adminLogoutUrl}
     >Log in</a>
-    <button type="button" class="nav-account" data-auth-modal-open="create">Create account</button>
-    <a href={publicUrl('/contact/')} class="nav-cta">Request Briefing</a>
+    <button type="button" class="nav-cta" data-subscribe-open data-account-href={publicUrl('/app/settings/')}>Subscribe</button>
   </nav>
 </header>
 
@@ -64,20 +64,34 @@ const isCurrent = (href: string) => {
     <a class="auth-modal__primary" href={CANONICAL_ADMIN_DASHBOARD_URL}>Continue with Cloudflare Access</a>
     <a class="auth-modal__secondary" href="/login?type=github">Continue with GitHub</a>
   </div>
-  <p class="auth-modal__note">Need access first? <button type="button" data-auth-modal-switch="create">Request an account</button>.</p>
 </dialog>
 
-<dialog class="auth-modal" data-auth-modal="create" aria-labelledby="create-modal-title">
-  <button class="auth-modal__close" type="button" data-auth-modal-close aria-label="Close create account dialog">Close</button>
-  <p class="gs-eyebrow">Account request</p>
-  <h2 id="create-modal-title">Create a GoldShore account</h2>
-  <p>GoldShore accounts are provisioned for approved clients, collaborators, and operators. Tell us what you need so we can route the request correctly.</p>
-  <div class="auth-modal__actions">
-    <a class="auth-modal__primary" href={publicUrl('/contact/?intent=account-access')}>Request account access</a>
-    <a class="auth-modal__secondary" href={publicUrl('/developer/')}>Review developer access</a>
+<dialog class="auth-modal subscribe-modal" data-subscribe-modal aria-labelledby="subscribe-modal-title" data-turnstile-site-key={turnstileSiteKey}>
+  <button class="auth-modal__close" type="button" data-subscribe-close aria-label="Close subscribe dialog">Close</button>
+  <div data-subscribe-step="email">
+    <h2 id="subscribe-modal-title">Stay in the loop</h2>
+    <p>Receive GoldShore analysis, product updates, and practical notes. Confirm your address before anything is sent.</p>
+    <form class="subscribe-form" data-subscribe-form>
+      <label>Name <span>Optional</span><input name="name" autocomplete="name" maxlength="120" /></label>
+      <label>Email address<input name="email" type="email" autocomplete="email" required /></label>
+      {turnstileSiteKey && <div class="cf-turnstile" data-sitekey={turnstileSiteKey} data-theme="dark"></div>}
+      <label class="subscribe-consent"><input name="consent" type="checkbox" required /> I agree to receive the selected GoldShore emails and can unsubscribe at any time.</label>
+      <button class="auth-modal__primary" type="submit">Send verification code</button>
+    </form>
   </div>
-  <p class="auth-modal__note">Already approved? <button type="button" data-auth-modal-switch="login">Log in</button>.</p>
+  <div data-subscribe-step="code" hidden>
+    <h2>Check your email</h2>
+    <p>Open the activation link or enter the six-digit code sent to <strong data-subscribe-email></strong>.</p>
+    <form class="subscribe-form" data-code-form>
+      <label>Verification code<input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required /></label>
+      <button class="auth-modal__primary" type="submit">Verify subscription</button>
+    </form>
+    <button class="auth-modal__text" type="button" data-subscribe-back>Use another email</button>
+  </div>
+  <p class="subscribe-status" data-subscribe-status role="status" aria-live="polite"></p>
 </dialog>
+
+{turnstileSiteKey && <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}
 
 <script>
   import '../scripts/theme-navigation';
@@ -92,7 +106,7 @@ const isCurrent = (href: string) => {
     try {
       const { isValid } = useAuthToken();
       if (isValid) {
-        loginLink.textContent = 'Logout';
+        loginLink.textContent = 'Log out';
         loginLink.dataset.authenticated = 'true';
         loginLink.setAttribute('href', loginLink.dataset.logoutHref ?? '/');
       }
@@ -131,11 +145,60 @@ const isCurrent = (href: string) => {
   modals.forEach((modal) => modal.addEventListener('click', (event) => {
     if (event.target === modal) modal.close();
   }));
+
+  const subscribeModal = document.querySelector<HTMLDialogElement>('[data-subscribe-modal]');
+  const subscribeButton = document.querySelector<HTMLButtonElement>('[data-subscribe-open]');
+  const subscribeStatus = subscribeModal?.querySelector<HTMLElement>('[data-subscribe-status]');
+  const emailStep = subscribeModal?.querySelector<HTMLElement>('[data-subscribe-step="email"]');
+  const codeStep = subscribeModal?.querySelector<HTMLElement>('[data-subscribe-step="code"]');
+  const emailForm = subscribeModal?.querySelector<HTMLFormElement>('[data-subscribe-form]');
+  const codeForm = subscribeModal?.querySelector<HTMLFormElement>('[data-code-form]');
+  let pendingEmail = '';
+
+  if (subscribeButton && loginLink?.dataset.authenticated === 'true') {
+    subscribeButton.textContent = 'Settings';
+    subscribeButton.addEventListener('click', () => { location.href = subscribeButton.dataset.accountHref || '/app/settings/'; });
+  } else {
+    subscribeButton?.addEventListener('click', () => subscribeModal?.showModal());
+  }
+  subscribeModal?.querySelector('[data-subscribe-close]')?.addEventListener('click', () => subscribeModal.close());
+  subscribeModal?.querySelector('[data-subscribe-back]')?.addEventListener('click', () => {
+    if (emailStep) emailStep.hidden = false;
+    if (codeStep) codeStep.hidden = true;
+    if (subscribeStatus) subscribeStatus.textContent = '';
+  });
+  subscribeModal?.addEventListener('click', (event) => { if (event.target === subscribeModal) subscribeModal.close(); });
+
+  emailForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = new FormData(emailForm);
+    pendingEmail = String(form.get('email') || '').trim().toLowerCase();
+    if (subscribeStatus) subscribeStatus.textContent = 'Sending your verification email…';
+    const response = await fetch('/api/leads/subscribe', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email: pendingEmail, name: String(form.get('name') || ''), source: 'header-subscribe', turnstileToken: String(form.get('cf-turnstile-response') || '') }),
+    }).catch(() => null);
+    const result = await response?.json().catch(() => ({}));
+    if (!response?.ok) { if (subscribeStatus) subscribeStatus.textContent = result?.error || 'Unable to send the verification email.'; return; }
+    subscribeModal?.querySelector<HTMLElement>('[data-subscribe-email]')?.replaceChildren(pendingEmail);
+    if (emailStep) emailStep.hidden = true;
+    if (codeStep) codeStep.hidden = false;
+    if (subscribeStatus) subscribeStatus.textContent = 'The code expires in 15 minutes.';
+  });
+
+  codeForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const code = String(new FormData(codeForm).get('code') || '').trim();
+    if (subscribeStatus) subscribeStatus.textContent = 'Verifying…';
+    const response = await fetch('/api/leads/confirm', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: pendingEmail, code }) }).catch(() => null);
+    const result = await response?.json().catch(() => ({}));
+    if (!response?.ok) { if (subscribeStatus) subscribeStatus.textContent = result?.error || 'That code could not be verified.'; return; }
+    location.href = result.settingsUrl || '/newsletter/settings/?subscribed=1';
+  });
 </script>
 
 <style>
-  .nav-login, .nav-account { font: inherit; cursor: pointer; }
-  .nav-account { border: 0; background: transparent; color: var(--gs-text-dim); text-transform: uppercase; letter-spacing: .08em; font-size: .68rem; }
+  .nav-login, .nav-cta { font: inherit; cursor: pointer; }
   .auth-modal { width: min(34rem, calc(100% - 2rem)); padding: clamp(1.5rem, 5vw, 2.5rem); border: 1px solid rgba(211,116,62,.42); border-radius: 0; background: #111019; color: #f5f1eb; box-shadow: 0 28px 90px rgba(0,0,0,.6); }
   .auth-modal::backdrop { background: rgba(3,3,7,.78); backdrop-filter: blur(8px); }
   .auth-modal h2 { margin: .65rem 0 1rem; font-size: clamp(2rem, 6vw, 3.5rem); line-height: .95; text-transform: uppercase; }
@@ -147,5 +210,13 @@ const isCurrent = (href: string) => {
   .auth-modal__secondary { border: 1px solid rgba(211,116,62,.42); color: #f5f1eb; }
   .auth-modal__note { margin: 1.25rem 0 0; font-size: .9rem; }
   .auth-modal__note button { border: 0; padding: 0; background: transparent; color: #d3743e; cursor: pointer; font: inherit; }
-  @media (max-width: 960px) { .nav-account { width: 100%; padding: .8rem; } }
+  .subscribe-form { display:grid; gap:1rem; margin-top:1.5rem; }
+  .subscribe-form label { display:grid; gap:.45rem; color:#f5f1eb; font:600 .66rem/1.4 'DM Mono',monospace; letter-spacing:.08em; text-transform:uppercase; }
+  .subscribe-form label span { color:var(--gs-text-dim); font-weight:400; }
+  .subscribe-form input:not([type="checkbox"]) { min-height:3rem; padding:.75rem; border:1px solid rgba(255,255,255,.16); border-radius:0; background:#09090e; color:#fff; }
+  .subscribe-form button { min-height:3rem; border:0; cursor:pointer; font:700 .68rem/1.2 'DM Mono',monospace; letter-spacing:.08em; text-transform:uppercase; }
+  .subscribe-consent { grid-template-columns:auto 1fr!important; align-items:start; color:var(--gs-text-dim)!important; font-family:'DM Sans',sans-serif!important; font-size:.82rem!important; font-weight:400!important; letter-spacing:0!important; text-transform:none!important; }
+  .subscribe-consent input { margin-top:.2rem; accent-color:#d3743e; }
+  .auth-modal__text { margin-top:1rem; padding:0; border:0; background:transparent; color:#d3743e; cursor:pointer; }
+  .subscribe-status { min-height:1.5rem; margin:1rem 0 0!important; color:#d9a47f!important; }
 </style>

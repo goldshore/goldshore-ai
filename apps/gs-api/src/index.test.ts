@@ -60,6 +60,9 @@ test('allows only public form submission writes through API authentication', () 
   assert.equal(isPublicPath('/v1/forms/contact/submissions', 'POST'), true);
   assert.equal(isPublicPath('/v1/forms/newsletter/submissions', 'POST'), true);
   assert.equal(isPublicPath('/v1/forms/newsletter/confirm', 'GET'), true);
+  assert.equal(isPublicPath('/v1/forms/newsletter/confirm', 'POST'), true);
+  assert.equal(isPublicPath('/v1/forms/newsletter/preferences', 'GET'), true);
+  assert.equal(isPublicPath('/v1/forms/newsletter/preferences', 'PUT'), true);
   assert.equal(isPublicPath('/v1/forms/newsletter/unsubscribe', 'GET'), true);
   assert.equal(isPublicPath('/v1/forms/contact/submissions', 'GET'), false);
   assert.equal(isPublicPath('/v1/forms/subscribers', 'GET'), false);
