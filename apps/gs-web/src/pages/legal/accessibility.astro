@@ -1,0 +1,23 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+export const prerender = false;
+---
+<BaseLayout title="Accessibility | GoldShore" description="GoldShore's approach to accessible digital experiences and reporting accessibility barriers." canonicalPath="/legal/accessibility/">
+  <section class="gs-section gs-section--padded legal-copy">
+    <p class="gs-eyebrow">Legal &amp; trust</p>
+    <h1>Accessibility</h1>
+    <p><strong>Updated August 22, 2026.</strong> GoldShore aims to make its public websites and core service journeys usable by people with a wide range of abilities, devices, and assistive technologies.</p>
+    <h2>Our approach</h2>
+    <p>We work toward clear structure, keyboard access, visible focus, sufficient contrast, descriptive labels, meaningful alternative text, responsive layouts, and reduced-motion support. Accessibility is reviewed as part of ongoing design and engineering work rather than treated as a one-time certification.</p>
+    <h2>Known limitations</h2>
+    <p>Third-party embeds, older documents, experimental features, and protected operator tools may not yet provide an equivalent experience in every context. We prioritize barriers that block access to information, contact, authentication, or essential tasks.</p>
+    <h2>Request help or report a barrier</h2>
+    <p>Use the <a href="/contact/">contact page</a> and include the page address, what you were trying to do, the browser or assistive technology you used, and the format that would work better. Please do not include passwords or other secrets. We will review the report and provide a reasonable alternative when possible.</p>
+  </section>
+</BaseLayout>
+<style>
+  .legal-copy { max-width: 78ch; margin-inline: auto; }
+  .legal-copy h1 { font-size: clamp(3rem, 8vw, 7rem); overflow-wrap: anywhere; }
+  .legal-copy h2 { margin-top: 2rem; }
+  .legal-copy p { line-height: 1.75; color: var(--gs-text-secondary); }
+</style>

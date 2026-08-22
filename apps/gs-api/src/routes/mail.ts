@@ -54,7 +54,7 @@ mail.post('/contact', async (c) => {
 
   const turnstile = await validateFormTurnstile(
     formData,
-    c.env.TURNSTILE_SECRET_KEY,
+    c.env.TURNSTILE_SECRET,
     c.req.raw,
   );
   if (!turnstile.valid) {

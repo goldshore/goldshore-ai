@@ -2,7 +2,13 @@ import { createRemoteJWKSet, jwtVerify, type JWTPayload, SignJWT, importSPKI } f
 
 export interface Env {
     // Sentinel: Added support for Audience verification to prevent auth bypass
-    CLOUDFLARE_ACCESS_AUDIENCE?: string;
+    // string[] accepted so a caller can trust more than one Access
+    // Application's audience for a single request (see index.ts's admin-surface
+    // branch, which trusts both api-production's own audience and
+    // admin-production's — the JWT gs-web forwards over the service binding was
+    // minted for admin-production, never api-production, since that hop never
+    // touches api.goldshore.ai's own Access-protected edge).
+    CLOUDFLARE_ACCESS_AUDIENCE?: string | string[];
     // Sentinel: Added support for dynamic team domain
     CLOUDFLARE_TEAM_DOMAIN?: string;
     // JWT secret for cookie-based authentication
@@ -125,7 +131,7 @@ export async function verifyAccessWithClaimsInternal(req: Request, env: Env, dep
   const JWKS = getJwks(teamDomain, deps);
 
   try {
-    const options: { issuer: string; audience?: string } = {
+    const options: { issuer: string; audience?: string | string[] } = {
       issuer: `https://${teamDomain}`,
     };
 

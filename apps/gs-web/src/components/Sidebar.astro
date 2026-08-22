@@ -19,6 +19,7 @@ const groups: NavGroup[] = [
     label: 'Operations',
     links: [
       { href: '/admin/platform', label: 'Control Plane' },
+      { href: '/admin/analytics', label: 'Analytics' },
       { href: '/content', label: 'Content Studio' },
       { href: '/admin/integrations/all', label: 'Integrations' },
       { href: '/admin/ads', label: 'Ad Integrator' },
@@ -38,19 +39,13 @@ const groups: NavGroup[] = [
     label: 'Workers',
     permission: 'cloudflare_inventory:read',
     links: [
-      { href: '/admin/workers/status', label: 'Status' },
-      { href: '/admin/workers/bindings', label: 'Bindings' },
-      { href: '/admin/workers/routes', label: 'Routes' },
-      { href: '/admin/workers/tunnels', label: 'Tunnels' },
+      { href: '/admin/workers', label: 'Workers' },
     ],
   },
   {
     label: 'System',
     links: [
-      { href: '/admin/system/dns', label: 'DNS', permission: 'cloudflare_inventory:read' },
-      { href: '/admin/system/secrets', label: 'Secrets', permission: 'secret_metadata:read' },
-      { href: '/admin/system/storage', label: 'Storage', permission: 'cloudflare_inventory:read' },
-      { href: '/admin/system/pages', label: 'Pages', permission: 'cloudflare_inventory:read' },
+      { href: '/admin/system', label: 'System & Infra', permission: 'cloudflare_inventory:read' },
       { href: '/admin/users', label: 'Users', permission: 'users:read' },
     ],
   },
@@ -117,7 +112,7 @@ const visibleGroups = groups
 <style>
   .gs-admin-sidebar { box-sizing: border-box; flex: 0 0 272px; width: 272px; height: 100dvh; position: sticky; top: 0; z-index: 40; display: flex; flex-direction: column; overflow: hidden; border-right: 1px solid var(--admin-line); background: #07111b; }
   .gs-sidebar-brand { min-height: 76px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; border-bottom: 1px solid var(--admin-line); }
-  .gs-sidebar-logo { display: flex; align-items: center; gap: 11px; color: var(--admin-text); font: 700 .86rem/1 var(--admin-ui); letter-spacing: .14em; text-decoration: none; }
+  .gs-sidebar-logo { display: flex; align-items: center; gap: 11px; color: var(--admin-text); font: 700 .86rem/1 'DM Sans', var(--admin-ui); letter-spacing: .14em; text-decoration: none; }
   .gs-sidebar-logo img { width: 30px; height: 30px; border-radius: 7px; object-fit: cover; }
   .sidebar-close { display: none; width: 34px; height: 34px; align-items: center; justify-content: center; border: 1px solid var(--admin-line); background: transparent; color: var(--admin-muted); }
   .sidebar-close svg { width: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; }

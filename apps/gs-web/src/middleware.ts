@@ -113,7 +113,8 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   if (
     adminRule?.kind === 'page' &&
     adminRule.canonicalPath === ADMIN_DASHBOARD_PATH &&
-    url.pathname === ADMIN_DASHBOARD_PATH
+    url.pathname === ADMIN_DASHBOARD_PATH &&
+    !isAdminHost(host)
   ) {
     const { env: cloudflareEnv } = await import('cloudflare:workers');
     response = await (cloudflareEnv as Env).ASSETS.fetch(context.request);

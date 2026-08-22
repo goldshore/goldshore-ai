@@ -2,6 +2,7 @@
 export const prerender = false;
 
 import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { fetchAdminJson } from '../../../lib/api-proxy';
 
 interface Entry {
   id: string;
@@ -27,21 +28,16 @@ let entry: Entry | null = null;
 let error: string | null = null;
 
 try {
-  const apiUrl = process.env.PUBLIC_API_URL || 'https://api.goldshore.ai';
   const endpoint = entryType === 'contact' ? 'contacts' : 'leads';
-  const response = await fetch(`${apiUrl}/admin/entries/${endpoint}/${entryId}`, {
-    headers: {
-      'Authorization': `Bearer ${Astro.cookies.get('auth_token')?.value || ''}`,
-    },
-  });
+  const result = await fetchAdminJson<Entry>(Astro.request, `/admin/entries/${endpoint}/${entryId}`);
 
-  if (response.ok) {
-    entry = await response.json();
-    entry.type = entryType;
-  } else if (response.status === 404) {
+  if (result.ok) {
+    entry = result.data;
+    if (entry) entry.type = entryType;
+  } else if (result.status === 404) {
     error = `${entryType === 'contact' ? 'Contact' : 'Lead'} not found`;
   } else {
-    error = `Failed to load ${entryType} (HTTP ${response.status})`;
+    error = `Failed to load ${entryType} (HTTP ${result.status})`;
   }
 } catch (e) {
   error = e instanceof Error ? e.message : `Failed to load ${entryType}`;

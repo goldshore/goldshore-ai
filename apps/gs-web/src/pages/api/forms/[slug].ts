@@ -11,12 +11,21 @@ export const prerender = false;
  * `forms:write` for PUT/PATCH) and CSRF checks live in gs-api so a single
  * implementation governs every client.
  */
-const forward: APIRoute = ({ request, params, locals }) =>
-  proxyApiRequest(
-    request,
-    `/v1/forms/configs/${encodeURIComponent(params.slug || '')}`,
-    locals.PUBLIC_API,
+const forward: APIRoute = async (context) => {
+  // Access the service binding from Cloudflare Workers environment
+  let serviceBinding: any = undefined;
+  if (!import.meta.env.DEV) {
+    const { env } = await import('cloudflare:workers');
+    serviceBinding = (env as any).API;
+  }
+
+  return proxyApiRequest(
+    context.request,
+    `/v1/forms/configs/${encodeURIComponent(context.params.slug || '')}`,
+    context.locals.PUBLIC_API,
+    serviceBinding
   );
+};
 
 export const GET = forward;
 export const PUT = forward;
