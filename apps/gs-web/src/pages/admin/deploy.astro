@@ -111,9 +111,7 @@ if (!rule) {
   </section>
 
   <script is:inline>
-    const page = document.querySelector('.deploy-assistant');
-    const apiBase = page?.dataset.apiBase || 'https://api.goldshore.ai';
-    const endpoint = (path) => `${apiBase}${path}`;
+    const endpoint = (path) => `/api/admin/deployments${path.replace(/^\/deployments/, '')}`;
 
     const state = {
       recommendations: [],

@@ -29,7 +29,7 @@ This is the single source of truth for:
 | `admin.goldshore.ai`, `admin.goldshore.org` | Sites project `appgprj_6a7667ce31208191b2962f93cf6c3504` | Keep on Sites | Admin dashboards |
 | `banproof.me`, `www.banproof.me` | Sites project `appgprj_6a7671b8ce188191a16f4831f51ff616` | Keep on Sites | Banproof verification / proof surface |
 | `armsway.com` | Sites project `appgprj_6a767419ed9081918b466ecd3dfedfb4` | Keep on Sites | Armsway public site |
-| `www.armsway.com` | Sites project `appgprj_6a767eac476881919df37ddb825c3507` | Same Armsway project | Still settling validation |
+| `www.armsway.com` | Sites project `appgprj_6a767419ed9081918b466ecd3dfedfb4` | Same Armsway project | Still settling validation |
 | `rmarston.com`, `www.rmarston.com` | Sites project `appgprj_6a76758dfb3c8191af4e1632d55c14b7` | Keep on Sites | Portfolio / personal brand |
 | `fortune-fund.com`, `www.fortune-fund.com` | Sites project `appgprj_6a76777f376481918867936ffe802c66` | Keep on Sites | Financial brand surface |
 | `solefoodny.com`, `www.solefoodny.com` | Sites project `appgprj_6a76797537a08191be971c52e2f1b879` | Keep on Sites once DNS is changed | Still blocked by registrar-managed apex DNS |

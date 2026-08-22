@@ -8,9 +8,10 @@ on:
   workflow_dispatch:
     inputs:
       issue_number:
-        description: Issue number to triage
-        required: true
-        type: number
+        description: Issue number to triage (required for manual trigger)
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: read

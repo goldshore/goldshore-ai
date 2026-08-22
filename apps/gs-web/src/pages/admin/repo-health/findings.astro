@@ -3,6 +3,7 @@ export const prerender = false;
 
 import AdminLayout from "../../../layouts/AdminLayout.astro";
 import { GSButton } from '@goldshore/ui';
+import { fetchAdminJson } from '../../../lib/api-proxy';
 
 interface Finding {
   id: string;
@@ -30,24 +31,18 @@ const status = Astro.url.searchParams.get('status') || '';
 const pageSize = 25;
 
 try {
-  const apiUrl = process.env.PUBLIC_API_URL || 'https://api.goldshore.ai';
   const params = new URLSearchParams();
   params.append('page', String(page));
   params.append('limit', String(pageSize));
   if (severity) params.append('severity', severity);
   if (status) params.append('status', status);
 
-  const response = await fetch(`${apiUrl}/admin/repo-health/findings?${params}`, {
-    headers: {
-      'Authorization': `Bearer ${Astro.cookies.get('auth_token')?.value}`,
-      'Accept': 'application/json',
-    },
-  });
+  const result = await fetchAdminJson<any>(Astro.request, `/admin/repo-health/findings?${params}`);
 
-  if (!response.ok) {
-    error = `Failed to fetch findings: ${response.status} ${response.statusText}`;
+  if (!result.ok) {
+    error = `Failed to fetch findings: ${result.status}`;
   } else {
-    const data = await response.json();
+    const data = result.data;
     findings = data.data || [];
     total = data.total || 0;
     criticalCount = data.summary?.critical || 0;
