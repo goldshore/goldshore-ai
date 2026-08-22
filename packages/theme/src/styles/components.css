@@ -106,8 +106,8 @@
 .gs-button--small { padding: var(--gs-space-2) var(--gs-space-4); font-size: 0.9rem; }
 .gs-button--large { padding: var(--gs-space-4) var(--gs-space-6); font-size: 1rem; }
 
-.gs-button:hover { transform: translateY(-2px); box-shadow: 0 10px 30px var(--gs-accent-soft); }
-.gs-button:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--gs-accent-soft); }
+.gs-button:hover { transform: translateY(-2px); box-shadow: none; }
+.gs-button:focus-visible { outline: 1px solid var(--gs-accent); outline-offset: 2px; box-shadow: none; }
 
 .gs-button--secondary {
   background: transparent;
@@ -232,13 +232,13 @@
 .gs-modal-panel {
   position: relative;
   overflow: hidden;
-  border-radius: 28px;
+  border-radius: 2px;
   border: 1px solid rgba(159, 220, 255, 0.18);
   background:
     radial-gradient(circle at top left, rgba(39, 125, 201, 0.22), transparent 34%),
     radial-gradient(circle at 86% 4%, rgba(255, 255, 255, 0.12), transparent 26%),
     linear-gradient(180deg, rgba(8, 14, 27, 0.98), rgba(5, 10, 18, 0.96));
-  box-shadow: 0 24px 70px rgba(2, 8, 18, 0.55);
+  box-shadow: none;
 }
 
 .gs-modal-panel::before {
@@ -261,11 +261,11 @@
   place-items: center;
   width: 3.5rem;
   height: 3.5rem;
-  border-radius: 1.1rem;
+  border-radius: 2px;
   color: #d8f2ff;
   background: linear-gradient(180deg, rgba(17, 74, 128, 0.88), rgba(7, 22, 40, 0.94));
   border: 1px solid rgba(159, 220, 255, 0.25);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.02), 0 14px 34px rgba(4, 12, 24, 0.45);
+  box-shadow: none;
 }
 
 .gs-access-mark svg {
@@ -383,9 +383,9 @@
   inset: -4px;
   border-radius: inherit;
   border: 1px solid rgba(120, 190, 255, 0.35);
-  box-shadow: 0 0 10px rgba(120, 190, 255, 0.25);
+  box-shadow: none;
   opacity: 0.45;
-  animation: gs-border-pulse 7s ease-in-out infinite;
+  animation: none;
   pointer-events: none;
 }
 @keyframes gs-border-pulse {

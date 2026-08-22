@@ -232,10 +232,10 @@ const turnstileSiteKey = Astro.locals.TURNSTILE_SITE_KEY || import.meta.env.PUBL
     display: grid;
     gap: 1.4rem;
     padding: clamp(1.4rem, 2vw, 2rem);
-    border-radius: 24px;
-    background: rgba(10, 18, 36, 0.72);
+    border-radius: 2px;
+    background: rgba(18, 18, 26, 0.88);
     border: 1px solid rgba(255, 255, 255, 0.06);
-    box-shadow: var(--gs-shadow);
+    box-shadow: none;
     backdrop-filter: blur(18px);
   }
 
@@ -285,7 +285,7 @@ const turnstileSiteKey = Astro.locals.TURNSTILE_SITE_KEY || import.meta.env.PUBL
   .contact-form textarea {
     width: 100%;
     border: 1px solid rgba(255, 255, 255, 0.04);
-    border-radius: 14px;
+    border-radius: 2px;
     background: rgba(255, 255, 255, 0.04);
     color: var(--gs-text);
     padding: 0.95rem 1rem;
@@ -296,8 +296,8 @@ const turnstileSiteKey = Astro.locals.TURNSTILE_SITE_KEY || import.meta.env.PUBL
   .contact-form input:focus,
   .contact-form select:focus,
   .contact-form textarea:focus {
-    border-color: rgba(90, 162, 255, 0.4);
-    box-shadow: 0 0 0 4px rgba(90, 162, 255, 0.12);
+    border-color: rgba(211, 116, 62, 0.52);
+    box-shadow: none;
     background: rgba(255, 255, 255, 0.06);
   }
 
@@ -338,9 +338,9 @@ const turnstileSiteKey = Astro.locals.TURNSTILE_SITE_KEY || import.meta.env.PUBL
   }
 
   .contact-form__submit {
-    border: 1px solid rgba(90, 162, 255, 0.2);
-    border-radius: 999px;
-    background: rgba(90, 162, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 2px;
+    background: transparent;
     color: var(--gs-text);
     padding: 0.9rem 1.35rem;
     min-width: 140px;
@@ -351,8 +351,8 @@ const turnstileSiteKey = Astro.locals.TURNSTILE_SITE_KEY || import.meta.env.PUBL
   .contact-form__submit:hover,
   .contact-form__submit:focus-visible {
     transform: translateY(-1px);
-    border-color: rgba(90, 162, 255, 0.45);
-    background: rgba(90, 162, 255, 0.2);
+    border-color: rgba(211, 116, 62, 0.52);
+    background: rgba(211, 116, 62, 0.08);
   }
 
   .contact-form__submit[disabled] {
@@ -367,8 +367,8 @@ const turnstileSiteKey = Astro.locals.TURNSTILE_SITE_KEY || import.meta.env.PUBL
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 24px;
-    background: rgba(10, 18, 36, 0.96);
+    border-radius: 2px;
+    background: rgba(18, 18, 26, 0.98);
     backdrop-filter: blur(8px);
     opacity: 0;
     pointer-events: none;
@@ -423,7 +423,7 @@ const turnstileSiteKey = Astro.locals.TURNSTILE_SITE_KEY || import.meta.env.PUBL
     justify-content: center;
     padding: 0.75rem 1.25rem;
     margin: 0.5rem auto 0;
-    border-radius: 999px;
+    border-radius: 2px;
     border: 1px solid rgba(255, 255, 255, 0.12);
     background: transparent;
     color: var(--gs-text-dim);

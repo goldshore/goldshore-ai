@@ -107,12 +107,12 @@
 .gs-shell-v284 :is(.gs-card, .info-card, .service-card) {
   position: relative;
   overflow: hidden;
-  border-radius: 4px;
+  border-radius: 2px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background:
     linear-gradient(145deg, rgba(211, 116, 62, 0.055), transparent 42%),
     rgba(18, 18, 26, 0.88);
-  box-shadow: 0 22px 55px rgba(0, 0, 0, 0.22);
+  box-shadow: none;
 }
 
 /* Platform and service-detail pages historically shipped their own blue
@@ -123,11 +123,11 @@
   position: relative;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 4px;
+  border-radius: 2px;
   background:
     linear-gradient(145deg, rgba(211, 116, 62, 0.055), transparent 42%),
     rgba(18, 18, 26, 0.88);
-  box-shadow: 0 22px 55px rgba(0, 0, 0, 0.22);
+  box-shadow: none;
 }
 
 .gs-shell-v284 .gs-page-content .module-card {
@@ -151,16 +151,16 @@
 
 .gs-shell-v284 .gs-page-content :is(.page-cta, .platform-cta) {
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 4px;
+  border-radius: 2px;
   background:
     linear-gradient(145deg, rgba(211, 116, 62, 0.055), transparent 42%),
     rgba(18, 18, 26, 0.88);
-  box-shadow: 0 22px 55px rgba(0, 0, 0, 0.22);
+  box-shadow: none;
 }
 
 .gs-shell-v284 .gs-page-content .cta-btn {
   border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 0;
+  border-radius: 2px;
   background: transparent;
   color: var(--gs-public-text);
   box-shadow: none;
@@ -175,6 +175,24 @@
   border-color: var(--gs-public-oxide);
   background: transparent;
   color: var(--gs-public-oxide-bright);
+}
+
+/* Normalize legacy public controls and content containers while leaving
+   intentionally circular status indicators alone. */
+.gs-shell-v284 :is(button, input, select, textarea, summary, .gs-button, .gs-card, .gs-panel, .info-card, .service-card, .feature-card, .module-card, .page-cta, .platform-cta, .contact-form, .contact-form__success) {
+  border-radius: 2px;
+}
+
+.gs-shell-v284 :is(.gs-card, .gs-panel, .info-card, .service-card, .feature-card, .module-card, .page-cta, .platform-cta, .contact-form) {
+  box-shadow: none;
+}
+
+.gs-shell-v284 .gs-page-content :is(article, aside, form, button, [role='button'], [class*='card'], [class*='panel']) {
+  box-shadow: none;
+}
+
+.gs-shell-v284 .gs-page-content :is([class*='card'], [class*='panel'], [class*='pill'], [class*='badge'], [class*='chip']) {
+  border-radius: 2px;
 }
 
 .gs-shell-v284 .gs-slug-page {

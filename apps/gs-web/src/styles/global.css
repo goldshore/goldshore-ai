@@ -27,9 +27,15 @@
   --gs-success: #5ddb9a;
   --gs-warning: #f0b35b;
   --gs-danger: #f56b6b;
-  --gs-radius: 16px;
-  --gs-radius-lg: 32px;
-  --gs-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  --gs-radius: 2px;
+  --gs-radius-xs: 2px;
+  --gs-radius-sm: 2px;
+  --gs-radius-md: 2px;
+  --gs-radius-lg: 2px;
+  --gs-radius-pill: 2px;
+  --gs-shadow: none;
+  --gs-shadow-soft: none;
+  --gs-shadow-hard: none;
   --gs-max-width: min(1600px, calc(100vw - 2rem));
   --gs-font-display: 'Syne', 'DM Sans', system-ui, sans-serif;
   --gs-font-body: 'DM Sans', 'Inter', system-ui, sans-serif;
