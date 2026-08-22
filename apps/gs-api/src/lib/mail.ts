@@ -37,17 +37,18 @@ export const sendMail = async (
 ): Promise<MailResult> => {
   const fromEmail = env.MAIL_FROM_EMAIL?.trim() || 'noreply@goldshore.ai';
   const fromName = env.MAIL_FROM_NAME?.trim() || 'GoldShore';
-  if ((!env.BREVO_API_KEY && !env.EMAIL) || !isValidEmail(fromEmail) || to.length === 0) {
+  const brevoApiKey = env.BREVO_API_KEY ? (await env.BREVO_API_KEY.get()).trim() : '';
+  if ((!brevoApiKey && !env.EMAIL) || !isValidEmail(fromEmail) || to.length === 0) {
     return { attempted: false, reason: 'missing_mail_configuration' };
   }
 
   try {
-    if (env.BREVO_API_KEY) {
+    if (brevoApiKey) {
       const response = await fetch('https://api.brevo.com/v3/smtp/email', {
         method: 'POST',
         headers: {
           accept: 'application/json',
-          'api-key': env.BREVO_API_KEY,
+          'api-key': brevoApiKey,
           'content-type': 'application/json',
         },
         body: JSON.stringify({
