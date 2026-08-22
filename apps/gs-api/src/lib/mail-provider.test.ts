@@ -12,7 +12,7 @@ test('Brevo sends transactional mail when its API key is configured', async () =
 
   try {
     const result = await sendMail(
-      { BREVO_API_KEY: 'test-key', MAIL_FROM_EMAIL: 'noreply@goldshore.ai', MAIL_FROM_NAME: 'GoldShore' } as any,
+      { BREVO_API_KEY: { get: async () => 'test-key' }, MAIL_FROM_EMAIL: 'noreply@goldshore.ai', MAIL_FROM_NAME: 'GoldShore' } as any,
       [{ email: 'subscriber@example.com', name: 'Subscriber' }],
       'Confirm your subscription',
       'Text body',
@@ -34,7 +34,7 @@ test('Brevo errors are sanitized and transient failures remain retryable', async
   globalThis.fetch = async () => new Response('provider details must not escape', { status: 503 });
   try {
     const result = await sendMail(
-      { BREVO_API_KEY: 'test-key', MAIL_FROM_EMAIL: 'noreply@goldshore.ai' } as any,
+      { BREVO_API_KEY: { get: async () => 'test-key' }, MAIL_FROM_EMAIL: 'noreply@goldshore.ai' } as any,
       [{ email: 'subscriber@example.com' }],
       'Subject',
       'Text',

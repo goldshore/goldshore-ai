@@ -39,6 +39,7 @@
   --gs-max-width: min(1600px, calc(100vw - 2rem));
   --gs-font-display: 'Syne', 'DM Sans', system-ui, sans-serif;
   --gs-font-body: 'DM Sans', 'Inter', system-ui, sans-serif;
+  --gs-font-wordmark: 'DM Sans', 'Inter', system-ui, sans-serif;
 }
 
 html {
