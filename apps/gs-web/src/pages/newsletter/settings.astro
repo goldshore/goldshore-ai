@@ -1,0 +1,120 @@
+---
+import MarketingLayout from '../../layouts/MarketingLayout.astro';
+
+export const prerender = false;
+
+const apiBase = (import.meta.env.PUBLIC_API || 'https://api.goldshore.ai').replace(/\/$/, '');
+---
+
+<MarketingLayout
+  title="Email preferences | GoldShore"
+  description="Choose which GoldShore emails you receive and how your subscriber profile is used."
+>
+  <main class="preferences-page">
+    <section class="preferences-shell" data-preferences data-api-base={apiBase}>
+      <p class="preferences-kicker">Account / Email</p>
+      <h1 data-preferences-title>Email preferences</h1>
+      <p class="preferences-intro" data-preferences-intro>
+        Use the private link from your GoldShore email to review subscriptions and privacy choices.
+      </p>
+
+      <div class="preferences-state" data-preferences-loading>Loading your preferences…</div>
+
+      <form class="preferences-form" data-preferences-form hidden>
+        <div class="preferences-identity">
+          <span>Subscriber</span>
+          <strong data-preferences-email></strong>
+        </div>
+
+        <fieldset>
+          <legend>Subscriptions</legend>
+          <label><input type="checkbox" name="newsletter" /> <span><strong>GoldShore briefings</strong>Analysis, publishing, and field notes.</span></label>
+          <label><input type="checkbox" name="productUpdates" /> <span><strong>Product updates</strong>New platform features, releases, and service changes.</span></label>
+          <label><input type="checkbox" name="partnerOffers" /> <span><strong>Selected partner offers</strong>Occasional relevant sponsorship or affiliate messages, clearly identified.</span></label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Account & privacy</legend>
+          <label><input type="checkbox" name="securityNotices" /> <span><strong>Security notices</strong>Important account and service alerts. Some operational notices may still be required.</span></label>
+          <label><input type="checkbox" name="privacyMode" /> <span><strong>Minimal profile</strong>Limit subscriber data to delivery, consent, and security records.</span></label>
+        </fieldset>
+
+        <div class="preferences-actions">
+          <button type="submit">Save preferences</button>
+          <a href="/privacy/">Privacy policy</a>
+        </div>
+        <p class="preferences-status" data-preferences-status role="status" aria-live="polite"></p>
+      </form>
+    </section>
+  </main>
+</MarketingLayout>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-preferences]');
+  const form = root?.querySelector<HTMLFormElement>('[data-preferences-form]');
+  const loading = root?.querySelector<HTMLElement>('[data-preferences-loading]');
+  const status = root?.querySelector<HTMLElement>('[data-preferences-status]');
+  const params = new URLSearchParams(location.search);
+  const manage = params.get('manage') || '';
+  const setMessage = (message: string) => { if (loading) loading.textContent = message; };
+
+  if (params.get('subscribed') === '1') {
+    const title = root?.querySelector<HTMLElement>('[data-preferences-title]');
+    const intro = root?.querySelector<HTMLElement>('[data-preferences-intro]');
+    if (title) title.textContent = 'Thanks for subscribing';
+    if (intro) intro.textContent = 'Your address is verified. Choose what you want GoldShore to send.';
+  }
+
+  if (!root || !form || manage.length < 24) {
+    setMessage('Open the private preference link in a GoldShore email to manage this subscription.');
+  } else {
+    const endpoint = new URL(`${root.dataset.apiBase}/v1/forms/newsletter/preferences`);
+    endpoint.searchParams.set('manage', manage);
+    fetch(endpoint)
+      .then(async (response) => {
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || 'Preference link unavailable.');
+        const preferences = result.subscriber?.preferences || {};
+        root.querySelector<HTMLElement>('[data-preferences-email]')?.replaceChildren(result.subscriber?.email || '');
+        for (const input of form.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')) {
+          input.checked = preferences[input.name] === true || (Object.keys(preferences).length === 0 && ['newsletter', 'productUpdates', 'securityNotices'].includes(input.name));
+        }
+        if (loading) loading.hidden = true;
+        form.hidden = false;
+      })
+      .catch((error) => setMessage(error instanceof Error ? error.message : 'Preference link unavailable.'));
+  }
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (status) status.textContent = 'Saving…';
+    const preferences = Object.fromEntries(Array.from(form.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')).map((input) => [input.name, input.checked]));
+    const response = await fetch(`${root?.dataset.apiBase}/v1/forms/newsletter/preferences`, {
+      method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ manage, preferences }),
+    }).catch(() => null);
+    const result = await response?.json().catch(() => ({}));
+    if (status) status.textContent = response?.ok ? 'Preferences saved.' : result?.error || 'Preferences could not be saved.';
+  });
+</script>
+
+<style>
+  .preferences-page { min-height: 72vh; padding: clamp(7rem, 13vw, 11rem) 1rem clamp(4rem, 8vw, 8rem); background: #06060a; color: #eceae4; }
+  .preferences-shell { width: min(100%, 62rem); margin: 0 auto; }
+  .preferences-kicker, legend, .preferences-identity span { font: 600 .67rem/1.2 'DM Mono', monospace; letter-spacing: .13em; text-transform: uppercase; color: #d3743e; }
+  h1 { max-width: 12ch; margin: .8rem 0 1rem; font: 700 clamp(3rem, 9vw, 7rem)/.9 'Syne', sans-serif; text-transform: uppercase; }
+  .preferences-intro { max-width: 42rem; color: #aaa69c; font-size: clamp(1rem, 2vw, 1.2rem); line-height: 1.7; }
+  .preferences-state { margin-top: 3rem; padding: 1.25rem 0; border-top: 1px solid rgba(255,255,255,.12); color: #aaa69c; }
+  .preferences-form { margin-top: 3rem; }
+  .preferences-identity { display: grid; gap: .45rem; padding: 1.25rem 0 2rem; border-top: 1px solid rgba(255,255,255,.12); }
+  .preferences-identity strong { font-size: clamp(1rem, 2vw, 1.35rem); overflow-wrap: anywhere; }
+  fieldset { display: grid; gap: 0; margin: 0; padding: 2.25rem 0; border: 0; border-top: 1px solid rgba(255,255,255,.12); }
+  legend { padding: 0 0 1.25rem; }
+  fieldset label { display: grid; grid-template-columns: auto 1fr; gap: 1rem; padding: 1.15rem 0; cursor: pointer; }
+  fieldset input { width: 1.15rem; height: 1.15rem; margin-top: .18rem; accent-color: #d3743e; }
+  fieldset span { display: grid; gap: .3rem; color: #aaa69c; line-height: 1.5; }
+  fieldset strong { color: #eceae4; font-size: 1rem; }
+  .preferences-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1.25rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,.12); }
+  .preferences-actions button { min-height: 3.1rem; padding: .75rem 1.3rem; border: 0; border-radius: 0; background: #d3743e; color: #08080c; cursor: pointer; font: 700 .68rem/1 'DM Mono', monospace; letter-spacing: .09em; text-transform: uppercase; }
+  .preferences-actions a { color: #eceae4; font: 600 .68rem/1 'DM Mono', monospace; letter-spacing: .08em; text-transform: uppercase; }
+  .preferences-status { min-height: 1.5rem; color: #d9a47f; }
+</style>
