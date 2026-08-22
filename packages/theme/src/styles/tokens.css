@@ -27,11 +27,11 @@
   --gs-space-10: 64px;
 
   /* Border radius */
-  --gs-radius-xs: 6px;
-  --gs-radius-sm: 10px;
-  --gs-radius-md: 14px;
-  --gs-radius-lg: 18px;
-  --gs-radius-pill: 999px;
+  --gs-radius-xs: 2px;
+  --gs-radius-sm: 2px;
+  --gs-radius-md: 2px;
+  --gs-radius-lg: 2px;
+  --gs-radius-pill: 2px;
 
   /* Color palette — copper-on-black */
   --gs-color-primary: #d96a32;
@@ -56,8 +56,8 @@
   --gs-accent-cyan: #22d3ee;
 
   /* Shadows */
-  --gs-shadow-soft: 0 10px 40px rgba(0, 0, 0, 0.28);
-  --gs-shadow-hard: 0 0 0 1px rgba(255, 255, 255, 0.02), 0 16px 50px rgba(5, 9, 20, 0.5);
+  --gs-shadow-soft: none;
+  --gs-shadow-hard: none;
 
   /* Transition */
   --gs-transition: 220ms cubic-bezier(0.22, 0.61, 0.36, 1);
@@ -118,8 +118,8 @@
   --gs-border-subtle: rgba(255, 255, 255, 0.06);
 
   /* Radius overrides */
-  --gs-radius-lg: 20px;
-  --gs-radius-md: 12px;
+  --gs-radius-lg: 2px;
+  --gs-radius-md: 2px;
 
   /* Layout */
   --gs-section-spacing: 6rem;
