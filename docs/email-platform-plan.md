@@ -17,6 +17,8 @@ Marketing, affiliate broadcasts, prospecting, retargeting, and newsletters must 
 
 Brevo is a separate consent-based channel. Use a dedicated API key stored as a Cloudflare secret and a dedicated sending subdomain so marketing reputation cannot impair transactional delivery.
 
+Production uses the account-level Cloudflare Secrets Store bindings `BREVO_API_KEY` and `BREVO_MCP_KEY`. `gs-api` calls `get()` only inside the relevant integration path; secret values are never returned by readiness endpoints or persisted in D1. The MCP credential is kept separate from the REST API credential and is not used for contact synchronization.
+
 ### Contact fields
 
 | Field | Type | Purpose |
