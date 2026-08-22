@@ -37,6 +37,7 @@
 }
 
 .brand-text-label {
+  font-family: var(--gs-font-wordmark, 'DM Sans', 'Inter', system-ui, sans-serif);
   white-space: nowrap;
 }
 
@@ -179,6 +180,7 @@
 .footer-brand h2 {
   margin: 0 0 0.5rem 0;
   color: #fff;
+  font-family: var(--gs-font-wordmark, 'DM Sans', 'Inter', system-ui, sans-serif);
   font-size: 1.1rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -394,7 +396,7 @@
 }
 
 .gs-theme-footer__lockup strong {
-  font-family: 'Syne', 'Space Grotesk', sans-serif;
+  font-family: var(--gs-font-wordmark, 'DM Sans', 'Inter', system-ui, sans-serif);
   font-size: clamp(1.3rem, 2.2vw, 2rem);
   line-height: 1;
   letter-spacing: 0.08em;
