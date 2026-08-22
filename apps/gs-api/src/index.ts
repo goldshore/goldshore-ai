@@ -24,6 +24,7 @@ import forms from './routes/forms';
 import deployments from './routes/deployments';
 import gearswipe from './routes/gearswipe';
 import services from './routes/services';
+import goldclaw from './routes/goldclaw';
 import agent from './routes/agent';
 import control from './routes/control';
 import core from './routes/core';
@@ -102,6 +103,7 @@ const isPublicPath = (path: string, method: string) => {
     // covered by the /health/ prefix check above.
     /^\/(agent|mail|control|trading|core)\/health\/?$/.test(path) ||
     (method === 'GET' && path === '/admin/google/oauth/callback') ||
+    (method === 'GET' && path === '/goldclaw/oauth/google/callback') ||
     (method === 'GET' && path === '/oauth/ebay/callback') ||
     path === '/mail/contact'
   );
@@ -187,7 +189,9 @@ app.use('*', async (c, next) => {
   // /admin prefix but has no other caller.
   const adminSurfaceRequest =
     c.req.path === '/admin' || c.req.path.startsWith('/admin/') ||
-    c.req.path === '/integrations/keys' || c.req.path.startsWith('/integrations/keys/');
+    c.req.path === '/integrations/keys' || c.req.path.startsWith('/integrations/keys/') ||
+    c.req.path === '/goldclaw' || c.req.path.startsWith('/goldclaw/') ||
+    c.req.path === '/v1/deployments' || c.req.path.startsWith('/v1/deployments/');
   const accessEnv = serviceRequest
     ? {
         ...c.env,
@@ -310,6 +314,7 @@ app.route('/pages', pages);
 app.route('/internal', internal);
 app.route('/products', products);
 app.route('/services', services);
+app.route('/goldclaw', goldclaw);
 // Host aliases are rewritten into these shared route modules above. They do
 // not own independent authentication, CORS, or security middleware stacks.
 app.route('/agent', agent);
