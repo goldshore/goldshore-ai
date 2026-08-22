@@ -28,6 +28,8 @@ try {
     emailLogs = { ...emailLogs, ...logsResult.data };
   } else if (logsResult.status === 401 || logsResult.status === 403) {
     emailLogs.error = 'Authentication required. Please ensure you are logged in with the correct credentials.';
+  } else if (!logsResult.ok) {
+    emailLogs.error = `Failed to load email logs (status ${logsResult.status}).`;
   }
 } catch (error) {
   emailLogs.error = error instanceof Error ? error.message : 'Failed to load email logs';
@@ -40,6 +42,8 @@ try {
     templates = { ...templates, ...result.data };
   } else if (result.status === 401 || result.status === 403) {
     templates.error = 'Authentication required. Please ensure you are logged in with the correct credentials.';
+  } else if (!result.ok) {
+    templates.error = `Failed to load templates (status ${result.status}).`;
   }
 } catch (error) {
   templates.error = error instanceof Error ? error.message : 'Failed to load templates';
