@@ -1,0 +1,133 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="Create Customer | GoldShore Admin">
+  <div class="max-w-7xl mx-auto p-8 space-y-8">
+    <div class="space-y-2">
+      <h1 class="text-4xl gs-heading gs-text-accent">Create New Customer</h1>
+      <p class="text-lg gs-text-subtle">Add a new customer to your platform</p>
+    </div>
+
+    <div class="gs-card max-w-2xl">
+      <form id="createCustomerForm" class="space-y-6">
+        <div>
+          <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+            Customer Name *
+          </label>
+          <input
+            type="text"
+            id="name"
+            name="name"
+            required
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Enter customer name"
+          />
+          <span class="text-red-500 text-sm mt-1" id="nameError"></span>
+        </div>
+
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+            Email Address *
+          </label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            required
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Enter email address"
+          />
+          <span class="text-red-500 text-sm mt-1" id="emailError"></span>
+        </div>
+
+        <div>
+          <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">
+            Notes (Optional)
+          </label>
+          <textarea
+            id="notes"
+            name="notes"
+            rows="4"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Enter any additional notes about this customer"
+          ></textarea>
+        </div>
+
+        <div class="flex gap-4 pt-6">
+          <button
+            type="submit"
+            class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium"
+          >
+            Create Customer
+          </button>
+          <a
+            href="/admin/customers"
+            class="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium"
+          >
+            Cancel
+          </a>
+        </div>
+
+        <div id="successMessage" class="hidden p-4 bg-green-50 border border-green-200 rounded text-green-700">
+          Customer created successfully! Redirecting...
+        </div>
+
+        <div id="errorMessage" class="hidden p-4 bg-red-50 border border-red-200 rounded text-red-700"></div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('createCustomerForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const form = e.target as HTMLFormElement;
+      const name = (form.querySelector('#name') as HTMLInputElement).value.trim();
+      const email = (form.querySelector('#email') as HTMLInputElement).value.trim();
+      const notes = (form.querySelector('#notes') as HTMLTextAreaElement).value.trim();
+
+      // Clear previous errors
+      document.getElementById('nameError')!.textContent = '';
+      document.getElementById('emailError')!.textContent = '';
+      document.getElementById('errorMessage')!.classList.add('hidden');
+
+      // Validate
+      if (!name || name.length < 2) {
+        document.getElementById('nameError')!.textContent = 'Name must be at least 2 characters';
+        return;
+      }
+
+      if (!email || !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+        document.getElementById('emailError')!.textContent = 'Please enter a valid email address';
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/admin/customers', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name, email, notes: notes || undefined }),
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to create customer');
+        }
+
+        document.getElementById('successMessage')!.classList.remove('hidden');
+        setTimeout(() => {
+          window.location.href = '/admin/customers';
+        }, 1500);
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : 'An error occurred';
+        document.getElementById('errorMessage')!.textContent = errorMsg;
+        document.getElementById('errorMessage')!.classList.remove('hidden');
+      }
+    });
+  </script>
+</AdminLayout>
