@@ -15,10 +15,11 @@ CREATE TABLE IF NOT EXISTS workflow_performance (
   branch TEXT,
   timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_workflow_name_timestamp (workflow_name, timestamp DESC),
-  INDEX idx_timestamp (timestamp DESC),
   UNIQUE (workflow_run_id)
 );
+
+CREATE INDEX IF NOT EXISTS idx_workflow_performance_name_timestamp ON workflow_performance(workflow_name, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_workflow_performance_timestamp ON workflow_performance(timestamp DESC);
 
 -- Table: workflow_performance_trends
 -- Purpose: Store calculated EMA (exponential moving average) trends
@@ -32,10 +33,11 @@ CREATE TABLE IF NOT EXISTS workflow_performance_trends (
   last_metric_count INTEGER DEFAULT 0,
   calculated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_workflow_name_calculated (workflow_name, calculated_at DESC),
-  INDEX idx_calculated_at (calculated_at DESC),
   UNIQUE (workflow_name, calculated_at)
 );
+
+CREATE INDEX IF NOT EXISTS idx_workflow_performance_trends_name_calculated ON workflow_performance_trends(workflow_name, calculated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_workflow_performance_trends_calculated_at ON workflow_performance_trends(calculated_at DESC);
 
 -- Table: workflow_performance_alerts
 -- Purpose: Track performance regression alerts and resolutions
@@ -53,11 +55,12 @@ CREATE TABLE IF NOT EXISTS workflow_performance_alerts (
   notes TEXT,
   triggered_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   resolved_at DATETIME,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_workflow_status (workflow_name, status),
-  INDEX idx_triggered_at (triggered_at DESC),
-  INDEX idx_severity (severity)
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX IF NOT EXISTS idx_workflow_performance_alerts_status ON workflow_performance_alerts(workflow_name, status);
+CREATE INDEX IF NOT EXISTS idx_workflow_performance_alerts_triggered_at ON workflow_performance_alerts(triggered_at DESC);
+CREATE INDEX IF NOT EXISTS idx_workflow_performance_alerts_severity ON workflow_performance_alerts(severity);
 
 -- Table: workflow_timeout_budgets
 -- Purpose: Define and track timeout budgets for each workflow
@@ -87,11 +90,12 @@ CREATE TABLE IF NOT EXISTS workflow_regression_history (
   resolved BOOLEAN DEFAULT FALSE,
   resolved_date DATE,
   notes TEXT,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_workflow_detected (workflow_name, detected_date DESC),
-  INDEX idx_detected_date (detected_date DESC),
-  INDEX idx_resolved (resolved)
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX IF NOT EXISTS idx_workflow_regression_history_detected ON workflow_regression_history(workflow_name, detected_date DESC);
+CREATE INDEX IF NOT EXISTS idx_workflow_regression_history_detected_date ON workflow_regression_history(detected_date DESC);
+CREATE INDEX IF NOT EXISTS idx_workflow_regression_history_resolved ON workflow_regression_history(resolved);
 
 -- View: workflow_performance_summary
 -- Purpose: Current performance status for all workflows
