@@ -33,6 +33,7 @@ import trading from './routes/trading';
 import googleBusiness from './routes/google-business';
 import ebayOauth from './routes/oauth/ebay';
 import mcp from './routes/mcp';
+import invitations from './routes/invitations';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
 import type { Env, Variables } from './types';
@@ -93,6 +94,7 @@ const isAllowedOrigin = (origin: string, allowedOrigins?: string) => {
 const isPublicPath = (path: string, method: string) => {
   if (method === 'OPTIONS') return true;
   if (method === 'POST' && /^\/v1\/forms\/[a-z0-9-]+\/submissions$/i.test(path)) return true;
+  if (method === 'POST' && path === '/invitations/accept') return true;
   if (method === 'GET' && /^\/pages\/public(?:\/slug\/[^/]+)?\/?$/.test(path)) return true;
   return (
     path === '/' ||
@@ -303,6 +305,7 @@ app.route('/users', users);
 app.route('/user', user);
 app.route('/system', system);
 app.route('/templates', templates);
+app.route('/invitations', invitations);
 app.route('/admin', admin);
 // The admin Secrets UI (apps/gs-web/src/pages/admin/system/index.astro,
 // Secrets tab) proxies to /integrations/keys/*, not /admin/*. The router for
