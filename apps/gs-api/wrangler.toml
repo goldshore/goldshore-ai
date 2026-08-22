@@ -192,6 +192,18 @@ allowed_sender_addresses = [
 enabled = true
 head_sampling_rate = 1
 
+# Account-level Secrets Store bindings. Values remain outside Worker config
+# and are fetched asynchronously only by the Brevo integration paths.
+[[env.prod.secrets_store_secrets]]
+binding = "BREVO_API_KEY"
+store_id = "b9824d3280c54573a24137c7e7143b33"
+secret_name = "BREVO_API_KEY"
+
+[[env.prod.secrets_store_secrets]]
+binding = "BREVO_MCP_KEY"
+store_id = "b9824d3280c54573a24137c7e7143b33"
+secret_name = "BREVO_MCP_KEY"
+
 # ── Cron Triggers (Scheduled Jobs) ──────────────────────────────────────────────────────────────
 # Token rotation job: Runs daily at 2 AM UTC to refresh expiring OAuth tokens
 [env.prod.triggers]
