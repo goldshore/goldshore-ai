@@ -82,18 +82,23 @@ void requiredPermission;
      --gs-color-surface: #0c1221 that made every .gs-card nearly invisible
      against --admin-bg), tighter corners, and the brand's actual display
      face (Space Grotesk) instead of a plain-Inter fallback that discarded
-     it for every admin heading. */
+     it for every admin heading.
+
+     --gs-color-text/-subtle are deliberately NOT set here at body scope:
+     the page background stays dark (--admin-bg), so page-level text
+     (page descriptions, labels, anything outside a card) must keep using
+     --admin-text/--admin-muted (light-on-dark). Only card surfaces flip
+     light, so their text-color overrides are scoped to .gs-card/.gs-panel
+     below instead - setting them here first caused exactly this: a page
+     intro paragraph rendering in a card-appropriate medium gray
+     (--gs-color-subtle) against the still-dark page background, which is
+     low-contrast and was a regression from the original --admin-muted. */
   body.gs-admin-body {
     margin: 0;
     background: var(--admin-bg);
     color: var(--admin-text);
     font-family: var(--admin-ui);
     min-height: 100dvh;
-    --gs-color-surface: #f5f3ec;
-    --gs-color-muted-surface: #ebe8de;
-    --gs-color-text: #14181d;
-    --gs-color-subtle: #5b6470;
-    --gs-color-border: rgba(20, 20, 20, 0.1);
     --gs-accent: var(--admin-accent);
     --gs-font-display: var(--admin-display);
     --gs-radius-sm: 6px;
@@ -107,16 +112,31 @@ void requiredPermission;
   }
 
   /* packages/theme ships two conflicting .gs-card rules - components.css
-     (background: var(--gs-color-surface), which the --gs-color-surface
-     override above targets) and layout.css (background:
+     (background: var(--gs-color-surface)) and layout.css (background:
      var(--gs-bg-secondary) directly, loaded after components.css so it
      wins the cascade everywhere, including here). Rather than chase every
      variable a shared rule might reference, override the class directly
      at higher specificity so it's correct regardless of which of the two
-     upstream rules currently wins. */
+     upstream rules currently wins.
+
+     :global() is required on the class part: .gs-card elements come from
+     slotted page content, not AdminLayout's own template, so Astro's
+     scoped-style compiler never stamps them with this component's
+     data-astro-cid attribute - a scoped .gs-admin-body .gs-card selector
+     silently matches nothing at all.
+
+     Text-color variables live here, not at body scope, so they apply
+     only within these now-light surfaces and never repaint page-level
+     text sitting directly on the dark page background. */
   .gs-admin-body :global(.gs-card), .gs-admin-body :global(.gs-panel) {
+    --gs-color-surface: #f5f3ec;
+    --gs-color-muted-surface: #ebe8de;
+    --gs-color-text: #14181d;
+    --gs-color-subtle: #5b6470;
+    --gs-color-border: rgba(20, 20, 20, 0.1);
     background: var(--gs-color-surface);
     border-color: var(--gs-color-border);
+    color: var(--gs-color-text);
   }
 
   .gs-admin-shell {
