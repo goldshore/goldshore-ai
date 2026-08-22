@@ -46,6 +46,7 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   // Response headers are authoritative for Astro-rendered HTML. Static files
   // that can bypass middleware keep their own platform config in public/_headers.
   context.locals.securityPolicySource = 'response-header';
+  context.locals.PUBLIC_API = import.meta.env.PUBLIC_API;
 
   const url = new URL(context.request.url);
   const routedPath = adminRewritePath ?? url.pathname;
@@ -112,7 +113,8 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   if (
     adminRule?.kind === 'page' &&
     adminRule.canonicalPath === ADMIN_DASHBOARD_PATH &&
-    url.pathname === ADMIN_DASHBOARD_PATH
+    url.pathname === ADMIN_DASHBOARD_PATH &&
+    !isAdminHost(host)
   ) {
     const { env: cloudflareEnv } = await import('cloudflare:workers');
     response = await (cloudflareEnv as Env).ASSETS.fetch(context.request);

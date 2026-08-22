@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useAuthToken } from '../../utils/auth';
 
 interface Column<T> {
   key: keyof T;
@@ -41,6 +42,7 @@ export default function DataTable<T extends { id?: string }>({
   const [total, setTotal] = useState(0);
   const [retryCount, setRetryCount] = useState(0);
   const isMountedRef = useRef(true);
+  const { token } = useAuthToken();
 
   useEffect(() => {
     return () => {
@@ -73,6 +75,9 @@ export default function DataTable<T extends { id?: string }>({
         const response = await Promise.race([
           fetch(`${endpoint}?${searchParams}`, {
             signal: abortController.signal,
+            headers: {
+              ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            },
           }),
           new Promise<Response>((_, reject) =>
             setTimeout(() => reject(new Error('Request timeout')), 10000)

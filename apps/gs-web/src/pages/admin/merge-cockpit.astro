@@ -3,14 +3,18 @@ export const prerender = false;
 
 import AdminLayout from '../../layouts/AdminLayout.astro';
 
-const apiOrigin = Astro.url.hostname.endsWith('goldshore.org')
-  ? 'https://api.goldshore.org'
-  : (import.meta.env.PUBLIC_API_URL || 'https://api.goldshore.ai');
+// Same-origin path, proxied server-side through the API service binding
+// (apps/gs-web/src/pages/api/admin/merge-cockpit/[...path].ts) instead of a
+// cross-origin browser fetch straight to api.goldshore.ai, which the browser
+// has no valid Cloudflare Access session for. This repo's canonical domain
+// is goldshore.ai; goldshore.org is the sister repo (marzton/goldshore, see
+// CLAUDE.md) and isn't served from here.
+const apiBase = '/api/admin/merge-cockpit';
 const demo = import.meta.env.DEV && Astro.url.searchParams.get('demo') === '1';
 ---
 
 <AdminLayout title="PR Merge Cockpit | GoldShore Admin" requiredPermission="github:read">
-  <main class="cockpit" data-api-origin={apiOrigin} data-demo={String(demo)}>
+  <main class="cockpit" data-api-base={apiBase} data-demo={String(demo)}>
     <header class="cockpit-header">
       <div>
         <p class="eyebrow">Repository governance</p>
@@ -95,7 +99,7 @@ const demo = import.meta.env.DEV && Astro.url.searchParams.get('demo') === '1';
   type Detail = { pull: any; currentBaseSha: string; mergeBaseSha: string; semanticConflicts: ConflictFile[]; checks: any[]; checksGreen: boolean; directMergeEligible: boolean };
 
   const root = document.querySelector<HTMLElement>('.cockpit')!;
-  const api = `${root.dataset.apiOrigin}/admin/merge-cockpit`;
+  const api = root.dataset.apiBase!;
   const isDemo = root.dataset.demo === 'true';
   const notice = document.querySelector<HTMLElement>('#notice')!;
   const pullsNode = document.querySelector<HTMLElement>('#pulls')!;

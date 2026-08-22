@@ -1,0 +1,27 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+export const prerender = false;
+---
+<BaseLayout title="Editorial & Advertising Standards | GoldShore" description="Standards for GoldShore analysis, opinion, AI assistance, sponsorships, affiliate links, advertising, and corrections." canonicalPath="/legal/editorial/">
+  <section class="gs-section gs-section--padded legal-copy">
+    <p class="gs-eyebrow">Legal &amp; trust</p>
+    <h1>Editorial &amp; Advertising Standards</h1>
+    <p><strong>Updated August 22, 2026.</strong> These standards apply to GoldShore articles, analysis, opinion, newsletters, video, social posts, sponsored material, and affiliate content.</p>
+    <h2>Editorial independence</h2>
+    <p>Editorial conclusions should be based on available evidence and clearly separated from commercial arrangements. Analysis and opinion are labeled when the distinction matters. Sources should be attributed, and material uncertainty should be stated rather than hidden behind confident language.</p>
+    <h2>AI-assisted work</h2>
+    <p>GoldShore may use AI tools for research support, transcription, drafting, data organization, or production. A human remains responsible for publication decisions. Material generated or transformed by AI should be reviewed for accuracy, sourcing, privacy, and potential harm before publication.</p>
+    <h2>Sponsorships, affiliates, and advertising</h2>
+    <p>Paid placements and sponsored content are labeled in a way readers can understand before engaging with them. Affiliate links are disclosed near the relevant content, and compensation does not guarantee favorable coverage. Advertising technology is limited to eligible placements and must respect applicable consent and privacy signals.</p>
+    <h2>Corrections and updates</h2>
+    <p>Substantive factual errors should be corrected promptly and transparently. Routine edits for spelling, clarity, formatting, or updated links may be made without a correction note. Send a correction request through the <a href="/contact/">contact page</a> with the article address and supporting source.</p>
+    <h2>Financial and other sensitive topics</h2>
+    <p>Market commentary and technical analysis are informational, not individualized investment, legal, tax, medical, or other regulated advice. Coverage should avoid presenting speculation as fact or implying guaranteed outcomes.</p>
+  </section>
+</BaseLayout>
+<style>
+  .legal-copy { max-width: 78ch; margin-inline: auto; }
+  .legal-copy h1 { font-size: clamp(3rem, 8vw, 7rem); overflow-wrap: anywhere; }
+  .legal-copy h2 { margin-top: 2rem; }
+  .legal-copy p { line-height: 1.75; color: var(--gs-text-secondary); }
+</style>

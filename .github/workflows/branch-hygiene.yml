@@ -3,7 +3,20 @@ name: Branch Hygiene — Auto-tag Stale & Archive
 on:
   schedule:
     - cron: '0 2 * * *'  # Daily at 2 AM UTC
-  workflow_dispatch:  # Manual trigger
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Preview changes without modifying branches'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+concurrency:
+  group: branch-hygiene
+  cancel-in-progress: false  # Don't cancel; let current run finish
 
 permissions:
   contents: write
@@ -12,9 +25,10 @@ permissions:
 jobs:
   branch-hygiene:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0  # Full history for age calculation
 
@@ -98,8 +112,14 @@ jobs:
         run: |
           if [ -d "archive/stale-branches" ] && [ -n "$(ls -A archive/stale-branches)" ]; then
             git add archive/stale-branches/
-            git commit -m "chore: archive stale branches [ci:branch-hygiene]" || true
-            git push origin HEAD:${{ github.ref }} || true
+            git commit -m "chore: archive stale branches [skip ci]" || true
+
+            # Push to archive branch to avoid re-triggering this workflow
+            if git rev-parse --verify refs/remotes/origin/archive/stale-branches >/dev/null 2>&1; then
+              git push origin HEAD:refs/heads/archive/stale-branches
+            else
+              echo "ℹ️  Archive branch does not exist; skipping push (create archive/stale-branches branch to enable)"
+            fi
           fi
 
       - name: Report stale branches
@@ -148,8 +168,8 @@ jobs:
           done
 
           git add docs/BRANCH_REGISTRY.md
-          git commit -m "chore: update BRANCH_REGISTRY [ci:branch-hygiene]" || true
-          git push origin HEAD:${{ github.ref }} || true
+          git commit -m "chore: update BRANCH_REGISTRY [skip ci]" || true
+          git push origin HEAD:refs/heads/main || true
 
       - name: Post summary
         if: always()

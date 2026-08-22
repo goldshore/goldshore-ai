@@ -35,7 +35,18 @@ export default function WorkflowsClient() {
       if (typeFilter) params.set('type', typeFilter);
 
       const res = await fetch(`${API_BASE}?${params}`);
-      if (!res.ok) throw new Error(`Failed to load workflows: ${res.statusText}`);
+      if (!res.ok) {
+        const contentType = res.headers.get('content-type');
+        if (contentType?.includes('text/html')) {
+          throw new Error('Admin API returned HTML (possible auth or routing issue)');
+        }
+        throw new Error(`Failed to load workflows: ${res.statusText}`);
+      }
+
+      const contentType = res.headers.get('content-type');
+      if (!contentType?.includes('application/json')) {
+        throw new Error('Invalid response format: expected JSON');
+      }
 
       const data = await res.json();
       setWorkflows(data.workflows || []);
