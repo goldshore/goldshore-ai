@@ -38,6 +38,7 @@ export const serviceLinks: NavLink[] = [
 
 export const companyLinks: NavLink[] = [
   { href: '/about/', label: 'About' },
+  { href: '/work/', label: 'Selected Work' },
   { href: '/team/', label: 'Team' },
   { href: '/blog/', label: 'Signals' },
   { href: '/developer/', label: 'Developer Hub' },
@@ -90,6 +91,7 @@ export const publicMenuGroups: PublicMenuGroup[] = [
     label: 'Company',
     links: [
       { href: '/about/', label: 'About' },
+      { href: '/work/', label: 'Selected Work' },
       { href: '/team/', label: 'Team' },
       { href: '/contact/', label: 'Contact' },
       { href: '/intake/', label: 'Project Intake' },
