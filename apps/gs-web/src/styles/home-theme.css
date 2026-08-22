@@ -278,11 +278,24 @@ main { display: grid; gap: 1px; position: relative; z-index: 1; }
   align-items: center;
   justify-content: center;
   min-height: 44px;
-  border: 1px solid var(--ox-border);
+  border: 1px solid var(--ox);
   border-radius: 2px;
   background: var(--ox);
   color: var(--void) !important;
-  padding: 0.65rem 0.8rem;
+  padding: 0.72rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.nav-cta:hover {
+  border-color: var(--ox-bright);
+  background: var(--ox-bright);
+  color: var(--void) !important;
 }
 
 .nav-login {
