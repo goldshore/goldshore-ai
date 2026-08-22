@@ -223,6 +223,7 @@ h1 strong, h2 strong { color: var(--gs-copper); }
 .gs-panel {
   background: rgba(20, 20, 32, 0.82) !important;
   border-color: rgba(255, 255, 255, 0.06) !important;
+  border-radius: 2px !important;
   transition: border-color 200ms, box-shadow 200ms !important;
 }
 
@@ -230,10 +231,10 @@ h1 strong, h2 strong { color: var(--gs-copper); }
 [class*="gs-panel"]:hover,
 .gs-card:hover {
   border-color: rgba(160, 72, 32, 0.28) !important;
-  box-shadow: none !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4) !important;
 }
 
-/* ── BUTTONS — near-square, DM Mono, matching the approved public spec ── */
+/* ── BUTTONS — sharp corners, DM Mono, copper accent ── */
 .gs-button {
   border-radius: 2px !important;
   font-family: 'DM Mono', ui-monospace, monospace !important;
@@ -299,9 +300,7 @@ input, select, textarea {
 }
 input:focus, select:focus, textarea:focus {
   border-color: rgba(160, 72, 32, 0.50) !important;
-  box-shadow: none !important;
-  outline: 1px solid rgba(160, 72, 32, 0.5) !important;
-  outline-offset: 1px;
+  box-shadow: 0 0 0 3px rgba(160, 72, 32, 0.12) !important;
 }
 label {
   font-family: 'DM Mono', ui-monospace, monospace !important;
