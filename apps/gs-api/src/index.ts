@@ -40,6 +40,11 @@ import type { Env, Variables } from './types';
 import { getHostRoutePrefix } from './host-routing';
 import { handleTokenRotation } from './workers/token-rotation';
 import { processQueueBatch } from './workers/queue-consumer';
+import {
+  getInternalAuthorizationEnv,
+  getInternalVerificationEnv,
+  isInternalPath,
+} from './lib/access-context';
 export { SignalsEvaluator } from './workers/signals-evaluator';
 
 interface ForwardableEmailMessage {
@@ -189,7 +194,7 @@ app.use('*', async (c, next) => {
     return;
   }
 
-  const serviceRequest = c.req.path === '/internal' || c.req.path.startsWith('/internal/');
+  const serviceRequest = isInternalPath(c.req.path);
   // Same admin-only surface, reached the same way (gs-web's service binding,
   // never touching api.goldshore.ai's own Access edge): /admin/* itself, and
   // /integrations/keys/* — the Secrets UI's backend, which lives outside the
@@ -200,11 +205,7 @@ app.use('*', async (c, next) => {
     c.req.path === '/goldclaw' || c.req.path.startsWith('/goldclaw/') ||
     c.req.path === '/v1/deployments' || c.req.path.startsWith('/v1/deployments/');
   const accessEnv = serviceRequest
-    ? {
-        ...c.env,
-        CLOUDFLARE_ACCESS_AUDIENCE: c.env.CLOUDFLARE_SERVICE_ACCESS_AUDIENCE,
-        CLOUDFLARE_ACCESS_APPLICATION: 'service-production',
-      }
+    ? getInternalVerificationEnv(c.env, ADMIN_PRODUCTION_ACCESS_AUDIENCE)
     : adminSurfaceRequest && c.env.CLOUDFLARE_ACCESS_AUDIENCE
     ? {
         // gs-web reaches /admin/* through its `API` service binding, which
@@ -229,8 +230,11 @@ app.use('*', async (c, next) => {
   }
 
   const verifiedClaims = await verifyAccessWithClaims(c.req.raw, accessEnv);
+  const authorizationEnv = verifiedClaims && serviceRequest
+    ? getInternalAuthorizationEnv(c.env, verifiedClaims)
+    : accessEnv;
   const claims = verifiedClaims
-    ? await authorizeAccessClaims(verifiedClaims, accessEnv)
+    ? await authorizeAccessClaims(verifiedClaims, authorizationEnv)
     : null;
   if (!claims) {
     return c.json({ error: 'Unauthorized' }, 401);
