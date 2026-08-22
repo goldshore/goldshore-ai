@@ -44,8 +44,12 @@ export async function GET({ url }: { url: URL }) {
     // Developer
     { url: '/developer', priority: 0.8, changefreq: 'weekly' },
     { url: '/developer/docs', priority: 0.7, changefreq: 'weekly' },
+    { url: '/developer/api', priority: 0.7, changefreq: 'weekly' },
     { url: '/developer/mcp', priority: 0.7, changefreq: 'monthly' },
     { url: '/developer/sdk', priority: 0.7, changefreq: 'monthly' },
+    { url: '/features', priority: 0.7, changefreq: 'monthly' },
+    { url: '/templates', priority: 0.7, changefreq: 'monthly' },
+    { url: '/intake', priority: 0.6, changefreq: 'monthly' },
 
     // Status & Support
     { url: '/status', priority: 0.5, changefreq: 'hourly' },
