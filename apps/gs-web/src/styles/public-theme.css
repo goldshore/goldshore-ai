@@ -115,6 +115,68 @@
   box-shadow: 0 22px 55px rgba(0, 0, 0, 0.22);
 }
 
+/* Platform and service-detail pages historically shipped their own blue
+   panels and pill CTAs. Keep those routes in the same restrained visual
+   system as the canonical service cards instead. The extra shell/content
+   specificity intentionally wins over Astro's page-scoped legacy rules. */
+.gs-shell-v284 .gs-page-content :is(.feature-card, .module-card) {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  background:
+    linear-gradient(145deg, rgba(211, 116, 62, 0.055), transparent 42%),
+    rgba(18, 18, 26, 0.88);
+  box-shadow: 0 22px 55px rgba(0, 0, 0, 0.22);
+}
+
+.gs-shell-v284 .gs-page-content .module-card {
+  color: var(--gs-public-text);
+}
+
+.gs-shell-v284 .gs-page-content .module-card:hover {
+  border-color: rgba(211, 116, 62, 0.42);
+  background:
+    linear-gradient(145deg, rgba(211, 116, 62, 0.09), transparent 48%),
+    rgba(20, 20, 28, 0.94);
+}
+
+.gs-shell-v284 .gs-page-content .module-link {
+  color: var(--gs-public-oxide-bright);
+  font-family: 'DM Mono', ui-monospace, monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.gs-shell-v284 .gs-page-content :is(.page-cta, .platform-cta) {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  background:
+    linear-gradient(145deg, rgba(211, 116, 62, 0.055), transparent 42%),
+    rgba(18, 18, 26, 0.88);
+  box-shadow: 0 22px 55px rgba(0, 0, 0, 0.22);
+}
+
+.gs-shell-v284 .gs-page-content .cta-btn {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 0;
+  background: transparent;
+  color: var(--gs-public-text);
+  box-shadow: none;
+  font-family: 'DM Mono', ui-monospace, monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.gs-shell-v284 .gs-page-content .cta-btn:hover {
+  border-color: var(--gs-public-oxide);
+  background: transparent;
+  color: var(--gs-public-oxide-bright);
+}
+
 .gs-shell-v284 .gs-slug-page {
   padding-block: clamp(3.5rem, 8vw, 7rem);
 }
