@@ -114,7 +114,7 @@ void requiredPermission;
      variable a shared rule might reference, override the class directly
      at higher specificity so it's correct regardless of which of the two
      upstream rules currently wins. */
-  .gs-admin-body .gs-card, .gs-admin-body .gs-panel {
+  .gs-admin-body :global(.gs-card), .gs-admin-body :global(.gs-panel) {
     background: var(--gs-color-surface);
     border-color: var(--gs-color-border);
   }
