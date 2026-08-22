@@ -14,6 +14,7 @@ import piiScans from './admin/pii-scans';
 import adminAnalytics from './admin/analytics';
 import apiTokens from './admin/tokens';
 import adminEmail from './admin/email';
+import adminSecrets from './admin/secrets';
 import { escapeHtml, isValidEmail } from '@goldshore/utils';
 import { enqueueMailJob } from '../lib/mail-queue';
 
@@ -367,6 +368,7 @@ admin.route("/entries", entries);
 admin.route("/pii-scans", piiScans);
 admin.route("/analytics", adminAnalytics);
 admin.route("/tokens", apiTokens);
+admin.route("/secrets", adminSecrets);
 
 // Same story for the email module: EmailManager/EmailTemplatesManager and
 // email/index.astro all call /admin/email/{status,logs,templates}, none of
