@@ -1,4 +1,8 @@
 ---
+import '@goldshore/theme/styles/tokens.css';
+import '@goldshore/theme/styles/base.css';
+import '@goldshore/theme/styles/components.css';
+import '@goldshore/theme/styles/layout.css';
 import Sidebar from '../components/Sidebar.astro';
 import FloatingChatWidget from '../components/admin/FloatingChatWidget';
 import { ADMIN_PERMISSIONS, type AdminPermission } from '@goldshore/auth';
@@ -100,6 +104,19 @@ void requiredPermission;
   .gs-admin-body h1, .gs-admin-body h2, .gs-admin-body h3 {
     font-family: var(--admin-display);
     letter-spacing: -0.01em;
+  }
+
+  /* packages/theme ships two conflicting .gs-card rules - components.css
+     (background: var(--gs-color-surface), which the --gs-color-surface
+     override above targets) and layout.css (background:
+     var(--gs-bg-secondary) directly, loaded after components.css so it
+     wins the cascade everywhere, including here). Rather than chase every
+     variable a shared rule might reference, override the class directly
+     at higher specificity so it's correct regardless of which of the two
+     upstream rules currently wins. */
+  .gs-admin-body :global(.gs-card), .gs-admin-body :global(.gs-panel) {
+    background: var(--gs-color-surface);
+    border-color: var(--gs-color-border);
   }
 
   .gs-admin-shell {
