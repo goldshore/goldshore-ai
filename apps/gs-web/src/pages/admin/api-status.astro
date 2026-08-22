@@ -107,11 +107,11 @@ const formatDate = (value: string | null | undefined) => (value ? new Date(value
             <h2 class="section-title"><span>◆</span>Health</h2>
             {health ? (
               <ul>
-                <li>Status: <span class={`gs-badge ${health.status === 'ok' ? 'success' : ''}`}>{health.status}</span></li>
+                <li>Status: <span class={`gs-badge ${health.status === 'ok' || health.status === 'ready' ? 'success' : ''}`}>{health.status}</span></li>
                 <li>Version: {health.apiVersion ?? health.version ?? 'unknown'}</li>
                 <li>Dependencies: {health.dependencySummary ? `${health.dependencySummary.ready ?? 0} / ${health.dependencySummary.total ?? 0} ready` : 'not reported'}</li>
-                <li>KV: <span class={`gs-badge ${health.kv === 'connected' ? 'success' : 'info'}`}>{health.kv ?? 'unknown'}</span></li>
-                <li>DB: <span class={`gs-badge ${health.db === 'connected' ? 'success' : 'info'}`}>{health.db ?? 'unknown'}</span></li>
+                {health.kv && <li>KV: <span class={`gs-badge ${health.kv === 'connected' ? 'success' : 'info'}`}>{health.kv}</span></li>}
+                {health.db && <li>DB: <span class={`gs-badge ${health.db === 'connected' ? 'success' : 'info'}`}>{health.db}</span></li>}
               </ul>
             ) : (
               <p>Health check unavailable.</p>
