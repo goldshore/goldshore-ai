@@ -20,6 +20,7 @@
   --green: #4ade80;
   --red: #f87171;
   --font-display: 'Syne', sans-serif;
+  --font-wordmark: 'DM Sans', 'Inter', system-ui, sans-serif;
   --font-body: 'DM Sans', sans-serif;
   --font-mono: 'DM Mono', monospace;
   --site-max: 1440px;
@@ -178,7 +179,7 @@ main { display: grid; gap: 1px; position: relative; z-index: 1; }
 .brand-wordmark {
   display: inline-flex;
   align-items: baseline;
-  font-family: var(--font-display);
+  font-family: var(--font-wordmark);
   font-size: 1.15rem;
   font-weight: 800;
   letter-spacing: 0.14em;
