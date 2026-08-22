@@ -1,6 +1,6 @@
 # CLAUDE.md — goldshore-ai
 
-> Updated: 2026-08-14 · Active branch: `claude/mcp-gs-api-worker-migration-0g51br`
+> Updated: 2026-08-22 · Active branch: `claude/goldshore-cloudflare-setup-5i243p`
 
 ## Platform overview
 
@@ -107,13 +107,24 @@ For Claude/Codex assistance with Google API integration: provide the API name, s
 
 ---
 
-## Standalone repos still running production code
+## Standalone repos and consolidation status
 
-| Repo | Deploys | Notes |
-|------|---------|-------|
-| `marzton/goldshore-gateway` | `gs-platform` worker | Platform front door; routes all subdomain traffic |
-| `marzton/goldshore-admin` | `admin.goldshore.org` (Pages) | Older admin; any replacement UI belongs under `apps/gs-web` sub-routes |
-| `marzton/goldshore-core` | `banproof-me` worker | Security/ban-check; future integration must route through `apps/gs-api` queues/routes (or stay external) and must not create `apps/gs-security`. |
+**Phase 1-3 Cleanup Complete (2026-08-22)**:
+- ✅ Deleted 7 legacy apps from goldshore-ai (armsway-com, goldclaw, gs-agent, gs-control, gs-core-worker, gs-mail, gs-platform, gs-trading, gs-www-redirect)
+- ✅ Removed auto-generated files (worker-configuration.d.ts, README-v2.md)
+- ✅ Full build verification passed; zero dangling references
+
+**Consolidation Audit Complete** (see `docs/CONSOLIDATION_AUDIT_2026_08.md`):
+
+| Repo | Status | Timeline | Notes |
+|------|--------|----------|-------|
+| `marzton/goldshore-ops` | 🔴 Archive immediately | 1 hour | KV template stub, never built, no dependencies |
+| `marzton/goldshore-web` | 🔴 Archive immediately | 1 hour | Deprecated Astro site, not in production |
+| `marzton/goldshore-labs` | 🟡 Audit then archive | 30 min audit | Purpose unclear; check CI/deployment refs first |
+| `marzton/goldshore-admin` | 🟠 Consolidate → gs-web | 3-4 days | Customer/subscription pages missing from gs-web; in progress |
+| `marzton/goldshore-gateway` | 🟠 Consolidate → gs-api | 2-3 days | Move CORS/Access middleware, health check to gs-api |
+| `marzton/goldshore-api` | ✅ Keep separate | N/A | Market data provider API (different purpose from gs-api) |
+| `marzton/goldshore-core` | ⚠️ Decision required | 1-3 days | banproof-me security service; consolidate or keep external? |
 
 ---
 
@@ -141,46 +152,34 @@ For Claude/Codex assistance with Google API integration: provide the API name, s
 
 ---
 
-## Active branch: `claude/mcp-gs-api-worker-migration-0g51br`
+## Active branch: `claude/goldshore-cloudflare-setup-5i243p`
 
-### Initiative: Enterprise Admin Platform Build-Out
+### Initiative: Monorepo Consolidation & Cleanup
 
-**Objective**: Build comprehensive admin dashboard with 30+ features for operations, automation, and infrastructure management.
+**Completed (2026-08-22)**:
+- ✅ **Phase 1-3 Cleanup**: Removed 7 legacy apps, auto-generated files, updated .gitignore
+- ✅ **Phase 3 Verification**: Full build pass, zero dangling references, CI/CD clean
+- ✅ **Consolidation Audit**: Analyzed all 6 production standalone repos, created actionable roadmap
+- ✅ PR #6904: Ready for review and merge to main
 
-**Phase 1 (Current Sprint — In Progress)**:
-- ✅ App-level CF Access auth verified (middleware.ts, api-proxy.ts, gs-api handlers all correct)
-- ⚠️ Edge-level CF Access Application for admin.goldshore.ai **pending manual dashboard configuration** (see `docs/ADMIN_DASHBOARD_FIX.md`)
-- ✅ Database schema: `github_webhooks` table created for AUDIT_DB (migration: `0002_github_webhooks.sql`)
-- ✅ D1 migration automation: GitHub Actions workflow for applying remote D1 migrations (`apply-d1-migration.yml`)
-- ✅ Admin dashboard diagnostics: Root cause analysis of ~13 failing admin pages documented (CF Access Application missing at edge)
-- 🔄 Core admin infrastructure:
-  - Email management (queue, logs, templates)
-  - Worker management (bindings, routes, secrets UI)
-  - Contact forms & leads CRUD (entries display, pagination)
-  - User sign-up management
-  - Settings panel
-  - API routes: `/api/admin/{email,workers,entries,users,settings}/*`
-  - Frontend pages: `/admin/{dashboard,email,workers,entries,users,settings}`
+**In Progress**:
+- 🟠 **Step 3: Complete admin migration** — Customer/subscription pages need migration to gs-web
+- 🟠 **Step 4: Gateway consolidation** — Move CORS/Access middleware to gs-api
+- 🟠 **Step 5: API audit** — Confirm goldshore-api separation (market data provider, not duplicate)
+- 🟠 **Step 6: Core integration decision** — Architecture review for banproof-me (consolidate vs. external)
+- 🟠 **Step 7: Documentation** — Update CLAUDE.md and README with consolidated structure
 
-**Secondary issues identified (separate investigation)**:
-- API Workflows: `/api/admin/workflows` endpoint missing from gs-api (404)
-- Repo Health: Client fetches HTML instead of JSON response
-- Lead Submissions: goldshore.ai returns 522; missing error boundary
-- Dashboard: Stricter CF Access policy required (separate from main admin auth)
+**Consolidation Timeline**:
+- Phase 1 (Days 1-2): Archive goldshore-ops, goldshore-web, goldshore-labs
+- Phase 2 (Days 3-7): Complete admin UI migration to gs-web
+- Phase 3 (Days 8-12): Consolidate gateway routing into gs-api
+- Phase 4 (Days 13-15): Integrate or document goldshore-core (architecture decision)
+- Phase 5 (Days 16-21): Documentation & team communication
 
-**Phase 2 (Week 2)**: WYSIWYG editors, secret creator, API key rotator, permission updater
-
-**Phase 3 (Week 3)**: Workflows (leads generator, list scraper, data collector, email sender, CF Tunnel manager)
-
-**Phase 4 (Week 4+)**: Enterprise features (PR manager, AI search, ad integrator, site builder, plugin installer, SQL sync, mailbox management)
-
-**Tech Stack**:
-- Backend: Hono (gs-api)
-- Frontend: Astro + React (gs-web)
-- Storage: D1 (schema), KV (cache), R2 (uploads)
-- Auth: Cloudflare Access + session tokens
-
-**Next**: Manual Cloudflare dashboard action required — create CF Access Application for `admin.goldshore.ai` subdomain (documented in `docs/ADMIN_DASHBOARD_FIX.md`)
+**Documentation**:
+- `docs/CONSOLIDATION_AUDIT_2026_08.md` — Complete audit with timeline and risk assessment
+- `docs/STANDALONE_REPO_CONSOLIDATION_PLAN.md` — Strategic consolidation plan
+- `docs/CLEANUP_LOG_2026_08.md` — Phase 1-3 cleanup audit trail
 
 ---
 
@@ -205,16 +204,33 @@ pnpm turbo run build --filter=gs-web
 
 ---
 
-## Repo migration plan
+## Repo consolidation roadmap
 
-| Priority | Repo | Action |
-|----------|------|--------|
-| 1 | `goldshore-ops` | Archive — KV template stub, never built |
-| 2 | `goldshore-web` | Already deprecated — remove from CI |
-| 3 | `goldshore-core` | Route `banproof-me` security logic into `apps/gs-api` queues/routes (or keep it external); do **not** create `apps/gs-security` or any other new Worker under `apps/`; archive standalone |
-| 4 | `goldshore-api` | Confirm `goldshore/apps/goldshore-api` at parity → archive standalone |
-| 5 | `goldshore-admin` | Move replacement admin UX into `apps/gs-web` sub-routes, then archive standalone |
-| 6 | `goldshore-gateway` | Route gateway responsibilities through `apps/gs-api`, then archive standalone |
+**Immediate Archival (No Code Migration)**:
+1. `goldshore-ops` — KV template stub, never built, no dependencies
+2. `goldshore-web` — Deprecated Astro site, functionality in gs-web
+3. `goldshore-labs` — Audit first; archive if unused
+
+**In-Progress Consolidation**:
+4. `goldshore-admin` → `apps/gs-web` sub-routes
+   - Missing: Customer management (`/admin/customers/*`), subscription management (`/admin/subscriptions/*`)
+   - In progress: Cherry-picked features via PRs #6896-6900
+   - Timeline: 3-4 days to complete UI migration
+
+5. `goldshore-gateway` → `apps/gs-api`
+   - Consolidate: CORS middleware, CF Access validation, health checks, correlation ID tracking
+   - Then: Update CF routing to point directly to gs-api
+   - Timeline: 2-3 days for middleware integration + testing
+
+**Requires Architecture Decision**:
+6. `goldshore-core` (banproof-me security service)
+   - Option A: Consolidate into gs-api (security-critical code, requires extensive testing)
+   - Option B: Keep external (isolated, can scale independently)
+   - Decision needed from ops/security team based on performance and isolation requirements
+
+**Keep Separate (Different Purpose)**:
+- `goldshore-api` — Market data provider API (brokers, market data, backtests) — NOT a duplicate of gs-api
+- `marzton/goldshore` — Sister monorepo for `.org` domain (data intelligence, research arm)
 
 ---
 
