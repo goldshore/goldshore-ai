@@ -35,6 +35,11 @@ test('gs-web retains its Astro SSR Worker-with-Assets deployment contract', () =
   assert.doesNotMatch(deployWorkflow, /^\s*run:.*wrangler pages deploy/m);
 });
 
+test('gs-web documents GS_CONFIG as an unbound proposed-only runtime store', () => {
+  assert.doesNotMatch(webWrangler, /binding\s*=\s*"GS_CONFIG"/);
+  assert.match(webReadme, /does not currently read `GS_CONFIG` directly/);
+});
+
 test('gs-web has no direct operational bindings beyond its session store', () => {
   assert.match(webWrangler, /\[assets\][\s\S]*?binding = "ASSETS"/);
 
@@ -48,7 +53,7 @@ test('gs-web has no direct operational bindings beyond its session store', () =>
   // deploy manifest before an environment is selected, and environments do not
   // inherit bindings, so dropping either one lets Cloudflare auto-provision a
   // replacement namespace at deploy time.
-  const sessionId = '805bff3293c2483facc5225e6ff9af60';
+  const sessionId = '7bf44b9bf6cd4ca69cd99573bbaffa52';
   assert.match(webWrangler, new RegExp(`\\[\\[kv_namespaces\\]\\]\\r?\\nbinding = "SESSION"\\r?\\nid = "${sessionId}"`));
   assert.match(webWrangler, new RegExp(`\\[\\[env\\.prod\\.kv_namespaces\\]\\]\\r?\\nbinding = "SESSION"\\r?\\nid = "${sessionId}"`));
 

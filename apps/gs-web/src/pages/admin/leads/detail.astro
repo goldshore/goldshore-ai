@@ -1,0 +1,206 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { fetchAdminJson } from '../../../lib/api-proxy';
+
+interface Lead {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  company?: string;
+  message?: string;
+  status: 'new' | 'contacted' | 'qualified' | 'rejected';
+  created_at: string;
+  updated_at: string;
+  metadata?: Record<string, any>;
+}
+
+const leadId = new URL(Astro.request.url).searchParams.get('id');
+
+if (!leadId) {
+  return Astro.redirect('/admin/entries');
+}
+
+let lead: Lead | null = null;
+let error: string | null = null;
+
+try {
+  const result = await fetchAdminJson<Lead>(Astro.request, `/admin/entries/leads/${leadId}`);
+
+  if (result.ok) {
+    lead = result.data;
+  } else if (result.status === 404) {
+    error = 'Lead not found';
+  } else {
+    error = `Failed to load lead (HTTP ${result.status})`;
+  }
+} catch (e) {
+  error = e instanceof Error ? e.message : 'Failed to load lead';
+}
+
+const statusColors: Record<string, { bg: string; text: string; badge: string }> = {
+  new: { bg: 'bg-blue-50', text: 'text-blue-900', badge: 'bg-blue-100 text-blue-800' },
+  contacted: { bg: 'bg-yellow-50', text: 'text-yellow-900', badge: 'bg-yellow-100 text-yellow-800' },
+  qualified: { bg: 'bg-green-50', text: 'text-green-900', badge: 'bg-green-100 text-green-800' },
+  rejected: { bg: 'bg-red-50', text: 'text-red-900', badge: 'bg-red-100 text-red-800' },
+};
+
+const colors = lead ? statusColors[lead.status] : statusColors.new;
+---
+
+<AdminLayout title={lead ? `${lead.name} | Leads` : 'Lead Detail | GoldShore'}>
+  <div class="max-w-4xl mx-auto p-8">
+    {error && (
+      <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded text-red-700">
+        {error}
+      </div>
+    )}
+
+    {!error && lead && (
+      <>
+        <div class="flex items-start justify-between mb-6">
+          <div>
+            <h1 class="text-4xl font-bold gs-heading">{lead.name}</h1>
+            <p class="text-gray-600 mt-2">Lead ID: {lead.id.slice(0, 8)}...</p>
+          </div>
+          <a href="/admin/entries" class="text-blue-600 hover:text-blue-800">← Back to Entries</a>
+        </div>
+
+        <div class={`${colors.bg} ${colors.text} p-6 rounded-lg mb-6`}>
+          <div class="grid md:grid-cols-4 gap-6">
+            <div>
+              <p class="text-sm font-medium opacity-75">Status</p>
+              <p class={`text-2xl font-bold mt-2 inline-block px-3 py-1 rounded ${colors.badge}`}>
+                {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
+              </p>
+            </div>
+            <div>
+              <p class="text-sm font-medium opacity-75">Email</p>
+              <p class="text-lg font-semibold mt-2">
+                <a href={`mailto:${lead.email}`} class="underline hover:opacity-75">{lead.email}</a>
+              </p>
+            </div>
+            {lead.phone && (
+              <div>
+                <p class="text-sm font-medium opacity-75">Phone</p>
+                <p class="text-lg font-semibold mt-2">
+                  <a href={`tel:${lead.phone}`} class="underline hover:opacity-75">{lead.phone}</a>
+                </p>
+              </div>
+            )}
+            {lead.company && (
+              <div>
+                <p class="text-sm font-medium opacity-75">Company</p>
+                <p class="text-lg font-semibold mt-2">{lead.company}</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-6 mb-6">
+          <div class="gs-card">
+            <h2 class="text-lg font-semibold mb-4">Timeline</h2>
+            <div class="space-y-3 text-sm">
+              <div>
+                <p class="text-gray-600">Created</p>
+                <p class="font-medium">{new Date(lead.created_at).toLocaleString()}</p>
+              </div>
+              <div>
+                <p class="text-gray-600">Last Updated</p>
+                <p class="font-medium">{new Date(lead.updated_at).toLocaleString()}</p>
+              </div>
+              {lead.metadata?.qualified_at && (
+                <div>
+                  <p class="text-gray-600">Qualified</p>
+                  <p class="font-medium">{new Date(lead.metadata.qualified_at).toLocaleString()}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div class="gs-card">
+            <h2 class="text-lg font-semibold mb-4">Metadata</h2>
+            <div class="space-y-3 text-sm">
+              {lead.metadata?.qualification_reason && (
+                <div>
+                  <p class="text-gray-600">Qualification Reason</p>
+                  <p class="font-medium">{lead.metadata.qualification_reason}</p>
+                </div>
+              )}
+              {lead.metadata?.qualified_by && (
+                <div>
+                  <p class="text-gray-600">Qualified By</p>
+                  <p class="font-medium">{lead.metadata.qualified_by}</p>
+                </div>
+              )}
+              {lead.metadata?.source && (
+                <div>
+                  <p class="text-gray-600">Source</p>
+                  <p class="font-medium">{lead.metadata.source}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {lead.message && (
+          <div class="gs-card mb-6">
+            <h2 class="text-lg font-semibold mb-4">Message</h2>
+            <p class="text-gray-700 whitespace-pre-wrap">{lead.message}</p>
+          </div>
+        )}
+
+        <div class="gs-card">
+          <h2 class="text-lg font-semibold mb-4">Quick Actions</h2>
+          <div class="flex flex-wrap gap-3">
+            <a href={`mailto:${lead.email}`} class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+              Send Email
+            </a>
+            {lead.phone && (
+              <a href={`tel:${lead.phone}`} class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
+                Call
+              </a>
+            )}
+            {lead.status !== 'qualified' && (
+              <button
+                hx-post={`/api/admin/entries/leads/${lead.id}/qualify`}
+                hx-target="this"
+                class="px-4 py-2 bg-emerald-500 text-white rounded hover:bg-emerald-600"
+              >
+                Mark Qualified
+              </button>
+            )}
+            {lead.status !== 'contacted' && (
+              <button
+                hx-post={`/api/admin/entries/leads/${lead.id}`}
+                hx-vals='{"status": "contacted"}'
+                hx-target="this"
+                class="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
+              >
+                Mark Contacted
+              </button>
+            )}
+            {lead.status !== 'rejected' && (
+              <button
+                hx-post={`/api/admin/entries/leads/${lead.id}`}
+                hx-vals='{"status": "rejected"}'
+                hx-target="this"
+                class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+              >
+                Reject
+              </button>
+            )}
+          </div>
+        </div>
+      </>
+    )}
+
+    {!error && !lead && (
+      <div class="text-center py-12">
+        <p class="text-gray-600">Loading lead...</p>
+      </div>
+    )}
+  </div>
+</AdminLayout>

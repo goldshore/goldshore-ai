@@ -190,8 +190,22 @@ https://goldshore-ai.pages.dev/  (or custom domain)
 When accessed via:
 - `https://goldshore.ai/` → CORS allows it (wildcard or explicit)
 - `https://goldshore.org/` → goldshore-org router sets ASSETS_ORIGIN, CORS allows it
-- `https://admin.goldshore.ai/` → now served by gs-web directly (same build/assets as the main site); admin page content itself has not been ported into gs-web yet, so this route currently serves gs-web's normal routing until admin pages land under apps/gs-web/src/pages/admin/*
 - `https://admin.goldshore.ai/` and `https://admin.goldshore.org/` → served by gs-web directly; admin pages live under `apps/gs-web/src/pages/admin/*`
+
+**Admin-host URL rewriting.** On an admin host, `getAdminHostRewritePath` in
+`apps/gs-web/src/utils/admin-access.ts` maps operator-facing URLs onto the Astro
+route tree, so the `/admin` prefix stays out of the address bar. Three tables
+drive it, and each carries a correctness obligation enforced by
+`tests/unit/admin-access.test.ts`:
+
+| Table | Effect | Obligation |
+|---|---|---|
+| `CLEAN_ADMIN_PAGE_PREFIXES` | `/x` → `/admin/x` | `/admin/x` must resolve, **including the bare prefix** — a directory with children but no `index.astro` 404s |
+| `MIGRATED_ADMIN_PAGE_RULES` | exempt; Astro serves the path as-is | the path must resolve as-is; an exemption without a page 404s instead of falling back to the dashboard |
+| neither | folds to `ADMIN_DASHBOARD_PATH` | — |
+
+A prefix must never appear in both tables: the migrated list is consulted first,
+so a duplicate entry in `CLEAN_ADMIN_PAGE_PREFIXES` is unreachable.
 
 **Recursion risk:** If gs-web tries to fetch from itself (e.g., prefetch WASM), ensure CORS doesn't loop back.
 

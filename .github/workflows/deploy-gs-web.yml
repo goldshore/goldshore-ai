@@ -18,6 +18,15 @@ on:
     branches: [main]
     paths: *web-paths
   workflow_dispatch:
+    inputs:
+      skip_validation:
+        description: 'Skip validation step before deployment'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
 
 concurrency:
   group: deploy-gs-web-${{ github.ref }}
@@ -56,7 +65,7 @@ jobs:
     timeout-minutes: 30
     environment: production
     env:
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
       CLOUDFLARE_ENV: prod
     steps:

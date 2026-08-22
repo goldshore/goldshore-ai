@@ -1,22 +1,14 @@
 import { Hono } from 'hono';
-import { escapeHtml, isValidEmail } from '@goldshore/utils';
 import type { Env, Variables } from '../types';
-import { enqueueMailJob } from '../lib/mail-queue';
-import { validateFormTurnstile } from '../lib/turnstile';
+import { isValidEmail } from '@goldshore/utils';
 
 const mail = new Hono<{ Bindings: Env; Variables: Variables }>();
 
 mail.get('/', (c) => c.json({ service: 'gs-api-mail', ok: true }));
 mail.get('/health', (c) => c.json({ status: 'ok', service: 'gs-api-mail' }));
 mail.get('/inbox/logs', async (c) => {
-  const result = await c.env.PLATFORM_DB.prepare(
-    `SELECT id, envelope_from AS "from", envelope_to AS "to", subject, received_at AS timestamp,
-            status, raw_object_key AS rawObjectKey, attachment_count AS attachmentCount
-       FROM inbound_messages
-      ORDER BY received_at DESC
-      LIMIT 100`,
-  ).all();
-  return c.json({ logs: result.results ?? [] });
+  const raw = await c.env.KV.get('EMAIL_INBOX_LOGS');
+  return c.json({ logs: raw ? JSON.parse(raw) : [] });
 });
 
 type ContactFormSubmission = {
@@ -62,7 +54,7 @@ mail.post('/contact', async (c) => {
 
   const turnstile = await validateFormTurnstile(
     formData,
-    c.env.TURNSTILE_SECRET_KEY,
+    c.env.TURNSTILE_SECRET,
     c.req.raw,
   );
   if (!turnstile.valid) {

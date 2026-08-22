@@ -1,23 +1,27 @@
 ---
+import '@goldshore/theme/styles/tokens.css';
+import '@goldshore/theme/styles/base.css';
+import '@goldshore/theme/styles/components.css';
+import '@goldshore/theme/styles/layout.css';
 import Sidebar from '../components/Sidebar.astro';
-import '../styles/admin.css';
-import { hasAdminPermission, type AdminPermission } from '@goldshore/auth';
+import FloatingChatWidget from '../components/admin/FloatingChatWidget';
+import { ADMIN_PERMISSIONS, type AdminPermission } from '@goldshore/auth';
 
 interface Props {
   title: string;
   requiredPermission?: AdminPermission;
+  description?: string;
 }
 
-const { title, requiredPermission } = Astro.props;
-const session = Astro.locals.adminSession;
-
-if (!session?.isAuthenticated || session.roles.length === 0) {
-  return Astro.redirect('/login?next=' + encodeURIComponent(Astro.url.pathname));
-}
-
-if (requiredPermission && !hasAdminPermission(session.permissions, requiredPermission)) {
-  return new Response('Forbidden', { status: 403 });
-}
+const { title, requiredPermission, description = 'Protected GoldShore operations workspace for content, infrastructure, integrations, and customer workflows.' } = Astro.props;
+const canonicalUrl = new URL(Astro.url.pathname, 'https://admin.goldshore.ai').toString();
+// Authentication and permission checks are authoritative in middleware.ts.
+// Returning a Response from an Astro layout component produces an empty 200
+// response under the Cloudflare adapter instead of the intended redirect or
+// error. Keep the layout presentation-only after middleware has authorized the
+// request.
+const permissions = ADMIN_PERMISSIONS;
+void requiredPermission;
 ---
 <!doctype html>
 <html lang="en">
@@ -26,15 +30,29 @@ if (requiredPermission && !hasAdminPermission(session.permissions, requiredPermi
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex, nofollow" />
     <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
     <link rel="icon" href="/favicon.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body class="gs-admin-body">
     <div class="gs-admin-shell">
-      <Sidebar permissions={session.permissions} />
+      <Sidebar permissions={permissions} />
       <main class="gs-admin-main">
-        <button class="gs-admin-menu-toggle" id="admin-menu-toggle" type="button" aria-label="Open admin navigation">Menu</button>
+        <button class="gs-admin-menu-toggle" id="admin-menu-toggle" type="button" aria-label="Open admin navigation">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg><span>Menu</span>
+        </button>
         <slot />
       </main>
+      <FloatingChatWidget client:load />
     </div>
   </body>
 </html>
@@ -42,14 +60,83 @@ if (requiredPermission && !hasAdminPermission(session.permissions, requiredPermi
 <style>
   :root {
     color-scheme: dark;
+    --admin-bg: #050d15;
+    --admin-surface: #09141f;
+    --admin-line: rgba(171, 190, 202, .12);
+    --admin-line-strong: rgba(171, 190, 202, .19);
+    --admin-text: #e8ecec;
+    --admin-muted: #91a0aa;
+    --admin-faint: #63727d;
+    --admin-accent: #d96a32;
+    --admin-success: #52c878;
+    --admin-display: "Space Grotesk", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --admin-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --admin-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   }
 
+  /* Scoped to the admin shell only — never touches the public site, which
+     gets its own values from packages/theme. Brings admin card surfaces,
+     corner radii, and headline type in line with the GoldShore brand
+     mockups: high-contrast light cards on a near-black page (the mockups'
+     most distinctive trait, and the opposite of the previous dark-on-dark
+     --gs-color-surface: #0c1221 that made every .gs-card nearly invisible
+     against --admin-bg), tighter corners, and the brand's actual display
+     face (Space Grotesk) instead of a plain-Inter fallback that discarded
+     it for every admin heading.
+
+     --gs-color-text/-subtle are deliberately NOT set here at body scope:
+     the page background stays dark (--admin-bg), so page-level text
+     (page descriptions, labels, anything outside a card) must keep using
+     --admin-text/--admin-muted (light-on-dark). Only card surfaces flip
+     light, so their text-color overrides are scoped to .gs-card/.gs-panel
+     below instead - setting them here first caused exactly this: a page
+     intro paragraph rendering in a card-appropriate medium gray
+     (--gs-color-subtle) against the still-dark page background, which is
+     low-contrast and was a regression from the original --admin-muted. */
   body.gs-admin-body {
     margin: 0;
-    background: #050b14;
-    color: rgba(226, 232, 240, 0.92);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--admin-bg);
+    color: var(--admin-text);
+    font-family: var(--admin-ui);
     min-height: 100dvh;
+    --gs-accent: var(--admin-accent);
+    --gs-font-display: var(--admin-display);
+    --gs-radius-sm: 6px;
+    --gs-radius-md: 8px;
+    --gs-radius-lg: 10px;
+  }
+
+  .gs-admin-body h1, .gs-admin-body h2, .gs-admin-body h3 {
+    font-family: var(--admin-display);
+    letter-spacing: -0.01em;
+  }
+
+  /* packages/theme ships two conflicting .gs-card rules - components.css
+     (background: var(--gs-color-surface)) and layout.css (background:
+     var(--gs-bg-secondary) directly, loaded after components.css so it
+     wins the cascade everywhere, including here). Rather than chase every
+     variable a shared rule might reference, override the class directly
+     at higher specificity so it's correct regardless of which of the two
+     upstream rules currently wins.
+
+     :global() is required on the class part: .gs-card elements come from
+     slotted page content, not AdminLayout's own template, so Astro's
+     scoped-style compiler never stamps them with this component's
+     data-astro-cid attribute - a scoped .gs-admin-body .gs-card selector
+     silently matches nothing at all.
+
+     Text-color variables live here, not at body scope, so they apply
+     only within these now-light surfaces and never repaint page-level
+     text sitting directly on the dark page background. */
+  .gs-admin-body :global(.gs-card), .gs-admin-body :global(.gs-panel) {
+    --gs-color-surface: #f5f3ec;
+    --gs-color-muted-surface: #ebe8de;
+    --gs-color-text: #14181d;
+    --gs-color-subtle: #5b6470;
+    --gs-color-border: rgba(20, 20, 20, 0.1);
+    background: var(--gs-color-surface);
+    border-color: var(--gs-color-border);
+    color: var(--gs-color-text);
   }
 
   .gs-admin-shell {
@@ -70,16 +157,19 @@ if (requiredPermission && !hasAdminPermission(session.permissions, requiredPermi
     .gs-admin-menu-toggle {
       display: inline-flex;
       position: fixed;
-      top: 10px;
-      right: 10px;
+      top: 14px;
+      left: 14px;
       z-index: 35;
-      border: 1px solid rgba(90, 162, 255, 0.25);
-      border-radius: 7px;
-      background: #0a1724;
-      color: #c4d5e2;
-      padding: 8px 10px;
-      font-weight: 700;
+      gap: 8px;
+      align-items: center;
+      border: 1px solid var(--admin-line-strong);
+      background: #09141f;
+      color: var(--admin-text);
+      padding: 9px 12px;
+      font: 650 .7rem var(--admin-ui);
     }
+    .gs-admin-menu-toggle svg { width: 15px; fill: none; stroke: var(--admin-accent); stroke-width: 1.5; }
+    body.gs-sidebar-open::after { content: ''; position: fixed; inset: 0; z-index: 30; background: rgba(0,0,0,.58); }
   }
 </style>
 

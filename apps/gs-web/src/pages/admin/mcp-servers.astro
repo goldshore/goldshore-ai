@@ -1,0 +1,68 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import MCPServerManager from '../../components/admin/MCPServerManager';
+
+const jwtToken = Astro.request.headers.get('CF-Access-JWT-Assertion') || '';
+---
+
+<AdminLayout title="Admin | MCP Servers">
+  <div class="max-w-7xl mx-auto p-8 space-y-8">
+    <div class="space-y-2">
+      <h1 class="text-4xl gs-heading gs-text-accent">MCP Server Management</h1>
+      <p class="text-lg gs-text-subtle">Configure and execute Model Context Protocol servers for automation workflows.</p>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="gs-card space-y-3">
+        <h2 class="text-xl font-semibold">GitHub PR Manager</h2>
+        <p class="text-sm gs-text-subtle">Automate PR reviews, merges, and CI status monitoring</p>
+        <div class="inline-block px-3 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">Active</div>
+      </div>
+      <div class="gs-card space-y-3">
+        <h2 class="text-xl font-semibold">Email Mailbox Manager</h2>
+        <p class="text-sm gs-text-subtle">Send campaigns, manage templates, track delivery</p>
+        <div class="inline-block px-3 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">Active</div>
+      </div>
+      <div class="gs-card space-y-3">
+        <h2 class="text-xl font-semibold">Cloudflare Config Sync</h2>
+        <p class="text-sm gs-text-subtle">Sync and verify infrastructure configuration</p>
+        <div class="inline-block px-3 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">Active</div>
+      </div>
+    </div>
+
+    <div class="gs-card space-y-4">
+      <h2 class="text-2xl font-semibold">Server Control Panel</h2>
+      <p class="text-sm gs-text-subtle mb-4">Select a server and execute tools to manage your platform</p>
+      <MCPServerManager client:load jwtToken={jwtToken} />
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6">
+      <div class="gs-card space-y-3">
+        <h3 class="text-lg font-semibold">Recent Activities</h3>
+        <div class="space-y-2 text-sm gs-text-subtle">
+          <p>• No recent MCP executions</p>
+          <p>• Servers are idle</p>
+        </div>
+      </div>
+      <div class="gs-card space-y-3">
+        <h3 class="text-lg font-semibold">Workflow Status</h3>
+        <div class="space-y-2 text-sm">
+          <div class="flex justify-between items-center">
+            <span>Active Workflows</span>
+            <span class="font-bold gs-text-info">0</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span>Completed Today</span>
+            <span class="font-bold gs-text-info">0</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span>Failed Tasks</span>
+            <span class="font-bold text-red-600">0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</AdminLayout>

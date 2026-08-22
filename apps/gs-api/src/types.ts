@@ -13,6 +13,7 @@ type ResourceBindings = {
   RISK_RADAR_DB?: D1Database;
   TELEMETRY_DB?: D1Database;
   GS_ASSETS: R2Bucket;
+  HOSTGATOR_DB?: Hyperdrive;
   MAIL_ARCHIVE?: R2Bucket;
   RISK_RADAR_R2?: R2Bucket;
   TELEMETRY?: R2Bucket;
@@ -34,22 +35,35 @@ type RuntimeSecrets = {
   ANTHROPIC_GATEWAY_ID?: string;
   ANTHROPIC_GATEWAY_VERIFIED?: string;
   API_VERSION?: string;
-  CF_VERSION_METADATA?: { id: string };
-  CLOUDFLARE_ACCOUNT_ID?: string;
-  CLOUDFLARE_API_TOKEN?: string;
-  CLOUDFLARE_PAGES_PROJECT?: string;
-  CLOUDFLARE_ZONE_ID?: string;
-  CLOUDFLARE_ZONE_NAME?: string;
-  CONTROL_ADMIN_ROLES?: string;
-  CONTROL_SYNC_TOKEN?: string;
   DEPLOY_SHA?: string;
-  DEV_AUTH_BYPASS?: string;
-  DISCORD_WEBHOOK_URL?: string;
-  FORWARD_TO?: string;
-  GEMINI_API_KEY?: string;
-  GH_TOKEN?: string;
   GIT_SHA?: string;
+  CONTROL_ADMIN_ROLES?: string;
+  MAIL_FORWARD_TO?: string;
+  FORWARD_TO?: string;
+  API_ORIGIN?: string;
+  CF_TOKEN?: string;
+  CF_AIG_TOKEN?: string;
+  CF_WEBHOOK_TOKEN?: string;
+  CF_VERSION_METADATA?: { id: string };
+  CF_ACCOUNT_ID?: string;
+  CF_ZONE_ID?: string;
+  CLOUDFLARE_BUILD_API_TOKEN?: string;
   GITHUB_API_TOKEN?: string;
+  GH_TOKEN?: string;
+  CLOUDFLARE_ZONE_NAME?: string;
+  CLOUDFLARE_PAGES_PROJECT?: string;
+  ADMIN_URL?: string;
+  ENV?: string;
+  DEV_AUTH_BYPASS?: string;
+  GOOGLE_OAUTH_CLIENT_ID?: string;
+  GOOGLE_OAUTH_CLIENT_SECRET?: string;
+  GOOGLE_OAUTH_REDIRECT_URI?: string;
+  GOOGLE_BUSINESS_OAUTH_REDIRECT_URI?: string;
+  EBAY_CLIENT_ID?: string;
+  EBAY_CLIENT_SECRET?: string;
+  EBAY_REDIRECT_URI?: string;
+  EBAY_ENV?: string;
+  GH_PAT?: string;
   GITHUB_CLIENT_ID?: string;
   GITHUB_CLIENT_SECRET?: string;
   GITHUB_TOKEN?: string;
@@ -66,7 +80,7 @@ type RuntimeSecrets = {
   GOOGLE_GSC_CLIENT_SECRET?: string;
   GOOGLE_GSC_REFRESH_TOKEN?: string;
   GOOGLE_GSC_SITE_URL?: string;
-  GOOGLE_OAUTH_CLIENT_SECRET?: string;
+  GOOGLE_WEBHOOK_TOKEN?: string;
   GOLDCLAW_SANDBOX_API_TOKEN?: string;
   GOLDCLAW_SANDBOX_API_URL?: string;
   GOLDCLAW_SANDBOX_PROVIDER?: string;
@@ -95,6 +109,21 @@ type RuntimeSecrets = {
   OAUTH_TOKEN_ENCRYPTION_KEY?: string;
   OPENAI_API_KEY?: string;
   OPENCLAW_API_KEY?: string;
+  // ────────────────────────────────────────────────────────────────────────────
+  // DEPRECATED SECRETS — Do not use in new code. Use primary names only.
+  // ────────────────────────────────────────────────────────────────────────────
+  CLOUDFLARE_API_TOKEN?: string; // Use CF_TOKEN instead
+  CLOUDFLARE_ACCOUNT_ID?: string; // Use CF_ACCOUNT_ID instead
+  CLOUDFLARE_ZONE_ID?: string; // Use CF_ZONE_ID or CLOUDFLARE_GOLDSHORE_AI_ZONE_ID instead
+  CF_AUTH_KEY?: string; // Deprecated: legacy global API key auth
+  CF_ACCOUNT_KEY?: string; // Deprecated: legacy account-level API key auth
+  GOLDSHORE_CF_TOKEN?: string; // Use CF_TOKEN instead
+  OPENAI_API_TOKEN?: string; // Use OPENAI_API_KEY instead
+  CLOUDFLARE_BUILD_TOKEN?: string; // Use CLOUDFLARE_BUILD_API_TOKEN instead
+  CF_WORKERS_BUILDS?: string; // Use CLOUDFLARE_BUILD_API_TOKEN instead
+  GOLDSHORE_CF_TOKEN_SECRET_ACCESS_KEY?: string; // Unclear purpose — audit for removal
+  GS_DISPATCH_TOKEN?: string; // Stale: last rotated 2+ months ago
+  CLOUDFLARE_CA_ORIGIN_KEY?: string; // Stale: last verified 2+ months ago
   OPENCLAW_BASE_URL?: string;
   PORT?: string;
   ROBINHOOD_ACCOUNT_ID?: string;
@@ -121,6 +150,7 @@ type RuntimeSecrets = {
 
 type RuntimeVariables = {
   AI_SEARCH_PUBLIC_ENDPOINT?: string;
+  ADMIN_PROXY_AUDIENCE?: string;
   ADMIN_URL?: string;
   API_ORIGIN?: string;
   CLOUDFLARE_ACCESS_APPLICATION?: string;

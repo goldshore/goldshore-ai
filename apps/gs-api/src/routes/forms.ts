@@ -65,14 +65,28 @@ forms.get('/leads', async (c) => {
   if (denied) return denied;
   const status = c.req.query('status');
   const whereClause = status && allowedStatuses.has(status) ? 'WHERE status = ?' : '';
-  const query = `SELECT id, form_type, name, email, company, role, website, team_size, industry, timeline, budget, goals, message, status, received_at, ip_address, user_agent FROM lead_submissions ${whereClause} ORDER BY received_at DESC`;
+  const requestedPage = Number.parseInt(c.req.query('page') ?? '', 10);
+  const requestedPageSize = Number.parseInt(c.req.query('pageSize') ?? '', 10);
+  const paginated = Number.isFinite(requestedPage) || Number.isFinite(requestedPageSize);
+  const page = Math.max(1, Number.isFinite(requestedPage) ? requestedPage : 1);
+  const pageSize = Math.min(100, Math.max(10, Number.isFinite(requestedPageSize) ? requestedPageSize : 25));
+  const paginationClause = paginated ? ' LIMIT ? OFFSET ?' : '';
+  const query = `SELECT id, form_type, name, email, company, role, website, team_size, industry, timeline, budget, goals, message, status, received_at, ip_address, user_agent FROM lead_submissions ${whereClause} ORDER BY received_at DESC${paginationClause}`;
   const statement = c.env.PLATFORM_DB.prepare(query);
-  const response = whereClause ? await statement.bind(status).all() : await statement.all();
+  const values: unknown[] = whereClause ? [status] : [];
+  if (paginated) values.push(pageSize, (page - 1) * pageSize);
+  const response = values.length ? await statement.bind(...values).all() : await statement.all();
   const rows = Array.isArray(response?.results) ? response.results : [];
   if (c.req.query('format') === 'csv') {
     return new Response(buildCsv(rows as Record<string, unknown>[]), { headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': 'attachment; filename="lead-submissions.csv"' } });
   }
-  return c.json(rows);
+  if (!paginated) return c.json(rows);
+  const countStatement = c.env.PLATFORM_DB.prepare(`SELECT COUNT(*) AS total FROM lead_submissions ${whereClause}`);
+  const countRow = whereClause
+    ? await countStatement.bind(status).first<{ total: number }>()
+    : await countStatement.first<{ total: number }>();
+  const total = Number(countRow?.total ?? 0);
+  return c.json({ items: rows, pagination: { page, pageSize, total, pages: Math.max(1, Math.ceil(total / pageSize)) } });
 });
 
 forms.post('/leads', async (c) => {
@@ -140,7 +154,15 @@ forms.put('/configs/:slug', updateConfig);
 forms.patch('/configs/:slug', updateConfig);
 
 forms.post('/:formId/submissions', async (c) => {
-  const body = await c.req.parseBody();
+  const contentType = c.req.header('content-type')?.toLowerCase() ?? '';
+  let body: Record<string, unknown>;
+  try {
+    body = contentType.includes('application/json')
+      ? await c.req.json<Record<string, unknown>>()
+      : await c.req.parseBody();
+  } catch {
+    return c.json({ ok: false, error: 'Invalid submission payload.' }, 400);
+  }
   const id = crypto.randomUUID();
   const formId = c.req.param('formId') || 'contact';
   const now = new Date().toISOString();
@@ -155,13 +177,13 @@ forms.post('/:formId/submissions', async (c) => {
   }
   const turnstileValidation = await validateFormTurnstile(
     turnstileForm,
-    c.env.TURNSTILE_SECRET_KEY,
+    c.env.TURNSTILE_SECRET,
     c.req.raw,
   );
 
   if (!turnstileValidation.valid) {
     return c.json(
-      { ok: false, error: { message: turnstileValidation.error || 'Turnstile validation failed' } },
+      { ok: false, error: turnstileValidation.error || 'Turnstile validation failed' },
       400,
     );
   }
@@ -189,7 +211,10 @@ forms.post('/:formId/submissions', async (c) => {
           html: `<p><strong>Name:</strong> ${escapeHtml(name || 'N/A')}</p><p><strong>Email:</strong> ${escapeHtml(email || 'N/A')}</p><p>${escapeHtml(message || 'No message provided.').replace(/\n/g, '<br>')}</p>`,
           replyTo: email && isValidEmail(email) ? { email, name } : undefined,
         },
-      )
+      ).catch((err) => {
+        console.error({ event: 'notification_mail_failed', formId, error: String(err) });
+        return { attempted: true, ok: false, status: 500, body: 'NOTIFICATION_ENQUEUE_THREW' };
+      })
     : { attempted: false, reason: 'no_recipients' };
 
   const autoResponder = buildLeadAutoResponder({ name, formType: formId });
@@ -200,6 +225,9 @@ forms.post('/:formId/submissions', async (c) => {
           subject: autoResponder.subject,
           text: autoResponder.text,
           html: autoResponder.html,
+        }).catch((err) => {
+          console.error({ event: 'autoresponder_mail_failed', formId, error: String(err) });
+          return { attempted: true, ok: false, status: 500, body: 'AUTORESPONDER_ENQUEUE_THREW' };
         })
       : { attempted: false, reason: 'missing_submitter_email' };
 

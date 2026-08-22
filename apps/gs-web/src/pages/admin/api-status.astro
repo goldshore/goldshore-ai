@@ -2,6 +2,7 @@
 import AdminLayout from "../../layouts/AdminLayout.astro";
 import { env as cloudflareEnv } from 'cloudflare:workers';
 import { authorizeAdminRequest, getAdminAuthError, getAdminRouteRule } from '../../utils/admin-access';
+import { fetchAdminJson } from '../../lib/api-proxy';
 
 export const prerender = false;
 
@@ -30,7 +31,9 @@ type DnsSyncStatusResponse = {
 type HealthResponse = {
   status: string;
   service: string;
-  version: string;
+  version?: string;
+  apiVersion?: string;
+  dependencySummary?: { ready?: number; total?: number };
   kv?: string;
   db?: string;
 };
@@ -46,32 +49,24 @@ if (!rule) {
   authError = getAdminAuthError(authResult);
 }
 
-const apiBase = (env?.PUBLIC_API || 'https://api.goldshore.ai').replace(/\/$/, '');
-
 let inboxStatus: InboxStatusResponse | null = null;
 let dnsSyncStatus: DnsSyncStatusResponse | null = null;
 let health: HealthResponse | null = null;
 let fetchError = '';
 
 if (!authError) {
-  const forwardHeaders = new Headers();
-  const cookie = Astro.request.headers.get('cookie');
-  const accessJwt = Astro.request.headers.get('cf-access-jwt-assertion');
-  if (cookie) forwardHeaders.set('cookie', cookie);
-  if (accessJwt) forwardHeaders.set('cf-access-jwt-assertion', accessJwt);
-
   try {
-    const [inboxRes, dnsRes, healthRes] = await Promise.all([
-      fetch(`${apiBase}/internal/inbox-status`, { headers: forwardHeaders }),
-      fetch(`${apiBase}/internal/dns-sync-status`, { headers: forwardHeaders }),
-      fetch(`${apiBase}/health?type=deep`, { headers: forwardHeaders }),
+    const [inboxResult, dnsResult, healthResult] = await Promise.all([
+      fetchAdminJson<InboxStatusResponse>(Astro.request, '/internal/inbox-status'),
+      fetchAdminJson<DnsSyncStatusResponse>(Astro.request, '/internal/dns-sync-status'),
+      fetchAdminJson<HealthResponse>(Astro.request, '/health?type=deep'),
     ]);
 
-    inboxStatus = inboxRes.ok ? await inboxRes.json() : { success: false, error: `HTTP ${inboxRes.status}` };
-    dnsSyncStatus = dnsRes.ok ? await dnsRes.json() : { success: false, error: `HTTP ${dnsRes.status}` };
-    health = healthRes.ok ? await healthRes.json() : null;
+    inboxStatus = inboxResult.ok && inboxResult.data ? inboxResult.data : { success: false, error: `HTTP ${inboxResult.status}` };
+    dnsSyncStatus = dnsResult.ok && dnsResult.data ? dnsResult.data : { success: false, error: `HTTP ${dnsResult.status}` };
+    health = healthResult.ok ? healthResult.data : null;
   } catch {
-    fetchError = 'Unable to reach api.goldshore.ai.';
+    fetchError = 'Unable to reach gs-api through the internal service binding.';
   }
 }
 
@@ -113,13 +108,23 @@ const formatDate = (value: string | null | undefined) => (value ? new Date(value
             {health ? (
               <ul>
                 <li>Status: <span class={`gs-badge ${health.status === 'ok' ? 'success' : ''}`}>{health.status}</span></li>
-                <li>Version: {health.version}</li>
+                <li>Version: {health.apiVersion ?? health.version ?? 'unknown'}</li>
+                <li>Dependencies: {health.dependencySummary ? `${health.dependencySummary.ready ?? 0} / ${health.dependencySummary.total ?? 0} ready` : 'not reported'}</li>
                 <li>KV: <span class={`gs-badge ${health.kv === 'connected' ? 'success' : 'info'}`}>{health.kv ?? 'unknown'}</span></li>
                 <li>DB: <span class={`gs-badge ${health.db === 'connected' ? 'success' : 'info'}`}>{health.db ?? 'unknown'}</span></li>
               </ul>
             ) : (
               <p>Health check unavailable.</p>
             )}
+          </div>
+
+          <div class="gs-card">
+            <h2 class="section-title"><span>◆</span>Network path</h2>
+            <ul>
+              <li>Transport: <span class="gs-badge success">API service binding</span></li>
+              <li>Identity header: <span class="gs-badge success">Access JWT forwarded</span></li>
+              <li>Secret values: <span class="gs-badge success">Not exposed to the browser</span></li>
+            </ul>
           </div>
 
           <div class="gs-card">

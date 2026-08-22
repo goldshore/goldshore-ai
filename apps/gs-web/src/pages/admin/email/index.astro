@@ -1,0 +1,130 @@
+---
+export const prerender = false;
+
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import EmailManager from "../../../components/admin/EmailManager";
+import EmailTemplatesManager from "../../../components/admin/EmailTemplatesManager";
+import { fetchAdminJson } from "../../../lib/api-proxy";
+
+const requestedTab = Astro.url.searchParams.get('tab');
+const TABS = ['logs', 'templates'] as const;
+const initialTab = (TABS as readonly string[]).includes(requestedTab ?? '') ? requestedTab! : 'logs';
+
+const jwtToken = Astro.request.headers.get('CF-Access-JWT-Assertion') || '';
+const offset = parseInt(Astro.url.searchParams.get('offset') || '0');
+const limit = parseInt(Astro.url.searchParams.get('limit') || '25');
+const status = Astro.url.searchParams.get('status') || '';
+
+let emailLogs: { items: any[]; total: number; offset: number; limit: number; error: string | null } = { items: [], total: 0, offset, limit, error: null };
+let emailStats = { queued: 0, sent: 0, failed: 0, total: 0 };
+
+try {
+  const statsResult = await fetchAdminJson<typeof emailStats>(Astro.request, '/admin/email/status');
+  if (statsResult.ok && statsResult.data) emailStats = statsResult.data;
+
+  const params = new URLSearchParams({ offset: String(offset), limit: String(limit), ...(status && { status }) });
+  const logsResult = await fetchAdminJson<{ items: any[]; total: number }>(Astro.request, `/admin/email/logs?${params}`);
+  if (logsResult.ok && logsResult.data) {
+    emailLogs = { ...emailLogs, ...logsResult.data };
+  } else if (logsResult.status === 401 || logsResult.status === 403) {
+    emailLogs.error = 'Authentication required. Please ensure you are logged in with the correct credentials.';
+  } else if (!logsResult.ok) {
+    emailLogs.error = `Failed to load email logs (status ${logsResult.status}).`;
+  }
+} catch (error) {
+  emailLogs.error = error instanceof Error ? error.message : 'Failed to load email logs';
+}
+
+let templates: { items: any[]; error: string | null } = { items: [], error: null };
+try {
+  const result = await fetchAdminJson<{ items: any[] }>(Astro.request, '/admin/email/templates');
+  if (result.ok && result.data) {
+    templates = { ...templates, ...result.data };
+  } else if (result.status === 401 || result.status === 403) {
+    templates.error = 'Authentication required. Please ensure you are logged in with the correct credentials.';
+  } else if (!result.ok) {
+    templates.error = `Failed to load templates (status ${result.status}).`;
+  }
+} catch (error) {
+  templates.error = error instanceof Error ? error.message : 'Failed to load templates';
+}
+---
+
+<AdminLayout title="Email | GoldShore Admin">
+  <div class="max-w-7xl mx-auto p-8 space-y-8">
+    <div class="space-y-2">
+      <h1 class="text-4xl gs-heading gs-text-accent">Email</h1>
+      <p class="text-lg gs-text-subtle">Queue, logs, and reusable templates — consolidated from two separate pages into one.</p>
+    </div>
+
+    <nav class="gs-tabs" role="tablist" aria-label="Email sections">
+      <button type="button" class="gs-tab" data-tab="logs" role="tab">Logs</button>
+      <button type="button" class="gs-tab" data-tab="templates" role="tab">Templates</button>
+    </nav>
+
+    <!-- ============================== Logs ============================== -->
+    <div class="gs-panel" data-panel="logs">
+      {emailLogs.error && <div class="p-4 bg-red-50 border border-red-200 rounded text-red-700 text-sm mb-4">{emailLogs.error}</div>}
+      <div class="grid md:grid-cols-4 gap-6">
+        <div class="gs-card space-y-3">
+          <h2 class="text-xl font-semibold">Queued</h2>
+          <p class="text-3xl font-bold gs-text-warning">{emailStats.queued}</p>
+          <p class="text-sm gs-text-subtle">Waiting to send</p>
+        </div>
+        <div class="gs-card space-y-3">
+          <h2 class="text-xl font-semibold">Sent</h2>
+          <p class="text-3xl font-bold gs-text-success">{emailStats.sent}</p>
+          <p class="text-sm gs-text-subtle">Successfully delivered</p>
+        </div>
+        <div class="gs-card space-y-3">
+          <h2 class="text-xl font-semibold">Failed</h2>
+          <p class="text-3xl font-bold gs-text-danger">{emailStats.failed}</p>
+          <p class="text-sm gs-text-subtle">Require attention</p>
+        </div>
+        <div class="gs-card space-y-3">
+          <h2 class="text-xl font-semibold">Total</h2>
+          <p class="text-3xl font-bold gs-text-info">{emailStats.total}</p>
+          <p class="text-sm gs-text-subtle">All emails</p>
+        </div>
+      </div>
+
+      <div class="gs-card space-y-4 mt-6">
+        <h2 class="text-2xl font-semibold">Email Logs</h2>
+        <EmailManager client:load jwtToken={jwtToken} initialLogs={emailLogs} />
+      </div>
+    </div>
+
+    <!-- ============================== Templates ============================== -->
+    <div class="gs-panel" data-panel="templates">
+      {templates.error && <div class="p-4 bg-red-50 border border-red-200 rounded text-red-700 text-sm mb-4">{templates.error}</div>}
+      <EmailTemplatesManager client:load jwtToken={jwtToken} initialTemplates={templates} />
+    </div>
+  </div>
+
+  <style>
+    .gs-tabs { display: flex; gap: 8px; flex-wrap: wrap; border-bottom: 1px solid var(--gs-color-border); padding-bottom: 4px; }
+    .gs-tab { font: 650 .85rem/1 inherit; padding: 8px 14px; border-radius: var(--gs-radius-pill, 999px) var(--gs-radius-pill, 999px) 0 0; border: 1px solid transparent; background: transparent; color: var(--gs-color-subtle); cursor: pointer; }
+    .gs-tab:hover { color: var(--gs-color-text); }
+    .gs-tab[aria-selected="true"] { color: var(--gs-color-primary, #d96a32); border-color: var(--gs-color-border); border-bottom-color: transparent; background: var(--gs-color-surface); }
+    .gs-panel[hidden] { display: none; }
+  </style>
+
+  <script define:vars={{ initialTab }}>
+    const tabs = Array.from(document.querySelectorAll('.gs-tab'));
+    const panels = Array.from(document.querySelectorAll('.gs-panel'));
+    function activate(tab) {
+      for (const t of tabs) t.setAttribute('aria-selected', String(t.dataset.tab === tab));
+      for (const p of panels) p.hidden = p.dataset.panel !== tab;
+    }
+    for (const t of tabs) {
+      t.addEventListener('click', () => {
+        const tab = t.dataset.tab;
+        activate(tab);
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', tab);
+        window.history.replaceState({}, '', url);
+      });
+    }
+    activate(initialTab);
+  </script>
+</AdminLayout>
