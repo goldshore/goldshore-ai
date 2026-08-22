@@ -137,18 +137,22 @@ const features = [
       justify-content: center;
       margin-top: 0.95rem;
       padding: 0.7rem 1.05rem;
-      border-radius: 999px;
-      background: rgba(0, 193, 255, 0.16);
-      border: 1px solid rgba(145, 222, 255, 0.45);
+      border-radius: 2px;
+      background: rgba(160, 72, 32, 0.14);
+      border: 1px solid rgba(160, 72, 32, 0.30);
       color: var(--gs-text);
       font-weight: 600;
       text-decoration: none;
-      transition: transform 120ms ease, background 120ms ease;
+      transition: background 120ms ease, border-color 120ms ease;
+      font-family: 'DM Mono', ui-monospace, monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
 
     .cta-btn:hover {
-      transform: translateY(-1px);
-      background: rgba(0, 193, 255, 0.24);
+      background: rgba(160, 72, 32, 0.24);
+      border-color: rgba(160, 72, 32, 0.50);
     }
 
     @media (max-width: 900px) {

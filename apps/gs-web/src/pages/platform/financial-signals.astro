@@ -91,10 +91,10 @@ const features = [
 
     .feature-card {
       padding: 1.3rem;
-      border-radius: 20px;
+      border-radius: 2px;
       border: 1px solid rgba(255, 255, 255, 0.06);
-      background: rgba(10, 18, 36, 0.72);
-      box-shadow: var(--gs-shadow);
+      background: rgba(20, 20, 32, 0.82);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
     }
 
     .feature-card h2 {
@@ -112,10 +112,10 @@ const features = [
     .page-cta {
       margin-top: 1.4rem;
       padding: 1.35rem;
-      border-radius: 22px;
-      border: 1px solid rgba(131, 197, 255, 0.28);
-      background: linear-gradient(145deg, rgba(12, 28, 56, 0.85), rgba(8, 17, 33, 0.95));
-      box-shadow: var(--gs-shadow);
+      border-radius: 2px;
+      border: 1px solid rgba(160, 72, 32, 0.18);
+      background: rgba(20, 20, 32, 0.82);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
     }
 
     .page-cta h2 {
@@ -136,18 +136,22 @@ const features = [
       justify-content: center;
       margin-top: 0.95rem;
       padding: 0.7rem 1.05rem;
-      border-radius: 999px;
-      background: rgba(0, 193, 255, 0.16);
-      border: 1px solid rgba(145, 222, 255, 0.45);
+      border-radius: 2px;
+      background: rgba(160, 72, 32, 0.14);
+      border: 1px solid rgba(160, 72, 32, 0.30);
       color: var(--gs-text);
       font-weight: 600;
       text-decoration: none;
-      transition: transform 120ms ease, background 120ms ease;
+      transition: background 120ms ease, border-color 120ms ease;
+      font-family: 'DM Mono', ui-monospace, monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
 
     .cta-btn:hover {
-      transform: translateY(-1px);
-      background: rgba(0, 193, 255, 0.24);
+      background: rgba(160, 72, 32, 0.24);
+      border-color: rgba(160, 72, 32, 0.50);
     }
 
     @media (max-width: 900px) {
