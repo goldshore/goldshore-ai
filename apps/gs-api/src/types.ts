@@ -25,6 +25,8 @@ type ResourceBindings = {
   MAIL_JOBS_QUEUE?: Queue;
   GS_SIGNALS?: Workflow<SignalsEvaluatorParams>;
   AGENT?: Fetcher;
+  BREVO_API_KEY?: SecretsStoreSecret;
+  BREVO_MCP_KEY?: SecretsStoreSecret;
 };
 
 type RuntimeSecrets = {
