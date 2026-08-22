@@ -161,7 +161,7 @@ forms.post('/:formId/submissions', async (c) => {
       ? await c.req.json<Record<string, unknown>>()
       : await c.req.parseBody();
   } catch {
-    return c.json({ ok: false, error: { message: 'Invalid submission payload.' } }, 400);
+    return c.json({ ok: false, error: 'Invalid submission payload.' }, 400);
   }
   const id = crypto.randomUUID();
   const formId = c.req.param('formId') || 'contact';
@@ -183,7 +183,7 @@ forms.post('/:formId/submissions', async (c) => {
 
   if (!turnstileValidation.valid) {
     return c.json(
-      { ok: false, error: { message: turnstileValidation.error || 'Turnstile validation failed' } },
+      { ok: false, error: turnstileValidation.error || 'Turnstile validation failed' },
       400,
     );
   }
