@@ -27,6 +27,10 @@ try {
     settings = { ...settings, ...result.data.settings };
   } else if (result.status === 401 || result.status === 403) {
     settings.error = 'Authentication required. Please ensure you are logged in with the correct credentials.';
+  } else if (result.status === 503) {
+    settings.error = 'Admin API is temporarily unavailable.';
+  } else if (!result.ok) {
+    settings.error = `Failed to load settings (status ${result.status}).`;
   }
 } catch (error) {
   settings.error = error instanceof Error ? error.message : 'Failed to load settings';
