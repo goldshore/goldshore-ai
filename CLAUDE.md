@@ -124,7 +124,7 @@ For Claude/Codex assistance with Google API integration: provide the API name, s
 | `marzton/goldshore-admin` | 🟠 Consolidate → gs-web | 3-4 days | Customer/subscription pages missing from gs-web; in progress |
 | `marzton/goldshore-gateway` | 🟠 Consolidate → gs-api | 2-3 days | Move CORS/Access middleware, health check to gs-api |
 | `marzton/goldshore-api` | ✅ Keep separate | N/A | Market data provider API (different purpose from gs-api) |
-| `marzton/goldshore-core` | ⚠️ Decision required | 1-3 days | banproof-me security service; consolidate or keep external? |
+| `marzton/goldshore-core` | 🔒 ARCHIVED (2026-08-22) | Completed | Legacy code archived; banproof-me continues as independent product on banproof.me domain |
 
 ---
 
@@ -152,29 +152,30 @@ For Claude/Codex assistance with Google API integration: provide the API name, s
 
 ---
 
-## Active branch: `claude/goldshore-cloudflare-setup-5i243p`
+## Active branch: `claude/goldshore-core-archival-phase4-exec`
 
 ### Initiative: Monorepo Consolidation & Cleanup
 
 **Completed (2026-08-22)**:
 - ✅ **Phase 1-3 Cleanup**: Removed 7 legacy apps, auto-generated files, updated .gitignore
 - ✅ **Phase 3 Verification**: Full build pass, zero dangling references, CI/CD clean
-- ✅ **Consolidation Audit**: Analyzed all 6 production standalone repos, created actionable roadmap
-- ✅ PR #6904: Ready for review and merge to main
+- ✅ **Phase 3 Consolidation**: Correlation ID middleware added to gs-api; gateway consolidation verified
+- ✅ **Phase 4 Analysis & Decision**: goldshore-core archival decision made; banproof-me independence confirmed
+- ✅ PR #6904 (Phase 1-3): Merged to main
+- ✅ PR #6905 (Phase 4 Decision): Merged to main
 
 **In Progress**:
-- 🟠 **Step 3: Complete admin migration** — Customer/subscription pages need migration to gs-web
-- 🟠 **Step 4: Gateway consolidation** — Move CORS/Access middleware to gs-api
-- 🟠 **Step 5: API audit** — Confirm goldshore-api separation (market data provider, not duplicate)
-- 🟠 **Step 6: Core integration decision** — Architecture review for banproof-me (consolidate vs. external)
-- 🟠 **Step 7: Documentation** — Update CLAUDE.md and README with consolidated structure
+- 🟠 **Phase 4 Execution** — Archive goldshore-core repository and update documentation
+  1. Update goldshore-core README with archival notice
+  2. Mark repository as archived in GitHub
+  3. Update goldshore-ai documentation (CLAUDE.md, BINDINGS_MAP.md)
+  4. Verify Cloudflare configuration
+  5. Team communication and knowledge base updates
 
 **Consolidation Timeline**:
-- Phase 1 (Days 1-2): Archive goldshore-ops, goldshore-web, goldshore-labs
-- Phase 2 (Days 3-7): Complete admin UI migration to gs-web
-- Phase 3 (Days 8-12): Consolidate gateway routing into gs-api
-- Phase 4 (Days 13-15): Integrate or document goldshore-core (architecture decision)
-- Phase 5 (Days 16-21): Documentation & team communication
+- ✅ Phase 1-3: Consolidated (all merged to main)
+- 🟠 Phase 4: Archival execution in progress
+- ⏭️ Phase 5: Documentation & team communication
 
 **Documentation**:
 - `docs/CONSOLIDATION_AUDIT_2026_08.md` — Complete audit with timeline and risk assessment
