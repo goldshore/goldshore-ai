@@ -204,6 +204,16 @@ binding = "BREVO_MCP_KEY"
 store_id = "b9824d3280c54573a24137c7e7143b33"
 secret_name = "BREVO_MCP_KEY"
 
+# Master key for lib/encryption.ts's AES-256-GCM encryption of integration_secrets
+# rows (admin dashboard "Manage Secrets" + /integrations/keys). This binding was
+# missing entirely - getMasterKey() has been throwing "binding is not configured"
+# on every call since the encryption module was written, silently swallowed by
+# integration-keys.ts's broad catch into a misleading 409 "already exists" error.
+[[env.prod.secrets_store_secrets]]
+binding = "INTEGRATION_MASTER_KEY"
+store_id = "b9824d3280c54573a24137c7e7143b33"
+secret_name = "INTEGRATION_MASTER_KEY"
+
 # ── Cron Triggers (Scheduled Jobs) ──────────────────────────────────────────────────────────────
 # Token rotation job: Runs daily at 2 AM UTC to refresh expiring OAuth tokens
 [env.prod.triggers]
