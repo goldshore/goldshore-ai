@@ -122,7 +122,7 @@ For Claude/Codex assistance with Google API integration: provide the API name, s
 | `marzton/goldshore-web` | 🔴 Archive immediately | 1 hour | Deprecated Astro site, not in production |
 | `marzton/goldshore-labs` | 🟡 Audit then archive | 30 min audit | Purpose unclear; check CI/deployment refs first |
 | `marzton/goldshore-admin` | 🟠 Consolidate → gs-web | 3-4 days | Customer/subscription pages missing from gs-web; in progress |
-| `marzton/goldshore-gateway` | 🟠 Consolidate → gs-api | 2-3 days | Move CORS/Access middleware, health check to gs-api |
+| `marzton/goldshore-gateway` | 🔒 ARCHIVED (2026-08-22) | Completed | Redundant proxy layer; all middleware already in gs-api |
 | `marzton/goldshore-api` | ✅ Keep separate | N/A | Market data provider API (different purpose from gs-api) |
 | `marzton/goldshore-core` | 🔒 ARCHIVED (2026-08-22) | Completed | Legacy code archived; banproof-me continues as independent product on banproof.me domain |
 
@@ -164,13 +164,20 @@ For Claude/Codex assistance with Google API integration: provide the API name, s
 - ✅ PR #6904 (Phase 1-3): Merged to main
 - ✅ PR #6905 (Phase 4 Decision): Merged to main
 
+**Completed (2026-08-22)**:
+- ✅ **Phase 4a Execution** — Archive goldshore-core repository (merged via PR #6908)
+  1. ✅ Updated goldshore-core README with archival notice
+  2. ✅ Updated goldshore-ai documentation (CLAUDE.md, BINDINGS_MAP.md)
+  3. ⏳ Verify Cloudflare configuration (requires dashboard access)
+  4. ⏳ Team communication and knowledge base updates
+
 **In Progress**:
-- 🟠 **Phase 4 Execution** — Archive goldshore-core repository and update documentation
-  1. Update goldshore-core README with archival notice
-  2. Mark repository as archived in GitHub
-  3. Update goldshore-ai documentation (CLAUDE.md, BINDINGS_MAP.md)
-  4. Verify Cloudflare configuration
-  5. Team communication and knowledge base updates
+- 🟠 **Phase 4b Execution** — Archive goldshore-gateway repository
+  1. ✅ Audit identified gateway as redundant proxy (all middleware in gs-api)
+  2. ✅ Update goldshore-gateway README with archival notice
+  3. ✅ Create `docs/GATEWAY_CONSOLIDATION_2026_08.md` with consolidation analysis
+  4. ⏳ Archive repository in GitHub (requires manual dashboard action)
+  5. ⏳ Team notification
 
 **Consolidation Timeline**:
 - ✅ Phase 1-3: Consolidated (all merged to main)
