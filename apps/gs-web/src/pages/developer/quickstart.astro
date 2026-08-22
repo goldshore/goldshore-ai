@@ -1,0 +1,19 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+export const prerender = false;
+const steps = [
+  ['1', 'Choose the surface', 'Use public HTTP endpoints for published resources, MCP for approved agent tooling, or the admin workspace for operator workflows.'],
+  ['2', 'Request access', 'Public health and documentation routes do not require a secret. Protected routes require an approved identity or credential issued through GoldShore.'],
+  ['3', 'Test safely', 'Start with health or readiness checks and a non-production workflow. Never place bearer tokens, Access secrets, or private keys in source or browser-visible code.'],
+  ['4', 'Move to production', 'Confirm the exact origin, callback, signature method, rate expectations, and failure handling before sending production traffic.'],
+];
+---
+<BaseLayout title="Developer Quickstart | GoldShore" description="Start integrating with GoldShore APIs, MCP tools, and protected operator services." canonicalPath="/developer/quickstart/">
+  <section class="gs-section gs-section--padded developer-copy">
+    <p class="gs-eyebrow">Developer hub</p><h1>Quickstart</h1>
+    <p class="lead">A safe path from public documentation to an approved production integration.</p>
+    <div class="step-grid">{steps.map(([number,title,body]) => <article><span>{number}</span><h2>{title}</h2><p>{body}</p></article>)}</div>
+    <p class="next"><a href="/developer/authentication/">Review authentication</a> or browse the <a href="/developer/api/">API reference</a>.</p>
+  </section>
+</BaseLayout>
+<style>.developer-copy{max-width:76rem;margin-inline:auto}.developer-copy h1{font-size:clamp(3.5rem,9vw,8rem)}.lead{max-width:60ch;color:var(--gs-text-dim);font-size:1.15rem}.step-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;margin-top:2rem;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.08)}.step-grid article{padding:1.5rem;background:#0d0c13}.step-grid span{color:#d3743e;font:600 .7rem 'DM Mono',monospace}.step-grid h2{margin:.75rem 0}.step-grid p,.next{color:var(--gs-text-dim);line-height:1.7}.next{margin-top:2rem}@media(max-width:720px){.step-grid{grid-template-columns:1fr}}</style>
