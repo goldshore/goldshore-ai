@@ -37,7 +37,9 @@
 }
 
 .brand-text-label {
-  font-family: var(--gs-font-wordmark, 'DM Sans', 'Inter', system-ui, sans-serif);
+  font-family: 'Syne', 'DM Sans', system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.14em;
   white-space: nowrap;
 }
 
@@ -197,9 +199,10 @@
 .footer-brand h2 {
   margin: 0 0 0.5rem 0;
   color: #fff;
-  font-family: var(--gs-font-wordmark, 'DM Sans', 'Inter', system-ui, sans-serif);
+  font-family: 'Syne', 'DM Sans', system-ui, sans-serif;
+  font-weight: 800;
   font-size: 1.1rem;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
@@ -413,10 +416,11 @@
 }
 
 .gs-theme-footer__lockup strong {
-  font-family: var(--gs-font-wordmark, 'DM Sans', 'Inter', system-ui, sans-serif);
+  font-family: 'Syne', 'DM Sans', system-ui, sans-serif;
+  font-weight: 800;
   font-size: clamp(1.3rem, 2.2vw, 2rem);
   line-height: 1;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.14em;
 }
 
 .gs-theme-footer__lockup small {
