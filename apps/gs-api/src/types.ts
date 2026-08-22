@@ -191,6 +191,7 @@ export type SignalsEvaluatorParams = {
 export type Variables = {
   accessClaims: AccessTokenPayload | null;
   requestId: string;
+  correlationId: string;
   user?: SessionUser;
 };
 

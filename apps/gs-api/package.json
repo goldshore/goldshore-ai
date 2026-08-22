@@ -10,7 +10,7 @@
     "types": "wrangler types --env prod --include-runtime=false",
     "types:check": "wrangler types --env prod --include-runtime=false --check",
     "lint": "eslint .",
-    "test": "tsx --test src/routes/*.test.ts src/lib/*.test.ts",
+    "test": "tsx --test src/routes/*.test.ts src/lib/*.test.ts src/middleware/*.test.ts",
     "test:gateway": "node test-gateway.js"
   },
   "dependencies": {

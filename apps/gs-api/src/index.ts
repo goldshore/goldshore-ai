@@ -5,6 +5,7 @@ import {
   authorizeAccessClaims,
 } from '@goldshore/auth';
 import { createCorsMiddleware, APPROVED_API_ORIGINS } from '@goldshore/shared';
+import { correlationIdMiddleware } from './middleware/correlation-id';
 import { EmailLogSchema } from '@goldshore/schema';
 import users from './routes/users';
 import integrationKeys from './routes/integration-keys';
@@ -165,6 +166,8 @@ app.use(
     allowLocalhost: true,
   }),
 );
+
+app.use('*', correlationIdMiddleware);
 
 app.use('*', async (c, next) => {
   await next();
