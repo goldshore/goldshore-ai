@@ -3,18 +3,33 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 export const prerender = false;
 ---
 <BaseLayout title="Privacy Notice | GoldShore" description="How GoldShore handles information submitted through its websites and services." canonicalPath="/legal/privacy/">
-  <section class="gs-section gs-section--padded">
-    <h1>Privacy Policy</h1>
-    <p><strong>Effective August 22, 2026.</strong> This notice describes information handled through GoldShore websites, contact forms, project intake, newsletters, and protected services.</p>
+  <section class="gs-section gs-section--padded legal-copy">
+    <p class="gs-eyebrow">Legal</p>
+    <h1>Privacy Notice</h1>
+    <p><strong>Effective August 22, 2026.</strong> This notice explains how GoldShore handles information through its public websites, forms, newsletters, and protected services. A signed client agreement may include additional terms for a specific engagement.</p>
     <h2>Information we receive</h2>
-    <p>We receive information you choose to submit, such as your name, business email, organization, project details, and messages. Our systems may also process basic security and diagnostic data, including IP address, request time, browser information, and service logs.</p>
+    <p>We receive information you choose to submit, such as your name, business email, organization, project details, newsletter preferences, and messages. Our systems also process security and diagnostic data such as IP address, request time, browser and device information, referring page, and service logs. Protected services may process account identity, authorization, and activity records.</p>
     <h2>How we use it</h2>
-    <p>We use this information to respond to requests, provide and secure services, troubleshoot failures, measure site performance, and meet legal obligations. We do not describe a form submission as consent to unrelated marketing.</p>
+    <p>We use this information to respond to requests, qualify and deliver work, operate and secure services, prevent abuse, troubleshoot failures, understand site performance, maintain business records, and meet legal obligations. A form submission is not consent to unrelated marketing. Where required, promotional messages include a way to unsubscribe.</p>
+    <h2>Cookies, analytics, and bot protection</h2>
+    <p>GoldShore and its service providers may use essential storage, cookies, and similar technologies for security, sessions, preferences, and diagnostics. Cloudflare Turnstile may process browser and device signals to distinguish legitimate visitors from automated abuse. Optional analytics or advertising technologies should run only when configured and when the required consent signal is available.</p>
     <h2>Service providers and disclosure</h2>
-    <p>Infrastructure, security, communications, and analytics providers may process limited information on our behalf. Sponsored or affiliate editorial content is labeled where it appears. We do not present the sale of personal information as part of our business model.</p>
+    <p>Infrastructure, security, hosting, communications, analytics, and professional-service providers may process limited information on our behalf. We may disclose information when required by law, to protect people or services, or as part of a business transaction subject to appropriate safeguards. We do not present the sale of personal information as part of our business model.</p>
     <h2>Retention and choices</h2>
-    <p>We retain information for as long as needed for the purpose it was collected, security, recordkeeping, or legal requirements. You may ask about, correct, or request deletion of information you submitted, subject to applicable exceptions.</p>
+    <p>We retain information only as long as reasonably needed for the purpose it was collected, security, dispute resolution, recordkeeping, or legal requirements. Retention periods vary by record type and engagement. Depending on where you live, you may have rights to ask for access, correction, deletion, restriction, portability, or information about disclosures. Applicable exceptions may limit a request.</p>
+    <h2>Security and international processing</h2>
+    <p>We use administrative, technical, and organizational safeguards appropriate to the information and service. No internet transmission or storage system can be guaranteed completely secure. Providers may process information in countries other than your own, subject to their contractual and legal safeguards.</p>
+    <h2>Children</h2>
+    <p>GoldShore services are intended for businesses and professionals, not children. We do not knowingly collect personal information from children through the public site.</p>
+    <h2>Updates</h2>
+    <p>We may revise this notice as services or legal requirements change. Material updates will be reflected by a new effective date on this page.</p>
     <h2>Contact</h2>
     <p>Send privacy questions through the <a href="/contact/">contact page</a> and select the closest available subject. Do not include passwords, API keys, financial account credentials, or other secrets.</p>
   </section>
 </BaseLayout>
+
+<style>
+  .legal-copy { max-width: 78ch; margin-inline: auto; }
+  .legal-copy h2 { margin-top: 2rem; }
+  .legal-copy p { line-height: 1.75; color: var(--gs-text-secondary); }
+</style>
