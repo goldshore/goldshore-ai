@@ -190,7 +190,8 @@ app.use('*', async (c, next) => {
   const adminSurfaceRequest =
     c.req.path === '/admin' || c.req.path.startsWith('/admin/') ||
     c.req.path === '/integrations/keys' || c.req.path.startsWith('/integrations/keys/') ||
-    c.req.path === '/goldclaw' || c.req.path.startsWith('/goldclaw/');
+    c.req.path === '/goldclaw' || c.req.path.startsWith('/goldclaw/') ||
+    c.req.path === '/v1/deployments' || c.req.path.startsWith('/v1/deployments/');
   const accessEnv = serviceRequest
     ? {
         ...c.env,
