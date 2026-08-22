@@ -42,6 +42,13 @@ const createTestApp = (claims: any = null) => {
 };
 
 describe('Pages API Security', () => {
+  it('GET /pages/public exposes only the published-content query without claims', async () => {
+    const app = createTestApp();
+    const res = await app.request('/pages/public');
+    assert.strictEqual(res.status, 200);
+    assert.match(String(mockDB.prepare.mock.calls.at(-1)?.arguments[0]), /status = 'published'/);
+  });
+
   it('GET /pages requires content:read permission (403 if missing)', async () => {
     // Viewer role has content:read, so let's use a role that doesn't have it, or empty roles.
     // 'unknown' role.
