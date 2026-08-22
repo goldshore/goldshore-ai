@@ -36,6 +36,11 @@
   margin-inline: auto;
 }
 
+/* Keep public layouts fluid on wide displays while preserving readable gutters. */
+.gs-shell-v284 .gs-section {
+  max-width: var(--gs-max-width, 1600px);
+}
+
 .gs-shell-v284 :is(.gs-hero, .gs-section, .page-shell, .gs-grid, .info-grid, .service-grid) > * {
   min-width: 0;
 }

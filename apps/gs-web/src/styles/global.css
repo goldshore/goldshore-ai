@@ -30,7 +30,7 @@
   --gs-radius: 16px;
   --gs-radius-lg: 32px;
   --gs-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
-  --gs-max-width: 1200px;
+  --gs-max-width: min(1600px, calc(100vw - 2rem));
   --gs-font-display: 'Syne', 'DM Sans', system-ui, sans-serif;
   --gs-font-body: 'DM Sans', 'Inter', system-ui, sans-serif;
 }

@@ -36,6 +36,7 @@ type RuntimeSecrets = {
   ANTHROPIC_API_KEY?: string;
   ANTHROPIC_GATEWAY_ID?: string;
   ANTHROPIC_GATEWAY_VERIFIED?: string;
+  BREVO_API_KEY?: string;
   API_VERSION?: string;
   DEPLOY_SHA?: string;
   GIT_SHA?: string;
