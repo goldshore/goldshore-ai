@@ -8,16 +8,17 @@ const slug = Astro.params.path ?? '';
 const API_BASE = import.meta.env.PUBLIC_API || 'https://api.goldshore.ai';
 
 let page: {
-  id: number;
+  id: string;
   slug: string;
   title: string;
-  body: string;
+  content: string;
+  metadata?: { description?: string };
   status: string;
 } | null = null;
 
 if (slug) {
   try {
-    const response = await fetch(`${API_BASE}/pages/slug/${encodeURIComponent(slug)}`, {
+    const response = await fetch(`${API_BASE}/pages/public/slug/${encodeURIComponent(slug)}`, {
       headers: { Accept: 'application/json' }
     });
     if (response.ok) {
@@ -52,7 +53,7 @@ if (slug) {
   ) : (
     <BaseLayout
       title={`${page.title} | GoldShore`}
-      description={`GoldShore information page: ${page.title}`}
+      description={page.metadata?.description || `GoldShore information page: ${page.title}`}
       canonicalPath={`/${page.slug || slug}/`}
     >
       <section class="gs-section gs-slug-page" aria-labelledby="slug-page-title">
@@ -61,7 +62,7 @@ if (slug) {
             <p class="gs-eyebrow">GoldShore</p>
             <h1 id="slug-page-title">{page.title}</h1>
           </header>
-          <article class="gs-rich-content" set:html={page.body} />
+          <article class="gs-rich-content" set:html={page.content} />
         </div>
       </section>
     </BaseLayout>

@@ -41,6 +41,33 @@ const normalizePage = (row: PageRow) => ({
 
 const pages = new Hono<{ Bindings: Env; Variables: Variables }>();
 
+// Published editorial content is intentionally public. Authoring routes below
+// remain protected by the existing content permissions.
+pages.get('/public', async (c) => {
+  const kind = c.req.query('kind');
+  const query = kind
+    ? c.env.PLATFORM_DB.prepare(
+        "SELECT * FROM pages WHERE status = 'published' AND json_extract(meta_json, '$.kind') = ? ORDER BY published_at DESC, updated_at DESC",
+      ).bind(kind)
+    : c.env.PLATFORM_DB.prepare(
+        "SELECT * FROM pages WHERE status = 'published' ORDER BY published_at DESC, updated_at DESC",
+      );
+  const result = await query.all<PageRow>();
+  return c.json({ pages: result.results.map(normalizePage) }, 200, {
+    'cache-control': 'public, max-age=60, stale-while-revalidate=300',
+  });
+});
+
+pages.get('/public/slug/:slug', async (c) => {
+  const page = await c.env.PLATFORM_DB.prepare(
+    "SELECT * FROM pages WHERE slug = ? AND status = 'published' LIMIT 1",
+  ).bind(c.req.param('slug')).first<PageRow>();
+  if (!page) return c.json({ error: 'Page not found' }, 404);
+  return c.json(normalizePage(page), 200, {
+    'cache-control': 'public, max-age=60, stale-while-revalidate=300',
+  });
+});
+
 pages.get('/', requirePermission('content:read'), async (c) => {
   const status = c.req.query('status');
   const query = status

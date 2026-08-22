@@ -65,6 +65,10 @@ test('allows only public form submission writes through API authentication', () 
   assert.equal(isPublicPath('/v1/forms/subscribers', 'GET'), false);
   assert.equal(isPublicPath('/v1/forms/configs', 'GET'), false);
   assert.equal(isPublicPath('/v1/forms/leads', 'GET'), false);
+  assert.equal(isPublicPath('/pages/public', 'GET'), true);
+  assert.equal(isPublicPath('/pages/public/slug/example-post', 'GET'), true);
+  assert.equal(isPublicPath('/pages/public', 'POST'), false);
+  assert.equal(isPublicPath('/pages/private-draft', 'GET'), false);
 });
 
 test('exposes /version without Cloudflare Access', async () => {
