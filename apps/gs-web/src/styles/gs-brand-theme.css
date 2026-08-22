@@ -230,12 +230,12 @@ h1 strong, h2 strong { color: var(--gs-copper); }
 [class*="gs-panel"]:hover,
 .gs-card:hover {
   border-color: rgba(160, 72, 32, 0.28) !important;
-  box-shadow: 0 0 0 1px rgba(160, 72, 32, 0.08), 0 8px 32px rgba(0,0,0,0.4) !important;
+  box-shadow: none !important;
 }
 
-/* ── BUTTONS — pill-shaped, DM Mono, matching home page nav-cta style ── */
+/* ── BUTTONS — near-square, DM Mono, matching the approved public spec ── */
 .gs-button {
-  border-radius: 999px !important;
+  border-radius: 2px !important;
   font-family: 'DM Mono', ui-monospace, monospace !important;
   font-size: 0.72rem !important;
   letter-spacing: 0.08em !important;
@@ -249,7 +249,7 @@ h1 strong, h2 strong { color: var(--gs-copper); }
   background: rgba(160, 72, 32, 0.24) !important;
   border-color: rgba(160, 72, 32, 0.50) !important;
   transform: none !important;
-  box-shadow: 0 0 14px rgba(160, 72, 32, 0.18) !important;
+  box-shadow: none !important;
 }
 
 /* ── TABLE — DM Mono headers, subtle borders ── */
@@ -277,7 +277,7 @@ h1 strong, h2 strong { color: var(--gs-copper); }
   font-size: 0.62rem !important;
   letter-spacing: 0.08em !important;
   text-transform: uppercase !important;
-  border-radius: 999px !important;
+  border-radius: 2px !important;
 }
 .gs-badge.info {
   background: rgba(160, 72, 32, 0.12) !important;
@@ -299,7 +299,9 @@ input, select, textarea {
 }
 input:focus, select:focus, textarea:focus {
   border-color: rgba(160, 72, 32, 0.50) !important;
-  box-shadow: 0 0 0 3px rgba(160, 72, 32, 0.12) !important;
+  box-shadow: none !important;
+  outline: 1px solid rgba(160, 72, 32, 0.5) !important;
+  outline-offset: 1px;
 }
 label {
   font-family: 'DM Mono', ui-monospace, monospace !important;

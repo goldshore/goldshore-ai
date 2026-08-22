@@ -25,7 +25,7 @@ const adapterFor = (type: string): string => {
 
 export async function processQueueBatch(
   batch: MessageBatch<unknown>,
-  env: Pick<Env, 'KV' | 'PLATFORM_DB' | 'EMAIL' | 'MAIL_FROM_EMAIL' | 'MAIL_FROM_NAME'>,
+  env: Pick<Env, 'KV' | 'PLATFORM_DB' | 'EMAIL' | 'MAIL_FROM_EMAIL' | 'MAIL_FROM_NAME' | 'BREVO_API_KEY'>,
 ): Promise<void> {
   for (const message of batch.messages) {
     const idempotencyKey = `queue:v1:${batch.queue}:${message.id}`;

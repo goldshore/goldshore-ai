@@ -22,10 +22,10 @@ const emailErrorCode = (error: unknown) => {
   return String((error as { code?: unknown }).code ?? 'E_UNKNOWN');
 };
 
-export type MailEnv = Pick<Env, 'EMAIL' | 'MAIL_FROM_EMAIL' | 'MAIL_FROM_NAME'>;
+export type MailEnv = Pick<Env, 'EMAIL' | 'MAIL_FROM_EMAIL' | 'MAIL_FROM_NAME' | 'BREVO_API_KEY'>;
 
 export const isRetryableMailFailure = (result: MailResult) =>
-  result.attempted && !result.ok && RETRYABLE_EMAIL_ERRORS.has(result.body);
+  result.attempted && !result.ok && (result.status === 429 || result.status >= 500 || RETRYABLE_EMAIL_ERRORS.has(result.body));
 
 export const sendMail = async (
   env: MailEnv,
@@ -37,11 +37,37 @@ export const sendMail = async (
 ): Promise<MailResult> => {
   const fromEmail = env.MAIL_FROM_EMAIL?.trim() || 'noreply@goldshore.ai';
   const fromName = env.MAIL_FROM_NAME?.trim() || 'GoldShore';
-  if (!env.EMAIL || !isValidEmail(fromEmail) || to.length === 0) {
+  if ((!env.BREVO_API_KEY && !env.EMAIL) || !isValidEmail(fromEmail) || to.length === 0) {
     return { attempted: false, reason: 'missing_mail_configuration' };
   }
 
   try {
+    if (env.BREVO_API_KEY) {
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          accept: 'application/json',
+          'api-key': env.BREVO_API_KEY,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          sender: { email: fromEmail, name: fromName },
+          to,
+          ...(replyTo ? { replyTo } : {}),
+          subject,
+          textContent: text,
+          htmlContent: html,
+        }),
+      });
+      if (!response.ok) {
+        const code = response.status === 429 ? 'E_RATE_LIMIT_EXCEEDED' : `E_BREVO_${response.status}`;
+        console.error({ event: 'mail_delivery_failed', provider: 'brevo', code });
+        return { attempted: true, ok: false, status: response.status, body: code };
+      }
+      const result = await response.json<{ messageId?: string }>().catch(() => ({}));
+      return { attempted: true, ok: true, status: 202, body: result.messageId || 'BREVO_ACCEPTED' };
+    }
+
     const response = await env.EMAIL.send({
       to: to.map((recipient) =>
         recipient.name ? { email: recipient.email, name: recipient.name } : recipient.email,
@@ -248,13 +274,16 @@ ${DEFAULT_SIGN_OFF}
 
 export function buildNewsletterConfirmation({
   confirmationUrl,
+  activationCode,
 }: {
   confirmationUrl: string;
+  activationCode?: string;
 }) {
   const subject = 'Confirm your GoldShore newsletter subscription';
   const text = `Confirm your subscription by opening this link:
 
 ${confirmationUrl}
+${activationCode ? `\nOr enter this verification code: ${activationCode}\n` : ''}
 
 If you did not request this, ignore this email. You will not be subscribed.
 
@@ -264,6 +293,7 @@ ${DEFAULT_SIGN_OFF}
     <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111;">
       <h1 style="font-size: 22px;">Confirm your subscription</h1>
       <p>Use the button below to confirm that you want GoldShore updates.</p>
+      ${activationCode ? `<p style="padding:16px;background:#090a0e;color:#f5f1eb;font-family:monospace;font-size:24px;letter-spacing:.2em;text-align:center">${escapeHtml(activationCode)}</p>` : ''}
       <p><a href="${escapeHtml(confirmationUrl)}" style="display:inline-block;padding:12px 18px;background:#d3743e;color:#08080c;text-decoration:none;font-weight:700;">Confirm subscription</a></p>
       <p>If you did not request this, ignore this email. You will not be subscribed.</p>
       <p>${DEFAULT_SIGN_OFF}</p>
