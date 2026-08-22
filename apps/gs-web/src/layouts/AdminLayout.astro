@@ -1,7 +1,10 @@
 ---
+import '@goldshore/theme/styles/tokens.css';
+import '@goldshore/theme/styles/base.css';
+import '@goldshore/theme/styles/components.css';
+import '@goldshore/theme/styles/layout.css';
 import Sidebar from '../components/Sidebar.astro';
 import FloatingChatWidget from '../components/admin/FloatingChatWidget';
-import '../styles/admin.css';
 import { ADMIN_PERMISSIONS, type AdminPermission } from '@goldshore/auth';
 
 interface Props {
@@ -33,6 +36,12 @@ void requiredPermission;
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonicalUrl} />
     <link rel="icon" href="/favicon.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body class="gs-admin-body">
     <div class="gs-admin-shell">
@@ -58,19 +67,56 @@ void requiredPermission;
     --admin-text: #e8ecec;
     --admin-muted: #91a0aa;
     --admin-faint: #63727d;
-    --admin-accent: #e08b48;
+    --admin-accent: #d96a32;
     --admin-success: #52c878;
-    --admin-display: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --admin-display: "Space Grotesk", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     --admin-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     --admin-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   }
 
+  /* Scoped to the admin shell only — never touches the public site, which
+     gets its own values from packages/theme. Brings admin card surfaces,
+     corner radii, and headline type in line with the GoldShore brand
+     mockups: high-contrast light cards on a near-black page (the mockups'
+     most distinctive trait, and the opposite of the previous dark-on-dark
+     --gs-color-surface: #0c1221 that made every .gs-card nearly invisible
+     against --admin-bg), tighter corners, and the brand's actual display
+     face (Space Grotesk) instead of a plain-Inter fallback that discarded
+     it for every admin heading. */
   body.gs-admin-body {
     margin: 0;
     background: var(--admin-bg);
     color: var(--admin-text);
     font-family: var(--admin-ui);
     min-height: 100dvh;
+    --gs-color-surface: #f5f3ec;
+    --gs-color-muted-surface: #ebe8de;
+    --gs-color-text: #14181d;
+    --gs-color-subtle: #5b6470;
+    --gs-color-border: rgba(20, 20, 20, 0.1);
+    --gs-accent: var(--admin-accent);
+    --gs-font-display: var(--admin-display);
+    --gs-radius-sm: 6px;
+    --gs-radius-md: 8px;
+    --gs-radius-lg: 10px;
+  }
+
+  .gs-admin-body h1, .gs-admin-body h2, .gs-admin-body h3 {
+    font-family: var(--admin-display);
+    letter-spacing: -0.01em;
+  }
+
+  /* packages/theme ships two conflicting .gs-card rules - components.css
+     (background: var(--gs-color-surface), which the --gs-color-surface
+     override above targets) and layout.css (background:
+     var(--gs-bg-secondary) directly, loaded after components.css so it
+     wins the cascade everywhere, including here). Rather than chase every
+     variable a shared rule might reference, override the class directly
+     at higher specificity so it's correct regardless of which of the two
+     upstream rules currently wins. */
+  .gs-admin-body :global(.gs-card), .gs-admin-body :global(.gs-panel) {
+    background: var(--gs-color-surface);
+    border-color: var(--gs-color-border);
   }
 
   .gs-admin-shell {
