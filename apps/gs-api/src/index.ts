@@ -24,6 +24,7 @@ import forms from './routes/forms';
 import deployments from './routes/deployments';
 import gearswipe from './routes/gearswipe';
 import services from './routes/services';
+import goldclaw from './routes/goldclaw';
 import agent from './routes/agent';
 import control from './routes/control';
 import core from './routes/core';
@@ -31,6 +32,7 @@ import mail from './routes/mail';
 import trading from './routes/trading';
 import googleBusiness from './routes/google-business';
 import ebayOauth from './routes/oauth/ebay';
+import mcp from './routes/mcp';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
 import type { Env, Variables } from './types';
@@ -102,6 +104,7 @@ const isPublicPath = (path: string, method: string) => {
     // covered by the /health/ prefix check above.
     /^\/(agent|mail|control|trading|core)\/health\/?$/.test(path) ||
     (method === 'GET' && path === '/admin/google/oauth/callback') ||
+    (method === 'GET' && path === '/goldclaw/oauth/google/callback') ||
     (method === 'GET' && path === '/oauth/ebay/callback') ||
     path === '/mail/contact'
   );
@@ -187,7 +190,9 @@ app.use('*', async (c, next) => {
   // /admin prefix but has no other caller.
   const adminSurfaceRequest =
     c.req.path === '/admin' || c.req.path.startsWith('/admin/') ||
-    c.req.path === '/integrations/keys' || c.req.path.startsWith('/integrations/keys/');
+    c.req.path === '/integrations/keys' || c.req.path.startsWith('/integrations/keys/') ||
+    c.req.path === '/goldclaw' || c.req.path.startsWith('/goldclaw/') ||
+    c.req.path === '/v1/deployments' || c.req.path.startsWith('/v1/deployments/');
   const accessEnv = serviceRequest
     ? {
         ...c.env,
@@ -310,6 +315,7 @@ app.route('/pages', pages);
 app.route('/internal', internal);
 app.route('/products', products);
 app.route('/services', services);
+app.route('/goldclaw', goldclaw);
 // Host aliases are rewritten into these shared route modules above. They do
 // not own independent authentication, CORS, or security middleware stacks.
 app.route('/agent', agent);
@@ -318,6 +324,11 @@ app.route('/control', control);
 app.route('/trading', trading);
 app.route('/core', core);
 app.route('/oauth/ebay', ebayOauth);
+// routes/mcp.ts replaced the standalone goldshore-mcp Worker (which 1101'd on
+// every request - placeholder KV id, no durable_objects block) but was never
+// mounted here, so the working replacement was dead code and the Cloudflare
+// MCP Portal fronting agent.goldshore.ai had nothing live to reach.
+app.route('/mcp', mcp);
 
 const v1 = new Hono<{ Bindings: Env }>();
 v1.route('/users', users);

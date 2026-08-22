@@ -3,10 +3,9 @@ export const prerender = false;
 
 import AdminLayout from "../../../layouts/AdminLayout.astro";
 import SettingsManager from "../../../components/admin/SettingsManager";
+import { fetchAdminJson } from "../../../lib/api-proxy";
 
 const jwtToken = Astro.request.headers.get('CF-Access-JWT-Assertion') || '';
-
-const apiBaseUrl = 'https://api.goldshore.ai/admin';
 
 let settings = {
   site_name: '',
@@ -19,18 +18,19 @@ let settings = {
 };
 
 try {
-  const res = await fetch(`${apiBaseUrl}/settings`, {
-    headers: {
-      'CF-Authorization': jwtToken,
-      'Content-Type': 'application/json',
-    },
-  });
+  const result = await fetchAdminJson<{ success: boolean; settings: Record<string, unknown> }>(
+    Astro.request,
+    '/admin/settings',
+  );
 
-  if (res.ok) {
-    const data = await res.json();
-    settings = { ...settings, ...data };
-  } else if (res.status === 401 || res.status === 403) {
+  if (result.ok && result.data?.settings) {
+    settings = { ...settings, ...result.data.settings };
+  } else if (result.status === 401 || result.status === 403) {
     settings.error = 'Authentication required. Please ensure you are logged in with the correct credentials.';
+  } else if (result.status === 503) {
+    settings.error = 'Admin API is temporarily unavailable.';
+  } else if (!result.ok) {
+    settings.error = `Failed to load settings (status ${result.status}).`;
   }
 } catch (error) {
   settings.error = error instanceof Error ? error.message : 'Failed to load settings';

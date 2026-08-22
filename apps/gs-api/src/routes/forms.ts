@@ -154,7 +154,15 @@ forms.put('/configs/:slug', updateConfig);
 forms.patch('/configs/:slug', updateConfig);
 
 forms.post('/:formId/submissions', async (c) => {
-  const body = await c.req.parseBody();
+  const contentType = c.req.header('content-type')?.toLowerCase() ?? '';
+  let body: Record<string, unknown>;
+  try {
+    body = contentType.includes('application/json')
+      ? await c.req.json<Record<string, unknown>>()
+      : await c.req.parseBody();
+  } catch {
+    return c.json({ ok: false, error: 'Invalid submission payload.' }, 400);
+  }
   const id = crypto.randomUUID();
   const formId = c.req.param('formId') || 'contact';
   const now = new Date().toISOString();
@@ -175,7 +183,7 @@ forms.post('/:formId/submissions', async (c) => {
 
   if (!turnstileValidation.valid) {
     return c.json(
-      { ok: false, error: { message: turnstileValidation.error || 'Turnstile validation failed' } },
+      { ok: false, error: turnstileValidation.error || 'Turnstile validation failed' },
       400,
     );
   }

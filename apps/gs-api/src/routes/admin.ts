@@ -14,6 +14,7 @@ import piiScans from './admin/pii-scans';
 import adminAnalytics from './admin/analytics';
 import apiTokens from './admin/tokens';
 import adminEmail from './admin/email';
+import adminSecrets from './admin/secrets';
 import { escapeHtml, isValidEmail } from '@goldshore/utils';
 import { enqueueMailJob } from '../lib/mail-queue';
 
@@ -342,10 +343,11 @@ admin.get("/lead-submissions", requirePermission("system:read"), async (c) => {
 });
 
 admin.post("/lead-submissions", requirePermission("system:write"), async (c) => {
-  const payload = await c.req.json<{ id?: string; status?: string }>().catch(() => null);
+  const payload = await c.req.parseBody().catch(() => null) as { id?: string; status?: string; redirectTo?: string } | null;
   if (!payload?.id || !['new', 'read', 'archived'].includes(payload.status ?? '')) return c.json({ error: 'Invalid submission ID or status.' }, 400);
   await c.env.PLATFORM_DB.prepare('UPDATE lead_submissions SET status = ? WHERE id = ?').bind(payload.status, payload.id).run();
   await audit(c, 'admin.lead-submission.update', 'success', { submissionId: payload.id, status: payload.status });
+  if (payload.redirectTo?.startsWith('/')) return c.redirect(payload.redirectTo, 303);
   return c.json({ ok: true, submissionId: payload.id, status: payload.status });
 });
 
@@ -366,6 +368,7 @@ admin.route("/entries", entries);
 admin.route("/pii-scans", piiScans);
 admin.route("/analytics", adminAnalytics);
 admin.route("/tokens", apiTokens);
+admin.route("/secrets", adminSecrets);
 
 // Same story for the email module: EmailManager/EmailTemplatesManager and
 // email/index.astro all call /admin/email/{status,logs,templates}, none of
