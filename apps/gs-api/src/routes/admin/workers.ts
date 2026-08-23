@@ -7,16 +7,17 @@ const workers = new Hono<{
   Variables: Variables;
 }>();
 
-// Apply auth middleware
 workers.use('*', verifyAdminAuth);
 
-/**
- * GET /api/admin/cf/workers
- * List all Cloudflare Workers in the account
- */
+function cloudflareCredentials(env: Env) {
+  return {
+    token: env.CF_TOKEN ?? env.CLOUDFLARE_API_TOKEN,
+    accountId: env.CF_ACCOUNT_ID ?? env.CLOUDFLARE_ACCOUNT_ID,
+  };
+}
+
 workers.get('/workers', errorHandler(async (c) => {
-  const cf_token = c.env.CLOUDFLARE_API_TOKEN;
-  const cf_account_id = c.env.CLOUDFLARE_ACCOUNT_ID;
+  const { token: cf_token, accountId: cf_account_id } = cloudflareCredentials(c.env);
 
   if (!cf_token || !cf_account_id) {
     return c.json({
@@ -37,7 +38,7 @@ workers.get('/workers', errorHandler(async (c) => {
     );
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
+      const error = await response.json().catch(() => ({})) as any;
       return c.json({
         error: error.errors?.[0]?.message || 'Failed to fetch workers from Cloudflare',
         workers: [],
@@ -58,13 +59,8 @@ workers.get('/workers', errorHandler(async (c) => {
   }
 }));
 
-/**
- * GET /api/admin/cf/workers/:name
- * Get single worker details
- */
 workers.get('/workers/:name', errorHandler(async (c) => {
-  const cf_token = c.env.CLOUDFLARE_API_TOKEN;
-  const cf_account_id = c.env.CLOUDFLARE_ACCOUNT_ID;
+  const { token: cf_token, accountId: cf_account_id } = cloudflareCredentials(c.env);
   const workerName = c.req.param('name');
 
   if (!cf_token || !cf_account_id) {
@@ -83,7 +79,7 @@ workers.get('/workers/:name', errorHandler(async (c) => {
     );
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
+      const error = await response.json().catch(() => ({})) as any;
       return c.json(
         { error: error.errors?.[0]?.message || 'Worker not found' },
         response.status
@@ -98,13 +94,8 @@ workers.get('/workers/:name', errorHandler(async (c) => {
   }
 }));
 
-/**
- * GET /api/admin/cf/workers/:name/content
- * Get worker script content
- */
 workers.get('/workers/:name/content', errorHandler(async (c) => {
-  const cf_token = c.env.CLOUDFLARE_API_TOKEN;
-  const cf_account_id = c.env.CLOUDFLARE_ACCOUNT_ID;
+  const { token: cf_token, accountId: cf_account_id } = cloudflareCredentials(c.env);
   const workerName = c.req.param('name');
 
   if (!cf_token || !cf_account_id) {
@@ -123,7 +114,7 @@ workers.get('/workers/:name/content', errorHandler(async (c) => {
     );
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
+      const error = await response.json().catch(() => ({})) as any;
       return c.json(
         { error: error.errors?.[0]?.message || 'Worker not found' },
         response.status
@@ -140,13 +131,8 @@ workers.get('/workers/:name/content', errorHandler(async (c) => {
   }
 }));
 
-/**
- * POST /api/admin/cf/workers/:name/publish
- * Deploy/publish worker code
- */
 workers.post('/workers/:name/publish', errorHandler(async (c) => {
-  const cf_token = c.env.CLOUDFLARE_API_TOKEN;
-  const cf_account_id = c.env.CLOUDFLARE_ACCOUNT_ID;
+  const { token: cf_token, accountId: cf_account_id } = cloudflareCredentials(c.env);
   const workerName = c.req.param('name');
   const user = c.get('user');
   const body = await c.req.json() as any;
@@ -173,7 +159,7 @@ workers.post('/workers/:name/publish', errorHandler(async (c) => {
     );
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
+      const error = await response.json().catch(() => ({})) as any;
       return c.json(
         { error: error.errors?.[0]?.message || 'Failed to deploy worker' },
         response.status
@@ -181,8 +167,7 @@ workers.post('/workers/:name/publish', errorHandler(async (c) => {
     }
 
     const data = await response.json() as any;
-
-    console.log(`[AUDIT] ${user.email} deployed worker: ${workerName}`);
+    console.log(`[AUDIT] ${user?.email ?? 'unknown'} deployed worker: ${workerName}`);
 
     return c.json({
       success: true,
