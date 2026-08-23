@@ -1,6 +1,7 @@
 import type { Env, Variables } from '../../types';
 import { Hono } from 'hono';
 import { verifyAdminAuth, errorHandler } from './middleware/auth';
+import layoutPreferences from './layout-preferences';
 
 const workers = new Hono<{
   Bindings: Env;
@@ -8,6 +9,7 @@ const workers = new Hono<{
 }>();
 
 workers.use('*', verifyAdminAuth);
+workers.route('/layout', layoutPreferences);
 
 const cfToken = (env: Env) => env.CF_TOKEN || env.CLOUDFLARE_API_TOKEN;
 const cfAccountId = (env: Env) => env.CF_ACCOUNT_ID || env.CLOUDFLARE_ACCOUNT_ID;
