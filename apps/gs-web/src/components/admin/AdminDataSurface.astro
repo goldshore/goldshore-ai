@@ -1,0 +1,74 @@
+---
+interface Tab { id: string; label: string; }
+interface Props {
+  title: string;
+  description?: string;
+  tabs?: Tab[];
+  activeTab?: string;
+  id?: string;
+  empty?: boolean;
+  error?: string;
+}
+
+const {
+  title,
+  description,
+  tabs = [],
+  activeTab = tabs[0]?.id,
+  id = title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+  empty = false,
+  error,
+} = Astro.props;
+---
+<section class="gs-module gs-span-12" data-draggable="true" data-resizable="true" id={id}>
+  <header class="gs-module-header">
+    <div>
+      <h2>{title}</h2>
+      {description && <p class="gs-data-description">{description}</p>}
+    </div>
+    <div class="gs-toolbar"><slot name="actions" /></div>
+  </header>
+
+  {tabs.length > 0 && (
+    <nav class="gs-tabs gs-data-tabs" role="tablist" aria-label={`${title} sections`}>
+      {tabs.map((tab) => (
+        <button class="gs-tab" type="button" role="tab" data-tab={tab.id} aria-selected={String(tab.id === activeTab)}>{tab.label}</button>
+      ))}
+    </nav>
+  )}
+
+  <div class="gs-module-body">
+    <div class="gs-filterbar"><slot name="filters" /></div>
+    {error ? (
+      <div class="gs-error-state" role="alert">
+        <div><strong>Unable to load data</strong><p>{error}</p><slot name="error-actions" /></div>
+      </div>
+    ) : empty ? (
+      <div class="gs-empty">
+        <div><strong>No indexed result yet</strong><p>This surface is ready for data as soon as its API source responds.</p><slot name="empty-actions" /></div>
+      </div>
+    ) : (
+      <div class="gs-data-content"><slot /></div>
+    )}
+  </div>
+</section>
+
+<style>
+  .gs-data-description { margin:.25rem 0 0; color:#68717b; font-size:.78rem; }
+  .gs-data-tabs { margin:10px 12px 0; }
+  .gs-filterbar:empty { display:none; }
+  .gs-filterbar { margin-bottom:10px; }
+  .gs-data-content { min-width:0; }
+</style>
+
+<script>
+  for (const surface of document.querySelectorAll<HTMLElement>('.gs-module')) {
+    const tabs = [...surface.querySelectorAll<HTMLButtonElement>('.gs-tab[data-tab]')];
+    for (const tab of tabs) {
+      tab.addEventListener('click', () => {
+        for (const sibling of tabs) sibling.setAttribute('aria-selected', String(sibling === tab));
+        surface.dispatchEvent(new CustomEvent('gs:tab-change', { detail: { tab: tab.dataset.tab }, bubbles: true }));
+      });
+    }
+  }
+</script>
