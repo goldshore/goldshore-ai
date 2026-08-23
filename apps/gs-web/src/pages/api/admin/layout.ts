@@ -3,7 +3,7 @@ import { proxyAdminRequest } from '../../../lib/api-proxy';
 
 const proxy = (request: Request, publicApi?: string) => {
   const url = new URL(request.url);
-  return proxyAdminRequest(request, `/admin/deploy/layout${url.search}`, publicApi);
+  return proxyAdminRequest(request, `/admin/deploy/cf/layout${url.search}`, publicApi);
 };
 
 export const GET: APIRoute = ({ request, locals }) => proxy(request, locals.PUBLIC_API);
