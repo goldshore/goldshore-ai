@@ -43,14 +43,14 @@
     "check:wrangler-placeholders": "node scripts/check-wrangler-placeholders.mjs"
   },
   "devDependencies": {
-    "@astrojs/mdx": "^7.0.3",
+    "@astrojs/mdx": "^7.0.7",
     "@astrojs/sitemap": "^3.7.2",
     "@astrojs/tailwind": "^6.0.2",
-    "@cloudflare/workers-types": "^5.20260813.1",
+    "@cloudflare/workers-types": "^5.20260820.1",
     "@types/node": "^26.1.1",
     "@typescript-eslint/eslint-plugin": "^8.57.2",
     "@typescript-eslint/parser": "^8.65.0",
-    "astro": "^7.2.0",
+    "astro": "^7.2.4",
     "eslint": "^10.8.0",
     "eslint-plugin-astro": "^3.0.1",
     "form-data": "^4.0.6",
@@ -59,15 +59,15 @@
     "prettier-plugin-astro": "^0.14.1",
     "svgo": "^4.0.2",
     "tsx": "^4.23.1",
-    "typescript": "^5.7.2",
-    "wrangler": "^4.123.0",
+    "typescript": "^7.0.2",
+    "wrangler": "^4.124.0",
     "yaml": "^2.9.0",
-    "zod": "^4.3.6"
+    "zod": "^4.4.3"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "^14.2.0",
+    "@astrojs/cloudflare": "^14.2.3",
     "p-limit": "^7.3.1",
-    "turbo": "^2.10.5"
+    "turbo": "^2.10.11"
   },
   "engines": {
     "node": ">=22.12.0"
