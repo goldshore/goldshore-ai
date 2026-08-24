@@ -169,24 +169,6 @@ workers.get('/dns', errorHandler(async (c) => {
       const zoneName = c.env.CLOUDFLARE_ZONE_NAME || 'goldshore.ai';
       const zones = await cfRequest(c.env, `/zones?name=${encodeURIComponent(zoneName)}`);
       zoneId = zones.result?.[0]?.id;
-    const response = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${cf_account_id}/workers/scripts/${workerName}`,
-      {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${cf_token}`,
-          'Content-Type': 'application/javascript',
-        },
-        body: body.script,
-      }
-    );
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({})) as any;
-      return c.json(
-        { error: error.errors?.[0]?.message || 'Failed to deploy worker' },
-        response.status
-      );
     }
     if (!zoneId) return c.json({ success: false, error: 'No Cloudflare zone could be resolved.', items: [] }, 503);
     const page = Math.max(1, Number(c.req.query('page')) || 1);
