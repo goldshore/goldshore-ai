@@ -1,6 +1,7 @@
 import type { Env, Variables } from '../../types';
 import { Hono } from 'hono';
 import { verifyAdminAuth, errorHandler } from './middleware/auth';
+import layoutPreferences from './layout-preferences';
 
 const workers = new Hono<{
   Bindings: Env;
@@ -8,7 +9,11 @@ const workers = new Hono<{
 }>();
 
 workers.use('*', verifyAdminAuth);
+workers.route('/layout', layoutPreferences);
 
+const cfToken = (env: Env) => env.CF_TOKEN || env.CLOUDFLARE_API_TOKEN;
+const cfAccountId = (env: Env) => env.CF_ACCOUNT_ID || env.CLOUDFLARE_ACCOUNT_ID;
+const cfZoneId = (env: Env) => env.CF_ZONE_ID || env.CLOUDFLARE_ZONE_ID;
 function cloudflareCredentials(env: Env) {
   return {
     token: env.CF_TOKEN ?? env.CLOUDFLARE_API_TOKEN,
@@ -75,6 +80,9 @@ workers.get('/overview', errorHandler(async (c) => {
 
 workers.get('/workers', errorHandler(async (c) => {
   try {
+    const { accountId } = requireCloudflare(c.env);
+    const data = await cfRequest(c.env, `/accounts/${accountId}/workers/scripts`);
+    return c.json({ success: true, items: data.result || [], total: (data.result || []).length });
     const response = await fetch(
       `https://api.cloudflare.com/client/v4/accounts/${cf_account_id}/workers/scripts`,
       {
@@ -104,69 +112,27 @@ workers.get('/workers', errorHandler(async (c) => {
 }));
 
 workers.get('/workers/:name', errorHandler(async (c) => {
-  const { token: cf_token, accountId: cf_account_id } = cloudflareCredentials(c.env);
-  const workerName = c.req.param('name');
-
-  if (!cf_token || !cf_account_id) {
-    return c.json({ error: 'Cloudflare API credentials not configured' }, 503);
-  }
-
   try {
-    const response = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${cf_account_id}/workers/scripts/${workerName}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${cf_token}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({})) as any;
-      return c.json(
-        { error: error.errors?.[0]?.message || 'Worker not found' },
-        response.status
-      );
-    }
-
-    const data = await response.json() as any;
-    return c.json(data.result || {});
+    const { accountId } = requireCloudflare(c.env);
+    const workerName = c.req.param('name');
+    const data = await cfRequest(c.env, `/accounts/${accountId}/workers/scripts/${encodeURIComponent(workerName)}/settings`);
+    const bindings = (data.result?.bindings || []).map((binding: any) => ({
+      name: binding.name,
+      type: binding.type,
+      resource: binding.namespace_id || binding.database_id || binding.bucket_name || binding.service || binding.queue_name || binding.class_name || binding.script_name || 'configured',
+    }));
+    return c.json({ success: true, name: workerName, bindings, settings: data.result || {} });
   } catch (error) {
     return c.json({ success: false, error: error instanceof Error ? error.message : 'Worker not found.' }, 502);
   }
 }));
 
 workers.get('/workers/:name/content', errorHandler(async (c) => {
-  const { token: cf_token, accountId: cf_account_id } = cloudflareCredentials(c.env);
-  const workerName = c.req.param('name');
-
-  if (!cf_token || !cf_account_id) {
-    return c.json({ error: 'Cloudflare API credentials not configured' }, 503);
-  }
-
   try {
-    const response = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${cf_account_id}/workers/scripts/${workerName}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${cf_token}`,
-          'Content-Type': 'application/javascript',
-        },
-      }
-    );
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({})) as any;
-      return c.json(
-        { error: error.errors?.[0]?.message || 'Worker not found' },
-        response.status
-      );
-    }
-
-    const content = await response.text();
-    return c.text(content, 200, {
-      'Content-Type': 'application/javascript',
+    const { token, accountId } = requireCloudflare(c.env);
+    const workerName = c.req.param('name');
+    const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/scripts/${encodeURIComponent(workerName)}`, {
+      headers: { Authorization: `Bearer ${token}` },
     });
     if (!response.ok) throw new Error(`Worker content request failed (${response.status}).`);
     return c.body(await response.text(), 200, { 'Content-Type': response.headers.get('content-type') || 'application/javascript' });
@@ -198,24 +164,11 @@ workers.post('/workers/:name/publish', errorHandler(async (c) => {
 
 workers.get('/dns', errorHandler(async (c) => {
   try {
-    const response = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${cf_account_id}/workers/scripts/${workerName}`,
-      {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${cf_token}`,
-          'Content-Type': 'application/javascript',
-        },
-        body: body.script,
-      }
-    );
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({})) as any;
-      return c.json(
-        { error: error.errors?.[0]?.message || 'Failed to deploy worker' },
-        response.status
-      );
+    let zoneId = cfZoneId(c.env);
+    if (!zoneId) {
+      const zoneName = c.env.CLOUDFLARE_ZONE_NAME || 'goldshore.ai';
+      const zones = await cfRequest(c.env, `/zones?name=${encodeURIComponent(zoneName)}`);
+      zoneId = zones.result?.[0]?.id;
     }
     if (!zoneId) return c.json({ success: false, error: 'No Cloudflare zone could be resolved.', items: [] }, 503);
     const page = Math.max(1, Number(c.req.query('page')) || 1);
@@ -239,9 +192,6 @@ workers.get('/dns', errorHandler(async (c) => {
     return c.json({ success: false, error: error instanceof Error ? error.message : 'Failed to list DNS records.', items: [] }, 502);
   }
 }));
-
-    const data = await response.json() as any;
-    console.log(`[AUDIT] ${user?.email ?? 'unknown'} deployed worker: ${workerName}`);
 
 workers.get('/pages', errorHandler(async (c) => {
   try {
