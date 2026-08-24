@@ -9,6 +9,9 @@ const workers = new Hono<{
 
 workers.use('*', verifyAdminAuth);
 
+const cfToken = (env: Env) => env.CF_TOKEN || env.CLOUDFLARE_API_TOKEN;
+const cfAccountId = (env: Env) => env.CF_ACCOUNT_ID || env.CLOUDFLARE_ACCOUNT_ID;
+const cfZoneId = (env: Env) => env.CF_ZONE_ID || env.CLOUDFLARE_ZONE_ID;
 function cloudflareCredentials(env: Env) {
   return {
     token: env.CF_TOKEN ?? env.CLOUDFLARE_API_TOKEN,
@@ -75,6 +78,9 @@ workers.get('/overview', errorHandler(async (c) => {
 
 workers.get('/workers', errorHandler(async (c) => {
   try {
+    const { accountId } = requireCloudflare(c.env);
+    const data = await cfRequest(c.env, `/accounts/${accountId}/workers/scripts`);
+    return c.json({ success: true, items: data.result || [], total: (data.result || []).length });
     const response = await fetch(
       `https://api.cloudflare.com/client/v4/accounts/${cf_account_id}/workers/scripts`,
       {
@@ -104,6 +110,16 @@ workers.get('/workers', errorHandler(async (c) => {
 }));
 
 workers.get('/workers/:name', errorHandler(async (c) => {
+  try {
+    const { accountId } = requireCloudflare(c.env);
+    const workerName = c.req.param('name');
+    const data = await cfRequest(c.env, `/accounts/${accountId}/workers/scripts/${encodeURIComponent(workerName)}/settings`);
+    const bindings = (data.result?.bindings || []).map((binding: any) => ({
+      name: binding.name,
+      type: binding.type,
+      resource: binding.namespace_id || binding.database_id || binding.bucket_name || binding.service || binding.queue_name || binding.class_name || binding.script_name || 'configured',
+    }));
+    return c.json({ success: true, name: workerName, bindings, settings: data.result || {} });
   const { token: cf_token, accountId: cf_account_id } = cloudflareCredentials(c.env);
   const workerName = c.req.param('name');
 
@@ -138,6 +154,11 @@ workers.get('/workers/:name', errorHandler(async (c) => {
 }));
 
 workers.get('/workers/:name/content', errorHandler(async (c) => {
+  try {
+    const { token, accountId } = requireCloudflare(c.env);
+    const workerName = c.req.param('name');
+    const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/scripts/${encodeURIComponent(workerName)}`, {
+      headers: { Authorization: `Bearer ${token}` },
   const { token: cf_token, accountId: cf_account_id } = cloudflareCredentials(c.env);
   const workerName = c.req.param('name');
 
@@ -198,6 +219,11 @@ workers.post('/workers/:name/publish', errorHandler(async (c) => {
 
 workers.get('/dns', errorHandler(async (c) => {
   try {
+    let zoneId = cfZoneId(c.env);
+    if (!zoneId) {
+      const zoneName = c.env.CLOUDFLARE_ZONE_NAME || 'goldshore.ai';
+      const zones = await cfRequest(c.env, `/zones?name=${encodeURIComponent(zoneName)}`);
+      zoneId = zones.result?.[0]?.id;
     const response = await fetch(
       `https://api.cloudflare.com/client/v4/accounts/${cf_account_id}/workers/scripts/${workerName}`,
       {
