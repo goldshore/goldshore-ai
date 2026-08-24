@@ -116,4 +116,29 @@ void requiredPermission;
   const startLayout = () => void initializeAdminLayout();
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startLayout, { once: true });
   else startLayout();
+  for (const module of document.querySelectorAll<HTMLElement>('.gs-module[data-draggable="true"]')) {
+    module.addEventListener('pointerdown', (event) => {
+      if ((event.target as HTMLElement).closest('button,input,select,textarea,a')) return;
+      module.dataset.dragging = 'true';
+      const startX = event.clientX;
+      const startY = event.clientY;
+      const startLeft = Number(module.dataset.dragX || 0);
+      const startTop = Number(module.dataset.dragY || 0);
+      const move = (moveEvent: PointerEvent) => {
+        const x = startLeft + moveEvent.clientX - startX;
+        const y = startTop + moveEvent.clientY - startY;
+        module.dataset.dragX = String(x);
+        module.dataset.dragY = String(y);
+        module.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+        module.style.setProperty('--module-grid-offset', `${Math.max(-10, Math.min(10, x / 12))}px`);
+      };
+      const up = () => {
+        module.dataset.dragging = 'false';
+        window.removeEventListener('pointermove', move);
+        window.removeEventListener('pointerup', up);
+      };
+      window.addEventListener('pointermove', move);
+      window.addEventListener('pointerup', up, { once: true });
+    });
+  }
 </script>
