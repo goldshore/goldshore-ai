@@ -90,6 +90,8 @@ void requiredPermission;
 </style>
 
 <script>
+  import { initializeAdminLayout } from '../lib/admin-layout';
+
   const openButton = document.querySelector<HTMLButtonElement>('#admin-menu-toggle');
   const closeButton = document.querySelector<HTMLButtonElement>('#sidebar-close');
   const closeSidebar = () => document.body.classList.remove('gs-sidebar-open');
@@ -111,6 +113,9 @@ void requiredPermission;
     });
   }, { passive: true });
 
+  const startLayout = () => void initializeAdminLayout();
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startLayout, { once: true });
+  else startLayout();
   for (const module of document.querySelectorAll<HTMLElement>('.gs-module[data-draggable="true"]')) {
     module.addEventListener('pointerdown', (event) => {
       if ((event.target as HTMLElement).closest('button,input,select,textarea,a')) return;
