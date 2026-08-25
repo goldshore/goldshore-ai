@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { isValidEmail } from '@goldshore/utils';
 import { getActor, logAdminAction, requirePermission } from '../../auth';
 import type { Env, Variables } from '../../types';
+import { suppressBrevoContact, upsertBrevoContact, verifyBrevoConnection } from '../../lib/brevo';
 
 const mailOperations = new Hono<{ Bindings: Env; Variables: Variables }>();
 const subscriberStatuses = new Set(['pending', 'confirmed', 'unsubscribed', 'suppressed', 'invalid']);
@@ -26,6 +27,17 @@ mailOperations.get('/audiences/lists', requirePermission('email_subscribers:read
     COUNT(s.id) subscriber_count,SUM(CASE WHEN s.status='confirmed' THEN 1 ELSE 0 END) confirmed_count
     FROM email_lists l LEFT JOIN newsletter_subscribers s ON s.list_name=l.name AND s.brand=l.brand GROUP BY l.id ORDER BY l.updated_at DESC`).all();
   return c.json({ items: rows.results });
+});
+
+mailOperations.get('/audiences/brevo/status', requirePermission('integrations:read'), async (c) => {
+  const verified = c.req.query('verify') === 'true'
+    ? await verifyBrevoConnection(c.env)
+    : null;
+  return c.json({
+    configured: Boolean(c.env.BREVO_API_KEY),
+    mcpConfigured: Boolean(c.env.BREVO_MCP_KEY),
+    verified,
+  });
 });
 
 mailOperations.post('/audiences/lists', requirePermission('email_subscribers:create'), async (c) => {
@@ -61,8 +73,26 @@ mailOperations.post('/audiences/subscribers', requirePermission('email_subscribe
 
 mailOperations.patch('/audiences/subscribers/:id', requirePermission('email_subscribers:update'), async (c) => {
   const body = await c.req.json<{ status?: string; confirm?: boolean }>().catch(() => null); if (!body?.status || !subscriberStatuses.has(body.status)) return c.json({ error: 'Valid subscriber status is required.' }, 400); if (['confirmed', 'suppressed'].includes(body.status) && !body.confirm) return c.json({ error: 'Explicit confirmation is required for this status.' }, 409);
+  const subscriber = await c.env.PLATFORM_DB.prepare('SELECT email,name,source,consent_basis,subscribed_at FROM newsletter_subscribers WHERE id=?').bind(c.req.param('id')).first<{ email: string; name: string | null; source: string; consent_basis: string; subscribed_at: string }>();
+  if (!subscriber) return c.json({ error: 'Subscriber not found.' }, 404);
   const result = await c.env.PLATFORM_DB.prepare(`UPDATE newsletter_subscribers SET status=?,confirmed_at=CASE WHEN ?='confirmed' THEN COALESCE(confirmed_at,CURRENT_TIMESTAMP) ELSE confirmed_at END,unsubscribed_at=CASE WHEN ?='unsubscribed' THEN CURRENT_TIMESTAMP ELSE unsubscribed_at END,updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(body.status, body.status, body.status, c.req.param('id')).run(); if (!result.meta.changes) return c.json({ error: 'Subscriber not found.' }, 404);
-  await audit(c, 'audience.subscriber.status', { subscriberId: c.req.param('id'), status: body.status }); return c.json({ success: true, status: body.status });
+  const [firstName, ...lastNameParts] = (subscriber.name ?? '').trim().split(/\s+/).filter(Boolean);
+  const provider = body.status === 'confirmed'
+    ? await upsertBrevoContact(c.env, {
+        email: subscriber.email,
+        firstName: firstName || undefined,
+        lastName: lastNameParts.join(' ') || undefined,
+        lifecycleStage: 'subscriber',
+        leadSource: subscriber.source,
+        consentAt: subscriber.subscribed_at,
+        consentSource: subscriber.consent_basis,
+        consentVersion: '2026-08',
+      })
+    : ['unsubscribed', 'suppressed', 'invalid'].includes(body.status)
+      ? await suppressBrevoContact(c.env, subscriber.email)
+      : null;
+  await audit(c, 'audience.subscriber.status', { subscriberId: c.req.param('id'), status: body.status, brevo: provider?.code ?? 'NOT_APPLICABLE' });
+  return c.json({ success: true, status: body.status, provider });
 });
 
 mailOperations.get('/mailboxes', requirePermission('mailboxes:read'), async (c) => {

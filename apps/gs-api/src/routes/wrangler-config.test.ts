@@ -61,14 +61,17 @@ describe('two-app Cloudflare binding contract', () => {
     // SESSION is deliberately absent from this list: gs-web binds a KV
     // namespace for Astro session/auth state. Everything transactional still
     // belongs to gs-api.
+    // API is a service binding for internal RPC to gs-api, bypassing Cloudflare Access.
     assert.doesNotMatch(webConfig, /^binding = "(?:KV|PLATFORM_DB|GS_ASSETS|MAIL_JOBS_QUEUE|EMAIL)"$/m);
-    assert.doesNotMatch(webConfig, /\[\[env\.prod\.(?:d1_databases|r2_buckets|queues|services|workflows|send_email)/);
+    assert.doesNotMatch(webConfig, /\[\[env\.prod\.(?:d1_databases|r2_buckets|queues|workflows|send_email)/);
 
-    // gs-web's only permitted KV binding is the session store.
+    // gs-web's only permitted named runtime bindings are the session store and
+    // the internal RPC service binding to gs-api.
     const webKvBindings = [...webConfig.matchAll(/^binding = "(\w+)"$/gm)]
       .map((m) => m[1])
       .filter((b) => b !== 'ASSETS' && b !== 'IMAGES');
-    assert.deepEqual([...new Set(webKvBindings)], ['SESSION']);
+    assert.deepEqual([...new Set(webKvBindings)], ['SESSION', 'API']);
+    assert.match(webConfig, /\[\[env\.prod\.services\]\]\s*binding = "API"\s*service = "gs-api"/);
   });
 
   it('declares no dedicated preview Worker environments', () => {

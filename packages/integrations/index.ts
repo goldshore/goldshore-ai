@@ -10,5 +10,7 @@ export * from './WhatsAppBusiness';
 export * from './GoogleAds';
 export * from './GoogleSearchConsole';
 export * from './Stripe';
+export * from './PayPal';
+export * from './Ebay';
 export * from './Zapier';
 export * from './Custom';

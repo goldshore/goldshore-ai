@@ -25,6 +25,8 @@ type ResourceBindings = {
   MAIL_JOBS_QUEUE?: Queue;
   GS_SIGNALS?: Workflow<SignalsEvaluatorParams>;
   AGENT?: Fetcher;
+  BREVO_API_KEY?: SecretsStoreSecret;
+  BREVO_MCP_KEY?: SecretsStoreSecret;
 };
 
 type RuntimeSecrets = {
@@ -40,16 +42,16 @@ type RuntimeSecrets = {
   CONTROL_ADMIN_ROLES?: string;
   MAIL_FORWARD_TO?: string;
   FORWARD_TO?: string;
-  MAIL_BLOCKED_SENDERS?: string;
-  MAIL_ALLOWED_RECIPIENTS?: string;
-  AGENT?: Fetcher;
   API_ORIGIN?: string;
   CF_TOKEN?: string;
-  GITHUB_TOKEN?: string;
-  GITHUB_API_TOKEN?: string;
-  GH_TOKEN?: string;
+  CF_AIG_TOKEN?: string;
+  CF_WEBHOOK_TOKEN?: string;
+  CF_VERSION_METADATA?: { id: string };
   CF_ACCOUNT_ID?: string;
   CF_ZONE_ID?: string;
+  CLOUDFLARE_BUILD_API_TOKEN?: string;
+  GITHUB_API_TOKEN?: string;
+  GH_TOKEN?: string;
   CLOUDFLARE_ZONE_NAME?: string;
   CLOUDFLARE_PAGES_PROJECT?: string;
   ADMIN_URL?: string;
@@ -59,6 +61,11 @@ type RuntimeSecrets = {
   GOOGLE_OAUTH_CLIENT_SECRET?: string;
   GOOGLE_OAUTH_REDIRECT_URI?: string;
   GOOGLE_BUSINESS_OAUTH_REDIRECT_URI?: string;
+  EBAY_CLIENT_ID?: string;
+  EBAY_CLIENT_SECRET?: string;
+  EBAY_REDIRECT_URI?: string;
+  EBAY_ENV?: string;
+  GH_PAT?: string;
   GITHUB_CLIENT_ID?: string;
   GITHUB_CLIENT_SECRET?: string;
   GITHUB_TOKEN?: string;
@@ -75,7 +82,7 @@ type RuntimeSecrets = {
   GOOGLE_GSC_CLIENT_SECRET?: string;
   GOOGLE_GSC_REFRESH_TOKEN?: string;
   GOOGLE_GSC_SITE_URL?: string;
-  GOOGLE_OAUTH_CLIENT_SECRET?: string;
+  GOOGLE_WEBHOOK_TOKEN?: string;
   GOLDCLAW_SANDBOX_API_TOKEN?: string;
   GOLDCLAW_SANDBOX_API_URL?: string;
   GOLDCLAW_SANDBOX_PROVIDER?: string;
@@ -184,6 +191,7 @@ export type SignalsEvaluatorParams = {
 export type Variables = {
   accessClaims: AccessTokenPayload | null;
   requestId: string;
+  correlationId: string;
   user?: SessionUser;
 };
 
