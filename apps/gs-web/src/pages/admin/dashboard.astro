@@ -6,9 +6,10 @@ import { Activity, Settings, Mail, Users, FileText } from 'lucide-react';
 
 const menuItems = [
   { name: 'Dashboard', href: '/admin/dashboard', icon: 'Activity' },
+  { name: 'Customers', href: '/admin/customers', icon: 'Users' },
+  { name: 'Subscriptions', href: '/admin/subscriptions', icon: 'FileText' },
   { name: 'Email', href: '/admin/email', icon: 'Mail' },
   { name: 'Leads', href: '/admin/entries', icon: 'FileText' },
-  { name: 'Users', href: '/admin/users', icon: 'Users' },
   { name: 'Settings', href: '/admin/settings', icon: 'Settings' },
 ];
 ---
@@ -38,6 +39,16 @@ const menuItems = [
           <h2 class="text-xl font-bold mb-4">Quick Actions</h2>
           <ul class="space-y-3">
             <li>
+              <a href="/admin/customers" class="text-blue-500 hover:text-blue-700">
+                → Manage customers
+              </a>
+            </li>
+            <li>
+              <a href="/admin/subscriptions" class="text-blue-500 hover:text-blue-700">
+                → Manage subscriptions
+              </a>
+            </li>
+            <li>
               <a href="/admin/email" class="text-blue-500 hover:text-blue-700">
                 → Send an email
               </a>
@@ -45,11 +56,6 @@ const menuItems = [
             <li>
               <a href="/admin/entries" class="text-blue-500 hover:text-blue-700">
                 → View submitted leads
-              </a>
-            </li>
-            <li>
-              <a href="/admin/users" class="text-blue-500 hover:text-blue-700">
-                → Manage admin users
               </a>
             </li>
             <li>

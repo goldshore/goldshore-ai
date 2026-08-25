@@ -1,5 +1,10 @@
 # Gold Shore Labs — Cloudflare Bindings Map
 
+**Last Updated**: 2026-08-22 (Phase 4 Archival Decision)
+
+> **Note**: `marzton/goldshore-core` repository has been archived. See Phase 4 decision in `docs/PHASE4_DECISION_2026_08.md`. 
+> banproof-me continues as an independent product on banproof.me domain.
+
 ## Zones
 
 - `goldshore.ai` — primary zone
@@ -173,9 +178,10 @@ the current Wrangler contract.
 ### 6. Banproof-Me Security Worker
 
 - Service Name: `banproof-me`
-- Config: `apps/banproof-me/wrangler.toml`
-- External domain: `banproof.me`
-- Bound as `SECURITY` in `gs-gateway`
+- Config: `marzton/goldshore-core/apps/banproof-me/wrangler.toml`
+- External domain: `banproof.me` (independent product, not part of goldshore-ai platform)
+- Status: **Independent standalone service** (Phase 4: 2026-08-22)
+- Note: banproof-me is deployed separately; it shares platform infrastructure (gs_platform_db, INFRA_SECRETS) but is not consolidated into goldshore-ai
 
 **Bindings (9 platform bindings):**
 
