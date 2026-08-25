@@ -14,16 +14,6 @@ workers.route('/layout', layoutPreferences);
 const cfToken = (env: Env) => env.CF_TOKEN || env.CLOUDFLARE_API_TOKEN;
 const cfAccountId = (env: Env) => env.CF_ACCOUNT_ID || env.CLOUDFLARE_ACCOUNT_ID;
 const cfZoneId = (env: Env) => env.CF_ZONE_ID || env.CLOUDFLARE_ZONE_ID;
-function cloudflareCredentials(env: Env) {
-  return {
-    token: env.CF_TOKEN ?? env.CLOUDFLARE_API_TOKEN,
-    accountId: env.CF_ACCOUNT_ID ?? env.CLOUDFLARE_ACCOUNT_ID,
-  };
-}
-
-workers.get('/workers', errorHandler(async (c) => {
-  const { token: cf_token, accountId: cf_account_id } = cloudflareCredentials(c.env);
-
 const requireCloudflare = (env: Env) => {
   const token = cfToken(env);
   const accountId = cfAccountId(env);
@@ -83,29 +73,6 @@ workers.get('/workers', errorHandler(async (c) => {
     const { accountId } = requireCloudflare(c.env);
     const data = await cfRequest(c.env, `/accounts/${accountId}/workers/scripts`);
     return c.json({ success: true, items: data.result || [], total: (data.result || []).length });
-    const response = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${cf_account_id}/workers/scripts`,
-      {
-        headers: {
-          'Authorization': `Bearer ${cf_token}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({})) as any;
-      return c.json({
-        error: error.errors?.[0]?.message || 'Failed to fetch workers from Cloudflare',
-        workers: [],
-      }, response.status);
-    }
-
-    const data = await response.json() as any;
-    return c.json({
-      workers: data.result || [],
-      total: (data.result || []).length,
-    });
   } catch (error) {
     return c.json({ success: false, error: error instanceof Error ? error.message : 'Failed to list Workers.', items: [] }, 502);
   }
