@@ -19,7 +19,24 @@ export async function getMasterKey(env: any): Promise<CryptoKey> {
   }
 
   try {
-    const keyData = new TextEncoder().encode(masterKeySecret);
+    if (typeof masterKeySecret !== 'string') {
+      throw new Error('INTEGRATION_MASTER_KEY must be a text secret binding');
+    }
+
+    // The deployed Secrets Store entry is generated with `openssl rand -hex 32`.
+    // That produces 64 hex characters representing the 32 raw bytes AES-256
+    // requires; importing the UTF-8 text directly would instead provide 64 bytes
+    // and Web Crypto rejects it. Retain support for an explicitly supplied 32-byte
+    // text key so existing non-hex development fixtures remain valid.
+    const normalizedSecret = masterKeySecret.trim();
+    const keyData = /^[0-9a-f]{64}$/i.test(normalizedSecret)
+      ? Uint8Array.from(normalizedSecret.match(/.{2}/g)!, (pair) => Number.parseInt(pair, 16))
+      : new TextEncoder().encode(masterKeySecret);
+
+    if (keyData.byteLength !== KEY_LENGTH / 8) {
+      throw new Error('INTEGRATION_MASTER_KEY must encode exactly 32 bytes');
+    }
+
     return await crypto.subtle.importKey(
       'raw',
       keyData,
