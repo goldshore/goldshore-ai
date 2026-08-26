@@ -99,6 +99,11 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Restore integration encryption key binding when absent
+        env:
+          INTEGRATION_MASTER_KEY: ${{ secrets.INTEGRATION_MASTER_KEY }}
+        run: node scripts/cloudflare/ensure-integration-master-key.mjs
+
       - name: Preflight repository and remote contracts
         run: |
           set -euo pipefail
