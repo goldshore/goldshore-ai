@@ -178,6 +178,16 @@ database_id = "af94f483-b98b-41c5-aa23-3fbed2764b52"
 [env.prod.ai]
 binding = "AI"
 
+# Live production AI Search resources. Keep both the instance and namespace
+# bindings explicit so deploys cannot silently fall back to the public endpoint.
+[[env.prod.ai_search]]
+binding = "AI_SEARCH"
+instance_name = "royal-wind-4649"
+
+[[env.prod.ai_search_namespaces]]
+binding = "SEARCH"
+namespace = "default"
+
 # Native Cloudflare Email Service. Domain onboarding and routing remain
 # dashboard-owned; there is no provider API key in Worker secrets.
 [[env.prod.send_email]]
@@ -266,6 +276,11 @@ dead_letter_queue = "gs-mail-dead-letter"
 binding = "GS_SIGNALS"
 name = "gs-signals-evaluator"
 class_name = "SignalsEvaluator"
+
+[[env.prod.workflows]]
+binding = "EDITORIAL_PRODUCTION"
+name = "editorial-production"
+class_name = "EditorialProductionWorkflow"
 
 # ── Durable Objects ──────────────────────────────────────────────────────────────
 [env.prod.durable_objects]
