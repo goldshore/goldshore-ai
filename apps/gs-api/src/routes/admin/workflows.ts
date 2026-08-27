@@ -4,6 +4,7 @@ import { requireRbacPermission } from '../../middleware/requireRbacPermission';
 import { errorHandler, parsePagination } from './middleware/auth';
 import * as workflowsDb from './db/workflows';
 import * as auditDb from './db/rbac-audit';
+import type { EditorialProductionParams } from '../../workers/editorial-production';
 
 const workflows = new Hono<{
   Bindings: Env;
@@ -43,6 +44,46 @@ workflows.get(
       offset: result.offset,
     });
   })
+);
+
+/**
+ * POST /api/admin/workflows/editorial-production/run
+ * Start the Cloudflare Workflow used by the GearSwipe production desk.
+ * This creates drafts and gates only; it never publishes or distributes.
+ */
+workflows.post(
+  '/editorial-production/run',
+  await requireRbacPermission('perm_workers_update'),
+  errorHandler(async (c) => {
+    const workflow = c.env.EDITORIAL_PRODUCTION;
+    if (!workflow) return c.json({ error: 'Editorial production workflow is not configured.' }, 503);
+
+    let body: Partial<EditorialProductionParams>;
+    try {
+      body = (await c.req.json()) as Partial<EditorialProductionParams>;
+    } catch {
+      return c.json({ error: 'Invalid JSON payload.' }, 400);
+    }
+
+    if (!body.intakeId?.trim() || !body.objectId?.trim()) {
+      return c.json({ error: 'intakeId and objectId are required.' }, 400);
+    }
+    if (body.sourceLeads !== undefined && (!Array.isArray(body.sourceLeads) || body.sourceLeads.some((lead) => typeof lead !== 'string'))) {
+      return c.json({ error: 'sourceLeads must be an array of strings.' }, 400);
+    }
+
+    const params: EditorialProductionParams = {
+      intakeId: body.intakeId.trim(),
+      objectId: body.objectId.trim(),
+      title: body.title?.trim(),
+      sourceLeads: body.sourceLeads,
+      rightsConfirmed: body.rightsConfirmed === true,
+      evidenceConfirmed: body.evidenceConfirmed === true,
+    };
+    const id = `editorial-${crypto.randomUUID()}`;
+    const instance = await workflow.create({ id, params });
+    return c.json({ id: instance.id, workflow: 'editorial-production', status: 'queued' }, 202);
+  }),
 );
 
 /**

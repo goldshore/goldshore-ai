@@ -267,6 +267,11 @@ binding = "GS_SIGNALS"
 name = "gs-signals-evaluator"
 class_name = "SignalsEvaluator"
 
+[[env.prod.workflows]]
+binding = "EDITORIAL_PRODUCTION"
+name = "editorial-production"
+class_name = "EditorialProductionWorkflow"
+
 # ── Durable Objects ──────────────────────────────────────────────────────────────
 [env.prod.durable_objects]
 bindings = [
