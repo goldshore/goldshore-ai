@@ -46,6 +46,7 @@ describe('mcp route', () => {
         'cloudflare_list_r2_buckets',
         'cloudflare_list_workers',
         'goldshore_search_knowledge',
+        'goldshore_search_objects',
       ],
     );
     assert.ok(body.result.tools.every((t: { inputSchema: { type: string } }) => t.inputSchema.type === 'object'));
