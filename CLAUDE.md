@@ -1,6 +1,6 @@
 # CLAUDE.md — goldshore-ai
 
-> Updated: 2026-08-22 · Active branch: `claude/goldshore-cloudflare-setup-5i243p`
+> Updated: 2026-08-27 · Canonical source is `main`; recovery branches must rebase/merge latest `origin/main` before handoff.
 
 ## Platform overview
 
@@ -137,8 +137,10 @@ For Claude/Codex assistance with Google API integration: provide the API name, s
 - D1: `PLATFORM_DB` (`9703574e-adb7-481e-8d98-96f8ce5f8a90`), `AUDIT_DB` (`1ae71d76-188f-481b-91d9-db2d39013f68`), `SIGNALS_DB` (`76af4653-7f44-417b-b46e-250143d906fd`), `RISK_RADAR_DB`, and `JOBS_DB` (`750c469c-788d-49e8-9254-77231cffd70f`). Legacy historical aliases only: `DB` and `GS_AUDIT_DB`.
 - R2: `GS_ASSETS` (`gs-assets` in `prod`; `gs-assets-preview` in `preview`), `TELEMETRY` (`gs-telemetry-storage`), and `RISK_RADAR_R2`.
 - AI and Durable Objects: `AI`; `AUTH_SESSION` (`AuthSession`).
+- AI Search: `AI_SEARCH` instance `royal-wind-4649`; `SEARCH` namespace `default`.
 - Queues: `JOBS_QUEUE` (`goldshore-jobs`), `EVENTS_QUEUE` (`gs-events`), `MAIL_JOBS_QUEUE` (`gs-mail-jobs`), `DEAD_LETTER_QUEUE` (`gs-mail-dead-letter`). `gs-api` also consumes the consolidated backend queues in `prod`.
 - Workflows: `GS_SIGNALS` → `signals-evaluator`.
+- Editorial workflow: `EDITORIAL_PRODUCTION` → `editorial-production` (source-managed; deploy to reconcile live state).
 - Secrets Store: `INTEGRATION_MASTER_KEY` is bound as a per-secret Secrets Store binding from store `b9824d3280c54573a24137c7e7143b33`. Do not use the historical `SECRETS.get(...)` store-object shape in Wrangler config.
 - Unclear/live Cloudflare note: if the dashboard still shows legacy service bindings such as `AGENT`, `GS_MAIL`, `GS_WEB PROD`, `API_SERVICE`, or `GOLDSHORE_AI`, treat them as stale until a human confirms a live dependency; do not re-add them to repo-managed `gs-api` config without updating this file and `docs/WORKER_CONFIGURATION.md`.
 
@@ -152,7 +154,10 @@ For Claude/Codex assistance with Google API integration: provide the API name, s
 
 ---
 
-## Active branch: `claude/goldshore-core-archival-phase4-exec`
+## Historical initiatives
+
+The consolidation and archival notes below are historical context. Verify current
+state from `origin/main`, Wrangler manifests, and Cloudflare before acting.
 
 ### Initiative: Monorepo Consolidation & Cleanup
 
@@ -171,7 +176,7 @@ For Claude/Codex assistance with Google API integration: provide the API name, s
   3. ⏳ Verify Cloudflare configuration (requires dashboard access)
   4. ⏳ Team communication and knowledge base updates
 
-**In Progress**:
+**Historical status**:
 - 🟠 **Phase 4b Execution** — Archive goldshore-gateway repository
   1. ✅ Audit identified gateway as redundant proxy (all middleware in gs-api)
   2. ✅ Update goldshore-gateway README with archival notice
@@ -198,6 +203,16 @@ For Claude/Codex assistance with Google API integration: provide the API name, s
 - Cloudflare Worker Builds token: `CLOUDFLARE_BUILD_API_TOKEN` (managed separately)
 - Workers deploy only through `.github/workflows/deploy-gs-web.yml` and `.github/workflows/deploy-gs-api.yml`, behind the GitHub `production` environment approval gate. Local Wrangler use is dry-run validation only.
 
+### Required production verification sequence
+
+1. Pull/fetch `origin/main`; preserve unrelated dirty worktree files.
+2. Run the app type check and tests.
+3. Run `wrangler deploy --env prod --dry-run` and inspect the binding list.
+4. Compare live script settings against the manifest; secrets are names-only checks.
+5. Verify routes, Access/IdP policy, and authenticated health/MCP initialize separately.
+6. Apply D1 migrations through the protected deployment workflow, then verify schema and rollback/restore evidence.
+7. Deploy only through the approved GitHub environment; record commit SHA, version, and endpoint checks.
+
 ---
 
 ## Common commands
@@ -212,7 +227,7 @@ pnpm turbo run build --filter=gs-web
 
 ---
 
-## Repo consolidation roadmap
+## Historical roadmap
 
 **Immediate Archival (No Code Migration)**:
 1. `goldshore-ops` — KV template stub, never built, no dependencies

@@ -47,6 +47,7 @@ import {
   isInternalPath,
 } from './lib/access-context';
 export { SignalsEvaluator } from './workers/signals-evaluator';
+export { EditorialProductionWorkflow } from './workers/editorial-production';
 
 interface ForwardableEmailMessage {
   from: string;
