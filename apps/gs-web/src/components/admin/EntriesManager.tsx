@@ -226,57 +226,57 @@ function EntriesManagerContent({ jwtToken: _jwtToken }: Props) {
   };
 
   const statusColors: Record<string, string> = {
-    new: 'bg-blue-100 text-blue-800',
-    contacted: 'bg-yellow-100 text-yellow-800',
-    qualified: 'bg-green-100 text-green-800',
-    rejected: 'bg-red-100 text-red-800',
+    new: 'info',
+    contacted: 'warning',
+    qualified: 'success',
+    rejected: 'danger',
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold">Lead Entries</h2>
+    <div className="gs-stack">
+      <div className="gs-row gs-row--between">
+        <h2>Lead Entries</h2>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          className="gs-button"
         >
           + New Entry
         </button>
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+        <div className="gs-alert gs-alert--error">
           {error}
         </div>
       )}
 
       {success && (
-        <div className="p-4 bg-green-50 border border-green-200 rounded text-green-700 text-sm">
+        <div className="gs-alert gs-alert--success">
           {success}
         </div>
       )}
 
       {selectedIds.size > 0 && (
-        <div className="p-4 bg-blue-50 border border-blue-200 rounded space-y-3">
-          <div className="flex justify-between items-center">
-            <span className="font-medium">{selectedIds.size} entries selected</span>
+        <div className="gs-alert gs-alert--info">
+          <div className="gs-row gs-row--between">
+            <span>{selectedIds.size} entries selected</span>
             <button
               onClick={() => setSelectedIds(new Set())}
-              className="text-sm text-gray-600 hover:text-gray-900"
+              className="gs-text-subtle"
             >
               Clear selection
             </button>
           </div>
-          <div className="flex gap-2">
+          <div className="gs-row">
             <button
               onClick={() => setBulkAction('status')}
-              className="px-3 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
+              className="gs-button"
             >
               Change Status
             </button>
             <button
               onClick={() => setBulkAction('delete')}
-              className="px-3 py-2 bg-red-500 text-white rounded text-sm hover:bg-red-600"
+              className="gs-button"
             >
               Delete
             </button>
@@ -285,15 +285,14 @@ function EntriesManagerContent({ jwtToken: _jwtToken }: Props) {
       )}
 
       {bulkAction && (
-        <div className="p-4 bg-gray-50 border border-gray-200 rounded space-y-3">
+        <div>
           {bulkAction === 'status' && (
             <>
-              <label className="block">
-                <span className="text-sm font-medium">New Status</span>
+              <label>
+                <span>New Status</span>
                 <select
                   value={bulkStatus}
                   onChange={(e) => setBulkStatus(e.target.value as Entry['status'])}
-                  className="mt-1 block w-full border rounded px-2 py-1"
                 >
                   <option value="new">New</option>
                   <option value="contacted">Contacted</option>
@@ -303,11 +302,11 @@ function EntriesManagerContent({ jwtToken: _jwtToken }: Props) {
               </label>
             </>
           )}
-          <div className="flex gap-2">
+          <div className="gs-row">
             <button
               onClick={handleBulkAction}
               disabled={isSaving}
-              className="px-3 py-2 bg-green-500 text-white rounded text-sm hover:bg-green-600 disabled:opacity-50"
+              className="gs-button"
             >
               {isSaving ? 'Processing...' : 'Confirm'}
             </button>
@@ -316,7 +315,6 @@ function EntriesManagerContent({ jwtToken: _jwtToken }: Props) {
                 setBulkAction(null);
                 setSelectedIds(new Set());
               }}
-              className="px-3 py-2 bg-gray-400 text-white rounded text-sm hover:bg-gray-500"
             >
               Cancel
             </button>
@@ -324,51 +322,51 @@ function EntriesManagerContent({ jwtToken: _jwtToken }: Props) {
         </div>
       )}
 
-      <div className="overflow-x-auto border rounded-lg">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-100">
+      <div>
+        <table>
+          <thead>
             <tr>
-              <th className="p-3 text-left">
+              <th>
                 <input
                   type="checkbox"
                   checked={selectedIds.size === entries.length && entries.length > 0}
                   onChange={selectAll}
                 />
               </th>
-              <th className="p-3 text-left">Name</th>
-              <th className="p-3 text-left">Email</th>
-              <th className="p-3 text-left">Company</th>
-              <th className="p-3 text-left">Status</th>
-              <th className="p-3 text-left">Date</th>
-              <th className="p-3 text-left">Actions</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Company</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th>Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y">
+          <tbody>
             {entries.map((entry) => (
-              <tr key={entry.id} className="hover:bg-gray-50">
-                <td className="p-3">
+              <tr key={entry.id} >
+                <td>
                   <input
                     type="checkbox"
                     checked={selectedIds.has(entry.id)}
                     onChange={() => toggleSelection(entry.id)}
                   />
                 </td>
-                <td className="p-3 font-medium">{entry.name}</td>
-                <td className="p-3 text-gray-600">{entry.email}</td>
-                <td className="p-3 text-gray-600">{entry.company || '—'}</td>
-                <td className="p-3">
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${statusColors[entry.status] || 'bg-gray-100'}`}>
+                <td>{entry.name}</td>
+                <td className="gs-text-subtle">{entry.email}</td>
+                <td className="gs-text-subtle">{entry.company || '—'}</td>
+                <td>
+                  <span className={`gs-badge ${statusColors[entry.status] || ''}`}>
                     {entry.status}
                   </span>
                 </td>
-                <td className="p-3 text-gray-600">{new Date(entry.created_at).toLocaleDateString()}</td>
-                <td className="p-3 text-sm space-x-2">
+                <td className="gs-text-subtle">{new Date(entry.created_at).toLocaleDateString()}</td>
+                <td>
                   <button
                     onClick={() => {
                       setSelectedEntry(entry);
                       setIsDetailOpen(true);
                     }}
-                    className="text-blue-500 hover:text-blue-700"
+                    className="gs-link-button"
                   >
                     View
                   </button>
@@ -378,7 +376,7 @@ function EntriesManagerContent({ jwtToken: _jwtToken }: Props) {
                         setSelectedEntry(entry);
                         setIsQualifyOpen(true);
                       }}
-                      className="text-green-500 hover:text-green-700"
+                      className="gs-link-button"
                     >
                       Qualify
                     </button>
@@ -402,12 +400,12 @@ function EntriesManagerContent({ jwtToken: _jwtToken }: Props) {
         isLoading={isSaving}
       >
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
+          <div className="gs-alert gs-alert--error">
             {error}
           </div>
         )}
         {success && (
-          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
+          <div className="gs-alert gs-alert--success">
             {success}
           </div>
         )}
@@ -448,39 +446,39 @@ function EntriesManagerContent({ jwtToken: _jwtToken }: Props) {
           onClose={() => setIsDetailOpen(false)}
           title={`Entry: ${selectedEntry.name}`}
         >
-          <div className="space-y-4">
+          <div className="gs-stack-sm">
             <div>
-              <label className="text-sm font-medium text-gray-600">Email</label>
+              <label className="gs-text-subtle">Email</label>
               <p>{selectedEntry.email}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-600">Company</label>
+              <label className="gs-text-subtle">Company</label>
               <p>{selectedEntry.company || 'N/A'}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-600">Message</label>
-              <p className="bg-gray-50 p-3 rounded text-sm">{selectedEntry.message}</p>
+              <label className="gs-text-subtle">Message</label>
+              <p>{selectedEntry.message}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-600">Status</label>
-              <span className={`inline-block mt-1 px-2 py-1 rounded text-sm font-medium ${statusColors[selectedEntry.status]}`}>
+              <label className="gs-text-subtle">Status</label>
+              <span className={`gs-badge ${statusColors[selectedEntry.status]}`}>
                 {selectedEntry.status}
               </span>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-600">Submitted</label>
+              <label className="gs-text-subtle">Submitted</label>
               <p>{new Date(selectedEntry.created_at).toLocaleString()}</p>
             </div>
             {selectedEntry.metadata?.qualification_reason && (
               <div>
-                <label className="text-sm font-medium text-gray-600">Qualification Reason</label>
+                <label className="gs-text-subtle">Qualification Reason</label>
                 <p>{selectedEntry.metadata.qualification_reason}</p>
               </div>
             )}
             {selectedEntry.status !== 'qualified' && (
               <button
                 onClick={() => setIsQualifyOpen(true)}
-                className="mt-4 w-full px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                className="gs-button gs-button--block"
               >
                 Qualify This Lead
               </button>
@@ -501,7 +499,7 @@ function EntriesManagerContent({ jwtToken: _jwtToken }: Props) {
           isLoading={isSaving}
         >
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
+            <div className="gs-alert gs-alert--error">
               {error}
             </div>
           )}

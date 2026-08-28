@@ -92,37 +92,37 @@ function SettingsContent({ initialSettings }: Props) {
   };
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-3xl font-bold">Settings</h2>
+    <div className="gs-stack">
+      <h2>Settings</h2>
 
       {message && (
-        <div className={`p-4 rounded-lg ${
-          message.type === 'success'
-            ? 'bg-green-50 border border-green-200 text-green-800'
-            : 'bg-red-50 border border-red-200 text-red-800'
-        }`}>
+        <div className={`${
+ message.type === 'success'
+ ? 'bg-green-50 border border-green-200 text-green-800'
+ : 'bg-red-50 border border-red-200 text-red-800'
+ }`}>
           {message.text}
         </div>
       )}
 
       {loading ? (
-        <div className="bg-white p-6 rounded-lg border space-y-6">
-          <div className="space-y-4">
-            <h3 className="text-xl font-semibold">Platform Configuration</h3>
+        <div className="gs-panel gs-stack">
+          <div className="gs-stack-sm">
+            <h3>Platform Configuration</h3>
             {Array.from({ length: 6 }).map((_, idx) => (
-              <div key={idx} className="space-y-2">
-                <div className="h-4 bg-gray-300 rounded w-24 animate-pulse" />
-                <div className="h-10 bg-gray-200 rounded animate-pulse" />
+              <div key={idx} className="gs-input-group">
+                <div className="gs-skeleton gs-skeleton--md" />
+                <div className="gs-skeleton gs-skeleton--tall" />
               </div>
             ))}
           </div>
-          <div className="h-10 bg-gray-300 rounded w-32 animate-pulse" />
+          <div className="gs-skeleton gs-skeleton--tall gs-skeleton--md" />
         </div>
       ) : (
 
-        <div className="bg-white p-6 rounded-lg border space-y-6">
-          <div className="space-y-4">
-            <h3 className="text-xl font-semibold">Platform Configuration</h3>
+        <div className="gs-panel gs-stack">
+          <div className="gs-stack-sm">
+            <h3>Platform Configuration</h3>
 
             <FormField
               label="Site Name"
@@ -183,8 +183,7 @@ function SettingsContent({ initialSettings }: Props) {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
-          >
+            className="gs-button">
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>

@@ -221,14 +221,14 @@ export default function AccessControlClient() {
   };
 
   if (isLoading) {
-    return <div className="text-center py-12 text-gray-600">Loading access control data...</div>;
+    return <div className="gs-empty gs-text-subtle">Loading access control data...</div>;
   }
 
   return (
-    <div className="grid grid-cols-3 gap-8">
-      <div className="col-span-1">
-        <div className="bg-white rounded-lg border border-gray-200 p-6 sticky top-4">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Roles</h2>
+    <div>
+      <div>
+        <div className="gs-panel">
+          <h2>Roles</h2>
 
           <button
             onClick={() => {
@@ -236,24 +236,24 @@ export default function AccessControlClient() {
               setSelectedRoleId(null);
               setFormData({ name: '', description: '', permissionIds: [], reason: '' });
             }}
-            className="w-full mb-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded"
+            className="gs-button gs-button--block"
           >
             + Create Role
           </button>
 
-          <div className="space-y-2 max-h-96 overflow-y-auto">
+          <div className="gs-input-group">
             {roles.map((role) => (
               <button
                 key={role.id}
                 onClick={() => handleSelectRole(role.id)}
-                className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
-                  selectedRoleId === role.id
-                    ? 'bg-blue-100 text-blue-900 border border-blue-300'
-                    : 'hover:bg-gray-100 text-gray-900'
-                }`}
+                className={`${
+ selectedRoleId === role.id
+ ? 'bg-blue-100 text-blue-900 border border-blue-300'
+ : 'hover:bg-gray-100 text-gray-900'
+ }`}
               >
-                <div className="font-medium">{role.name}</div>
-                <div className="text-xs text-gray-600">
+                <div>{role.name}</div>
+                <div className="gs-cell-meta">
                   {Array.isArray(role.permissions) ? role.permissions.length : JSON.parse(role.permissions || '[]').length} perms
                 </div>
               </button>
@@ -262,22 +262,22 @@ export default function AccessControlClient() {
         </div>
       </div>
 
-      <div className="col-span-2 space-y-6">
+      <div className="gs-stack">
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm">
+          <div className="gs-alert gs-alert--error">
             {error}
           </div>
         )}
 
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="gs-panel">
+          <h2>
             {showCreateForm ? 'Create New Role' : selectedRoleId ? 'Edit Role' : 'Select a Role'}
           </h2>
 
           {(showCreateForm || selectedRoleId) && (
-            <form onSubmit={showCreateForm ? handleCreateRole : handleUpdateRole} className="space-y-4">
+            <form onSubmit={showCreateForm ? handleCreateRole : handleUpdateRole} className="gs-stack-sm">
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label>
                   Role Name
                 </label>
                 <input
@@ -286,19 +286,19 @@ export default function AccessControlClient() {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="e.g., Content Editor"
                   disabled={!showCreateForm && selectedRoleId && roles.find(r => r.id === selectedRoleId)?.is_default}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50"
+                  
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label>
                   Description
                 </label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="What is this role for?"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm h-20"
+                  
                 />
               </div>
 
@@ -310,7 +310,7 @@ export default function AccessControlClient() {
               />
 
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label>
                   Reason (optional)
                 </label>
                 <input
@@ -318,15 +318,15 @@ export default function AccessControlClient() {
                   value={formData.reason}
                   onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
                   placeholder="Why are you making this change?"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  
                 />
               </div>
 
-              <div className="flex gap-2 pt-4">
+              <div className="gs-row">
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded disabled:opacity-50"
+                  className="gs-button"
                 >
                   {isSubmitting ? 'Saving...' : showCreateForm ? 'Create Role' : 'Update Role'}
                 </button>
@@ -337,7 +337,6 @@ export default function AccessControlClient() {
                     setSelectedRoleId(null);
                     setFormData({ name: '', description: '', permissionIds: [], reason: '' });
                   }}
-                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-900 text-sm font-medium rounded"
                 >
                   Cancel
                 </button>
@@ -345,7 +344,7 @@ export default function AccessControlClient() {
                   <button
                     type="button"
                     onClick={() => handleDeleteRole(selectedRoleId)}
-                    className="ml-auto px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded"
+                    className="gs-button"
                   >
                     Delete Role
                   </button>
@@ -355,12 +354,12 @@ export default function AccessControlClient() {
           )}
 
           {!showCreateForm && !selectedRoleId && (
-            <p className="text-gray-600 text-sm">Select a role from the sidebar to edit it, or create a new one.</p>
+            <p className="gs-text-subtle">Select a role from the sidebar to edit it, or create a new one.</p>
           )}
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Team Members</h2>
+        <div className="gs-panel">
+          <h2>Team Members</h2>
           <UserAccessTable
             users={users}
             onEdit={handleEditUser}

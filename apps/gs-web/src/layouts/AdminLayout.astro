@@ -3,6 +3,7 @@ import '@goldshore/theme/styles/tokens.css';
 import '@goldshore/theme/styles/base.css';
 import '@goldshore/theme/styles/components.css';
 import '@goldshore/theme/styles/layout.css';
+import '../styles/admin-components.css';
 import '../styles/admin-saas.css';
 import Sidebar from '../components/Sidebar.astro';
 import FloatingChatWidget from '../components/admin/FloatingChatWidget';
@@ -45,6 +46,7 @@ void requiredPermission;
         </button>
         <slot />
       </main>
+      <button class="gs-sidebar-scrim" id="sidebar-scrim" type="button" aria-label="Close admin navigation" tabindex="-1"></button>
       <FloatingChatWidget client:load />
     </div>
   </body>
@@ -67,7 +69,13 @@ void requiredPermission;
   .gs-admin-shell { display: flex; min-height: 100dvh; }
   .gs-admin-main { flex: 1; min-width: 0; overflow-x: hidden; }
   .gs-admin-menu-toggle { display: none; }
-  @media (max-width: 900px) {
+  .gs-sidebar-scrim { display: none; }
+
+  /* (pointer: coarse) as well as a width cap: a tablet in landscape reports
+     well over 900px, so a width-only query left touch users on the desktop
+     shell — a permanent 272px sidebar with no way to dismiss it, and the page
+     content squeezed into whatever was left. */
+  @media (max-width: 900px), (pointer: coarse) {
     .gs-admin-menu-toggle {
       display: inline-flex;
       position: fixed;
@@ -85,7 +93,19 @@ void requiredPermission;
       backdrop-filter: blur(12px);
     }
     .gs-admin-menu-toggle svg { width: 15px; fill: none; stroke: currentColor; stroke-width: 1.5; }
-    body.gs-sidebar-open::after { content: ''; position: fixed; inset: 0; z-index: 30; background: rgba(0,0,0,.62); }
+    /* A real element rather than body::after. The pseudo-element painted the
+       same dim, but nothing could listen to it, so tapping outside the drawer
+       — the ordinary way to dismiss one on touch — did nothing. */
+    body.gs-sidebar-open .gs-sidebar-scrim {
+      display: block;
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      border: 0;
+      padding: 0;
+      background: rgba(0,0,0,.62);
+      cursor: pointer;
+    }
   }
 </style>
 
@@ -94,9 +114,22 @@ void requiredPermission;
 
   const openButton = document.querySelector<HTMLButtonElement>('#admin-menu-toggle');
   const closeButton = document.querySelector<HTMLButtonElement>('#sidebar-close');
-  const closeSidebar = () => document.body.classList.remove('gs-sidebar-open');
-  openButton?.addEventListener('click', () => document.body.classList.add('gs-sidebar-open'));
+  const scrim = document.querySelector<HTMLButtonElement>('#sidebar-scrim');
+  const closeSidebar = () => {
+    document.body.classList.remove('gs-sidebar-open');
+    openButton?.setAttribute('aria-expanded', 'false');
+  };
+  const openSidebar = () => {
+    document.body.classList.add('gs-sidebar-open');
+    openButton?.setAttribute('aria-expanded', 'true');
+    closeButton?.focus();
+  };
+  openButton?.addEventListener('click', openSidebar);
   closeButton?.addEventListener('click', closeSidebar);
+  scrim?.addEventListener('click', closeSidebar);
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeSidebar();
+  });
   document.querySelector('#admin-sidebar')?.addEventListener('click', (event) => {
     if ((event.target as HTMLElement).closest('a')) closeSidebar();
   });
