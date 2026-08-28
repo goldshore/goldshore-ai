@@ -35,6 +35,7 @@ import googleBusiness from './routes/google-business';
 import ebayOauth from './routes/oauth/ebay';
 import mcp from './routes/mcp';
 import invitations from './routes/invitations';
+import account from './routes/account';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
 import type { Env, Variables } from './types';
@@ -317,6 +318,7 @@ app.route('/user', user);
 app.route('/system', system);
 app.route('/templates', templates);
 app.route('/invitations', invitations);
+app.route('/account', account);
 app.route('/admin', admin);
 // The admin Secrets UI (apps/gs-web/src/pages/admin/system/index.astro,
 // Secrets tab) proxies to /integrations/keys/*, not /admin/*. The router for
