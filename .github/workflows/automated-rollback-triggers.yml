@@ -91,7 +91,11 @@ jobs:
           echo "p99_latency=${P99_LATENCY}" >> $GITHUB_OUTPUT
           echo "error_rate_threshold=${ERROR_RATE_THRESHOLD}" >> $GITHUB_OUTPUT
           echo "latency_threshold=${LATENCY_THRESHOLD}" >> $GITHUB_OUTPUT
-          echo "status_codes=${STATUS_CODES}" >> $GITHUB_OUTPUT
+          # GitHub Actions file commands require the delimiter form for values
+          # containing line breaks. The compact JSON below keeps the output
+          # single-line and makes it safe to consume from later steps.
+          STATUS_CODES="$(printf '%s' "${STATUS_CODES}" | tr -d '\n' | tr -s ' ')"
+          echo "status_codes=${STATUS_CODES}" >> "$GITHUB_OUTPUT"
 
       - name: Check dependency health
         id: dependencies
