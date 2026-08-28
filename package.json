@@ -3,6 +3,7 @@
   "private": true,
   "packageManager": "pnpm@9.15.4",
   "scripts": {
+    "cloudflare:preflight": "node scripts/cloudflare-preflight.mjs",
     "dev": "turbo run dev --parallel",
     "build": "pnpm build:pages",
     "build:all": "pnpm build:openapi && turbo run build",
