@@ -12,9 +12,25 @@ devices. No secret values were read and no production resources were changed.
   push, pull, and triage permission on `marzton/goldshore-ai`.
 - Cloudflare: Wrangler OAuth and the Cloudflare API both authenticate to Gold
   Shore Labs account `f77de1…50bd2`.
-- The Browser plugin could not attach its in-app webview. Cloudflare and
-  GitHub dashboard-session verification therefore remains a visible-browser
-  handoff; API and HTTP evidence below is current.
+- The Codex in-app Browser attached successfully during the follow-up. The
+  Cloudflare and GitHub dashboard tabs are preserved at their respective
+  sign-in handoffs; authenticated dashboard membership and private settings
+  remain pending operator sign-in. Browser-visible public and Access-boundary
+  results are recorded below.
+
+## Browser-visible verification
+
+| Surface | Visible result | Assessment |
+| --- | --- | --- |
+| GitHub PR #6959 | Public PR view shows draft state, verified commit `fb9534c`, three changed files, and the signed webhook repair description. The Browser session is signed out, so private repository settings remain unverified there. | Public evidence present; operator permissions pending sign-in |
+| Cloudflare dashboard | Account link reaches Cloudflare sign-in and offers the saved GoldShore Google profile. Google requires interactive account authentication before the dashboard can be inspected. | Correct handoff; membership pending sign-in |
+| Public frontend | `goldshore.ai/` renders “Gold Shore Labs | Applied Intelligence,” identifies `gs-web`/`gs-api` as the two canonical apps, and links login to `admin.goldshore.ai/app/dashboard`. | Pass |
+| Templates/content | `goldshore.ai/templates` renders the Astro page-template contract and shared composition primitives. | Pass |
+| Public media route | `goldshore.ai/media` renders the GoldShore 404 page. Media bindings exist, but no public `/media` page exists. | Missing if a public media library is intended |
+| Admin Access | `admin.goldshore.ai/app/dashboard` reaches the branded “Gold Shore Admin Production” Access login with GitHub, Cloudflare Members, and Google Workspace SAML choices. | Edge/IdP selection verified; authorized login pending |
+| Agent/SSH Access | `agent.goldshore.ai` reaches the branded “SSH” Access login and offers SAML, GitHub, and Google. | Edge/IdP selection verified; authorized login pending |
+| Laptop tunnel | `ssh-laptop.goldshore.ai` visibly returns Cloudflare Tunnel error 1033 and says Cloudflare cannot resolve the configured tunnel. | Fail |
+| JSON endpoints | The in-app Browser blocks direct JSON-document navigation with `ERR_BLOCKED_BY_CLIENT`; API/HTTP results below are therefore the authoritative endpoint evidence. | Browser limitation, not service evidence |
 
 ## Verified live
 
@@ -51,7 +67,8 @@ devices. No secret values were read and no production resources were changed.
 3. **Laptop/private connectivity is unavailable.** All three Cloudflare
    tunnels have zero connections. `LAPTOP-TREB-temp` and
    `goldshore-lacie-local` are down; `MCP Tunnel` is inactive.
-   `ssh-laptop.goldshore.ai` returns 530. The HP laptop has cloudflared
+   `ssh-laptop.goldshore.ai` visibly returns Cloudflare Tunnel error 1033
+   (the earlier raw HTTP probe surfaced the edge failure as 530). The HP laptop has cloudflared
    installed but no cloudflared service/process, and it is not enrolled as a
    Zero Trust device.
 4. **GitHub webhooks are failing.** Push, pull-request, and workflow-run hooks
