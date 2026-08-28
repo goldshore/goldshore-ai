@@ -36,6 +36,7 @@ import ebayOauth from './routes/oauth/ebay';
 import mcp from './routes/mcp';
 import invitations from './routes/invitations';
 import account from './routes/account';
+import webhooks from './routes/webhooks';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
 import type { Env, Variables } from './types';
@@ -101,6 +102,12 @@ const isAllowedOrigin = (origin: string, allowedOrigins?: string) => {
 
 const isPublicPath = (path: string, method: string) => {
   if (method === 'OPTIONS') return true;
+  // GitHub authenticates these machine-to-machine requests with the
+  // X-Hub-Signature-256 HMAC verified by the webhook router. Requiring an
+  // interactive Access JWT here rejects GitHub before that verification can
+  // run, even when the edge Access application intentionally bypasses the
+  // signed webhook paths.
+  if (method === 'POST' && /^\/webhooks\/github\/[^/]+\/?$/i.test(path)) return true;
   if (method === 'POST' && /^\/v1\/forms\/[a-z0-9-]+\/submissions$/i.test(path)) return true;
   if (path === '/v1/forms/newsletter/confirm' && (method === 'GET' || method === 'POST')) return true;
   if (path === '/v1/forms/newsletter/preferences' && (method === 'GET' || method === 'PUT')) return true;
@@ -341,6 +348,7 @@ app.route('/control', control);
 app.route('/trading', trading);
 app.route('/core', core);
 app.route('/oauth/ebay', ebayOauth);
+app.route('/webhooks', webhooks);
 // routes/mcp.ts replaced the standalone goldshore-mcp Worker (which 1101'd on
 // every request - placeholder KV id, no durable_objects block) but was never
 // mounted here, so the working replacement was dead code and the Cloudflare
