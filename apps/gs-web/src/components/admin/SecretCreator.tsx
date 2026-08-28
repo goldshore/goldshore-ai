@@ -109,13 +109,13 @@ const SecretCreator: React.FC<SecretCreatorProps> = ({
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded text-red-700 text-sm flex items-center justify-between mb-4">
+        <div className="gs-alert gs-alert--error gs-row gs-row--between">
           <div>
             <strong>Error:</strong> {error}
           </div>
           <button
             onClick={() => setError(null)}
-            className="ml-2 text-red-700 hover:text-red-900 font-bold"
+            className="gs-link-button gs-link-button--danger"
           >
             ✕
           </button>

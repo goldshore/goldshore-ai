@@ -38,26 +38,26 @@ export default function PermissionSelector({
 
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-900 mb-3">
+      <label>
         Permissions
       </label>
-      <div className="space-y-4 max-h-96 overflow-y-auto border border-gray-200 rounded-lg p-4 bg-gray-50">
+      <div className="gs-stack-sm">
         {Object.entries(groupedByCategory).map(([category, perms]) => (
           <div key={category}>
-            <h4 className="text-sm font-semibold text-gray-900 mb-2">{category}</h4>
-            <div className="space-y-2 ml-2">
+            <h4>{category}</h4>
+            <div className="gs-input-group">
               {perms.map((perm) => (
-                <label key={perm.id} className="flex items-start cursor-pointer">
+                <label key={perm.id} >
                   <input
                     type="checkbox"
                     checked={selectedIds.includes(perm.id)}
                     onChange={() => handleToggle(perm.id)}
                     disabled={disabled}
-                    className="mt-1 mr-2 cursor-pointer disabled:opacity-50"
+                    
                   />
                   <div>
-                    <div className="text-sm font-medium text-gray-900">{perm.name}</div>
-                    <div className="text-xs text-gray-600">{perm.description}</div>
+                    <div>{perm.name}</div>
+                    <div className="gs-cell-meta">{perm.description}</div>
                   </div>
                 </label>
               ))}

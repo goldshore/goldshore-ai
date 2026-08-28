@@ -227,3 +227,105 @@
     background: transparent;
   }
 }
+
+/* Inline JSON / diff payloads inside a table cell. */
+.gs-admin-body .gs-code-cell {
+  margin: 0;
+  padding: var(--gs-space-2, 0.5rem);
+  max-width: 22rem;
+  max-height: 8rem;
+  overflow: auto;
+  overscroll-behavior: contain;
+  background: var(--gs-color-muted-surface);
+  border-radius: var(--gs-radius-sm, 6px);
+  font-size: 0.75rem;
+  font-family: var(--admin-mono, ui-monospace, monospace);
+}
+
+.gs-admin-body .gs-cell-meta {
+  font-size: 0.75rem;
+  opacity: 0.72;
+}
+
+/* -------------------------------------------------------------- loading ---
+ * Skeleton placeholder bars, previously `h-4 bg-gray-200 animate-pulse`.
+ */
+.gs-admin-body .gs-skeleton {
+  height: 1rem;
+  border-radius: var(--gs-radius-sm, 6px);
+  background: var(--gs-color-muted-surface);
+  animation: gs-skeleton-pulse 1.6s ease-in-out infinite;
+}
+
+.gs-admin-body .gs-skeleton--tall { height: 2.5rem; }
+.gs-admin-body .gs-skeleton--grow { flex: 1; }
+.gs-admin-body .gs-skeleton--sm { width: 5rem; }
+.gs-admin-body .gs-skeleton--md { width: 8rem; }
+
+@keyframes gs-skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gs-admin-body .gs-skeleton { animation: none; }
+}
+
+.gs-admin-body .gs-alert--success {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.4);
+  color: #86efac;
+}
+
+.gs-admin-body .gs-card .gs-alert--success,
+.gs-admin-body .gs-panel .gs-alert--success {
+  color: #14532d;
+}
+
+/* A button that reads as a link — inline row actions such as Edit / Delete. */
+.gs-admin-body .gs-link-button {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--gs-accent);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.gs-admin-body .gs-link-button--danger { color: var(--gs-danger, #ef4444); }
+.gs-admin-body .gs-link-button:focus-visible {
+  outline: 1px solid var(--gs-accent);
+  outline-offset: 2px;
+}
+
+.gs-admin-body .gs-alert--warning {
+  background: rgba(234, 179, 8, 0.1);
+  border-color: rgba(234, 179, 8, 0.4);
+  color: #fde047;
+}
+.gs-admin-body .gs-alert--info {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.4);
+  color: #93c5fd;
+}
+.gs-admin-body .gs-card .gs-alert--warning,
+.gs-admin-body .gs-panel .gs-alert--warning { color: #713f12; }
+.gs-admin-body .gs-card .gs-alert--info,
+.gs-admin-body .gs-panel .gs-alert--info { color: #1e3a8a; }
+
+/* Inline icons — previously `w-4 h-4` / `w-5 h-5`. */
+.gs-admin-body .gs-icon { width: 1rem; height: 1rem; flex: none; }
+.gs-admin-body .gs-icon--lg { width: 1.25rem; height: 1.25rem; }
+.gs-admin-body .gs-icon--inline { display: inline-block; vertical-align: -0.15em; margin-right: 0.35rem; }
+
+.gs-admin-body .gs-spin { animation: gs-spin 1s linear infinite; }
+@keyframes gs-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .gs-admin-body .gs-spin { animation: none; }
+}
+
+.gs-admin-body .gs-mono { font-family: var(--admin-mono, ui-monospace, monospace); }
+.gs-admin-body .gs-list-tight { margin: 0; padding-left: 1.1rem; }
+.gs-admin-body .gs-list-tight > li + li { margin-top: 0.25rem; }
