@@ -42,7 +42,10 @@ function applyPreference(pref: LayoutPreference) {
     const p=byId.get(id); if(!p) continue;
     if(typeof p.order==='number') el.style.order=String(p.order);
     el.hidden=Boolean(p.hidden);
-    if(!isMobileLayout()) {
+    // Saved pixel widths/heights come from a mouse-driven desktop session and
+    // overflow the drawer layout, so they apply only there. Matches the
+    // (max-width:900px), (pointer:coarse) query the shell switches on.
+    if(matchMedia('(min-width: 901px)').matches && !matchMedia('(pointer: coarse)').matches) {
       if(p.width) el.style.width=`min(100%, ${p.width}px)`;
       if(p.height) el.style.height=`${p.height}px`;
       if(p.colSpan) el.style.gridColumn=`span ${Math.max(1,Math.min(12,p.colSpan))}`;

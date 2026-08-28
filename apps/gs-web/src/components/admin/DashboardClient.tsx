@@ -18,7 +18,7 @@ export default function DashboardClient() {
 
   if (!isOnline) {
     return (
-      <div className="fixed bottom-4 right-4 p-4 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+      <div className="gs-alert gs-alert--error">
         You are currently offline. Some features may not work.
       </div>
     );

@@ -122,9 +122,23 @@ const visibleGroups = groups
   .gs-sidebar-footer { padding:10px 8px 14px; border-top:1px solid rgba(255,255,255,.08); }
   .gs-public-site-btn { color:#c1c7cc; }
   .gs-logout-btn:hover { color:#ffb1ad; background:rgba(239,68,68,.08); }
-  @media (max-width:900px) {
-    .gs-admin-sidebar { position:fixed; left:0; transform:translateX(-102%); transition:transform 180ms ease; box-shadow:22px 0 70px rgba(0,0,0,.55); }
+  /* Matches AdminLayout: (pointer: coarse) so touch devices get the drawer
+     whatever width they report — a tablet in landscape is well over 900px. */
+  @media (max-width:900px), (pointer:coarse) {
+    .gs-admin-sidebar { position:fixed; left:0; transform:translateX(-102%); transition:transform 180ms ease; box-shadow:22px 0 70px rgba(0,0,0,.55); overscroll-behavior:contain; }
     :global(body.gs-sidebar-open) .gs-admin-sidebar { transform:translateX(0); }
     .sidebar-close { display:inline-flex; }
+  }
+
+  /* 44px is the WCAG 2.5.5 / iOS HIG floor. These rows were laid out for a
+     mouse: 34px tall with 7px of padding, and a 32px close button. */
+  @media (pointer:coarse) {
+    .gs-nav-block { min-height:44px; padding:11px 12px; }
+    .gs-nav-group summary { min-height:44px; padding:12px 10px 8px; }
+    .sidebar-close { width:44px; height:44px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .gs-admin-sidebar { transition:none; }
   }
 </style>

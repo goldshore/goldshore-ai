@@ -92,22 +92,21 @@ function UsersManagerContent({ jwtToken: _jwtToken }: Props) {
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'admin':
-        return 'bg-red-100 text-red-800';
+        return 'danger';
       case 'moderator':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'warning';
       default:
-        return 'bg-blue-100 text-blue-800';
+        return 'info';
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold">User Management</h2>
+    <div className="gs-stack">
+      <div className="gs-row gs-row--between">
+        <h2>User Management</h2>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-        >
+          className="gs-button">
           + Add User
         </button>
       </div>
@@ -119,7 +118,7 @@ function UsersManagerContent({ jwtToken: _jwtToken }: Props) {
             key: 'role',
             label: 'Role',
             render: (v) => (
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${getRoleColor(v)}`}>
+              <span className={`gs-badge ${getRoleColor(v)}`}>
                 {v}
               </span>
             ),
@@ -128,7 +127,7 @@ function UsersManagerContent({ jwtToken: _jwtToken }: Props) {
             key: 'status',
             label: 'Status',
             render: (v) => (
-              <span className={`px-3 py-1 rounded text-sm font-medium ${v === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+              <span className={`gs-badge ${v === 'active' ? 'success' : ''}`}>
                 {v}
               </span>
             ),
@@ -138,11 +137,11 @@ function UsersManagerContent({ jwtToken: _jwtToken }: Props) {
         endpoint="/api/admin/users"
         title="Admin Users"
         actions={(row) => (
-          <div className="flex gap-2">
-            <button className="text-blue-500 hover:text-blue-700" title="Change permissions">
+          <div className="gs-row">
+            <button className="gs-link-button" title="Change permissions">
               Permissions
             </button>
-            <button className="text-red-500 hover:text-red-700" title="Remove user">
+            <button className="gs-link-button gs-link-button--danger" title="Remove user">
               Remove
             </button>
           </div>
@@ -158,15 +157,14 @@ function UsersManagerContent({ jwtToken: _jwtToken }: Props) {
         }}
         title="Add User"
         onSubmit={handleAddUser}
-        isLoading={isSaving}
-      >
+        isLoading={isSaving}>
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
+          <div className="gs-alert gs-alert--error">
             {error}
           </div>
         )}
         {success && (
-          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
+          <div className="gs-alert gs-alert--success">
             {success}
           </div>
         )}

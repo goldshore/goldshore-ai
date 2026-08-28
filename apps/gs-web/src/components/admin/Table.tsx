@@ -23,16 +23,16 @@ export function Table<T extends Record<string, any>>({
   emptyMessage = 'No data available',
 }: TableProps<T>) {
   if (loading) {
-    return <div className="gs-card p-8 text-center text-sm gs-text-subtle">Loading...</div>;
+    return <div className="gs-card gs-empty gs-text-subtle">Loading...</div>;
   }
 
   if (!data || data.length === 0) {
-    return <div className="gs-card p-8 text-center text-sm gs-text-subtle">{emptyMessage}</div>;
+    return <div className="gs-card gs-empty gs-text-subtle">{emptyMessage}</div>;
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="gs-admin-table w-full">
+    <div className="gs-table-scroll">
+      <table className="gs-admin-table">
         <thead>
           <tr>
             {columns.map((col) => (
@@ -47,7 +47,7 @@ export function Table<T extends Record<string, any>>({
             <tr
               key={idx}
               onClick={() => onRowClick?.(row)}
-              className={onRowClick ? 'cursor-pointer hover:bg-opacity-50' : ''}
+              className={onRowClick ? 'gs-row-clickable' : undefined}
             >
               {columns.map((col) => (
                 <td key={String(col.key)}>

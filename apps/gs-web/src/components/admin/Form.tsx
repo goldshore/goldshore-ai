@@ -58,20 +58,20 @@ export function Form({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {error && <div className="p-4 bg-red-50 border border-red-200 rounded text-red-700 text-sm">{error}</div>}
+    <form onSubmit={handleSubmit} className="gs-stack">
+      {error && <div className="gs-alert gs-alert--error" role="alert">{error}</div>}
       {submitError && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+        <div className="gs-alert gs-alert--error" role="alert">
           {submitError}
         </div>
       )}
 
-      <div className="space-y-4">
+      <div className="gs-stack-sm">
         {fields.map((field) => (
-          <div key={field.name}>
-            <label htmlFor={field.name} className="block text-sm font-medium mb-2">
+          <div key={field.name} className="gs-field">
+            <label htmlFor={field.name} className="gs-label">
               {field.label}
-              {field.required && <span className="text-red-500">*</span>}
+              {field.required && <span className="gs-required">*</span>}
             </label>
 
             {field.type === 'textarea' ? (
@@ -83,7 +83,6 @@ export function Form({
                 placeholder={field.placeholder}
                 required={field.required}
                 rows={4}
-                className="w-full px-3 py-2 text-sm border rounded gs-input"
               />
             ) : field.type === 'select' ? (
               <select
@@ -92,7 +91,6 @@ export function Form({
                 value={values[field.name]}
                 onChange={handleChange}
                 required={field.required}
-                className="w-full px-3 py-2 text-sm border rounded gs-input"
               >
                 <option value="">Select {field.label}</option>
                 {field.options?.map((opt) => (
@@ -110,7 +108,6 @@ export function Form({
                 onChange={handleChange}
                 placeholder={field.placeholder}
                 required={field.required}
-                className="w-full px-3 py-2 text-sm border rounded gs-input"
               />
             )}
           </div>
@@ -122,7 +119,7 @@ export function Form({
       <button
         type="submit"
         disabled={isSubmitting || loading}
-        className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="gs-button gs-button--block"
       >
         {isSubmitting || loading ? 'Submitting...' : submitLabel}
       </button>
