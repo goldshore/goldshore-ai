@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import webhooks from './webhooks';
+
+const workerSource = readFileSync(new URL('../index.ts', import.meta.url), 'utf8');
 
 const payload = JSON.stringify({
   zen: 'Keep it logically awesome.',
@@ -19,6 +22,15 @@ const env = {
   },
   KV: { put: async () => undefined },
 };
+
+test('the Worker mounts signed GitHub webhooks before interactive Access', () => {
+  assert.ok(workerSource.includes("app.route('/webhooks', webhooks);"));
+  assert.ok(
+    workerSource.includes(
+      "if (method === 'POST' && /^\\/webhooks\\/github\\/[^/]+\\/?$/i.test(path)) return true;",
+    ),
+  );
+});
 
 test('GitHub webhooks reject unsigned requests before parsing payloads', async () => {
   const response = await webhooks.request('/github/push', {
