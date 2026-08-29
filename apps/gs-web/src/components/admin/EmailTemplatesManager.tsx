@@ -342,7 +342,7 @@ function EmailTemplatesContent({ jwtToken: _jwtToken }: Props) {
         </div>
       )}
 
-      <div>
+      <div className="gs-stack-sm">
         {templates.length === 0 ? (
           <div className="gs-card">
             <p className="gs-text-subtle">No templates created yet. Create your first template to get started.</p>
@@ -350,7 +350,7 @@ function EmailTemplatesContent({ jwtToken: _jwtToken }: Props) {
         ) : (
           templates.map((template) => (
             <div key={template.id} className="gs-card gs-row gs-row--between">
-              <div>
+              <div className="gs-fill">
                 <h3>{template.name}</h3>
                 <p className="gs-text-subtle">{template.subject}</p>
                 <div className="gs-row">

@@ -28,11 +28,7 @@ export default function RoleCard({
   return (
     <div
       onClick={onClick}
-      className={`${
- isSelected
- ? 'border-blue-500 bg-blue-50'
- : 'border-gray-200 bg-white hover:border-gray-300'
- }`}
+      className={`gs-selectable ${isSelected ? 'is-selected' : ''}`}
     >
       <div>
         <div>

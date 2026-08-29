@@ -113,13 +113,13 @@ export default function MCPServerManager({ jwtToken }: Props) {
             >
               <div className="gs-row">
                 <div
-                  className={`${
- server.status === 'active'
- ? 'bg-green-500'
- : server.status === 'error'
- ? 'bg-red-500'
- : 'bg-gray-300'
- }`}
+                  className={`gs-status-dot ${
+                    server.status === 'active'
+                      ? 'gs-status-dot--ok'
+                      : server.status === 'error'
+                        ? 'gs-status-dot--error'
+                        : ''
+                  }`}
                 ></div>
                 <div>
                   <h3>{server.name}</h3>
@@ -132,9 +132,9 @@ export default function MCPServerManager({ jwtToken }: Props) {
                 </div>
               </div>
               <ChevronDown
-                className={`gs-icon gs-icon--lg transition-transform ${
- expandedServer === server.name ? 'rotate-180' : ''
- }`}
+                className={`gs-icon gs-icon--lg gs-chevron ${
+                  expandedServer === server.name ? 'is-open' : ''
+                }`}
               />
             </div>
 

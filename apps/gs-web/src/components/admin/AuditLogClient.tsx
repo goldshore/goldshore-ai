@@ -78,8 +78,8 @@ export default function AuditLogClient() {
 
       <div className="gs-panel">
         <h2>Filters</h2>
-        <div>
-          <div>
+        <div className="gs-list-grid">
+          <div className="gs-input-group">
             <label>
               User Email
             </label>
@@ -88,10 +88,9 @@ export default function AuditLogClient() {
               value={filters.actorEmail}
               onChange={(e) => handleFilterChange('actorEmail', e.target.value)}
               placeholder="Filter by user..."
-              
             />
           </div>
-          <div>
+          <div className="gs-input-group">
             <label>
               Action
             </label>
@@ -108,7 +107,7 @@ export default function AuditLogClient() {
               <option value="restored_user">Restored user</option>
             </select>
           </div>
-          <div>
+          <div className="gs-input-group">
             <label>
               From Date
             </label>
@@ -116,10 +115,9 @@ export default function AuditLogClient() {
               type="date"
               value={filters.startDate}
               onChange={(e) => handleFilterChange('startDate', e.target.value)}
-              
             />
           </div>
-          <div>
+          <div className="gs-input-group">
             <label>
               To Date
             </label>
@@ -127,10 +125,9 @@ export default function AuditLogClient() {
               type="date"
               value={filters.endDate}
               onChange={(e) => handleFilterChange('endDate', e.target.value)}
-              
             />
           </div>
-          <div>
+          <div className="gs-grid-cell-end">
             <button
               onClick={handleExport}
               className="gs-button gs-button--block"
@@ -151,14 +148,18 @@ export default function AuditLogClient() {
             </p>
             <div className="gs-row">
               <button
+                type="button"
                 onClick={() => setOffset(Math.max(0, offset - limit))}
                 disabled={offset === 0}
+                className="gs-button gs-button--secondary gs-button--small"
               >
                 Previous
               </button>
               <button
+                type="button"
                 onClick={() => setOffset(offset + limit)}
                 disabled={offset + limit >= total}
+                className="gs-button gs-button--secondary gs-button--small"
               >
                 Next
               </button>

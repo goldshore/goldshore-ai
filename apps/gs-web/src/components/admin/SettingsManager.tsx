@@ -96,11 +96,9 @@ function SettingsContent({ initialSettings }: Props) {
       <h2>Settings</h2>
 
       {message && (
-        <div className={`${
- message.type === 'success'
- ? 'bg-green-50 border border-green-200 text-green-800'
- : 'bg-red-50 border border-red-200 text-red-800'
- }`}>
+        <div className={`gs-alert ${
+          message.type === 'success' ? 'gs-alert--success' : 'gs-alert--error'
+        }`}>
           {message.text}
         </div>
       )}

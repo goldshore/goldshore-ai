@@ -128,7 +128,7 @@ export default function WorkflowsClient() {
           No workflows found. Create one to get started.
         </div>
       ) : (
-        <div>
+        <div className="gs-list-grid">
           {workflows.map((workflow) => (
             <WorkflowCard
               key={workflow.id}

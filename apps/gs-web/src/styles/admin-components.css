@@ -329,3 +329,67 @@
 .gs-admin-body .gs-mono { font-family: var(--admin-mono, ui-monospace, monospace); }
 .gs-admin-body .gs-list-tight { margin: 0; padding-left: 1.1rem; }
 .gs-admin-body .gs-list-tight > li + li { margin-top: 0.25rem; }
+
+/* .gs-row centres its children. These restore the alignments that the
+ * Tailwind conversion dropped (items-start / items-end / flex-1). */
+.gs-admin-body .gs-row--start { align-items: flex-start; }
+.gs-admin-body .gs-row--end { align-items: flex-end; }
+.gs-admin-body .gs-fill { flex: 1; min-width: 0; }
+
+/* A grid cell whose control should sit on the baseline of its neighbours
+ * rather than the top — the Export button beside a row of filter fields. */
+.gs-admin-body .gs-grid-cell-end {
+  display: flex;
+  align-items: flex-end;
+}
+
+/* ------------------------------------------------------------- selected ---
+ * Selectable cards and list rows. These were Tailwind ternaries
+ * (`isSelected ? 'border-blue-500 bg-blue-50' : ...`) that never resolved, so
+ * selection had no visible state at all.
+ */
+.gs-admin-body .gs-selectable {
+  cursor: pointer;
+  border: 1px solid var(--gs-color-border);
+  border-radius: var(--gs-radius-sm, 6px);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  width: 100%;
+  padding: var(--gs-space-3, 0.75rem);
+}
+
+.gs-admin-body .gs-selectable[aria-pressed='true'],
+.gs-admin-body .gs-selectable.is-selected {
+  border-color: var(--gs-accent);
+  background: var(--gs-accent-soft, rgba(217, 106, 50, 0.12));
+}
+
+.gs-admin-body .gs-selectable:focus-visible {
+  outline: 1px solid var(--gs-accent);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .gs-admin-body .gs-selectable:hover { border-color: var(--gs-accent); }
+}
+
+/* Connection/health dot beside a server or service name. */
+.gs-admin-body .gs-status-dot {
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  flex: none;
+  background: var(--gs-color-subtle);
+}
+
+.gs-admin-body .gs-status-dot--ok { background: #22c55e; }
+.gs-admin-body .gs-status-dot--error { background: #ef4444; }
+
+/* Disclosure chevron that flips when its section is open. */
+.gs-admin-body .gs-chevron { transition: transform 140ms ease; }
+.gs-admin-body .gs-chevron.is-open { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) {
+  .gs-admin-body .gs-chevron { transition: none; }
+}

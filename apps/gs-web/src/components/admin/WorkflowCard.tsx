@@ -44,7 +44,7 @@ export default function WorkflowCard({
   const [showMenu, setShowMenu] = useState(false);
 
   return (
-    <div className="gs-panel transition-shadow">
+    <div className="gs-panel">
       <div>
         <div>
           <h3>{workflow.name}</h3>
