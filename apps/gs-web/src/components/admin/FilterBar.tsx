@@ -49,9 +49,9 @@ export function FilterBar({ filters, onFilter, onSearch }: FilterBarProps) {
         />
       )}
 
-      <div>
+      <div className="gs-list-grid">
         {filters.map((filter) => (
-          <div key={filter.key}>
+          <div key={filter.key} className="gs-input-group">
             {filter.type === 'select' ? (
               <select
                 value={values[filter.key] || ''}

@@ -226,7 +226,7 @@ export default function AccessControlClient() {
 
   return (
     <div>
-      <div>
+      <div className="gs-list-grid">
         <div className="gs-panel">
           <h2>Roles</h2>
 
@@ -246,11 +246,7 @@ export default function AccessControlClient() {
               <button
                 key={role.id}
                 onClick={() => handleSelectRole(role.id)}
-                className={`${
- selectedRoleId === role.id
- ? 'bg-blue-100 text-blue-900 border border-blue-300'
- : 'hover:bg-gray-100 text-gray-900'
- }`}
+                className={`gs-selectable ${selectedRoleId === role.id ? 'is-selected' : ''}`}
               >
                 <div>{role.name}</div>
                 <div className="gs-cell-meta">
