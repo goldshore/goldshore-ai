@@ -32,10 +32,10 @@ const permissionGroups: Array<{ label: string; permissions: AdminPermission[] }>
 ---
 
 <AdminLayout title="Users | GoldShore Admin" requiredPermission="users:read">
-  <section class="max-w-7xl mx-auto p-8 space-y-6">
-    <div class="space-y-2">
-      <h1 class="text-4xl gs-heading gs-text-accent">Users</h1>
-      <p class="text-lg gs-text-subtle">Team overview, the operator directory, and the role/permission matrix — consolidated from three separate pages into one.</p>
+  <section class="gs-page gs-stack">
+    <div class="gs-stack-sm">
+      <h1 class="gs-heading gs-text-accent">Users</h1>
+      <p class="gs-text-lg gs-text-subtle">Team overview, the operator directory, and the role/permission matrix — consolidated from three separate pages into one.</p>
     </div>
 
     <nav class="gs-tabs" role="tablist" aria-label="User sections">
@@ -46,22 +46,22 @@ const permissionGroups: Array<{ label: string; permissions: AdminPermission[] }>
 
     <!-- ============================== Overview ============================== -->
     <div class="gs-panel" data-panel="overview">
-      {users.error && <div class="p-4 bg-red-50 border border-red-200 rounded text-red-700 text-sm mb-4">{users.error}</div>}
-      <div class="grid md:grid-cols-3 gap-6">
-        <div class="gs-card space-y-3">
-          <h2 class="text-xl font-semibold">Total Users</h2>
-          <p class="text-3xl font-bold gs-text-info">{users.total}</p>
-          <p class="text-sm gs-text-subtle">Team members</p>
+      {users.error && <div class="gs-text-danger gs-text-sm">{users.error}</div>}
+      <div class="gs-list-grid">
+        <div class="gs-card gs-stack-sm">
+          <h2>Total Users</h2>
+          <p class="gs-stat gs-text-info">{users.total}</p>
+          <p class="gs-text-sm gs-text-subtle">Team members</p>
         </div>
-        <div class="gs-card space-y-3">
-          <h2 class="text-xl font-semibold">Active Users</h2>
-          <p class="text-3xl font-bold gs-text-success">{activeUsers}</p>
-          <p class="text-sm gs-text-subtle">Currently active</p>
+        <div class="gs-card gs-stack-sm">
+          <h2>Active Users</h2>
+          <p class="gs-stat gs-text-success">{activeUsers}</p>
+          <p class="gs-text-sm gs-text-subtle">Currently active</p>
         </div>
-        <div class="gs-card space-y-3">
-          <h2 class="text-xl font-semibold">Pending Invites</h2>
-          <p class="text-3xl font-bold gs-text-warning">{users.total - activeUsers}</p>
-          <p class="text-sm gs-text-subtle">Awaiting acceptance</p>
+        <div class="gs-card gs-stack-sm">
+          <h2>Pending Invites</h2>
+          <p class="gs-stat gs-text-warning">{users.total - activeUsers}</p>
+          <p class="gs-text-sm gs-text-subtle">Awaiting acceptance</p>
         </div>
       </div>
     </div>
@@ -69,7 +69,7 @@ const permissionGroups: Array<{ label: string; permissions: AdminPermission[] }>
     <!-- ============================== Directory ============================== -->
     <div class="gs-panel" data-panel="directory">
       <div class="gs-grid columns-2">
-        <div><h2 class="text-2xl font-semibold">User directory</h2><p class="gs-text-lg">Create, invite, update, disable, and review operator access without exposing session credentials.</p></div>
+        <div><h2>User directory</h2><p class="gs-text-lg">Create, invite, update, disable, and review operator access without exposing session credentials.</p></div>
         <form id="user-create" class="gs-card">
           <h3 id="form-title">Invite user</h3>
           <div class="gs-input-group"><label for="user-email">Email</label><input id="user-email" name="email" type="email" required /></div>
@@ -89,7 +89,7 @@ const permissionGroups: Array<{ label: string; permissions: AdminPermission[] }>
 
     <!-- ============================== Permissions ============================== -->
     <div class="gs-panel" data-panel="permissions">
-      <p class="text-[var(--gs-text-secondary)] mb-6">
+      <p class="gs-text-subtle">
         Roles map directly to content, media, and forms access. Admins inherit full control, editors
         can create and update assets, and viewers remain read-only. To change a user's role, use the Directory tab.
       </p>
@@ -98,14 +98,14 @@ const permissionGroups: Array<{ label: string; permissions: AdminPermission[] }>
           <thead>
             <tr>
               <th>Permission</th>
-              {ADMIN_ROLES.map((role) => (<th class="capitalize">{role}</th>))}
+              {ADMIN_ROLES.map((role) => (<th>{role}</th>))}
             </tr>
           </thead>
           <tbody>
             {permissionGroups.map((group) => (
               <>
                 <tr>
-                  <td colspan={ADMIN_ROLES.length + 1} class="text-sm uppercase text-[var(--gs-text-secondary)]">{group.label}</td>
+                  <td colspan={ADMIN_ROLES.length + 1} class="gs-text-sm gs-text-subtle">{group.label}</td>
                 </tr>
                 {group.permissions.map((permission) => (
                   <tr>

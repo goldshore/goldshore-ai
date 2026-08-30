@@ -443,3 +443,36 @@
 /* Constrains a form or reading column — was `max-w-2xl` / `max-w-4xl`. */
 .gs-admin-body .gs-measure { max-width: 42rem; }
 .gs-admin-body .gs-measure--wide { max-width: 56rem; }
+
+/* An inline text link or a link-styled <button>/<summary>. Referenced by
+ * deploy.astro, services/index.astro and products/index.astro, but never
+ * defined — those controls rendered as default buttons and disclosure
+ * triangles. `.gs-inline-link` exists in the theme but lives in a stylesheet
+ * AdminLayout.astro does not import. */
+.gs-admin-body .gs-link {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--gs-accent-strong, var(--gs-color-accent, #d6b26a));
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  cursor: pointer;
+}
+
+.gs-admin-body .gs-link:hover,
+.gs-admin-body .gs-link:focus-visible {
+  color: var(--gs-color-text, #f5f5f4);
+}
+
+/* Touch targets: a link-styled control still has to be reachable with a
+ * thumb, but it is inline text, so pad the row rather than the glyph. */
+@media (pointer: coarse) {
+  .gs-admin-body button.gs-link,
+  .gs-admin-body summary.gs-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+}

@@ -43,11 +43,11 @@ try {
   error = e instanceof Error ? e.message : `Failed to load ${entryType}`;
 }
 
-const statusColors: Record<string, { bg: string; text: string; badge: string }> = {
-  new: { bg: 'bg-blue-50', text: 'text-blue-900', badge: 'bg-blue-100 text-blue-800' },
-  contacted: { bg: 'bg-yellow-50', text: 'text-yellow-900', badge: 'bg-yellow-100 text-yellow-800' },
-  qualified: { bg: 'bg-green-50', text: 'text-green-900', badge: 'bg-green-100 text-green-800' },
-  rejected: { bg: 'bg-red-50', text: 'text-red-900', badge: 'bg-red-100 text-red-800' },
+const statusColors: Record<string, { panel: string; badge: string }> = {
+  new: { panel: 'gs-alert--info', badge: 'info' },
+  contacted: { panel: 'gs-alert--warning', badge: 'warning' },
+  qualified: { panel: 'gs-alert--success', badge: 'success' },
+  rejected: { panel: 'gs-alert--error', badge: 'danger' },
 };
 
 const colors = entry ? statusColors[entry.status] : statusColors.new;
@@ -72,11 +72,11 @@ const typeLabel = entryType === 'contact' ? 'Contact Form Submission' : 'Lead';
           <a href="/admin/entries" >← Back to Entries</a>
         </div>
 
-        <div class={`${colors.bg} ${colors.text} p-6 rounded-lg mb-6`}>
+        <div class={`gs-alert ${colors.panel} gs-stack`}>
           <div class="gs-grid columns-4">
             <div>
               <p class="gs-text-sm">Status</p>
-              <p class={`text-2xl font-bold mt-2 inline-block px-3 py-1 rounded ${colors.badge}`}>
+              <p class={`gs-badge ${colors.badge}`}>
                 {entry.status.charAt(0).toUpperCase() + entry.status.slice(1)}
               </p>
             </div>

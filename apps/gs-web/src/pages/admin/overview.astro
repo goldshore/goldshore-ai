@@ -90,7 +90,7 @@ const recentDeploys: Array<{ label: string; time: string; env: string; ok: boole
                 <td>{d.label}</td>
                 <td>{d.time}</td>
                 <td><code>{d.env}</code></td>
-                <td class={d.ok ? 'gs-status--ok' : 'gs-status--err'}>{d.ok ? 'Success' : 'Failed'}</td>
+                <td class={d.ok ? 'gs-status-ok' : 'gs-status-error'}>{d.ok ? 'Success' : 'Failed'}</td>
               </tr>
             ))}
           </tbody>
@@ -109,7 +109,7 @@ const recentDeploys: Array<{ label: string; time: string; env: string; ok: boole
             <td><code>KV</code></td>
             <td>KV Namespace</td>
             <td>gs_admin_kv_001</td>
-            <td class={runtimeEnv['KV'] ? 'gs-status--ok' : 'gs-status--warn'}>
+            <td class={runtimeEnv['KV'] ? 'gs-status-ok' : 'gs-status-warning'}>
               {runtimeEnv['KV'] ? 'Bound' : 'Not bound'}
             </td>
           </tr>
@@ -117,7 +117,7 @@ const recentDeploys: Array<{ label: string; time: string; env: string; ok: boole
             <td><code>API_SERVICE</code></td>
             <td>Service binding</td>
             <td>gs-api (prod)</td>
-            <td class={runtimeEnv['API_SERVICE'] ? 'gs-status--ok' : 'gs-status--warn'}>
+            <td class={runtimeEnv['API_SERVICE'] ? 'gs-status-ok' : 'gs-status-warning'}>
               {runtimeEnv['API_SERVICE'] ? 'Bound' : 'Not bound'}
             </td>
           </tr>
