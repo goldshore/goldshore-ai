@@ -15,71 +15,71 @@ const menuItems = [
 ---
 
 <AdminLayout title="Admin Dashboard">
-  <div class="min-h-screen bg-gray-50">
-    <div class="max-w-7xl mx-auto px-4 py-12">
-      <div class="mb-8">
-        <h1 class="text-4xl font-bold text-gray-900">Admin Dashboard</h1>
-        <p class="text-lg text-gray-600 mt-2">Manage your platform infrastructure</p>
+  <div>
+    <div class="gs-page">
+      <div>
+        <h1 class="gs-heading">Admin Dashboard</h1>
+        <p class="gs-text-lg gs-text-subtle">Manage your platform infrastructure</p>
       </div>
 
-      <div class="grid md:grid-cols-5 gap-4 mb-12">
+      <div class="gs-grid columns-4">
         {menuItems.map((item) => (
           <a
             href={item.href}
-            class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow border-l-4 border-blue-500"
+            class="gs-card"
           >
-            <h3 class="text-lg font-semibold text-gray-900 mb-2">{item.name}</h3>
-            <p class="text-sm text-gray-600">Manage {item.name.toLowerCase()}</p>
+            <h3 class="gs-text-lg">{item.name}</h3>
+            <p class="gs-text-sm gs-text-subtle">Manage {item.name.toLowerCase()}</p>
           </a>
         ))}
       </div>
 
-      <div class="grid md:grid-cols-2 gap-6">
-        <div class="bg-white p-6 rounded-lg shadow">
-          <h2 class="text-xl font-bold mb-4">Quick Actions</h2>
-          <ul class="space-y-3">
+      <div class="gs-grid columns-2">
+        <div class="gs-card">
+          <h2>Quick Actions</h2>
+          <ul class="gs-stack-sm">
             <li>
-              <a href="/admin/customers" class="text-blue-500 hover:text-blue-700">
+              <a href="/admin/customers" >
                 → Manage customers
               </a>
             </li>
             <li>
-              <a href="/admin/subscriptions" class="text-blue-500 hover:text-blue-700">
+              <a href="/admin/subscriptions" >
                 → Manage subscriptions
               </a>
             </li>
             <li>
-              <a href="/admin/email" class="text-blue-500 hover:text-blue-700">
+              <a href="/admin/email" >
                 → Send an email
               </a>
             </li>
             <li>
-              <a href="/admin/entries" class="text-blue-500 hover:text-blue-700">
+              <a href="/admin/entries" >
                 → View submitted leads
               </a>
             </li>
             <li>
-              <a href="/admin/settings" class="text-blue-500 hover:text-blue-700">
+              <a href="/admin/settings" >
                 → Update settings
               </a>
             </li>
           </ul>
         </div>
 
-        <div class="bg-white p-6 rounded-lg shadow">
-          <h2 class="text-xl font-bold mb-4">System Status</h2>
-          <div class="space-y-3">
-            <div class="flex justify-between items-center pb-3 border-b">
-              <span class="text-gray-700">API Status</span>
-              <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">Online</span>
+        <div class="gs-card">
+          <h2>System Status</h2>
+          <div class="gs-stack-sm">
+            <div class="gs-row gs-row--between">
+              <span class="gs-text-subtle">API Status</span>
+              <span class="gs-badge success gs-text-sm">Online</span>
             </div>
-            <div class="flex justify-between items-center pb-3 border-b">
-              <span class="text-gray-700">Database</span>
-              <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">Connected</span>
+            <div class="gs-row gs-row--between">
+              <span class="gs-text-subtle">Database</span>
+              <span class="gs-badge success gs-text-sm">Connected</span>
             </div>
-            <div class="flex justify-between items-center">
-              <span class="text-gray-700">Email Service</span>
-              <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">Pending Config</span>
+            <div class="gs-row gs-row--between">
+              <span class="gs-text-subtle">Email Service</span>
+              <span class="gs-badge warning gs-text-sm">Pending Config</span>
             </div>
           </div>
         </div>

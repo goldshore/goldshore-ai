@@ -70,58 +70,58 @@ const buildQueryString = (newParams: Record<string, string>) => {
 ---
 
 <AdminLayout title="Repo Health Findings | GoldShore Admin">
-  <div class="max-w-7xl mx-auto p-8 space-y-8">
-    <div class="flex justify-between items-start">
+  <div class="gs-page gs-stack">
+    <div class="gs-row gs-row--between gs-row--start">
       <div>
-        <h1 class="text-4xl gs-heading gs-text-accent">Audit Findings</h1>
-        <p class="text-lg gs-text-subtle mt-2">Complete list of repository audit findings and security issues.</p>
+        <h1 class="gs-heading gs-text-accent">Audit Findings</h1>
+        <p class="gs-text-lg gs-text-subtle">Complete list of repository audit findings and security issues.</p>
       </div>
       <GSButton variant="secondary" href="/admin/repo-health">← Back to Summary</GSButton>
     </div>
 
     {error && (
-      <div class="gs-card border-l-4 border-red-500 bg-red-50">
-        <p class="gs-text-danger font-semibold">Error loading findings</p>
-        <p class="text-sm gs-text-subtle mt-1">{error}</p>
+      <div class="gs-card">
+        <p class="gs-text-danger">Error loading findings</p>
+        <p class="gs-text-sm gs-text-subtle">{error}</p>
       </div>
     )}
 
     {!error && (
       <>
         {/* Summary Cards */}
-        <div class="grid md:grid-cols-4 gap-6">
-          <div class="gs-card space-y-3">
-            <h2 class="text-sm font-semibold gs-text-muted uppercase tracking-wider">Total Findings</h2>
-            <p class="text-5xl font-bold gs-text-accent">{total}</p>
-            <p class="text-xs gs-text-subtle">All issues across severities</p>
+        <div class="gs-list-grid">
+          <div class="gs-card gs-stack-sm">
+            <h2 class="gs-text-sm gs-text-subtle">Total Findings</h2>
+            <p class="gs-stat gs-text-accent">{total}</p>
+            <p class="gs-text-sm gs-text-subtle">All issues across severities</p>
           </div>
 
-          <div class="gs-card space-y-3">
-            <h2 class="text-sm font-semibold gs-text-muted uppercase tracking-wider">Critical</h2>
-            <p class="text-5xl font-bold gs-text-critical">{criticalCount}</p>
-            <p class="text-xs gs-text-subtle">Requires immediate action</p>
+          <div class="gs-card gs-stack-sm">
+            <h2 class="gs-text-sm gs-text-subtle">Critical</h2>
+            <p class="gs-stat gs-text-critical">{criticalCount}</p>
+            <p class="gs-text-sm gs-text-subtle">Requires immediate action</p>
           </div>
 
-          <div class="gs-card space-y-3">
-            <h2 class="text-sm font-semibold gs-text-muted uppercase tracking-wider">High</h2>
-            <p class="text-5xl font-bold gs-text-warning">{highCount}</p>
-            <p class="text-xs gs-text-subtle">Address this sprint</p>
+          <div class="gs-card gs-stack-sm">
+            <h2 class="gs-text-sm gs-text-subtle">High</h2>
+            <p class="gs-stat gs-text-warning">{highCount}</p>
+            <p class="gs-text-sm gs-text-subtle">Address this sprint</p>
           </div>
 
-          <div class="gs-card space-y-3">
-            <h2 class="text-sm font-semibold gs-text-muted uppercase tracking-wider">Results</h2>
-            <p class="text-5xl font-bold gs-text-accent">{findings.length}</p>
-            <p class="text-xs gs-text-subtle">On this page</p>
+          <div class="gs-card gs-stack-sm">
+            <h2 class="gs-text-sm gs-text-subtle">Results</h2>
+            <p class="gs-stat gs-text-accent">{findings.length}</p>
+            <p class="gs-text-sm gs-text-subtle">On this page</p>
           </div>
         </div>
 
         {/* Filters */}
-        <div class="gs-card space-y-4">
-          <h2 class="text-lg font-semibold">Filters</h2>
-          <div class="flex flex-wrap gap-4">
+        <div class="gs-card gs-stack">
+          <h2 class="gs-text-lg">Filters</h2>
+          <div class="gs-row">
             <div>
-              <label class="text-sm font-medium gs-text-muted block mb-2">Severity</label>
-              <select class="px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm"
+              <label class="gs-text-sm gs-text-subtle">Severity</label>
+              <select class="gs-text-sm"
                 onchange={`window.location.href='?${buildQueryString({ ...Object.fromEntries(new URLSearchParams(window.location.search)), severity: this.value || '' })}'`}>
                 <option value="">All severities</option>
                 <option value="critical" selected={severity === 'critical'}>Critical</option>
@@ -131,8 +131,8 @@ const buildQueryString = (newParams: Record<string, string>) => {
               </select>
             </div>
             <div>
-              <label class="text-sm font-medium gs-text-muted block mb-2">Status</label>
-              <select class="px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm"
+              <label class="gs-text-sm gs-text-subtle">Status</label>
+              <select class="gs-text-sm"
                 onchange={`window.location.href='?${buildQueryString({ ...Object.fromEntries(new URLSearchParams(window.location.search)), status: this.value || '' })}'`}>
                 <option value="">All statuses</option>
                 <option value="open" selected={status === 'open'}>Open</option>
@@ -144,33 +144,32 @@ const buildQueryString = (newParams: Record<string, string>) => {
         </div>
 
         {/* Findings List */}
-        <div class="gs-card space-y-4">
-          <h2 class="text-lg font-semibold">Issues ({findings.length} of {total})</h2>
+        <div class="gs-card gs-stack">
+          <h2 class="gs-text-lg">Issues ({findings.length} of {total})</h2>
 
           {findings.length === 0 ? (
-            <p class="gs-text-muted py-8 text-center">No findings match your filters.</p>
+            <p class="gs-text-subtle">No findings match your filters.</p>
           ) : (
-            <div class="space-y-3">
+            <div class="gs-stack-sm">
               {findings.map((finding) => (
                 <a
                   href={finding.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="block p-4 border border-gray-200 rounded hover:bg-gray-50 transition-colors"
                 >
-                  <div class="flex justify-between items-start gap-4 mb-3">
-                    <div class="flex items-center gap-2">
-                      <span class={`inline-block px-2 py-0.5 text-xs font-semibold rounded ${severityColors[finding.severity]}`}>
+                  <div class="gs-row gs-row--between gs-row--start">
+                    <div class="gs-row">
+                      <span class={`gs-text-sm ${severityColors[finding.severity]}`}>
                         {finding.severity.toUpperCase()}
                       </span>
-                      <span class="text-xs gs-text-muted font-mono">
+                      <span class="gs-text-sm gs-text-subtle gs-mono">
                         #{finding.issue_id}
                       </span>
                     </div>
-                    <span class={`text-xs font-semibold px-2 py-1 rounded whitespace-nowrap ${
-                      finding.status === 'open' ? 'bg-red-100 text-red-700' :
-                      finding.status === 'in_progress' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-green-100 text-green-700'
+                    <span class={`gs-badge ${
+                      finding.status === 'open' ? 'danger' :
+                      finding.status === 'in_progress' ? 'warning' :
+                      'success'
                     }`}>
                       {finding.status === 'open' ? 'Open' :
                        finding.status === 'in_progress' ? 'In Progress' :
@@ -178,21 +177,21 @@ const buildQueryString = (newParams: Record<string, string>) => {
                     </span>
                   </div>
 
-                  <p class="font-semibold gs-text-accent mb-2">{finding.title}</p>
+                  <p class="gs-text-accent">{finding.title}</p>
 
                   {finding.description && (
-                    <p class="text-sm gs-text-subtle mb-2">{finding.description}</p>
+                    <p class="gs-text-sm gs-text-subtle">{finding.description}</p>
                   )}
 
-                  <div class="flex flex-wrap gap-2 mb-2">
+                  <div class="gs-row">
                     {finding.labels.map((label) => (
-                      <span class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                      <span class="gs-text-sm gs-text-subtle">
                         {label}
                       </span>
                     ))}
                   </div>
 
-                  <div class="flex gap-4 text-xs gs-text-muted">
+                  <div class="gs-row gs-text-sm gs-text-subtle">
                     <span>Created: {new Date(finding.created_at).toLocaleDateString()}</span>
                     <span>Updated: {new Date(finding.updated_at).toLocaleDateString()}</span>
                     {finding.resolution_date && (
@@ -207,21 +206,19 @@ const buildQueryString = (newParams: Record<string, string>) => {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div class="gs-card flex justify-center items-center gap-2">
+          <div class="gs-card gs-row">
             {page > 1 && (
-              <a href={`?${buildQueryString({ ...Object.fromEntries(new URLSearchParams(window.location.search)), page: String(page - 1) })}`}
-                class="px-3 py-2 border border-gray-300 rounded hover:bg-gray-50">
+              <a href={`?${buildQueryString({ ...Object.fromEntries(new URLSearchParams(window.location.search)), page: String(page - 1) })}`}>
                 ← Previous
               </a>
             )}
 
-            <span class="text-sm gs-text-muted">
+            <span class="gs-text-sm gs-text-subtle">
               Page {page} of {totalPages}
             </span>
 
             {page < totalPages && (
-              <a href={`?${buildQueryString({ ...Object.fromEntries(new URLSearchParams(window.location.search)), page: String(page + 1) })}`}
-                class="px-3 py-2 border border-gray-300 rounded hover:bg-gray-50">
+              <a href={`?${buildQueryString({ ...Object.fromEntries(new URLSearchParams(window.location.search)), page: String(page + 1) })}`}>
                 Next →
               </a>
             )}

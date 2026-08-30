@@ -35,38 +35,38 @@ const leads = entries.items?.filter((e: any) => e.type === 'lead') || [];
 ---
 
 <AdminLayout title="Admin | Entries">
-  <div class="max-w-7xl mx-auto p-8 space-y-8">
-    <div class="space-y-2">
-      <h1 class="text-4xl gs-heading gs-text-accent">Entries Management</h1>
-      <p class="text-lg gs-text-subtle">Manage contact form submissions and lead submissions.</p>
+  <div class="gs-page gs-stack">
+    <div class="gs-stack-sm">
+      <h1 class="gs-heading gs-text-accent">Entries Management</h1>
+      <p class="gs-text-subtle gs-text-lg">Manage contact form submissions and lead submissions.</p>
     </div>
 
     {entries.error && (
-      <div class="p-4 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+      <div class="gs-alert gs-alert--error gs-text-sm">
         {entries.error}
       </div>
     )}
 
-    <div class="grid md:grid-cols-3 gap-6">
-      <div class="gs-card space-y-3">
-        <h2 class="text-xl font-semibold">Total Entries</h2>
-        <p class="text-3xl font-bold gs-text-info">{entries.total}</p>
-        <p class="text-sm gs-text-subtle">Contacts and leads combined</p>
+    <div class="gs-grid columns-3">
+      <div class="gs-card gs-stack-sm">
+        <h2>Total Entries</h2>
+        <p class="gs-text-info gs-heading">{entries.total}</p>
+        <p class="gs-text-subtle gs-text-sm">Contacts and leads combined</p>
       </div>
-      <div class="gs-card space-y-3">
-        <h2 class="text-xl font-semibold">Contact Submissions</h2>
-        <p class="text-3xl font-bold gs-text-info">{contacts.length}</p>
-        <p class="text-sm gs-text-subtle">From contact forms</p>
+      <div class="gs-card gs-stack-sm">
+        <h2>Contact Submissions</h2>
+        <p class="gs-text-info gs-heading">{contacts.length}</p>
+        <p class="gs-text-subtle gs-text-sm">From contact forms</p>
       </div>
-      <div class="gs-card space-y-3">
-        <h2 class="text-xl font-semibold">Lead Submissions</h2>
-        <p class="text-3xl font-bold gs-text-info">{leads.length}</p>
-        <p class="text-sm gs-text-subtle">From lead forms</p>
+      <div class="gs-card gs-stack-sm">
+        <h2>Lead Submissions</h2>
+        <p class="gs-text-info gs-heading">{leads.length}</p>
+        <p class="gs-text-subtle gs-text-sm">From lead forms</p>
       </div>
     </div>
 
-    <div class="gs-card space-y-4">
-      <h2 class="text-2xl font-semibold">All Entries</h2>
+    <div class="gs-card gs-stack-sm">
+      <h2>All Entries</h2>
       <EntriesManager client:load jwtToken={jwtToken} initialEntries={entries.items} />
     </div>
   </div>
