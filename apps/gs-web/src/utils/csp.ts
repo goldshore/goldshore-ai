@@ -23,6 +23,7 @@ export const WEB_CSP_DIRECTIVES = {
   'font-src': [SELF, 'https://fonts.gstatic.com'],
   'img-src': [SELF, 'data:', 'https://*.cloudflare.com'],
   'connect-src': [...BROWSER_CONNECT_SRC],
+  'frame-src': ['https://*.cloudflare.com'],
   'object-src': [NONE],
   'base-uri': [SELF],
 } as const satisfies ContentSecurityPolicyDirectives;
@@ -50,4 +51,3 @@ export function buildContentSecurityPolicy(
 export const WEB_META_CSP = buildContentSecurityPolicy(WEB_META_DIRECTIVES);
 export const WEB_HEADERS_CSP = buildContentSecurityPolicy(WEB_HEADER_DIRECTIVES);
 export const WEB_CONTENT_SECURITY_POLICY = WEB_HEADERS_CSP;
-

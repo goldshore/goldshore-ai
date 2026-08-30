@@ -5,9 +5,11 @@ import {
   authorizeAccessClaims,
 } from '@goldshore/auth';
 import { createCorsMiddleware, APPROVED_API_ORIGINS } from '@goldshore/shared';
+import { correlationIdMiddleware } from './middleware/correlation-id';
 import { EmailLogSchema } from '@goldshore/schema';
 import users from './routes/users';
-import health from './routes/health';
+import integrationKeys from './routes/integration-keys';
+import health, { readinessHandler } from './routes/health';
 import ai from './routes/ai';
 import user from './routes/user';
 import system from './routes/system';
@@ -23,19 +25,31 @@ import forms from './routes/forms';
 import deployments from './routes/deployments';
 import gearswipe from './routes/gearswipe';
 import services from './routes/services';
+import goldclaw from './routes/goldclaw';
 import agent from './routes/agent';
 import control from './routes/control';
 import core from './routes/core';
 import mail from './routes/mail';
 import trading from './routes/trading';
 import googleBusiness from './routes/google-business';
+import ebayOauth from './routes/oauth/ebay';
+import mcp from './routes/mcp';
+import invitations from './routes/invitations';
+import account from './routes/account';
+import webhooks from './routes/webhooks';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
 import type { Env, Variables } from './types';
 import { getHostRoutePrefix } from './host-routing';
 import { handleTokenRotation } from './workers/token-rotation';
 import { processQueueBatch } from './workers/queue-consumer';
+import {
+  getInternalAuthorizationEnv,
+  getInternalVerificationEnv,
+  isInternalPath,
+} from './lib/access-context';
 export { SignalsEvaluator } from './workers/signals-evaluator';
+export { EditorialProductionWorkflow } from './workers/editorial-production';
 
 interface ForwardableEmailMessage {
   from: string;
@@ -56,6 +70,13 @@ const app = new Hono<{
 
 const requiredBindings = ['PLATFORM_DB', 'GS_ASSETS', 'AI'] as const;
 const expectedD1Binding = 'PLATFORM_DB' as const;
+
+// Audience of the "Gold Shore Admin Production" Cloudflare Access
+// Application (admin.goldshore.ai/*). Not a secret — an Access audience is a
+// public app identifier baked into JWTs, useless without Cloudflare's
+// private signing key to forge one. Referenced by the /admin/* branch of the
+// auth middleware below; see the comment there for why this is needed.
+const ADMIN_PRODUCTION_ACCESS_AUDIENCE = 'c520a7647223b49b20fbe5be240772863eb684b97b57c08955b6104c58170db9';
 
 const DEFAULT_ALLOWED_ORIGINS = [...APPROVED_API_ORIGINS];
 
@@ -81,17 +102,31 @@ const isAllowedOrigin = (origin: string, allowedOrigins?: string) => {
 
 const isPublicPath = (path: string, method: string) => {
   if (method === 'OPTIONS') return true;
+  // GitHub authenticates these machine-to-machine requests with the
+  // X-Hub-Signature-256 HMAC verified by the webhook router. Requiring an
+  // interactive Access JWT here rejects GitHub before that verification can
+  // run, even when the edge Access application intentionally bypasses the
+  // signed webhook paths.
+  if (method === 'POST' && /^\/webhooks\/github\/[^/]+\/?$/i.test(path)) return true;
   if (method === 'POST' && /^\/v1\/forms\/[a-z0-9-]+\/submissions$/i.test(path)) return true;
+  if (path === '/v1/forms/newsletter/confirm' && (method === 'GET' || method === 'POST')) return true;
+  if (path === '/v1/forms/newsletter/preferences' && (method === 'GET' || method === 'PUT')) return true;
+  if (path === '/v1/forms/newsletter/unsubscribe' && method === 'GET') return true;
+  if (method === 'POST' && path === '/invitations/accept') return true;
+  if (method === 'GET' && /^\/pages\/public(?:\/slug\/[^/]+)?\/?$/.test(path)) return true;
   return (
     path === '/' ||
     path === '/version' ||
     path === '/health' ||
+    path === '/ready' ||
     path.startsWith('/health/') ||
     (method === 'POST' && /^\/v1\/forms\/[^/]+\/submissions$/.test(path)) ||
     // Per-service health probes (/agent/health, /mail/health, …) are not
     // covered by the /health/ prefix check above.
     /^\/(agent|mail|control|trading|core)\/health\/?$/.test(path) ||
     (method === 'GET' && path === '/admin/google/oauth/callback') ||
+    (method === 'GET' && path === '/goldclaw/oauth/google/callback') ||
+    (method === 'GET' && path === '/oauth/ebay/callback') ||
     path === '/mail/contact'
   );
 };
@@ -141,6 +176,8 @@ app.use(
   }),
 );
 
+app.use('*', correlationIdMiddleware);
+
 app.use('*', async (c, next) => {
   await next();
   const runtimeVersion = getRuntimeVersion(c.env);
@@ -169,12 +206,32 @@ app.use('*', async (c, next) => {
     return;
   }
 
-  const serviceRequest = c.req.path === '/internal' || c.req.path.startsWith('/internal/');
+  const serviceRequest = isInternalPath(c.req.path);
+  // Same admin-only surface, reached the same way (gs-web's service binding,
+  // never touching api.goldshore.ai's own Access edge): /admin/* itself, and
+  // /integrations/keys/* — the Secrets UI's backend, which lives outside the
+  // /admin prefix but has no other caller.
+  const adminSurfaceRequest =
+    c.req.path === '/admin' || c.req.path.startsWith('/admin/') ||
+    c.req.path === '/integrations/keys' || c.req.path.startsWith('/integrations/keys/') ||
+    c.req.path === '/goldclaw' || c.req.path.startsWith('/goldclaw/') ||
+    c.req.path === '/v1/deployments' || c.req.path.startsWith('/v1/deployments/');
   const accessEnv = serviceRequest
+    ? getInternalVerificationEnv(c.env, ADMIN_PRODUCTION_ACCESS_AUDIENCE)
+    : adminSurfaceRequest && c.env.CLOUDFLARE_ACCESS_AUDIENCE
     ? {
+        // gs-web reaches /admin/* through its `API` service binding, which
+        // never touches api.goldshore.ai's own Access-protected edge — so no
+        // fresh api-production-scoped JWT ever gets minted for this hop. The
+        // JWT it forwards is whatever the browser already holds for
+        // admin.goldshore.ai (audience ADMIN_PRODUCTION_ACCESS_AUDIENCE
+        // below), so gs-api's own verification must accept that audience too,
+        // specifically for this path prefix. CLOUDFLARE_ACCESS_APPLICATION
+        // stays api-production — the operators already hold an owner role
+        // for that application in access_application_roles, so authorization
+        // (not just authentication) succeeds once the audience check passes.
         ...c.env,
-        CLOUDFLARE_ACCESS_AUDIENCE: c.env.CLOUDFLARE_SERVICE_ACCESS_AUDIENCE,
-        CLOUDFLARE_ACCESS_APPLICATION: 'service-production',
+        CLOUDFLARE_ACCESS_AUDIENCE: [c.env.CLOUDFLARE_ACCESS_AUDIENCE, ADMIN_PRODUCTION_ACCESS_AUDIENCE],
       }
     : c.env;
   if (!accessEnv.CLOUDFLARE_ACCESS_AUDIENCE) {
@@ -185,8 +242,11 @@ app.use('*', async (c, next) => {
   }
 
   const verifiedClaims = await verifyAccessWithClaims(c.req.raw, accessEnv);
+  const authorizationEnv = verifiedClaims && serviceRequest
+    ? getInternalAuthorizationEnv(c.env, verifiedClaims)
+    : accessEnv;
   const claims = verifiedClaims
-    ? await authorizeAccessClaims(verifiedClaims, accessEnv)
+    ? await authorizeAccessClaims(verifiedClaims, authorizationEnv)
     : null;
   if (!claims) {
     return c.json({ error: 'Unauthorized' }, 401);
@@ -258,18 +318,28 @@ app.get('/version.json', (c) =>
 );
 
 app.route('/health', health);
+app.get('/ready', readinessHandler);
 app.route('/ai', ai);
 app.route('/users', users);
 app.route('/user', user);
 app.route('/system', system);
 app.route('/templates', templates);
+app.route('/invitations', invitations);
+app.route('/account', account);
 app.route('/admin', admin);
+// The admin Secrets UI (apps/gs-web/src/pages/admin/system/index.astro,
+// Secrets tab) proxies to /integrations/keys/*, not /admin/*. The router for
+// it existed (apps/gs-api/src/routes/integration-keys.ts) but was never
+// mounted anywhere, so every request 404d before even reaching auth -
+// entirely separate from the Access-audience bugs fixed elsewhere today.
+app.route('/integrations/keys', integrationKeys);
 app.route('/admin/google', googleBusiness);
 app.route('/media', media);
 app.route('/pages', pages);
 app.route('/internal', internal);
 app.route('/products', products);
 app.route('/services', services);
+app.route('/goldclaw', goldclaw);
 // Host aliases are rewritten into these shared route modules above. They do
 // not own independent authentication, CORS, or security middleware stacks.
 app.route('/agent', agent);
@@ -277,6 +347,13 @@ app.route('/mail', mail);
 app.route('/control', control);
 app.route('/trading', trading);
 app.route('/core', core);
+app.route('/oauth/ebay', ebayOauth);
+app.route('/webhooks', webhooks);
+// routes/mcp.ts replaced the standalone goldshore-mcp Worker (which 1101'd on
+// every request - placeholder KV id, no durable_objects block) but was never
+// mounted here, so the working replacement was dead code and the Cloudflare
+// MCP Portal fronting agent.goldshore.ai had nothing live to reach.
+app.route('/mcp', mcp);
 
 const v1 = new Hono<{ Bindings: Env }>();
 v1.route('/users', users);

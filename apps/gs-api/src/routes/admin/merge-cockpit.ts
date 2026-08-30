@@ -35,11 +35,11 @@ type CompareResponse = {
 
 const cockpit = new Hono<{ Bindings: Env; Variables: Variables }>();
 
-const tokenFor = (env: Env) => env.GITHUB_API_TOKEN ?? env.GITHUB_TOKEN ?? env.GH_TOKEN;
+const tokenFor = (env: Env) => env.GH_PAT ?? env.GITHUB_API_TOKEN ?? env.GITHUB_TOKEN;
 
 const github = async <T>(env: Env, path: string, init: RequestInit = {}): Promise<T> => {
   const token = tokenFor(env);
-  if (!token) throw new Error('GITHUB_API_TOKEN is not configured.');
+  if (!token) throw new Error('GH_PAT is not configured.');
   const response = await fetch(path.startsWith('https://') ? path : `${API}${path}`, {
     ...init,
     headers: {

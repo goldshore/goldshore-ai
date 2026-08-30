@@ -1,0 +1,207 @@
+---
+export const prerender = false;
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+
+const requestedTab = Astro.url.searchParams.get('tab');
+const TABS = ['overview', 'secrets', 'storage', 'dns', 'pages'] as const;
+const initialTab = (TABS as readonly string[]).includes(requestedTab ?? '') ? requestedTab! : 'overview';
+---
+
+<AdminLayout title="System & Infra | GoldShore Admin" requiredPermission="cloudflare_inventory:read">
+  <div class="gs-admin-page" data-initial-tab={initialTab}>
+    <header class="gs-page-header">
+      <div>
+        <h1>System &amp; Infra</h1>
+        <p>Cloudflare control-plane state, secrets, storage, DNS, and Pages through the canonical gs-web → gs-api service path.</p>
+      </div>
+      <div class="gs-toolbar">
+        <button id="refresh-system" class="gs-btn-secondary" type="button">Refresh</button>
+      </div>
+    </header>
+
+    <nav class="gs-tabs" role="tablist" aria-label="System sections">
+      {TABS.map((tab) => <button type="button" class="gs-tab" data-tab={tab} role="tab" aria-selected={String(tab === initialTab)}>{tab[0].toUpperCase() + tab.slice(1)}</button>)}
+    </nav>
+
+    <section class="gs-admin-grid" data-panel="overview">
+      <article class="gs-module gs-span-4" data-draggable="true" data-resizable="true">
+        <header class="gs-module-header"><h2>Cloudflare API</h2><span id="cf-api-signal" class="gs-status gs-status-pending"><i></i>Checking</span></header>
+        <div class="gs-module-body"><dl class="gs-kv-list"><div><dt>Account ID</dt><dd id="cf-account">—</dd></div><div><dt>API token</dt><dd id="cf-token">—</dd></div><div><dt>Zone ID</dt><dd id="cf-zone">—</dd></div></dl></div>
+      </article>
+      <article class="gs-module gs-span-8" data-draggable="true" data-resizable="true">
+        <header class="gs-module-header"><h2>Runtime bindings</h2><span id="binding-count" class="gs-status gs-status-info"><i></i>Loading</span></header>
+        <div class="gs-module-body"><div id="binding-grid" class="binding-grid"><p class="gs-muted">Reading live gs-api runtime bindings…</p></div></div>
+      </article>
+      <article class="gs-module gs-span-12">
+        <header class="gs-module-header"><div><h2>Transport contract</h2><p class="gs-data-description">Admin requests stay inside Cloudflare over the gs-web API service binding; browser code never needs a Cloudflare account token.</p></div></header>
+        <div class="gs-module-body transport-flow"><code>admin.goldshore.ai</code><span>→</span><code>gs-web</code><span>→ service binding →</span><code>gs-api</code><span>→</span><code>Cloudflare API / D1 / R2 / KV</code></div>
+      </article>
+    </section>
+
+    <section class="gs-admin-grid" data-panel="secrets" hidden>
+      <article class="gs-module gs-span-12">
+        <header class="gs-module-header">
+          <div><h2>Secrets &amp; integration credentials</h2><p class="gs-data-description">Metadata only. Secret values are encrypted by gs-api and never returned to this surface.</p></div>
+          <button id="new-secret" class="gs-btn-primary" type="button">+ New secret</button>
+        </header>
+        <div class="gs-module-body">
+          <div class="gs-filterbar">
+            <input id="filter-integration" class="gs-input" placeholder="Filter integration" />
+            <select id="filter-type" class="gs-input"><option value="">All types</option><option value="apiKey">API key</option><option value="apiSecret">API secret</option><option value="webhook_secret">Webhook secret</option><option value="oauth_token">OAuth token</option></select>
+            <label class="gs-check"><input id="include-expired" type="checkbox" /> Include expired</label>
+            <button id="apply-filter" class="gs-btn-secondary" type="button">Apply</button>
+          </div>
+          <div id="secret-error" class="gs-error-state" hidden></div>
+          <div class="gs-table-wrap"><table class="gs-admin-table"><thead><tr><th>Integration</th><th>Type</th><th>Identifier</th><th>Expires</th><th>Rotations</th><th>Actions</th></tr></thead><tbody id="secret-rows"><tr><td colspan="6">Loading…</td></tr></tbody></table></div>
+          <footer class="gs-table-footer"><span id="page-summary"></span><div><button id="previous-page" class="gs-btn-secondary" type="button">Previous</button><button id="next-page" class="gs-btn-secondary" type="button">Next</button></div></footer>
+        </div>
+      </article>
+    </section>
+
+    <dialog id="secret-dialog" class="gs-modal">
+      <form id="secret-form" method="dialog" class="gs-modal-card">
+        <header><h2 id="dialog-title">Create secret</h2><button id="close-dialog" type="button" class="gs-icon-button" aria-label="Close">×</button></header>
+        <input id="secret-id" type="hidden" />
+        <label>Integration ID<input id="integration-id" class="gs-input" required pattern="[A-Za-z0-9][A-Za-z0-9_-]{1,63}" /></label>
+        <label>Key type<select id="key-type" class="gs-input"><option value="apiKey">API key</option><option value="apiSecret">API secret</option><option value="webhook_secret">Webhook secret</option><option value="oauth_token">OAuth token</option></select></label>
+        <label><span id="value-label">Secret value</span><textarea id="secret-value" class="gs-input" rows="5" minlength="8" maxlength="16384" required autocomplete="new-password"></textarea></label>
+        <label>Expires at<input id="expires-at" type="datetime-local" class="gs-input" /></label>
+        <footer><button id="cancel-dialog" type="button" class="gs-btn-secondary">Cancel</button><button type="submit" class="gs-btn-primary">Save securely</button></footer>
+      </form>
+    </dialog>
+
+    <section class="gs-admin-grid" data-panel="storage" hidden>
+      <article class="gs-module gs-span-12">
+        <header class="gs-module-header"><div><h2>Media storage</h2><p class="gs-data-description">Authenticated asset inventory backed by GS_ASSETS with durable metadata.</p></div><button id="refresh-assets" class="gs-btn-secondary" type="button">Refresh</button></header>
+        <div class="gs-module-body">
+          <form id="upload" class="gs-filterbar"><input id="file" name="file" type="file" accept=".png,.jpg,.jpeg,.svg,image/png,image/jpeg,image/svg+xml" required /><button type="submit" class="gs-btn-primary">Upload</button><span id="media-message" class="gs-muted">PNG, JPEG, or sanitized SVG; max 5 MB.</span></form>
+          <div id="assets" class="asset-grid"><div class="gs-empty"><strong>Loading assets…</strong></div></div>
+          <footer class="gs-table-footer"><span id="asset-page"></span><div><button id="asset-previous" class="gs-btn-secondary" type="button">Previous</button><button id="asset-next" class="gs-btn-secondary" type="button">Next</button></div></footer>
+        </div>
+      </article>
+    </section>
+
+    <section class="gs-admin-grid" data-panel="dns" hidden>
+      <article class="gs-module gs-span-12">
+        <header class="gs-module-header"><div><h2>DNS records</h2><p class="gs-data-description">Live Cloudflare records. Read state is retrieved with the scoped gs-api Cloudflare credential.</p></div><span id="dns-status" class="gs-status gs-status-pending"><i></i>Loading</span></header>
+        <div class="gs-module-body">
+          <div class="gs-filterbar"><input id="dns-search" class="gs-input" placeholder="Search hostname or target" /><select id="dns-type" class="gs-input"><option value="">All record types</option><option>A</option><option>AAAA</option><option>CNAME</option><option>MX</option><option>TXT</option><option>CAA</option></select><button id="dns-refresh" class="gs-btn-secondary" type="button">Refresh</button></div>
+          <div id="dns-error" class="gs-error-state" hidden></div>
+          <div class="gs-table-wrap"><table class="gs-admin-table"><thead><tr><th><input id="dns-select-all" type="checkbox" aria-label="Select all DNS records" /></th><th>Type</th><th>Name</th><th>Content</th><th>Proxy</th><th>TTL</th><th>Modified</th></tr></thead><tbody id="dns-rows"><tr><td colspan="7">Loading…</td></tr></tbody></table></div>
+          <footer class="gs-table-footer"><span id="dns-summary"></span></footer>
+        </div>
+      </article>
+    </section>
+
+    <section class="gs-admin-grid" data-panel="pages" hidden>
+      <article class="gs-module gs-span-12">
+        <header class="gs-module-header"><div><h2>Cloudflare Pages</h2><p class="gs-data-description">Projects are shown as legacy/deployment surfaces only; gs-web itself remains a Worker + Assets application.</p></div><span id="pages-status" class="gs-status gs-status-pending"><i></i>Loading</span></header>
+        <div class="gs-module-body">
+          <div class="gs-filterbar"><input id="pages-search" class="gs-input" placeholder="Search project or domain" /><button id="pages-refresh" class="gs-btn-secondary" type="button">Refresh</button></div>
+          <div id="pages-error" class="gs-error-state" hidden></div>
+          <div class="gs-table-wrap"><table class="gs-admin-table"><thead><tr><th>Project</th><th>Domains</th><th>Production branch</th><th>Latest deployment</th><th>Status</th><th>Created</th></tr></thead><tbody id="pages-rows"><tr><td colspan="6">Loading…</td></tr></tbody></table></div>
+          <footer class="gs-table-footer"><span id="pages-summary"></span></footer>
+        </div>
+      </article>
+    </section>
+  </div>
+</AdminLayout>
+
+<style>
+  .gs-admin-page { max-width: 1480px; margin: 0 auto; padding: clamp(72px, 8vw, 96px) clamp(16px, 3vw, 36px) 48px; }
+  .gs-page-header { display:flex; justify-content:space-between; gap:20px; align-items:flex-end; margin-bottom:18px; }
+  .gs-page-header h1 { margin:0; font-size:clamp(2rem,4vw,3.5rem); letter-spacing:-.045em; }
+  .gs-page-header p { max-width:780px; margin:.55rem 0 0; color:var(--admin-muted); line-height:1.55; }
+  .gs-admin-grid { margin-top:14px; }
+  [data-panel][hidden] { display:none !important; }
+  .gs-kv-list { margin:0; display:grid; gap:10px; }
+  .gs-kv-list div { display:flex; justify-content:space-between; gap:18px; padding-bottom:9px; border-bottom:1px solid rgba(15,17,21,.08); }
+  .gs-kv-list dt { color:#68717b; } .gs-kv-list dd { margin:0; font-weight:650; color:#0f1115; }
+  .binding-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px; }
+  .binding-pill { border:1px solid rgba(15,17,21,.09); background:#f3f2ee; padding:10px; min-height:52px; display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .transport-flow { display:flex; gap:10px; flex-wrap:wrap; align-items:center; color:#68717b; }
+  .transport-flow code { color:#0f1115; background:#f1f0ec; border:1px solid rgba(15,17,21,.08); padding:6px 9px; }
+  .gs-check { display:inline-flex; gap:7px; align-items:center; color:#525b65; font-size:.78rem; }
+  .gs-table-footer { display:flex; justify-content:space-between; align-items:center; gap:12px; padding-top:12px; color:#68717b; font-size:.75rem; }
+  .gs-table-footer > div { display:flex; gap:6px; }
+  .asset-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; }
+  .asset { border:1px solid rgba(15,17,21,.08); background:#f4f3ef; padding:8px; min-width:0; }
+  .asset img { width:100%; aspect-ratio:4/3; object-fit:cover; background:#0a0a0b; }
+  .asset b,.asset span,.asset small { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .asset b { margin-top:7px; font-size:.78rem; } .asset span,.asset small { color:#737b84; font-size:.68rem; margin-top:3px; }
+  .gs-modal { border:0; padding:0; background:transparent; width:min(560px,calc(100vw - 24px)); }
+  .gs-modal::backdrop { background:rgba(0,0,0,.72); }
+  .gs-modal-card { display:grid; gap:14px; background:#faf9f6; color:#0f1115; border:1px solid #deddd8; border-radius:6px; padding:18px; box-shadow:0 28px 80px rgba(0,0,0,.55); }
+  .gs-modal-card header,.gs-modal-card footer { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+  .gs-modal-card h2 { margin:0; }.gs-modal-card label { display:grid; gap:6px; color:#59616b; font-size:.76rem; }
+  @media(max-width:720px){ .gs-page-header{align-items:flex-start;flex-direction:column}.gs-table-wrap{overflow:auto}.gs-admin-table{min-width:760px}.transport-flow{font-size:.72rem} }
+</style>
+
+<script define:vars={{ initialTab }}>
+  const tabs = [...document.querySelectorAll('.gs-tab[data-tab]')];
+  const panels = [...document.querySelectorAll('[data-panel]')];
+  const activate = (id) => {
+    for (const tab of tabs) tab.setAttribute('aria-selected', String(tab.dataset.tab === id));
+    for (const panel of panels) panel.hidden = panel.dataset.panel !== id;
+    const url = new URL(location.href); url.searchParams.set('tab', id); history.replaceState({}, '', url);
+  };
+  tabs.forEach((tab) => tab.addEventListener('click', () => activate(tab.dataset.tab)));
+  activate(initialTab);
+</script>
+
+<script>
+  import { adminApi, adminApiMessage } from '../../../lib/admin-api-client';
+
+  type Secret = { id:string; integration_id:string; key_type:string; key_prefix:string; created_at:string; rotated_at:string|null; expires_at:string|null; rotation_count:number };
+  type DnsRecord = { id:string; type:string; name:string; content:string; proxied:boolean|null; ttl:number; modifiedOn:string };
+  type PagesProject = { name:string; subdomain?:string; domains:string[]; productionBranch?:string; createdOn?:string; latestDeployment?:{id:string;environment?:string;url?:string;createdOn?:string;status?:string}|null };
+
+  const text = (selector:string, value:string) => { const el=document.querySelector<HTMLElement>(selector); if(el) el.textContent=value; };
+  const status = (selector:string, tone:'ok'|'warning'|'error'|'info'|'pending', value:string) => { const el=document.querySelector<HTMLElement>(selector); if(!el)return; el.className=`gs-status gs-status-${tone}`; el.innerHTML='<i></i>'; el.append(document.createTextNode(value)); };
+  const errorBox = (selector:string, message?:string) => { const el=document.querySelector<HTMLElement>(selector); if(!el)return; el.hidden=!message; if(message){ el.replaceChildren(); const wrap=document.createElement('div'); const strong=document.createElement('strong'); strong.textContent='Unable to load data'; const p=document.createElement('p'); p.textContent=message; wrap.append(strong,p); el.append(wrap); } };
+  const td = (value:string) => { const cell=document.createElement('td'); cell.textContent=value; return cell; };
+
+  async function loadOverview(){
+    const result=await adminApi<any>('/api/admin/cf/overview');
+    if(!result.ok){ status('#cf-api-signal','error','Unavailable'); text('#cf-account','Error'); text('#cf-token','Error'); text('#cf-zone','Error'); return; }
+    const c=result.data.credentials||{}; status('#cf-api-signal',result.data.success?'ok':'warning',result.data.success?'Connected':'Incomplete');
+    text('#cf-account',c.accountIdConfigured?'Configured':'Missing'); text('#cf-token',c.apiTokenConfigured?'Configured':'Missing'); text('#cf-zone',c.zoneIdConfigured?'Configured / resolvable':'Resolve by zone name');
+    const grid=document.querySelector<HTMLElement>('#binding-grid'); if(!grid)return; grid.replaceChildren();
+    const entries=Object.entries(result.data.runtimeBindings||{}); text('#binding-count',`${entries.filter(([,v])=>v).length}/${entries.length} bound`);
+    for(const [name,bound] of entries){ const item=document.createElement('div'); item.className='binding-pill'; const label=document.createElement('code'); label.textContent=name; const signal=document.createElement('span'); signal.className=`gs-status gs-status-${bound?'ok':'warning'}`; signal.innerHTML='<i></i>'; signal.append(document.createTextNode(bound?'Bound':'Missing')); item.append(label,signal); grid.append(item); }
+  }
+
+  let secretPage=1,secretPages=1;
+  const secretRows=document.querySelector<HTMLTableSectionElement>('#secret-rows');
+  const dialog=document.querySelector<HTMLDialogElement>('#secret-dialog'); const secretForm=document.querySelector<HTMLFormElement>('#secret-form');
+  const secretId=document.querySelector<HTMLInputElement>('#secret-id'); const integration=document.querySelector<HTMLInputElement>('#integration-id'); const keyType=document.querySelector<HTMLSelectElement>('#key-type'); const secretValue=document.querySelector<HTMLTextAreaElement>('#secret-value'); const expires=document.querySelector<HTMLInputElement>('#expires-at');
+  async function loadSecrets(){
+    if(!secretRows)return; const q=new URLSearchParams({offset:String((secretPage-1)*25),limit:'25'}); const filter=(document.querySelector<HTMLInputElement>('#filter-integration')?.value||'').trim(); const type=document.querySelector<HTMLSelectElement>('#filter-type')?.value||''; if(filter)q.set('integration_id',filter);if(type)q.set('key_type',type);if(document.querySelector<HTMLInputElement>('#include-expired')?.checked)q.set('include_expired','true');
+    const result=await adminApi<any>(`/api/admin/secrets?${q}`); secretRows.replaceChildren(); if(!result.ok){errorBox('#secret-error',adminApiMessage(result));const tr=document.createElement('tr');const c=td('Unavailable');c.colSpan=6;tr.append(c);secretRows.append(tr);return;} errorBox('#secret-error');
+    for(const s of result.data.items as Secret[]){const tr=document.createElement('tr');tr.append(td(s.integration_id),td(s.key_type),td(`${s.key_prefix}••••`),td(s.expires_at?new Date(s.expires_at).toLocaleString():'Never'),td(String(s.rotation_count)));const actions=td('');const rotate=document.createElement('button');rotate.className='gs-btn-secondary';rotate.textContent='Rotate';rotate.onclick=()=>openRotate(s);const revoke=document.createElement('button');revoke.className='gs-btn-secondary';revoke.textContent='Revoke';revoke.onclick=()=>revokeSecret(s);actions.append(rotate,revoke);tr.append(actions);secretRows.append(tr);} if(!result.data.items.length){const tr=document.createElement('tr');const c=td('No secret metadata matches this filter.');c.colSpan=6;tr.append(c);secretRows.append(tr);} secretPages=result.data.pagination?.pages||1;text('#page-summary',`Page ${result.data.pagination?.page||1} of ${secretPages} · ${result.data.pagination?.total||0} secrets`);
+  }
+  const openCreate=()=>{secretForm?.reset();if(secretId)secretId.value='';if(integration){integration.disabled=false;integration.value='';}if(keyType)keyType.disabled=false;text('#dialog-title','Create secret');text('#value-label','Secret value');dialog?.showModal();};
+  const openRotate=(s:Secret)=>{secretForm?.reset();if(secretId)secretId.value=s.id;if(integration){integration.value=s.integration_id;integration.disabled=true;}if(keyType){keyType.value=s.key_type;keyType.disabled=true;}text('#dialog-title',`Rotate ${s.integration_id}`);text('#value-label','New secret value');dialog?.showModal();};
+  const closeSecret=()=>{if(secretValue)secretValue.value='';dialog?.close();};
+  async function revokeSecret(s:Secret){if(!confirm(`Revoke ${s.key_type} for ${s.integration_id}?`))return;const result=await adminApi(`/api/admin/secrets/${encodeURIComponent(s.id)}`,{method:'DELETE'});if(!result.ok){errorBox('#secret-error',adminApiMessage(result));return;}await loadSecrets();}
+  secretForm?.addEventListener('submit',async(e)=>{e.preventDefault();const id=secretId?.value||'';const body=id?{action:'rotate',new_value:secretValue?.value}:{integration_id:integration?.value.trim(),key_type:keyType?.value,value:secretValue?.value,expires_at:expires?.value?new Date(expires.value).toISOString():undefined};const result=await adminApi(id?`/api/admin/secrets/${encodeURIComponent(id)}`:'/api/admin/secrets',{method:id?'PATCH':'POST',body:JSON.stringify(body)});if(!result.ok){errorBox('#secret-error',adminApiMessage(result));return;}closeSecret();await loadSecrets();});
+  document.querySelector('#new-secret')?.addEventListener('click',openCreate);document.querySelector('#close-dialog')?.addEventListener('click',closeSecret);document.querySelector('#cancel-dialog')?.addEventListener('click',closeSecret);document.querySelector('#apply-filter')?.addEventListener('click',()=>{secretPage=1;void loadSecrets();});document.querySelector('#previous-page')?.addEventListener('click',()=>{if(secretPage>1){secretPage--;void loadSecrets();}});document.querySelector('#next-page')?.addEventListener('click',()=>{if(secretPage<secretPages){secretPage++;void loadSecrets();}});
+
+  const assetState={offset:0,limit:24,hasNext:false};
+  async function loadAssets(){const result=await adminApi<any>(`/api/admin/media?limit=${assetState.limit}&offset=${assetState.offset}`);const grid=document.querySelector<HTMLElement>('#assets');if(!grid)return;grid.replaceChildren();if(!result.ok){const box=document.createElement('div');box.className='gs-error-state';box.textContent=adminApiMessage(result);grid.append(box);return;}assetState.hasNext=result.data.items.length===assetState.limit;text('#asset-page',result.data.items.length?`Items ${assetState.offset+1}–${assetState.offset+result.data.items.length}`:'No assets');for(const item of result.data.items){const card=document.createElement('article');card.className='asset';const link=document.createElement('a');link.href=`/api/admin/media/${encodeURIComponent(item.id)}`;link.target='_blank';link.rel='noopener';const img=document.createElement('img');img.src=link.href;img.alt=item.filename||'';img.loading='lazy';link.append(img);const name=document.createElement('b');name.textContent=item.filename;const meta=document.createElement('span');meta.textContent=`${item.type} · ${(Number(item.size)/1024).toFixed(1)} KB`;const time=document.createElement('small');time.textContent=new Date(item.created_at).toLocaleString();card.append(link,name,meta,time);grid.append(card);}}
+  document.querySelector<HTMLFormElement>('#upload')?.addEventListener('submit',async(e)=>{e.preventDefault();const form=e.currentTarget;const result=await adminApi<any>('/api/admin/media/upload',{method:'POST',body:new FormData(form)});if(!result.ok){text('#media-message',adminApiMessage(result));return;}text('#media-message',`Uploaded ${result.data.filename}.`);form.reset();assetState.offset=0;await loadAssets();});document.querySelector('#refresh-assets')?.addEventListener('click',()=>void loadAssets());document.querySelector('#asset-previous')?.addEventListener('click',()=>{assetState.offset=Math.max(0,assetState.offset-assetState.limit);void loadAssets();});document.querySelector('#asset-next')?.addEventListener('click',()=>{if(assetState.hasNext){assetState.offset+=assetState.limit;void loadAssets();}});
+
+  let dnsItems:DnsRecord[]=[];
+  function renderDns(){const rows=document.querySelector<HTMLTableSectionElement>('#dns-rows');if(!rows)return;rows.replaceChildren();const query=(document.querySelector<HTMLInputElement>('#dns-search')?.value||'').toLowerCase();const type=document.querySelector<HTMLSelectElement>('#dns-type')?.value||'';const filtered=dnsItems.filter(r=>(!type||r.type===type)&&(!query||r.name.toLowerCase().includes(query)||r.content.toLowerCase().includes(query)));for(const r of filtered){const tr=document.createElement('tr');const select=td('');const check=document.createElement('input');check.type='checkbox';check.setAttribute('aria-label',`Select ${r.name}`);select.append(check);tr.append(select,td(r.type),td(r.name),td(r.content),td(r.proxied===true?'Proxied':r.proxied===false?'DNS only':'—'),td(r.ttl===1?'Auto':String(r.ttl)),td(r.modifiedOn?new Date(r.modifiedOn).toLocaleString():'—'));rows.append(tr);}if(!filtered.length){const tr=document.createElement('tr');const c=td('No DNS records match the current filter.');c.colSpan=7;tr.append(c);rows.append(tr);}text('#dns-summary',`${filtered.length} of ${dnsItems.length} records`);}
+  async function loadDns(){status('#dns-status','pending','Loading');const result=await adminApi<any>('/api/admin/cf/dns');if(!result.ok){errorBox('#dns-error',adminApiMessage(result));status('#dns-status','error','Unavailable');dnsItems=[];renderDns();return;}errorBox('#dns-error');dnsItems=result.data.items||[];status('#dns-status','ok','Live');renderDns();}
+  document.querySelector('#dns-search')?.addEventListener('input',renderDns);document.querySelector('#dns-type')?.addEventListener('change',renderDns);document.querySelector('#dns-refresh')?.addEventListener('click',()=>void loadDns());document.querySelector<HTMLInputElement>('#dns-select-all')?.addEventListener('change',(e)=>{document.querySelectorAll<HTMLInputElement>('#dns-rows input[type=checkbox]').forEach(c=>c.checked=(e.currentTarget as HTMLInputElement).checked);});
+
+  let pagesItems:PagesProject[]=[];
+  function renderPages(){const rows=document.querySelector<HTMLTableSectionElement>('#pages-rows');if(!rows)return;rows.replaceChildren();const q=(document.querySelector<HTMLInputElement>('#pages-search')?.value||'').toLowerCase();const filtered=pagesItems.filter(p=>!q||p.name.toLowerCase().includes(q)||(p.domains||[]).some(d=>d.toLowerCase().includes(q)));for(const p of filtered){const dep=p.latestDeployment;const tr=document.createElement('tr');tr.append(td(p.name),td((p.domains||[]).join(', ')||p.subdomain||'—'),td(p.productionBranch||'—'),td(dep?.createdOn?new Date(dep.createdOn).toLocaleString():dep?.id||'—'),td(dep?.status||'—'),td(p.createdOn?new Date(p.createdOn).toLocaleString():'—'));rows.append(tr);}if(!filtered.length){const tr=document.createElement('tr');const c=td('No Pages projects match the current filter.');c.colSpan=6;tr.append(c);rows.append(tr);}text('#pages-summary',`${filtered.length} of ${pagesItems.length} projects`);}
+  async function loadPages(){status('#pages-status','pending','Loading');const result=await adminApi<any>('/api/admin/cf/pages');if(!result.ok){errorBox('#pages-error',adminApiMessage(result));status('#pages-status','error','Unavailable');pagesItems=[];renderPages();return;}errorBox('#pages-error');pagesItems=result.data.items||[];status('#pages-status','ok','Live');renderPages();}
+  document.querySelector('#pages-search')?.addEventListener('input',renderPages);document.querySelector('#pages-refresh')?.addEventListener('click',()=>void loadPages());
+
+  async function refreshAll(){await Promise.allSettled([loadOverview(),loadSecrets(),loadAssets(),loadDns(),loadPages()]);}
+  document.querySelector('#refresh-system')?.addEventListener('click',()=>void refreshAll());
+  void refreshAll();
+</script>

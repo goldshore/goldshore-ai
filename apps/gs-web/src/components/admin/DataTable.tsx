@@ -142,93 +142,89 @@ export default function DataTable<T extends { id?: string }>({
   const totalPages = Math.ceil(total / pageSize);
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-2xl font-bold">{title}</h2>
+    <div className="gs-stack-sm">
+      <h2>{title}</h2>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-lg">
+        <div className="gs-alert gs-alert--error">
           {error}
         </div>
       )}
 
       {loading ? (
-        <div className="border rounded-lg overflow-hidden">
-          <div className="w-full text-sm">
-            <div className="bg-gray-50 border-b">
-              <div className="px-4 py-3 flex gap-4">
+        <div className="gs-card">
+          <div className="gs-stack-sm">
+            <div>
+              <div className="gs-row">
                 {columns.map((col) => (
-                  <div key={String(col.key)} className="h-4 bg-gray-300 rounded animate-pulse flex-1" />
+                  <div key={String(col.key)} className="gs-skeleton gs-skeleton--grow" />
                 ))}
-                {actions && <div className="h-4 bg-gray-300 rounded animate-pulse w-20" />}
+                {actions && <div className="gs-skeleton gs-skeleton--sm" />}
               </div>
             </div>
             {Array.from({ length: Math.min(pageSize, 5) }).map((_, idx) => (
-              <div key={idx} className="border-b px-4 py-3 flex gap-4">
+              <div key={idx} className="gs-row">
                 {columns.map((col) => (
-                  <div key={String(col.key)} className="h-4 bg-gray-200 rounded animate-pulse flex-1" />
+                  <div key={String(col.key)} className="gs-skeleton gs-skeleton--grow" />
                 ))}
-                {actions && <div className="h-4 bg-gray-200 rounded animate-pulse w-20" />}
+                {actions && <div className="gs-skeleton gs-skeleton--sm" />}
               </div>
             ))}
           </div>
         </div>
       ) : data.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
+        <div className="gs-empty gs-text-subtle">
           No {title.toLowerCase()} found
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto border rounded-lg">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b">
+          <div className="gs-table-scroll gs-card">
+            <table className="gs-admin-table">
+              <thead>
                 <tr>
                   {columns.map((col) => (
-                    <th key={String(col.key)} className="px-4 py-3 text-left font-semibold">
+                    <th key={String(col.key)}>
                       {col.label}
                     </th>
                   ))}
-                  {actions && <th className="px-4 py-3 text-left">Actions</th>}
+                  {actions && <th>Actions</th>}
                 </tr>
               </thead>
               <tbody>
                 {data.map((row, idx) => (
                   <tr
-                    key={row.id || idx}
-                    className="border-b hover:bg-gray-50 transition-colors"
-                  >
+                    key={row.id || idx}>
                     {columns.map((col) => (
-                      <td key={String(col.key)} className="px-4 py-3">
+                      <td key={String(col.key)}>
                         {col.render ? col.render(row[col.key], row) : String(row[col.key])}
                       </td>
                     ))}
-                    {actions && <td className="px-4 py-3">{actions(row)}</td>}
+                    {actions && <td>{actions(row)}</td>}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
 
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-600">
+          <div className="gs-row gs-row--between">
+            <p className="gs-text-subtle">
               Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, total)} of{' '}
               {total}
             </p>
-            <div className="flex gap-2">
+            <div className="gs-row">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="p-2 hover:bg-gray-100 disabled:opacity-50 rounded"
-              >
+                className="gs-button gs-button--ghost gs-button--small">
                 ← Previous
               </button>
-              <span className="px-4 py-2">
+              <span>
                 {page} / {totalPages || 1}
               </span>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page >= totalPages}
-                className="p-2 hover:bg-gray-100 disabled:opacity-50 rounded"
-              >
+                disabled={page>= totalPages}
+                className="gs-button gs-button--ghost gs-button--small">
                 Next →
               </button>
             </div>

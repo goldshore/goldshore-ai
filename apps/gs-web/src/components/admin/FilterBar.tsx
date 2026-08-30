@@ -38,25 +38,25 @@ export function FilterBar({ filters, onFilter, onSearch }: FilterBarProps) {
   };
 
   return (
-    <div className="gs-card p-4 space-y-4">
+    <div className="gs-card gs-stack-sm">
       {onSearch && (
         <input
           type="text"
           placeholder="Search..."
           value={searchQuery}
           onChange={handleSearchChange}
-          className="w-full px-3 py-2 text-sm border rounded gs-input"
+          className="gs-input"
         />
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3">
+      <div className="gs-list-grid">
         {filters.map((filter) => (
-          <div key={filter.key}>
+          <div key={filter.key} className="gs-input-group">
             {filter.type === 'select' ? (
               <select
                 value={values[filter.key] || ''}
                 onChange={(e) => handleFilterChange(filter.key, e.target.value)}
-                className="w-full px-3 py-2 text-sm border rounded gs-input"
+                className="gs-input"
               >
                 <option value="">{filter.label}</option>
                 {filter.options?.map((opt) => (
@@ -71,7 +71,7 @@ export function FilterBar({ filters, onFilter, onSearch }: FilterBarProps) {
                 placeholder={filter.placeholder || filter.label}
                 value={values[filter.key] || ''}
                 onChange={(e) => handleFilterChange(filter.key, e.target.value)}
-                className="w-full px-3 py-2 text-sm border rounded gs-input"
+                className="gs-input"
               />
             )}
           </div>
@@ -79,7 +79,7 @@ export function FilterBar({ filters, onFilter, onSearch }: FilterBarProps) {
 
         <button
           onClick={handleReset}
-          className="px-3 py-2 text-sm border rounded gs-text-subtle hover:bg-opacity-50"
+          className="gs-text-subtle"
         >
           Reset Filters
         </button>

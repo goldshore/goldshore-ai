@@ -1,0 +1,395 @@
+/* Admin-only component CSS.
+ *
+ * Everything here is scoped under .gs-admin-body so it cannot reach the public
+ * site, which shares packages/theme. Only rules that packages/theme genuinely
+ * does not provide belong here — anything the theme already ships (.gs-button,
+ * .gs-card, .gs-table, .gs-badge, .gs-form-row, .gs-input-group,
+ * .gs-form-actions, .gs-modal-panel, .gs-stack*) should be used directly
+ * instead of being reimplemented.
+ *
+ * Loaded from layouts/AdminLayout.astro after the theme stylesheets.
+ */
+
+/* ---------------------------------------------------------------- modal ---
+ * packages/theme ships .gs-modal-panel (the panel surface) but nothing that
+ * positions it. The React admin components previously leaned on Tailwind's
+ * `fixed inset-0 flex items-center justify-center`, which never resolved —
+ * gs-web has no Tailwind — so every modal rendered inline in document flow.
+ */
+.gs-admin-body .gs-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--gs-space-4, 1rem);
+}
+
+.gs-admin-body .gs-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: rgba(0, 0, 0, 0.58);
+  cursor: pointer;
+}
+
+.gs-admin-body .gs-modal-overlay .gs-modal-panel {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: min(34rem, 100%);
+  max-height: min(90dvh, 44rem);
+  color: var(--admin-text-on-dark, var(--gs-color-text));
+  overflow: hidden;
+}
+
+.gs-admin-body .gs-modal-head,
+.gs-admin-body .gs-modal-foot {
+  display: flex;
+  align-items: center;
+  gap: var(--gs-space-3, 0.75rem);
+  padding: var(--gs-space-5, 1.25rem) var(--gs-space-6, 1.5rem);
+  flex: none;
+}
+
+.gs-admin-body .gs-modal-head {
+  justify-content: space-between;
+  border-bottom: 1px solid var(--admin-line-on-dark, var(--gs-color-border));
+}
+
+.gs-admin-body .gs-modal-foot {
+  justify-content: flex-end;
+  border-top: 1px solid var(--admin-line-on-dark, var(--gs-color-border));
+}
+
+.gs-admin-body .gs-modal-body {
+  padding: var(--gs-space-6, 1.5rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  min-height: 0;
+}
+
+.gs-admin-body .gs-modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--admin-line-on-dark, var(--gs-color-border));
+  background: transparent;
+  color: var(--admin-muted-on-dark, var(--gs-color-subtle));
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.gs-admin-body .gs-modal-close:focus-visible {
+  outline: 1px solid var(--gs-accent);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------- layout ---
+ * .gs-row is referenced by admin markup but packages/theme never defines it.
+ */
+.gs-admin-body .gs-row {
+  display: flex;
+  align-items: center;
+  gap: var(--gs-space-3, 0.75rem);
+  flex-wrap: wrap;
+}
+
+.gs-admin-body .gs-row--between {
+  justify-content: space-between;
+}
+
+.gs-admin-body .gs-table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Loading / empty states inside a card. */
+.gs-admin-body .gs-empty {
+  padding: var(--gs-space-8, 2rem);
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.gs-admin-body .gs-row-clickable {
+  cursor: pointer;
+}
+
+.gs-admin-body .gs-row-clickable:focus-visible {
+  outline: 1px solid var(--gs-accent);
+  outline-offset: -1px;
+}
+
+/* ----------------------------------------------------------------- form ---
+ * packages/theme/styles/base.css already styles bare input/select/textarea,
+ * so controls need no class of their own — only the surrounding structure.
+ */
+.gs-admin-body .gs-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.gs-admin-body .gs-required {
+  color: var(--gs-danger, #ef4444);
+  margin-left: 0.25rem;
+}
+
+.gs-admin-body .gs-field-error {
+  font-size: 0.85rem;
+  color: var(--gs-danger, #ef4444);
+  margin: 0;
+}
+
+.gs-admin-body .gs-input-group > input,
+.gs-admin-body .gs-input-group > select,
+.gs-admin-body .gs-input-group > textarea,
+.gs-admin-body .gs-field > input,
+.gs-admin-body .gs-field > select,
+.gs-admin-body .gs-field > textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.gs-admin-body .gs-field > .gs-label {
+  margin-bottom: var(--gs-space-2, 0.5rem);
+}
+
+.gs-admin-body .gs-button--block {
+  width: 100%;
+}
+
+/* ---------------------------------------------------------------- alert ---
+ * The theme has .gs-badge for inline status but nothing block-level for a
+ * form-level error.
+ */
+.gs-admin-body .gs-alert {
+  padding: var(--gs-space-4, 1rem);
+  border: 1px solid var(--gs-color-border);
+  border-radius: var(--gs-radius-sm, 6px);
+  font-size: 0.9rem;
+}
+
+.gs-admin-body .gs-alert--error {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}
+
+/* Inside the admin shell .gs-card/.gs-panel flip to a light surface
+ * (AdminLayout.astro), so an alert sitting on one needs the darker text. */
+.gs-admin-body .gs-card .gs-alert--error,
+.gs-admin-body .gs-panel .gs-alert--error {
+  color: #991b1b;
+}
+
+/* ---------------------------------------------------------------- touch ---
+ * Coarse pointers get targets at the 44px floor WCAG 2.5.5 / the iOS HIG ask
+ * for. Width-based queries miss this: a tablet in landscape reports well over
+ * 900px and would otherwise keep the mouse-sized controls.
+ */
+@media (pointer: coarse) {
+  .gs-admin-body .gs-button,
+  .gs-admin-body .gs-modal-close,
+  .gs-admin-body button,
+  .gs-admin-body [role='button'],
+  .gs-admin-body select,
+  .gs-admin-body input:not([type='checkbox']):not([type='radio']) {
+    min-height: 44px;
+  }
+
+  .gs-admin-body .gs-modal-close {
+    width: 44px;
+  }
+
+  /* iOS zooms the page in when a focused field is under 16px. */
+  .gs-admin-body input,
+  .gs-admin-body select,
+  .gs-admin-body textarea {
+    font-size: max(16px, 1rem);
+  }
+}
+
+/* Hover styling is only meaningful where a hover state actually exists.
+ * Unguarded, iOS Safari leaves the hovered look stuck on after a tap. */
+@media (hover: none) {
+  .gs-admin-body .gs-button:hover {
+    transform: none;
+  }
+
+  .gs-admin-body .gs-table tbody tr:hover {
+    background: transparent;
+  }
+}
+
+/* Inline JSON / diff payloads inside a table cell. */
+.gs-admin-body .gs-code-cell {
+  margin: 0;
+  padding: var(--gs-space-2, 0.5rem);
+  max-width: 22rem;
+  max-height: 8rem;
+  overflow: auto;
+  overscroll-behavior: contain;
+  background: var(--gs-color-muted-surface);
+  border-radius: var(--gs-radius-sm, 6px);
+  font-size: 0.75rem;
+  font-family: var(--admin-mono, ui-monospace, monospace);
+}
+
+.gs-admin-body .gs-cell-meta {
+  font-size: 0.75rem;
+  opacity: 0.72;
+}
+
+/* -------------------------------------------------------------- loading ---
+ * Skeleton placeholder bars, previously `h-4 bg-gray-200 animate-pulse`.
+ */
+.gs-admin-body .gs-skeleton {
+  height: 1rem;
+  border-radius: var(--gs-radius-sm, 6px);
+  background: var(--gs-color-muted-surface);
+  animation: gs-skeleton-pulse 1.6s ease-in-out infinite;
+}
+
+.gs-admin-body .gs-skeleton--tall { height: 2.5rem; }
+.gs-admin-body .gs-skeleton--grow { flex: 1; }
+.gs-admin-body .gs-skeleton--sm { width: 5rem; }
+.gs-admin-body .gs-skeleton--md { width: 8rem; }
+
+@keyframes gs-skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gs-admin-body .gs-skeleton { animation: none; }
+}
+
+.gs-admin-body .gs-alert--success {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.4);
+  color: #86efac;
+}
+
+.gs-admin-body .gs-card .gs-alert--success,
+.gs-admin-body .gs-panel .gs-alert--success {
+  color: #14532d;
+}
+
+/* A button that reads as a link — inline row actions such as Edit / Delete. */
+.gs-admin-body .gs-link-button {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--gs-accent);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.gs-admin-body .gs-link-button--danger { color: var(--gs-danger, #ef4444); }
+.gs-admin-body .gs-link-button:focus-visible {
+  outline: 1px solid var(--gs-accent);
+  outline-offset: 2px;
+}
+
+.gs-admin-body .gs-alert--warning {
+  background: rgba(234, 179, 8, 0.1);
+  border-color: rgba(234, 179, 8, 0.4);
+  color: #fde047;
+}
+.gs-admin-body .gs-alert--info {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.4);
+  color: #93c5fd;
+}
+.gs-admin-body .gs-card .gs-alert--warning,
+.gs-admin-body .gs-panel .gs-alert--warning { color: #713f12; }
+.gs-admin-body .gs-card .gs-alert--info,
+.gs-admin-body .gs-panel .gs-alert--info { color: #1e3a8a; }
+
+/* Inline icons — previously `w-4 h-4` / `w-5 h-5`. */
+.gs-admin-body .gs-icon { width: 1rem; height: 1rem; flex: none; }
+.gs-admin-body .gs-icon--lg { width: 1.25rem; height: 1.25rem; }
+.gs-admin-body .gs-icon--inline { display: inline-block; vertical-align: -0.15em; margin-right: 0.35rem; }
+
+.gs-admin-body .gs-spin { animation: gs-spin 1s linear infinite; }
+@keyframes gs-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .gs-admin-body .gs-spin { animation: none; }
+}
+
+.gs-admin-body .gs-mono { font-family: var(--admin-mono, ui-monospace, monospace); }
+.gs-admin-body .gs-list-tight { margin: 0; padding-left: 1.1rem; }
+.gs-admin-body .gs-list-tight > li + li { margin-top: 0.25rem; }
+
+/* .gs-row centres its children. These restore the alignments that the
+ * Tailwind conversion dropped (items-start / items-end / flex-1). */
+.gs-admin-body .gs-row--start { align-items: flex-start; }
+.gs-admin-body .gs-row--end { align-items: flex-end; }
+.gs-admin-body .gs-fill { flex: 1; min-width: 0; }
+
+/* A grid cell whose control should sit on the baseline of its neighbours
+ * rather than the top — the Export button beside a row of filter fields. */
+.gs-admin-body .gs-grid-cell-end {
+  display: flex;
+  align-items: flex-end;
+}
+
+/* ------------------------------------------------------------- selected ---
+ * Selectable cards and list rows. These were Tailwind ternaries
+ * (`isSelected ? 'border-blue-500 bg-blue-50' : ...`) that never resolved, so
+ * selection had no visible state at all.
+ */
+.gs-admin-body .gs-selectable {
+  cursor: pointer;
+  border: 1px solid var(--gs-color-border);
+  border-radius: var(--gs-radius-sm, 6px);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  width: 100%;
+  padding: var(--gs-space-3, 0.75rem);
+}
+
+.gs-admin-body .gs-selectable[aria-pressed='true'],
+.gs-admin-body .gs-selectable.is-selected {
+  border-color: var(--gs-accent);
+  background: var(--gs-accent-soft, rgba(217, 106, 50, 0.12));
+}
+
+.gs-admin-body .gs-selectable:focus-visible {
+  outline: 1px solid var(--gs-accent);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .gs-admin-body .gs-selectable:hover { border-color: var(--gs-accent); }
+}
+
+/* Connection/health dot beside a server or service name. */
+.gs-admin-body .gs-status-dot {
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  flex: none;
+  background: var(--gs-color-subtle);
+}
+
+.gs-admin-body .gs-status-dot--ok { background: #22c55e; }
+.gs-admin-body .gs-status-dot--error { background: #ef4444; }
+
+/* Disclosure chevron that flips when its section is open. */
+.gs-admin-body .gs-chevron { transition: transform 140ms ease; }
+.gs-admin-body .gs-chevron.is-open { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) {
+  .gs-admin-body .gs-chevron { transition: none; }
+}

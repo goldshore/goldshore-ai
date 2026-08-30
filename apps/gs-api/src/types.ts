@@ -24,7 +24,10 @@ type ResourceBindings = {
   EVENTS_QUEUE?: Queue;
   MAIL_JOBS_QUEUE?: Queue;
   GS_SIGNALS?: Workflow<SignalsEvaluatorParams>;
+  EDITORIAL_PRODUCTION?: Workflow<import('./workers/editorial-production').EditorialProductionParams>;
   AGENT?: Fetcher;
+  BREVO_API_KEY?: SecretsStoreSecret;
+  BREVO_MCP_KEY?: SecretsStoreSecret;
 };
 
 type RuntimeSecrets = {
@@ -59,6 +62,11 @@ type RuntimeSecrets = {
   GOOGLE_OAUTH_CLIENT_SECRET?: string;
   GOOGLE_OAUTH_REDIRECT_URI?: string;
   GOOGLE_BUSINESS_OAUTH_REDIRECT_URI?: string;
+  EBAY_CLIENT_ID?: string;
+  EBAY_CLIENT_SECRET?: string;
+  EBAY_REDIRECT_URI?: string;
+  EBAY_ENV?: string;
+  GH_PAT?: string;
   GITHUB_CLIENT_ID?: string;
   GITHUB_CLIENT_SECRET?: string;
   GITHUB_TOKEN?: string;
@@ -184,6 +192,7 @@ export type SignalsEvaluatorParams = {
 export type Variables = {
   accessClaims: AccessTokenPayload | null;
   requestId: string;
+  correlationId: string;
   user?: SessionUser;
 };
 

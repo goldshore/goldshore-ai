@@ -3,6 +3,7 @@ export const prerender = false;
 
 import AdminLayout from "../../layouts/AdminLayout.astro";
 import { GSButton } from '@goldshore/ui';
+import { fetchAdminJson } from '../../lib/api-proxy';
 
 interface RepoHealth {
   overall_health: 'critical' | 'warning' | 'healthy';
@@ -28,19 +29,12 @@ let health: RepoHealth | null = null;
 let error: string | null = null;
 
 try {
-  const apiUrl = process.env.PUBLIC_API_URL || 'https://api.goldshore.ai';
-  const response = await fetch(`${apiUrl}/admin/repo-health`, {
-    headers: {
-      'Authorization': `Bearer ${Astro.cookies.get('auth_token')?.value}`,
-      'Accept': 'application/json',
-    },
-  });
+  const result = await fetchAdminJson<any>(Astro.request, '/admin/repo-health');
 
-  if (!response.ok) {
-    error = `Failed to fetch repo health: ${response.status} ${response.statusText}`;
+  if (!result.ok) {
+    error = `Failed to fetch repo health: ${result.status}`;
   } else {
-    const data = await response.json();
-    health = data.data;
+    health = result.data?.data;
   }
 } catch (e) {
   error = e instanceof Error ? e.message : 'Unknown error fetching repo health';

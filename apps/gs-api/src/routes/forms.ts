@@ -60,6 +60,12 @@ const sha256 = async (value: string) => {
 
 const publicSiteUrl = (env: Env) => (env.PUBLIC_SITE_URL || 'https://goldshore.ai').replace(/\/$/, '');
 
+const randomToken = () => {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+};
+const verificationCode = () => String(crypto.getRandomValues(new Uint32Array(1))[0] % 1_000_000).padStart(6, '0');
+
 forms.get('/leads', async (c) => {
   const denied = requirePermission(c.get('accessClaims'), c.env, 'forms:read');
   if (denied) return denied;
@@ -153,8 +159,107 @@ const updateConfig = async (c: FormsContext) => {
 forms.put('/configs/:slug', updateConfig);
 forms.patch('/configs/:slug', updateConfig);
 
+forms.post('/newsletter/submissions', async (c) => {
+  const body = await c.req.json<{ email?: string; name?: string; source?: string; turnstileToken?: string }>().catch(() => null);
+  const email = body?.email?.trim().toLowerCase() ?? '';
+  const name = body?.name?.trim().slice(0, 120) || null;
+  if (!isValidEmail(email)) return c.json({ ok: false, error: 'Enter a valid email address.' }, 400);
+
+  const turnstileForm = new FormData();
+  if (body?.turnstileToken) turnstileForm.set('cf-turnstile-response', body.turnstileToken);
+  const turnstile = await validateFormTurnstile(turnstileForm, c.env.TURNSTILE_SECRET, c.req.raw);
+  if (!turnstile.valid) return c.json({ ok: false, error: turnstile.error || 'Bot verification failed.' }, 400);
+
+  const existing = await c.env.PLATFORM_DB.prepare('SELECT status FROM newsletter_subscribers WHERE email=?').bind(email).first<{ status: string }>();
+  if (existing && ['suppressed', 'invalid'].includes(existing.status)) {
+    return c.json({ ok: true, status: 'pending' }, 202);
+  }
+
+  const token = randomToken();
+  const manage = randomToken();
+  const code = verificationCode();
+  const [emailHash, tokenHash, manageHash, codeHash] = await Promise.all([sha256(email), sha256(token), sha256(manage), sha256(code)]);
+  const now = new Date().toISOString();
+  const expiresAt = new Date(Date.now() + 15 * 60_000).toISOString();
+  await c.env.PLATFORM_DB.prepare(`INSERT INTO newsletter_subscribers
+    (id,email,email_hash,name,brand,list_name,source,status,consent_basis,confirmation_token_hash,manage_token_hash,verification_code_hash,verification_code_expires_at,subscribed_at,created_at,updated_at)
+    VALUES(?,?,?,?,?,'newsletter',?,'pending','double_opt_in',?,?,?,?,?,?,?)
+    ON CONFLICT(email) DO UPDATE SET name=excluded.name,source=excluded.source,status='pending',confirmation_token_hash=excluded.confirmation_token_hash,manage_token_hash=excluded.manage_token_hash,verification_code_hash=excluded.verification_code_hash,verification_code_expires_at=excluded.verification_code_expires_at,subscribed_at=excluded.subscribed_at,updated_at=excluded.updated_at`)
+    .bind(crypto.randomUUID(), email, emailHash, name, 'goldshore', body?.source?.slice(0, 120) || 'header-subscribe', tokenHash, manageHash, codeHash, expiresAt, now, now, now).run();
+
+  const confirmationUrl = `${publicSiteUrl(c.env)}/newsletter/confirm?token=${encodeURIComponent(token)}&manage=${encodeURIComponent(manage)}`;
+  const message = buildNewsletterConfirmation({ confirmationUrl, activationCode: code });
+  const queued = await enqueueMailJob(c.env, { to: [{ email, name: name || undefined }], ...message });
+  if (queued.attempted && !queued.ok) return c.json({ ok: false, error: 'Confirmation email could not be queued.' }, 503);
+  return c.json({ ok: true, status: 'pending', expiresInSeconds: 900 }, 202);
+});
+
+const confirmNewsletter = async (c: FormsContext, tokenHash: string, suppliedManage?: string) => {
+  const row = await c.env.PLATFORM_DB.prepare(`SELECT id,email,name,status,verification_code_expires_at FROM newsletter_subscribers
+    WHERE confirmation_token_hash=? OR verification_code_hash=? LIMIT 1`).bind(tokenHash, tokenHash).first<{ id: string; email: string; name: string | null; status: string; verification_code_expires_at: string | null }>();
+  if (!row || ['suppressed', 'invalid'].includes(row.status)) return c.json({ ok: false, error: 'Invalid or expired confirmation.' }, 400);
+  if (row.verification_code_expires_at && Date.parse(row.verification_code_expires_at) < Date.now()) return c.json({ ok: false, error: 'Invalid or expired confirmation.' }, 400);
+  const manage = suppliedManage || randomToken();
+  const manageHash = await sha256(manage);
+  await c.env.PLATFORM_DB.prepare(`UPDATE newsletter_subscribers SET status='confirmed',confirmed_at=COALESCE(confirmed_at,CURRENT_TIMESTAMP),confirmation_token_hash=NULL,verification_code_hash=NULL,verification_code_expires_at=NULL,manage_token_hash=?,updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(manageHash, row.id).run();
+  const settingsUrl = `${publicSiteUrl(c.env)}/newsletter/settings?subscribed=1&manage=${encodeURIComponent(manage)}`;
+  const welcome = buildNewsletterWelcome({ unsubscribeUrl: `${publicSiteUrl(c.env)}/newsletter/unsubscribe?token=${encodeURIComponent(manage)}` });
+  await enqueueMailJob(c.env, { to: [{ email: row.email, name: row.name || undefined }], ...welcome }).catch(() => undefined);
+  return c.json({ ok: true, status: 'confirmed', settingsUrl });
+};
+
+forms.get('/newsletter/confirm', async (c) => {
+  const token = c.req.query('token') ?? '';
+  if (token.length < 24) return c.json({ ok: false, error: 'Invalid confirmation.' }, 400);
+  return confirmNewsletter(c, await sha256(token), c.req.query('manage'));
+});
+
+forms.post('/newsletter/confirm', async (c) => {
+  const body = await c.req.json<{ email?: string; code?: string }>().catch(() => null);
+  const email = body?.email?.trim().toLowerCase() ?? '';
+  const code = body?.code?.trim() ?? '';
+  if (!isValidEmail(email) || !/^\d{6}$/.test(code)) return c.json({ ok: false, error: 'Enter the email and six-digit code.' }, 400);
+  const row = await c.env.PLATFORM_DB.prepare('SELECT verification_code_hash FROM newsletter_subscribers WHERE email=? AND status=?').bind(email, 'pending').first<{ verification_code_hash: string | null }>();
+  const codeHash = await sha256(code);
+  if (!row?.verification_code_hash || row.verification_code_hash !== codeHash) return c.json({ ok: false, error: 'Invalid or expired confirmation.' }, 400);
+  return confirmNewsletter(c, codeHash);
+});
+
+forms.get('/newsletter/preferences', async (c) => {
+  const token = c.req.query('manage') ?? '';
+  if (token.length < 24) return c.json({ ok: false, error: 'Invalid preference link.' }, 400);
+  const row = await c.env.PLATFORM_DB.prepare('SELECT email,name,status,preferences_json FROM newsletter_subscribers WHERE manage_token_hash=?').bind(await sha256(token)).first<{ email: string; name: string | null; status: string; preferences_json: string | null }>();
+  if (!row) return c.json({ ok: false, error: 'Invalid preference link.' }, 404);
+  return c.json({ ok: true, subscriber: { email: row.email, name: row.name, status: row.status, preferences: parseJson(row.preferences_json, {}) } });
+});
+
+forms.put('/newsletter/preferences', async (c) => {
+  const body = await c.req.json<{ manage?: string; preferences?: Record<string, boolean> }>().catch(() => null);
+  const manage = body?.manage ?? '';
+  const allowed = ['productUpdates', 'newsletter', 'securityNotices', 'partnerOffers', 'privacyMode'];
+  const preferences = Object.fromEntries(allowed.map((key) => [key, body?.preferences?.[key] === true]));
+  if (manage.length < 24) return c.json({ ok: false, error: 'Invalid preference link.' }, 400);
+  const result = await c.env.PLATFORM_DB.prepare('UPDATE newsletter_subscribers SET preferences_json=?,updated_at=CURRENT_TIMESTAMP WHERE manage_token_hash=?').bind(JSON.stringify(preferences), await sha256(manage)).run();
+  return result.meta.changes ? c.json({ ok: true, preferences }) : c.json({ ok: false, error: 'Invalid preference link.' }, 404);
+});
+
+forms.get('/newsletter/unsubscribe', async (c) => {
+  const token = c.req.query('token') ?? '';
+  if (token.length < 24) return c.json({ ok: false, error: 'Invalid unsubscribe link.' }, 400);
+  const result = await c.env.PLATFORM_DB.prepare(`UPDATE newsletter_subscribers SET status='unsubscribed',unsubscribed_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE manage_token_hash=? AND status NOT IN ('suppressed','invalid')`).bind(await sha256(token)).run();
+  return result.meta.changes ? c.json({ ok: true, status: 'unsubscribed' }) : c.json({ ok: false, error: 'Invalid unsubscribe link.' }, 404);
+});
+
 forms.post('/:formId/submissions', async (c) => {
-  const body = await c.req.parseBody();
+  const contentType = c.req.header('content-type')?.toLowerCase() ?? '';
+  let body: Record<string, unknown>;
+  try {
+    body = contentType.includes('application/json')
+      ? await c.req.json<Record<string, unknown>>()
+      : await c.req.parseBody();
+  } catch {
+    return c.json({ ok: false, error: 'Invalid submission payload.' }, 400);
+  }
   const id = crypto.randomUUID();
   const formId = c.req.param('formId') || 'contact';
   const now = new Date().toISOString();
@@ -175,7 +280,7 @@ forms.post('/:formId/submissions', async (c) => {
 
   if (!turnstileValidation.valid) {
     return c.json(
-      { ok: false, error: { message: turnstileValidation.error || 'Turnstile validation failed' } },
+      { ok: false, error: turnstileValidation.error || 'Turnstile validation failed' },
       400,
     );
   }
@@ -203,7 +308,10 @@ forms.post('/:formId/submissions', async (c) => {
           html: `<p><strong>Name:</strong> ${escapeHtml(name || 'N/A')}</p><p><strong>Email:</strong> ${escapeHtml(email || 'N/A')}</p><p>${escapeHtml(message || 'No message provided.').replace(/\n/g, '<br>')}</p>`,
           replyTo: email && isValidEmail(email) ? { email, name } : undefined,
         },
-      )
+      ).catch((err) => {
+        console.error({ event: 'notification_mail_failed', formId, error: String(err) });
+        return { attempted: true, ok: false, status: 500, body: 'NOTIFICATION_ENQUEUE_THREW' };
+      })
     : { attempted: false, reason: 'no_recipients' };
 
   const autoResponder = buildLeadAutoResponder({ name, formType: formId });
@@ -214,6 +322,9 @@ forms.post('/:formId/submissions', async (c) => {
           subject: autoResponder.subject,
           text: autoResponder.text,
           html: autoResponder.html,
+        }).catch((err) => {
+          console.error({ event: 'autoresponder_mail_failed', formId, error: String(err) });
+          return { attempted: true, ok: false, status: 500, body: 'AUTORESPONDER_ENQUEUE_THREW' };
         })
       : { attempted: false, reason: 'missing_submitter_email' };
 

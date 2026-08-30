@@ -18,7 +18,7 @@ prManager.post(
   errorHandler(async (c) => {
     const user = c.get('user');
     const body = (await c.req.json()) as any;
-    const token = c.env.GITHUB_TOKEN as string;
+    const token = c.env.GH_PAT as string;
 
     if (!body.title || !body.description || !body.changes) {
       return c.json({ error: 'Missing required fields: title, description, changes' }, 400);
@@ -66,7 +66,7 @@ prManager.get(
   '/open',
   await requireRbacPermission('perm_workers_view'),
   errorHandler(async (c) => {
-    const token = c.env.GITHUB_TOKEN as string;
+    const token = c.env.GH_PAT as string;
 
     const response = await fetch(
       'https://api.github.com/repos/marzton/goldshore-ai/pulls?state=open&per_page=20',
@@ -107,7 +107,7 @@ prManager.post(
   await requireRbacPermission('perm_workers_update'),
   errorHandler(async (c) => {
     const prNumber = c.req.param('prNumber');
-    const token = c.env.GITHUB_TOKEN as string;
+    const token = c.env.GH_PAT as string;
 
     const response = await fetch(
       `https://api.github.com/repos/marzton/goldshore-ai/pulls/${prNumber}/merge`,

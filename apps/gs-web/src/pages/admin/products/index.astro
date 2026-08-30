@@ -207,7 +207,7 @@ const fmtPrice = (price: number, currency: string, interval: string) => {
         btn.disabled = true;
         btn.textContent = 'Saving…';
         try {
-          const res = await fetch(`/api/admin/products?id=${encodeURIComponent(id)}`, {
+          const res = await fetch(`/api/admin/products/${encodeURIComponent(id)}`, {
             method: 'PUT',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({
