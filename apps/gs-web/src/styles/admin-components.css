@@ -393,3 +393,53 @@
 @media (prefers-reduced-motion: reduce) {
   .gs-admin-body .gs-chevron { transition: none; }
 }
+
+/* ============================================================== pages ====
+ * The admin Astro pages under pages/admin/ were written against Tailwind
+ * utilities that never resolved (gs-web has no Tailwind), and against a few
+ * .gs-* classes that were simply never defined. These are the primitives they
+ * reach for, defined once here rather than restated per page.
+ */
+
+/* Page shell — was `max-w-7xl mx-auto p-8 space-y-8`. */
+.gs-admin-body .gs-page {
+  max-width: 80rem;
+  margin-inline: auto;
+  padding: var(--gs-space-6, 1.5rem);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-6, 1.5rem);
+}
+
+@media (min-width: 768px) {
+  .gs-admin-body .gs-page { padding: var(--gs-space-8, 2rem); }
+}
+
+/* Used 19 times across the admin pages and never defined. */
+.gs-admin-body .gs-heading {
+  font-family: var(--admin-display, inherit);
+  font-size: clamp(1.75rem, 1.2rem + 1.6vw, 2.25rem);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin: 0;
+}
+
+/* The large figure in a stat card — was `text-2xl font-bold`. */
+.gs-admin-body .gs-stat {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.gs-admin-body .gs-text-sm { font-size: 0.875rem; }
+.gs-admin-body .gs-text-lg { font-size: 1.125rem; line-height: 1.6; }
+
+/* packages/theme defines .gs-grid with .columns-2 and .columns-3 only; the
+ * admin stat rows are four across. Same auto-fit behaviour as the others. */
+.gs-admin-body .gs-grid.columns-4 {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+/* Constrains a form or reading column — was `max-w-2xl` / `max-w-4xl`. */
+.gs-admin-body .gs-measure { max-width: 42rem; }
+.gs-admin-body .gs-measure--wide { max-width: 56rem; }
