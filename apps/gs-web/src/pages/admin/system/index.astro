@@ -15,7 +15,7 @@ const initialTab = (TABS as readonly string[]).includes(requestedTab ?? '') ? re
         <p>Cloudflare control-plane state, secrets, storage, DNS, and Pages through the canonical gs-web → gs-api service path.</p>
       </div>
       <div class="gs-toolbar">
-        <button id="refresh-system" class="gs-btn-secondary" type="button">Refresh</button>
+        <button id="refresh-system" class="gs-button gs-button--secondary" type="button">Refresh</button>
       </div>
     </header>
 
@@ -30,10 +30,10 @@ const initialTab = (TABS as readonly string[]).includes(requestedTab ?? '') ? re
       </article>
       <article class="gs-module gs-span-8" data-draggable="true" data-resizable="true">
         <header class="gs-module-header"><h2>Runtime bindings</h2><span id="binding-count" class="gs-status gs-status-info"><i></i>Loading</span></header>
-        <div class="gs-module-body"><div id="binding-grid" class="binding-grid"><p class="gs-muted">Reading live gs-api runtime bindings…</p></div></div>
+        <div class="gs-module-body"><div id="binding-grid" class="binding-grid"><p class="gs-text-subtle">Reading live gs-api runtime bindings…</p></div></div>
       </article>
       <article class="gs-module gs-span-12">
-        <header class="gs-module-header"><div><h2>Transport contract</h2><p class="gs-data-description">Admin requests stay inside Cloudflare over the gs-web API service binding; browser code never needs a Cloudflare account token.</p></div></header>
+        <header class="gs-module-header"><div><h2>Transport contract</h2><p class="gs-text-subtle">Admin requests stay inside Cloudflare over the gs-web API service binding; browser code never needs a Cloudflare account token.</p></div></header>
         <div class="gs-module-body transport-flow"><code>admin.goldshore.ai</code><span>→</span><code>gs-web</code><span>→ service binding →</span><code>gs-api</code><span>→</span><code>Cloudflare API / D1 / R2 / KV</code></div>
       </article>
     </section>
@@ -41,51 +41,51 @@ const initialTab = (TABS as readonly string[]).includes(requestedTab ?? '') ? re
     <section class="gs-admin-grid" data-panel="secrets" hidden>
       <article class="gs-module gs-span-12">
         <header class="gs-module-header">
-          <div><h2>Secrets &amp; integration credentials</h2><p class="gs-data-description">Metadata only. Secret values are encrypted by gs-api and never returned to this surface.</p></div>
-          <button id="new-secret" class="gs-btn-primary" type="button">+ New secret</button>
+          <div><h2>Secrets &amp; integration credentials</h2><p class="gs-text-subtle">Metadata only. Secret values are encrypted by gs-api and never returned to this surface.</p></div>
+          <button id="new-secret" class="gs-button" type="button">+ New secret</button>
         </header>
         <div class="gs-module-body">
           <div class="gs-filterbar">
             <input id="filter-integration" class="gs-input" placeholder="Filter integration" />
             <select id="filter-type" class="gs-input"><option value="">All types</option><option value="apiKey">API key</option><option value="apiSecret">API secret</option><option value="webhook_secret">Webhook secret</option><option value="oauth_token">OAuth token</option></select>
             <label class="gs-check"><input id="include-expired" type="checkbox" /> Include expired</label>
-            <button id="apply-filter" class="gs-btn-secondary" type="button">Apply</button>
+            <button id="apply-filter" class="gs-button gs-button--secondary" type="button">Apply</button>
           </div>
           <div id="secret-error" class="gs-error-state" hidden></div>
           <div class="gs-table-wrap"><table class="gs-admin-table"><thead><tr><th>Integration</th><th>Type</th><th>Identifier</th><th>Expires</th><th>Rotations</th><th>Actions</th></tr></thead><tbody id="secret-rows"><tr><td colspan="6">Loading…</td></tr></tbody></table></div>
-          <footer class="gs-table-footer"><span id="page-summary"></span><div><button id="previous-page" class="gs-btn-secondary" type="button">Previous</button><button id="next-page" class="gs-btn-secondary" type="button">Next</button></div></footer>
+          <footer class="gs-table-footer"><span id="page-summary"></span><div><button id="previous-page" class="gs-button gs-button--secondary" type="button">Previous</button><button id="next-page" class="gs-button gs-button--secondary" type="button">Next</button></div></footer>
         </div>
       </article>
     </section>
 
     <dialog id="secret-dialog" class="gs-modal">
       <form id="secret-form" method="dialog" class="gs-modal-card">
-        <header><h2 id="dialog-title">Create secret</h2><button id="close-dialog" type="button" class="gs-icon-button" aria-label="Close">×</button></header>
+        <header><h2 id="dialog-title">Create secret</h2><button id="close-dialog" type="button" class="gs-icon-btn" aria-label="Close">×</button></header>
         <input id="secret-id" type="hidden" />
         <label>Integration ID<input id="integration-id" class="gs-input" required pattern="[A-Za-z0-9][A-Za-z0-9_-]{1,63}" /></label>
         <label>Key type<select id="key-type" class="gs-input"><option value="apiKey">API key</option><option value="apiSecret">API secret</option><option value="webhook_secret">Webhook secret</option><option value="oauth_token">OAuth token</option></select></label>
         <label><span id="value-label">Secret value</span><textarea id="secret-value" class="gs-input" rows="5" minlength="8" maxlength="16384" required autocomplete="new-password"></textarea></label>
         <label>Expires at<input id="expires-at" type="datetime-local" class="gs-input" /></label>
-        <footer><button id="cancel-dialog" type="button" class="gs-btn-secondary">Cancel</button><button type="submit" class="gs-btn-primary">Save securely</button></footer>
+        <footer><button id="cancel-dialog" type="button" class="gs-button gs-button--secondary">Cancel</button><button type="submit" class="gs-button">Save securely</button></footer>
       </form>
     </dialog>
 
     <section class="gs-admin-grid" data-panel="storage" hidden>
       <article class="gs-module gs-span-12">
-        <header class="gs-module-header"><div><h2>Media storage</h2><p class="gs-data-description">Authenticated asset inventory backed by GS_ASSETS with durable metadata.</p></div><button id="refresh-assets" class="gs-btn-secondary" type="button">Refresh</button></header>
+        <header class="gs-module-header"><div><h2>Media storage</h2><p class="gs-text-subtle">Authenticated asset inventory backed by GS_ASSETS with durable metadata.</p></div><button id="refresh-assets" class="gs-button gs-button--secondary" type="button">Refresh</button></header>
         <div class="gs-module-body">
-          <form id="upload" class="gs-filterbar"><input id="file" name="file" type="file" accept=".png,.jpg,.jpeg,.svg,image/png,image/jpeg,image/svg+xml" required /><button type="submit" class="gs-btn-primary">Upload</button><span id="media-message" class="gs-muted">PNG, JPEG, or sanitized SVG; max 5 MB.</span></form>
+          <form id="upload" class="gs-filterbar"><input id="file" name="file" type="file" accept=".png,.jpg,.jpeg,.svg,image/png,image/jpeg,image/svg+xml" required /><button type="submit" class="gs-button">Upload</button><span id="media-message" class="gs-text-subtle">PNG, JPEG, or sanitized SVG; max 5 MB.</span></form>
           <div id="assets" class="asset-grid"><div class="gs-empty"><strong>Loading assets…</strong></div></div>
-          <footer class="gs-table-footer"><span id="asset-page"></span><div><button id="asset-previous" class="gs-btn-secondary" type="button">Previous</button><button id="asset-next" class="gs-btn-secondary" type="button">Next</button></div></footer>
+          <footer class="gs-table-footer"><span id="asset-page"></span><div><button id="asset-previous" class="gs-button gs-button--secondary" type="button">Previous</button><button id="asset-next" class="gs-button gs-button--secondary" type="button">Next</button></div></footer>
         </div>
       </article>
     </section>
 
     <section class="gs-admin-grid" data-panel="dns" hidden>
       <article class="gs-module gs-span-12">
-        <header class="gs-module-header"><div><h2>DNS records</h2><p class="gs-data-description">Live Cloudflare records. Read state is retrieved with the scoped gs-api Cloudflare credential.</p></div><span id="dns-status" class="gs-status gs-status-pending"><i></i>Loading</span></header>
+        <header class="gs-module-header"><div><h2>DNS records</h2><p class="gs-text-subtle">Live Cloudflare records. Read state is retrieved with the scoped gs-api Cloudflare credential.</p></div><span id="dns-status" class="gs-status gs-status-pending"><i></i>Loading</span></header>
         <div class="gs-module-body">
-          <div class="gs-filterbar"><input id="dns-search" class="gs-input" placeholder="Search hostname or target" /><select id="dns-type" class="gs-input"><option value="">All record types</option><option>A</option><option>AAAA</option><option>CNAME</option><option>MX</option><option>TXT</option><option>CAA</option></select><button id="dns-refresh" class="gs-btn-secondary" type="button">Refresh</button></div>
+          <div class="gs-filterbar"><input id="dns-search" class="gs-input" placeholder="Search hostname or target" /><select id="dns-type" class="gs-input"><option value="">All record types</option><option>A</option><option>AAAA</option><option>CNAME</option><option>MX</option><option>TXT</option><option>CAA</option></select><button id="dns-refresh" class="gs-button gs-button--secondary" type="button">Refresh</button></div>
           <div id="dns-error" class="gs-error-state" hidden></div>
           <div class="gs-table-wrap"><table class="gs-admin-table"><thead><tr><th><input id="dns-select-all" type="checkbox" aria-label="Select all DNS records" /></th><th>Type</th><th>Name</th><th>Content</th><th>Proxy</th><th>TTL</th><th>Modified</th></tr></thead><tbody id="dns-rows"><tr><td colspan="7">Loading…</td></tr></tbody></table></div>
           <footer class="gs-table-footer"><span id="dns-summary"></span></footer>
@@ -95,9 +95,9 @@ const initialTab = (TABS as readonly string[]).includes(requestedTab ?? '') ? re
 
     <section class="gs-admin-grid" data-panel="pages" hidden>
       <article class="gs-module gs-span-12">
-        <header class="gs-module-header"><div><h2>Cloudflare Pages</h2><p class="gs-data-description">Projects are shown as legacy/deployment surfaces only; gs-web itself remains a Worker + Assets application.</p></div><span id="pages-status" class="gs-status gs-status-pending"><i></i>Loading</span></header>
+        <header class="gs-module-header"><div><h2>Cloudflare Pages</h2><p class="gs-text-subtle">Projects are shown as legacy/deployment surfaces only; gs-web itself remains a Worker + Assets application.</p></div><span id="pages-status" class="gs-status gs-status-pending"><i></i>Loading</span></header>
         <div class="gs-module-body">
-          <div class="gs-filterbar"><input id="pages-search" class="gs-input" placeholder="Search project or domain" /><button id="pages-refresh" class="gs-btn-secondary" type="button">Refresh</button></div>
+          <div class="gs-filterbar"><input id="pages-search" class="gs-input" placeholder="Search project or domain" /><button id="pages-refresh" class="gs-button gs-button--secondary" type="button">Refresh</button></div>
           <div id="pages-error" class="gs-error-state" hidden></div>
           <div class="gs-table-wrap"><table class="gs-admin-table"><thead><tr><th>Project</th><th>Domains</th><th>Production branch</th><th>Latest deployment</th><th>Status</th><th>Created</th></tr></thead><tbody id="pages-rows"><tr><td colspan="6">Loading…</td></tr></tbody></table></div>
           <footer class="gs-table-footer"><span id="pages-summary"></span></footer>
@@ -178,7 +178,7 @@ const initialTab = (TABS as readonly string[]).includes(requestedTab ?? '') ? re
   async function loadSecrets(){
     if(!secretRows)return; const q=new URLSearchParams({offset:String((secretPage-1)*25),limit:'25'}); const filter=(document.querySelector<HTMLInputElement>('#filter-integration')?.value||'').trim(); const type=document.querySelector<HTMLSelectElement>('#filter-type')?.value||''; if(filter)q.set('integration_id',filter);if(type)q.set('key_type',type);if(document.querySelector<HTMLInputElement>('#include-expired')?.checked)q.set('include_expired','true');
     const result=await adminApi<any>(`/api/admin/secrets?${q}`); secretRows.replaceChildren(); if(!result.ok){errorBox('#secret-error',adminApiMessage(result));const tr=document.createElement('tr');const c=td('Unavailable');c.colSpan=6;tr.append(c);secretRows.append(tr);return;} errorBox('#secret-error');
-    for(const s of result.data.items as Secret[]){const tr=document.createElement('tr');tr.append(td(s.integration_id),td(s.key_type),td(`${s.key_prefix}••••`),td(s.expires_at?new Date(s.expires_at).toLocaleString():'Never'),td(String(s.rotation_count)));const actions=td('');const rotate=document.createElement('button');rotate.className='gs-btn-secondary';rotate.textContent='Rotate';rotate.onclick=()=>openRotate(s);const revoke=document.createElement('button');revoke.className='gs-btn-secondary';revoke.textContent='Revoke';revoke.onclick=()=>revokeSecret(s);actions.append(rotate,revoke);tr.append(actions);secretRows.append(tr);} if(!result.data.items.length){const tr=document.createElement('tr');const c=td('No secret metadata matches this filter.');c.colSpan=6;tr.append(c);secretRows.append(tr);} secretPages=result.data.pagination?.pages||1;text('#page-summary',`Page ${result.data.pagination?.page||1} of ${secretPages} · ${result.data.pagination?.total||0} secrets`);
+    for(const s of result.data.items as Secret[]){const tr=document.createElement('tr');tr.append(td(s.integration_id),td(s.key_type),td(`${s.key_prefix}••••`),td(s.expires_at?new Date(s.expires_at).toLocaleString():'Never'),td(String(s.rotation_count)));const actions=td('');const rotate=document.createElement('button');rotate.className='gs-button gs-button--secondary';rotate.textContent='Rotate';rotate.onclick=()=>openRotate(s);const revoke=document.createElement('button');revoke.className='gs-button gs-button--secondary';revoke.textContent='Revoke';revoke.onclick=()=>revokeSecret(s);actions.append(rotate,revoke);tr.append(actions);secretRows.append(tr);} if(!result.data.items.length){const tr=document.createElement('tr');const c=td('No secret metadata matches this filter.');c.colSpan=6;tr.append(c);secretRows.append(tr);} secretPages=result.data.pagination?.pages||1;text('#page-summary',`Page ${result.data.pagination?.page||1} of ${secretPages} · ${result.data.pagination?.total||0} secrets`);
   }
   const openCreate=()=>{secretForm?.reset();if(secretId)secretId.value='';if(integration){integration.disabled=false;integration.value='';}if(keyType)keyType.disabled=false;text('#dialog-title','Create secret');text('#value-label','Secret value');dialog?.showModal();};
   const openRotate=(s:Secret)=>{secretForm?.reset();if(secretId)secretId.value=s.id;if(integration){integration.value=s.integration_id;integration.disabled=true;}if(keyType){keyType.value=s.key_type;keyType.disabled=true;}text('#dialog-title',`Rotate ${s.integration_id}`);text('#value-label','New secret value');dialog?.showModal();};
