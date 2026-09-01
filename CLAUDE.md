@@ -1,6 +1,6 @@
 # CLAUDE.md — goldshore-ai
 
-> Updated: 2026-08-27 · Canonical source is `main`; recovery branches must rebase/merge latest `origin/main` before handoff.
+> Updated: 2026-09-01 · Canonical source is `main`; recovery branches must rebase/merge latest `origin/main` before handoff.
 
 ## Platform overview
 
@@ -61,6 +61,24 @@ pnpm 9 + Turborepo. This repository intentionally exposes only the two canonical
 |-----|-------------|--------|--------|
 | `apps/gs-web` | `gs-web` | `goldshore.ai/*` | ✅ Canonical Astro frontend |
 | `apps/gs-api` | `gs-api` | `api.goldshore.ai/*` | ✅ Canonical unified API Worker |
+
+> **These Workers were renamed, and `[env.prod]` must keep pinning `name`.**
+> The production Workers used to be `gs-web-prod` and `gs-api-prod`; both were
+> renamed in the dashboard, keeping their script ids (`7510e007…` and
+> `a5322bde…` respectively — ids survive a rename, which is how this is
+> verifiable). Wrangler derives the Worker name for a named environment as
+> `<top-level name>-<env>`, so **without the explicit `name =` line in
+> `[env.prod]`, `wrangler deploy --env prod` would recreate `gs-web-prod` /
+> `gs-api-prod` and move the routes onto the new Worker, orphaning the live
+> one.** Do not remove those pins. Note the side effect in `gs-api`: the
+> top-level and `env.prod` configs now resolve to the same Worker, and the top
+> level declares no bindings — a bare `wrangler deploy` without `--env prod`
+> would replace live `gs-api` with a bindingless build. Every deploy path in
+> this repo passes `--env prod`; keep it that way.
+>
+> Older names still appear in `infra/INFRASTRUCTURE.md` and some `reports/`
+> and `docs/` files, which have not been reconciled. `infra/Cloudflare/BINDINGS_MAP.md`
+> carries the live inventory, verified 2026-09-01.
 
 If a task appears to require a separate admin, gateway, MCP, cron, mail, signals, or agent worker, implement it as a sub-route, handler, queue consumer, or scheduled flow inside `apps/gs-api`, or as a page/sub-route inside `apps/gs-web`.
 
