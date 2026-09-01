@@ -167,7 +167,7 @@ forms.post('/newsletter/submissions', async (c) => {
 
   const turnstileForm = new FormData();
   if (body?.turnstileToken) turnstileForm.set('cf-turnstile-response', body.turnstileToken);
-  const turnstile = await validateFormTurnstile(turnstileForm, c.env.TURNSTILE_SECRET, c.req.raw);
+  const turnstile = await validateFormTurnstile(turnstileForm, c.env.TURNSTILE_SECRET_KEY, c.req.raw);
   if (!turnstile.valid) return c.json({ ok: false, error: turnstile.error || 'Bot verification failed.' }, 400);
 
   const existing = await c.env.PLATFORM_DB.prepare('SELECT status FROM newsletter_subscribers WHERE email=?').bind(email).first<{ status: string }>();
@@ -274,7 +274,7 @@ forms.post('/:formId/submissions', async (c) => {
   }
   const turnstileValidation = await validateFormTurnstile(
     turnstileForm,
-    c.env.TURNSTILE_SECRET,
+    c.env.TURNSTILE_SECRET_KEY,
     c.req.raw,
   );
 

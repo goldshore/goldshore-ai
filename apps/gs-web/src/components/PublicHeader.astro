@@ -201,7 +201,7 @@ const isCurrent = (href: string) => {
   .nav-login, .nav-cta { cursor: pointer; }
   .auth-modal { width: min(34rem, calc(100% - 2rem)); padding: clamp(1.5rem, 5vw, 2.5rem); border: 1px solid rgba(211,116,62,.42); border-radius: 0; background: #111019; color: #f5f1eb; box-shadow: 0 28px 90px rgba(0,0,0,.6); }
   .auth-modal::backdrop { background: rgba(3,3,7,.78); backdrop-filter: blur(8px); }
-  .auth-modal h2 { margin: .65rem 0 1rem; font-size: clamp(2rem, 6vw, 3.5rem); line-height: .95; text-transform: uppercase; }
+  .auth-modal h2 { margin: .65rem 0 1rem; font-size: clamp(1.75rem, 5vw, 2.75rem); line-height: 1.05; text-transform: uppercase; overflow-wrap: break-word; word-break: break-word; hyphens: auto; }
   .auth-modal p { color: var(--gs-text-dim); line-height: 1.7; }
   .auth-modal__close { position: absolute; top: 1rem; right: 1rem; border: 0; background: transparent; color: var(--gs-text-dim); cursor: pointer; text-transform: uppercase; font: 600 .62rem/1 'DM Mono', monospace; letter-spacing: .1em; }
   .auth-modal__actions { display: grid; gap: .75rem; margin-top: 1.5rem; }

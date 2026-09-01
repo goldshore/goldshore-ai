@@ -1,6 +1,8 @@
 import { Hono } from 'hono';
 import type { Env, Variables } from '../types';
-import { isValidEmail } from '@goldshore/utils';
+import { escapeHtml, isValidEmail } from '@goldshore/utils';
+import { enqueueMailJob } from '../lib/mail-queue';
+import { validateFormTurnstile } from '../lib/turnstile';
 
 const mail = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -54,7 +56,7 @@ mail.post('/contact', async (c) => {
 
   const turnstile = await validateFormTurnstile(
     formData,
-    c.env.TURNSTILE_SECRET,
+    c.env.TURNSTILE_SECRET_KEY,
     c.req.raw,
   );
   if (!turnstile.valid) {
