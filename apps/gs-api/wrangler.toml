@@ -8,7 +8,7 @@ workers_dev = false
 # preview URLs for Durable Object Workers, so keep this explicit rather than
 # implying the dashboard toggle can create one. Use an Access-protected staging
 # hostname with isolated bindings for shareable API testing.
-preview_urls = false
+preview_urls = true
 
 # Deployments must always select a named environment so bindings cannot leak
 # between production and preview.
