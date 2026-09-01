@@ -4,6 +4,11 @@ compatibility_date = "2026-08-12"
 compatibility_flags = ["nodejs_compat"]
 
 workers_dev = false
+# `gs-api` implements Durable Objects. Cloudflare does not generate Workers
+# preview URLs for Durable Object Workers, so keep this explicit rather than
+# implying the dashboard toggle can create one. Use an Access-protected staging
+# hostname with isolated bindings for shareable API testing.
+preview_urls = true
 
 # Deployments must always select a named environment so bindings cannot leak
 # between production and preview.
@@ -25,6 +30,9 @@ workers_dev = false
 # deploy` without `--env prod` would replace live gs-api with a bindingless
 # build. Every deploy path in this repo passes `--env prod`; keep it that way.
 name = "gs-api"
+# Match the top-level policy for the CI production target. This does not change
+# Durable Object preview support; Cloudflare currently does not provide it.
+preview_urls = false
 
 routes = [
   { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" },
