@@ -31,6 +31,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # A shallow clone shares no ancestor with origin/main, which makes the
+          # three-dot range below abort instead of computing a diff.
+          fetch-depth: 0
 
       - name: Guard pnpm lockfile
         run: |
@@ -40,7 +44,11 @@ jobs:
           # Allow adding pnpm-lock.yaml when main doesn't have one (restoration after deletion).
           # Only block modifications to an existing lockfile.
           if git show origin/main:pnpm-lock.yaml > /dev/null 2>&1; then
-            if git diff --name-only origin/main...HEAD | grep -q '^pnpm-lock.yaml$'; then
+            # Assign first so a failed diff trips set -e. As the condition of an
+            # `if`, piped straight into grep, a fatal error was indistinguishable
+            # from "no match" and the guard passed every PR unconditionally.
+            CHANGED="$(git diff --name-only origin/main...HEAD)"
+            if printf '%s\n' "$CHANGED" | grep -q '^pnpm-lock\.yaml$'; then
               echo "❌ Detected changes to pnpm-lock.yaml in this pull request."
               echo "Lockfile updates must go through the designated lockfile update branch/process."
               exit 1
