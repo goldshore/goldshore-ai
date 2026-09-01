@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "manifest_version": "1.0",
+  "purpose": "Values-only review record for GoldShore Google Admin branding",
+  "google_admin": {
+    "organization_name": "Gold Shore Labs",
+    "application_name": "GoldShore",
+    "support_email": "admin@goldshore.org",
+    "homepage_url": "https://goldshore.ai/",
+    "privacy_policy_url": "https://goldshore.ai/privacy",
+    "terms_url": "https://goldshore.ai/terms",
+    "upload_note": "Google Admin branding is configured by uploading an image in the Admin console; this JSON is an internal review record and is not uploaded to Google."
+  },
+  "brand": {
+    "wordmark": "GOLDSHORE",
+    "font": {
+      "family": "Syne",
+      "fallbacks": ["DM Sans", "system-ui", "sans-serif"],
+      "weight": 800,
+      "text_transform": "uppercase",
+      "letter_spacing_px": 2.576
+    },
+    "colors": {
+      "dark_background": "#06060A",
+      "light_foreground": "#06060A",
+      "dark_foreground": "#FFFFFF",
+      "secondary_text": "#ECEAE4"
+    }
+  },
+  "assets": {
+    "production_source": {
+      "status": "verified_in_artifact",
+      "artifact_label": "CURRENT",
+      "artifact_filename": "goldshore-lockup-white.svg",
+      "public_logo_url": "https://goldshore.ai/assets/penrose-logo.png",
+      "public_logo_dimensions": "1024x1024",
+      "repo_candidates": {
+        "horizontal": "packages/brand/logo-horizontal.svg",
+        "icon": "packages/brand/logo-penrose.svg"
+      }
+    },
+    "candidate_policy": {
+      "candidate_a": "do_not_use_without_brand_approval",
+      "candidate_b": "do_not_use_without_brand_approval",
+      "reason": "The artifact identifies both as unreferenced alternatives; they are not the production CSS/admin-console source of truth."
+    }
+  },
+  "review_status": {
+    "branding_choice": "CURRENT production-consistent lockup",
+    "google_admin_upload": "pending owner upload",
+    "light_variant": "requires approved dark artwork; do not approximate the mark",
+    "last_reviewed": "2026-09-01"
+  }
+}
