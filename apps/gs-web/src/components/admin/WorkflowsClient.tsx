@@ -86,33 +86,32 @@ export default function WorkflowsClient() {
   };
 
   if (isLoading) {
-    return <div className="text-center py-12 text-gray-600">Loading workflows...</div>;
+    return <div className="gs-empty gs-text-subtle">Loading workflows...</div>;
   }
 
   return (
-    <div className="space-y-6">
+    <div className="gs-stack">
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm">
+        <div className="gs-alert gs-alert--error">
           {error}
         </div>
       )}
 
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Workflows</h2>
-          <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded">
+      <div className="gs-panel">
+        <div className="gs-row gs-row--between">
+          <h2>Workflows</h2>
+          <button className="gs-button">
             + Create Workflow
           </button>
         </div>
 
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-900 mb-2">
+        <div>
+          <label>
             Filter by Type
           </label>
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
           >
             <option value="">All types</option>
             <option value="leads_generator">Leads Generator</option>
@@ -125,11 +124,11 @@ export default function WorkflowsClient() {
       </div>
 
       {workflows.length === 0 ? (
-        <div className="text-center py-12 text-gray-600">
+        <div className="gs-empty gs-text-subtle">
           No workflows found. Create one to get started.
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="gs-list-grid">
           {workflows.map((workflow) => (
             <WorkflowCard
               key={workflow.id}

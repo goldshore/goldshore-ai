@@ -24,6 +24,7 @@ type ResourceBindings = {
   EVENTS_QUEUE?: Queue;
   MAIL_JOBS_QUEUE?: Queue;
   GS_SIGNALS?: Workflow<SignalsEvaluatorParams>;
+  EDITORIAL_PRODUCTION?: Workflow<import('./workers/editorial-production').EditorialProductionParams>;
   AGENT?: Fetcher;
   BREVO_API_KEY?: SecretsStoreSecret;
   BREVO_MCP_KEY?: SecretsStoreSecret;
@@ -191,6 +192,7 @@ export type SignalsEvaluatorParams = {
 export type Variables = {
   accessClaims: AccessTokenPayload | null;
   requestId: string;
+  correlationId: string;
   user?: SessionUser;
 };
 

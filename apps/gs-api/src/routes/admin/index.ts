@@ -17,6 +17,9 @@ import aiSearch from './ai-search';
 import prManager from './pr-manager';
 import workers from './workers';
 import mcpServers from './mcp-servers';
+import customers from './customers';
+import subscriptions from './subscriptions';
+import social from './social';
 
 const admin = new Hono<{
   Bindings: Env;
@@ -39,6 +42,11 @@ admin.route('/repo-health', repoHealth);
 admin.route('/chat', chat);
 admin.route('/cf', workers);
 admin.route('/mcp', mcpServers);
+
+// Phase 2: Customer and subscription management (consolidation from goldshore-admin)
+admin.route('/customers', customers);
+admin.route('/subscriptions', subscriptions);
+admin.route('/social', social);
 
 // Phase 2a: RBAC access control routes
 admin.route('/rbac/roles', rbacRoles);

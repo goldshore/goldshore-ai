@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 interface ModalProps {
   isOpen: boolean;
@@ -19,17 +19,32 @@ export default function Modal({
   submitLabel = 'Save',
   isLoading = false,
 }: ModalProps) {
+  // The close button has always advertised "Close (Esc)" without anything
+  // listening for it.
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose} />
-      <div className="relative bg-white rounded-lg shadow-lg max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-bold">{title}</h2>
+    <div className="gs-modal-overlay" role="dialog" aria-modal="true" aria-label={title}>
+      {/* A real button, not a bare div: the backdrop is the expected way out of
+          a dialog on touch, and it needs to be reachable by keyboard too. */}
+      <button type="button" className="gs-modal-backdrop" aria-label="Close" onClick={onClose} />
+
+      <div className="gs-modal-panel">
+        <div className="gs-modal-head">
+          <h2 className="gs-modal-title">{title}</h2>
           <button
+            type="button"
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 font-bold text-2xl leading-none"
+            className="gs-modal-close"
             aria-label="Close"
             title="Close (Esc)"
           >
@@ -37,20 +52,22 @@ export default function Modal({
           </button>
         </div>
 
-        <div className="p-6 space-y-4">{children}</div>
+        <div className="gs-modal-body gs-stack-sm">{children}</div>
 
         {onSubmit && (
-          <div className="flex gap-2 p-6 border-t justify-end">
+          <div className="gs-modal-foot">
             <button
+              type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="gs-button gs-button--secondary gs-button--small"
               disabled={isLoading}
             >
               Cancel
             </button>
             <button
+              type="button"
               onClick={onSubmit}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
+              className="gs-button gs-button--small"
               disabled={isLoading}
             >
               {isLoading ? 'Saving...' : submitLabel}

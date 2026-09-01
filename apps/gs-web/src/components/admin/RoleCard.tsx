@@ -28,26 +28,22 @@ export default function RoleCard({
   return (
     <div
       onClick={onClick}
-      className={`cursor-pointer p-4 rounded-lg border-2 transition-colors ${
-        isSelected
-          ? 'border-blue-500 bg-blue-50'
-          : 'border-gray-200 bg-white hover:border-gray-300'
-      }`}
+      className={`gs-selectable ${isSelected ? 'is-selected' : ''}`}
     >
-      <div className="flex items-start justify-between mb-2">
+      <div>
         <div>
-          <h3 className="font-semibold text-gray-900">{role.name}</h3>
+          <h3>{role.name}</h3>
           {role.description && (
-            <p className="text-xs text-gray-600 mt-1">{role.description}</p>
+            <p className="gs-cell-meta">{role.description}</p>
           )}
         </div>
         {role.is_default && (
-          <span className="text-xs bg-gray-200 text-gray-800 px-2 py-1 rounded">
+          <span className="gs-badge">
             Default
           </span>
         )}
       </div>
-      <div className="flex items-center justify-between text-xs text-gray-600">
+      <div className="gs-row gs-row--between">
         <span>{permCount} permissions</span>
         {!role.is_default && (
           <button
@@ -55,7 +51,7 @@ export default function RoleCard({
               e.stopPropagation();
               onDelete(role.id);
             }}
-            className="text-red-600 hover:text-red-700 font-medium"
+            className="gs-link-button gs-link-button--danger"
           >
             Delete
           </button>

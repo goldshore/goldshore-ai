@@ -5,6 +5,7 @@ import {
   authorizeAccessClaims,
 } from '@goldshore/auth';
 import { createCorsMiddleware, APPROVED_API_ORIGINS } from '@goldshore/shared';
+import { correlationIdMiddleware } from './middleware/correlation-id';
 import { EmailLogSchema } from '@goldshore/schema';
 import users from './routes/users';
 import integrationKeys from './routes/integration-keys';
@@ -34,6 +35,8 @@ import googleBusiness from './routes/google-business';
 import ebayOauth from './routes/oauth/ebay';
 import mcp from './routes/mcp';
 import invitations from './routes/invitations';
+import account from './routes/account';
+import webhooks from './routes/webhooks';
 import { getRuntimeVersion, withContractHeaders } from './routes/contract';
 import { assertSecuritySecrets } from './securitySecrets';
 import type { Env, Variables } from './types';
@@ -46,6 +49,7 @@ import {
   isInternalPath,
 } from './lib/access-context';
 export { SignalsEvaluator } from './workers/signals-evaluator';
+export { EditorialProductionWorkflow } from './workers/editorial-production';
 
 interface ForwardableEmailMessage {
   from: string;
@@ -98,6 +102,12 @@ const isAllowedOrigin = (origin: string, allowedOrigins?: string) => {
 
 const isPublicPath = (path: string, method: string) => {
   if (method === 'OPTIONS') return true;
+  // GitHub authenticates these machine-to-machine requests with the
+  // X-Hub-Signature-256 HMAC verified by the webhook router. Requiring an
+  // interactive Access JWT here rejects GitHub before that verification can
+  // run, even when the edge Access application intentionally bypasses the
+  // signed webhook paths.
+  if (method === 'POST' && /^\/webhooks\/github\/[^/]+\/?$/i.test(path)) return true;
   if (method === 'POST' && /^\/v1\/forms\/[a-z0-9-]+\/submissions$/i.test(path)) return true;
   if (path === '/v1/forms/newsletter/confirm' && (method === 'GET' || method === 'POST')) return true;
   if (path === '/v1/forms/newsletter/preferences' && (method === 'GET' || method === 'PUT')) return true;
@@ -165,6 +175,8 @@ app.use(
     allowLocalhost: true,
   }),
 );
+
+app.use('*', correlationIdMiddleware);
 
 app.use('*', async (c, next) => {
   await next();
@@ -313,6 +325,7 @@ app.route('/user', user);
 app.route('/system', system);
 app.route('/templates', templates);
 app.route('/invitations', invitations);
+app.route('/account', account);
 app.route('/admin', admin);
 // The admin Secrets UI (apps/gs-web/src/pages/admin/system/index.astro,
 // Secrets tab) proxies to /integrations/keys/*, not /admin/*. The router for
@@ -335,6 +348,7 @@ app.route('/control', control);
 app.route('/trading', trading);
 app.route('/core', core);
 app.route('/oauth/ebay', ebayOauth);
+app.route('/webhooks', webhooks);
 // routes/mcp.ts replaced the standalone goldshore-mcp Worker (which 1101'd on
 // every request - placeholder KV id, no durable_objects block) but was never
 // mounted here, so the working replacement was dead code and the Cloudflare

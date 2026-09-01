@@ -27,14 +27,14 @@ try {
 ---
 
 <AdminLayout title="Admin | API Tokens">
-  <div class="max-w-7xl mx-auto p-8 space-y-8">
-    <div class="space-y-2">
-      <h1 class="text-4xl gs-heading gs-text-accent">API Tokens</h1>
-      <p class="text-lg gs-text-subtle">Generate and manage API tokens for programmatic access to your account.</p>
+  <div class="gs-page gs-stack">
+    <div class="gs-stack-sm">
+      <h1 class="gs-heading gs-text-accent">API Tokens</h1>
+      <p class="gs-text-subtle gs-text-lg">Generate and manage API tokens for programmatic access to your account.</p>
     </div>
 
     {tokens.error && (
-      <div class="p-4 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+      <div class="gs-alert gs-alert--error gs-text-sm">
         {tokens.error}
       </div>
     )}
