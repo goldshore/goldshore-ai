@@ -1,0 +1,131 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { fetchAdminJson } from '../../lib/api-proxy';
+
+const jwtToken = Astro.request.headers.get('CF-Access-JWT-Assertion') || '';
+const offset = parseInt(Astro.url.searchParams.get('offset') || '0');
+const limit = parseInt(Astro.url.searchParams.get('limit') || '25');
+const search = Astro.url.searchParams.get('search') || '';
+
+let customersData: { customers: any[]; total: number; offset: number; limit: number; error: string | null } = {
+  customers: [],
+  total: 0,
+  offset,
+  limit,
+  error: null
+};
+
+try {
+  const params = new URLSearchParams({
+    offset: String(offset),
+    limit: String(limit),
+    ...(search && { search })
+  });
+
+  const result = await fetchAdminJson<{ customers: any[]; total: number }>(
+    Astro.request,
+    `/admin/customers?${params}`
+  );
+
+  if (result.ok && result.data) {
+    customersData = { ...customersData, ...result.data };
+  } else if (result.status === 401 || result.status === 403) {
+    customersData.error = 'Authentication required. Please ensure you are logged in with the correct credentials.';
+  } else if (!result.ok) {
+    customersData.error = `Failed to load customers (status ${result.status}).`;
+  }
+} catch (error) {
+  customersData.error = error instanceof Error ? error.message : 'Failed to load customers';
+}
+---
+
+<AdminLayout title="Customers | GoldShore Admin">
+  <div class="gs-page gs-stack">
+    <div class="gs-stack-sm">
+      <h1 class="gs-heading gs-text-accent">Customers</h1>
+      <p class="gs-text-subtle gs-text-lg">Manage customer accounts and subscriptions</p>
+    </div>
+
+    {customersData.error && (
+      <div class="gs-alert gs-alert--error gs-text-sm">
+        {customersData.error}
+      </div>
+    )}
+
+    <div class="gs-card gs-stack">
+      <div class="gs-row gs-row--between">
+        <h2>All Customers</h2>
+        <a href="/admin/customers/new" class="gs-button">
+          + Create New Customer
+        </a>
+      </div>
+
+      {customersData.customers.length === 0 ? (
+        <p class="gs-text-subtle">No customers found</p>
+      ) : (
+        <div>
+          <table class="gs-text-sm">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {customersData.customers.map((customer: any) => (
+                <tr>
+                  <td>{customer.name}</td>
+                  <td>{customer.email}</td>
+                  <td>
+                    <span class="gs-badge success">
+                      {customer.status}
+                    </span>
+                  </td>
+                  <td class="gs-text-subtle">
+                    {new Date(customer.created_at).toLocaleDateString()}
+                  </td>
+                  <td>
+                    <a href={`/admin/customers/${customer.id}`} >
+                      View
+                    </a>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {customersData.customers.length > 0 && (
+        <div class="gs-row gs-row--between">
+          <div class="gs-text-sm gs-text-subtle">
+            Showing {offset + 1} to {Math.min(offset + limit, customersData.total)} of {customersData.total}
+          </div>
+          <div>
+            {offset > 0 && (
+              <a
+                href={`/admin/customers?offset=${offset - limit}&limit=${limit}`}
+                class="gs-button gs-button--secondary"
+              >
+                ← Previous
+              </a>
+            )}
+            {offset + limit < customersData.total && (
+              <a
+                href={`/admin/customers?offset=${offset + limit}&limit=${limit}`}
+                class="gs-button gs-button--secondary"
+              >
+                Next →
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+</AdminLayout>

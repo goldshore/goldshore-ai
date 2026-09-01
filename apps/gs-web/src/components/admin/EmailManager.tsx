@@ -94,12 +94,12 @@ function EmailManagerContent({ jwtToken: _jwtToken }: Props) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold">Email Management</h2>
+    <div className="gs-stack">
+      <div className="gs-row gs-row--between">
+        <h2>Email Management</h2>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          className="gs-button"
         >
           + Send Email
         </button>
@@ -114,13 +114,13 @@ function EmailManagerContent({ jwtToken: _jwtToken }: Props) {
             label: 'Status',
             render: (v) => (
               <span
-                className={`px-2 py-1 rounded text-sm font-medium ${
-                  v === 'sent'
-                    ? 'bg-green-100 text-green-800'
-                    : v === 'failed'
-                    ? 'bg-red-100 text-red-800'
-                    : 'bg-yellow-100 text-yellow-800'
-                }`}
+                className={`${
+ v === 'sent'
+ ? 'success'
+ : v === 'failed'
+ ? 'danger'
+ : 'warning'
+ }`}
               >
                 {v}
               </span>
@@ -135,7 +135,7 @@ function EmailManagerContent({ jwtToken: _jwtToken }: Props) {
         endpoint="/api/admin/email"
         title="Email History"
         actions={() => (
-          <button className="text-red-500 hover:text-red-700" title="Delete">
+          <button className="gs-link-button gs-link-button--danger" title="Delete">
             Delete
           </button>
         )}
@@ -153,12 +153,12 @@ function EmailManagerContent({ jwtToken: _jwtToken }: Props) {
         isLoading={isSending}
       >
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
+          <div className="gs-alert gs-alert--error">
             {error}
           </div>
         )}
         {success && (
-          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
+          <div className="gs-alert gs-alert--success">
             {success}
           </div>
         )}

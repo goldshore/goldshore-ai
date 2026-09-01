@@ -1,7 +1,12 @@
 ---
+import '@goldshore/theme/styles/tokens.css';
+import '@goldshore/theme/styles/base.css';
+import '@goldshore/theme/styles/components.css';
+import '@goldshore/theme/styles/layout.css';
+import '../styles/admin-components.css';
+import '../styles/admin-saas.css';
 import Sidebar from '../components/Sidebar.astro';
 import FloatingChatWidget from '../components/admin/FloatingChatWidget';
-import '../styles/admin.css';
 import { ADMIN_PERMISSIONS, type AdminPermission } from '@goldshore/auth';
 
 interface Props {
@@ -12,11 +17,6 @@ interface Props {
 
 const { title, requiredPermission, description = 'Protected GoldShore operations workspace for content, infrastructure, integrations, and customer workflows.' } = Astro.props;
 const canonicalUrl = new URL(Astro.url.pathname, 'https://admin.goldshore.ai').toString();
-// Authentication and permission checks are authoritative in middleware.ts.
-// Returning a Response from an Astro layout component produces an empty 200
-// response under the Cloudflare adapter instead of the intended redirect or
-// error. Keep the layout presentation-only after middleware has authorized the
-// request.
 const permissions = ADMIN_PERMISSIONS;
 void requiredPermission;
 ---
@@ -33,8 +33,11 @@ void requiredPermission;
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonicalUrl} />
     <link rel="icon" href="/favicon.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   </head>
-  <body class="gs-admin-body">
+  <body class="gs-admin-body gs-density-balanced">
     <div class="gs-admin-shell">
       <Sidebar permissions={permissions} />
       <main class="gs-admin-main">
@@ -43,6 +46,7 @@ void requiredPermission;
         </button>
         <slot />
       </main>
+      <button class="gs-sidebar-scrim" id="sidebar-scrim" type="button" aria-label="Close admin navigation" tabindex="-1"></button>
       <FloatingChatWidget client:load />
     </div>
   </body>
@@ -50,44 +54,28 @@ void requiredPermission;
 
 <style>
   :root {
-    color-scheme: dark;
-    --admin-bg: #050d15;
-    --admin-surface: #09141f;
-    --admin-line: rgba(171, 190, 202, .12);
-    --admin-line-strong: rgba(171, 190, 202, .19);
-    --admin-text: #e8ecec;
-    --admin-muted: #91a0aa;
-    --admin-faint: #63727d;
-    --admin-accent: #e08b48;
-    --admin-success: #52c878;
-    --admin-display: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --admin-text-on-dark: #f5f7fa;
+    --admin-muted-on-dark: #9aa4ae;
+    --admin-line-on-dark: rgba(255,255,255,.12);
     --admin-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    --admin-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    --admin-display: "Space Grotesk", var(--admin-ui);
   }
-
   body.gs-admin-body {
     margin: 0;
-    background: var(--admin-bg);
-    color: var(--admin-text);
+    min-height: 100dvh;
     font-family: var(--admin-ui);
-    min-height: 100dvh;
   }
-
-  .gs-admin-shell {
-    display: flex;
-    min-height: 100dvh;
-  }
-
-  .gs-admin-main {
-    flex: 1;
-    min-width: 0;
-    overflow-x: hidden;
-    padding: 0;
-  }
-
+  .gs-admin-body h1,.gs-admin-body h2,.gs-admin-body h3 { font-family: var(--admin-display); letter-spacing: -.015em; }
+  .gs-admin-shell { display: flex; min-height: 100dvh; }
+  .gs-admin-main { flex: 1; min-width: 0; overflow-x: hidden; }
   .gs-admin-menu-toggle { display: none; }
+  .gs-sidebar-scrim { display: none; }
 
-  @media (max-width: 900px) {
+  /* (pointer: coarse) as well as a width cap: a tablet in landscape reports
+     well over 900px, so a width-only query left touch users on the desktop
+     shell — a permanent 272px sidebar with no way to dismiss it, and the page
+     content squeezed into whatever was left. */
+  @media (max-width: 900px), (pointer: coarse) {
     .gs-admin-menu-toggle {
       display: inline-flex;
       position: fixed;
@@ -96,24 +84,69 @@ void requiredPermission;
       z-index: 35;
       gap: 8px;
       align-items: center;
-      border: 1px solid var(--admin-line-strong);
-      background: #09141f;
-      color: var(--admin-text);
+      border: 1px solid var(--admin-line-on-dark);
+      border-radius: 6px;
+      background: rgba(12,15,20,.92);
+      color: var(--admin-text-on-dark);
       padding: 9px 12px;
-      font: 650 .7rem var(--admin-ui);
+      font: 650 .72rem var(--admin-ui);
+      backdrop-filter: blur(12px);
     }
-    .gs-admin-menu-toggle svg { width: 15px; fill: none; stroke: var(--admin-accent); stroke-width: 1.5; }
-    body.gs-sidebar-open::after { content: ''; position: fixed; inset: 0; z-index: 30; background: rgba(0,0,0,.58); }
+    .gs-admin-menu-toggle svg { width: 15px; fill: none; stroke: currentColor; stroke-width: 1.5; }
+    /* A real element rather than body::after. The pseudo-element painted the
+       same dim, but nothing could listen to it, so tapping outside the drawer
+       — the ordinary way to dismiss one on touch — did nothing. */
+    body.gs-sidebar-open .gs-sidebar-scrim {
+      display: block;
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      border: 0;
+      padding: 0;
+      background: rgba(0,0,0,.62);
+      cursor: pointer;
+    }
   }
 </style>
 
 <script>
+  import { initializeAdminLayout } from '../lib/admin-layout';
+
   const openButton = document.querySelector<HTMLButtonElement>('#admin-menu-toggle');
   const closeButton = document.querySelector<HTMLButtonElement>('#sidebar-close');
-  const closeSidebar = () => document.body.classList.remove('gs-sidebar-open');
-  openButton?.addEventListener('click', () => document.body.classList.add('gs-sidebar-open'));
+  const scrim = document.querySelector<HTMLButtonElement>('#sidebar-scrim');
+  const closeSidebar = () => {
+    document.body.classList.remove('gs-sidebar-open');
+    openButton?.setAttribute('aria-expanded', 'false');
+  };
+  const openSidebar = () => {
+    document.body.classList.add('gs-sidebar-open');
+    openButton?.setAttribute('aria-expanded', 'true');
+    closeButton?.focus();
+  };
+  openButton?.addEventListener('click', openSidebar);
   closeButton?.addEventListener('click', closeSidebar);
+  scrim?.addEventListener('click', closeSidebar);
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeSidebar();
+  });
   document.querySelector('#admin-sidebar')?.addEventListener('click', (event) => {
     if ((event.target as HTMLElement).closest('a')) closeSidebar();
   });
+
+  const root = document.documentElement;
+  let raf = 0;
+  window.addEventListener('pointermove', (event) => {
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => {
+      root.style.setProperty('--grid-hot-x', `${event.clientX}px`);
+      root.style.setProperty('--grid-hot-y', `${event.clientY}px`);
+      root.style.setProperty('--grid-shift-x', `${(event.clientX / window.innerWidth - .5) * 4}px`);
+      root.style.setProperty('--grid-shift-y', `${(event.clientY / window.innerHeight - .5) * 4}px`);
+    });
+  }, { passive: true });
+
+  const startLayout = () => void initializeAdminLayout();
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startLayout, { once: true });
+  else startLayout();
 </script>

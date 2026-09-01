@@ -43,11 +43,11 @@ try {
   error = e instanceof Error ? e.message : `Failed to load ${entryType}`;
 }
 
-const statusColors: Record<string, { bg: string; text: string; badge: string }> = {
-  new: { bg: 'bg-blue-50', text: 'text-blue-900', badge: 'bg-blue-100 text-blue-800' },
-  contacted: { bg: 'bg-yellow-50', text: 'text-yellow-900', badge: 'bg-yellow-100 text-yellow-800' },
-  qualified: { bg: 'bg-green-50', text: 'text-green-900', badge: 'bg-green-100 text-green-800' },
-  rejected: { bg: 'bg-red-50', text: 'text-red-900', badge: 'bg-red-100 text-red-800' },
+const statusColors: Record<string, { panel: string; badge: string }> = {
+  new: { panel: 'gs-alert--info', badge: 'info' },
+  contacted: { panel: 'gs-alert--warning', badge: 'warning' },
+  qualified: { panel: 'gs-alert--success', badge: 'success' },
+  rejected: { panel: 'gs-alert--error', badge: 'danger' },
 };
 
 const colors = entry ? statusColors[entry.status] : statusColors.new;
@@ -55,101 +55,101 @@ const typeLabel = entryType === 'contact' ? 'Contact Form Submission' : 'Lead';
 ---
 
 <AdminLayout title={entry ? `${entry.name} | ${typeLabel}` : `${typeLabel} | GoldShore`}>
-  <div class="max-w-4xl mx-auto p-8">
+  <div class="gs-page">
     {error && (
-      <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded text-red-700">
+      <div class="gs-alert gs-alert--error">
         {error}
       </div>
     )}
 
     {!error && entry && (
       <>
-        <div class="flex items-start justify-between mb-6">
+        <div class="gs-row gs-row--between">
           <div>
-            <h1 class="text-4xl font-bold gs-heading">{entry.name}</h1>
-            <p class="text-gray-600 mt-2">{typeLabel} ID: {entry.id.slice(0, 8)}...</p>
+            <h1 class="gs-heading">{entry.name}</h1>
+            <p class="gs-text-subtle">{typeLabel} ID: {entry.id.slice(0, 8)}...</p>
           </div>
-          <a href="/admin/entries" class="text-blue-600 hover:text-blue-800">← Back to Entries</a>
+          <a href="/admin/entries" >← Back to Entries</a>
         </div>
 
-        <div class={`${colors.bg} ${colors.text} p-6 rounded-lg mb-6`}>
-          <div class="grid md:grid-cols-4 gap-6">
+        <div class={`gs-alert ${colors.panel} gs-stack`}>
+          <div class="gs-grid columns-4">
             <div>
-              <p class="text-sm font-medium opacity-75">Status</p>
-              <p class={`text-2xl font-bold mt-2 inline-block px-3 py-1 rounded ${colors.badge}`}>
+              <p class="gs-text-sm">Status</p>
+              <p class={`gs-badge ${colors.badge}`}>
                 {entry.status.charAt(0).toUpperCase() + entry.status.slice(1)}
               </p>
             </div>
             <div>
-              <p class="text-sm font-medium opacity-75">Email</p>
-              <p class="text-lg font-semibold mt-2">
-                <a href={`mailto:${entry.email}`} class="underline hover:opacity-75">{entry.email}</a>
+              <p class="gs-text-sm">Email</p>
+              <p class="gs-text-lg">
+                <a href={`mailto:${entry.email}`} >{entry.email}</a>
               </p>
             </div>
             {entry.phone && (
               <div>
-                <p class="text-sm font-medium opacity-75">Phone</p>
-                <p class="text-lg font-semibold mt-2">
-                  <a href={`tel:${entry.phone}`} class="underline hover:opacity-75">{entry.phone}</a>
+                <p class="gs-text-sm">Phone</p>
+                <p class="gs-text-lg">
+                  <a href={`tel:${entry.phone}`} >{entry.phone}</a>
                 </p>
               </div>
             )}
             {entry.company && (
               <div>
-                <p class="text-sm font-medium opacity-75">Company</p>
-                <p class="text-lg font-semibold mt-2">{entry.company}</p>
+                <p class="gs-text-sm">Company</p>
+                <p class="gs-text-lg">{entry.company}</p>
               </div>
             )}
           </div>
         </div>
 
-        <div class="grid md:grid-cols-2 gap-6 mb-6">
+        <div class="gs-grid columns-2">
           <div class="gs-card">
-            <h2 class="text-lg font-semibold mb-4">Timeline</h2>
-            <div class="space-y-3 text-sm">
+            <h2 class="gs-text-lg">Timeline</h2>
+            <div class="gs-stack-sm gs-text-sm">
               <div>
-                <p class="text-gray-600">Submitted</p>
-                <p class="font-medium">{new Date(entry.created_at).toLocaleString()}</p>
+                <p class="gs-text-subtle">Submitted</p>
+                <p>{new Date(entry.created_at).toLocaleString()}</p>
               </div>
               {entry.updated_at && (
                 <div>
-                  <p class="text-gray-600">Last Updated</p>
-                  <p class="font-medium">{new Date(entry.updated_at).toLocaleString()}</p>
+                  <p class="gs-text-subtle">Last Updated</p>
+                  <p>{new Date(entry.updated_at).toLocaleString()}</p>
                 </div>
               )}
             </div>
           </div>
 
           <div class="gs-card">
-            <h2 class="text-lg font-semibold mb-4">Summary</h2>
-            <div class="space-y-3 text-sm">
+            <h2 class="gs-text-lg">Summary</h2>
+            <div class="gs-stack-sm gs-text-sm">
               <div>
-                <p class="text-gray-600">Type</p>
-                <p class="font-medium">{typeLabel}</p>
+                <p class="gs-text-subtle">Type</p>
+                <p>{typeLabel}</p>
               </div>
               <div>
-                <p class="text-gray-600">Entry ID</p>
-                <p class="font-mono text-xs">{entry.id}</p>
+                <p class="gs-text-subtle">Entry ID</p>
+                <p class="gs-mono">{entry.id}</p>
               </div>
             </div>
           </div>
         </div>
 
         {entry.message && (
-          <div class="gs-card mb-6">
-            <h2 class="text-lg font-semibold mb-4">Message</h2>
-            <p class="text-gray-700 whitespace-pre-wrap leading-relaxed">{entry.message}</p>
+          <div class="gs-card">
+            <h2 class="gs-text-lg">Message</h2>
+            <p class="gs-text-subtle">{entry.message}</p>
           </div>
         )}
 
         <div class="gs-card">
-          <h2 class="text-lg font-semibold mb-4">Quick Actions</h2>
-          <div class="flex flex-wrap gap-3">
-            <a href={`mailto:${entry.email}`} class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+          <h2 class="gs-text-lg">Quick Actions</h2>
+          <div class="gs-row">
+            <a href={`mailto:${entry.email}`} class="gs-button">
               Send Email
             </a>
             {entry.phone && (
-              <a href={`tel:${entry.phone}`} class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
+              <a href={`tel:${entry.phone}`} class="gs-button">
                 Call
               </a>
             )}
@@ -158,7 +158,7 @@ const typeLabel = entryType === 'contact' ? 'Contact Form Submission' : 'Lead';
                 hx-post={`/api/admin/entries/${entryType === 'contact' ? 'contacts' : 'leads'}/${entry.id}`}
                 hx-vals='{"status": "contacted"}'
                 hx-target="this"
-                class="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
+                class="gs-button"
               >
                 Mark Contacted
               </button>
@@ -167,7 +167,7 @@ const typeLabel = entryType === 'contact' ? 'Contact Form Submission' : 'Lead';
               <button
                 hx-post={`/api/admin/entries/leads/${entry.id}/qualify`}
                 hx-target="this"
-                class="px-4 py-2 bg-emerald-500 text-white rounded hover:bg-emerald-600"
+                class="gs-button"
               >
                 Mark Qualified
               </button>
@@ -177,7 +177,6 @@ const typeLabel = entryType === 'contact' ? 'Contact Form Submission' : 'Lead';
                 hx-post={`/api/admin/entries/${entryType === 'contact' ? 'contacts' : 'leads'}/${entry.id}`}
                 hx-vals='{"status": "rejected"}'
                 hx-target="this"
-                class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
               >
                 Reject
               </button>
@@ -188,8 +187,8 @@ const typeLabel = entryType === 'contact' ? 'Contact Form Submission' : 'Lead';
     )}
 
     {!error && !entry && (
-      <div class="text-center py-12">
-        <p class="text-gray-600">Loading {typeLabel.toLowerCase()}...</p>
+      <div>
+        <p class="gs-text-subtle">Loading {typeLabel.toLowerCase()}...</p>
       </div>
     )}
   </div>

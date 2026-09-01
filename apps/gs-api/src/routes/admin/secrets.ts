@@ -1,7 +1,9 @@
-import type { Env, Variables } from '../../types';
+import type { Env, KeyType, Variables } from '../../types';
 import { Hono } from 'hono';
 import { verifyAdminAuth, parsePagination, errorHandler } from './middleware/auth';
 import * as secretsDb from './db/secrets';
+
+const VALID_KEY_TYPES: readonly KeyType[] = ['apiKey', 'apiSecret', 'webhook_secret', 'oauth_token'];
 
 const secrets = new Hono<{
   Bindings: Env;
@@ -47,18 +49,18 @@ secrets.post('/', errorHandler(async (c) => {
     );
   }
 
-  // Extract key prefix (first 8 chars) for display
-  const keyPrefix = body.value.substring(0, Math.min(8, body.value.length));
+  if (!VALID_KEY_TYPES.includes(body.key_type)) {
+    return c.json(
+      { error: `Invalid key_type. Must be one of: ${VALID_KEY_TYPES.join(', ')}` },
+      400
+    );
+  }
 
-  // Encrypt the value (in production, use proper encryption)
-  const encryptedValue = Buffer.from(body.value).toString('base64');
-
-  await secretsDb.createSecret(db, {
+  await secretsDb.createSecret(c.env, {
     integration_id: body.integration_id,
     key_type: body.key_type,
-    key_prefix: keyPrefix,
-    encryptedValue,
-    expiresAt: body.expires_at,
+    value: body.value,
+    expires_at: body.expires_at,
     createdBy: currentUser.email,
   });
 
@@ -90,13 +92,7 @@ secrets.patch('/:id', errorHandler(async (c) => {
     return c.json({ error: 'Secret not found' }, 404);
   }
 
-  // Extract key prefix from new value
-  const keyPrefix = body.new_value.substring(0, Math.min(8, body.new_value.length));
-
-  // Encrypt the new value
-  const encryptedValue = Buffer.from(body.new_value).toString('base64');
-
-  await secretsDb.rotateSecret(db, id, encryptedValue, keyPrefix, currentUser.email);
+  await secretsDb.rotateSecret(c.env, id, body.new_value, currentUser.email);
 
   console.log(`[AUDIT] ${currentUser.email} rotated secret: ${secret.integration_id}/${secret.key_type}`);
 
@@ -120,7 +116,7 @@ secrets.delete('/:id', errorHandler(async (c) => {
     return c.json({ error: 'Secret not found' }, 404);
   }
 
-  await secretsDb.deleteSecret(db, id);
+  await secretsDb.deleteSecret(c.env, id, currentUser.email);
 
   console.log(`[AUDIT] ${currentUser.email} deleted secret: ${secret.integration_id}/${secret.key_type}`);
 

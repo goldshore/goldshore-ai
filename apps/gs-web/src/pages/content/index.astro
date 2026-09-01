@@ -3,26 +3,209 @@ export const prerender = false;
 import AdminLayout from '../../layouts/AdminLayout.astro';
 if (!Astro.locals.adminSession?.isAuthenticated) return Astro.redirect('/login');
 ---
+
 <AdminLayout title="Content Studio" requiredPermission="content:read">
-  <main class="studio"><header><div><p class="eyebrow">D1-backed CMS</p><h1>Content Studio</h1><p>Create, preview, save, and publish sanitized GoldShore pages.</p></div><button id="new-page">New page</button></header>
-  <div class="layout"><aside><div class="filter"><input id="search" placeholder="Search pages"/><button id="refresh">↻</button></div><div id="pages"><p class="muted">Loading…</p></div></aside>
-  <section class="editor"><form id="page-form"><input type="hidden" name="id"/><div class="row"><label>Title<input name="title" required maxlength="160"/></label><label>Slug<input name="slug" required pattern="[a-z0-9][a-z0-9-]*"/></label></div><div class="row"><label>Site<input name="siteId" value="goldshore"/></label><label>Status<select name="status"><option value="draft">Draft</option><option value="published">Published</option><option value="disabled">Disabled</option></select></label></div>
-  <div class="toolbar" role="toolbar" aria-label="Formatting"><button type="button" data-command="bold"><b>B</b></button><button type="button" data-command="italic"><i>I</i></button><button type="button" data-command="formatBlock" data-value="h2">H2</button><button type="button" data-command="insertUnorderedList">List</button><button type="button" id="add-link">Link</button><button type="button" id="view-source">HTML</button></div>
-  <div id="wysiwyg" contenteditable="true" aria-label="Page content"></div><textarea id="html-source" hidden></textarea>
-  <details><summary>SEO metadata</summary><div class="row"><label>Description<textarea name="description" rows="3" maxlength="300"></textarea></label><label>Social image URL<input name="image" type="url"/></label></div></details>
-  <div class="actions"><button type="button" class="danger" id="delete" disabled>Delete</button><button type="button" id="preview">Preview</button><button type="submit">Save page</button></div><p id="status" class="muted"></p></form></section></div></main>
+  <div class="gs-admin-page">
+    <header class="gs-page-header">
+      <div>
+        <h1>Content Studio</h1>
+        <p>D1-backed editorial workspace for Gold Shore pages, analysis, sponsored content, and social-ready source material.</p>
+      </div>
+      <div class="gs-toolbar">
+        <button id="refresh-pages" class="gs-btn-secondary" type="button">Refresh</button>
+        <button id="new-page" class="gs-btn-primary" type="button">+ New content</button>
+      </div>
+    </header>
+
+    <section class="gs-admin-grid">
+      <article class="gs-module gs-span-12" data-draggable="true" data-resizable="true" data-module-id="content-listing">
+        <header class="gs-module-header">
+          <div>
+            <h2>Content inventory</h2>
+            <p class="gs-data-description">Select rows for bulk actions, preview safely, edit in the WYSIWYG workspace, or open published content on the front end.</p>
+          </div>
+          <span id="content-count" class="gs-status gs-status-pending"><i></i>Loading</span>
+        </header>
+        <div class="gs-module-body">
+          <nav class="gs-tabs" role="tablist" aria-label="Content status filters">
+            <button class="gs-tab" type="button" data-status="" aria-selected="true">All</button>
+            <button class="gs-tab" type="button" data-status="published" aria-selected="false">Published</button>
+            <button class="gs-tab" type="button" data-status="draft" aria-selected="false">Drafts</button>
+            <button class="gs-tab" type="button" data-status="disabled" aria-selected="false">Disabled</button>
+          </nav>
+
+          <div class="gs-filterbar">
+            <input id="content-search" class="gs-input" type="search" placeholder="Search title, slug, author, or type" />
+            <select id="content-kind" class="gs-input">
+              <option value="">All content types</option>
+              <option value="article">Article</option>
+              <option value="news">News</option>
+              <option value="analysis">Analysis</option>
+              <option value="opinion">Opinion</option>
+              <option value="video">Video</option>
+              <option value="post">Post</option>
+              <option value="social">Social</option>
+            </select>
+            <select id="content-site" class="gs-input"><option value="">All sites</option><option value="goldshore">Gold Shore</option></select>
+            <button id="bulk-delete" class="gs-btn-secondary" type="button" disabled>Delete selected</button>
+          </div>
+
+          <div id="content-error" class="gs-error-state" hidden></div>
+          <div class="gs-data-wrap">
+            <table id="content-table" class="gs-data-table" aria-label="Content inventory">
+              <thead><tr><th class="gs-select-cell"><input id="content-select-all" type="checkbox" aria-label="Select all content rows" /></th><th></th><th>Title</th><th>Type</th><th>Status</th><th>Site</th><th>Updated</th><th>Actions</th><th></th></tr></thead>
+              <tbody id="content-rows"><tr><td colspan="9">Loading content…</td></tr></tbody>
+            </table>
+          </div>
+          <footer class="gs-table-footer"><span id="content-summary">Loading…</span><span id="selection-summary">0 selected</span></footer>
+        </div>
+      </article>
+    </section>
+  </div>
+
+  <dialog id="editor-dialog" class="gs-modal editor-modal">
+    <form id="page-form" class="gs-modal-card editor-card">
+      <header class="editor-header">
+        <div><h2 id="editor-title">New content</h2><p id="editor-state" class="gs-data-description">Unsaved draft</p></div>
+        <button id="close-editor" type="button" class="gs-icon-button" aria-label="Close editor">×</button>
+      </header>
+      <input type="hidden" name="id" />
+
+      <nav class="gs-tabs editor-tabs" role="tablist" aria-label="Editor sections">
+        <button type="button" class="gs-tab" data-editor-tab="content" aria-selected="true">Content</button>
+        <button type="button" class="gs-tab" data-editor-tab="publishing" aria-selected="false">Publishing</button>
+        <button type="button" class="gs-tab" data-editor-tab="seo" aria-selected="false">SEO &amp; source</button>
+      </nav>
+
+      <section class="editor-panel" data-editor-panel="content">
+        <div class="editor-fields two-col">
+          <label>Title<input name="title" class="gs-input" required maxlength="160" /></label>
+          <label>Slug<input name="slug" class="gs-input" required pattern="[a-z0-9][a-z0-9-]*" /></label>
+        </div>
+        <div class="wysiwyg-shell">
+          <div class="editor-toolbar" role="toolbar" aria-label="Content formatting">
+            <button type="button" class="gs-btn-secondary" data-command="bold"><strong>B</strong></button>
+            <button type="button" class="gs-btn-secondary" data-command="italic"><em>I</em></button>
+            <button type="button" class="gs-btn-secondary" data-command="formatBlock" data-value="h2">H2</button>
+            <button type="button" class="gs-btn-secondary" data-command="formatBlock" data-value="blockquote">Quote</button>
+            <button type="button" class="gs-btn-secondary" data-command="insertUnorderedList">List</button>
+            <button type="button" class="gs-btn-secondary" id="add-link">Link</button>
+            <span class="toolbar-spacer"></span>
+            <button type="button" class="gs-btn-secondary" id="view-source">HTML</button>
+          </div>
+          <div id="wysiwyg" class="wysiwyg" contenteditable="true" aria-label="Page content"></div>
+          <textarea id="html-source" class="gs-input source-editor" hidden aria-label="HTML source"></textarea>
+        </div>
+      </section>
+
+      <section class="editor-panel" data-editor-panel="publishing" hidden>
+        <div class="editor-fields three-col">
+          <label>Site<input name="siteId" class="gs-input" value="goldshore" /></label>
+          <label>Status<select name="status" class="gs-input"><option value="draft">Draft</option><option value="published">Published</option><option value="disabled">Disabled</option></select></label>
+          <label>Format<select name="kind" class="gs-input"><option value="article">Article</option><option value="news">News</option><option value="video">Video</option><option value="post">Post</option><option value="social">Social post</option><option value="analysis">Gold Shore analysis</option><option value="opinion">Opinion</option></select></label>
+          <label>Disclosure<select name="disclosure" class="gs-input"><option value="editorial">Editorial</option><option value="sponsored">Sponsored</option><option value="affiliate">Affiliate</option><option value="partner">Partner</option></select></label>
+          <label>Author<input name="author" class="gs-input" maxlength="120" value="GoldShore Editorial" /></label>
+        </div>
+      </section>
+
+      <section class="editor-panel" data-editor-panel="seo" hidden>
+        <div class="editor-fields two-col">
+          <label>Description<textarea name="description" class="gs-input" rows="4" maxlength="300"></textarea></label>
+          <label>Source URL<input name="sourceUrl" class="gs-input" type="url" placeholder="External research or source URL" /></label>
+          <label>Media URL<input name="mediaUrl" class="gs-input" type="url" placeholder="Image, video, or embed source" /></label>
+        </div>
+      </section>
+
+      <div id="editor-error" class="gs-error-state" hidden></div>
+      <footer class="editor-actions">
+        <div><button type="button" class="gs-btn-secondary danger-action" id="delete-page" disabled>Delete</button></div>
+        <div><button type="button" class="gs-btn-secondary" id="preview-page">Preview</button><button type="button" class="gs-btn-secondary" id="view-page" disabled>View live</button><button type="submit" class="gs-btn-primary">Save</button></div>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog id="preview-dialog" class="gs-modal preview-modal">
+    <section class="gs-modal-card preview-card">
+      <header><div><h2 id="preview-title">Preview</h2><p class="gs-data-description">Sandboxed content preview; scripts cannot execute.</p></div><button id="close-preview" type="button" class="gs-icon-button" aria-label="Close preview">×</button></header>
+      <iframe id="preview-frame" sandbox="" title="Content preview"></iframe>
+    </section>
+  </dialog>
 </AdminLayout>
-<script>
-  const form=document.querySelector<HTMLFormElement>('#page-form')!,list=document.querySelector<HTMLElement>('#pages')!,editor=document.querySelector<HTMLElement>('#wysiwyg')!,source=document.querySelector<HTMLTextAreaElement>('#html-source')!,status=document.querySelector<HTMLElement>('#status')!,del=document.querySelector<HTMLButtonElement>('#delete')!,search=document.querySelector<HTMLInputElement>('#search')!;let pages:any[]=[];
-  const esc=(v:string)=>v.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
-  const edit=(p:any={})=>{for(const k of ['id','title','slug','siteId','status']){const el=form.elements.namedItem(k) as HTMLInputElement|HTMLSelectElement;el.value=p[k]||({siteId:'goldshore',status:'draft'} as any)[k]||'';} (form.elements.namedItem('description') as HTMLTextAreaElement).value=p.metadata?.description||'';(form.elements.namedItem('image') as HTMLInputElement).value=p.metadata?.image||'';editor.innerHTML=p.content||'';source.value=p.content||'';del.disabled=!p.id;status.textContent='';};
-  const render=()=>{const q=search.value.toLowerCase();const shown=pages.filter(p=>`${p.title} ${p.slug}`.toLowerCase().includes(q));list.innerHTML=shown.length?shown.map(p=>`<button type="button" data-id="${esc(p.id)}"><strong>${esc(p.title)}</strong><small>/${esc(p.slug)} · ${esc(p.status)}</small></button>`).join(''):'<p class="muted">No pages found.</p>';list.querySelectorAll<HTMLButtonElement>('button').forEach(b=>b.onclick=()=>edit(pages.find(p=>p.id===b.dataset.id)));};
-  const load=async()=>{const r=await fetch('/api/admin/pages');const p=await r.json();if(!r.ok)throw new Error(p.error||'Could not load pages');pages=p.pages||[];render();};
-  document.querySelectorAll<HTMLButtonElement>('[data-command]').forEach(b=>b.onclick=()=>{document.execCommand(b.dataset.command!,false,b.dataset.value);editor.focus();});document.querySelector<HTMLButtonElement>('#add-link')!.onclick=()=>{const u=prompt('Link URL');if(u)document.execCommand('createLink',false,u)};
-  document.querySelector<HTMLButtonElement>('#view-source')!.onclick=()=>{const showing=!source.hidden;if(showing){editor.innerHTML=source.value}else{source.value=editor.innerHTML}source.hidden=showing;editor.hidden=!showing;};
-  form.onsubmit=async e=>{e.preventDefault();const data=Object.fromEntries(new FormData(form));const id=String(data.id||'');const payload={title:data.title,slug:data.slug,siteId:data.siteId,status:data.status,content:source.hidden?editor.innerHTML:source.value,metadata:{description:data.description,image:data.image}};status.textContent='Saving…';const r=await fetch(`/api/admin/pages${id?`/${id}`:''}`,{method:id?'PUT':'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});const p=await r.json();if(!r.ok){status.textContent=p.error||'Save failed';return;}status.textContent='Saved.';await load();edit(p);};
-  del.onclick=async()=>{const id=(form.elements.namedItem('id') as HTMLInputElement).value;if(id&&confirm('Delete this page?')){const r=await fetch(`/api/admin/pages/${id}`,{method:'DELETE'});if(r.ok){edit();await load();}}};document.querySelector<HTMLButtonElement>('#new-page')!.onclick=()=>edit();document.querySelector<HTMLButtonElement>('#refresh')!.onclick=()=>load();document.querySelector<HTMLButtonElement>('#preview')!.onclick=()=>{const w=open('','goldshore-preview');if(w)w.document.write(`<title>Preview</title><body>${editor.innerHTML}</body>`)};search.oninput=render;load().catch(e=>list.innerHTML=`<p class="error">${esc(e.message)}</p>`);
-</script>
+
 <style>
-  .studio{padding:2rem}.studio>header{display:flex;justify-content:space-between;align-items:end;margin-bottom:1rem}.eyebrow{color:#f5b942;text-transform:uppercase;letter-spacing:.12em;font-size:.72rem}.layout{display:grid;grid-template-columns:300px 1fr;gap:1rem}aside,.editor{background:#081522;border:1px solid #23364d;border-radius:12px;padding:1rem}.filter,.row,.toolbar,.actions{display:flex;gap:.6rem}.filter input{flex:1}#pages{display:grid;gap:.5rem;margin-top:.8rem}#pages button{text-align:left;background:#0c1c2c;color:#edf4fc;border:1px solid #29425f;border-radius:8px;padding:.75rem}#pages small{display:block;color:#8ea2b8;margin-top:.25rem}form{display:grid;gap:.8rem}.row>*{flex:1}label{display:grid;gap:.3rem;color:#9fb1c5}input,select,textarea,#wysiwyg{box-sizing:border-box;width:100%;background:#07111d;color:#fff;border:1px solid #29425f;border-radius:7px;padding:.7rem}#wysiwyg{min-height:360px;overflow:auto}.toolbar{flex-wrap:wrap}.toolbar button{background:#10253a;color:#e4edf7}.actions{justify-content:flex-end}button{background:#d99a20;color:#07111d;border:0;border-radius:7px;padding:.7rem 1rem;font-weight:700}.danger{background:#401c24;color:#fecaca}.muted{color:#8ea2b8}.error{color:#fca5a5}@media(max-width:800px){.layout{grid-template-columns:1fr}.row{flex-direction:column}}
+  .gs-admin-page{max-width:1480px;margin:0 auto;padding:clamp(72px,8vw,96px) clamp(16px,3vw,36px) 48px}.gs-page-header{display:flex;justify-content:space-between;gap:20px;align-items:flex-end;margin-bottom:18px}.gs-page-header h1{margin:0;font-size:clamp(2rem,4vw,3.5rem);letter-spacing:-.045em}.gs-page-header p{max-width:760px;margin:.55rem 0 0;color:var(--admin-muted);line-height:1.55}.gs-admin-grid{margin-top:14px}.gs-select-cell{width:34px}.gs-data-table th:nth-child(2),.gs-data-table td:nth-child(2){width:32px}.gs-row-icon{display:grid;place-items:center;width:22px;height:22px;border-radius:4px;background:#ecebe6;border:1px solid rgba(15,17,21,.08);font:700 .65rem var(--admin-ui);color:#434b54}.title-cell{min-width:250px}.title-cell strong,.title-cell small{display:block}.title-cell small{margin-top:3px;color:#747c85;font-size:.68rem}.row-actions{display:flex;gap:5px;white-space:nowrap}.row-actions button,.row-actions a{min-height:28px;padding:5px 8px;font-size:.68rem}.drag-handle{cursor:grab;color:#899098;letter-spacing:-2px;user-select:none}.gs-table-footer{display:flex;justify-content:space-between;gap:12px;padding-top:12px;color:#68717b;font-size:.72rem}.editor-modal{width:min(1120px,calc(100vw - 24px));max-width:none;border:0;padding:0;background:transparent}.editor-modal::backdrop,.preview-modal::backdrop{background:rgba(0,0,0,.76)}.editor-card{display:grid;gap:14px;padding:18px;background:#faf9f6;color:#0f1115;border:1px solid #deddd8;border-radius:6px;box-shadow:0 28px 90px rgba(0,0,0,.58)}.editor-header,.preview-card>header,.editor-actions{display:flex;justify-content:space-between;align-items:center;gap:12px}.editor-header h2,.preview-card h2{margin:0}.editor-fields{display:grid;gap:12px}.editor-fields.two-col{grid-template-columns:repeat(2,minmax(0,1fr))}.editor-fields.three-col{grid-template-columns:repeat(3,minmax(0,1fr))}.editor-fields label{display:grid;gap:6px;color:#58616b;font-size:.74rem}.wysiwyg-shell{border:1px solid #d8d7d2;background:#fff}.editor-toolbar{display:flex;gap:5px;align-items:center;padding:7px;border-bottom:1px solid #deddd8;background:#f3f2ee}.editor-toolbar .gs-btn-secondary{min-width:34px;padding:6px 8px}.toolbar-spacer{flex:1}.wysiwyg,.source-editor{box-sizing:border-box;width:100%;min-height:420px;padding:24px;border:0;outline:0;background:#fff;color:#111820;font:400 1rem/1.7 Georgia,serif;overflow:auto}.source-editor{resize:vertical;font:400 .78rem/1.6 var(--admin-mono)}.editor-actions>div{display:flex;gap:7px}.danger-action{color:#ad1d25!important}.preview-modal{width:min(980px,calc(100vw - 24px));max-width:none;border:0;padding:0;background:transparent}.preview-card{display:grid;gap:12px;background:#f8f7f3;color:#101318;border:1px solid #deddd8;border-radius:6px;padding:14px;box-shadow:0 28px 90px rgba(0,0,0,.58)}#preview-frame{width:100%;height:min(72vh,780px);border:1px solid #deddd8;background:#fff}.gs-modal{color:#101318}.gs-modal-card{margin:0}.gs-icon-button{border:1px solid rgba(15,17,21,.12);background:transparent;color:#101318;width:32px;height:32px;cursor:pointer}.editor-panel[hidden]{display:none!important}@media(max-width:800px){.gs-page-header{align-items:flex-start;flex-direction:column}.editor-fields.two-col,.editor-fields.three-col{grid-template-columns:1fr}.gs-data-wrap{overflow:auto}.gs-data-table{min-width:920px}.editor-actions{align-items:stretch;flex-direction:column}.editor-actions>div{justify-content:flex-end}}
 </style>
+
+<script>
+  import { adminApi, adminApiMessage } from '../../lib/admin-api-client';
+
+  type PageItem={id:string;siteId:string;slug:string;title:string;content:string;metadata:Record<string,any>;status:string;publishedAt?:string|null;createdAt?:string;updatedAt?:string};
+  const rows=document.querySelector<HTMLTableSectionElement>('#content-rows')!;
+  const search=document.querySelector<HTMLInputElement>('#content-search')!;
+  const kindFilter=document.querySelector<HTMLSelectElement>('#content-kind')!;
+  const siteFilter=document.querySelector<HTMLSelectElement>('#content-site')!;
+  const selectAll=document.querySelector<HTMLInputElement>('#content-select-all')!;
+  const bulkDelete=document.querySelector<HTMLButtonElement>('#bulk-delete')!;
+  const editorDialog=document.querySelector<HTMLDialogElement>('#editor-dialog')!;
+  const previewDialog=document.querySelector<HTMLDialogElement>('#preview-dialog')!;
+  const previewFrame=document.querySelector<HTMLIFrameElement>('#preview-frame')!;
+  const form=document.querySelector<HTMLFormElement>('#page-form')!;
+  const wysiwyg=document.querySelector<HTMLElement>('#wysiwyg')!;
+  const source=document.querySelector<HTMLTextAreaElement>('#html-source')!;
+  const deleteButton=document.querySelector<HTMLButtonElement>('#delete-page')!;
+  const viewButton=document.querySelector<HTMLButtonElement>('#view-page')!;
+  let pages:PageItem[]=[]; let activeStatus=''; let editing:PageItem|null=null;
+
+  const setError=(message?:string)=>{const el=document.querySelector<HTMLElement>('#content-error')!;el.hidden=!message;el.textContent=message||'';};
+  const setEditorError=(message?:string)=>{const el=document.querySelector<HTMLElement>('#editor-error')!;el.hidden=!message;el.textContent=message||'';};
+  const statusClass=(value:string)=>value==='published'?'ok':value==='draft'?'warning':value==='disabled'?'pending':'info';
+  const iconText=(p:PageItem)=>String(p.metadata?.kind||'P').slice(0,1).toUpperCase();
+  const selectedIds=()=>[...rows.querySelectorAll<HTMLInputElement>('input[data-row-select]:checked')].map(c=>c.dataset.id!).filter(Boolean);
+  const updateSelection=()=>{const ids=selectedIds();document.querySelector<HTMLElement>('#selection-summary')!.textContent=`${ids.length} selected`;bulkDelete.disabled=!ids.length;const all=[...rows.querySelectorAll<HTMLInputElement>('input[data-row-select]')];selectAll.checked=all.length>0&&all.every(c=>c.checked);selectAll.indeterminate=all.some(c=>c.checked)&&!selectAll.checked;};
+  const filteredPages=()=>{const q=search.value.trim().toLowerCase();const kind=kindFilter.value;const site=siteFilter.value;return pages.filter(p=>(!activeStatus||p.status===activeStatus)&&(!kind||p.metadata?.kind===kind)&&(!site||p.siteId===site)&&(!q||`${p.title} ${p.slug} ${p.metadata?.author||''} ${p.metadata?.kind||''}`.toLowerCase().includes(q)));};
+
+  function makeAction(label:string,handler:()=>void){const b=document.createElement('button');b.type='button';b.className='gs-btn-secondary';b.textContent=label;b.addEventListener('click',handler);return b;}
+  function render(){
+    const items=filteredPages();rows.replaceChildren();
+    for(const p of items){
+      const tr=document.createElement('tr');tr.dataset.id=p.id;
+      const selectCell=document.createElement('td');const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.dataset.rowSelect='';checkbox.dataset.id=p.id;checkbox.setAttribute('aria-label',`Select ${p.title}`);checkbox.addEventListener('change',updateSelection);selectCell.append(checkbox);
+      const iconCell=document.createElement('td');const icon=document.createElement('span');icon.className='gs-row-icon';icon.textContent=iconText(p);iconCell.append(icon);
+      const titleCell=document.createElement('td');titleCell.className='title-cell';const strong=document.createElement('strong');strong.textContent=p.title;const small=document.createElement('small');small.textContent=`/${p.slug} · ${p.metadata?.author||'GoldShore Editorial'}`;titleCell.append(strong,small);
+      const typeCell=document.createElement('td');typeCell.textContent=p.metadata?.kind||'article';
+      const stateCell=document.createElement('td');const state=document.createElement('span');state.className=`gs-status gs-status-${statusClass(p.status)}`;const dot=document.createElement('i');state.append(dot,document.createTextNode(p.status));stateCell.append(state);
+      const siteCell=document.createElement('td');siteCell.textContent=p.siteId||'goldshore';
+      const dateCell=document.createElement('td');dateCell.textContent=p.updatedAt?new Date(p.updatedAt).toLocaleString():'—';
+      const actionsCell=document.createElement('td');const actions=document.createElement('div');actions.className='row-actions';actions.append(makeAction('Preview',()=>openPreview(p)),makeAction('Edit',()=>openEditor(p)));if(p.status==='published'){const live=document.createElement('a');live.className='gs-btn-secondary';live.textContent='View';live.href=`https://goldshore.ai/${encodeURIComponent(p.slug)}`;live.target='_blank';live.rel='noopener';actions.append(live);}actions.append(makeAction('Delete',()=>void deleteOne(p)));actionsCell.append(actions);
+      const dragCell=document.createElement('td');const handle=document.createElement('span');handle.className='drag-handle';handle.textContent='⠿';handle.title='Drag ordering is enabled when layout persistence is active.';dragCell.append(handle);
+      tr.append(selectCell,iconCell,titleCell,typeCell,stateCell,siteCell,dateCell,actionsCell,dragCell);rows.append(tr);
+    }
+    if(!items.length){const tr=document.createElement('tr');const td=document.createElement('td');td.colSpan=9;td.innerHTML='<div class="gs-empty"><strong>No content found</strong><p>Adjust filters or create a new content item.</p></div>';tr.append(td);rows.append(tr);}
+    document.querySelector<HTMLElement>('#content-summary')!.textContent=`${items.length} shown · ${pages.length} total`;
+    const count=document.querySelector<HTMLElement>('#content-count')!;count.className='gs-status gs-status-info';count.innerHTML='<i></i>';count.append(document.createTextNode(`${pages.length} items`));updateSelection();
+  }
+
+  async function load(){setError();const result=await adminApi<{pages:PageItem[]}>('/api/admin/pages');if(!result.ok){setError(adminApiMessage(result));rows.innerHTML='<tr><td colspan="9">Content API unavailable.</td></tr>';return;}pages=result.data.pages||[];const sites=[...new Set(pages.map(p=>p.siteId).filter(Boolean))];siteFilter.replaceChildren(new Option('All sites',''),...sites.map(s=>new Option(s,s)));render();}
+
+  function resetEditor(){editing=null;form.reset();(form.elements.namedItem('siteId') as HTMLInputElement).value='goldshore';(form.elements.namedItem('status') as HTMLSelectElement).value='draft';(form.elements.namedItem('kind') as HTMLSelectElement).value='article';(form.elements.namedItem('disclosure') as HTMLSelectElement).value='editorial';(form.elements.namedItem('author') as HTMLInputElement).value='GoldShore Editorial';(form.elements.namedItem('id') as HTMLInputElement).value='';wysiwyg.innerHTML='';source.value='';source.hidden=true;wysiwyg.hidden=false;deleteButton.disabled=true;viewButton.disabled=true;document.querySelector<HTMLElement>('#editor-title')!.textContent='New content';document.querySelector<HTMLElement>('#editor-state')!.textContent='Unsaved draft';setEditorError();activateEditorTab('content');}
+  function populateEditor(p:PageItem){editing=p;for(const key of ['id','title','slug','siteId','status'] as const){const el=form.elements.namedItem(key) as HTMLInputElement|HTMLSelectElement;el.value=String((p as any)[key]||'');}for(const key of ['kind','disclosure','author','sourceUrl','mediaUrl'] as const){const el=form.elements.namedItem(key) as HTMLInputElement|HTMLSelectElement;el.value=String(p.metadata?.[key]||({kind:'article',disclosure:'editorial',author:'GoldShore Editorial'} as any)[key]||'');}(form.elements.namedItem('description') as HTMLTextAreaElement).value=p.metadata?.description||'';wysiwyg.innerHTML=p.content||'';source.value=p.content||'';source.hidden=true;wysiwyg.hidden=false;deleteButton.disabled=false;viewButton.disabled=p.status!=='published';document.querySelector<HTMLElement>('#editor-title')!.textContent=p.title;document.querySelector<HTMLElement>('#editor-state')!.textContent=`${p.status} · updated ${p.updatedAt?new Date(p.updatedAt).toLocaleString():'—'}`;setEditorError();activateEditorTab('content');}
+  function openEditor(p?:PageItem){if(p)populateEditor(p);else resetEditor();editorDialog.showModal();}
+  function closeEditor(){editorDialog.close();}
+  function htmlBody(){return source.hidden?wysiwyg.innerHTML:source.value;}
+  function openPreview(p?:PageItem){const title=p?.title||(form.elements.namedItem('title') as HTMLInputElement).value||'Preview';const body=p?.content??htmlBody();document.querySelector<HTMLElement>('#preview-title')!.textContent=title;previewFrame.srcdoc=`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><style>body{max-width:760px;margin:48px auto;padding:0 24px;color:#111820;font:18px/1.7 Georgia,serif}img{max-width:100%;height:auto}h1,h2{font-family:Arial,sans-serif;line-height:1.1}</style></head><body>${body}</body></html>`;previewDialog.showModal();}
+
+  async function savePage(event:SubmitEvent){event.preventDefault();setEditorError();const data=Object.fromEntries(new FormData(form));const id=String(data.id||'');const payload={title:data.title,slug:data.slug,siteId:data.siteId,status:data.status,content:htmlBody(),metadata:{description:data.description,kind:data.kind,disclosure:data.disclosure,author:data.author,sourceUrl:data.sourceUrl,mediaUrl:data.mediaUrl}};document.querySelector<HTMLElement>('#editor-state')!.textContent='Saving…';const result=await adminApi<PageItem>(`/api/admin/pages${id?`/${encodeURIComponent(id)}`:''}`,{method:id?'PUT':'POST',body:JSON.stringify(payload)});if(!result.ok){setEditorError(adminApiMessage(result));document.querySelector<HTMLElement>('#editor-state')!.textContent='Save failed';return;}editing=result.data;populateEditor(result.data);await load();document.querySelector<HTMLElement>('#editor-state')!.textContent='Saved';}
+  async function deleteOne(p:PageItem){if(!confirm(`Delete “${p.title}”? This cannot be undone.`))return;const result=await adminApi(`/api/admin/pages/${encodeURIComponent(p.id)}`,{method:'DELETE'});if(!result.ok){setError(adminApiMessage(result));return;}if(editing?.id===p.id)closeEditor();await load();}
+  async function deleteSelected(){const ids=selectedIds();if(!ids.length||!confirm(`Delete ${ids.length} selected content item${ids.length===1?'':'s'}?`))return;bulkDelete.disabled=true;for(const id of ids){const result=await adminApi(`/api/admin/pages/${encodeURIComponent(id)}`,{method:'DELETE'});if(!result.ok){setError(adminApiMessage(result));break;}}await load();}
+  function activateEditorTab(id:string){document.querySelectorAll<HTMLButtonElement>('[data-editor-tab]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.editorTab===id)));document.querySelectorAll<HTMLElement>('[data-editor-panel]').forEach(p=>p.hidden=p.dataset.editorPanel!==id);}
+
+  document.querySelectorAll<HTMLButtonElement>('[data-status]').forEach(button=>button.addEventListener('click',()=>{activeStatus=button.dataset.status||'';document.querySelectorAll<HTMLButtonElement>('[data-status]').forEach(b=>b.setAttribute('aria-selected',String(b===button)));render();}));
+  document.querySelectorAll<HTMLButtonElement>('[data-editor-tab]').forEach(button=>button.addEventListener('click',()=>activateEditorTab(button.dataset.editorTab||'content')));
+  document.querySelectorAll<HTMLButtonElement>('[data-command]').forEach(button=>button.addEventListener('click',()=>{document.execCommand(button.dataset.command!,false,button.dataset.value);wysiwyg.focus();}));
+  document.querySelector<HTMLButtonElement>('#add-link')!.addEventListener('click',()=>{const url=prompt('Link URL');if(url)document.execCommand('createLink',false,url);});
+  document.querySelector<HTMLButtonElement>('#view-source')!.addEventListener('click',()=>{const showingSource=!source.hidden;if(showingSource){wysiwyg.innerHTML=source.value;source.hidden=true;wysiwyg.hidden=false;}else{source.value=wysiwyg.innerHTML;source.hidden=false;wysiwyg.hidden=true;}});
+  selectAll.addEventListener('change',()=>{rows.querySelectorAll<HTMLInputElement>('input[data-row-select]').forEach(c=>c.checked=selectAll.checked);updateSelection();});
+  search.addEventListener('input',render);kindFilter.addEventListener('change',render);siteFilter.addEventListener('change',render);bulkDelete.addEventListener('click',()=>void deleteSelected());
+  document.querySelector('#new-page')?.addEventListener('click',()=>openEditor());document.querySelector('#refresh-pages')?.addEventListener('click',()=>void load());document.querySelector('#close-editor')?.addEventListener('click',closeEditor);document.querySelector('#close-preview')?.addEventListener('click',()=>previewDialog.close());document.querySelector('#preview-page')?.addEventListener('click',()=>openPreview());deleteButton.addEventListener('click',()=>{if(editing)void deleteOne(editing);});viewButton.addEventListener('click',()=>{if(editing?.status==='published')window.open(`https://goldshore.ai/${encodeURIComponent(editing.slug)}`,'_blank','noopener');});form.addEventListener('submit',(e)=>void savePage(e as SubmitEvent));
+  void load();
+</script>

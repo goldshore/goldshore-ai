@@ -3,264 +3,205 @@ export const prerender = false;
 import AdminLayout from '../../../layouts/AdminLayout.astro';
 
 const requestedTab = Astro.url.searchParams.get('tab');
-const TABS = ['secrets', 'storage', 'dns', 'pages'] as const;
-const initialTab = (TABS as readonly string[]).includes(requestedTab ?? '') ? requestedTab! : 'secrets';
+const TABS = ['overview', 'secrets', 'storage', 'dns', 'pages'] as const;
+const initialTab = (TABS as readonly string[]).includes(requestedTab ?? '') ? requestedTab! : 'overview';
 ---
 
 <AdminLayout title="System & Infra | GoldShore Admin" requiredPermission="cloudflare_inventory:read">
-  <section class="max-w-6xl mx-auto py-16 px-6 space-y-6">
-    <div>
-      <p class="gs-eyebrow">Operations</p>
-      <h1 class="text-3xl gs-heading">System &amp; Infra</h1>
-      <p class="gs-text-subtle mt-2">Secrets, media storage, DNS, and Pages — consolidated from four separate pages into one.</p>
-    </div>
+  <div class="gs-admin-page" data-initial-tab={initialTab}>
+    <header class="gs-page-header">
+      <div>
+        <h1>System &amp; Infra</h1>
+        <p>Cloudflare control-plane state, secrets, storage, DNS, and Pages through the canonical gs-web → gs-api service path.</p>
+      </div>
+      <div class="gs-toolbar">
+        <button id="refresh-system" class="gs-button gs-button--secondary" type="button">Refresh</button>
+      </div>
+    </header>
 
     <nav class="gs-tabs" role="tablist" aria-label="System sections">
-      <button type="button" class="gs-tab" data-tab="secrets" role="tab">Secrets</button>
-      <button type="button" class="gs-tab" data-tab="storage" role="tab">Storage</button>
-      <button type="button" class="gs-tab" data-tab="dns" role="tab">DNS</button>
-      <button type="button" class="gs-tab" data-tab="pages" role="tab">Pages</button>
+      {TABS.map((tab) => <button type="button" class="gs-tab" data-tab={tab} role="tab" aria-selected={String(tab === initialTab)}>{tab[0].toUpperCase() + tab.slice(1)}</button>)}
     </nav>
 
-    <!-- ============================== Secrets ============================== -->
-    <div class="gs-panel" data-panel="secrets">
-      <div class="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h2 class="text-xl font-semibold">Secrets and API Keys</h2>
-          <p class="gs-text-subtle mt-1">Create, rotate, expire, and revoke encrypted integration credentials.</p>
+    <section class="gs-admin-grid" data-panel="overview">
+      <article class="gs-module gs-span-4" data-draggable="true" data-resizable="true">
+        <header class="gs-module-header"><h2>Cloudflare API</h2><span id="cf-api-signal" class="gs-status gs-status-pending"><i></i>Checking</span></header>
+        <div class="gs-module-body"><dl class="gs-kv-list"><div><dt>Account ID</dt><dd id="cf-account">—</dd></div><div><dt>API token</dt><dd id="cf-token">—</dd></div><div><dt>Zone ID</dt><dd id="cf-zone">—</dd></div></dl></div>
+      </article>
+      <article class="gs-module gs-span-8" data-draggable="true" data-resizable="true">
+        <header class="gs-module-header"><h2>Runtime bindings</h2><span id="binding-count" class="gs-status gs-status-info"><i></i>Loading</span></header>
+        <div class="gs-module-body"><div id="binding-grid" class="binding-grid"><p class="gs-text-subtle">Reading live gs-api runtime bindings…</p></div></div>
+      </article>
+      <article class="gs-module gs-span-12">
+        <header class="gs-module-header"><div><h2>Transport contract</h2><p class="gs-text-subtle">Admin requests stay inside Cloudflare over the gs-web API service binding; browser code never needs a Cloudflare account token.</p></div></header>
+        <div class="gs-module-body transport-flow"><code>admin.goldshore.ai</code><span>→</span><code>gs-web</code><span>→ service binding →</span><code>gs-api</code><span>→</span><code>Cloudflare API / D1 / R2 / KV</code></div>
+      </article>
+    </section>
+
+    <section class="gs-admin-grid" data-panel="secrets" hidden>
+      <article class="gs-module gs-span-12">
+        <header class="gs-module-header">
+          <div><h2>Secrets &amp; integration credentials</h2><p class="gs-text-subtle">Metadata only. Secret values are encrypted by gs-api and never returned to this surface.</p></div>
+          <button id="new-secret" class="gs-button" type="button">+ New secret</button>
+        </header>
+        <div class="gs-module-body">
+          <div class="gs-filterbar">
+            <input id="filter-integration" class="gs-input" placeholder="Filter integration" />
+            <select id="filter-type" class="gs-input"><option value="">All types</option><option value="apiKey">API key</option><option value="apiSecret">API secret</option><option value="webhook_secret">Webhook secret</option><option value="oauth_token">OAuth token</option></select>
+            <label class="gs-check"><input id="include-expired" type="checkbox" /> Include expired</label>
+            <button id="apply-filter" class="gs-button gs-button--secondary" type="button">Apply</button>
+          </div>
+          <div id="secret-error" class="gs-error-state" hidden></div>
+          <div class="gs-table-wrap"><table class="gs-admin-table"><thead><tr><th>Integration</th><th>Type</th><th>Identifier</th><th>Expires</th><th>Rotations</th><th>Actions</th></tr></thead><tbody id="secret-rows"><tr><td colspan="6">Loading…</td></tr></tbody></table></div>
+          <footer class="gs-table-footer"><span id="page-summary"></span><div><button id="previous-page" class="gs-button gs-button--secondary" type="button">Previous</button><button id="next-page" class="gs-button gs-button--secondary" type="button">Next</button></div></footer>
         </div>
-        <button id="new-secret" class="gs-btn-primary px-4 py-2">Create secret</button>
-      </div>
+      </article>
+    </section>
 
-      <div class="gs-card border-l-4 border-blue-500 text-sm mt-4">
-        Secret values are accepted only for create and rotation requests. They are encrypted by gs-api and are never returned to this page.
-      </div>
-
-      <div class="gs-card flex gap-3 flex-wrap items-end mt-4">
-        <label class="space-y-1"><span class="block text-sm">Integration</span><input id="filter-integration" class="gs-input" placeholder="stripe, meta, openai…" /></label>
-        <label class="space-y-1"><span class="block text-sm">Key type</span><select id="filter-type" class="gs-input"><option value="">All types</option><option value="apiKey">API key</option><option value="apiSecret">API secret</option><option value="webhook_secret">Webhook secret</option><option value="oauth_token">OAuth token</option></select></label>
-        <label class="flex gap-2 items-center pb-2"><input id="include-expired" type="checkbox" /> Include expired</label>
-        <button id="apply-filter" class="gs-btn-secondary px-4 py-2">Apply</button>
-      </div>
-
-      <div id="notice" class="gs-card text-sm mt-4" hidden></div>
-      <div class="gs-card overflow-x-auto mt-4">
-        <table class="w-full text-left text-sm">
-          <thead><tr class="border-b border-[var(--gs-color-border)]"><th class="p-3">Integration</th><th class="p-3">Type</th><th class="p-3">Identifier</th><th class="p-3">Expires</th><th class="p-3">Rotations</th><th class="p-3">Actions</th></tr></thead>
-          <tbody id="secret-rows"><tr><td colspan="6" class="p-6 gs-text-subtle">Loading secret metadata…</td></tr></tbody>
-        </table>
-        <div class="flex justify-between items-center gap-3 p-3 border-t border-[var(--gs-color-border)]">
-          <span id="page-summary" class="text-sm gs-text-subtle"></span>
-          <div class="flex gap-2"><button id="previous-page" class="gs-btn-secondary px-3 py-1">Previous</button><button id="next-page" class="gs-btn-secondary px-3 py-1">Next</button></div>
-        </div>
-      </div>
-    </div>
-
-    <dialog id="secret-dialog" class="gs-card max-w-xl w-full backdrop:bg-black/70">
-      <form id="secret-form" class="space-y-4">
-        <div class="flex justify-between"><h2 id="dialog-title" class="text-xl font-semibold">Create secret</h2><button type="button" id="close-dialog" aria-label="Close">✕</button></div>
+    <dialog id="secret-dialog" class="gs-modal">
+      <form id="secret-form" method="dialog" class="gs-modal-card">
+        <header><h2 id="dialog-title">Create secret</h2><button id="close-dialog" type="button" class="gs-icon-btn" aria-label="Close">×</button></header>
         <input id="secret-id" type="hidden" />
-        <label class="block space-y-1"><span>Integration ID</span><input id="integration-id" class="gs-input w-full" required pattern="[A-Za-z0-9][A-Za-z0-9_-]{1,63}" placeholder="openai" /></label>
-        <label class="block space-y-1"><span>Key type</span><select id="key-type" class="gs-input w-full"><option value="apiKey">API key</option><option value="apiSecret">API secret</option><option value="webhook_secret">Webhook secret</option><option value="oauth_token">OAuth token</option></select></label>
-        <label class="block space-y-1"><span id="value-label">Secret value</span><textarea id="secret-value" class="gs-input w-full font-mono" rows="5" minlength="8" maxlength="16384" required autocomplete="new-password"></textarea></label>
-        <label id="expiry-field" class="block space-y-1"><span>Expires at (optional)</span><input id="expires-at" type="datetime-local" class="gs-input w-full" /></label>
-        <p class="text-xs gs-text-subtle">The value is cleared from this form immediately after the request finishes.</p>
-        <div class="flex justify-end gap-3"><button type="button" id="cancel-dialog" class="gs-btn-secondary px-4 py-2">Cancel</button><button class="gs-btn-primary px-4 py-2" type="submit">Save securely</button></div>
+        <label>Integration ID<input id="integration-id" class="gs-input" required pattern="[A-Za-z0-9][A-Za-z0-9_-]{1,63}" /></label>
+        <label>Key type<select id="key-type" class="gs-input"><option value="apiKey">API key</option><option value="apiSecret">API secret</option><option value="webhook_secret">Webhook secret</option><option value="oauth_token">OAuth token</option></select></label>
+        <label><span id="value-label">Secret value</span><textarea id="secret-value" class="gs-input" rows="5" minlength="8" maxlength="16384" required autocomplete="new-password"></textarea></label>
+        <label>Expires at<input id="expires-at" type="datetime-local" class="gs-input" /></label>
+        <footer><button id="cancel-dialog" type="button" class="gs-button gs-button--secondary">Cancel</button><button type="submit" class="gs-button">Save securely</button></footer>
       </form>
     </dialog>
 
-    <!-- ============================== Storage ============================== -->
-    <div class="gs-panel" data-panel="storage">
-      <h2 class="text-xl font-semibold">Media Storage</h2>
-      <p class="gs-text-subtle mt-1">Upload sanitized images to the canonical GS_ASSETS bucket and browse durable D1 metadata.</p>
-
-      <div class="gs-card mt-4">
-        <form id="upload" class="flex justify-between items-center gap-4 flex-wrap">
-          <label class="flex items-center gap-4"><span class="text-sm">Image file</span><input id="file" name="file" type="file" accept=".png,.jpg,.jpeg,.svg,image/png,image/jpeg,image/svg+xml" required /></label>
-          <button type="submit" class="gs-btn-primary px-4 py-2">Upload image</button>
-        </form>
-        <p id="message" role="status" class="gs-text-subtle text-sm mt-2">PNG, JPEG, or sanitized SVG; maximum 5 MB.</p>
-      </div>
-
-      <div class="gs-card mt-4">
-        <div class="flex justify-between items-center gap-4 flex-wrap">
-          <div><h3 class="font-semibold">Assets</h3><p class="gs-text-subtle text-sm">Newest first. Open an asset to use its authenticated delivery URL.</p></div>
-          <button id="refresh" type="button" class="gs-btn-secondary px-3 py-1">Refresh</button>
+    <section class="gs-admin-grid" data-panel="storage" hidden>
+      <article class="gs-module gs-span-12">
+        <header class="gs-module-header"><div><h2>Media storage</h2><p class="gs-text-subtle">Authenticated asset inventory backed by GS_ASSETS with durable metadata.</p></div><button id="refresh-assets" class="gs-button gs-button--secondary" type="button">Refresh</button></header>
+        <div class="gs-module-body">
+          <form id="upload" class="gs-filterbar"><input id="file" name="file" type="file" accept=".png,.jpg,.jpeg,.svg,image/png,image/jpeg,image/svg+xml" required /><button type="submit" class="gs-button">Upload</button><span id="media-message" class="gs-text-subtle">PNG, JPEG, or sanitized SVG; max 5 MB.</span></form>
+          <div id="assets" class="asset-grid"><div class="gs-empty"><strong>Loading assets…</strong></div></div>
+          <footer class="gs-table-footer"><span id="asset-page"></span><div><button id="asset-previous" class="gs-button gs-button--secondary" type="button">Previous</button><button id="asset-next" class="gs-button gs-button--secondary" type="button">Next</button></div></footer>
         </div>
-        <div id="assets" class="gs-asset-grid mt-4">Loading…</div>
-        <nav class="flex justify-end gap-2 mt-4">
-          <button id="previous" type="button" class="gs-btn-secondary px-3 py-1">Previous</button>
-          <span id="page" class="text-sm gs-text-subtle self-center"></span>
-          <button id="next" type="button" class="gs-btn-secondary px-3 py-1">Next</button>
-        </nav>
-      </div>
-    </div>
+      </article>
+    </section>
 
-    <!-- ============================== DNS ============================== -->
-    <div class="gs-panel" data-panel="dns">
-      <h2 class="text-xl font-semibold">DNS Configuration</h2>
-      <p class="gs-text-subtle mt-1">Manage DNS records and zones across Cloudflare.</p>
-      <div class="gs-ghost-card mt-4">
-        <span class="gs-ghost-icon" aria-hidden="true">🔌</span>
-        <h3>Not connected yet</h3>
-        <p>gs-api doesn't have a Cloudflare API token bound for zone/DNS reads, so this can't show real records without faking data. Add a scoped token (Zone:DNS:Read/Edit) as a gs-api secret and wire up <code>/admin/cloudflare/dns</code> to switch this on.</p>
-      </div>
-    </div>
+    <section class="gs-admin-grid" data-panel="dns" hidden>
+      <article class="gs-module gs-span-12">
+        <header class="gs-module-header"><div><h2>DNS records</h2><p class="gs-text-subtle">Live Cloudflare records. Read state is retrieved with the scoped gs-api Cloudflare credential.</p></div><span id="dns-status" class="gs-status gs-status-pending"><i></i>Loading</span></header>
+        <div class="gs-module-body">
+          <div class="gs-filterbar"><input id="dns-search" class="gs-input" placeholder="Search hostname or target" /><select id="dns-type" class="gs-input"><option value="">All record types</option><option>A</option><option>AAAA</option><option>CNAME</option><option>MX</option><option>TXT</option><option>CAA</option></select><button id="dns-refresh" class="gs-button gs-button--secondary" type="button">Refresh</button></div>
+          <div id="dns-error" class="gs-error-state" hidden></div>
+          <div class="gs-table-wrap"><table class="gs-admin-table"><thead><tr><th><input id="dns-select-all" type="checkbox" aria-label="Select all DNS records" /></th><th>Type</th><th>Name</th><th>Content</th><th>Proxy</th><th>TTL</th><th>Modified</th></tr></thead><tbody id="dns-rows"><tr><td colspan="7">Loading…</td></tr></tbody></table></div>
+          <footer class="gs-table-footer"><span id="dns-summary"></span></footer>
+        </div>
+      </article>
+    </section>
 
-    <!-- ============================== Pages ============================== -->
-    <div class="gs-panel" data-panel="pages">
-      <h2 class="text-xl font-semibold">Pages Configuration</h2>
-      <p class="gs-text-subtle mt-1">Manage Cloudflare Pages projects and deployments.</p>
-      <div class="gs-ghost-card mt-4">
-        <span class="gs-ghost-icon" aria-hidden="true">🔌</span>
-        <h3>Not connected yet</h3>
-        <p>Same gap as DNS — no Cloudflare API token is bound in gs-api for Pages reads. Add one (Account:Cloudflare Pages:Read) and wire up <code>/admin/cloudflare/pages</code> to switch this on.</p>
-      </div>
-    </div>
-  </section>
-
-  <style>
-    .gs-eyebrow { color: var(--gs-color-primary, #d96a32); font-weight: 800; text-transform: uppercase; letter-spacing: .12em; font-size: .8rem; }
-    .gs-tabs { display: flex; gap: 8px; flex-wrap: wrap; border-bottom: 1px solid var(--gs-color-border); padding-bottom: 4px; }
-    .gs-tab {
-      font: 650 .85rem/1 var(--gs-font-body, inherit);
-      padding: 8px 14px; border-radius: var(--gs-radius-pill, 999px) var(--gs-radius-pill, 999px) 0 0;
-      border: 1px solid transparent; background: transparent; color: var(--gs-color-subtle);
-      cursor: pointer;
-    }
-    .gs-tab:hover { color: var(--gs-color-text); }
-    .gs-tab[aria-selected="true"] {
-      color: var(--gs-color-primary, #d96a32);
-      border-color: var(--gs-color-border);
-      border-bottom-color: transparent;
-      background: var(--gs-color-surface);
-    }
-    .gs-panel[hidden] { display: none; }
-    .gs-asset-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
-    .gs-asset-grid article { display: grid; gap: .4rem; }
-    .gs-asset-grid img { width: 100%; aspect-ratio: 4/3; object-fit: cover; background: #08080b; border-radius: .7rem; }
-    .gs-asset-grid span, .gs-asset-grid small { opacity: .72; }
-    @media (max-width: 900px) { .gs-asset-grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 560px) { .gs-asset-grid { grid-template-columns: 1fr; } }
-
-    .gs-ghost-card {
-      background: var(--gs-color-muted-surface); border: 1px dashed var(--gs-color-border-strong);
-      border-radius: var(--gs-radius-lg, 18px); padding: 1.5rem; text-align: left;
-    }
-    .gs-ghost-card .gs-ghost-icon { font-size: 1.4rem; display: block; margin-bottom: .5rem; }
-    .gs-ghost-card h3 { margin: 0 0 .4rem; font-size: 1rem; font-weight: 600; }
-    .gs-ghost-card p { margin: 0; font-size: .85rem; color: var(--gs-color-subtle); line-height: 1.6; }
-    .gs-ghost-card code { font-family: var(--gs-font-mono, monospace); background: var(--gs-color-surface); padding: .1rem .35rem; border-radius: .3rem; }
-  </style>
-
-  <script define:vars={{ initialTab }}>
-    // ---- Tab switching (client-side, deep-linkable via ?tab=) ----
-    const tabs = Array.from(document.querySelectorAll('.gs-tab'));
-    const panels = Array.from(document.querySelectorAll('.gs-panel'));
-    function activate(tab) {
-      for (const t of tabs) t.setAttribute('aria-selected', String(t.dataset.tab === tab));
-      for (const p of panels) p.hidden = p.dataset.panel !== tab;
-    }
-    for (const t of tabs) {
-      t.addEventListener('click', () => {
-        const tab = t.dataset.tab;
-        activate(tab);
-        const url = new URL(window.location.href);
-        url.searchParams.set('tab', tab);
-        window.history.replaceState({}, '', url);
-      });
-    }
-    activate(initialTab);
-  </script>
-
-  <script>
-    // ---- Secrets tab: create/rotate/revoke/paginate (ported from the former secrets.astro) ----
-    type Secret = { id:string; integration_id:string; key_type:string; key_prefix:string; created_at:string; rotated_at:string|null; expires_at:string|null; rotation_count:number };
-    const rows = document.querySelector('#secret-rows') as HTMLTableSectionElement;
-    const notice = document.querySelector('#notice') as HTMLElement;
-    const dialog = document.querySelector('#secret-dialog') as HTMLDialogElement;
-    const form = document.querySelector('#secret-form') as HTMLFormElement;
-    const integrationInput = document.querySelector('#integration-id') as HTMLInputElement;
-    const keyType = document.querySelector('#key-type') as HTMLSelectElement;
-    const valueInput = document.querySelector('#secret-value') as HTMLTextAreaElement;
-    const expiresInput = document.querySelector('#expires-at') as HTMLInputElement;
-    const secretIdInput = document.querySelector('#secret-id') as HTMLInputElement;
-    const summary = document.querySelector('#page-summary') as HTMLElement;
-    let page = 1;
-    let pages = 1;
-
-    const showNotice = (message:string, error = false) => { notice.hidden = false; notice.textContent = message; notice.classList.toggle('gs-text-danger', error); };
-    const cell = (text:string) => { const td = document.createElement('td'); td.className = 'p-3'; td.textContent = text; return td; };
-    const load = async () => {
-      const pageSize = 25;
-      const offset = (page - 1) * pageSize;
-      const query = new URLSearchParams({ offset:String(offset), limit:String(pageSize) });
-      const integration = (document.querySelector('#filter-integration') as HTMLInputElement).value.trim();
-      const type = (document.querySelector('#filter-type') as HTMLSelectElement).value;
-      if (integration) query.set('integration_id', integration); if (type) query.set('key_type', type);
-      if ((document.querySelector('#include-expired') as HTMLInputElement).checked) query.set('include_expired', 'true');
-      const response = await fetch(`/api/admin/secrets?${query}`);
-      const data = await response.json();
-      if (!response.ok) { rows.replaceChildren(); const tr=document.createElement('tr'); tr.append(cell(data.error ?? 'Unable to load secrets.')); rows.append(tr); return; }
-      rows.replaceChildren();
-      for (const secret of data.items as Secret[]) {
-        const tr = document.createElement('tr'); tr.className = 'border-b border-[var(--gs-color-border)]/50';
-        tr.append(cell(secret.integration_id), cell(secret.key_type), cell(`${secret.key_prefix}••••`), cell(secret.expires_at ? new Date(secret.expires_at).toLocaleString() : 'Never'), cell(String(secret.rotation_count)));
-        const actions = cell('');
-        const rotate = document.createElement('button'); rotate.className='gs-btn-secondary px-2 py-1 mr-2'; rotate.textContent='Rotate'; rotate.addEventListener('click',()=>openRotate(secret));
-        const revoke = document.createElement('button'); revoke.className='gs-btn-secondary px-2 py-1'; revoke.textContent='Revoke'; revoke.addEventListener('click',()=>revokeSecret(secret));
-        actions.append(rotate,revoke); tr.append(actions); rows.append(tr);
-      }
-      if (!data.items.length) { const tr=document.createElement('tr'); const td=cell('No secret metadata matches this filter.'); td.colSpan=6; tr.append(td); rows.append(tr); }
-      pages = data.pagination?.pages || 1;
-      summary.textContent = `Page ${data.pagination?.page || 1} of ${pages} · ${data.pagination?.total || 0} secrets`;
-      (document.querySelector('#previous-page') as HTMLButtonElement).disabled = page <= 1;
-      (document.querySelector('#next-page') as HTMLButtonElement).disabled = page >= pages;
-    };
-    const openCreate = () => { form.reset(); secretIdInput.value=''; integrationInput.disabled=false; keyType.disabled=false; document.querySelector('#dialog-title')!.textContent='Create secret'; document.querySelector('#value-label')!.textContent='Secret value'; dialog.showModal(); };
-    const openRotate = (secret:Secret) => { form.reset(); secretIdInput.value=secret.id; integrationInput.value=secret.integration_id; keyType.value=secret.key_type; integrationInput.disabled=true; keyType.disabled=true; document.querySelector('#dialog-title')!.textContent=`Rotate ${secret.integration_id}`; document.querySelector('#value-label')!.textContent='New secret value'; dialog.showModal(); };
-    const close = () => { valueInput.value=''; dialog.close(); };
-    const revokeSecret = async (secret:Secret) => { if (!confirm(`Revoke ${secret.key_type} for ${secret.integration_id}? This cannot be undone.`)) return; const response=await fetch(`/api/admin/secrets/${encodeURIComponent(secret.id)}`,{method:'DELETE'}); showNotice(response.ok?'Secret revoked.':(await response.json()).error ?? 'Revoke failed.',!response.ok); if(response.ok) await load(); };
-    form.addEventListener('submit', async (event) => { event.preventDefault(); const id=secretIdInput.value; const body=id?{action:'rotate',new_value:valueInput.value}:{integration_id:integrationInput.value.trim(),key_type:keyType.value,value:valueInput.value,expires_at:expiresInput.value?new Date(expiresInput.value).toISOString():undefined}; const response=await fetch(id?`/api/admin/secrets/${encodeURIComponent(id)}`:'/api/admin/secrets',{method:id?'PATCH':'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)}); valueInput.value=''; const data=response.status===204?{}:await response.json(); showNotice(response.ok?(id?'Secret rotated.':'Secret created.'):(data.error??'Save failed.'),!response.ok); if(response.ok){close();await load();} });
-    document.querySelector('#new-secret')?.addEventListener('click',openCreate); document.querySelector('#close-dialog')?.addEventListener('click',close); document.querySelector('#cancel-dialog')?.addEventListener('click',close);
-    document.querySelector('#apply-filter')?.addEventListener('click',()=>{page=1;load();}); document.querySelector('#previous-page')?.addEventListener('click',()=>{if(page>1){page--;load();}}); document.querySelector('#next-page')?.addEventListener('click',()=>{if(page<pages){page++;load();}});
-    load().catch(()=>showNotice('The secrets API could not be reached.',true));
-  </script>
-
-  <script is:inline>
-    // ---- Storage tab: upload/browse R2 media (ported from the former storage.astro) ----
-    (function () {
-      const state = { offset: 0, limit: 24, hasNext: false };
-      const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-      async function load() {
-        const response = await fetch(`/api/admin/media?limit=${state.limit}&offset=${state.offset}`, { credentials: 'same-origin' });
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(data.error || 'Asset inventory failed.');
-        state.hasNext = data.items.length === state.limit;
-        document.getElementById('previous').disabled = state.offset === 0;
-        document.getElementById('next').disabled = !state.hasNext;
-        document.getElementById('page').textContent = `Items ${state.offset + 1}–${state.offset + data.items.length}`;
-        document.getElementById('assets').innerHTML = data.items.length
-          ? data.items.map((item) => `<article><a href="/api/admin/media/${encodeURIComponent(item.id)}" target="_blank" rel="noopener"><img src="/api/admin/media/${encodeURIComponent(item.id)}" alt="${esc(item.filename)}" loading="lazy" /></a><b>${esc(item.filename)}</b><span>${esc(item.type)} · ${(Number(item.size) / 1024).toFixed(1)} KB</span><small>${esc(new Date(item.created_at).toLocaleString())}</small></article>`).join('')
-          : '<p>No media assets found.</p>';
-      }
-      document.getElementById('upload').onsubmit = async (event) => {
-        event.preventDefault();
-        const form = event.currentTarget;
-        const message = document.getElementById('message');
-        message.textContent = 'Uploading and sanitizing…';
-        const response = await fetch('/api/admin/media/upload', { method: 'POST', body: new FormData(form), credentials: 'same-origin' });
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) { message.textContent = data.error || 'Upload failed.'; return; }
-        message.textContent = `Uploaded ${data.filename}.`;
-        form.reset();
-        state.offset = 0;
-        await load();
-      };
-      document.getElementById('refresh').onclick = () => load().catch((e) => (document.getElementById('message').textContent = e.message));
-      document.getElementById('previous').onclick = () => { state.offset = Math.max(0, state.offset - state.limit); load(); };
-      document.getElementById('next').onclick = () => { state.offset += state.limit; load(); };
-      load().catch((e) => (document.getElementById('assets').textContent = e.message));
-    })();
-  </script>
+    <section class="gs-admin-grid" data-panel="pages" hidden>
+      <article class="gs-module gs-span-12">
+        <header class="gs-module-header"><div><h2>Cloudflare Pages</h2><p class="gs-text-subtle">Projects are shown as legacy/deployment surfaces only; gs-web itself remains a Worker + Assets application.</p></div><span id="pages-status" class="gs-status gs-status-pending"><i></i>Loading</span></header>
+        <div class="gs-module-body">
+          <div class="gs-filterbar"><input id="pages-search" class="gs-input" placeholder="Search project or domain" /><button id="pages-refresh" class="gs-button gs-button--secondary" type="button">Refresh</button></div>
+          <div id="pages-error" class="gs-error-state" hidden></div>
+          <div class="gs-table-wrap"><table class="gs-admin-table"><thead><tr><th>Project</th><th>Domains</th><th>Production branch</th><th>Latest deployment</th><th>Status</th><th>Created</th></tr></thead><tbody id="pages-rows"><tr><td colspan="6">Loading…</td></tr></tbody></table></div>
+          <footer class="gs-table-footer"><span id="pages-summary"></span></footer>
+        </div>
+      </article>
+    </section>
+  </div>
 </AdminLayout>
+
+<style>
+  .gs-admin-page { max-width: 1480px; margin: 0 auto; padding: clamp(72px, 8vw, 96px) clamp(16px, 3vw, 36px) 48px; }
+  .gs-page-header { display:flex; justify-content:space-between; gap:20px; align-items:flex-end; margin-bottom:18px; }
+  .gs-page-header h1 { margin:0; font-size:clamp(2rem,4vw,3.5rem); letter-spacing:-.045em; }
+  .gs-page-header p { max-width:780px; margin:.55rem 0 0; color:var(--admin-muted); line-height:1.55; }
+  .gs-admin-grid { margin-top:14px; }
+  [data-panel][hidden] { display:none !important; }
+  .gs-kv-list { margin:0; display:grid; gap:10px; }
+  .gs-kv-list div { display:flex; justify-content:space-between; gap:18px; padding-bottom:9px; border-bottom:1px solid rgba(15,17,21,.08); }
+  .gs-kv-list dt { color:#68717b; } .gs-kv-list dd { margin:0; font-weight:650; color:#0f1115; }
+  .binding-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px; }
+  .binding-pill { border:1px solid rgba(15,17,21,.09); background:#f3f2ee; padding:10px; min-height:52px; display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .transport-flow { display:flex; gap:10px; flex-wrap:wrap; align-items:center; color:#68717b; }
+  .transport-flow code { color:#0f1115; background:#f1f0ec; border:1px solid rgba(15,17,21,.08); padding:6px 9px; }
+  .gs-check { display:inline-flex; gap:7px; align-items:center; color:#525b65; font-size:.78rem; }
+  .gs-table-footer { display:flex; justify-content:space-between; align-items:center; gap:12px; padding-top:12px; color:#68717b; font-size:.75rem; }
+  .gs-table-footer > div { display:flex; gap:6px; }
+  .asset-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; }
+  .asset { border:1px solid rgba(15,17,21,.08); background:#f4f3ef; padding:8px; min-width:0; }
+  .asset img { width:100%; aspect-ratio:4/3; object-fit:cover; background:#0a0a0b; }
+  .asset b,.asset span,.asset small { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .asset b { margin-top:7px; font-size:.78rem; } .asset span,.asset small { color:#737b84; font-size:.68rem; margin-top:3px; }
+  .gs-modal { border:0; padding:0; background:transparent; width:min(560px,calc(100vw - 24px)); }
+  .gs-modal::backdrop { background:rgba(0,0,0,.72); }
+  .gs-modal-card { display:grid; gap:14px; background:#faf9f6; color:#0f1115; border:1px solid #deddd8; border-radius:6px; padding:18px; box-shadow:0 28px 80px rgba(0,0,0,.55); }
+  .gs-modal-card header,.gs-modal-card footer { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+  .gs-modal-card h2 { margin:0; }.gs-modal-card label { display:grid; gap:6px; color:#59616b; font-size:.76rem; }
+  @media(max-width:720px){ .gs-page-header{align-items:flex-start;flex-direction:column}.gs-table-wrap{overflow:auto}.gs-admin-table{min-width:760px}.transport-flow{font-size:.72rem} }
+</style>
+
+<script define:vars={{ initialTab }}>
+  const tabs = [...document.querySelectorAll('.gs-tab[data-tab]')];
+  const panels = [...document.querySelectorAll('[data-panel]')];
+  const activate = (id) => {
+    for (const tab of tabs) tab.setAttribute('aria-selected', String(tab.dataset.tab === id));
+    for (const panel of panels) panel.hidden = panel.dataset.panel !== id;
+    const url = new URL(location.href); url.searchParams.set('tab', id); history.replaceState({}, '', url);
+  };
+  tabs.forEach((tab) => tab.addEventListener('click', () => activate(tab.dataset.tab)));
+  activate(initialTab);
+</script>
+
+<script>
+  import { adminApi, adminApiMessage } from '../../../lib/admin-api-client';
+
+  type Secret = { id:string; integration_id:string; key_type:string; key_prefix:string; created_at:string; rotated_at:string|null; expires_at:string|null; rotation_count:number };
+  type DnsRecord = { id:string; type:string; name:string; content:string; proxied:boolean|null; ttl:number; modifiedOn:string };
+  type PagesProject = { name:string; subdomain?:string; domains:string[]; productionBranch?:string; createdOn?:string; latestDeployment?:{id:string;environment?:string;url?:string;createdOn?:string;status?:string}|null };
+
+  const text = (selector:string, value:string) => { const el=document.querySelector<HTMLElement>(selector); if(el) el.textContent=value; };
+  const status = (selector:string, tone:'ok'|'warning'|'error'|'info'|'pending', value:string) => { const el=document.querySelector<HTMLElement>(selector); if(!el)return; el.className=`gs-status gs-status-${tone}`; el.innerHTML='<i></i>'; el.append(document.createTextNode(value)); };
+  const errorBox = (selector:string, message?:string) => { const el=document.querySelector<HTMLElement>(selector); if(!el)return; el.hidden=!message; if(message){ el.replaceChildren(); const wrap=document.createElement('div'); const strong=document.createElement('strong'); strong.textContent='Unable to load data'; const p=document.createElement('p'); p.textContent=message; wrap.append(strong,p); el.append(wrap); } };
+  const td = (value:string) => { const cell=document.createElement('td'); cell.textContent=value; return cell; };
+
+  async function loadOverview(){
+    const result=await adminApi<any>('/api/admin/cf/overview');
+    if(!result.ok){ status('#cf-api-signal','error','Unavailable'); text('#cf-account','Error'); text('#cf-token','Error'); text('#cf-zone','Error'); return; }
+    const c=result.data.credentials||{}; status('#cf-api-signal',result.data.success?'ok':'warning',result.data.success?'Connected':'Incomplete');
+    text('#cf-account',c.accountIdConfigured?'Configured':'Missing'); text('#cf-token',c.apiTokenConfigured?'Configured':'Missing'); text('#cf-zone',c.zoneIdConfigured?'Configured / resolvable':'Resolve by zone name');
+    const grid=document.querySelector<HTMLElement>('#binding-grid'); if(!grid)return; grid.replaceChildren();
+    const entries=Object.entries(result.data.runtimeBindings||{}); text('#binding-count',`${entries.filter(([,v])=>v).length}/${entries.length} bound`);
+    for(const [name,bound] of entries){ const item=document.createElement('div'); item.className='binding-pill'; const label=document.createElement('code'); label.textContent=name; const signal=document.createElement('span'); signal.className=`gs-status gs-status-${bound?'ok':'warning'}`; signal.innerHTML='<i></i>'; signal.append(document.createTextNode(bound?'Bound':'Missing')); item.append(label,signal); grid.append(item); }
+  }
+
+  let secretPage=1,secretPages=1;
+  const secretRows=document.querySelector<HTMLTableSectionElement>('#secret-rows');
+  const dialog=document.querySelector<HTMLDialogElement>('#secret-dialog'); const secretForm=document.querySelector<HTMLFormElement>('#secret-form');
+  const secretId=document.querySelector<HTMLInputElement>('#secret-id'); const integration=document.querySelector<HTMLInputElement>('#integration-id'); const keyType=document.querySelector<HTMLSelectElement>('#key-type'); const secretValue=document.querySelector<HTMLTextAreaElement>('#secret-value'); const expires=document.querySelector<HTMLInputElement>('#expires-at');
+  async function loadSecrets(){
+    if(!secretRows)return; const q=new URLSearchParams({offset:String((secretPage-1)*25),limit:'25'}); const filter=(document.querySelector<HTMLInputElement>('#filter-integration')?.value||'').trim(); const type=document.querySelector<HTMLSelectElement>('#filter-type')?.value||''; if(filter)q.set('integration_id',filter);if(type)q.set('key_type',type);if(document.querySelector<HTMLInputElement>('#include-expired')?.checked)q.set('include_expired','true');
+    const result=await adminApi<any>(`/api/admin/secrets?${q}`); secretRows.replaceChildren(); if(!result.ok){errorBox('#secret-error',adminApiMessage(result));const tr=document.createElement('tr');const c=td('Unavailable');c.colSpan=6;tr.append(c);secretRows.append(tr);return;} errorBox('#secret-error');
+    for(const s of result.data.items as Secret[]){const tr=document.createElement('tr');tr.append(td(s.integration_id),td(s.key_type),td(`${s.key_prefix}••••`),td(s.expires_at?new Date(s.expires_at).toLocaleString():'Never'),td(String(s.rotation_count)));const actions=td('');const rotate=document.createElement('button');rotate.className='gs-button gs-button--secondary';rotate.textContent='Rotate';rotate.onclick=()=>openRotate(s);const revoke=document.createElement('button');revoke.className='gs-button gs-button--secondary';revoke.textContent='Revoke';revoke.onclick=()=>revokeSecret(s);actions.append(rotate,revoke);tr.append(actions);secretRows.append(tr);} if(!result.data.items.length){const tr=document.createElement('tr');const c=td('No secret metadata matches this filter.');c.colSpan=6;tr.append(c);secretRows.append(tr);} secretPages=result.data.pagination?.pages||1;text('#page-summary',`Page ${result.data.pagination?.page||1} of ${secretPages} · ${result.data.pagination?.total||0} secrets`);
+  }
+  const openCreate=()=>{secretForm?.reset();if(secretId)secretId.value='';if(integration){integration.disabled=false;integration.value='';}if(keyType)keyType.disabled=false;text('#dialog-title','Create secret');text('#value-label','Secret value');dialog?.showModal();};
+  const openRotate=(s:Secret)=>{secretForm?.reset();if(secretId)secretId.value=s.id;if(integration){integration.value=s.integration_id;integration.disabled=true;}if(keyType){keyType.value=s.key_type;keyType.disabled=true;}text('#dialog-title',`Rotate ${s.integration_id}`);text('#value-label','New secret value');dialog?.showModal();};
+  const closeSecret=()=>{if(secretValue)secretValue.value='';dialog?.close();};
+  async function revokeSecret(s:Secret){if(!confirm(`Revoke ${s.key_type} for ${s.integration_id}?`))return;const result=await adminApi(`/api/admin/secrets/${encodeURIComponent(s.id)}`,{method:'DELETE'});if(!result.ok){errorBox('#secret-error',adminApiMessage(result));return;}await loadSecrets();}
+  secretForm?.addEventListener('submit',async(e)=>{e.preventDefault();const id=secretId?.value||'';const body=id?{action:'rotate',new_value:secretValue?.value}:{integration_id:integration?.value.trim(),key_type:keyType?.value,value:secretValue?.value,expires_at:expires?.value?new Date(expires.value).toISOString():undefined};const result=await adminApi(id?`/api/admin/secrets/${encodeURIComponent(id)}`:'/api/admin/secrets',{method:id?'PATCH':'POST',body:JSON.stringify(body)});if(!result.ok){errorBox('#secret-error',adminApiMessage(result));return;}closeSecret();await loadSecrets();});
+  document.querySelector('#new-secret')?.addEventListener('click',openCreate);document.querySelector('#close-dialog')?.addEventListener('click',closeSecret);document.querySelector('#cancel-dialog')?.addEventListener('click',closeSecret);document.querySelector('#apply-filter')?.addEventListener('click',()=>{secretPage=1;void loadSecrets();});document.querySelector('#previous-page')?.addEventListener('click',()=>{if(secretPage>1){secretPage--;void loadSecrets();}});document.querySelector('#next-page')?.addEventListener('click',()=>{if(secretPage<secretPages){secretPage++;void loadSecrets();}});
+
+  const assetState={offset:0,limit:24,hasNext:false};
+  async function loadAssets(){const result=await adminApi<any>(`/api/admin/media?limit=${assetState.limit}&offset=${assetState.offset}`);const grid=document.querySelector<HTMLElement>('#assets');if(!grid)return;grid.replaceChildren();if(!result.ok){const box=document.createElement('div');box.className='gs-error-state';box.textContent=adminApiMessage(result);grid.append(box);return;}assetState.hasNext=result.data.items.length===assetState.limit;text('#asset-page',result.data.items.length?`Items ${assetState.offset+1}–${assetState.offset+result.data.items.length}`:'No assets');for(const item of result.data.items){const card=document.createElement('article');card.className='asset';const link=document.createElement('a');link.href=`/api/admin/media/${encodeURIComponent(item.id)}`;link.target='_blank';link.rel='noopener';const img=document.createElement('img');img.src=link.href;img.alt=item.filename||'';img.loading='lazy';link.append(img);const name=document.createElement('b');name.textContent=item.filename;const meta=document.createElement('span');meta.textContent=`${item.type} · ${(Number(item.size)/1024).toFixed(1)} KB`;const time=document.createElement('small');time.textContent=new Date(item.created_at).toLocaleString();card.append(link,name,meta,time);grid.append(card);}}
+  document.querySelector<HTMLFormElement>('#upload')?.addEventListener('submit',async(e)=>{e.preventDefault();const form=e.currentTarget;const result=await adminApi<any>('/api/admin/media/upload',{method:'POST',body:new FormData(form)});if(!result.ok){text('#media-message',adminApiMessage(result));return;}text('#media-message',`Uploaded ${result.data.filename}.`);form.reset();assetState.offset=0;await loadAssets();});document.querySelector('#refresh-assets')?.addEventListener('click',()=>void loadAssets());document.querySelector('#asset-previous')?.addEventListener('click',()=>{assetState.offset=Math.max(0,assetState.offset-assetState.limit);void loadAssets();});document.querySelector('#asset-next')?.addEventListener('click',()=>{if(assetState.hasNext){assetState.offset+=assetState.limit;void loadAssets();}});
+
+  let dnsItems:DnsRecord[]=[];
+  function renderDns(){const rows=document.querySelector<HTMLTableSectionElement>('#dns-rows');if(!rows)return;rows.replaceChildren();const query=(document.querySelector<HTMLInputElement>('#dns-search')?.value||'').toLowerCase();const type=document.querySelector<HTMLSelectElement>('#dns-type')?.value||'';const filtered=dnsItems.filter(r=>(!type||r.type===type)&&(!query||r.name.toLowerCase().includes(query)||r.content.toLowerCase().includes(query)));for(const r of filtered){const tr=document.createElement('tr');const select=td('');const check=document.createElement('input');check.type='checkbox';check.setAttribute('aria-label',`Select ${r.name}`);select.append(check);tr.append(select,td(r.type),td(r.name),td(r.content),td(r.proxied===true?'Proxied':r.proxied===false?'DNS only':'—'),td(r.ttl===1?'Auto':String(r.ttl)),td(r.modifiedOn?new Date(r.modifiedOn).toLocaleString():'—'));rows.append(tr);}if(!filtered.length){const tr=document.createElement('tr');const c=td('No DNS records match the current filter.');c.colSpan=7;tr.append(c);rows.append(tr);}text('#dns-summary',`${filtered.length} of ${dnsItems.length} records`);}
+  async function loadDns(){status('#dns-status','pending','Loading');const result=await adminApi<any>('/api/admin/cf/dns');if(!result.ok){errorBox('#dns-error',adminApiMessage(result));status('#dns-status','error','Unavailable');dnsItems=[];renderDns();return;}errorBox('#dns-error');dnsItems=result.data.items||[];status('#dns-status','ok','Live');renderDns();}
+  document.querySelector('#dns-search')?.addEventListener('input',renderDns);document.querySelector('#dns-type')?.addEventListener('change',renderDns);document.querySelector('#dns-refresh')?.addEventListener('click',()=>void loadDns());document.querySelector<HTMLInputElement>('#dns-select-all')?.addEventListener('change',(e)=>{document.querySelectorAll<HTMLInputElement>('#dns-rows input[type=checkbox]').forEach(c=>c.checked=(e.currentTarget as HTMLInputElement).checked);});
+
+  let pagesItems:PagesProject[]=[];
+  function renderPages(){const rows=document.querySelector<HTMLTableSectionElement>('#pages-rows');if(!rows)return;rows.replaceChildren();const q=(document.querySelector<HTMLInputElement>('#pages-search')?.value||'').toLowerCase();const filtered=pagesItems.filter(p=>!q||p.name.toLowerCase().includes(q)||(p.domains||[]).some(d=>d.toLowerCase().includes(q)));for(const p of filtered){const dep=p.latestDeployment;const tr=document.createElement('tr');tr.append(td(p.name),td((p.domains||[]).join(', ')||p.subdomain||'—'),td(p.productionBranch||'—'),td(dep?.createdOn?new Date(dep.createdOn).toLocaleString():dep?.id||'—'),td(dep?.status||'—'),td(p.createdOn?new Date(p.createdOn).toLocaleString():'—'));rows.append(tr);}if(!filtered.length){const tr=document.createElement('tr');const c=td('No Pages projects match the current filter.');c.colSpan=6;tr.append(c);rows.append(tr);}text('#pages-summary',`${filtered.length} of ${pagesItems.length} projects`);}
+  async function loadPages(){status('#pages-status','pending','Loading');const result=await adminApi<any>('/api/admin/cf/pages');if(!result.ok){errorBox('#pages-error',adminApiMessage(result));status('#pages-status','error','Unavailable');pagesItems=[];renderPages();return;}errorBox('#pages-error');pagesItems=result.data.items||[];status('#pages-status','ok','Live');renderPages();}
+  document.querySelector('#pages-search')?.addEventListener('input',renderPages);document.querySelector('#pages-refresh')?.addEventListener('click',()=>void loadPages());
+
+  async function refreshAll(){await Promise.allSettled([loadOverview(),loadSecrets(),loadAssets(),loadDns(),loadPages()]);}
+  document.querySelector('#refresh-system')?.addEventListener('click',()=>void refreshAll());
+  void refreshAll();
+</script>

@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import type { Env, Variables } from "../../types";
+import { TOOLS, toolDescriptors, callTool, callKnowledgeTool } from "../mcp";
 
 const chat = new Hono<{
   Bindings: Env;
@@ -83,7 +84,7 @@ chat.post("/message", async (c) => {
     }
 
     // Build messages array for Claude API
-    const messages = [
+    const messages: Array<{ role: "user" | "assistant"; content: unknown }> = [
       ...context.map((msg) => ({
         role: msg.role as "user" | "assistant",
         content: msg.content,
@@ -91,35 +92,86 @@ chat.post("/message", async (c) => {
       { role: "user" as const, content: message },
     ];
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-opus-4-1-20250805",
-        max_tokens: 1024,
-        system: systemContext,
-        messages,
-      }),
-    });
+    const tools = toolDescriptors.map((tool) => ({
+      name: tool.name,
+      description: tool.description,
+      input_schema: tool.inputSchema,
+    }));
 
-    if (!response.ok) {
-      const error = await response.text();
-      console.error("[chat] Claude API error:", error);
-      return c.json(
-        { error: "Failed to get response from Claude" },
-        response.status
-      );
+    // Tool-use loop: Claude may call MCP tools (Cloudflare listings, knowledge
+    // search) before producing its final answer. Capped to avoid a runaway chain.
+    const MAX_TOOL_ITERATIONS = 5;
+    type ClaudeResponse = {
+      content: Array<{
+        type: string;
+        text?: string;
+        id?: string;
+        name?: string;
+        input?: Record<string, unknown>;
+      }>;
+      stop_reason: string;
+    };
+    let data: ClaudeResponse | undefined;
+
+    for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-5",
+          max_tokens: 1024,
+          system: systemContext,
+          messages,
+          tools,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        console.error("[chat] Claude API error:", error);
+        return c.json(
+          { error: "Failed to get response from Claude" },
+          response.status
+        );
+      }
+
+      const parsed = (await response.json()) as ClaudeResponse;
+      data = parsed;
+
+      if (parsed.stop_reason !== "tool_use") break;
+
+      messages.push({ role: "assistant", content: parsed.content });
+
+      const toolResults = [];
+      for (const block of parsed.content) {
+        if (block.type !== "tool_use" || !block.name || !block.id) continue;
+        const args = block.input ?? {};
+        const toolResult =
+          block.name === "goldshore_search_knowledge"
+            ? await callKnowledgeTool(c.env, args)
+            : await (async () => {
+                const tool = TOOLS.find((candidate) => candidate.name === block.name);
+                if (!tool) {
+                  return { content: [{ type: "text", text: `Unknown tool: ${block.name}` }], isError: true };
+                }
+                return callTool(c.env, tool, args);
+              })();
+        toolResults.push({
+          type: "tool_result",
+          tool_use_id: block.id,
+          content: toolResult.content,
+          ...(toolResult.isError ? { is_error: true } : {}),
+        });
+      }
+      messages.push({ role: "user", content: toolResults });
     }
 
-    const data = (await response.json()) as {
-      content: Array<{ type: string; text: string }>;
-    };
     const assistantMessage =
-      data.content.find((block) => block.type === "text")?.text ||
+      data?.content.find((block) => block.type === "text")?.text ||
       "No response generated";
 
     return c.json({

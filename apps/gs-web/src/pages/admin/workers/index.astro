@@ -7,10 +7,10 @@ const TABS = ['status', 'bindings', 'routes', 'tunnels'] as const;
 const initialTab = (TABS as readonly string[]).includes(requestedTab ?? '') ? requestedTab! : 'status';
 ---
 <AdminLayout title="Workers | GoldShore Admin">
-  <section class="max-w-6xl mx-auto py-16 px-6 space-y-6">
+  <section class="gs-page gs-stack">
     <div>
-      <h1 class="text-3xl gs-heading">Workers</h1>
-      <p class="gs-text-subtle mt-2">Live Cloudflare Worker status, bindings, routes, and tunnels — consolidated from four separate pages into one.</p>
+      <h1 class="gs-heading">Workers</h1>
+      <p class="gs-text-subtle">Live Cloudflare Worker status, bindings, routes, and tunnels — consolidated from four separate pages into one.</p>
     </div>
 
     <nav class="gs-tabs" role="tablist" aria-label="Worker sections">
@@ -22,15 +22,15 @@ const initialTab = (TABS as readonly string[]).includes(requestedTab ?? '') ? re
 
     <!-- ============================== Status ============================== -->
     <div class="gs-panel" data-panel="status">
-      <div class="flex items-center justify-between gap-4">
-        <h2 class="text-xl font-semibold">Deployed Workers</h2>
-        <button id="st-refresh-btn" class="gs-btn-secondary text-sm px-4 py-2">Refresh</button>
+      <div class="gs-row gs-row--between">
+        <h2>Deployed Workers</h2>
+        <button id="st-refresh-btn" class="gs-button gs-button--secondary gs-text-sm">Refresh</button>
       </div>
-      <div class="gs-card space-y-4 mt-4">
-        <div class="overflow-x-auto">
-          <table class="w-full text-left">
-            <thead><tr class="text-sm gs-text-subtle border-b border-[var(--gs-color-border)]"><th class="pb-2">Worker Name</th><th class="pb-2">Last Modified</th><th class="pb-2">Status</th></tr></thead>
-            <tbody id="st-workers-table-body"><tr><td class="py-3 text-sm gs-text-subtle" colspan="3">Loading workers…</td></tr></tbody>
+      <div class="gs-card gs-stack">
+        <div class="gs-table-scroll">
+          <table>
+            <thead><tr class="gs-text-sm gs-text-subtle"><th>Worker Name</th><th>Last Modified</th><th>Status</th></tr></thead>
+            <tbody id="st-workers-table-body"><tr><td class="gs-text-sm gs-text-subtle" colspan="3">Loading workers…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -38,96 +38,96 @@ const initialTab = (TABS as readonly string[]).includes(requestedTab ?? '') ? re
 
     <!-- ============================== Bindings ============================== -->
     <div class="gs-panel" data-panel="bindings">
-      <h2 class="text-xl font-semibold mb-2">Worker Bindings</h2>
-      <p class="gs-text-subtle mb-4">Resource bindings, environment variables, and secrets mapped to each worker.</p>
+      <h2>Worker Bindings</h2>
+      <p class="gs-text-subtle">Resource bindings, environment variables, and secrets mapped to each worker.</p>
 
-      <div class="gs-card space-y-4">
-        <div class="flex items-center gap-4 flex-wrap">
-          <label for="bd-worker-select" class="text-sm font-medium gs-text-subtle whitespace-nowrap">Select worker:</label>
-          <select id="bd-worker-select" class="gs-input text-sm" style="min-width: 220px;"><option value="">Loading workers…</option></select>
+      <div class="gs-card gs-stack">
+        <div class="gs-row">
+          <label for="bd-worker-select" class="gs-text-sm gs-text-subtle">Select worker:</label>
+          <select id="bd-worker-select" class="gs-input gs-text-sm" style="min-width: 220px;"><option value="">Loading workers…</option></select>
         </div>
       </div>
 
-      <div id="bd-bindings-section" class="gs-card space-y-4 mt-4" style="display: none;">
-        <h3 class="text-lg font-semibold">Bindings</h3>
-        <form id="bd-binding-form" class="grid gap-3 md:grid-cols-4 items-end">
-          <label class="space-y-1"><span class="block text-sm">Variable name</span><input id="bd-binding-name" class="gs-input w-full font-mono" required pattern="[A-Za-z_$][A-Za-z0-9_$]{0,63}" placeholder="FEATURE_FLAG" /></label>
-          <label class="space-y-1"><span class="block text-sm">Type</span><select id="bd-binding-type" class="gs-input w-full"><option value="plain_text">Plain text</option><option value="json">JSON</option></select></label>
-          <label class="space-y-1"><span class="block text-sm">Value</span><textarea id="bd-binding-value" class="gs-input w-full font-mono" required maxlength="16384" rows="2"></textarea></label>
-          <button class="gs-btn-primary px-4 py-2" type="submit">Save confirmed binding</button>
+      <div id="bd-bindings-section" class="gs-card gs-stack" style="display: none;">
+        <h3 class="gs-text-lg">Bindings</h3>
+        <form id="bd-binding-form" class="gs-list-grid gs-row--end">
+          <label class="gs-stack-sm"><span class="gs-text-sm">Variable name</span><input id="bd-binding-name" class="gs-input gs-mono" required pattern="[A-Za-z_$][A-Za-z0-9_$]{0,63}" placeholder="FEATURE_FLAG" /></label>
+          <label class="gs-stack-sm"><span class="gs-text-sm">Type</span><select id="bd-binding-type" class="gs-input"><option value="plain_text">Plain text</option><option value="json">JSON</option></select></label>
+          <label class="gs-stack-sm"><span class="gs-text-sm">Value</span><textarea id="bd-binding-value" class="gs-input gs-mono" required maxlength="16384" rows="2"></textarea></label>
+          <button class="gs-button" type="submit">Save confirmed binding</button>
         </form>
-        <p class="text-xs gs-text-subtle">Secret and resource bindings are read-only here. Use Secrets Management or Wrangler for those types.</p>
-        <p id="bd-binding-status" class="text-sm gs-text-subtle" role="status"></p>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left">
-            <thead><tr class="text-sm gs-text-subtle border-b border-[var(--gs-color-border)]"><th class="pb-2">Binding Name</th><th class="pb-2">Type</th><th class="pb-2">Resource</th><th class="pb-2">Actions</th></tr></thead>
-            <tbody id="bd-bindings-table-body"><tr><td class="py-3 text-sm gs-text-subtle" colspan="4">Select a worker to view bindings.</td></tr></tbody>
+        <p class="gs-text-sm gs-text-subtle">Secret and resource bindings are read-only here. Use Secrets Management or Wrangler for those types.</p>
+        <p id="bd-binding-status" class="gs-text-sm gs-text-subtle" role="status"></p>
+        <div class="gs-table-scroll">
+          <table>
+            <thead><tr class="gs-text-sm gs-text-subtle"><th>Binding Name</th><th>Type</th><th>Resource</th><th>Actions</th></tr></thead>
+            <tbody id="bd-bindings-table-body"><tr><td class="gs-text-sm gs-text-subtle" colspan="4">Select a worker to view bindings.</td></tr></tbody>
           </table>
         </div>
       </div>
 
-      <div id="bd-bindings-error" class="gs-card mt-4" style="display: none;">
-        <p id="bd-bindings-error-msg" class="text-sm gs-text-danger"></p>
-        <p class="gs-text-subtle text-xs mt-1">Ensure <code>CLOUDFLARE_ACCOUNT_ID</code> and <code>CLOUDFLARE_API_TOKEN</code> are configured on gs-api.</p>
+      <div id="bd-bindings-error" class="gs-card" style="display: none;">
+        <p id="bd-bindings-error-msg" class="gs-text-sm gs-text-danger"></p>
+        <p class="gs-text-subtle gs-text-sm">Ensure <code>CLOUDFLARE_ACCOUNT_ID</code> and <code>CLOUDFLARE_API_TOKEN</code> are configured on gs-api.</p>
       </div>
     </div>
 
     <!-- ============================== Routes ============================== -->
     <div class="gs-panel" data-panel="routes">
-      <h2 class="text-xl font-semibold mb-2">Worker Routes</h2>
-      <p class="gs-text-subtle mb-4">Route tables, domains, and traffic rules for each deployed worker.</p>
+      <h2>Worker Routes</h2>
+      <p class="gs-text-subtle">Route tables, domains, and traffic rules for each deployed worker.</p>
 
-      <div class="gs-card space-y-4">
-        <div class="flex items-center gap-4 flex-wrap">
-          <label for="rt-worker-select" class="text-sm font-medium gs-text-subtle whitespace-nowrap">Select worker:</label>
-          <select id="rt-worker-select" class="gs-input text-sm" style="min-width: 220px;"><option value="">Loading workers…</option></select>
-          <a id="rt-cf-dashboard-link" href="#" target="_blank" rel="noopener noreferrer" class="gs-btn-secondary text-sm px-4 py-2 ml-auto" style="display: none;">CF Dashboard ↗</a>
+      <div class="gs-card gs-stack">
+        <div class="gs-row gs-row--between">
+          <label for="rt-worker-select" class="gs-text-sm gs-text-subtle">Select worker:</label>
+          <select id="rt-worker-select" class="gs-input gs-text-sm" style="min-width: 220px;"><option value="">Loading workers…</option></select>
+          <a id="rt-cf-dashboard-link" href="#" target="_blank" rel="noopener noreferrer" class="gs-button gs-button--secondary gs-text-sm" style="display: none;">CF Dashboard ↗</a>
         </div>
-        <form id="rt-route-form" class="flex items-end gap-3 flex-wrap">
-          <label class="space-y-1 flex-1"><span class="block text-sm">New route pattern</span><input id="rt-route-pattern" class="gs-input w-full" required placeholder="api.goldshore.ai/*" /></label>
-          <button class="gs-btn-primary px-4 py-2" type="submit">Add confirmed route</button>
+        <form id="rt-route-form" class="gs-row gs-row--end">
+          <label class="gs-stack-sm gs-fill"><span class="gs-text-sm">New route pattern</span><input id="rt-route-pattern" class="gs-input" required placeholder="api.goldshore.ai/*" /></label>
+          <button class="gs-button" type="submit">Add confirmed route</button>
         </form>
-        <p id="rt-route-status" class="text-sm gs-text-subtle" role="status"></p>
+        <p id="rt-route-status" class="gs-text-sm gs-text-subtle" role="status"></p>
       </div>
 
-      <div id="rt-routes-section" class="gs-card space-y-4 mt-4" style="display: none;">
-        <h3 class="text-lg font-semibold">Routes</h3>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left">
-            <thead><tr class="text-sm gs-text-subtle border-b border-[var(--gs-color-border)]"><th class="pb-2">Pattern</th><th class="pb-2">Zone</th><th class="pb-2">Created</th><th class="pb-2">Actions</th></tr></thead>
-            <tbody id="rt-routes-table-body"><tr><td class="py-3 text-sm gs-text-subtle" colspan="4">Select a worker to view routes.</td></tr></tbody>
+      <div id="rt-routes-section" class="gs-card gs-stack" style="display: none;">
+        <h3 class="gs-text-lg">Routes</h3>
+        <div class="gs-table-scroll">
+          <table>
+            <thead><tr class="gs-text-sm gs-text-subtle"><th>Pattern</th><th>Zone</th><th>Created</th><th>Actions</th></tr></thead>
+            <tbody id="rt-routes-table-body"><tr><td class="gs-text-sm gs-text-subtle" colspan="4">Select a worker to view routes.</td></tr></tbody>
           </table>
         </div>
       </div>
 
-      <div id="rt-routes-error" class="gs-card mt-4" style="display: none;">
-        <p id="rt-routes-error-msg" class="text-sm gs-text-danger"></p>
-        <p class="gs-text-subtle text-xs mt-1">Ensure <code>CF_ACCOUNT_ID</code> and <code>CF_API_TOKEN</code> are set in your environment.</p>
+      <div id="rt-routes-error" class="gs-card" style="display: none;">
+        <p id="rt-routes-error-msg" class="gs-text-sm gs-text-danger"></p>
+        <p class="gs-text-subtle gs-text-sm">Ensure <code>CF_ACCOUNT_ID</code> and <code>CF_API_TOKEN</code> are set in your environment.</p>
       </div>
     </div>
 
     <!-- ============================== Tunnels ============================== -->
     <div class="gs-panel" data-panel="tunnels">
-      <h2 class="text-xl font-semibold mb-2">Cloudflare Tunnels</h2>
-      <p class="gs-text-subtle mb-4">Inventory and guarded configuration for GoldShore private origins.</p>
+      <h2>Cloudflare Tunnels</h2>
+      <p class="gs-text-subtle">Inventory and guarded configuration for GoldShore private origins.</p>
 
-      <form id="tn-create-form" class="gs-card flex gap-3 items-end flex-wrap">
-        <label class="space-y-1 flex-1"><span class="block text-sm">New remotely managed tunnel</span><input id="tn-tunnel-name" class="gs-input w-full" required maxlength="100" placeholder="goldshore-admin-origin" /></label>
-        <button class="gs-btn-primary px-4 py-2" type="submit">Create tunnel</button>
+      <form id="tn-create-form" class="gs-card gs-row gs-row--end">
+        <label class="gs-stack-sm gs-fill"><span class="gs-text-sm">New remotely managed tunnel</span><input id="tn-tunnel-name" class="gs-input" required maxlength="100" placeholder="goldshore-admin-origin" /></label>
+        <button class="gs-button" type="submit">Create tunnel</button>
       </form>
-      <p id="tn-status" class="text-sm gs-text-subtle mt-2" role="status"></p>
-      <div class="gs-card overflow-x-auto mt-4">
-        <table class="w-full text-left">
-          <thead><tr class="border-b"><th class="pb-2">Name</th><th>Status</th><th>Management</th><th>Last active</th><th>Actions</th></tr></thead>
-          <tbody id="tn-rows"><tr><td colspan="5" class="py-4 gs-text-subtle">Loading tunnels…</td></tr></tbody>
+      <p id="tn-status" class="gs-text-sm gs-text-subtle" role="status"></p>
+      <div class="gs-card gs-table-scroll">
+        <table>
+          <thead><tr><th>Name</th><th>Status</th><th>Management</th><th>Last active</th><th>Actions</th></tr></thead>
+          <tbody id="tn-rows"><tr><td colspan="5" class="gs-text-subtle">Loading tunnels…</td></tr></tbody>
         </table>
       </div>
-      <dialog id="tn-config-dialog" class="gs-card p-6 max-w-3xl w-full backdrop:bg-black/60">
-        <form method="dialog" class="space-y-4">
-          <div class="flex justify-between"><div><h3 class="text-xl font-semibold">Tunnel ingress</h3><p id="tn-config-name" class="text-sm gs-text-subtle"></p></div><button class="gs-btn-secondary px-3" value="cancel">Close</button></div>
-          <p class="text-sm gs-text-subtle">One JSON rule per hostname. Only goldshore.ai and goldshore.org hostnames are accepted. The final rule must be a catch-all such as <code>{`{"service":"http_status:404"}`}</code>.</p>
-          <textarea id="tn-ingress" class="gs-input w-full font-mono text-sm" rows="14" spellcheck="false"></textarea>
-          <button id="tn-save-config" class="gs-btn-primary px-4 py-2" type="button">Save confirmed configuration</button>
+      <dialog id="tn-config-dialog" class="gs-card">
+        <form method="dialog" class="gs-stack">
+          <div class="gs-row gs-row--between"><div><h3>Tunnel ingress</h3><p id="tn-config-name" class="gs-text-sm gs-text-subtle"></p></div><button class="gs-button gs-button--secondary" value="cancel">Close</button></div>
+          <p class="gs-text-sm gs-text-subtle">One JSON rule per hostname. Only goldshore.ai and goldshore.org hostnames are accepted. The final rule must be a catch-all such as <code>{`{"service":"http_status:404"}`}</code>.</p>
+          <textarea id="tn-ingress" class="gs-input gs-mono gs-text-sm" rows="14" spellcheck="false"></textarea>
+          <button id="tn-save-config" class="gs-button" type="button">Save confirmed configuration</button>
         </form>
       </dialog>
     </div>
@@ -166,27 +166,27 @@ const initialTab = (TABS as readonly string[]).includes(requestedTab ?? '') ? re
 
     function stRenderError(message: string) {
       if (stTableBody) {
-        stTableBody.innerHTML = `<tr><td class="py-3 text-sm gs-text-danger" colspan="3">${message}<br/><span class="gs-text-subtle text-xs">Set <code>CF_ACCOUNT_ID</code> and <code>CF_API_TOKEN</code> in your environment to enable this page.</span></td></tr>`;
+        stTableBody.innerHTML = `<tr><td class="gs-text-sm gs-text-danger" colspan="3">${message}<br/><span class="gs-text-subtle gs-text-sm">Set <code>CF_ACCOUNT_ID</code> and <code>CF_API_TOKEN</code> in your environment to enable this page.</span></td></tr>`;
       }
     }
 
     async function stLoadWorkers() {
-      if (stTableBody) stTableBody.innerHTML = '<tr><td class="py-3 text-sm gs-text-subtle" colspan="3">Loading workers…</td></tr>';
+      if (stTableBody) stTableBody.innerHTML = '<tr><td class="gs-text-sm gs-text-subtle" colspan="3">Loading workers…</td></tr>';
       try {
         const res = await fetch('/api/admin/cf/workers');
         const data = await res.json();
         if (!res.ok || data.error) { stRenderError(data.error ?? 'Failed to load workers.'); return; }
         const workers: Array<{ id: string; modified_on: string }> = data.workers ?? [];
         if (!workers.length) {
-          if (stTableBody) stTableBody.innerHTML = '<tr><td class="py-3 text-sm gs-text-subtle" colspan="3">No workers found in this account.</td></tr>';
+          if (stTableBody) stTableBody.innerHTML = '<tr><td class="gs-text-sm gs-text-subtle" colspan="3">No workers found in this account.</td></tr>';
           return;
         }
         if (stTableBody) {
           stTableBody.innerHTML = workers.map((w) => `
-            <tr class="border-b border-[var(--gs-color-border)]/50">
-              <td class="py-2 font-mono text-sm">${w.id}</td>
-              <td class="py-2 text-sm gs-text-subtle">${w.modified_on ? new Date(w.modified_on).toLocaleString() : 'N/A'}</td>
-              <td class="py-2"><span class="gs-pill gs-pill--success">active</span></td>
+            <tr>
+              <td class="gs-mono gs-text-sm">${w.id}</td>
+              <td class="gs-text-sm gs-text-subtle">${w.modified_on ? new Date(w.modified_on).toLocaleString() : 'N/A'}</td>
+              <td><span class="gs-badge success">active</span></td>
             </tr>`).join('');
         }
       } catch {
@@ -241,7 +241,7 @@ const initialTab = (TABS as readonly string[]).includes(requestedTab ?? '') ? re
       bdHideError();
       if (bdBindingsSection) bdBindingsSection.style.display = 'none';
       if (!name) return;
-      if (bdBindingsTableBody) bdBindingsTableBody.innerHTML = '<tr><td class="py-3 text-sm gs-text-subtle" colspan="4">Loading bindings…</td></tr>';
+      if (bdBindingsTableBody) bdBindingsTableBody.innerHTML = '<tr><td class="gs-text-sm gs-text-subtle" colspan="4">Loading bindings…</td></tr>';
       if (bdBindingsSection) bdBindingsSection.style.display = 'block';
 
       try {
@@ -255,15 +255,15 @@ const initialTab = (TABS as readonly string[]).includes(requestedTab ?? '') ? re
         bdBindingsRevision = data.bindingsRevision ?? '';
         const bindings: Array<{ name: string; type: string; resource?: string; editable?: boolean }> = data.bindings ?? [];
         if (!bindings.length) {
-          if (bdBindingsTableBody) bdBindingsTableBody.innerHTML = '<tr><td class="py-3 text-sm gs-text-subtle" colspan="4">No bindings found for this worker.</td></tr>';
+          if (bdBindingsTableBody) bdBindingsTableBody.innerHTML = '<tr><td class="gs-text-sm gs-text-subtle" colspan="4">No bindings found for this worker.</td></tr>';
           return;
         }
         if (bdBindingsTableBody) {
-          bdBindingsTableBody.innerHTML = bindings.map((b) => `<tr class="border-b border-[var(--gs-color-border)]/50">
-              <td class="py-2 font-mono text-sm">${bdEscapeHtml(b.name)}</td>
-              <td class="py-2 text-sm">${bdEscapeHtml(b.type)}</td>
-              <td class="py-2 text-sm gs-text-subtle">${bdEscapeHtml(b.resource ?? 'Configured')}</td>
-              <td class="py-2">${b.editable ? `<button class="gs-btn-secondary px-2 py-1 mr-2" data-edit-binding="${bdEscapeHtml(b.name)}" data-binding-type="${bdEscapeHtml(b.type)}">Replace</button><button class="gs-btn-secondary px-2 py-1" data-delete-binding="${bdEscapeHtml(b.name)}">Delete</button>` : 'Protected'}</td>
+          bdBindingsTableBody.innerHTML = bindings.map((b) => `<tr>
+              <td class="gs-mono gs-text-sm">${bdEscapeHtml(b.name)}</td>
+              <td class="gs-text-sm">${bdEscapeHtml(b.type)}</td>
+              <td class="gs-text-sm gs-text-subtle">${bdEscapeHtml(b.resource ?? 'Configured')}</td>
+              <td>${b.editable ? `<button class="gs-button gs-button--secondary" data-edit-binding="${bdEscapeHtml(b.name)}" data-binding-type="${bdEscapeHtml(b.type)}">Replace</button><button class="gs-button gs-button--secondary" data-delete-binding="${bdEscapeHtml(b.name)}">Delete</button>` : 'Protected'}</td>
             </tr>`).join('');
         }
       } catch {
@@ -364,7 +364,7 @@ const initialTab = (TABS as readonly string[]).includes(requestedTab ?? '') ? re
       if (rtRoutesSection) rtRoutesSection.style.display = 'none';
       rtUpdateDashboardLink(name);
       if (!name) return;
-      if (rtRoutesTableBody) rtRoutesTableBody.innerHTML = '<tr><td class="py-3 text-sm gs-text-subtle" colspan="4">Loading routes…</td></tr>';
+      if (rtRoutesTableBody) rtRoutesTableBody.innerHTML = '<tr><td class="gs-text-sm gs-text-subtle" colspan="4">Loading routes…</td></tr>';
       if (rtRoutesSection) rtRoutesSection.style.display = 'block';
 
       try {
@@ -377,16 +377,16 @@ const initialTab = (TABS as readonly string[]).includes(requestedTab ?? '') ? re
         }
         const routes: Array<{ id?: string; pattern: string; zone_name?: string; created_on?: string }> = data.routes ?? [];
         if (!routes.length) {
-          if (rtRoutesTableBody) rtRoutesTableBody.innerHTML = '<tr><td class="py-3 text-sm gs-text-subtle" colspan="4">No routes found for this worker on GoldShore zones.</td></tr>';
+          if (rtRoutesTableBody) rtRoutesTableBody.innerHTML = '<tr><td class="gs-text-sm gs-text-subtle" colspan="4">No routes found for this worker on GoldShore zones.</td></tr>';
           return;
         }
         if (rtRoutesTableBody) {
           rtRoutesTableBody.innerHTML = routes.map((r) => `
-            <tr class="border-b border-[var(--gs-color-border)]/50">
-              <td class="py-2 font-mono text-sm">${rtEscapeHtml(r.pattern)}</td>
-              <td class="py-2 text-sm gs-text-subtle">${rtEscapeHtml(r.zone_name ?? 'goldshore.ai')}</td>
-              <td class="py-2 text-sm gs-text-subtle">${r.created_on ? new Date(r.created_on).toLocaleString() : '—'}</td>
-              <td class="py-2">${r.id ? `<button class="gs-btn-secondary px-2 py-1" data-delete-route="${rtEscapeHtml(r.id)}">Delete</button>` : '—'}</td>
+            <tr>
+              <td class="gs-mono gs-text-sm">${rtEscapeHtml(r.pattern)}</td>
+              <td class="gs-text-sm gs-text-subtle">${rtEscapeHtml(r.zone_name ?? 'goldshore.ai')}</td>
+              <td class="gs-text-sm gs-text-subtle">${r.created_on ? new Date(r.created_on).toLocaleString() : '—'}</td>
+              <td>${r.id ? `<button class="gs-button gs-button--secondary" data-delete-route="${rtEscapeHtml(r.id)}">Delete</button>` : '—'}</td>
             </tr>`).join('');
         }
       } catch {
@@ -435,9 +435,9 @@ const initialTab = (TABS as readonly string[]).includes(requestedTab ?? '') ? re
         const data = await response.json();
         if (!response.ok) throw new Error(data.error ?? 'Tunnel inventory failed.');
         const tunnels = data.tunnels ?? [];
-        if (tnRows) tnRows.innerHTML = tunnels.length ? tunnels.map((t: any) => `<tr class="border-b"><td class="py-3 font-medium">${tnEscapeHtml(t.name)}</td><td>${tnEscapeHtml(t.status ?? 'unknown')}</td><td>${tnEscapeHtml(t.configSrc ?? 'local')}</td><td>${t.activeAt ? new Date(t.activeAt).toLocaleString() : 'Never'}</td><td class="space-x-2"><button class="gs-btn-secondary px-2 py-1" data-config="${tnEscapeHtml(t.id)}" data-name="${tnEscapeHtml(t.name)}" ${t.configSrc === 'cloudflare' ? '' : 'disabled'}>Configure</button><button class="gs-btn-secondary px-2 py-1" data-delete="${tnEscapeHtml(t.id)}" data-name="${tnEscapeHtml(t.name)}" ${['inactive', 'down'].includes(t.status) ? '' : 'disabled'}>Delete</button></td></tr>`).join('') : '<tr><td colspan="5" class="py-4 gs-text-subtle">No active tunnels found.</td></tr>';
+        if (tnRows) tnRows.innerHTML = tunnels.length ? tunnels.map((t: any) => `<tr><td>${tnEscapeHtml(t.name)}</td><td>${tnEscapeHtml(t.status ?? 'unknown')}</td><td>${tnEscapeHtml(t.configSrc ?? 'local')}</td><td>${t.activeAt ? new Date(t.activeAt).toLocaleString() : 'Never'}</td><td class="gs-row"><button class="gs-button gs-button--secondary" data-config="${tnEscapeHtml(t.id)}" data-name="${tnEscapeHtml(t.name)}" ${t.configSrc === 'cloudflare' ? '' : 'disabled'}>Configure</button><button class="gs-button gs-button--secondary" data-delete="${tnEscapeHtml(t.id)}" data-name="${tnEscapeHtml(t.name)}" ${['inactive', 'down'].includes(t.status) ? '' : 'disabled'}>Delete</button></td></tr>`).join('') : '<tr><td colspan="5" class="gs-text-subtle">No active tunnels found.</td></tr>';
       } catch (error) {
-        if (tnRows) tnRows.innerHTML = `<tr><td colspan="5" class="py-4 gs-text-danger">${tnEscapeHtml(error instanceof Error ? error.message : 'Network error')}</td></tr>`;
+        if (tnRows) tnRows.innerHTML = `<tr><td colspan="5" class="gs-text-danger">${tnEscapeHtml(error instanceof Error ? error.message : 'Network error')}</td></tr>`;
       }
     }
 

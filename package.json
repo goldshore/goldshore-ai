@@ -3,6 +3,7 @@
   "private": true,
   "packageManager": "pnpm@9.15.4",
   "scripts": {
+    "cloudflare:preflight": "node scripts/cloudflare-preflight.mjs",
     "dev": "turbo run dev --parallel",
     "build": "pnpm build:pages",
     "build:all": "pnpm build:openapi && turbo run build",
@@ -43,31 +44,31 @@
     "check:wrangler-placeholders": "node scripts/check-wrangler-placeholders.mjs"
   },
   "devDependencies": {
-    "@astrojs/mdx": "^7.0.3",
+    "@astrojs/mdx": "^7.0.8",
     "@astrojs/sitemap": "^3.7.2",
     "@astrojs/tailwind": "^6.0.2",
-    "@cloudflare/workers-types": "^5.20260813.1",
-    "@types/node": "^26.1.1",
-    "@typescript-eslint/eslint-plugin": "^8.57.2",
-    "@typescript-eslint/parser": "^8.65.0",
-    "astro": "^7.2.0",
-    "eslint": "^10.8.0",
+    "@cloudflare/workers-types": "^5.20260827.1",
+    "@types/node": "^26.4.0",
+    "@typescript-eslint/eslint-plugin": "^8.68.0",
+    "@typescript-eslint/parser": "^8.68.0",
+    "astro": "^7.2.9",
+    "eslint": "^10.9.1",
     "eslint-plugin-astro": "^3.0.1",
     "form-data": "^4.0.6",
     "octokit": "^5.0.5",
     "prettier": "^3.9.6",
     "prettier-plugin-astro": "^0.14.1",
-    "svgo": "^4.0.2",
+    "svgo": "^4.1.0",
     "tsx": "^4.23.1",
-    "typescript": "^5.7.2",
-    "wrangler": "^4.123.0",
+    "typescript": "^6.0.3",
+    "wrangler": "^4.127.1",
     "yaml": "^2.9.0",
-    "zod": "^4.3.6"
+    "zod": "^4.4.3"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "^14.2.0",
+    "@astrojs/cloudflare": "^14.2.5",
     "p-limit": "^7.3.1",
-    "turbo": "^2.10.5"
+    "turbo": "^2.10.12"
   },
   "engines": {
     "node": ">=22.12.0"
