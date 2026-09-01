@@ -17,68 +17,68 @@ const runtimeEnv = cloudflareEnv as Record<string, unknown>;
 const recentDeploys: Array<{ label: string; time: string; env: string; ok: boolean }> = [];
 ---
 <AdminLayout title="Admin | Operational Overview">
-  <div class="max-w-7xl mx-auto p-8 space-y-8">
-    <h1 class="text-4xl gs-heading gs-text-accent">Operational Overview</h1>
-    <p class="text-lg gs-text-subtle">Protected access to monitor Workers, Data, and System Health.</p>
+  <div class="gs-page gs-stack">
+    <h1 class="gs-heading gs-text-accent">Operational Overview</h1>
+    <p class="gs-text-subtle gs-text-lg">Protected access to monitor Workers, Data, and System Health.</p>
 
-    <div class="grid md:grid-cols-4 gap-6">
-      <div class="gs-card space-y-3">
-        <h2 class="text-xl font-semibold">gs-api Health</h2>
-        <p id="api-health" class="text-2xl font-bold gs-text-info">{initialStatus.health}</p>
-        <p class="text-sm gs-text-subtle">Last checked: <span id="api-health-sync">{initialStatus.lastSync}</span></p>
+    <div class="gs-grid columns-4">
+      <div class="gs-card gs-stack-sm">
+        <h2>gs-api Health</h2>
+        <p id="api-health" class="gs-text-info gs-stat">{initialStatus.health}</p>
+        <p class="gs-text-subtle gs-text-sm">Last checked: <span id="api-health-sync">{initialStatus.lastSync}</span></p>
         <GSButton variant="secondary" id="check-api-health">Check Health</GSButton>
       </div>
-      <div class="gs-card space-y-3">
-        <h2 class="text-xl font-semibold">Active Workers</h2>
-        <p class="text-2xl font-bold gs-text-success">3/3</p>
-        <p class="text-sm gs-text-subtle">API, Gateway, Control are online.</p>
+      <div class="gs-card gs-stack-sm">
+        <h2>Active Workers</h2>
+        <p class="gs-text-success gs-stat">3/3</p>
+        <p class="gs-text-subtle gs-text-sm">API, Gateway, Control are online.</p>
         <GSButton href="/admin/workers?tab=bindings" variant="secondary">View Bindings</GSButton>
       </div>
-      <div class="gs-card space-y-3">
-        <h2 class="text-xl font-semibold">Git Conflicts</h2>
-        <p id="conflict-count" class="text-2xl font-bold gs-text-danger">7 Open</p>
-        <p class="text-sm gs-text-subtle">Requires immediate SOP-001 execution.</p>
+      <div class="gs-card gs-stack-sm">
+        <h2>Git Conflicts</h2>
+        <p id="conflict-count" class="gs-text-danger gs-stat">7 Open</p>
+        <p class="gs-text-subtle gs-text-sm">Requires immediate SOP-001 execution.</p>
         <GSButton variant="primary" id="run-sop">Execute Git Repair</GSButton>
       </div>
-      <div class="gs-card space-y-3">
-        <h2 class="text-xl font-semibold">PII Scan Status</h2>
-        <p class="text-2xl font-bold gs-text-warning">{summary.status}</p>
-        <p class="text-sm gs-text-subtle">Last scan: {formattedScanDate}</p>
-        <p class="text-sm gs-text-subtle">Alert routing: {alerts.status}</p>
+      <div class="gs-card gs-stack-sm">
+        <h2>PII Scan Status</h2>
+        <p class="gs-text-warning gs-stat">{summary.status}</p>
+        <p class="gs-text-subtle gs-text-sm">Last scan: {formattedScanDate}</p>
+        <p class="gs-text-subtle gs-text-sm">Alert routing: {alerts.status}</p>
         <GSButton href="/admin/pii-scans" variant="secondary">View PII Results</GSButton>
       </div>
     </div>
 
     <InboxDashboard />
 
-    <div class="grid md:grid-cols-3 gap-6">
-      <div class="gs-card space-y-3">
-        <h2 class="text-xl font-semibold">gs-api Status</h2>
-        <p id="api-status" class="text-2xl font-bold gs-text-info">{initialStatus.status}</p>
-        <p class="text-sm gs-text-subtle">Uptime: <span id="api-uptime">Loading...</span></p>
-        <p class="text-sm gs-text-subtle">Last checked: <span id="api-status-sync">{initialStatus.lastSync}</span></p>
+    <div class="gs-grid columns-3">
+      <div class="gs-card gs-stack-sm">
+        <h2>gs-api Status</h2>
+        <p id="api-status" class="gs-text-info gs-stat">{initialStatus.status}</p>
+        <p class="gs-text-subtle gs-text-sm">Uptime: <span id="api-uptime">Loading...</span></p>
+        <p class="gs-text-subtle gs-text-sm">Last checked: <span id="api-status-sync">{initialStatus.lastSync}</span></p>
         <GSButton variant="secondary" id="check-api-status">Refresh Status</GSButton>
       </div>
-      <div class="gs-card space-y-3">
-        <h2 class="text-xl font-semibold">gs-api Version</h2>
-        <p id="api-version" class="text-2xl font-bold gs-text-info">{initialStatus.version}</p>
-        <p class="text-sm gs-text-subtle">Deploy SHA: <span id="api-deploy-sha">—</span></p>
-        <p class="text-sm gs-text-subtle">Last checked: <span id="api-version-sync">{initialStatus.lastSync}</span></p>
+      <div class="gs-card gs-stack-sm">
+        <h2>gs-api Version</h2>
+        <p id="api-version" class="gs-text-info gs-stat">{initialStatus.version}</p>
+        <p class="gs-text-subtle gs-text-sm">Deploy SHA: <span id="api-deploy-sha">—</span></p>
+        <p class="gs-text-subtle gs-text-sm">Last checked: <span id="api-version-sync">{initialStatus.lastSync}</span></p>
         <GSButton variant="secondary" id="check-api-version">Refresh Version</GSButton>
       </div>
-      <div class="gs-card space-y-3">
-        <h2 class="text-xl font-semibold">gs-api Config Access</h2>
-        <p class="text-sm gs-text-subtle">Requires admin roles to view or modify configuration.</p>
-        <p id="api-config-access" class="text-2xl font-bold gs-text-info">Pending</p>
-        <p class="text-sm gs-text-subtle">Last checked: <span id="api-config-sync">{initialStatus.lastSync}</span></p>
+      <div class="gs-card gs-stack-sm">
+        <h2>gs-api Config Access</h2>
+        <p class="gs-text-subtle gs-text-sm">Requires admin roles to view or modify configuration.</p>
+        <p id="api-config-access" class="gs-text-info gs-stat">Pending</p>
+        <p class="gs-text-subtle gs-text-sm">Last checked: <span id="api-config-sync">{initialStatus.lastSync}</span></p>
         <GSButton variant="secondary" id="check-api-config">Validate Access</GSButton>
       </div>
     </div>
 
-    <section class="overview__section" aria-labelledby="deploys-title">
-      <h2 class="overview__section-title" id="deploys-title">Recent Deploys</h2>
+    <section  aria-labelledby="deploys-title">
+      <h2  id="deploys-title">Recent Deploys</h2>
       {recentDeploys.length === 0 ? (
-        <p class="gs-empty-state">No recent deploys recorded.</p>
+        <p class="gs-empty">No recent deploys recorded.</p>
       ) : (
         <table class="gs-admin-table">
           <thead>
@@ -90,7 +90,7 @@ const recentDeploys: Array<{ label: string; time: string; env: string; ok: boole
                 <td>{d.label}</td>
                 <td>{d.time}</td>
                 <td><code>{d.env}</code></td>
-                <td class={d.ok ? 'gs-status--ok' : 'gs-status--err'}>{d.ok ? 'Success' : 'Failed'}</td>
+                <td class={d.ok ? 'gs-status-ok' : 'gs-status-error'}>{d.ok ? 'Success' : 'Failed'}</td>
               </tr>
             ))}
           </tbody>
@@ -98,8 +98,8 @@ const recentDeploys: Array<{ label: string; time: string; env: string; ok: boole
       )}
     </section>
 
-    <section class="overview__section" aria-labelledby="bindings-title">
-      <h2 class="overview__section-title" id="bindings-title">Cloudflare Bindings</h2>
+    <section  aria-labelledby="bindings-title">
+      <h2  id="bindings-title">Cloudflare Bindings</h2>
       <table class="gs-admin-table">
         <thead>
           <tr><th>Binding</th><th>Type</th><th>Resource</th><th>Status</th></tr>
@@ -109,7 +109,7 @@ const recentDeploys: Array<{ label: string; time: string; env: string; ok: boole
             <td><code>KV</code></td>
             <td>KV Namespace</td>
             <td>gs_admin_kv_001</td>
-            <td class={runtimeEnv['KV'] ? 'gs-status--ok' : 'gs-status--warn'}>
+            <td class={runtimeEnv['KV'] ? 'gs-status-ok' : 'gs-status-warning'}>
               {runtimeEnv['KV'] ? 'Bound' : 'Not bound'}
             </td>
           </tr>
@@ -117,7 +117,7 @@ const recentDeploys: Array<{ label: string; time: string; env: string; ok: boole
             <td><code>API_SERVICE</code></td>
             <td>Service binding</td>
             <td>gs-api (prod)</td>
-            <td class={runtimeEnv['API_SERVICE'] ? 'gs-status--ok' : 'gs-status--warn'}>
+            <td class={runtimeEnv['API_SERVICE'] ? 'gs-status-ok' : 'gs-status-warning'}>
               {runtimeEnv['API_SERVICE'] ? 'Bound' : 'Not bound'}
             </td>
           </tr>
@@ -125,48 +125,48 @@ const recentDeploys: Array<{ label: string; time: string; env: string; ok: boole
             <td><code>CONTENT_DB</code></td>
             <td>D1 Database</td>
             <td>goldshore (gs_db_001)</td>
-            <td class="gs-status--info">Via API service</td>
+            <td class="gs-status-info">Via API service</td>
           </tr>
           <tr>
             <td><code>ASSETS</code></td>
             <td>R2 Bucket</td>
             <td>gs-assets</td>
-            <td class="gs-status--info">Via API service</td>
+            <td class="gs-status-info">Via API service</td>
           </tr>
         </tbody>
       </table>
     </section>
 
-    <div class="gs-card space-y-4">
+    <div class="gs-card gs-stack-sm">
       <div>
-        <h2 class="text-2xl font-semibold">gs-api Configuration</h2>
-        <p class="text-sm gs-text-subtle">Update runtime configuration values for gs-api via the secured proxy.</p>
+        <h2>gs-api Configuration</h2>
+        <p class="gs-text-subtle gs-text-sm">Update runtime configuration values for gs-api via the secured proxy.</p>
       </div>
-      <div class="grid gap-4 md:grid-cols-3">
-        <label class="flex items-center gap-3 text-sm gs-text-subtle">
-          <input id="api-maintenance" type="checkbox" class="h-4 w-4" />
+      <div class="gs-grid columns-3">
+        <label class="gs-text-subtle gs-row gs-text-sm">
+          <input id="api-maintenance" type="checkbox"  />
           Maintenance mode
         </label>
-        <label class="text-sm gs-text-subtle">
+        <label class="gs-text-subtle gs-text-sm">
           Max concurrency
-          <input id="api-max-concurrency" type="number" min="1" class="gs-input mt-2" />
+          <input id="api-max-concurrency" type="number" min="1" class="gs-input" />
         </label>
-        <label class="text-sm gs-text-subtle md:col-span-3">
+        <label class="gs-text-subtle gs-text-sm">
           Notes
-          <textarea id="api-config-notes" class="gs-input mt-2 w-full min-h-[120px]"></textarea>
+          <textarea id="api-config-notes" class="gs-input"></textarea>
         </label>
       </div>
-      <div class="flex flex-wrap gap-3">
+      <div class="gs-row">
         <GSButton variant="secondary" id="api-config-refresh">Refresh Config</GSButton>
         <GSButton variant="primary" id="api-config-save">Save Config</GSButton>
       </div>
-      <p id="api-config-message" class="text-sm gs-text-subtle"></p>
+      <p id="api-config-message" class="gs-text-subtle gs-text-sm"></p>
     </div>
 
-    <div class="gs-card space-y-4">
-      <h2 class="text-2xl font-semibold">Deployment Actions</h2>
-      <p class="text-sm gs-text-subtle">Initiate a controlled preview deployment or production rollback (UI only; backend triggers to be wired later).</p>
-      <div class="flex space-x-4">
+    <div class="gs-card gs-stack-sm">
+      <h2>Deployment Actions</h2>
+      <p class="gs-text-subtle gs-text-sm">Initiate a controlled preview deployment or production rollback (UI only; backend triggers to be wired later).</p>
+      <div class="gs-row">
         <GSButton variant="primary" id="preview-deploy">Run Preview Deploy</GSButton>
         <GSButton variant="secondary" id="prod-rollback" disabled>Production Rollback</GSButton>
       </div>

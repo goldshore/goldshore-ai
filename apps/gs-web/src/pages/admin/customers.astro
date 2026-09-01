@@ -42,55 +42,55 @@ try {
 ---
 
 <AdminLayout title="Customers | GoldShore Admin">
-  <div class="max-w-7xl mx-auto p-8 space-y-8">
-    <div class="space-y-2">
-      <h1 class="text-4xl gs-heading gs-text-accent">Customers</h1>
-      <p class="text-lg gs-text-subtle">Manage customer accounts and subscriptions</p>
+  <div class="gs-page gs-stack">
+    <div class="gs-stack-sm">
+      <h1 class="gs-heading gs-text-accent">Customers</h1>
+      <p class="gs-text-subtle gs-text-lg">Manage customer accounts and subscriptions</p>
     </div>
 
     {customersData.error && (
-      <div class="p-4 bg-red-50 border border-red-200 rounded text-red-700 text-sm mb-4">
+      <div class="gs-alert gs-alert--error gs-text-sm">
         {customersData.error}
       </div>
     )}
 
-    <div class="gs-card space-y-6">
-      <div class="flex justify-between items-center">
-        <h2 class="text-2xl font-semibold">All Customers</h2>
-        <a href="/admin/customers/new" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+    <div class="gs-card gs-stack">
+      <div class="gs-row gs-row--between">
+        <h2>All Customers</h2>
+        <a href="/admin/customers/new" class="gs-button">
           + Create New Customer
         </a>
       </div>
 
       {customersData.customers.length === 0 ? (
-        <p class="text-gray-500">No customers found</p>
+        <p class="gs-text-subtle">No customers found</p>
       ) : (
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead class="border-b">
+        <div>
+          <table class="gs-text-sm">
+            <thead>
               <tr>
-                <th class="text-left py-3 px-4 font-semibold">Name</th>
-                <th class="text-left py-3 px-4 font-semibold">Email</th>
-                <th class="text-left py-3 px-4 font-semibold">Status</th>
-                <th class="text-left py-3 px-4 font-semibold">Created</th>
-                <th class="text-left py-3 px-4 font-semibold">Actions</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {customersData.customers.map((customer: any) => (
-                <tr class="border-b hover:bg-gray-50">
-                  <td class="py-3 px-4">{customer.name}</td>
-                  <td class="py-3 px-4">{customer.email}</td>
-                  <td class="py-3 px-4">
-                    <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">
+                <tr>
+                  <td>{customer.name}</td>
+                  <td>{customer.email}</td>
+                  <td>
+                    <span class="gs-badge success">
                       {customer.status}
                     </span>
                   </td>
-                  <td class="py-3 px-4 text-gray-600">
+                  <td class="gs-text-subtle">
                     {new Date(customer.created_at).toLocaleDateString()}
                   </td>
-                  <td class="py-3 px-4">
-                    <a href={`/admin/customers/${customer.id}`} class="text-blue-500 hover:text-blue-700 underline">
+                  <td>
+                    <a href={`/admin/customers/${customer.id}`} >
                       View
                     </a>
                   </td>
@@ -102,15 +102,15 @@ try {
       )}
 
       {customersData.customers.length > 0 && (
-        <div class="flex justify-between items-center pt-4">
-          <div class="text-sm text-gray-600">
+        <div class="gs-row gs-row--between">
+          <div class="gs-text-sm gs-text-subtle">
             Showing {offset + 1} to {Math.min(offset + limit, customersData.total)} of {customersData.total}
           </div>
-          <div class="space-x-2">
+          <div>
             {offset > 0 && (
               <a
                 href={`/admin/customers?offset=${offset - limit}&limit=${limit}`}
-                class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+                class="gs-button gs-button--secondary"
               >
                 ← Previous
               </a>
@@ -118,7 +118,7 @@ try {
             {offset + limit < customersData.total && (
               <a
                 href={`/admin/customers?offset=${offset + limit}&limit=${limit}`}
-                class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+                class="gs-button gs-button--secondary"
               >
                 Next →
               </a>
