@@ -37,8 +37,20 @@ jobs:
           fetch-depth: 0
 
       - name: Guard pnpm lockfile
+        env:
+          HEAD_REF: ${{ github.head_ref }}
         run: |
           set -euo pipefail
+
+          # Dependabot's weekly run groups every package into a single branch,
+          # so a rewritten lockfile is its expected output, not a policy breach.
+          # Empty on workflow_dispatch, where the guard should still run.
+          if [[ "$HEAD_REF" == dependabot/* ]]; then
+            echo "ℹ️  Dependabot branch ($HEAD_REF) — lockfile updates are expected here."
+            echo "✅ Lockfile policy check passed."
+            exit 0
+          fi
+
           git fetch origin main
 
           # Allow adding pnpm-lock.yaml when main doesn't have one (restoration after deletion).
