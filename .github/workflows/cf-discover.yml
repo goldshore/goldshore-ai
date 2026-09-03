@@ -1,0 +1,41 @@
+name: Inventory Cloudflare Resources
+
+# Live discovery is performed by a human in the Cloudflare dashboard. This job
+# exports repository expected state only and deliberately has no credentials.
+on:
+  pull_request:
+    paths:
+      - 'apps/gs-web/wrangler.toml'
+      - 'apps/gs-api/wrangler.toml'
+      - 'infra/Cloudflare/dashboard-inventory.json'
+      - 'scripts/export-cloudflare-inventory.py'
+      - '.github/workflows/cf-discover.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/gs-web/wrangler.toml'
+      - 'apps/gs-api/wrangler.toml'
+      - 'infra/Cloudflare/dashboard-inventory.json'
+      - 'scripts/export-cloudflare-inventory.py'
+      - '.github/workflows/cf-discover.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    name: Export redacted expected state
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Export binding names, routes, Access IDs, and secret names
+        run: python3 scripts/export-cloudflare-inventory.py cloudflare-inventory.json
+      - name: Display redacted inventory
+        run: jq . cloudflare-inventory.json
+      - name: Upload drift-review artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: cloudflare-inventory-${{ github.run_id }}-cf-discover
+          path: cloudflare-inventory.json
+          retention-days: 30
