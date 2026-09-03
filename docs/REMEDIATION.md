@@ -104,11 +104,11 @@
 
 ## goldshore-ai Worker — build failing
 # Problem: Build command "pnpm run build --filter=..." builds entire monorepo
-#          Deploy cmd "npx wrangler deploy --assets=./apps/gs-web/dist" conflicts with gs-web Pages
+#          A legacy direct deploy command conflicts with the canonical gs-web Worker.
 # FIX OPTION A (recommended): Remove the goldshore-ai Worker's git connection entirely.
 #   The gs-web Pages project already serves goldshore.ai. The Worker is redundant.
 #   Dashboard: Workers & Pages → goldshore-ai → Build → Disconnect git repo
-# FIX OPTION B: Change build command to just: echo "no-op" and deploy cmd to: npx wrangler deploy
+# FIX OPTION B: Use .github/workflows/deploy-gs-web.yml and its production approval gate.
 
 ## banproof-me Worker — build failing
 # Problem: Static assets only — no src/index.ts — wrangler can't deploy as Worker
@@ -116,7 +116,7 @@
 # Also fix route: was wrongly pointing to rmarston.com/* 
 # Dashboard: Workers & Pages → banproof-me → Build
 #   Build command: pnpm install --no-frozen-lockfile && npx tsc --noEmit || true
-#   Deploy command: npx wrangler deploy
+#   Deploy only through the owning repository's human-approved workflow.
 
 # ══════════════════════════════════════════════════════════════
 # PRIORITY 6 — QUEUE WIRING

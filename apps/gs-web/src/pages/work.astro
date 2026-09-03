@@ -1,0 +1,60 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+export const prerender = false;
+
+const stories = [
+  {
+    number: '01',
+    name: 'SoleFoodNY / #SFNY',
+    headline: 'Brand, commerce, publishing, and product content in one operating system.',
+    contribution: 'Custom storefront and theme work, newsletters, product photography, blogging, advertising, social promotion, and e-commerce operations.',
+    disciplines: ['Brand identity', 'E-commerce', 'Digital publishing', 'Product content', 'Marketing'],
+  },
+  {
+    number: '02',
+    name: 'Hotel Business / ICD Publications',
+    headline: 'Digital publishing systems for a national B2B media operation.',
+    contribution: 'Contributed to WordPress and PHP migration, CMS operations, advertising technology, analytics, subscriber workflows, email systems, and web infrastructure across hospitality media properties.',
+    disciplines: ['Publishing', 'CMS', 'Ad technology', 'Analytics', 'Operations'],
+  },
+  {
+    number: '03',
+    name: 'Dynamic Drainage',
+    headline: 'A connected small-business growth system, not just a website.',
+    contribution: 'Worked across the Wix marketing site, homepage optimization, social content, Google Ads, and account operations supporting the path from visibility to qualified leads.',
+    disciplines: ['Web', 'Local search', 'Google Ads', 'Social', 'Lead generation'],
+  },
+];
+
+const systems = [
+  ['Gold Shore / Risk Radar', 'Data ingestion, model-assisted analysis, signals, operator review, dashboards, and APIs.'],
+  ['TradeZing', 'WordPress product work connecting video, transcription, searchable content, and product workflows.'],
+  ['Gold Shore infrastructure', 'A two-app Cloudflare architecture joining the public experience, unified API, storage, queues, and protected operations.'],
+];
+---
+<BaseLayout title="Selected Work | GoldShore" description="Selected GoldShore work across branding, digital publishing, commerce, marketing, software, and platform systems." canonicalPath="/work/">
+  <section class="work-hero gs-shell-section">
+    <p class="gs-eyebrow">Selected work</p>
+    <h1>Built across brands, platforms, and businesses.</h1>
+    <p>Proof of work across the full digital lifecycle: design, publish, build, grow, and operate. Each story describes the contribution without implying ownership of work outside that scope.</p>
+  </section>
+
+  <section class="brand-rail" aria-label="Selected brands"><span>SFNY</span><span>Hotel Business</span><span>InspireDesign</span><span>Dynamic Drainage</span><span>TradeZing</span></section>
+
+  <section class="case-list gs-shell-section">
+    {stories.map((story) => <article class="case-story"><div class="case-meta"><span>{story.number}</span><p>{story.name}</p></div><div><h2>{story.headline}</h2><p class="contribution">{story.contribution}</p><ul>{story.disciplines.map((item)=><li>{item}</li>)}</ul></div></article>)}
+  </section>
+
+  <section class="systems gs-shell-section">
+    <div class="systems-head"><p class="gs-eyebrow">Systems &amp; product work</p><h2>What does not fit inside a browser frame.</h2></div>
+    <div class="systems-list">{systems.map(([name,body],index)=><article><span>{String(index+1).padStart(2,'0')}</span><h3>{name}</h3><p>{body}</p></article>)}</div>
+  </section>
+
+  <section class="progression gs-shell-section" aria-label="GoldShore delivery progression"><div><strong>Design</strong><span>Brand · CAD · visual systems</span></div><div><strong>Publish</strong><span>Editorial · commerce · CMS</span></div><div><strong>Build</strong><span>Web · applications · integrations</span></div><div><strong>Operate</strong><span>Infrastructure · data · automation</span></div></section>
+
+  <section class="work-cta gs-shell-section"><p class="gs-eyebrow">Next project</p><h2>Bring the interface and the operating system together.</h2><a href="/contact/?intent=selected-work">Request a briefing</a></section>
+</BaseLayout>
+
+<style>
+  .work-hero,.case-list,.systems,.progression,.work-cta{width:min(76rem,calc(100% - 3rem));margin-inline:auto}.work-hero{padding-top:7rem;padding-bottom:5rem}.work-hero h1{max-width:13ch;margin:.75rem 0 1.25rem;font-size:clamp(3.5rem,7vw,7rem);line-height:.88;text-transform:uppercase}.work-hero>p:last-child{max-width:68ch;color:var(--gs-text-dim);font-size:1.1rem;line-height:1.75}.brand-rail{display:flex;gap:clamp(2rem,7vw,7rem);overflow-x:auto;padding:1.5rem max(1.25rem,calc((100vw - 76rem)/2));border-block:1px solid rgba(255,255,255,.09);white-space:nowrap}.brand-rail span{font:700 clamp(1.1rem,2vw,1.8rem)/1 'Syne',sans-serif;text-transform:uppercase}.case-list{padding-block:4rem}.case-story{display:grid;grid-template-columns:minmax(10rem,.45fr) minmax(0,1.55fr);gap:2rem;padding:3rem 0;border-top:1px solid rgba(255,255,255,.1)}.case-meta span{color:#d3743e;font:600 .7rem 'DM Mono',monospace}.case-meta p{font-weight:700}.case-story h2{max-width:18ch;margin:0;font-size:clamp(2.2rem,5vw,5rem);line-height:.96}.contribution{max-width:70ch;color:var(--gs-text-dim);line-height:1.75}.case-story ul{display:flex;flex-wrap:wrap;gap:.5rem;list-style:none;padding:0}.case-story li{padding:.45rem .7rem;border:1px solid rgba(211,116,62,.28);font:500 .62rem 'DM Mono',monospace;text-transform:uppercase;letter-spacing:.07em}.systems{padding-block:5rem}.systems-head{display:grid;grid-template-columns:.65fr 1.35fr;gap:2rem}.systems-head h2{margin:0;font-size:clamp(2.5rem,6vw,6rem);line-height:.92}.systems-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;margin-top:3rem;background:rgba(255,255,255,.08)}.systems-list article{padding:1.5rem;background:#0d0c13}.systems-list span{color:#d3743e;font:600 .68rem 'DM Mono',monospace}.systems-list p{color:var(--gs-text-dim);line-height:1.7}.progression{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));padding-block:4rem}.progression div{display:grid;gap:.55rem;padding:1.2rem;border-left:1px solid rgba(211,116,62,.3)}.progression strong{text-transform:uppercase;font:700 1.2rem 'Syne',sans-serif}.progression span{color:var(--gs-text-dim);font-size:.9rem}.work-cta{padding-block:6rem}.work-cta h2{max-width:16ch;font-size:clamp(2.8rem,6vw,6rem);line-height:.92}.work-cta a{display:inline-flex;padding:.9rem 1.2rem;background:#d3743e;color:#09080d;text-decoration:none;text-transform:uppercase;font:600 .68rem 'DM Mono',monospace}@media(max-width:760px){.case-story,.systems-head{grid-template-columns:1fr}.systems-list,.progression{grid-template-columns:1fr}.progression div{border-left:0;border-top:1px solid rgba(211,116,62,.3)}}
+</style>

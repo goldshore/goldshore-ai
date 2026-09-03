@@ -1,4 +1,4 @@
-export function getServerEnv(locals: Record<string, unknown>): Record<string, unknown> {
-  const runtime = locals['runtime'] as { env?: Record<string, unknown> } | undefined;
-  return runtime?.env ?? {};
+export async function getServerEnv(): Promise<Record<string, unknown>> {
+  const { env } = await import('cloudflare:workers');
+  return env;
 }

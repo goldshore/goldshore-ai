@@ -6,7 +6,6 @@ type ContentSecurityPolicyDirectives = Record<string, readonly string[]>;
 
 export const GOLDSHORE_API_ORIGINS = [
   'https://api.goldshore.ai',
-  'https://api-preview.goldshore.ai',
 ] as const;
 
 export const WEB_CONNECT_SRC = [SELF, ...GOLDSHORE_API_ORIGINS] as const;
@@ -24,6 +23,7 @@ export const WEB_CSP_DIRECTIVES = {
   'font-src': [SELF, 'https://fonts.gstatic.com'],
   'img-src': [SELF, 'data:', 'https://*.cloudflare.com'],
   'connect-src': [...BROWSER_CONNECT_SRC],
+  'frame-src': ['https://*.cloudflare.com'],
   'object-src': [NONE],
   'base-uri': [SELF],
 } as const satisfies ContentSecurityPolicyDirectives;
@@ -51,4 +51,3 @@ export function buildContentSecurityPolicy(
 export const WEB_META_CSP = buildContentSecurityPolicy(WEB_META_DIRECTIVES);
 export const WEB_HEADERS_CSP = buildContentSecurityPolicy(WEB_HEADER_DIRECTIVES);
 export const WEB_CONTENT_SECURITY_POLICY = WEB_HEADERS_CSP;
-

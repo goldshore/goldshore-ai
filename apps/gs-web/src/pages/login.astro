@@ -7,9 +7,14 @@ import {
 
 const requested = Astro.url.searchParams.get('to') ?? 'dashboard';
 const loginType = Astro.url.searchParams.get('type') ?? 'admin';
-const destination = getAdminLoginDestination(requested);
+const nextPath = Astro.url.searchParams.get('next');
+const destination = getAdminLoginDestination(requested, nextPath);
 const apiOrigin = Astro.locals.PUBLIC_API || import.meta.env.PUBLIC_API || 'https://api.goldshore.ai';
 const redirectUri = `${Astro.url.origin}/auth/callback`;
+
+if (loginType !== 'github') {
+  return Astro.redirect(destination, 302);
+}
 ---
 
 <!doctype html>
@@ -18,9 +23,6 @@ const redirectUri = `${Astro.url.origin}/auth/callback`;
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex, nofollow" />
-    {loginType !== 'github' ? (
-      <meta http-equiv="refresh" content={`2;url=${destination}`} />
-    ) : null}
     <title>{loginType === 'github' ? 'Gold Shore GitHub Login' : 'Gold Shore Admin Login'}</title>
   </head>
   <body>

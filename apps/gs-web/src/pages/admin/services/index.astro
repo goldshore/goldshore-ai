@@ -1,5 +1,6 @@
 ---
-import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { env as cloudflareEnv } from 'cloudflare:workers';
+import AdminLayout from "../../../layouts/AdminLayout.astro";
 import { authorizeAdminRequest, getAdminRouteRule } from '../../../utils/admin-access';
 
 export const prerender = false;
@@ -25,7 +26,7 @@ type WorkflowRow = {
   received_at: string;
 };
 
-const env = Astro.locals.runtime?.env as Env | undefined;
+const env = cloudflareEnv as Env;
 const rule = getAdminRouteRule('/admin/services', 'GET');
 
 let authError: { status: number; message: string } | null = null;
@@ -47,7 +48,7 @@ let fetchError = '';
 
 if (!authError) {
   try {
-    const apiUrl = new URL('/api/admin/services', url.origin);
+    const apiUrl = new URL('/api/admin/services/workflows', url.origin);
     if (typeFilter) apiUrl.searchParams.set('type', typeFilter);
     const res = await fetch(apiUrl, { headers: Astro.request.headers });
     if (res.ok) {
@@ -81,9 +82,8 @@ const fmt = (value: string | null | undefined) =>
   value ? new Date(value).toLocaleString() : '—';
 ---
 
-<BaseLayout
+<AdminLayout
   title="Service Workflows | GoldShore Admin"
-  description="Manage service inquiries and approval workflows"
 >
   <section class="gs-section">
     <div class="gs-grid columns-2">
@@ -259,10 +259,10 @@ const fmt = (value: string | null | undefined) =>
 
         btn.disabled = true;
         try {
-          const res = await fetch('/api/admin/services', {
-            method: 'POST',
+          const res = await fetch(`/api/admin/services/workflows/${encodeURIComponent(id)}`, {
+            method: 'PATCH',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ id, status: newStatus }),
+            body: JSON.stringify({ status: newStatus }),
           });
 
           if (res.ok) {
@@ -284,7 +284,7 @@ const fmt = (value: string | null | undefined) =>
       });
     });
   </script>
-</BaseLayout>
+</AdminLayout>
 
 <style>
   .gs-card--active {

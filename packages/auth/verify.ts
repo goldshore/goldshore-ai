@@ -2,13 +2,20 @@ import { createRemoteJWKSet, jwtVerify, type JWTPayload, SignJWT, importSPKI } f
 
 export interface Env {
     // Sentinel: Added support for Audience verification to prevent auth bypass
-    CLOUDFLARE_ACCESS_AUDIENCE?: string;
+    // string[] accepted so a caller can trust more than one Access
+    // Application's audience for a single request (see index.ts's admin-surface
+    // branch, which trusts both api-production's own audience and
+    // admin-production's — the JWT gs-web forwards over the service binding was
+    // minted for admin-production, never api-production, since that hop never
+    // touches api.goldshore.ai's own Access-protected edge).
+    CLOUDFLARE_ACCESS_AUDIENCE?: string | string[];
     // Sentinel: Added support for dynamic team domain
     CLOUDFLARE_TEAM_DOMAIN?: string;
     // JWT secret for cookie-based authentication
     JWT_SECRET?: string;
     PLATFORM_DB?: AuthorizationDatabase;
     CLOUDFLARE_ACCESS_APPLICATION?: string;
+    ADMIN_OWNER_EMAILS?: string;
 }
 
 // Sentinel: Default to existing hardcoded values if not provided in Env
@@ -61,7 +68,7 @@ export type AuthorizationDatabase = {
 export type AuthorizedAccessUser = {
   id: string;
   email: string;
-  role: "admin" | "editor" | "viewer";
+  role: "owner" | "admin" | "editor" | "viewer";
   application: string;
 };
 
@@ -91,7 +98,7 @@ export async function authorizeAccessUser(
      WHERE lower(u.email) = ?1
        AND u.status = 'active'
        AND ar.application = ?2
-       AND ar.role IN ('admin', 'editor', 'viewer')
+       AND ar.role IN ('owner', 'admin', 'editor', 'viewer')
      LIMIT 1
   `).bind(email, env.CLOUDFLARE_ACCESS_APPLICATION).first<AuthorizedAccessUser>();
 }
@@ -124,7 +131,7 @@ export async function verifyAccessWithClaimsInternal(req: Request, env: Env, dep
   const JWKS = getJwks(teamDomain, deps);
 
   try {
-    const options: { issuer: string; audience?: string } = {
+    const options: { issuer: string; audience?: string | string[] } = {
       issuer: `https://${teamDomain}`,
     };
 

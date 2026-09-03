@@ -5,10 +5,13 @@ import type { AccessTokenPayload } from "./verify";
 export const ADMIN_PERMISSIONS = [
   "dashboard:read",
   "cms:read", "cms:create", "cms:update", "cms:publish", "cms:delete",
+  "content:read", "content:write", "content:publish",
+  "media:read", "media:write", "media:delete",
+  "system:read", "system:write", "system:integrations:manage",
   "api_configuration:read", "api_configuration:update",
   "mailboxes:read", "mailboxes:create", "mailboxes:update", "mailboxes:delete",
   "email_subscribers:read", "email_subscribers:create", "email_subscribers:update", "email_subscribers:delete",
-  "forms:read", "forms:create", "forms:update", "forms:publish", "forms:delete",
+  "forms:read", "forms:create", "forms:update", "forms:publish", "forms:delete", "forms:write",
   "deployments:read", "deployments:create", "deployments:promote",
   "rollbacks:read", "rollbacks:create",
   "integrations:read", "integrations:manage",
@@ -20,6 +23,11 @@ export const ADMIN_PERMISSIONS = [
   "roles:read", "roles:manage",
   "approvals:read", "approvals:create", "approvals:approve", "approvals:execute",
   "audit:read",
+  "admin:repo-health:read",
+  "content:read", "content:write", "content:publish",
+  "media:read", "media:write", "media:delete",
+  "forms:write",
+  "system:read", "system:write", "system:integrations:manage",
   "ai:analyze",
   "google-business:read",
   "google-business:publish",
@@ -37,7 +45,7 @@ const VIEWER_PERMISSIONS: AdminPermission[] = [
   "email_subscribers:read", "forms:read", "deployments:read", "rollbacks:read",
   "integrations:read", "google_business_profile:read", "github:read",
   "cloudflare_inventory:read", "secret_metadata:read", "users:read", "roles:read",
-  "content:read", "system:read", "media:read"
+  "content:read", "system:read", "media:read", "admin:repo-health:read"
 ];
 
 const EDITOR_PERMISSIONS: AdminPermission[] = [

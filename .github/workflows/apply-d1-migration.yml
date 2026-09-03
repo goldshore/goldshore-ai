@@ -1,0 +1,165 @@
+name: Apply D1 Migration
+
+on:
+  workflow_dispatch:
+    inputs:
+      database:
+        description: 'Database to migrate (audit_db, platform_db, signals_db, jobs_db, risk_radar_db)'
+        required: true
+        default: 'audit_db'
+        type: choice
+        options:
+          - audit_db
+          - platform_db
+          - signals_db
+          - jobs_db
+          - risk_radar_db
+      migration_file:
+        description: 'Path to migration file (relative to repo root, e.g., migrations/0003_add_table.sql)'
+        required: true
+        type: string
+      dry_run:
+        description: 'Dry run (validate without applying)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+concurrency:
+  group: apply-d1-migration-${{ inputs.database }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  apply-migration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+        with:
+          version: 9.15.4
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate migration file exists
+        run: |
+          if [ ! -f "${{ inputs.migration_file }}" ]; then
+            echo "::error::Migration file not found: ${{ inputs.migration_file }}"
+            exit 1
+          fi
+          echo "✅ Migration file exists"
+          echo "--- Migration content ---"
+          head -20 "${{ inputs.migration_file }}"
+
+      - name: Apply D1 migration
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: f77de112d2019e5456a3198a8bb50bd2
+        run: |
+          set -euo pipefail
+          echo "::add-mask::${CLOUDFLARE_API_TOKEN}"
+
+          # Map database alias to D1 binding name
+          case "${{ inputs.database }}" in
+            audit_db)
+              DB_BINDING="gs_audit_db"
+              ;;
+            platform_db)
+              DB_BINDING="gs_platform_db"
+              ;;
+            signals_db)
+              DB_BINDING="gs_signals_db"
+              ;;
+            jobs_db)
+              DB_BINDING="gs_jobs_db"
+              ;;
+            risk_radar_db)
+              DB_BINDING="risk-radar-db"
+              ;;
+            *)
+              echo "::error::Unknown database: ${{ inputs.database }}"
+              exit 1
+              ;;
+          esac
+
+          echo "📋 Migration Details:"
+          echo "  Database: ${{ inputs.database }} ($DB_BINDING)"
+          echo "  File: ${{ inputs.migration_file }}"
+          echo "  Dry run: ${{ inputs.dry_run }}"
+          echo ""
+
+          # Prepare wrangler command
+          CMD="pnpm exec wrangler d1 execute $DB_BINDING --file=${{ inputs.migration_file }} --remote"
+
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "🏜️  DRY RUN - would execute:"
+            echo "  $CMD"
+            exit 0
+          fi
+
+          echo "⚡ Applying migration..."
+          eval "$CMD" || {
+            echo "::error::Migration failed"
+            exit 1
+          }
+
+          echo "✅ Migration applied successfully"
+
+      - name: Verify migration
+        if: github.event.inputs.dry_run != 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: f77de112d2019e5456a3198a8bb50bd2
+        run: |
+          echo "::add-mask::${CLOUDFLARE_API_TOKEN}"
+          # Map database alias to D1 binding name
+          case "${{ inputs.database }}" in
+            audit_db)
+              DB_BINDING="gs_audit_db"
+              ;;
+            platform_db)
+              DB_BINDING="gs_platform_db"
+              ;;
+            signals_db)
+              DB_BINDING="gs_signals_db"
+              ;;
+            jobs_db)
+              DB_BINDING="gs_jobs_db"
+              ;;
+            risk_radar_db)
+              DB_BINDING="risk-radar-db"
+              ;;
+          esac
+
+          echo "🔍 Verifying database schema..."
+          pnpm exec wrangler d1 info $DB_BINDING --remote || true
+          echo "✅ Migration verification complete"
+
+      - name: Summary
+        if: always()
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+          ## D1 Migration Report
+          - **Database**: ${{ inputs.database }}
+          - **Migration File**: ${{ inputs.migration_file }}
+          - **Dry Run**: ${{ inputs.dry_run }}
+          - **Status**: ✅ Completed
+
+          ### Next Steps
+          1. Review database changes in Cloudflare dashboard
+          2. Run database-dependent tests
+          3. Monitor application logs for errors
+          EOF

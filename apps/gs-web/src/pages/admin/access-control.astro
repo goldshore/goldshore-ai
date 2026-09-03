@@ -1,0 +1,16 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import AccessControlClient from '../../components/admin/AccessControlClient';
+---
+
+<AdminLayout title="Access Control & Roles">
+  <div>
+    <div class="gs-page">
+      <div>
+        <h1 class="gs-heading">Access Control</h1>
+        <p class="gs-text-subtle">Manage team roles, permissions, and access levels</p>
+      </div>
+      <AccessControlClient client:load />
+    </div>
+  </div>
+</AdminLayout>

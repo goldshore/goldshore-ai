@@ -7,6 +7,6 @@
     "test": "npx tsx --test **/*.test.ts"
   },
   "dependencies": {
-    "@huggingface/inference": "^4.13.23"
+    "@huggingface/inference": "^4.13.28"
   }
 }

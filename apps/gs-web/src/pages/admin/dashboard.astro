@@ -1,0 +1,89 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { Activity, Settings, Mail, Users, FileText } from 'lucide-react';
+
+const menuItems = [
+  { name: 'Dashboard', href: '/admin/dashboard', icon: 'Activity' },
+  { name: 'Customers', href: '/admin/customers', icon: 'Users' },
+  { name: 'Subscriptions', href: '/admin/subscriptions', icon: 'FileText' },
+  { name: 'Email', href: '/admin/email', icon: 'Mail' },
+  { name: 'Leads', href: '/admin/entries', icon: 'FileText' },
+  { name: 'Settings', href: '/admin/settings', icon: 'Settings' },
+];
+---
+
+<AdminLayout title="Admin Dashboard">
+  <div>
+    <div class="gs-page">
+      <div>
+        <h1 class="gs-heading">Admin Dashboard</h1>
+        <p class="gs-text-lg gs-text-subtle">Manage your platform infrastructure</p>
+      </div>
+
+      <div class="gs-grid columns-4">
+        {menuItems.map((item) => (
+          <a
+            href={item.href}
+            class="gs-card"
+          >
+            <h3 class="gs-text-lg">{item.name}</h3>
+            <p class="gs-text-sm gs-text-subtle">Manage {item.name.toLowerCase()}</p>
+          </a>
+        ))}
+      </div>
+
+      <div class="gs-grid columns-2">
+        <div class="gs-card">
+          <h2>Quick Actions</h2>
+          <ul class="gs-stack-sm">
+            <li>
+              <a href="/admin/customers" >
+                → Manage customers
+              </a>
+            </li>
+            <li>
+              <a href="/admin/subscriptions" >
+                → Manage subscriptions
+              </a>
+            </li>
+            <li>
+              <a href="/admin/email" >
+                → Send an email
+              </a>
+            </li>
+            <li>
+              <a href="/admin/entries" >
+                → View submitted leads
+              </a>
+            </li>
+            <li>
+              <a href="/admin/settings" >
+                → Update settings
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="gs-card">
+          <h2>System Status</h2>
+          <div class="gs-stack-sm">
+            <div class="gs-row gs-row--between">
+              <span class="gs-text-subtle">API Status</span>
+              <span class="gs-badge success gs-text-sm">Online</span>
+            </div>
+            <div class="gs-row gs-row--between">
+              <span class="gs-text-subtle">Database</span>
+              <span class="gs-badge success gs-text-sm">Connected</span>
+            </div>
+            <div class="gs-row gs-row--between">
+              <span class="gs-text-subtle">Email Service</span>
+              <span class="gs-badge warning gs-text-sm">Pending Config</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</AdminLayout>

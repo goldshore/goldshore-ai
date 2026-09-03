@@ -75,7 +75,8 @@ test('home page renders core layout and CTA navigation', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await expect(
     page.getByRole('link', { name: 'Request Briefing' }).first(),
-  ).toHaveAttribute('href', '#engage');
+  ).toHaveAttribute('href', /contact\/?/);
+
 
   assertHealthyPage(monitors);
 });
@@ -96,12 +97,10 @@ test('services page renders highlights and CTA', async ({ page }) => {
   assertHealthyPage(monitors);
 });
 
-test('contact form submits and redirects to thank-you', async ({ page }) => {
+test('contact form submits and shows success message', async ({ page }) => {
   const monitors = attachPageMonitors(page);
 
-  await page.goto('/contact', { waitUntil: 'networkidle' });
-
-  // Mock Turnstile widget
+  // Mock Turnstile widget before page loads
   await page.addInitScript(() => {
     (window as any).turnstile = {
       render: () => 'mock-token',
@@ -110,53 +109,51 @@ test('contact form submits and redirects to thank-you', async ({ page }) => {
     };
   });
 
-  await page.route('**/api/contact', async (route) => {
+  await page.goto('/contact', { waitUntil: 'networkidle' });
+
+  // Mock the form submission endpoint
+  await page.route('/api/forms/contact/submissions', async (route) => {
     await route.fulfill({
-      status: 202,
+      status: 200,
       headers: {
         'content-type': 'application/json',
       },
       body: JSON.stringify({
         ok: true,
-        status: 'received',
-        formId: 'contact',
         submissionId: '123',
-        submittedAt: new Date().toISOString(),
-        redirectTo: '/thank-you',
-        mail: { notification: { attempted: true }, autoResponder: { attempted: true } },
       }),
     });
   });
 
   await page.getByLabel('Name').fill('Test User');
-  await page.getByLabel('Work email').fill('test@example.com');
-  await page
-    .getByLabel('Project brief')
-    .fill('Interested in a scoped engagement.');
+  await page.getByLabel('Email').fill('test@example.com');
+  await page.getByLabel('Subject').fill('Inquiry');
+  await page.getByLabel('Message').fill('Interested in GoldShore services.');
 
-  // Click send and wait for navigation
-  await Promise.all([
-    page.waitForURL('**/thank-you'),
-    page.getByRole('button', { name: 'Send message' }).click(),
-  ]);
+  // Mock alert since Playwright can't directly handle browser alerts
+  page.on('dialog', (dialog) => {
+    expect(dialog.message()).toContain('Thank you');
+    dialog.accept();
+  });
 
-  await expect(page.getByRole('heading', { level: 1 })).toContainText(
-    'Thank you',
-  );
+  await page.getByRole('button', { name: 'Send message' }).click();
 
   assertHealthyPage(monitors);
 });
 
-test('contact page preselects strategy-call inquiry from query string', async ({
-  page,
-}) => {
+test('contact page loads and renders form', async ({ page }) => {
   const monitors = attachPageMonitors(page);
 
-  await page.goto('/contact?inquiry=strategy-call', {
-    waitUntil: 'networkidle',
-  });
+  await page.goto('/contact', { waitUntil: 'networkidle' });
 
-  await expect(page.getByLabel('Inquiry type')).toHaveValue('strategy-call');
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Contact GoldShore' }),
+  ).toBeVisible();
+  await expect(page.getByLabel('Name')).toBeVisible();
+  await expect(page.getByLabel('Email')).toBeVisible();
+  await expect(page.getByLabel('Subject')).toBeVisible();
+  await expect(page.getByLabel('Message')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Send message' })).toBeVisible();
 
   assertHealthyPage(monitors);
 });

@@ -42,6 +42,13 @@ const createTestApp = (claims: any = null) => {
 };
 
 describe('Pages API Security', () => {
+  it('GET /pages/public exposes only the published-content query without claims', async () => {
+    const app = createTestApp();
+    const res = await app.request('/pages/public');
+    assert.strictEqual(res.status, 200);
+    assert.match(String(mockDB.prepare.mock.calls.at(-1)?.arguments[0]), /status = 'published'/);
+  });
+
   it('GET /pages requires content:read permission (403 if missing)', async () => {
     // Viewer role has content:read, so let's use a role that doesn't have it, or empty roles.
     // 'unknown' role.
@@ -84,7 +91,9 @@ describe('Pages API Security', () => {
   });
 
   it('PATCH /pages/:id/status requires content:publish permission', async () => {
-    const app = createTestApp({ roles: ['editor'] });
+    // viewer is the denied role here: publishing is part of the editor role,
+    // so an editor holds content:publish and is expected to pass this guard.
+    const app = createTestApp({ roles: ['viewer'] });
     const res = await app.request('/pages/1/status', {
       method: 'PATCH',
       body: JSON.stringify({ status: 'published' }),
@@ -116,8 +125,7 @@ describe('Pages API Security', () => {
     const calls = mockBind.mock.calls;
     // The last call should be the one
     const lastCallArgs = calls[calls.length - 1].arguments;
-    // The bind arguments for INSERT are: [slug, title, body, status]
-    // Check if the body argument (index 2) matches expectedBody
-    assert.strictEqual(lastCallArgs[2], expectedBody);
+    // The canonical schema binds [id, site_id, slug, title, content, metadata, status, status].
+    assert.strictEqual(lastCallArgs[4], expectedBody);
   });
 });

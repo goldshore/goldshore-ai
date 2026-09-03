@@ -1,41 +1,28 @@
 ---
-import PublicFeaturePage from '../../components/PublicFeaturePage.astro';
-
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FlowSection from '../../components/FlowSection.astro';
+import { fetchAdminJson } from '../../lib/api-proxy';
 export const prerender = false;
-
-const cards = [
-  {
-    title: 'Designing launch systems that compound',
-    body: 'How to sequence announcements, product releases, and stakeholder communication without exhausting audience trust.',
-    href: '/services/digital-strategy/',
-    linkLabel: 'Explore digital strategy',
-  },
-  {
-    title: 'Operating AI with accountable controls',
-    body: 'A practical model for audit trails, fallback paths, operator review, and measurable production outcomes.',
-    href: '/services/ai-implementation/',
-    linkLabel: 'Explore AI implementation',
-  },
-  {
-    title: 'Reputation defense as infrastructure',
-    body: 'Monitoring, incident response, resilient publishing, and coordinated recovery for high-pressure organizations.',
-    href: '/services/banproof/',
-    linkLabel: 'Explore Banproof',
-  },
-  {
-    title: 'Signals over noise',
-    body: 'Turning market, operational, and sentiment telemetry into decisions that remain explainable under pressure.',
-    href: '/platform/financial-signals/',
-    linkLabel: 'Explore financial signals',
-  },
-];
+type Signal = { id:string; slug:string; title:string; content:string; publishedAt:string|null; metadata?:{ description?:string; kind?:'news'|'article'|'video'|'post'|'social'|'analysis'|'opinion'; sourceUrl?:string; mediaUrl?:string; disclosure?:'editorial'|'sponsored'|'affiliate'|'partner'; author?:string } };
+const result = await fetchAdminJson<{ pages: Signal[] }>(Astro.request, '/pages/public');
+const signals = result.ok ? result.data?.pages ?? [] : [];
+const excerpt = (item:Signal) => item.metadata?.description || item.content.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim().slice(0,190);
+const label = (value?:string) => ({ social:'Social post', partner:'Partner' }[value || ''] || value || 'Article');
 ---
-
-<PublicFeaturePage
-  eyebrow="Research & Analysis"
-  title="GoldShore Signals"
-  description="Analytical notes, operating patterns, and field intelligence from the GoldShore team."
-  canonicalPath="/blog/"
-  {cards}
-  ctaLabel="Request a research briefing"
-/>
+<BaseLayout title="Signals | GoldShore" description="GoldShore analysis, field notes, media, and clearly disclosed partner content." canonicalPath="/blog/">
+  <FlowSection variant="hero">
+    <div><p class="gs-eyebrow">Signals</p><h1>Analysis for decisions that cross systems.</h1><p class="gs-text-lg">Field notes, explainers, media, and opinion from GoldShore. External material keeps its source; sponsored, affiliate, and partner relationships are labeled.</p></div>
+    <div class="gs-card"><h2>Editorial standard</h2><p>We separate reported facts, external sources, GoldShore analysis, and opinion. A commercial relationship does not remove the disclosure.</p></div>
+  </FlowSection>
+  <FlowSection>
+    {signals.length ? <div class="signal-grid">{signals.map((item) => <article class="gs-card signal-card">
+      <div class="signal-meta"><span>{label(item.metadata?.kind)}</span>{item.metadata?.disclosure && item.metadata.disclosure !== 'editorial' && <strong>{label(item.metadata.disclosure)}</strong>}</div>
+      <h2><a href={`/${item.slug}/`}>{item.title}</a></h2><p>{excerpt(item)}</p>
+      <div class="signal-meta"><span>{item.metadata?.author || 'GoldShore Editorial'}</span>{item.publishedAt && <time datetime={item.publishedAt}>{new Date(item.publishedAt).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'})}</time>}</div>
+    </article>)}</div> : <div class="gs-card"><h2>No published Signals yet</h2><p>The editorial system is ready, but nothing has been published. We leave the archive empty instead of presenting sample reporting as current content.</p></div>}
+  </FlowSection>
+  <aside class="ad-reservation" data-gs-ad-slot="signals-inline" data-ad-format="auto" aria-label="Advertisement"><span>Advertisement</span></aside>
+</BaseLayout>
+<style>
+  .signal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;width:100%}.signal-card{display:grid;gap:.8rem}.signal-card h2,.signal-card p{margin:0}.signal-card a{color:inherit}.signal-meta{display:flex;justify-content:space-between;gap:1rem;color:var(--gs-text-tertiary);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em}.signal-meta strong{color:#f5b75c}.ad-reservation{display:none;min-height:90px;max-width:72rem;margin:1rem auto;padding:.5rem;border:1px solid var(--gs-border-color);text-align:center}.ad-reservation[data-ad-ready="true"]{display:block}.ad-reservation>span{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;opacity:.65}@media(max-width:720px){.signal-grid{grid-template-columns:1fr}}
+</style>

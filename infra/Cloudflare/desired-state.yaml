@@ -60,30 +60,12 @@ cloudflare:
         content: "gs-web-preview.goldshore.workers.dev"
         proxied: true
         zone: goldshore.ai
-      - name: "admin-preview"
-        type: CNAME
-        content: "gs-web-prod.goldshore.workers.dev"
-      # apps/gs-web/wrangler.toml). admin.goldshore.org is out of scope here
-      # pending the separate goldshore.org ownership conflict
-      # (policy/ROUTE_POLICY.md vs docs/architecture/domain-ownership.md) --
-      # still points at the legacy gs-admin app until that's resolved.
       - name: "admin"
-      - name: "risk.goldshore.org"
         type: CNAME
         content: "gs-web-prod.goldshore.workers.dev"
         proxied: true
         zone: goldshore.org
-
-      # B. Admin browser surfaces owned by gs-web.
-      - name: "admin.goldshore.ai"
-        type: CNAME
-        content: "gs-web-prod.goldshore.workers.dev"
-        proxied: true
-      - name: "admin-preview.goldshore.ai"
-        type: CNAME
-        content: "gs-web-prod.goldshore.workers.dev"
-        proxied: true
-      - name: "admin.goldshore.org"
+      - name: "risk"
         type: CNAME
         content: "gs-web-prod.goldshore.workers.dev"
         proxied: true
@@ -385,15 +367,17 @@ cloudflare:
         script_path: "apps/gs-api/dist/index.js"
         routes:
           - pattern: "api.goldshore.ai/*"
-          - pattern: "api-preview.goldshore.ai/*"
+          - pattern: "api.goldshore.org/*"
           - pattern: "agent.goldshore.ai/*"
+          - pattern: "agent.goldshore.org/*"
           - pattern: "mail.goldshore.ai/*"
+          - pattern: "mail.goldshore.org/*"
           - pattern: "ops.goldshore.ai/*"
           - pattern: "trading.goldshore.ai/*"
+          - pattern: "trading.goldshore.org/*"
           - pattern: "dashboard.goldshore.ai/*"
           - pattern: "dash.goldshore.ai/*"
           - pattern: "gw.goldshore.ai/*"
-          - pattern: "api.goldshore.org/*"
         bindings:
           kv:
             - name: "KV"
@@ -413,9 +397,10 @@ cloudflare:
         routes:
           - pattern: "goldshore.ai/*"
           - pattern: "goldshore.org/*"
+          - pattern: "www.goldshore.ai/*"
+          - pattern: "www.goldshore.org/*"
           - pattern: "admin.goldshore.ai/*"
           - pattern: "admin.goldshore.org/*"
-          - pattern: "preview.goldshore.ai/*"
           - pattern: "risk.goldshore.ai/*"
           - pattern: "risk.goldshore.org/*"
         bindings:

@@ -1,16 +1,15 @@
 ---
 export const prerender = false;
 
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import AdminLayout from "../../layouts/AdminLayout.astro";
 
 const apiBase = (import.meta.env.PUBLIC_API || 'https://api.goldshore.ai').replace(/\/$/, '');
 ---
 
-<BaseLayout
+<AdminLayout
   title="GoldClaw Control | GoldShore Admin"
-  description="GoldClaw monetization, marketing, SEO, and agent integration control surface"
 >
-  <main class="goldclaw-page" data-api-base={apiBase}>
+  <div class="goldclaw-page" data-api-base={apiBase}>
     <header class="goldclaw-header">
       <div>
         <p class="goldclaw-kicker">GoldShore Labs</p>
@@ -77,13 +76,14 @@ const apiBase = (import.meta.env.PUBLIC_API || 'https://api.goldshore.ai').repla
       </div>
       <div id="goldclaw-plan" class="goldclaw-plan"></div>
     </section>
-  </main>
+  </div>
 
   <script is:inline>
     const page = document.querySelector('.goldclaw-page');
     const apiBase = page?.dataset.apiBase || 'https://api.goldshore.ai';
 
     const endpoint = (path) => `${apiBase}${path}`;
+    const apiEndpoint = (path) => `/api/admin/goldclaw${path.replace(/^\/goldclaw/, '')}`;
 
     const setText = (id, value) => {
       const el = document.getElementById(id);
@@ -130,7 +130,7 @@ const apiBase = (import.meta.env.PUBLIC_API || 'https://api.goldshore.ai').repla
     };
 
     const loadGoldClaw = async () => {
-      const response = await fetch(endpoint('/goldclaw'), {
+      const response = await fetch(apiEndpoint('/goldclaw'), {
         credentials: 'include',
         headers: { accept: 'application/json' },
       });
@@ -165,7 +165,7 @@ const apiBase = (import.meta.env.PUBLIC_API || 'https://api.goldshore.ai').repla
       if (output) output.textContent = 'Generating...';
 
       try {
-        const response = await fetch(endpoint('/goldclaw/brief'), {
+        const response = await fetch(apiEndpoint('/goldclaw/brief'), {
           method: 'POST',
           credentials: 'include',
           headers: { 'content-type': 'application/json', accept: 'application/json' },
@@ -184,7 +184,7 @@ const apiBase = (import.meta.env.PUBLIC_API || 'https://api.goldshore.ai').repla
       if (target) target.innerHTML = `<p class="goldclaw-error">${error.message}</p>`;
     });
   </script>
-</BaseLayout>
+</AdminLayout>
 
 <style>
   .goldclaw-page {

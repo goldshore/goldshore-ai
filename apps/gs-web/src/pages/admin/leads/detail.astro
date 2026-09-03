@@ -1,0 +1,205 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { fetchAdminJson } from '../../../lib/api-proxy';
+
+interface Lead {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  company?: string;
+  message?: string;
+  status: 'new' | 'contacted' | 'qualified' | 'rejected';
+  created_at: string;
+  updated_at: string;
+  metadata?: Record<string, any>;
+}
+
+const leadId = new URL(Astro.request.url).searchParams.get('id');
+
+if (!leadId) {
+  return Astro.redirect('/admin/entries');
+}
+
+let lead: Lead | null = null;
+let error: string | null = null;
+
+try {
+  const result = await fetchAdminJson<Lead>(Astro.request, `/admin/entries/leads/${leadId}`);
+
+  if (result.ok) {
+    lead = result.data;
+  } else if (result.status === 404) {
+    error = 'Lead not found';
+  } else {
+    error = `Failed to load lead (HTTP ${result.status})`;
+  }
+} catch (e) {
+  error = e instanceof Error ? e.message : 'Failed to load lead';
+}
+
+const statusColors: Record<string, { panel: string; badge: string }> = {
+  new: { panel: 'gs-alert--info', badge: 'info' },
+  contacted: { panel: 'gs-alert--warning', badge: 'warning' },
+  qualified: { panel: 'gs-alert--success', badge: 'success' },
+  rejected: { panel: 'gs-alert--error', badge: 'danger' },
+};
+
+const colors = lead ? statusColors[lead.status] : statusColors.new;
+---
+
+<AdminLayout title={lead ? `${lead.name} | Leads` : 'Lead Detail | GoldShore'}>
+  <div class="gs-page">
+    {error && (
+      <div class="gs-alert gs-alert--error">
+        {error}
+      </div>
+    )}
+
+    {!error && lead && (
+      <>
+        <div class="gs-row gs-row--between">
+          <div>
+            <h1 class="gs-heading">{lead.name}</h1>
+            <p class="gs-text-subtle">Lead ID: {lead.id.slice(0, 8)}...</p>
+          </div>
+          <a href="/admin/entries" >← Back to Entries</a>
+        </div>
+
+        <div class={`gs-alert ${colors.panel} gs-stack`}>
+          <div class="gs-grid columns-4">
+            <div>
+              <p class="gs-text-sm">Status</p>
+              <p class={`gs-badge ${colors.badge}`}>
+                {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
+              </p>
+            </div>
+            <div>
+              <p class="gs-text-sm">Email</p>
+              <p class="gs-text-lg">
+                <a href={`mailto:${lead.email}`} >{lead.email}</a>
+              </p>
+            </div>
+            {lead.phone && (
+              <div>
+                <p class="gs-text-sm">Phone</p>
+                <p class="gs-text-lg">
+                  <a href={`tel:${lead.phone}`} >{lead.phone}</a>
+                </p>
+              </div>
+            )}
+            {lead.company && (
+              <div>
+                <p class="gs-text-sm">Company</p>
+                <p class="gs-text-lg">{lead.company}</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div class="gs-grid columns-2">
+          <div class="gs-card">
+            <h2 class="gs-text-lg">Timeline</h2>
+            <div class="gs-stack-sm gs-text-sm">
+              <div>
+                <p class="gs-text-subtle">Created</p>
+                <p>{new Date(lead.created_at).toLocaleString()}</p>
+              </div>
+              <div>
+                <p class="gs-text-subtle">Last Updated</p>
+                <p>{new Date(lead.updated_at).toLocaleString()}</p>
+              </div>
+              {lead.metadata?.qualified_at && (
+                <div>
+                  <p class="gs-text-subtle">Qualified</p>
+                  <p>{new Date(lead.metadata.qualified_at).toLocaleString()}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div class="gs-card">
+            <h2 class="gs-text-lg">Metadata</h2>
+            <div class="gs-stack-sm gs-text-sm">
+              {lead.metadata?.qualification_reason && (
+                <div>
+                  <p class="gs-text-subtle">Qualification Reason</p>
+                  <p>{lead.metadata.qualification_reason}</p>
+                </div>
+              )}
+              {lead.metadata?.qualified_by && (
+                <div>
+                  <p class="gs-text-subtle">Qualified By</p>
+                  <p>{lead.metadata.qualified_by}</p>
+                </div>
+              )}
+              {lead.metadata?.source && (
+                <div>
+                  <p class="gs-text-subtle">Source</p>
+                  <p>{lead.metadata.source}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {lead.message && (
+          <div class="gs-card">
+            <h2 class="gs-text-lg">Message</h2>
+            <p class="gs-text-subtle">{lead.message}</p>
+          </div>
+        )}
+
+        <div class="gs-card">
+          <h2 class="gs-text-lg">Quick Actions</h2>
+          <div class="gs-row">
+            <a href={`mailto:${lead.email}`} class="gs-button">
+              Send Email
+            </a>
+            {lead.phone && (
+              <a href={`tel:${lead.phone}`} class="gs-button">
+                Call
+              </a>
+            )}
+            {lead.status !== 'qualified' && (
+              <button
+                hx-post={`/api/admin/entries/leads/${lead.id}/qualify`}
+                hx-target="this"
+                class="gs-button"
+              >
+                Mark Qualified
+              </button>
+            )}
+            {lead.status !== 'contacted' && (
+              <button
+                hx-post={`/api/admin/entries/leads/${lead.id}`}
+                hx-vals='{"status": "contacted"}'
+                hx-target="this"
+                class="gs-button"
+              >
+                Mark Contacted
+              </button>
+            )}
+            {lead.status !== 'rejected' && (
+              <button
+                hx-post={`/api/admin/entries/leads/${lead.id}`}
+                hx-vals='{"status": "rejected"}'
+                hx-target="this"
+              >
+                Reject
+              </button>
+            )}
+          </div>
+        </div>
+      </>
+    )}
+
+    {!error && !lead && (
+      <div>
+        <p class="gs-text-subtle">Loading lead...</p>
+      </div>
+    )}
+  </div>
+</AdminLayout>

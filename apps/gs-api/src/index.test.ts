@@ -4,14 +4,43 @@ import * as assert from 'node:assert/strict';
 import worker, { app, isAllowedOrigin, isPreviewOrigin, isPublicPath } from './index';
 
 const requiredRuntimeEnv = {
-  PLATFORM_DB: {} as any,
+  KV: { get: async () => null } as any,
+  PLATFORM_DB: { prepare: () => ({ first: async () => ({ ok: 1 }) }) } as any,
   GS_ASSETS: {} as any,
+  MAIL_ARCHIVE: {} as any,
+  MAIL_JOBS_QUEUE: {} as any,
+  EMAIL: {} as any,
   AI: {} as any,
   JWT_SECRET: 'test-jwt-secret',
-  STRIPE_API_KEY: 'test-stripe-key',
-  SENDGRID_API_KEY: 'test-sendgrid-key',
   ACCESS_CLIENT_SECRET: 'test-access-client-secret',
 };
+
+test('keeps shallow production health independent of optional provider secrets', async () => {
+  const response = await app.request(
+    '/health',
+    {},
+    {
+      ...requiredRuntimeEnv,
+      ENV: 'production',
+      CLOUDFLARE_ACCESS_AUDIENCE: 'test-audience',
+      CONTROL_SYNC_TOKEN: 'test-control-token',
+    } as any,
+  );
+
+  assert.equal(response.status, 200);
+});
+
+test('exposes the dependency readiness summary without Cloudflare Access', async () => {
+  const response = await app.request('/ready', {}, requiredRuntimeEnv as any);
+
+  assert.equal(response.status, 200);
+  const payload = (await response.json()) as {
+    status: string;
+    dependencySummary: { ready: number; total: number };
+  };
+  assert.equal(payload.status, 'ready');
+  assert.equal(payload.dependencySummary.ready, payload.dependencySummary.total);
+});
 
 test('allows documented preview goldshore.ai origins', () => {
   assert.equal(isPreviewOrigin('https://feature-123-preview.goldshore.ai'), true);
@@ -31,11 +60,18 @@ test('allows only public form submission writes through API authentication', () 
   assert.equal(isPublicPath('/v1/forms/contact/submissions', 'POST'), true);
   assert.equal(isPublicPath('/v1/forms/newsletter/submissions', 'POST'), true);
   assert.equal(isPublicPath('/v1/forms/newsletter/confirm', 'GET'), true);
+  assert.equal(isPublicPath('/v1/forms/newsletter/confirm', 'POST'), true);
+  assert.equal(isPublicPath('/v1/forms/newsletter/preferences', 'GET'), true);
+  assert.equal(isPublicPath('/v1/forms/newsletter/preferences', 'PUT'), true);
   assert.equal(isPublicPath('/v1/forms/newsletter/unsubscribe', 'GET'), true);
   assert.equal(isPublicPath('/v1/forms/contact/submissions', 'GET'), false);
   assert.equal(isPublicPath('/v1/forms/subscribers', 'GET'), false);
   assert.equal(isPublicPath('/v1/forms/configs', 'GET'), false);
   assert.equal(isPublicPath('/v1/forms/leads', 'GET'), false);
+  assert.equal(isPublicPath('/pages/public', 'GET'), true);
+  assert.equal(isPublicPath('/pages/public/slug/example-post', 'GET'), true);
+  assert.equal(isPublicPath('/pages/public', 'POST'), false);
+  assert.equal(isPublicPath('/pages/private-draft', 'GET'), false);
 });
 
 test('exposes /version without Cloudflare Access', async () => {

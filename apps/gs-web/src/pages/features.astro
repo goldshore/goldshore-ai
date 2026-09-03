@@ -1,0 +1,68 @@
+---
+import { GSButton } from '@goldshore/ui';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import FlowSection from '../components/FlowSection.astro';
+
+export const prerender = false;
+
+const features = [
+  {
+    title: 'Continuous risk surveillance',
+    body: 'Threshold monitoring, anomaly detection, and operator-in-loop review across positions, portfolios, and market conditions.',
+  },
+  {
+    title: 'Governed automation',
+    body: 'Role-based approvals, audit trails, and resilient fallback handling for every automated workflow.',
+  },
+  {
+    title: 'Model-assisted decisions',
+    body: 'Policy-governed inference with observability and production validation before AI output reaches downstream systems.',
+  },
+  {
+    title: 'Enterprise security',
+    body: 'Cloudflare Access-gated operator tooling, audit logging, and least-privilege access by default.',
+  },
+  {
+    title: 'Edge performance',
+    body: "Built on Cloudflare's global network — sub-45ms P99 latency at the gateway.",
+  },
+  {
+    title: 'API access',
+    body: 'REST, WebSocket, and MCP interfaces for integrating GoldShore signals into your own systems.',
+  },
+];
+---
+
+<BaseLayout
+  title="Platform Features | GoldShore"
+  description="Risk intelligence, governed automation, and model-assisted decisions — the capabilities behind the GoldShore platform."
+  canonicalPath="/features"
+>
+  <FlowSection variant="hero">
+    <div>
+      <p class="gs-eyebrow">Platform</p>
+      <h1>Platform capabilities</h1>
+      <p class="gs-text-lg">The operational building blocks behind Risk Radar, Financial Signals, Workflow Engine, Sentinel, and AI Oracle.</p>
+      <GSButton href="/platform">View the full platform</GSButton>
+    </div>
+  </FlowSection>
+
+  <FlowSection>
+    <div class="gs-grid columns-2">
+      {features.map((feature) => (
+        <div class="gs-card">
+          <h3 class="section-title">{feature.title}</h3>
+          <p>{feature.body}</p>
+        </div>
+      ))}
+    </div>
+  </FlowSection>
+
+  <FlowSection variant="hero">
+    <div>
+      <h2>Ready to get started?</h2>
+      <p class="gs-text-lg">See how these capabilities apply to your operating environment.</p>
+      <GSButton href="/pricing" data-analytics-id="features-cta">View pricing</GSButton>
+    </div>
+  </FlowSection>
+</BaseLayout>

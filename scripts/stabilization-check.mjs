@@ -9,7 +9,6 @@ const WORKFLOW_DIR = '.github/workflows';
 
 const ALLOWED_APPS = [
   'gs-web',
-  'gs-admin',
   'gs-api',
   'gs-mail',
   'gs-gateway',

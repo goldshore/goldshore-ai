@@ -1,71 +1,84 @@
-name: Verify gs-web build
+name: Deploy Goldshore Web
 
-# Read-only drift inventory. Cloudflare production configuration is changed only
-# by an approved human in the dashboard; this workflow has no Cloudflare credentials.
 on:
   pull_request:
-    paths:
+    branches: [main]
+    paths: &web-paths
       - 'apps/gs-web/**'
-      - 'scripts/export-cloudflare-inventory.py'
-      - 'infra/Cloudflare/dashboard-inventory.json'
+      - 'packages/**'
+      - 'scripts/build-openapi.mjs'
+      - 'scripts/verify-web-dist.mjs'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.node-version'
+      - '.nvmrc'
       - '.github/workflows/deploy-gs-web.yml'
   push:
     branches: [main]
-    paths:
-      - 'apps/gs-web/**'
-      - 'scripts/export-cloudflare-inventory.py'
-      - 'infra/Cloudflare/dashboard-inventory.json'
-      - '.github/workflows/deploy-gs-web.yml'
+    paths: *web-paths
   workflow_dispatch:
+    inputs:
+      skip_validation:
+        description: 'Skip validation step before deployment'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
 
 concurrency:
-  group: verify-gs-web-${{ github.ref }}
+  group: deploy-gs-web-${{ github.ref }}
   cancel-in-progress: true
 
-jobs:
-  # Build verification only — this job does NOT deploy.
-  #
-  # gs-web is an SSR Astro app (`main = ./src/worker.ts`, `output: server`) whose
-  # entrypoint is emitted to dist/server. It is deployed as the `gs-web-prod`
-  # Worker by the Cloudflare Workers Build git integration, which is the single
-  # authoritative deploy path.
-  #
-  # Do not add a second static-site deployment. Dynamic and static output ship
-  # together through the canonical Worker-with-Assets release.
-  deploy:
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    env:
-      RELEASE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-    steps:
-      - uses: actions/checkout@v7.0.1
-        with:
-          ref: ${{ env.RELEASE_SHA }}
+permissions:
+  contents: read
 
-      - uses: pnpm/action-setup@v6
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CLOUDFLARE_ENV: prod
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
         with:
           version: 9.15.4
-
-      - uses: actions/setup-node@v7.0.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .node-version
           cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build gs-web Worker output once
+      - run: pnpm install --frozen-lockfile
+      - name: Build gs-web Worker output
         run: pnpm build:pages
+      - name: Validate the production manifest without mutating Cloudflare
+        working-directory: apps/gs-web
+        run: pnpm exec wrangler deploy --env prod --dry-run
 
-      - name: Preserve release SHA with build output
-        run: printf '%s\n' "$RELEASE_SHA" > apps/gs-web/dist/release.sha
-
-      - name: Preserve immutable gs-web build
-        uses: actions/upload-artifact@v7
+  production:
+    name: Approve and deploy production
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
+      CLOUDFLARE_ENV: prod
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
         with:
-          name: gs-web-${{ env.RELEASE_SHA }}
-          path: apps/gs-web/dist
-          if-no-files-found: error
-          retention-days: 30
+          version: 9.15.4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build:pages
+      - name: Deploy production Worker
+        working-directory: apps/gs-web
+        run: pnpm exec wrangler deploy --env prod

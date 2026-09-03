@@ -1,15 +1,7 @@
-name: Inventory gs-api configuration
+name: Deploy Goldshore API
 
-# Read-only drift inventory. Cloudflare production configuration is changed only
-# by an approved human in the dashboard; this workflow has no Cloudflare credentials.
 on:
   pull_request:
-    paths:
-      - 'apps/gs-api/**'
-      - 'scripts/export-cloudflare-inventory.py'
-      - 'infra/Cloudflare/dashboard-inventory.json'
-      - '.github/workflows/deploy-gs-api.yml'
-  push:
     branches: [main]
     paths:
       - 'apps/gs-api/**'
@@ -21,229 +13,204 @@ on:
       - '.nvmrc'
       - '.github/actions/**'
       - '.github/workflows/deploy-gs-api.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/gs-api/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.node-version'
+      - '.nvmrc'
+      - '.github/workflows/deploy-gs-api.yml'
   workflow_dispatch:
 
 concurrency:
   group: deploy-gs-api-${{ github.ref }}
   cancel-in-progress: false
-      - 'scripts/export-cloudflare-inventory.py'
-      - 'infra/Cloudflare/dashboard-inventory.json'
-      - '.github/workflows/deploy-gs-api.yml'
-  workflow_dispatch:
-
-permissions:
-  contents: read
 
 jobs:
   gs-api-build:
+    name: Validate production candidate
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: pnpm/action-setup@v6
-        with:
-          version: 9.15.4
-      - uses: actions/setup-node@v7.0.0
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - name: Build gs-api
-        run: pnpm --filter @goldshore/gs-api build
-
-  deploy:
-    needs: gs-api-build
-  inventory:
-    name: Export redacted expected state
-    runs-on: ubuntu-latest
-    environment:
-      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
-    permissions:
-      contents: read
-    env:
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      TARGET_ENV: ${{ github.ref == 'refs/heads/main' && 'prod' || 'preview' }}
-      HEALTH_ORIGIN: ${{ github.ref == 'refs/heads/main' && 'https://api.goldshore.ai' || 'https://api-preview.goldshore.ai' }}
-    steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
       - uses: ./.github/actions/check-lockfile-conflicts
         id: lockfile-check
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
         with:
           version: 9.15.4
 
-      - uses: actions/setup-node@v7.0.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           cache: pnpm
 
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @goldshore/gs-api types:check
+      - run: pnpm --filter @goldshore/gs-api build
+      - run: pnpm --filter @goldshore/gs-api exec wrangler deploy --env prod --dry-run
+
+  deploy:
+    name: Approve and deploy production
+    # Restored with the job header. Without it the secret-provisioning steps
+    # below run on every pull_request event, which this workflow triggers on.
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: gs-api-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Restored with the job header. This is the protected-environment approval
+    # gate added by #6470; without it production deploys need no approval.
+    environment: production
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      TARGET_ENV: prod
+      HEALTH_ORIGIN: https://api.goldshore.ai
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+        with:
+          version: 9.15.4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: pnpm
       - uses: ./.github/actions/normalize-cf-token
         id: cf-token
         with:
           raw_token: ${{ secrets.CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN }}
-          token_name: 'CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN'
+          token_name: CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN
 
-      - name: Verify Cloudflare secrets
+      - name: Configure Cloudflare authentication
         env:
           CF_TOKEN: ${{ steps.cf-token.outputs.token }}
         run: |
-          test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "::error::Missing CLOUDFLARE_ACCOUNT_ID" && exit 1)
-          test -n "$CF_TOKEN" || (echo "::error::Missing CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN" && exit 1)
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "::error::Missing CLOUDFLARE_ACCOUNT_ID"; exit 1; }
+          test -n "$CF_TOKEN" || { echo "::error::Missing deploy token"; exit 1; }
           echo "CLOUDFLARE_API_TOKEN=$CF_TOKEN" >> "$GITHUB_ENV"
 
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @goldshore/gs-api build
+
+      - name: Restore integration encryption key binding when absent
+        env:
+          INTEGRATION_MASTER_KEY: ${{ secrets.INTEGRATION_MASTER_KEY }}
+        run: node scripts/cloudflare/ensure-integration-master-key.mjs
+
+      - name: Preflight repository and remote contracts
+        run: |
+          set -euo pipefail
+          pnpm validate:workspace
+          pnpm validate:structure
+          pnpm --filter @goldshore/gs-api build
+          pnpm --filter @goldshore/gs-api exec wrangler whoami
+          node scripts/cloudflare/audit-worker-secrets.mjs --environment "$TARGET_ENV"
+
+      - name: Upload immutable candidate version
+        id: upload
+        working-directory: apps/gs-api
+        env:
+          VERSION_TAG: git-${{ github.sha }}
+        run: |
+          set -euo pipefail
+          pnpm exec wrangler versions upload \
+            --env "$TARGET_ENV" \
+            --tag "$VERSION_TAG" \
+            --message "${GITHUB_REPOSITORY}@${GITHUB_SHA}" \
+            --keep-vars \
+            --strict 2>&1 | tee upload.log
+          version_id="$(sed -nE 's/^Worker Version ID:[[:space:]]*([[:alnum:]-]+).*$/\1/p' upload.log | tail -1)"
+          test -n "$version_id" || { echo "::error::Wrangler did not return an immutable Worker version ID"; exit 1; }
+          echo "version_id=$version_id" >> "$GITHUB_OUTPUT"
+
+      - name: Promote candidate to 100 percent traffic
+        working-directory: apps/gs-api
+        run: |
+          pnpm exec wrangler versions deploy \
+            --env "$TARGET_ENV" \
+            --version-id "${{ steps.upload.outputs.version_id }}" \
+            --percentage 100 \
+            --message "Promote validated ${GITHUB_SHA}" \
+            --yes
+
+      - name: Health check promoted deployment
+        run: bash scripts/cloudflare/health-check.sh "$HEALTH_ORIGIN/health"
 
       - name: Apply newsletter subscriber schema
-        if: github.ref == 'refs/heads/main'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         working-directory: apps/gs-api
         run: pnpm exec wrangler d1 execute gs_platform_db --remote --file=db/migrations/0004_newsletter_subscribers.sql --env prod
 
-      - name: Provision gs-api Worker secrets
+      - name: Reconcile legacy users schema
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         working-directory: apps/gs-api
+        run: bash scripts/reconcile-d1-users-schema.sh gs_platform_db prod
+
+      - name: Apply Google Workspace RBAC schema
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        working-directory: apps/gs-api
+        run: |
+          set -euo pipefail
+          for migration in \
+            db/migrations/0005_identity_rbac.sql \
+            db/migrations/0005_access_authorization.sql \
+            db/migrations/0007_google_workspace_rbac.sql \
+            db/migrations/0008_access_owner_role.sql
+          do
+            pnpm exec wrangler d1 execute gs_platform_db --remote --env prod --file="$migration"
+          done
+          pnpm exec wrangler d1 execute gs_audit_db --remote --env prod --file=db/migrations/0007_github_webhooks.sql
+
+      - name: Apply infrastructure baseline schema
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        working-directory: apps/gs-api
+        run: pnpm exec wrangler d1 execute gs_platform_db --remote --env prod --file=db/migrations/0009_infrastructure_baseline.sql
+
+      - name: Health and readiness checks (gs-api)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          ACCESS_CLIENT_SECRET: ${{ secrets.ACCESS_CLIENT_SECRET }}
-          CONTROL_SYNC_TOKEN: ${{ secrets.CONTROL_SYNC_TOKEN }}
-          INTEGRATION_MASTER_KEY: ${{ secrets.INTEGRATION_MASTER_KEY }}
-          MAILCHANNELS_SENDER_EMAIL: ${{ secrets.MAILCHANNELS_SENDER_EMAIL }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GOOGLE_API_GEMINI }}
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
         run: |
           set -euo pipefail
-          trap 'rm -f worker-secrets.json' EXIT
-          
-          node <<'NODE' > worker-secrets.json
-          const names = [
-            'JWT_SECRET',
-            'ACCESS_CLIENT_SECRET',
-            'CONTROL_SYNC_TOKEN',
-            'INTEGRATION_MASTER_KEY',
-            'MAILCHANNELS_SENDER_EMAIL',
-            'OPENAI_API_KEY',
-            'GEMINI_API_KEY',
-          ];
-          const secrets = Object.fromEntries(
-            names.map((name) => [name, process.env[name]]).filter(([, value]) => value),
-          );
-          const required = ['JWT_SECRET', 'ACCESS_CLIENT_SECRET', 'CONTROL_SYNC_TOKEN'];
-          const missing = required.filter((name) => !secrets[name]);
-          if (missing.length) throw new Error(`Missing required GitHub secrets: ${missing.join(', ')}`);
-          process.stdout.write(JSON.stringify(secrets));
-          NODE
-          
-          pnpm exec wrangler secret bulk worker-secrets.json --env ${{ github.ref == 'refs/heads/main' && 'prod' || 'preview' }}
-
-      - run: pnpm --filter @goldshore/gs-api run deploy -- --env=${{ github.ref == 'refs/heads/main' && 'prod' || 'preview' }}
-
-      - name: Health check (gs-api)
-        if: github.ref == 'refs/heads/main'
-        run: |
-          set -euo pipefail
+          test -n "$CF_ACCESS_CLIENT_ID" || { echo "::error::Missing CF_ACCESS_CLIENT_ID"; exit 1; }
+          test -n "$CF_ACCESS_CLIENT_SECRET" || { echo "::error::Missing CF_ACCESS_CLIENT_SECRET"; exit 1; }
           max_retries=5
           retry=0
           
           while [ $retry -lt $max_retries ]; do
-            echo "Health check attempt $((retry + 1))/$max_retries..."
-            if curl -fsS https://api.goldshore.ai/health >/dev/null 2>&1; then
-              echo "✅ gs-api is healthy"
+            echo "Health/readiness attempt $((retry + 1))/$max_retries..."
+            if curl -fsS https://api.goldshore.ai/health >/dev/null 2>&1 \
+              && curl -fsS \
+                -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" \
+                -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET" \
+                https://api.goldshore.ai/ready >/dev/null 2>&1; then
+              echo "✅ gs-api is healthy and ready"
               exit 0
             fi
             retry=$((retry + 1))
             sleep 10
           done
           
-          echo "::error::gs-api failed health check after $max_retries attempts"
+          echo "::error::gs-api failed health or readiness checks after $max_retries attempts"
           exit 1
-          name: cloudflare-inventory-${{ github.run_id }}-deploy-gs-api
-          path: cloudflare-inventory.json
-          retention-days: 30
-      - name: Stamp release identity into the selected environment
-        working-directory: apps/gs-api
-        env:
-          DEPLOY_ENV: ${{ github.ref == 'refs/heads/main' && 'prod' || 'preview' }}
+
+      - name: Deployment audit summary
+        if: always()
+        shell: bash
         run: |
-          node <<'NODE'
-          const fs = require('node:fs');
-          const path = 'wrangler.toml';
-          const source = fs.readFileSync(path, 'utf8');
-          const marker = `[env.${process.env.DEPLOY_ENV}.vars]\n`;
-          if (!source.includes(marker)) throw new Error(`Missing ${marker.trim()} in ${path}`);
-          const identity = `API_VERSION = "${process.env.GITHUB_SHA}"\nDEPLOY_SHA = "${process.env.GITHUB_SHA}"\n`;
-          fs.writeFileSync(path, source.replace(marker, marker + identity));
-          NODE
-
-      - run: pnpm --filter @goldshore/gs-api run deploy -- --env=${{ github.ref == 'refs/heads/main' && 'prod' || 'preview' }}
-
-      - name: Verify production API aliases
-        if: github.ref == 'refs/heads/main'
-        env:
-          CORS_ORIGIN: https://goldshore.ai
-        run: |
-          set -euo pipefail
-          tmp_dir=$(mktemp -d)
-          trap 'rm -rf "$tmp_dir"' EXIT
-
-          request() {
-            local host=$1 path=$2 name=$3
-            for attempt in 1 2 3 4 5; do
-              if curl --fail-with-body --silent --show-error \
-                --dump-header "$tmp_dir/$name.headers" \
-                --output "$tmp_dir/$name.body" \
-                "https://$host$path"; then return 0; fi
-              echo "Retrying $host$path ($attempt/5)"
-              sleep 10
-            done
-            return 1
-          }
-
-          for host in api.goldshore.ai api.goldshore.org; do
-            key=${host//./_}
-            request "$host" /health "$key-health"
-            jq -e '.status == "ok" and .service == "gs-api"' "$tmp_dir/$key-health.body"
-
-            request "$host" /version "$key-version"
-            jq -e --arg sha "$GITHUB_SHA" \
-              '.service == "gs-api" and .version == $sha and .deploySha == $sha' \
-              "$tmp_dir/$key-version.body"
-
-            auth_status=$(curl --silent --show-error --output "$tmp_dir/$key-auth.body" \
-              --dump-header "$tmp_dir/$key-auth.headers" --write-out '%{http_code}' \
-              "https://$host/system/status")
-            case "$auth_status" in
-              401) jq -e '.error == "Unauthorized"' "$tmp_dir/$key-auth.body" ;;
-              302|303|307)
-                tr -d '\r' < "$tmp_dir/$key-auth.headers" \
-                  | grep -Eqi '^location: https://[^/]*cloudflareaccess\.com/'
-                ;;
-              *) echo "::error::Unexpected authentication challenge status $auth_status from $host"; exit 1 ;;
-            esac
-
-            cors_status=$(curl --silent --show-error --output /dev/null \
-              --dump-header "$tmp_dir/$key-cors.headers" --write-out '%{http_code}' \
-              -X OPTIONS -H "Origin: $CORS_ORIGIN" \
-              -H 'Access-Control-Request-Method: POST' \
-              "https://$host/v1/forms/contact/submissions")
-            test "$cors_status" = 204
-            tr -d '\r' < "$tmp_dir/$key-cors.headers" | grep -Fqi "access-control-allow-origin: $CORS_ORIGIN"
-            tr -d '\r' < "$tmp_dir/$key-cors.headers" | grep -Eqi 'access-control-allow-methods:.*POST'
-          done
-
-          header_value() {
-            tr -d '\r' < "$1" | awk -F': *' -v wanted="$2" \
-              'tolower($1) == tolower(wanted) { value=$2 } END { print value }'
-          }
-          for header in x-gs-api-version x-gs-deploy-sha; do
-            ai_value=$(header_value "$tmp_dir/api_goldshore_ai-version.headers" "$header")
-            org_value=$(header_value "$tmp_dir/api_goldshore_org-version.headers" "$header")
-            test -n "$ai_value" && test "$ai_value" = "$GITHUB_SHA"
-            test "$ai_value" = "$org_value" || {
-              echo "::error::$header differs between production API domains"
-              exit 1
-            }
-          done
+          {
+            echo "## gs-api deployment audit"
+            echo "- Result: **${{ job.status }}**"
+            echo "- Commit: \`$GITHUB_SHA\`"
+            echo "- Environment: \`${{ github.event_name == 'push' && 'production' || 'build-only' }}\`"
+            echo "- Initiator: \`${{ github.actor }}\`"
+            echo "- Route/Access authority: **not granted to this workflow token**"
+          } >> "$GITHUB_STEP_SUMMARY"

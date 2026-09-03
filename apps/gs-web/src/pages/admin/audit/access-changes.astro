@@ -1,0 +1,16 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import AuditLogClient from '../../../components/admin/AuditLogClient';
+---
+
+<AdminLayout title="Access Changes Audit">
+  <div>
+    <div class="gs-page gs-measure--wide">
+      <div>
+        <h1 class="gs-heading">Access Changes</h1>
+        <p class="gs-text-subtle">View all role and user permission modifications</p>
+      </div>
+      <AuditLogClient client:load />
+    </div>
+  </div>
+</AdminLayout>

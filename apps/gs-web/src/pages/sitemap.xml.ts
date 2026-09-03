@@ -8,6 +8,7 @@ export async function GET({ url }: { url: URL }) {
     { url: '/', priority: 1.0, changefreq: 'weekly' },
     { url: '/about', priority: 0.8, changefreq: 'monthly' },
     { url: '/team', priority: 0.7, changefreq: 'monthly' },
+    { url: '/work', priority: 0.8, changefreq: 'monthly' },
     { url: '/contact', priority: 0.8, changefreq: 'weekly' },
     { url: '/services', priority: 0.9, changefreq: 'monthly' },
 
@@ -44,8 +45,15 @@ export async function GET({ url }: { url: URL }) {
     // Developer
     { url: '/developer', priority: 0.8, changefreq: 'weekly' },
     { url: '/developer/docs', priority: 0.7, changefreq: 'weekly' },
+    { url: '/developer/api', priority: 0.7, changefreq: 'weekly' },
     { url: '/developer/mcp', priority: 0.7, changefreq: 'monthly' },
     { url: '/developer/sdk', priority: 0.7, changefreq: 'monthly' },
+    { url: '/developer/quickstart', priority: 0.7, changefreq: 'monthly' },
+    { url: '/developer/authentication', priority: 0.7, changefreq: 'monthly' },
+    { url: '/developer/webhooks', priority: 0.7, changefreq: 'monthly' },
+    { url: '/features', priority: 0.7, changefreq: 'monthly' },
+    { url: '/templates', priority: 0.7, changefreq: 'monthly' },
+    { url: '/intake', priority: 0.6, changefreq: 'monthly' },
 
     // Status & Support
     { url: '/status', priority: 0.5, changefreq: 'hourly' },
@@ -54,6 +62,8 @@ export async function GET({ url }: { url: URL }) {
     { url: '/legal', priority: 0.3, changefreq: 'yearly' },
     { url: '/legal/privacy', priority: 0.5, changefreq: 'yearly' },
     { url: '/legal/terms', priority: 0.5, changefreq: 'yearly' },
+    { url: '/legal/accessibility', priority: 0.4, changefreq: 'yearly' },
+    { url: '/legal/editorial', priority: 0.4, changefreq: 'yearly' },
   ];
 
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
