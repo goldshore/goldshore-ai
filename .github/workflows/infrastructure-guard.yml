@@ -72,8 +72,13 @@ jobs:
           from pathlib import Path
           import re
 
+          # setup-cf-agent-access.yml is deliberately absent: it is a sanctioned
+          # Cloudflare mutation path (it provisions Access applications and
+          # rotates the goldshore-agents service token), gated behind
+          # `workflow_dispatch` and the production environment. It was listed
+          # here only because its name and header used to describe a read-only
+          # export. Add a workflow here only if it must stay credential-free.
           inventory_workflows = (
-              Path('.github/workflows/setup-cf-agent-access.yml'),
               Path('.github/workflows/reconcile-dns.yml'),
           )
           forbidden = re.compile(
