@@ -32,12 +32,21 @@ jobs:
 
       - name: Verify canonical wrangler config references canonical worker names
         run: |
-          CANONICAL_WORKERS="gs-api"
+          # Per CLAUDE.md and INFRASTRUCTURE.md: only apps/gs-web and apps/gs-api are canonical in-repo.
+          # Other workers (armsway-com, banproof-me, gs-admin, gs-agent, etc.) are external or legacy
+          # non-canonical workers and are intentionally excluded from this check.
+          CANONICAL_WORKERS="gs-web gs-api"
 
-          echo "Canonical workers:"
+          echo "Checking canonical apps only:"
           echo "$CANONICAL_WORKERS"
 
-          for toml in apps/gs-api/wrangler.toml; do
+          for app in gs-web gs-api; do
+            toml="apps/$app/wrangler.toml"
+            if [ ! -f "$toml" ]; then
+              echo "INFO: $toml not found (may be valid for some configs)"
+              continue
+            fi
+
             WORKER_NAME=$(grep '^name = ' "$toml" | head -1 | sed 's/name = "\(.*\)"/\1/')
             if [ -n "$WORKER_NAME" ] && ! echo "$CANONICAL_WORKERS" | grep -qx "$WORKER_NAME"; then
               echo "FAIL: $toml references unrecognized worker '$WORKER_NAME'"
@@ -45,7 +54,8 @@ jobs:
             fi
           done
 
-          echo "All wrangler configs reference canonical workers."
+          echo "All canonical wrangler configs reference recognized canonical workers."
+          echo "Note: non-canonical workers in apps/* (gs-admin, gs-agent, etc.) are not validated here."
 
       - name: Verify dashboard-only inventories cannot mutate Cloudflare
         run: |
