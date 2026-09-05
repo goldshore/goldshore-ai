@@ -1,156 +1,112 @@
 name = "gs-api"
 main = "src/index.ts"
-compatibility_date = "2026-04-18"
+compatibility_date = "2026-08-12"
 compatibility_flags = ["nodejs_compat"]
 
 workers_dev = false
+# `gs-api` implements Durable Objects. Cloudflare does not generate Workers
+# preview URLs for Durable Object Workers, so keep this explicit rather than
+# implying the dashboard toggle can create one. Use an Access-protected staging
+# hostname with isolated bindings for shareable API testing.
+preview_urls = true
 
-# Cloudflare Workers Builds can run `npx wrangler versions upload` without
-# selecting `--env prod`. Keep the top-level binding set production-compatible
-# so those version uploads do not replace gs-api-prod with a bindingless build.
-[vars]
-ENV = "production"
-CLOUDFLARE_ACCESS_AUDIENCE = "8510d42c31fc791e295427031ffeef7c7ebc0f1b62d8634fbb284bf82562f528"
-CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
-GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
-GOOGLE_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/goldclaw/oauth/google/callback"
-CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
-PUBLIC_SITE_URL = "https://goldshore.ai"
-MAILCHANNELS_SENDER_NAME = "GoldShore"
-
-[[kv_namespaces]]
-binding = "KV"
-id = "e0b8b807191346c3b0afc25fe716d2cd"
-
-[[kv_namespaces]]
-binding = "CONTROL_LOGS"
-id = "a52e94cb331c4e3db08f2aa507e6df09"
-
-[[kv_namespaces]]
-binding = "RISK_RADAR_CACHE"
-id = "0b56873b6d7b451f9279481920a15447"
-
-# TRADING_KV: the real namespace previously owned by the now route-free
-# apps/gs-trading Worker. Trading feature flags, Schwab/Robinhood OAuth
-# tokens, and agent orchestration state live here.
-[[kv_namespaces]]
-binding = "TRADING_KV"
-id = "9b3314c3b7af40a284a8c9b6e2990709"
-
-[[r2_buckets]]
-binding = "GS_ASSETS"
-bucket_name = "gs-assets"
-
-[[r2_buckets]]
-binding = "TELEMETRY"
-bucket_name = "gs-telemetry-storage"
-
-[[r2_buckets]]
-binding = "RISK_RADAR_R2"
-bucket_name = "risk-radar-raw"
-
-[[d1_databases]]
-binding = "PLATFORM_DB"
-database_name = "gs_platform_db"
-database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
-
-[[d1_databases]]
-binding = "AUDIT_DB"
-database_name = "gs_audit_db"
-database_id = "1ae71d76-188f-481b-91d9-db2d39013f68"
-
-[[d1_databases]]
-binding = "SIGNALS_DB"
-database_name = "gs_signals_db"
-database_id = "76af4653-7f44-417b-b46e-250143d906fd"
-
-[[d1_databases]]
-binding = "RISK_RADAR_DB"
-database_name = "risk-radar-db"
-database_id = "b0bf3b0e-a7d0-49ae-ac82-4f19450b2ce2"
-
-[[d1_databases]]
-binding = "JOBS_DB"
-database_name = "gs_jobs_db"
-database_id = "750c469c-788d-49e8-9254-77231cffd70f"
-
-# PAPER_DB: the real paper-trading ledger previously owned by the now
-# route-free apps/gs-trading Worker (paper_orders, paper_positions,
-# paper_closed_positions, agent_recommendations, notification_log — schema in
-# db/migrations/0004_paper_trading.sql). trading/routes/trading.ts's
-# `env.PAPER_DB ?? env.PLATFORM_DB` fallback exists only so the Worker doesn't
-# crash if this binding is ever removed; PLATFORM_DB has no matching schema
-# and must not be used for paper-trading data.
-[[d1_databases]]
-binding = "PAPER_DB"
-database_name = "goldshore-paper-trading"
-database_id = "af94f483-b98b-41c5-aa23-3fbed2764b52"
-
-[ai]
-binding = "AI"
-
-[[queues.producers]]
-binding = "JOBS_QUEUE"
-queue = "goldshore-jobs"
-
-[[queues.producers]]
-binding = "EVENTS_QUEUE"
-queue = "gs-events"
-
-[[queues.producers]]
-binding = "MAIL_JOBS_QUEUE"
-queue = "gs-mail-jobs"
-
-[[queues.producers]]
-binding = "DEAD_LETTER_QUEUE"
-queue = "gs-mail-dead-letter"
+# Deployments must always select a named environment so bindings cannot leak
+# between production and preview.
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Production environment
-# Canonical environment name is "prod". Use `wrangler deploy --env prod`.
+# Canonical environment name is "prod". Validate locally with
+# `pnpm exec wrangler deploy --env prod --dry-run`; production uses the protected workflow.
 # ══════════════════════════════════════════════════════════════════════════════
 
 [env.prod]
+# Pin the Worker name. Wrangler otherwise derives `<top-level name>-<env>` and
+# would target `gs-api-prod`; the production Worker was renamed to `gs-api` in
+# the dashboard (same script id, a5322bde…). Without this, `wrangler deploy
+# --env prod` recreates `gs-api-prod` and moves the routes below onto it.
+#
+# NOTE: this makes the default (top-level) environment and env.prod resolve to
+# the same Worker. The top level declares no bindings, so a bare `wrangler
+# deploy` without `--env prod` would replace live gs-api with a bindingless
+# build. Every deploy path in this repo passes `--env prod`; keep it that way.
+name = "gs-api"
+# Match the top-level policy for the CI production target. This does not change
+# Durable Object preview support; Cloudflare currently does not provide it.
+preview_urls = false
+
 routes = [
   { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "mail.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "ops.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "trading.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "dashboard.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "dash.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "gw.goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "api.goldshore.org/*", zone_name = "goldshore.org" }
 ]
 
 [env.prod.vars]
 ENV = "production"
+AI_SEARCH_PUBLIC_ENDPOINT = "https://f800ea69-7ef4-4094-ba29-de38736fd22f.search.ai.cloudflare.com"
 CLOUDFLARE_ACCESS_AUDIENCE = "8510d42c31fc791e295427031ffeef7c7ebc0f1b62d8634fbb284bf82562f528"
+CLOUDFLARE_ACCESS_APPLICATION = "api-production"
+ADMIN_PROXY_AUDIENCE = "c520a7647223b49b20fbe5be240772863eb684b97b57c08955b6104c58170db9"
+CLOUDFLARE_SERVICE_ACCESS_AUDIENCE = "7ad07891d7c74cf243bb276b5941a75a3fcdc7301addb662a8b21df3e679c4a1"
 CLOUDFLARE_TEAM_DOMAIN = "goldshore.cloudflareaccess.com"
 # CONTROL_SYNC_TOKEN is a Worker secret. Keep it out of vars so deploys
 # preserve the remote secret instead of replacing it with a placeholder.
 GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
 GOOGLE_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/goldclaw/oauth/google/callback"
+GOOGLE_BUSINESS_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/admin/google/oauth/callback"
+GOOGLE_BUSINESS_OWNERSHIP_VERIFIED = "false"
+GOOGLE_OAUTH_PRODUCTION_APPROVED = "false"
+# Workspace RBAC remains fail-closed until the service-account secret,
+# delegated admin, and verified group mapping are configured by an operator.
+GOOGLE_WORKSPACE_SYNC_ENABLED = "false"
+GOOGLE_WORKSPACE_DELEGATED_ADMIN = ""
+GOOGLE_WORKSPACE_CUSTOMER_ID = "my_customer"
+GOOGLE_WORKSPACE_GROUP_ROLE_MAP = "{}"
+GOOGLE_WORKSPACE_ACCESS_APPLICATIONS = "admin-production,api-production"
+GITHUB_OAUTH_REDIRECT_URI = "https://api.goldshore.ai/auth/github/callback"
 CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
+MAIL_FORWARD_TO = "marstonr6@gmail.com"
 PUBLIC_SITE_URL = "https://goldshore.ai"
-MAILCHANNELS_SENDER_NAME = "GoldShore"
+MAIL_FROM_EMAIL = "noreply@goldshore.ai"
+MAIL_FROM_NAME = "GoldShore"
+TURNSTILE_SITEKEY = "0x4AAAAAAESEtC0-1kwdI9_7"
 
-# MAILCHANNELS_SENDER_EMAIL is a secret, not a var — never commit the value.
-#   wrangler secret put MAILCHANNELS_SENDER_EMAIL --env prod --name gs-api
-#   Value: hello@goldshore.ai
-# Without this secret, /v1/forms/:formId/submissions still persists the
-# submission to D1; it just reports mail as not attempted
-# (reason: "missing_mail_configuration") instead of failing the request.
+# ── SECRETS (set in Cloudflare dashboard, not here) ──────────────────────────────────
+# CF_ACCOUNT_ID is your Cloudflare account ID for API operations.
+#   Value: <32-character hex from https://dash.cloudflare.com>
+#   Example: f77de112d2019e5456a3198a8bb50bd2
+# Required for admin dashboard Worker management, DNS operations, KV access.
 
-# GITHUB_API_TOKEN is a secret for Phase 2 Admin Deployment Assistant.
-#   wrangler secret put GITHUB_API_TOKEN --env prod --name gs-api
-#   Value: <personal access token with public_repo scope>
+# CF_TOKEN is a secret for Cloudflare API authentication.
+#   Value: <API token from https://dash.cloudflare.com/profile/api-tokens>
+#   Permissions: Workers Scripts (Edit), Worker Routes (Edit), Workers KV (Edit), Zone Settings (Read)
+# Required for admin operations against Cloudflare resources (workers, DNS, KV).
+
+# GITHUB_API_TOKEN is a secret for GitHub API operations (merge cockpit, repo health, framework search).
+#   Value: <personal access token from https://github.com/settings/tokens>
+#   Permissions: public_repo scope minimum
 # Required for searching GitHub repositories and validating wrangler.toml files.
 
-# ANTHROPIC_API_KEY is a secret for Phase 2 Admin Deployment Assistant Claude ranking.
-#   wrangler secret put ANTHROPIC_API_KEY --env prod --name gs-api
-#   Value: <Anthropic API key>
-# Required for AI-powered framework ranking and recommendations.
+# ANTHROPIC_API_KEY is a secret for AI-powered admin features (framework ranking).
+#   Value: <Anthropic API key from https://console.anthropic.com>
+# Optional. Required only for /admin/search endpoint (framework search with Claude ranking).
+
+# GITHUB_CLIENT_SECRET is a secret for GitHub OAuth authentication.
+#   Value: <GitHub OAuth app client secret from https://github.com/settings/developers>
+# Required for /auth/github/callback and session creation.
+
+# GS_GITHUB_WEBHOOK_SECRET is the HMAC secret shared only with GitHub repository
+# webhooks. It is distinct from INTEGRATION_MASTER_KEY and OAuth credentials.
+
+# TURNSTILE_SECRET_KEY is a secret for Cloudflare Turnstile bot protection validation.
+#   Value: <Turnstile secret key from https://dash.cloudflare.com/>
+# Required for validating Turnstile responses on form submissions.
+
+# GOOGLE_ADMIN_SERVICE_ACCOUNT is a JSON Worker secret used only by the
+# disabled-by-default Workspace RBAC sync.
+
+# CONTROL_SYNC_TOKEN is an internal token for control system synchronization.
+#   Value: <UUID or random string>
+#   Example: 550e8400-e29b-41d4-a716-446655440000
+# Required for cross-system state synchronization.
 
 # ── KV ───────────────────────────────────────────────────────────────────────
 [[env.prod.kv_namespaces]]
@@ -161,36 +117,34 @@ id = "e0b8b807191346c3b0afc25fe716d2cd"
 binding = "CONTROL_LOGS"
 id = "a52e94cb331c4e3db08f2aa507e6df09"
 
-# RISK_RADAR_CACHE: apps/gs-api/src/routes/wrangler-config.test.ts requires this
-# binding to exist. infra/Cloudflare/BINDINGS_MAP.md documents a
-# "gs-risk-radar-cache" KV under a naming convention that was never actually
-# provisioned in the Gold Shore Labs account. Pointed at the live "RR_CACHE"
-# KV namespace (owned by the risk-radar repo) instead of inventing a resource —
-# if a dedicated gs-api cache is later provisioned, repoint this to it.
-[[env.prod.kv_namespaces]]
-binding = "RISK_RADAR_CACHE"
-id = "0b56873b6d7b451f9279481920a15447"
-
-# TRADING_KV: see top-level default-env comment above.
+# TRADING_KV remains shared with the default environment until a dedicated
+# production namespace is provisioned in the Cloudflare dashboard.
 [[env.prod.kv_namespaces]]
 binding = "TRADING_KV"
 id = "9b3314c3b7af40a284a8c9b6e2990709"
 
-# ── R2 ───────────────────────────────────────────────────────────────────────
+# MCP Workers Prompt Storage — for storing model context protocol worker
+# prompts, templates, and system instructions.
+[[env.prod.kv_namespaces]]
+binding = "MCP_WORKERS_PROMPT"
+id = "e8f02d97140b4e1daba2e88078fcf5c8"
+
+# ── R2 ──────────────────────────────────────────────────────────────────────────────────────
 [[env.prod.r2_buckets]]
 binding = "GS_ASSETS"
+bucket_name = "gs-assets"
+
+# Reuse the verified production bucket with a dedicated binding and prefix.
+# A future dashboard migration can point MAIL_ARCHIVE at its own bucket without
+# changing application code.
+[[env.prod.r2_buckets]]
+binding = "MAIL_ARCHIVE"
 bucket_name = "gs-assets"
 
 [[env.prod.r2_buckets]]
 binding = "TELEMETRY"
 bucket_name = "gs-telemetry-storage"
 
-[env.prod.ai]
-binding = "AI"
-
-# RISK_RADAR_R2: same situation as RISK_RADAR_CACHE above — pointed at the
-# live "risk-radar-raw" bucket (risk-radar repo) rather than the undeployed
-# "gs-risk-radar-raw" name from BINDINGS_MAP.md.
 [[env.prod.r2_buckets]]
 binding = "RISK_RADAR_R2"
 bucket_name = "gs-risk-radar-raw"
@@ -211,13 +165,6 @@ binding = "SIGNALS_DB"
 database_name = "gs_signals_db"
 database_id = "76af4653-7f44-417b-b46e-250143d906fd"
 
-# RISK_RADAR_DB: same situation — the documented "gs_risk_radar_db" (IDs
-# aabedb82-60ca-5697-bbd5-9e85675ee7c5 prod / fe25ba0b-7d1e-5362-a03f-065487222a08
-# preview) does not exist in the account. Pointed at the live "risk-radar-db"
-# D1 (risk-radar repo) instead. No dedicated preview copy of any of these three
-# risk-radar resources exists yet, so env.preview below reuses the same live
-# IDs as env.prod — acceptable for a read-mostly signals cache/store, but flag
-# if preview traffic should not share the production risk-radar dataset.
 [[env.prod.d1_databases]]
 binding = "RISK_RADAR_DB"
 database_name = "risk-radar-db"
@@ -235,16 +182,67 @@ binding = "PAPER_DB"
 database_name = "goldshore-paper-trading"
 database_id = "af94f483-b98b-41c5-aa23-3fbed2764b52"
 
+# ── AI ───────────────────────────────────────────────────────────────────────
+[env.prod.ai]
+binding = "AI"
+
+# Live production AI Search resources. Keep both the instance and namespace
+# bindings explicit so deploys cannot silently fall back to the public endpoint.
+[[env.prod.ai_search]]
+binding = "AI_SEARCH"
+instance_name = "royal-wind-4649"
+
+[[env.prod.ai_search_namespaces]]
+binding = "SEARCH"
+namespace = "default"
+
+# Native Cloudflare Email Service. Domain onboarding and routing remain
+# dashboard-owned; there is no provider API key in Worker secrets.
+[[env.prod.send_email]]
+name = "EMAIL"
+allowed_sender_addresses = [
+  "noreply@goldshore.ai",
+  "hello@goldshore.ai",
+  "support@goldshore.ai"
+]
+
+[env.prod.observability]
+enabled = true
+head_sampling_rate = 1
+
+# Account-level Secrets Store bindings. Values remain outside Worker config
+# and are fetched asynchronously only by the Brevo integration paths.
+[[env.prod.secrets_store_secrets]]
+binding = "BREVO_API_KEY"
+store_id = "b9824d3280c54573a24137c7e7143b33"
+secret_name = "BREVO_API_KEY"
+
+[[env.prod.secrets_store_secrets]]
+binding = "BREVO_MCP_KEY"
+store_id = "b9824d3280c54573a24137c7e7143b33"
+secret_name = "BREVO_MCP_KEY"
+
+# Master key for lib/encryption.ts's AES-256-GCM encryption of integration_secrets
+# rows (admin dashboard "Manage Secrets" + /integrations/keys). This binding was
+# missing entirely - getMasterKey() has been throwing "binding is not configured"
+# on every call since the encryption module was written, silently swallowed by
+# integration-keys.ts's broad catch into a misleading 409 "already exists" error.
+[[env.prod.secrets_store_secrets]]
+binding = "INTEGRATION_MASTER_KEY"
+store_id = "b9824d3280c54573a24137c7e7143b33"
+secret_name = "INTEGRATION_MASTER_KEY"
+
 # ── Cron Triggers (Scheduled Jobs) ──────────────────────────────────────────────────────────────
 # Token rotation job: Runs daily at 2 AM UTC to refresh expiring OAuth tokens
-[[env.prod.triggers.crons]]
-cron = "0 2 * * *"
+[env.prod.triggers]
+crons = ["0 2 * * *"]
 
 # Legacy satellite service bindings were removed during the two-app
 # consolidation. Agent, mail, and API behavior is implemented directly by
 # gs-api routes and event handlers; no source code references these bindings.
 
-# ── Queues (producers) ───────────────────────────────────────────────────────────
+# ── Queues ───────────────────────────────────────────────────────────────────
+# gs-api is the sole application consumer after the satellite migration.
 [[env.prod.queues.producers]]
 binding = "JOBS_QUEUE"
 queue = "goldshore-jobs"
@@ -257,164 +255,51 @@ queue = "gs-events"
 binding = "MAIL_JOBS_QUEUE"
 queue = "gs-mail-jobs"
 
-[[env.prod.queues.producers]]
-binding = "DEAD_LETTER_QUEUE"
-queue = "gs-mail-dead-letter"
-
-# Production queue consumers are owned outside gs-api today:
-# - goldshore-jobs and gs-events are consumed by gs-mail.
-# - gs-mail-jobs is configured as an HTTP pull consumer.
-# Keep gs-api as a producer only so deploys do not fail while attempting to
-# replace existing queue consumers.
+[[env.prod.queues.consumers]]
+queue = "goldshore-jobs"
+max_batch_size = 10
+max_batch_timeout = 5
+max_retries = 5
+retry_delay = 60
+dead_letter_queue = "gs-mail-dead-letter"
 
 [[env.prod.queues.consumers]]
 queue = "gs-events"
+max_batch_size = 10
+max_batch_timeout = 5
+max_retries = 5
+retry_delay = 60
+dead_letter_queue = "gs-mail-dead-letter"
+
+[[env.prod.queues.consumers]]
+queue = "gs-mail-jobs"
+max_batch_size = 10
+max_batch_timeout = 5
+max_retries = 5
+retry_delay = 60
+dead_letter_queue = "gs-mail-dead-letter"
 
 # ── Workflows ────────────────────────────────────────────────────────────────
 [[env.prod.workflows]]
 binding = "GS_SIGNALS"
-name = "signals-evaluator"
+name = "gs-signals-evaluator"
 class_name = "SignalsEvaluator"
-script_name = "gs-signals-prod"
 
-# ── Secrets Store ────────────────────────────────────────────────────────────
-# Secrets Store bindings are per secret, not a store object. The runtime reads
-# env.INTEGRATION_MASTER_KEY directly.
+[[env.prod.workflows]]
+binding = "EDITORIAL_PRODUCTION"
+name = "editorial-production"
+class_name = "EditorialProductionWorkflow"
 
-# ══════════════════════════════════════════════════════════════════════════════
-# Preview environment
-# INTEGRATION_MASTER_KEY remains a normal Worker secret until a real Cloudflare
-# Secrets Store and secret are provisioned. Do not add a secrets_store_secrets
-# binding that points at a nonexistent store; that blocks every deployment.
-
-# ══════════════════════════════════════════════════════════════════════════════
-# Preview environment — deploys to workers.dev (no zone route needed)
-# ══════════════════════════════════════════════════════════════════════════════
-
-[env.preview]
-workers_dev = true
-routes = [
-  { pattern = "api-preview.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "agent.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "mail.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "ops.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "trading.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "dashboard.goldshore.ai/*", zone_name = "goldshore.ai" },
-  { pattern = "dash.goldshore.ai/*", zone_name = "goldshore.ai" }
+# ── Durable Objects ──────────────────────────────────────────────────────────────
+[env.prod.durable_objects]
+bindings = [
+  { name = "AUTH_SESSION", class_name = "AuthSession" }
 ]
 
-[env.preview.vars]
-ENV = "preview"
-GOOGLE_OAUTH_CLIENT_ID = "1054833139648-gt5o3k9uqhltt08nne0sigh8l3vodji7.apps.googleusercontent.com"
-CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
-PUBLIC_SITE_URL = "https://preview.goldshore.ai"
-MAILCHANNELS_SENDER_NAME = "GoldShore"
+[[env.prod.migrations]]
+tag = "v1"
+new_sqlite_classes = ["AuthSession"]
 
-# ── Secrets ──────────────────────────────────────────────────────────────────
-# MAILCHANNELS_SENDER_EMAIL secret — see env.prod above for the command;
-# use --env preview --name gs-api instead.
-
-# GITHUB_API_TOKEN and ANTHROPIC_API_KEY secrets — see env.prod above;
-# use --env preview --name gs-api instead.
-
-# ── KV ────────────────────────────────────────────────────────────────────────────
-[[env.preview.kv_namespaces]]
-binding = "KV"
-id = "20d2c096b673433597d084a562993021"
-
-[[env.preview.kv_namespaces]]
-binding = "CONTROL_LOGS"
-id = "09e43cb8bd4749fdaaed0dc9d4ff2284"
-
-[[env.preview.kv_namespaces]]
-binding = "RISK_RADAR_CACHE"
-id = "a2315c0e83f27b610c3dfdd30eb0a9ea"
-
-# ── R2 ───────────────────────────────────────────────────────────────────────
-# RISK_RADAR_CACHE: same live "RR_CACHE" resource as env.prod — see the note
-# there. No dedicated preview KV exists for this yet.
-[[env.preview.kv_namespaces]]
-binding = "RISK_RADAR_CACHE"
-id = "0b56873b6d7b451f9279481920a15447"
-
-# TRADING_KV: dedicated preview namespace (also owned by the now route-free
-# apps/gs-trading Worker previously).
-[[env.preview.kv_namespaces]]
-binding = "TRADING_KV"
-id = "2c14b79b76e6453ab57c6dde6116a11d"
-
-# ── R2 ────────────────────────────────────────────────────────────────────────────
-[[env.preview.r2_buckets]]
-binding = "GS_ASSETS"
-bucket_name = "gs-assets-preview"
-
-[[env.preview.r2_buckets]]
-binding = "TELEMETRY"
-bucket_name = "gs-telemetry-storage"
-
-[[env.preview.r2_buckets]]
-binding = "RISK_RADAR_R2"
-bucket_name = "gs-risk-radar-raw-preview"
-
-# ── D1 ───────────────────────────────────────────────────────────────────────
-[[env.preview.d1_databases]]
-binding = "PLATFORM_DB"
-database_name = "gs_platform_db"
-database_id = "9703574e-adb7-481e-8d98-96f8ce5f8a90"
-
-[[env.preview.d1_databases]]
-binding = "AUDIT_DB"
-database_name = "gs_audit_db"
-database_id = "1ae71d76-188f-481b-91d9-db2d39013f68"
-
-[[env.preview.d1_databases]]
-binding = "SIGNALS_DB"
-database_name = "gs_signals_db"
-database_id = "76af4653-7f44-417b-b46e-250143d906fd"
-
-# RISK_RADAR_DB: same live "risk-radar-db" D1 as env.prod — see the note there.
-# No dedicated preview database exists for this yet.
-[[env.preview.d1_databases]]
-binding = "RISK_RADAR_DB"
-database_name = "risk-radar-db"
-database_id = "b0bf3b0e-a7d0-49ae-ac82-4f19450b2ce2"
-
-[[env.preview.d1_databases]]
-binding = "JOBS_DB"
-database_name = "gs_jobs_db"
-database_id = "750c469c-788d-49e8-9254-77231cffd70f"
-
-# PAPER_DB: preview shares the live paper-trading ledger until a dedicated
-# preview copy is provisioned. The trading routes already guard against a
-# missing binding, but the wrangler contract test expects this preview binding
-# to exist so version uploads keep matching the runtime contract.
-[[env.preview.d1_databases]]
-binding = "PAPER_DB"
-database_name = "goldshore-paper-trading"
-database_id = "af94f483-b98b-41c5-aa23-3fbed2764b52"
-
-# ── AI ───────────────────────────────────────────────────────────────────────
-[env.preview.ai]
-binding = "AI"
-
-# ── Queues ───────────────────────────────────────────────────────────────────
-[[env.preview.queues.producers]]
-binding = "JOBS_QUEUE"
-queue = "goldshore-jobs"
-
-[[env.preview.queues.producers]]
-binding = "EVENTS_QUEUE"
-queue = "gs-events"
-
-[[env.preview.queues.producers]]
-binding = "MAIL_JOBS_QUEUE"
-queue = "gs-mail-jobs"
-
-[[env.preview.queues.producers]]
-binding = "DEAD_LETTER_QUEUE"
-queue = "gs-mail-dead-letter"
-
-# ── Secrets Store ────────────────────────────────────────────────────────────
-# Secrets Store bindings are per secret, not a store object. The runtime reads
-# env.INTEGRATION_MASTER_KEY directly.
-
+# Preview deployments use Cloudflare Worker Versions generated from this
+# production manifest. They have no custom preview routes or event triggers;
+# request middleware rejects state-changing requests on workers.dev hosts.

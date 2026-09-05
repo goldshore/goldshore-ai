@@ -1,0 +1,73 @@
+---
+export const prerender = false;
+
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import EntriesManager from "../../../components/admin/EntriesManager";
+import { fetchAdminJson } from "../../../lib/api-proxy";
+
+const jwtToken = Astro.request.headers.get('CF-Access-JWT-Assertion') || '';
+const offset = parseInt(new URL(Astro.request.url).searchParams.get('offset') || '0');
+const limit = parseInt(new URL(Astro.request.url).searchParams.get('limit') || '25');
+
+let entries = { items: [], total: 0, offset, limit, error: null as string | null };
+
+try {
+  const params = new URLSearchParams({
+    offset: String(offset),
+    limit: String(limit),
+  });
+
+  const result = await fetchAdminJson<{ items: any[]; total: number }>(Astro.request, `/admin/entries?${params}`);
+
+  if (result.ok && result.data) {
+    entries = { ...entries, ...result.data };
+  } else if (result.status === 401 || result.status === 403) {
+    entries.error = 'Authentication required. Please ensure you are logged in with the correct credentials.';
+  } else {
+    entries.error = `Failed to load entries (${result.status}).`;
+  }
+} catch (error) {
+  entries.error = error instanceof Error ? error.message : 'Failed to load entries';
+}
+
+const contacts = entries.items?.filter((e: any) => e.type === 'contact') || [];
+const leads = entries.items?.filter((e: any) => e.type === 'lead') || [];
+---
+
+<AdminLayout title="Admin | Entries">
+  <div class="gs-page gs-stack">
+    <div class="gs-stack-sm">
+      <h1 class="gs-heading gs-text-accent">Entries Management</h1>
+      <p class="gs-text-subtle gs-text-lg">Manage contact form submissions and lead submissions.</p>
+    </div>
+
+    {entries.error && (
+      <div class="gs-alert gs-alert--error gs-text-sm">
+        {entries.error}
+      </div>
+    )}
+
+    <div class="gs-grid columns-3">
+      <div class="gs-card gs-stack-sm">
+        <h2>Total Entries</h2>
+        <p class="gs-text-info gs-heading">{entries.total}</p>
+        <p class="gs-text-subtle gs-text-sm">Contacts and leads combined</p>
+      </div>
+      <div class="gs-card gs-stack-sm">
+        <h2>Contact Submissions</h2>
+        <p class="gs-text-info gs-heading">{contacts.length}</p>
+        <p class="gs-text-subtle gs-text-sm">From contact forms</p>
+      </div>
+      <div class="gs-card gs-stack-sm">
+        <h2>Lead Submissions</h2>
+        <p class="gs-text-info gs-heading">{leads.length}</p>
+        <p class="gs-text-subtle gs-text-sm">From lead forms</p>
+      </div>
+    </div>
+
+    <div class="gs-card gs-stack-sm">
+      <h2>All Entries</h2>
+      <EntriesManager client:load jwtToken={jwtToken} initialEntries={entries.items} />
+    </div>
+  </div>
+</AdminLayout>

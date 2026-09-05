@@ -1,5 +1,6 @@
 ---
-import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { env as cloudflareEnv } from 'cloudflare:workers';
+import AdminLayout from "../../../layouts/AdminLayout.astro";
 import { authorizeAdminRequest, getAdminRouteRule } from '../../../utils/admin-access';
 
 export const prerender = false;
@@ -25,7 +26,7 @@ type Product = {
   updatedAt: string;
 };
 
-const env = Astro.locals.runtime?.env as Env | undefined;
+const env = cloudflareEnv as Env;
 const rule = getAdminRouteRule('/admin/products', 'GET');
 
 let authError: { status: number; message: string } | null = null;
@@ -74,9 +75,8 @@ const fmtPrice = (price: number, currency: string, interval: string) => {
 };
 ---
 
-<BaseLayout
+<AdminLayout
   title="Product Catalog | GoldShore Admin"
-  description="Manage product offerings, plans, and settings"
 >
   <section class="gs-section">
     <div class="gs-grid columns-2">
@@ -207,7 +207,7 @@ const fmtPrice = (price: number, currency: string, interval: string) => {
         btn.disabled = true;
         btn.textContent = 'Saving…';
         try {
-          const res = await fetch(`/api/admin/products?id=${encodeURIComponent(id)}`, {
+          const res = await fetch(`/api/admin/products/${encodeURIComponent(id)}`, {
             method: 'PUT',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({
@@ -231,7 +231,7 @@ const fmtPrice = (price: number, currency: string, interval: string) => {
       });
     });
   </script>
-</BaseLayout>
+</AdminLayout>
 
 <style>
   .gs-select {

@@ -1,10 +1,11 @@
 ---
+import { env as cloudflareEnv } from 'cloudflare:workers';
 export const prerender = false;
 
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import AdminLayout from "../../layouts/AdminLayout.astro";
 import { authorizeAdminRequest, getAdminAuthError, getAdminRouteRule } from '../../utils/admin-access';
 
-const env = Astro.locals.runtime?.env as Env | undefined;
+const env = cloudflareEnv as Env;
 const rule = getAdminRouteRule('/admin/deploy', 'GET');
 const apiBase = (env?.PUBLIC_API || 'https://api.goldshore.ai').replace(/\/$/, '');
 
@@ -17,7 +18,7 @@ if (!rule) {
 }
 ---
 
-<BaseLayout title="Deploy Assistant | GoldShore Admin" description="Search Cloudflare-native templates, stream ranked recommendations, and stage dry-run deployments.">
+<AdminLayout title="Deploy Assistant | GoldShore Admin">
   <section class="gs-section deploy-assistant" data-api-base={apiBase}>
     <div class="gs-grid columns-2">
       <div>
@@ -57,12 +58,12 @@ if (!rule) {
               <button class="gs-button" id="assistant-search" type="button">Search GitHub</button>
               <button class="gs-button gs-button--secondary" id="assistant-stream" type="button">Stream ranking</button>
             </div>
-            <p id="assistant-summary" class="gs-text-sm gs-text-dim">Run a search to generate recommendations.</p>
+            <p id="assistant-summary" class="gs-text-sm gs-text-subtle">Run a search to generate recommendations.</p>
           </div>
 
           <div class="gs-card assistant-panel">
             <h2 class="section-title"><span>◆</span>Selected template</h2>
-            <div id="assistant-selected" class="assistant-selected gs-text-dim">No template selected.</div>
+            <div id="assistant-selected" class="assistant-selected gs-text-subtle">No template selected.</div>
             <div class="assistant-dry-run">
               <label class="gs-input-group">
                 <span>Workspace</span>
@@ -110,9 +111,7 @@ if (!rule) {
   </section>
 
   <script is:inline>
-    const page = document.querySelector('.deploy-assistant');
-    const apiBase = page?.dataset.apiBase || 'https://api.goldshore.ai';
-    const endpoint = (path) => `${apiBase}${path}`;
+    const endpoint = (path) => `/api/admin/deployments${path.replace(/^\/deployments/, '')}`;
 
     const state = {
       recommendations: [],
@@ -155,7 +154,7 @@ if (!rule) {
       if (!target) return;
 
       if (!items.length) {
-        target.innerHTML = '<p class="gs-text-dim">No recommendations found.</p>';
+        target.innerHTML = '<p class="gs-text-subtle">No recommendations found.</p>';
         return;
       }
 
@@ -343,7 +342,7 @@ if (!rule) {
 
     loadRecommendations().catch((error) => setText('assistant-summary', error.message || 'Initial search failed'));
   </script>
-</BaseLayout>
+</AdminLayout>
 
 <style>
   .deploy-flow {

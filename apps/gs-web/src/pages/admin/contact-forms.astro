@@ -1,0 +1,76 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+
+export const prerender = false;
+if (!Astro.locals.adminSession?.isAuthenticated) return Astro.redirect('/login');
+---
+
+<AdminLayout title="Contact Forms | GoldShore" requiredPermission="forms:read">
+  <section class="gs-section">
+    <div class="gs-grid columns-2">
+      <div>
+        <h1>Contact forms</h1>
+        <p class="gs-text-lg">Configure fields, delivery recipients, status, and integrations. Submitted entries remain available in the lead inbox.</p>
+      </div>
+      <div class="gs-card">
+        <h2 class="section-title"><span>◆</span>Submission inbox</h2>
+        <p id="submission-count">Loading entry count…</p>
+        <a class="gs-button" href="/admin/lead-submissions">Review entries</a>
+      </div>
+    </div>
+
+    <div class="gs-grid columns-2" style="margin-top: 2rem; align-items: start;">
+      <div class="gs-card">
+        <h2>Form configurations</h2>
+        <div id="forms-list" style="display: grid; gap: .75rem;"></div>
+        <button id="new-form" class="gs-button" type="button" style="margin-top: 1rem;">New form</button>
+      </div>
+      <form id="form-editor" class="gs-card">
+        <h2 id="editor-title">New form</h2>
+        <div class="gs-input-group"><label for="slug">Slug</label><input id="slug" name="slug" required pattern="[a-z0-9-]+" placeholder="contact" /></div>
+        <div class="gs-input-group"><label for="name">Name</label><input id="name" name="name" required placeholder="General contact" /></div>
+        <div class="gs-input-group"><label for="status">Status</label><select id="status" name="status"><option value="active">Active</option><option value="disabled">Disabled</option></select></div>
+        <div class="gs-input-group"><label for="recipients">Recipient emails</label><textarea id="recipients" name="recipients" rows="3" placeholder="hello@goldshore.ai, sales@goldshore.ai"></textarea></div>
+        <div class="gs-input-group"><label for="fields">Fields (one per line)</label><textarea id="fields" name="fields" rows="6" placeholder="name\nemail\nmessage"></textarea></div>
+        <div class="gs-input-group"><label for="integrations">Integration IDs (one per line)</label><textarea id="integrations" name="integrations" rows="3" placeholder="crm-primary"></textarea></div>
+        <p id="form-status" role="status"></p>
+        <button class="gs-button" type="submit">Save configuration</button>
+      </form>
+    </div>
+  </section>
+</AdminLayout>
+
+<script>
+  type Config = { slug: string; name: string; status: string; fields: Array<{ name?: string }>; recipients: Array<{ email?: string }>; integrations: Array<{ id?: string }> };
+  let configs: Config[] = [];
+  let selectedSlug = '';
+  const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  const lines = (value: string) => value.split(/[,\n]/).map((item) => item.trim()).filter(Boolean);
+  const render = () => {
+    el('forms-list').innerHTML = configs.length ? configs.map((config) => `<button type="button" class="gs-button" data-slug="${config.slug}" style="text-align:left"><strong>${config.name}</strong><br><small>${config.slug} · ${config.status}</small></button>`).join('') : '<p>No configurations yet.</p>';
+    document.querySelectorAll<HTMLElement>('[data-slug]').forEach((button) => button.addEventListener('click', () => select(button.dataset.slug ?? '')));
+  };
+  const select = (slug: string) => {
+    const config = configs.find((item) => item.slug === slug); if (!config) return;
+    selectedSlug = slug; el<HTMLInputElement>('slug').value = config.slug; el<HTMLInputElement>('slug').readOnly = true;
+    el<HTMLInputElement>('name').value = config.name; el<HTMLSelectElement>('status').value = config.status;
+    el<HTMLTextAreaElement>('recipients').value = config.recipients.map((item) => item.email ?? '').filter(Boolean).join('\n');
+    el<HTMLTextAreaElement>('fields').value = config.fields.map((item) => item.name ?? '').filter(Boolean).join('\n');
+    el<HTMLTextAreaElement>('integrations').value = config.integrations.map((item) => item.id ?? '').filter(Boolean).join('\n');
+    el('editor-title').textContent = `Edit ${config.name}`;
+  };
+  const reset = () => { selectedSlug = ''; el<HTMLFormElement>('form-editor').reset(); el<HTMLInputElement>('slug').readOnly = false; el('editor-title').textContent = 'New form'; };
+  const load = async () => {
+    const [formsResponse, entriesResponse] = await Promise.all([fetch('/api/forms'), fetch('/api/leads/list?page=1&pageSize=10')]);
+    if (formsResponse.ok) { configs = (await formsResponse.json()).configs ?? []; render(); }
+    if (entriesResponse.ok) { const payload = await entriesResponse.json(); el('submission-count').textContent = `${payload.pagination?.total ?? payload.length ?? 0} stored entries`; }
+  };
+  el('new-form').addEventListener('click', reset);
+  el<HTMLFormElement>('form-editor').addEventListener('submit', async (event) => {
+    event.preventDefault(); const status = el('form-status'); status.textContent = 'Saving…';
+    const payload = { slug: el<HTMLInputElement>('slug').value, name: el<HTMLInputElement>('name').value, status: el<HTMLSelectElement>('status').value, recipients: lines(el<HTMLTextAreaElement>('recipients').value).map((email) => ({ email })), fields: lines(el<HTMLTextAreaElement>('fields').value).map((name) => ({ name, type: name === 'email' ? 'email' : 'text', required: name === 'email' })), integrations: lines(el<HTMLTextAreaElement>('integrations').value).map((id) => ({ id })) };
+    const response = await fetch(selectedSlug ? `/api/forms/${encodeURIComponent(selectedSlug)}` : '/api/forms', { method: selectedSlug ? 'PUT' : 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) });
+    status.textContent = response.ok ? 'Saved.' : await response.text(); if (response.ok) { reset(); await load(); }
+  });
+  load().catch(() => { el('submission-count').textContent = 'Could not load entries.'; });
+</script>

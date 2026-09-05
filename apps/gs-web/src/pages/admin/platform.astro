@@ -1,0 +1,128 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import AdminDataSurface from '../../components/admin/AdminDataSurface.astro';
+import AdminListingTable from '../../components/admin/AdminListingTable.astro';
+
+export const prerender = false;
+
+const serviceInventory = [
+  { label: 'Public interface', value: 'gs-web', description: 'Marketing site and protected admin routes', status: 'success' },
+  { label: 'Unified backend', value: 'gs-api', description: 'API, MCP, mail, queues, scheduled work and integrations', status: 'success' },
+  { label: 'Platform data', value: 'D1 + KV + R2', description: 'Application state, configuration, audit data and assets', status: 'info' },
+  { label: 'Operator access', value: 'Cloudflare Access', description: 'Identity verification and role-based permissions', status: 'success' },
+] as const;
+
+const controlRows = [
+  { title: 'Workers', href: '/admin/workers', type: 'Compute', status: 'success', updated: 'Live inventory' },
+  { title: 'Bindings', href: '/admin/workers?tab=bindings', type: 'Runtime', status: 'info', updated: 'From Wrangler / API' },
+  { title: 'Routes & DNS', href: '/admin/system?tab=dns', type: 'Network', status: 'warning', updated: 'API integration pending' },
+  { title: 'Pages', href: '/admin/system?tab=pages', type: 'Deployments', status: 'warning', updated: 'API integration pending' },
+  { title: 'Workflows', href: '/admin/workflows', type: 'Automation', status: 'success', updated: 'gs-api' },
+  { title: 'Repo Health', href: '/admin/repo-health', type: 'Governance', status: 'success', updated: 'GitHub' },
+] as const;
+---
+
+<AdminLayout title="Control Plane | GoldShore Admin" requiredPermission="system:read">
+  <div class="gs-control-page">
+    <header class="gs-control-header">
+      <div>
+        <h1 class="gs-control-title">Control Plane</h1>
+        <p class="gs-control-subtitle">One operational surface for runtime health, deployments, routes, bindings, workflows and repository state.</p>
+      </div>
+      <div class="gs-toolbar">
+        <span class="gs-status" data-status="success">Protected workspace</span>
+        <a class="gs-icon-btn" href="/admin/system" aria-label="Open system settings" title="System settings">⚙</a>
+      </div>
+    </header>
+
+    <section class="gs-module-grid" aria-label="Control plane modules">
+      {serviceInventory.map((service) => (
+        <article class="gs-module gs-span-3" data-draggable="true" data-resizable="true">
+          <header class="gs-module-header"><h2>{service.label}</h2><span class="gs-status" data-status={service.status}>{service.status}</span></header>
+          <div class="gs-module-body">
+            <strong class="metric">{service.value}</strong>
+            <p>{service.description}</p>
+          </div>
+        </article>
+      ))}
+
+      <AdminDataSurface
+        title="Platform inventory"
+        description="Filterable control surfaces for Cloudflare, GitHub and Gold Shore runtime operations."
+        tabs={[
+          { id: 'all', label: 'All' },
+          { id: 'compute', label: 'Compute' },
+          { id: 'data', label: 'Data' },
+          { id: 'automation', label: 'Automation' },
+          { id: 'governance', label: 'Governance' },
+        ]}
+      >
+        <div slot="actions" class="gs-row-actions">
+          <a class="gs-icon-btn" href="/admin/projects" title="Add project" aria-label="Add project">＋</a>
+          <button class="gs-icon-btn" type="button" title="Refresh" aria-label="Refresh">↻</button>
+        </div>
+        <div slot="filters">
+          <input class="gs-input" type="search" placeholder="Search platform…" aria-label="Search platform inventory" />
+          <select class="gs-select" aria-label="Filter status"><option>All statuses</option><option>Healthy</option><option>Warning</option><option>Error</option></select>
+          <select class="gs-select" aria-label="Filter source"><option>All sources</option><option>Cloudflare</option><option>GitHub</option><option>Gold Shore</option></select>
+        </div>
+
+        <AdminListingTable headers={['Title','Type','Status','Source / Updated','Actions']} label="Platform inventory">
+          {controlRows.map((row) => (
+            <tr draggable="true">
+              <td><input type="checkbox" data-row-select aria-label={`Select ${row.title}`} /></td>
+              <td><div class="gs-row-title"><span class="surface-icon" aria-hidden="true">◆</span><a href={row.href}>{row.title}</a></div></td>
+              <td>{row.type}</td>
+              <td><span class="gs-status" data-status={row.status}>{row.status}</span></td>
+              <td>{row.updated}</td>
+              <td>
+                <div class="gs-row-actions">
+                  <a class="gs-icon-btn" href={row.href} aria-label={`View ${row.title}`} title="View">↗</a>
+                  <a class="gs-icon-btn" href={row.href} aria-label={`Edit ${row.title}`} title="Edit">✎</a>
+                  <button class="gs-icon-btn" type="button" aria-label={`More actions for ${row.title}`} title="More">⋮</button>
+                  <span class="drag-handle" title="Drag row" aria-hidden="true">⠿</span>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </AdminListingTable>
+      </AdminDataSurface>
+
+      <article class="gs-module gs-span-8" data-draggable="true" data-resizable="true">
+        <header class="gs-module-header"><h2>Deployment posture</h2><span class="gs-status" data-status="info">Review gated</span></header>
+        <div class="gs-module-body posture-grid">
+          <div><span class="label">Production changes</span><strong>Protected workflow</strong><p>Bindings, routes, migrations and DNS remain review gated.</p></div>
+          <div><span class="label">Preferred transport</span><strong>gs-web → gs-api</strong><p>Internal service bindings should be preferred over browser-to-public-API fetches.</p></div>
+          <div><span class="label">Deploy telemetry</span><strong>Build notifications</strong><p>Target for the next phase: Worker build events and health checks in one timeline.</p></div>
+        </div>
+      </article>
+
+      <article class="gs-module gs-span-4" data-draggable="true" data-resizable="true">
+        <header class="gs-module-header"><h2>Operator guidance</h2><span class="gs-status" data-status="success">Ready</span></header>
+        <div class="gs-module-body operator-list">
+          <a href="/admin/system">System & Infra <span>→</span></a>
+          <a href="/admin/workers">Workers & Bindings <span>→</span></a>
+          <a href="/admin/repo-health">Repository Health <span>→</span></a>
+          <a href="/admin/workflows">API Workflows <span>→</span></a>
+        </div>
+      </article>
+    </section>
+  </div>
+</AdminLayout>
+
+<style>
+  .metric { display:block; font-size:1.3rem; margin-bottom:.45rem; }
+  .gs-module-body p { margin:.2rem 0 0; color:#68717b; line-height:1.45; font-size:.8rem; }
+  .surface-icon { display:grid; place-items:center; width:20px; height:20px; border-radius:5px; background:#11161d; color:#fff; font-size:.55rem; box-shadow:0 0 0 1px rgba(255,255,255,.35) inset; }
+  .gs-row-title a { color:#11161d; font-weight:650; text-decoration:none; }
+  .gs-row-title a:hover { text-decoration:underline; }
+  .drag-handle { color:#7c858d; cursor:grab; user-select:none; padding:4px; }
+  .posture-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+  .posture-grid > div { padding:12px; border:1px solid #dfe2df; border-radius:6px; background:#fbfbf8; }
+  .posture-grid .label { display:block; color:#737c84; font-size:.67rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:.35rem; }
+  .posture-grid strong { font-size:.9rem; }
+  .operator-list { display:grid; gap:2px; padding:8px; }
+  .operator-list a { display:flex; justify-content:space-between; gap:8px; padding:10px; border-radius:5px; color:#151a20; text-decoration:none; font-size:.8rem; }
+  .operator-list a:hover { background:#e9f2f6; }
+  @media (max-width:900px) { .posture-grid { grid-template-columns:1fr; } }
+</style>

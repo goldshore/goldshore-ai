@@ -1,6 +1,6 @@
 # CLAUDE.md — goldshore-ai
 
-> Updated: 2026-07-03 · Active branch: `claude/risk-radar-fra-epo-2wk5mk`
+> Updated: 2026-09-01 · Canonical source is `main`; recovery branches must rebase/merge latest `origin/main` before handoff.
 
 ## Platform overview
 
@@ -62,6 +62,24 @@ pnpm 9 + Turborepo. This repository intentionally exposes only the two canonical
 | `apps/gs-web` | `gs-web` | `goldshore.ai/*` | ✅ Canonical Astro frontend |
 | `apps/gs-api` | `gs-api` | `api.goldshore.ai/*` | ✅ Canonical unified API Worker |
 
+> **These Workers were renamed, and `[env.prod]` must keep pinning `name`.**
+> The production Workers used to be `gs-web-prod` and `gs-api-prod`; both were
+> renamed in the dashboard, keeping their script ids (`7510e007…` and
+> `a5322bde…` respectively — ids survive a rename, which is how this is
+> verifiable). Wrangler derives the Worker name for a named environment as
+> `<top-level name>-<env>`, so **without the explicit `name =` line in
+> `[env.prod]`, `wrangler deploy --env prod` would recreate `gs-web-prod` /
+> `gs-api-prod` and move the routes onto the new Worker, orphaning the live
+> one.** Do not remove those pins. Note the side effect in `gs-api`: the
+> top-level and `env.prod` configs now resolve to the same Worker, and the top
+> level declares no bindings — a bare `wrangler deploy` without `--env prod`
+> would replace live `gs-api` with a bindingless build. Every deploy path in
+> this repo passes `--env prod`; keep it that way.
+>
+> Older names still appear in `infra/INFRASTRUCTURE.md` and some `reports/`
+> and `docs/` files, which have not been reconciled. `infra/Cloudflare/BINDINGS_MAP.md`
+> carries the live inventory, verified 2026-09-01.
+
 If a task appears to require a separate admin, gateway, MCP, cron, mail, signals, or agent worker, implement it as a sub-route, handler, queue consumer, or scheduled flow inside `apps/gs-api`, or as a page/sub-route inside `apps/gs-web`.
 
 ### Shared packages
@@ -107,13 +125,24 @@ For Claude/Codex assistance with Google API integration: provide the API name, s
 
 ---
 
-## Standalone repos still running production code
+## Standalone repos and consolidation status
 
-| Repo | Deploys | Notes |
-|------|---------|-------|
-| `marzton/goldshore-gateway` | `gs-platform` worker | Platform front door; routes all subdomain traffic |
-| `marzton/goldshore-admin` | `admin.goldshore.org` (Pages) | Older admin; any replacement UI belongs under `apps/gs-web` sub-routes |
-| `marzton/goldshore-core` | `banproof-me` worker | Security/ban-check; future integration must route through `apps/gs-api` queues/routes (or stay external) and must not create `apps/gs-security`. |
+**Phase 1-3 Cleanup Complete (2026-08-22)**:
+- ✅ Deleted 7 legacy apps from goldshore-ai (armsway-com, goldclaw, gs-agent, gs-control, gs-core-worker, gs-mail, gs-platform, gs-trading, gs-www-redirect)
+- ✅ Removed auto-generated files (worker-configuration.d.ts, README-v2.md)
+- ✅ Full build verification passed; zero dangling references
+
+**Consolidation Audit Complete** (see `docs/CONSOLIDATION_AUDIT_2026_08.md`):
+
+| Repo | Status | Timeline | Notes |
+|------|--------|----------|-------|
+| `marzton/goldshore-ops` | 🔴 Archive immediately | 1 hour | KV template stub, never built, no dependencies |
+| `marzton/goldshore-web` | 🔴 Archive immediately | 1 hour | Deprecated Astro site, not in production |
+| `marzton/goldshore-labs` | 🟡 Audit then archive | 30 min audit | Purpose unclear; check CI/deployment refs first |
+| `marzton/goldshore-admin` | 🟠 Consolidate → gs-web | 3-4 days | Customer/subscription pages missing from gs-web; in progress |
+| `marzton/goldshore-gateway` | 🔒 ARCHIVED (2026-08-22) | Completed | Redundant proxy layer; all middleware already in gs-api |
+| `marzton/goldshore-api` | ✅ Keep separate | N/A | Market data provider API (different purpose from gs-api) |
+| `marzton/goldshore-core` | 🔒 ARCHIVED (2026-08-22) | Completed | Legacy code archived; banproof-me continues as independent product on banproof.me domain |
 
 ---
 
@@ -126,19 +155,62 @@ For Claude/Codex assistance with Google API integration: provide the API name, s
 - D1: `PLATFORM_DB` (`9703574e-adb7-481e-8d98-96f8ce5f8a90`), `AUDIT_DB` (`1ae71d76-188f-481b-91d9-db2d39013f68`), `SIGNALS_DB` (`76af4653-7f44-417b-b46e-250143d906fd`), `RISK_RADAR_DB`, and `JOBS_DB` (`750c469c-788d-49e8-9254-77231cffd70f`). Legacy historical aliases only: `DB` and `GS_AUDIT_DB`.
 - R2: `GS_ASSETS` (`gs-assets` in `prod`; `gs-assets-preview` in `preview`), `TELEMETRY` (`gs-telemetry-storage`), and `RISK_RADAR_R2`.
 - AI and Durable Objects: `AI`; `AUTH_SESSION` (`AuthSession`).
+- AI Search: `AI_SEARCH` instance `royal-wind-4649`; `SEARCH` namespace `default`.
 - Queues: `JOBS_QUEUE` (`goldshore-jobs`), `EVENTS_QUEUE` (`gs-events`), `MAIL_JOBS_QUEUE` (`gs-mail-jobs`), `DEAD_LETTER_QUEUE` (`gs-mail-dead-letter`). `gs-api` also consumes the consolidated backend queues in `prod`.
 - Workflows: `GS_SIGNALS` → `signals-evaluator`.
+- Editorial workflow: `EDITORIAL_PRODUCTION` → `editorial-production` (source-managed; deploy to reconcile live state).
 - Secrets Store: `INTEGRATION_MASTER_KEY` is bound as a per-secret Secrets Store binding from store `b9824d3280c54573a24137c7e7143b33`. Do not use the historical `SECRETS.get(...)` store-object shape in Wrangler config.
 - Unclear/live Cloudflare note: if the dashboard still shows legacy service bindings such as `AGENT`, `GS_MAIL`, `GS_WEB PROD`, `API_SERVICE`, or `GOLDSHORE_AI`, treat them as stale until a human confirms a live dependency; do not re-add them to repo-managed `gs-api` config without updating this file and `docs/WORKER_CONFIGURATION.md`.
 
+> **`KV` means a different namespace in each app.** In `gs-api` the `KV` binding
+> resolves to `GS_API_KV` (`e0b8b807…`); in `gs-web` it resolves to
+> `GOLDSHORE-AI` (`5f133705…`). The binding name is identical, the store is not.
+> Any key that both apps need — `PRODUCT_CATALOG` is the one that got this wrong —
+> must have exactly one owning app, with the other reaching it over HTTP. Reading
+> or writing the same key from `env.KV` in both apps forks it into two stores that
+> diverge silently, with no error at build or deploy time.
+
 ---
 
-## Active branch: `claude/risk-radar-fra-epo-2wk5mk`
+## Historical initiatives
 
-What's on this branch:
-- `apps/gs-web/src/pages/index.astro` — nav links → real page routes, access modal (`<dialog>`), hamburger nav toggle, contact form fix
-- `apps/gs-web/src/styles/home-theme.css` — mobile nav, modal, honeypot CSS
-- `.github/workflows/manage-cf-tokens.yml` — dual Cloudflare auth (Bearer token + Global API Key), verify step
+The consolidation and archival notes below are historical context. Verify current
+state from `origin/main`, Wrangler manifests, and Cloudflare before acting.
+
+### Initiative: Monorepo Consolidation & Cleanup
+
+**Completed (2026-08-22)**:
+- ✅ **Phase 1-3 Cleanup**: Removed 7 legacy apps, auto-generated files, updated .gitignore
+- ✅ **Phase 3 Verification**: Full build pass, zero dangling references, CI/CD clean
+- ✅ **Phase 3 Consolidation**: Correlation ID middleware added to gs-api; gateway consolidation verified
+- ✅ **Phase 4 Analysis & Decision**: goldshore-core archival decision made; banproof-me independence confirmed
+- ✅ PR #6904 (Phase 1-3): Merged to main
+- ✅ PR #6905 (Phase 4 Decision): Merged to main
+
+**Completed (2026-08-22)**:
+- ✅ **Phase 4a Execution** — Archive goldshore-core repository (merged via PR #6908)
+  1. ✅ Updated goldshore-core README with archival notice
+  2. ✅ Updated goldshore-ai documentation (CLAUDE.md, BINDINGS_MAP.md)
+  3. ⏳ Verify Cloudflare configuration (requires dashboard access)
+  4. ⏳ Team communication and knowledge base updates
+
+**Historical status**:
+- 🟠 **Phase 4b Execution** — Archive goldshore-gateway repository
+  1. ✅ Audit identified gateway as redundant proxy (all middleware in gs-api)
+  2. ✅ Update goldshore-gateway README with archival notice
+  3. ✅ Create `docs/GATEWAY_CONSOLIDATION_2026_08.md` with consolidation analysis
+  4. ⏳ Archive repository in GitHub (requires manual dashboard action)
+  5. ⏳ Team notification
+
+**Consolidation Timeline**:
+- ✅ Phase 1-3: Consolidated (all merged to main)
+- 🟠 Phase 4: Archival execution in progress
+- ⏭️ Phase 5: Documentation & team communication
+
+**Documentation**:
+- `docs/CONSOLIDATION_AUDIT_2026_08.md` — Complete audit with timeline and risk assessment
+- `docs/STANDALONE_REPO_CONSOLIDATION_PLAN.md` — Strategic consolidation plan
+- `docs/CLEANUP_LOG_2026_08.md` — Phase 1-3 cleanup audit trail
 
 ---
 
@@ -147,7 +219,17 @@ What's on this branch:
 - GitHub Actions: Lighthouse CI threshold `LH_MIN_PERFORMANCE: 0.60`
 - GitHub Actions deploy token: `CLOUDFLARE_GOLDSHORE_AI_DEPLOY_TOKEN`
 - Cloudflare Worker Builds token: `CLOUDFLARE_BUILD_API_TOKEN` (managed separately)
-- Workers deploy per-app via `wrangler deploy`
+- Workers deploy only through `.github/workflows/deploy-gs-web.yml` and `.github/workflows/deploy-gs-api.yml`, behind the GitHub `production` environment approval gate. Local Wrangler use is dry-run validation only.
+
+### Required production verification sequence
+
+1. Pull/fetch `origin/main`; preserve unrelated dirty worktree files.
+2. Run the app type check and tests.
+3. Run `wrangler deploy --env prod --dry-run` and inspect the binding list.
+4. Compare live script settings against the manifest; secrets are names-only checks.
+5. Verify routes, Access/IdP policy, and authenticated health/MCP initialize separately.
+6. Apply D1 migrations through the protected deployment workflow, then verify schema and rollback/restore evidence.
+7. Deploy only through the approved GitHub environment; record commit SHA, version, and endpoint checks.
 
 ---
 
@@ -163,16 +245,33 @@ pnpm turbo run build --filter=gs-web
 
 ---
 
-## Repo migration plan
+## Historical roadmap
 
-| Priority | Repo | Action |
-|----------|------|--------|
-| 1 | `goldshore-ops` | Archive — KV template stub, never built |
-| 2 | `goldshore-web` | Already deprecated — remove from CI |
-| 3 | `goldshore-core` | Route `banproof-me` security logic into `apps/gs-api` queues/routes (or keep it external); do **not** create `apps/gs-security` or any other new Worker under `apps/`; archive standalone |
-| 4 | `goldshore-api` | Confirm `goldshore/apps/goldshore-api` at parity → archive standalone |
-| 5 | `goldshore-admin` | Move replacement admin UX into `apps/gs-web` sub-routes, then archive standalone |
-| 6 | `goldshore-gateway` | Route gateway responsibilities through `apps/gs-api`, then archive standalone |
+**Immediate Archival (No Code Migration)**:
+1. `goldshore-ops` — KV template stub, never built, no dependencies
+2. `goldshore-web` — Deprecated Astro site, functionality in gs-web
+3. `goldshore-labs` — Audit first; archive if unused
+
+**In-Progress Consolidation**:
+4. `goldshore-admin` → `apps/gs-web` sub-routes
+   - Missing: Customer management (`/admin/customers/*`), subscription management (`/admin/subscriptions/*`)
+   - In progress: Cherry-picked features via PRs #6896-6900
+   - Timeline: 3-4 days to complete UI migration
+
+5. `goldshore-gateway` → `apps/gs-api`
+   - Consolidate: CORS middleware, CF Access validation, health checks, correlation ID tracking
+   - Then: Update CF routing to point directly to gs-api
+   - Timeline: 2-3 days for middleware integration + testing
+
+**Requires Architecture Decision**:
+6. `goldshore-core` (banproof-me security service)
+   - Option A: Consolidate into gs-api (security-critical code, requires extensive testing)
+   - Option B: Keep external (isolated, can scale independently)
+   - Decision needed from ops/security team based on performance and isolation requirements
+
+**Keep Separate (Different Purpose)**:
+- `goldshore-api` — Market data provider API (brokers, market data, backtests) — NOT a duplicate of gs-api
+- `marzton/goldshore` — Sister monorepo for `.org` domain (data intelligence, research arm)
 
 ---
 

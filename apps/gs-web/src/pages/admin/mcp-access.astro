@@ -1,0 +1,54 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+if (!Astro.locals.adminSession?.isAuthenticated) return Astro.redirect('/login');
+---
+
+<AdminLayout title="GoldShore MCP Assistant" requiredPermission="system:read">
+  <header class="hero">
+    <div><p class="eyebrow">Operator intelligence</p><h1>GoldShore MCP Assistant</h1><p>Reference infrastructure and get grounded help with integrations, email, ads, and tool setup.</p></div>
+    <div class="endpoint"><span>Streamable HTTP</span><code>https://mcp.goldshore.ai/mcp</code></div>
+  </header>
+  <main class="workspace">
+    <section class="areas" id="areas"><p class="muted">Loading assistant catalog…</p></section>
+    <section class="search-panel">
+      <form id="assistant-form">
+        <label for="assistant-query">Ask about GoldShore operations</label>
+        <div class="query-row"><textarea id="assistant-query" maxlength="500" rows="3" placeholder="Which bindings and secrets are required for the email pipeline?"></textarea><button type="submit">Search knowledge</button></div>
+      </form>
+      <p class="status" id="assistant-status">Answers are retrieved from the configured Cloudflare AI Search index.</p>
+      <div id="assistant-results" class="results" aria-live="polite"></div>
+    </section>
+    <section class="guardrails"><h2>Operating guardrails</h2><ul><li>Read and search tools are available through MCP; mutations remain separate and permission-gated.</li><li>Secrets stay in Cloudflare or provider secret stores and are never returned in results.</li><li>Repository manifests define intended configuration; verify live Cloudflare state before production changes.</li></ul></section>
+  </main>
+</AdminLayout>
+
+<script>
+  const areas = document.querySelector<HTMLElement>('#areas');
+  const form = document.querySelector<HTMLFormElement>('#assistant-form');
+  const query = document.querySelector<HTMLTextAreaElement>('#assistant-query');
+  const status = document.querySelector<HTMLElement>('#assistant-status');
+  const results = document.querySelector<HTMLElement>('#assistant-results');
+  const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[char]!);
+  fetch('/api/admin/mcp-assistant/catalog', { credentials: 'same-origin' }).then((response) => {
+    if (!response.ok) throw new Error(`Catalog unavailable (${response.status})`);
+    return response.json();
+  }).then((catalog) => {
+    if (!areas) return;
+    areas.innerHTML = catalog.areas.map((area: any) => `<article><h2>${escapeHtml(area.title)}</h2><p>${escapeHtml(area.description)}</p><div>${area.prompts.map((prompt: string) => `<button type="button" class="prompt" data-prompt="${escapeHtml(prompt)}">${escapeHtml(prompt)}</button>`).join('')}</div></article>`).join('');
+    areas.querySelectorAll<HTMLButtonElement>('.prompt').forEach((button) => button.addEventListener('click', () => { if (query) { query.value = button.dataset.prompt || ''; query.focus(); } }));
+  }).catch((error) => { if (areas) areas.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`; });
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault(); const value = query?.value.trim(); if (!value || !status || !results) return;
+    status.textContent = 'Searching indexed GoldShore knowledge…'; results.innerHTML = '';
+    try {
+      const response = await fetch('/api/admin/mcp-assistant/search', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body:JSON.stringify({query:value}) });
+      const payload = await response.json(); if (!response.ok) throw new Error(payload.error || `Search failed (${response.status})`);
+      status.textContent = payload.indexed ? `${payload.results.length} grounded result${payload.results.length === 1 ? '' : 's'}.` : 'No indexed result yet. The Cloudflare AI Search source may still be indexing.';
+      results.innerHTML = payload.results.map((item: any) => `<article><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.text)}</p><small>Relevance ${Number(item.score).toFixed(3)}${item.source ? ` · ${escapeHtml(item.source)}` : ''}</small></article>`).join('');
+    } catch (error) { status.textContent = error instanceof Error ? error.message : 'Search failed.'; }
+  });
+</script>
+
+<style>
+  .hero,.workspace{padding:24px}.hero{display:flex;justify-content:space-between;gap:24px;border-bottom:1px solid rgba(226,232,240,.12)}.hero h1{margin:4px 0 8px}.eyebrow{color:#f5b942;text-transform:uppercase;letter-spacing:.12em;font-size:12px}.endpoint{align-self:center;padding:16px;border:1px solid rgba(245,185,66,.28);border-radius:12px;background:rgba(245,185,66,.06)}.endpoint span{display:block;font-size:12px;color:#f5b942;margin-bottom:6px}.areas{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.areas article,.search-panel,.guardrails,.results article{padding:18px;border:1px solid rgba(226,232,240,.12);border-radius:12px;background:rgba(15,23,42,.55)}.areas h2,.results h3{margin:0 0 8px}.prompt{display:block;width:100%;margin-top:8px;padding:9px;text-align:left;color:#e2e8f0;background:rgba(148,163,184,.08);border:1px solid rgba(148,163,184,.15);border-radius:8px;cursor:pointer}.search-panel,.guardrails{margin-top:18px}label{display:block;font-weight:700;margin-bottom:10px}.query-row{display:flex;gap:10px}textarea{flex:1;padding:12px;color:#fff;background:#08111f;border:1px solid rgba(148,163,184,.28);border-radius:8px;resize:vertical}button[type=submit]{padding:0 18px;border:0;border-radius:8px;background:#f5b942;color:#111827;font-weight:800}.status,.muted{color:#94a3b8}.results{display:grid;gap:10px}.results p{white-space:pre-wrap}.error{color:#fca5a5}@media(max-width:720px){.hero,.query-row{flex-direction:column}.endpoint code{overflow-wrap:anywhere}button[type=submit]{padding:12px}}
+</style>

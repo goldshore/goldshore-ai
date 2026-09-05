@@ -53,6 +53,10 @@ const stripQuotes = (value) => value.trim().replace(/^["']|["']$/g, '');
 function parseWranglerToml(text, filePath) {
   const workerNameMatch = text.match(/^\s*name\s*=\s*["']([^"']+)["']/m);
   const workerName = workerNameMatch ? workerNameMatch[1] : path.basename(path.dirname(filePath));
+  const environments = [...text.matchAll(/^\s*\[env\.([A-Za-z0-9_-]+)\]\s*$/gm)].map((match) => match[1]);
+  // Wrangler deploys named environments as `<name>-<environment>`. A manifest
+  // with environments is never meant to validate an unsuffixed legacy Worker.
+  const workerNames = environments.length > 0 ? environments.map((environment) => `${workerName}-${environment}`) : [workerName];
 
   const kvIds = [...text.matchAll(/^\s*id\s*=\s*["']([a-f0-9]{32})["']\s*$/gim)].map((m) => m[1]);
   const d1Ids = [...text.matchAll(/^\s*database_id\s*=\s*["']([a-f0-9-]{10,})["']\s*$/gim)].map((m) => m[1]);
@@ -67,7 +71,7 @@ function parseWranglerToml(text, filePath) {
     ? /(?:^\[\[env\.production\.(?:d1_databases|kv_namespaces|r2_buckets|queues\.(?:producers|consumers))\]\]|\n\[\[env\.production\.)/m.test(text)
     : false;
 
-  return { filePath, workerName, kvIds, d1Ids, bucketNames, queueNames, accessAuds, envProductionWarning };
+  return { filePath, workerNames, kvIds, d1Ids, bucketNames, queueNames, accessAuds, envProductionWarning };
 }
 
 async function cfGet(pathname) {
@@ -112,7 +116,7 @@ const knownSharedKvIds = new Set([
   '09e43cb8bd4749fdaaed0dc9d4ff2284',
 ]);
 const knownExternalKvIds = new Set(['0b56873b6d7b451f9279481920a15447']);
-const knownExternalR2 = new Set(['risk-radar-raw', 'gs-risk-radar-raw']);
+const knownExternalR2 = new Set(['risk-radar-raw', 'gs-risk-radar-raw', 'gs-risk-radar-raw-preview']);
 const knownExternalD1 = new Set(['b0bf3b0e-a7d0-49ae-ac82-4f19450b2ce2']);
 const knownExternalAudience = new Set();
 
@@ -171,10 +175,11 @@ for (const file of appTomls) {
     if (!ok) failed = true;
   }
 
-  const topWorker = parsed.workerName;
-  const okWorker = existsWorker(topWorker);
-  rows.push({ type: 'Worker', file, item: topWorker, status: okWorker ? 'ok' : 'missing', detail: '' });
-  if (!okWorker) failed = true;
+  for (const workerName of parsed.workerNames) {
+    const okWorker = existsWorker(workerName);
+    rows.push({ type: 'Worker', file, item: workerName, status: okWorker ? 'ok' : 'missing', detail: '' });
+    if (!okWorker) failed = true;
+  }
 }
 
 const order = { ok: 0, warning: 1, missing: 2 };

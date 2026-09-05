@@ -7,15 +7,20 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: required-merge-checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   workspace-install:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
         with:
           run_install: false
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           cache: pnpm
@@ -24,50 +29,81 @@ jobs:
 
   gs-api-build-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: workspace-install
     steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
         with:
           run_install: false
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Build gs-api
-        run: pnpm --filter ./apps/gs-api... build
+        run: pnpm --filter @goldshore/gs-api build
       - name: Test gs-api
         run: pnpm --filter ./apps/gs-api... test
 
   gs-web-build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: workspace-install
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
         with:
           run_install: false
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Build gs-web
         run: pnpm --dir apps/gs-web build
+      # gs-web's "test" script runs Playwright only, so tests/unit never ran in
+      # CI. That let a syntax error disable a whole unit-test file unnoticed.
+      # Invoke test:unit explicitly; the e2e suite needs a served build and is
+      # covered by the release quality gate below.
+      - name: Test gs-web (unit)
+        run: pnpm --dir apps/gs-web test:unit
       - name: Detect gs-web release-impact changes
         id: gs-web-changes
         shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          BEFORE_SHA: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            RANGE="origin/${{ github.base_ref }}...HEAD"
+          set -euo pipefail
+
+          # Fail open: if we cannot compute a trustworthy diff base (first push
+          # to a branch, force-push, shallow clone), run the gate rather than
+          # silently skipping it.
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            git fetch --no-tags origin "$BASE_REF" >/dev/null 2>&1 || true
+            RANGE="origin/${BASE_REF}...HEAD"
+          elif git cat-file -e "${BEFORE_SHA}^{commit}" 2>/dev/null; then
+            RANGE="${BEFORE_SHA}...${HEAD_SHA}"
           else
-            RANGE="${{ github.event.before }}...${{ github.sha }}"
+            echo "No usable diff base (${BEFORE_SHA:-unset}); running the release gate."
+            echo "release_impact=true" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
 
-          if git diff --name-only "$RANGE" | grep -Eq '^(apps/gs-web/|packages/|package.json|pnpm-lock.yaml|pnpm-workspace.yaml|turbo.json)$'; then
+          CHANGED="$(git diff --name-only "$RANGE")"
+          echo "Changed files in $RANGE:"
+          echo "$CHANGED"
+
+          # Directory entries are prefix matches; root files are exact matches.
+          # The previous single-group pattern anchored every alternative with $,
+          # so 'apps/gs-web/' could only match a line that was literally
+          # 'apps/gs-web/' — no real path ever matched and the gate never ran.
+          if printf '%s\n' "$CHANGED" | grep -Eq '^(apps/gs-web/|packages/)|^(package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|turbo\.json)$'; then
             echo "release_impact=true" >> "$GITHUB_OUTPUT"
           else
             echo "release_impact=false" >> "$GITHUB_OUTPUT"
@@ -90,15 +126,16 @@ jobs:
 
   deployment-dry-run:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs:
       - gs-api-build-test
       - gs-web-build
     steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
         with:
           run_install: false
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           cache: pnpm

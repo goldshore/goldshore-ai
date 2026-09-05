@@ -1,430 +1,161 @@
 ---
 import { GSButton } from '@goldshore/ui';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import FlowSection from '../components/FlowSection.astro';
 
 export const prerender = false;
 ---
 
 <BaseLayout
-  title="Contact | Gold Shore"
-  description="Start a conversation with GoldShore about your AI infrastructure and delivery goals."
+  title="Contact GoldShore"
+  description="Get in touch with GoldShore for briefings, engagement scoping, or support."
   canonicalPath="/contact"
-  ogTitle="Contact GoldShore | Start Your Operational AI Engagement"
-  ogDescription="Share your timeline and constraints to get a focused plan for resilient infrastructure, observability, and AI execution."
 >
-  <FlowSection variant="hero">
-    <div>
-      <p class="gs-eyebrow">Contact</p>
-      <h1>Open a direct line with Gold Shore.</h1>
-      <p>
-        Start with the guided intake to receive a tailored service
-        recommendation and week-one engagement outline.
-      </p>
-      <p>
-        Prefer a structured intake? Use our
-        <a href="/intake">project qualification form</a>.
-      </p>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
+  <section class="intake-shell gs-shell-section">
+    <div class="intake-copy">
+      <p class="gs-eyebrow">Project Intake</p>
+      <h1>Tell us what is not working.</h1>
+      <p>Briefings run 45 minutes with the people who would do the work. Send the shape of the problem and any constraints you already know about.</p>
+      <dl><div><dt>Response time</dt><dd>Within one business day</dd></div><div><dt>Briefing length</dt><dd>45 minutes</dd></div><div><dt>You speak with</dt><dd>The delivery team</dd></div><div><dt>Cost</dt><dd>No charge</dd></div></dl>
     </div>
+    <div class="intake-card">
+        <form id="contact-form">
+          <div class="gs-form-group">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" required />
+          </div>
 
-    <form id="contact-form" class="gs-card" action="/api/contact" method="post">
-      <input type="hidden" name="formType" value="contact" />
-      <input type="hidden" name="redirectTo" value="/thank-you" />
-      <input type="hidden" name="formStartedAt" value="" />
-      <input type="hidden" name="dedupeKey" value="" />
+          <div class="gs-form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required />
+          </div>
 
-      <div class="gs-honeypot" aria-hidden="true">
-        <label for="companyWebsite">Company website</label>
-        <input
-          id="companyWebsite"
-          name="companyWebsite"
-          type="text"
-          autocomplete="off"
-          tabindex="-1"
-        />
-      </div>
+          <div class="gs-form-group">
+            <label for="subject">Project or company</label>
+            <input type="text" id="subject" name="subject" required placeholder="Company or agency" />
+          </div>
 
-      <div class="gs-input-group">
-        <label for="name">Name</label>
-        <p id="name-help" class="field-help">
-          Share your full name so we can personalize the follow-up.
-        </p>
-        <input
-          id="name"
-          name="name"
-          type="text"
-          autocomplete="name"
-          aria-describedby="name-help"
-          required
-        />
-      </div>
+          <div class="gs-form-group">
+            <label for="sector">Sector</label>
+            <select id="sector" name="sector" required>
+              <option value="">Select a sector</option>
+              <option>Financial services</option><option>Operations &amp; logistics</option><option>Media &amp; communications</option><option>Healthcare systems</option><option>Public sector</option><option>Enterprise technology</option>
+            </select>
+          </div>
 
-      <div class="gs-input-group">
-        <label for="email">Work email</label>
-        <p id="email-help" class="field-help">
-          Use the best email for project follow-up.
-        </p>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          autocomplete="email"
-          spellcheck="false"
-          aria-describedby="email-help"
-          required
-        />
-      </div>
+          <fieldset class="interest-options"><legend>Engagement type</legend><label><input type="radio" name="interest" value="advisory" required />Advisory</label><label><input type="radio" name="interest" value="build" />Build</label><label><input type="radio" name="interest" value="platform" />Platform licence</label><label><input type="radio" name="interest" value="unsure" />Not sure yet</label></fieldset>
 
-      <div class="gs-input-group">
-        <label for="inquiry">Inquiry type</label>
-        <p id="inquiry-help" class="field-help">
-          Choose the path that best matches the engagement you want to start.
-        </p>
-        <select id="inquiry" name="inquiry" aria-describedby="inquiry-help">
-          <option value="general">General inquiry</option>
-          <option value="strategy-call">Strategy call</option>
-          <option value="project-scope">Project scoping</option>
-          <option value="support">Support</option>
-        </select>
-      </div>
+          <div class="gs-form-group">
+            <label for="message">What is the problem?</label>
+            <textarea id="message" name="message" rows="6" required placeholder="Systems, constraints, what has already been tried"></textarea>
+          </div>
 
-      <div class="gs-input-group">
-        <label for="message">Project brief</label>
-        <p id="message-help" class="field-help">
-          Share a short summary of your goals, timeline, and budget. We read
-          every request, so please avoid sensitive data.
-        </p>
-        <textarea
-          id="message"
-          name="message"
-          rows="5"
-          placeholder="We need support with cloud architecture and security hardening over the next 8 weeks."
-          aria-describedby="message-help"
-          required></textarea>
-      </div>
+          <div class="cf-turnstile" data-sitekey="0x4AAAAAAESEtC0-1kwdI9_7"></div>
 
-      <div
-        id="form-status"
-        class="form-status"
-        aria-live="polite"
-        role="status"
-      >
-      </div>
-
-      <GSButton type="submit">
-        <span id="submit-text">Send message</span>
-      </GSButton>
-    </form>
-  </FlowSection>
-
-  <FlowSection>
-    <div class="gs-grid columns-2">
-      <div>
-        <h2>Snapshot</h2>
-        <p class="gs-text-lg">
-          Direct, senior-led delivery that keeps programs steady and fast.
-        </p>
-        <GSButton href="#contact-form" variant="secondary"
-          >Send your brief</GSButton
-        >
-      </div>
-      <div class="gs-card">
-        <h3 class="section-title"><span>◆</span>Snapshot</h3>
-        <ul>
-          <li>
-            <strong>Current Focus:</strong> Automation layers, resilient infrastructure,
-            and AI-assisted operations.
-          </li>
-          <li>
-            <strong>What I build:</strong> End-to-end platforms, secure integrations,
-            and operator-facing tooling.
-          </li>
-          <li>
-            <strong>How I work:</strong> Clear scope, weekly checkpoints, and transparent
-            delivery metrics.
-          </li>
-          <li>
-            <strong>Availability:</strong> Full-time or contract engagements.
-          </li>
-        </ul>
-        <p class="gs-text-sm">
-          Have a scope in mind? Send the brief and I’ll respond with a plan.
-        </p>
-      </div>
+          <GSButton type="submit">Send message</GSButton>
+          <p id="contact-form-status" class="contact-form-status" role="status" aria-live="polite" hidden></p>
+        </form>
     </div>
-  </FlowSection>
-
-  <script>
-    import { trackEvent, trackEventOnce } from '../scripts/analytics';
-
-    const form = document.getElementById('contact-form');
-    const button = form?.querySelector('button[type="submit"]');
-    const submitText = form?.querySelector('#submit-text');
-    const formStatus = document.getElementById('form-status');
-    let hadSubmissionError = false;
-
-    const setStatus = (message, type) => {
-      if (!(formStatus instanceof HTMLElement)) return;
-      formStatus.textContent = message;
-      formStatus.classList.remove('success', 'error', 'progress');
-      if (type) {
-        formStatus.classList.add(type);
-      }
-      if (type === 'error') {
-        formStatus.setAttribute('aria-live', 'assertive');
-      } else {
-        formStatus.setAttribute('aria-live', 'polite');
-      }
-    };
-
-    const emitAnalytics = (eventName, payload = {}) => {
-      const eventPayload = {
-        event: eventName,
-        page: window.location.pathname,
-        ...payload,
-      };
-      window.dataLayer = window.dataLayer || [];
-      if (Array.isArray(window.dataLayer)) {
-        window.dataLayer.push(eventPayload);
-      }
-      window.dispatchEvent(
-        new CustomEvent('gs:analytics', {
-          detail: eventPayload,
-        }),
-      );
-    };
-
-    const toHex = (buffer) =>
-      Array.from(new Uint8Array(buffer))
-        .map((byte) => byte.toString(16).padStart(2, '0'))
-        .join('');
-
-    const buildDedupeKey = async (currentForm) => {
-      const name = currentForm.querySelector('#name');
-      const email = currentForm.querySelector('#email');
-      const inquiry = currentForm.querySelector('#inquiry');
-      const message = currentForm.querySelector('#message');
-      const formTypeField = currentForm.querySelector('[name="formType"]');
-
-      const normalized = [
-        formTypeField instanceof HTMLInputElement
-          ? formTypeField.value.trim().toLowerCase()
-          : 'contact',
-        name instanceof HTMLInputElement
-          ? name.value.trim().toLowerCase().replace(/\s+/g, ' ')
-          : '',
-        email instanceof HTMLInputElement
-          ? email.value.trim().toLowerCase()
-          : '',
-        inquiry instanceof HTMLSelectElement
-          ? inquiry.value.trim().toLowerCase()
-          : '',
-        message instanceof HTMLTextAreaElement
-          ? message.value.trim().replace(/\s+/g, ' ')
-          : '',
-      ].join('|');
-
-      const hash = await crypto.subtle.digest(
-        'SHA-256',
-        new TextEncoder().encode(normalized),
-      );
-      return toHex(hash);
-    };
-
-    if (
-      form instanceof HTMLFormElement &&
-      button instanceof HTMLButtonElement
-    ) {
-      let isSubmitting = false;
-      const startedAtField = form.querySelector('[name="formStartedAt"]');
-      if (startedAtField instanceof HTMLInputElement) {
-        startedAtField.value = String(Date.now());
-      }
-
-      const inquiryField = form.querySelector('#inquiry');
-      const inquiryParam = new URLSearchParams(window.location.search).get(
-        'inquiry',
-      );
-      const allowedInquiryTypes = new Set([
-        'general',
-        'strategy-call',
-        'project-scope',
-        'support',
-      ]);
-
-      if (
-        inquiryField instanceof HTMLSelectElement &&
-        inquiryParam &&
-        allowedInquiryTypes.has(inquiryParam)
-      ) {
-        inquiryField.value = inquiryParam;
-      }
-
-      const registerStart = () => {
-        trackEventOnce('contact_form_start', 'contact_form_start', {
-          page_path: window.location.pathname,
-          form_id: 'contact-form',
-        });
-      };
-
-      form.addEventListener('focusin', registerStart, { once: true });
-      form.addEventListener('input', registerStart, { once: true });
-
-      form.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        if (button.disabled || isSubmitting) return;
-        isSubmitting = true;
-
-        if (!form.checkValidity()) {
-          form.reportValidity();
-          setStatus(
-            'Please complete all required fields before submitting.',
-            'error',
-          );
-          isSubmitting = false;
-          return;
-        }
-
-        button.disabled = true;
-        button.setAttribute('aria-busy', 'true');
-        if (submitText instanceof HTMLElement) {
-          submitText.textContent = 'Sending...';
-        }
-        setStatus(
-          hadSubmissionError
-            ? 'Retrying your submission...'
-            : 'Sending your message...',
-          'progress',
-        );
-
-        const submissionId =
-          (window.crypto?.randomUUID && window.crypto.randomUUID()) ||
-          `${Date.now()}`;
-
-        try {
-          const dedupeKeyField = form.querySelector('[name="dedupeKey"]');
-          if (dedupeKeyField instanceof HTMLInputElement) {
-            dedupeKeyField.value = await buildDedupeKey(form);
-          }
-
-          const response = await fetch(
-            form.getAttribute('action') || '/api/contact',
-            {
-              method: form.getAttribute('method') || 'POST',
-              headers: {
-                'x-gs-request-mode': 'spa',
-                accept: 'application/json',
-              },
-              body: new FormData(form),
-            },
-          );
-          const payload = await response.json().catch(() => null);
-
-          if (!response.ok || !payload?.ok) {
-            throw new Error(payload?.error?.message || `Submission failed: ${response.status}`);
-          }
-
-          trackEvent(
-            'contact_submit_success',
-            {
-              page_path: window.location.pathname,
-              form_id: 'contact-form',
-              submission_id: submissionId,
-              response_status: response.status,
-            },
-            {
-              debounceKey: `contact_submit_success:${submissionId}`,
-              debounceMs: 5000,
-            },
-          );
-
-          const redirectToField = form.querySelector('[name="redirectTo"]');
-          const redirectTarget =
-            response.redirected && response.url
-              ? response.url
-              : redirectToField instanceof HTMLInputElement &&
-                  redirectToField.value
-                ? redirectToField.value
-                : '/thank-you';
-
-          hadSubmissionError = false;
-          setStatus('Message sent. Redirecting you now...', 'success');
-          window.location.href = redirectTarget;
-        } catch (error) {
-          console.error(error);
-          trackEvent(
-            'contact_submit_failure',
-            {
-              page_path: window.location.pathname,
-              form_id: 'contact-form',
-              submission_id: submissionId,
-            },
-            {
-              debounceKey: `contact_submit_failure:${submissionId}`,
-              debounceMs: 5000,
-            },
-          );
-          button.disabled = false;
-          isSubmitting = false;
-          button.removeAttribute('aria-busy');
-          if (submitText instanceof HTMLElement) {
-            submitText.textContent = 'Retry sending';
-          }
-          setStatus(
-            'We could not send your message. Please review your details and retry. If the issue persists, email hello@goldshore.ai.',
-            'error',
-          );
-          emitAnalytics('form_submit_error', { form_type: 'contact' });
-        }
-      });
-    }
-  </script>
-
-  <style is:global>
-    .gs-honeypot {
-      position: absolute;
-      left: -10000px;
-      top: auto;
-      width: 1px;
-      height: 1px;
-      overflow: hidden;
-    }
-
-    .field-help {
-      margin: var(--gs-space-1) 0 var(--gs-space-2);
-      color: var(--gs-text-dim);
-      font-size: 0.95rem;
-    }
-
-    .form-status {
-      margin: var(--gs-space-3) 0;
-      padding: var(--gs-space-3) var(--gs-space-4);
-      border-radius: var(--gs-radius-sm);
-      border: 1px solid transparent;
-      min-height: 1.25rem;
-    }
-
-    .form-status.progress {
-      background: color-mix(in srgb, var(--gs-info) 14%, transparent);
-      border-color: color-mix(in srgb, var(--gs-info) 48%, transparent);
-      color: color-mix(in srgb, var(--gs-info) 65%, white);
-    }
-
-    .form-status.success {
-      background: color-mix(in srgb, var(--gs-success) 14%, transparent);
-      border-color: color-mix(in srgb, var(--gs-success) 42%, transparent);
-      color: color-mix(in srgb, var(--gs-success) 60%, white);
-    }
-
-    .form-status.error {
-      background: color-mix(in srgb, var(--gs-danger) 14%, transparent);
-      border-color: color-mix(in srgb, var(--gs-danger) 42%, transparent);
-      color: color-mix(in srgb, var(--gs-danger) 62%, white);
-    }
-
-    #contact-form button[disabled] {
-      opacity: 0.65;
-      cursor: not-allowed;
-    }
-  </style>
+  </section>
 </BaseLayout>
+
+<script>
+  const contactForm = document.getElementById('contact-form') as HTMLFormElement | null;
+  const formStatus = document.getElementById('contact-form-status');
+  const submitButton = contactForm?.querySelector<HTMLButtonElement>('button[type="submit"]');
+
+  const showStatus = (message: string, state: 'error' | 'success' | 'progress') => {
+    if (!formStatus) return;
+    formStatus.textContent = message;
+    formStatus.dataset.state = state;
+    formStatus.hidden = false;
+  };
+
+  contactForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(e.target as HTMLFormElement);
+    const data = Object.fromEntries(formData);
+
+    const token = (window as any).turnstile?.getResponse?.();
+    if (!token) {
+      showStatus('Please complete the bot verification before sending your message.', 'error');
+      return;
+    }
+
+    data['cf-turnstile-response'] = token;
+    showStatus('Sending your message…', 'progress');
+    if (submitButton) submitButton.disabled = true;
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (response.ok) {
+        showStatus('Thank you! We received your message and will get back to you soon.', 'success');
+        (window as any).turnstile?.reset?.();
+        contactForm.reset();
+      } else {
+        const payload = await response.json().catch(() => null) as { error?: string | { message?: string } } | null;
+        const serverMessage = typeof payload?.error === 'string' ? payload.error : payload?.error?.message;
+        showStatus(serverMessage || 'Failed to send message. Please try again.', 'error');
+      }
+    } catch (error) {
+      showStatus('Unable to reach the message service. Please try again later.', 'error');
+    } finally {
+      if (submitButton) submitButton.disabled = false;
+    }
+  });
+</script>
+
+<style>
+  .intake-shell{display:grid;grid-template-columns:minmax(0,.9fr) minmax(420px,1.1fr);gap:clamp(3rem,8vw,9rem);align-items:start;padding-top:6rem;padding-bottom:7rem}.intake-copy h1{max-width:9ch;margin:1rem 0 1.5rem;font:800 clamp(3.2rem,6vw,6.8rem)/.88 'Syne',sans-serif;letter-spacing:-.065em;text-transform:uppercase}.intake-copy>p:not(.gs-eyebrow){max-width:54ch;color:var(--gs-text-dim);line-height:1.7}.intake-copy dl{margin:3rem 0 0;border-top:1px solid rgba(255,255,255,.08)}.intake-copy dl div{padding:1rem 0;border-bottom:1px solid rgba(255,255,255,.08)}.intake-copy dt{color:#d3743e;font:500 .62rem/1 'DM Mono',monospace;letter-spacing:.12em;text-transform:uppercase}.intake-copy dd{margin:.45rem 0 0;font:600 1rem/1.3 'Syne',sans-serif}.intake-card{position:relative;padding:clamp(1.5rem,4vw,3rem);border:1px solid rgba(211,116,62,.28);background:#0d0c13}.intake-card::before,.intake-card::after{content:'';position:absolute;width:14px;height:14px;border-color:#d3743e}.intake-card::before{top:-1px;right:-1px;border-top:1px solid;border-right:1px solid}.intake-card::after{bottom:-1px;left:-1px;border-bottom:1px solid;border-left:1px solid}.gs-form-group{margin-bottom:1.25rem}
+
+  .gs-form-group label {
+    display: block;
+    color:var(--gs-text-dim);font:500 .62rem/1 'DM Mono',monospace;letter-spacing:.1em;text-transform:uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  .gs-form-group input,
+  .gs-form-group select,
+  .gs-form-group textarea {
+    width: 100%;
+    padding:.9rem 1rem;background:#09080d;border:1px solid rgba(255,255,255,.1);border-radius:0;
+    color: inherit;
+    font-family: inherit;
+    font-size: 0.9rem;
+  }
+
+  .contact-form-status {
+    margin: 1rem 0 0;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--gs-border-color, rgba(255, 255, 255, 0.12));
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.035);
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+
+  .contact-form-status[data-state='error'] {
+    border-color: rgba(238, 112, 91, 0.55);
+    color: #ffb3a6;
+  }
+
+  .contact-form-status[data-state='success'] {
+    border-color: rgba(82, 200, 120, 0.55);
+    color: #a8e4ba;
+  }
+
+  #contact-form button:disabled {
+    cursor: wait;
+    opacity: 0.65;
+  }
+  .interest-options{margin:0 0 1.25rem;padding:0;border:0}.interest-options legend{margin-bottom:.65rem;color:var(--gs-text-dim);font:500 .62rem/1 'DM Mono',monospace;letter-spacing:.1em;text-transform:uppercase}.interest-options label{display:inline-flex;align-items:center;margin:0 .45rem .45rem 0;padding:.7rem .8rem;border:1px solid rgba(255,255,255,.1);color:var(--gs-text-dim);font:500 .62rem/1 'DM Mono',monospace;text-transform:uppercase;cursor:pointer}.interest-options input{accent-color:#d3743e;margin:0 .45rem 0 0}.interest-options label:has(input:checked){border-color:#d3743e;color:#d3743e;background:rgba(211,116,62,.08)}
+  #contact-form :global(button[type='submit']){width:100%;margin-top:1rem;border-radius:0;background:#d3743e;color:#09080d;font:700 .68rem/1 'DM Mono',monospace;letter-spacing:.1em;text-transform:uppercase}
+  @media(max-width:850px){.intake-shell{grid-template-columns:1fr;padding-top:2.5rem}.intake-copy h1{font-size:clamp(3rem,13vw,5.5rem)}}
+</style>

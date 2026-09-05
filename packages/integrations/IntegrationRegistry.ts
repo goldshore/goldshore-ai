@@ -10,10 +10,12 @@ import { WhatsAppBusinessIntegration } from './WhatsAppBusiness';
 import { GoogleAdsIntegration } from './GoogleAds';
 import { GoogleSearchConsoleIntegration } from './GoogleSearchConsole';
 import { StripeIntegration } from './Stripe';
+import { PayPalIntegration } from './PayPal';
+import { EbayIntegration } from './Ebay';
 import { ZapierIntegration } from './Zapier';
 import { CustomIntegration } from './Custom';
 
-export type IntegrationType = 'facebook_pixel' | 'whatsapp' | 'google_ads' | 'google_gsc' | 'stripe' | 'zapier' | 'custom';
+export type IntegrationType = 'facebook_pixel' | 'whatsapp' | 'google_ads' | 'google_gsc' | 'stripe' | 'paypal' | 'ebay' | 'zapier' | 'custom';
 
 export interface IntegrationDefinition {
   id: string;
@@ -76,6 +78,22 @@ export const INTEGRATION_DEFINITIONS: Record<IntegrationType, IntegrationDefinit
     docUrl: 'https://stripe.com/docs/api',
     requiredFields: ['apiKey', 'apiSecret'],
   },
+  paypal: {
+    id: 'paypal',
+    name: 'PayPal Payments',
+    type: 'paypal',
+    description: 'Process payments and manage transactions via PayPal',
+    docUrl: 'https://developer.paypal.com/api/rest/',
+    requiredFields: ['apiKey', 'apiSecret'],
+  },
+  ebay: {
+    id: 'ebay',
+    name: 'eBay Selling',
+    type: 'ebay',
+    description: 'Create, edit, and relist items; manage orders',
+    docUrl: 'https://developer.ebay.com/api-docs/sell/inventory/overview.html',
+    requiredFields: ['apiKey', 'apiSecret'],
+  },
   zapier: {
     id: 'zapier',
     name: 'Zapier',
@@ -130,6 +148,12 @@ export class IntegrationRegistry {
         break;
       case 'stripe':
         integration = new StripeIntegration(config);
+        break;
+      case 'paypal':
+        integration = new PayPalIntegration(config);
+        break;
+      case 'ebay':
+        integration = new EbayIntegration(config);
         break;
       case 'zapier':
         integration = new ZapierIntegration(config);

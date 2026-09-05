@@ -9,8 +9,9 @@ const executablePath =
   (process.platform === 'linux'
     ? browserName === 'firefox'
       ? '/usr/bin/firefox-esr'
-      : '/usr/bin/chromium'
+      : '/opt/pw-browsers/chromium'
     : undefined);
+const testPort = Number(process.env.PLAYWRIGHT_PORT || 4321);
 const launchOptions =
   browserName === 'firefox'
     ? { ...(executablePath ? { executablePath } : {}) }
@@ -26,16 +27,20 @@ export default defineConfig({
     timeout: 5_000,
   },
   use: {
-    baseURL: 'http://127.0.0.1:4321',
+    baseURL: `http://127.0.0.1:${testPort}`,
     trace: 'retain-on-failure',
+    ignoreHTTPSErrors: true,
     launchOptions,
   },
   webServer: {
-    command: 'pnpm dev -- --host 127.0.0.1 --port 4321',
+    command: `pnpm dev --host 127.0.0.1 --port ${testPort}`,
     env: {
       PLAYWRIGHT_TEST: '1',
+      // Astro 7 backgrounds dev servers in detected agent environments. The
+      // Playwright webServer lifecycle needs the foreground process instead.
+      ASTRO_DEV_BACKGROUND: '0',
     },
-    port: 4321,
+    port: testPort,
     reuseExistingServer: !process.env.CI,
   },
 });

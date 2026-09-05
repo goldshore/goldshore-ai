@@ -20,6 +20,7 @@
   --green: #4ade80;
   --red: #f87171;
   --font-display: 'Syne', sans-serif;
+  --font-wordmark: 'DM Sans', 'Inter', system-ui, sans-serif;
   --font-body: 'DM Sans', sans-serif;
   --font-mono: 'DM Mono', monospace;
   --site-max: 1440px;
@@ -101,6 +102,18 @@ body.gs-home code {
   overflow-x: auto;
 }
 
+body.gs-home main,
+body.gs-home main > section,
+body.gs-home main > section > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+body.gs-home code {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
 a { color: inherit; }
 
 a:focus-visible,
@@ -153,13 +166,20 @@ main { display: grid; gap: 1px; position: relative; z-index: 1; }
   align-items: center;
   align-self: center;
   grid-column: 1 / span 4;
+  gap: 0.75rem;
   text-decoration: none;
+}
+
+.brand-logo {
+  width: 2rem;
+  height: 2rem;
+  object-fit: contain;
 }
 
 .brand-wordmark {
   display: inline-flex;
   align-items: baseline;
-  font-family: var(--font-display);
+  font-family: var(--font-wordmark);
   font-size: 1.15rem;
   font-weight: 800;
   letter-spacing: 0.14em;
@@ -258,11 +278,24 @@ main { display: grid; gap: 1px; position: relative; z-index: 1; }
   align-items: center;
   justify-content: center;
   min-height: 44px;
-  border: 1px solid var(--ox-border);
+  border: 1px solid var(--ox);
   border-radius: 2px;
   background: var(--ox);
   color: var(--void) !important;
-  padding: 0.65rem 0.8rem;
+  padding: 0.72rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.nav-cta:hover {
+  border-color: var(--ox-bright);
+  background: var(--ox-bright);
+  color: var(--void) !important;
 }
 
 .nav-login {
@@ -1486,7 +1519,7 @@ code {
   .section-head.large { grid-template-columns: 1fr; }
 }
 
-@media (max-width: 960px) {
+@media (max-width: 1023px) {
   .hero { padding-top: 4rem; }
   .topbar { grid-template-columns: 1fr auto; gap: 0.75rem; }
   .brand { grid-column: 1; }

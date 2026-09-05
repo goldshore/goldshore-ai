@@ -6,9 +6,11 @@
   "scripts": {
     "dev": "tsx src/dev.ts",
     "dev:wrangler": "wrangler dev src/index.ts --ip 0.0.0.0",
-    "deploy": "wrangler deploy --env prod",
     "build": "wrangler deploy --env prod --dry-run --outdir=dist",
-    "test": "tsx --test src/routes/*.test.ts",
+    "types": "wrangler types --env prod --include-runtime=false",
+    "types:check": "wrangler types --env prod --include-runtime=false --check",
+    "lint": "eslint .",
+    "test": "tsx --test src/routes/*.test.ts src/lib/*.test.ts src/middleware/*.test.ts",
     "test:gateway": "node test-gateway.js"
   },
   "dependencies": {
@@ -18,16 +20,20 @@
     "@goldshore/schema": "workspace:^",
     "@goldshore/shared": "workspace:^",
     "@goldshore/utils": "workspace:^",
+    "@modelcontextprotocol/server": "^2.0.0",
     "@types/sanitize-html": "^2.16.0",
-    "hono": "^4.12.32",
-    "openai": "^6.48.0",
+    "hono": "^4.13.5",
+    "mysql2": "3.24.2",
+    "openai": "^7.7.0",
+    "postal-mime": "^3.0.0",
     "safe-stable-stringify": "^2.5.0",
-    "sanitize-html": "^2.17.6"
+    "sanitize-html": "^2.17.7",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20260726.1",
+    "@cloudflare/workers-types": "^5.20260827.1",
     "tsx": "^4.7.1",
-    "typescript": "^5.4.0",
-    "wrangler": "^4.112.0"
+    "typescript": "^6.0.3",
+    "wrangler": "^4.127.1"
   }
 }

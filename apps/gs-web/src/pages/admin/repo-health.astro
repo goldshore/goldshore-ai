@@ -1,0 +1,250 @@
+---
+export const prerender = false;
+
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { GSButton } from '@goldshore/ui';
+import { fetchAdminJson } from '../../lib/api-proxy';
+
+interface RepoHealth {
+  overall_health: 'critical' | 'warning' | 'healthy';
+  health_score: number;
+  last_audit: string;
+  findings: Array<{
+    id: string;
+    issue_id: number;
+    title: string;
+    severity: 'critical' | 'high' | 'medium' | 'low';
+    status: 'open' | 'in_progress' | 'resolved';
+    url: string;
+    labels: string[];
+  }>;
+  security_summary: {
+    critical_issues: number;
+    high_issues: number;
+    cves_open: number;
+  };
+}
+
+let health: RepoHealth | null = null;
+let error: string | null = null;
+
+try {
+  const result = await fetchAdminJson<any>(Astro.request, '/admin/repo-health');
+
+  if (!result.ok) {
+    error = `Failed to fetch repo health: ${result.status}`;
+  } else {
+    health = result.data?.data;
+  }
+} catch (e) {
+  error = e instanceof Error ? e.message : 'Unknown error fetching repo health';
+}
+
+const healthColors = {
+  critical: 'gs-status-critical',
+  warning: 'gs-status-warning',
+  healthy: 'gs-status-healthy',
+};
+
+const severityColors = {
+  critical: 'gs-severity-critical',
+  high: 'gs-severity-high',
+  medium: 'gs-severity-medium',
+  low: 'gs-severity-low',
+};
+
+const lastAudit = health?.last_audit ? new Date(health.last_audit).toLocaleString() : 'Never';
+---
+
+<AdminLayout title="Repo Health | GoldShore Admin">
+  <div class="gs-page gs-stack">
+    <div>
+      <h1 class="gs-heading gs-text-accent">Repository Health</h1>
+      <p class="gs-text-lg gs-text-subtle">Monitor audit findings, security issues, and deployment health.</p>
+      <p class="gs-text-sm gs-text-subtle">Last audited: {lastAudit}</p>
+    </div>
+
+    {error && (
+      <div class="gs-card">
+        <p class="gs-text-danger">Error loading repo health</p>
+        <p class="gs-text-sm gs-text-subtle">{error}</p>
+      </div>
+    )}
+
+    {health && (
+      <>
+        {/* Health Scorecard */}
+        <div class="gs-list-grid">
+          <div class="gs-card gs-stack-sm">
+            <h2 class="gs-text-sm gs-text-subtle">Health Score</h2>
+            <div class="gs-stat gs-text-accent">{health.health_score}</div>
+            <div class={`gs-text-sm ${healthColors[health.overall_health]}`}>
+              {health.overall_health.charAt(0).toUpperCase() + health.overall_health.slice(1)}
+            </div>
+            <p class="gs-text-sm gs-text-subtle">Scale: 0–100</p>
+          </div>
+
+          <div class="gs-card gs-stack-sm">
+            <h2 class="gs-text-sm gs-text-subtle">Critical Issues</h2>
+            <p class="gs-stat gs-text-critical">{health.security_summary.critical_issues}</p>
+            <p class="gs-text-sm gs-text-subtle">Requires immediate action</p>
+          </div>
+
+          <div class="gs-card gs-stack-sm">
+            <h2 class="gs-text-sm gs-text-subtle">High Priority</h2>
+            <p class="gs-stat gs-text-warning">{health.security_summary.high_issues}</p>
+            <p class="gs-text-sm gs-text-subtle">Address this sprint</p>
+          </div>
+
+          <div class="gs-card gs-stack-sm">
+            <h2 class="gs-text-sm gs-text-subtle">CVEs Open</h2>
+            <p class="gs-stat gs-text-danger">{health.security_summary.cves_open}</p>
+            <p class="gs-text-sm gs-text-subtle">Vulnerability count</p>
+          </div>
+        </div>
+
+        {/* Top Blockers */}
+        <div class="gs-card gs-stack">
+          <div class="gs-row gs-row--between">
+            <h2>Top Blockers</h2>
+            <GSButton variant="secondary" href="/admin/repo-health/findings">View All</GSButton>
+          </div>
+
+          {health.findings.length === 0 ? (
+            <p class="gs-text-subtle">No audit findings — keep up the good work! ✨</p>
+          ) : (
+            <div class="gs-stack-sm">
+              {health.findings.slice(0, 5).map((finding) => (
+                <a
+                  href={finding.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <div class="gs-row gs-row--between gs-row--start">
+                    <div class="gs-fill">
+                      <div class="gs-row">
+                        <span class={`gs-text-sm ${severityColors[finding.severity]}`}>
+                          {finding.severity.toUpperCase()}
+                        </span>
+                        <span class="gs-text-sm gs-text-subtle">
+                          #{finding.issue_id}
+                        </span>
+                      </div>
+                      <p class="gs-text-accent">{finding.title}</p>
+                      <div class="gs-row">
+                        {finding.labels.map((label) => (
+                          <span class="gs-text-sm gs-text-subtle">
+                            {label}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <span class={`gs-badge ${
+                      finding.status === 'open' ? 'danger' :
+                      finding.status === 'in_progress' ? 'warning' :
+                      'success'
+                    }`}>
+                      {finding.status === 'open' ? 'Open' :
+                       finding.status === 'in_progress' ? 'In Progress' :
+                       'Resolved'}
+                    </span>
+                  </div>
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Issues Summary Table */}
+        <div class="gs-card gs-stack">
+          <h2>Issue Summary by Severity</h2>
+          <div class="gs-table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Severity</th>
+                  <th>Count</th>
+                  <th>Status Breakdown</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(['critical', 'high', 'medium', 'low'] as const).map((severity) => {
+                  const findingsOfSeverity = health.findings.filter(f => f.severity === severity);
+                  const openCount = findingsOfSeverity.filter(f => f.status === 'open').length;
+                  const inProgressCount = findingsOfSeverity.filter(f => f.status === 'in_progress').length;
+                  const resolvedCount = findingsOfSeverity.filter(f => f.status === 'resolved').length;
+
+                  return (
+                    <tr>
+                      <td>
+                        <span class={`gs-text-sm ${severityColors[severity]}`}>
+                          {severity.toUpperCase()}
+                        </span>
+                      </td>
+                      <td>{findingsOfSeverity.length}</td>
+                      <td class="gs-text-sm">
+                        <span class="gs-text-danger">{openCount} open</span>
+                        {' · '}
+                        <span class="gs-status-warning">{inProgressCount} in progress</span>
+                        {' · '}
+                        <span class="gs-status-ok">{resolvedCount} resolved</span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </>
+    )}
+
+    {!health && !error && (
+      <div class="gs-card">
+        <p class="gs-text-subtle">Loading repository health...</p>
+      </div>
+    )}
+  </div>
+</AdminLayout>
+
+<style>
+  .gs-status-critical {
+    @apply bg-red-100 text-red-700 font-semibold;
+  }
+
+  .gs-status-warning {
+    @apply bg-yellow-100 text-yellow-700 font-semibold;
+  }
+
+  .gs-status-healthy {
+    @apply bg-green-100 text-green-700 font-semibold;
+  }
+
+  .gs-severity-critical {
+    @apply bg-red-100 text-red-700 font-semibold;
+  }
+
+  .gs-severity-high {
+    @apply bg-orange-100 text-orange-700 font-semibold;
+  }
+
+  .gs-severity-medium {
+    @apply bg-yellow-100 text-yellow-700 font-semibold;
+  }
+
+  .gs-severity-low {
+    @apply bg-blue-100 text-blue-700 font-semibold;
+  }
+
+  .gs-text-critical {
+    @apply text-red-600;
+  }
+
+  .gs-text-warning {
+    @apply text-yellow-600;
+  }
+
+  .gs-text-danger {
+    @apply text-red-600;
+  }
+</style>

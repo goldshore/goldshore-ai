@@ -11,5 +11,5 @@ export const withContractHeaders = <T>(
 });
 
 export const getRuntimeVersion = (
-  env?: { API_VERSION?: string; GIT_SHA?: string } | null,
-) => env?.API_VERSION ?? env?.GIT_SHA ?? 'v1';
+  env?: { API_VERSION?: string; GIT_SHA?: string; CF_VERSION_METADATA?: { id: string } } | null,
+) => env?.API_VERSION ?? env?.GIT_SHA ?? env?.CF_VERSION_METADATA?.id ?? 'v1';

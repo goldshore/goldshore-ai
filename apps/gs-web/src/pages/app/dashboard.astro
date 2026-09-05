@@ -1,11 +1,166 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
+export const prerender = false;
+
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { fetchAdminJson } from '../../lib/api-proxy';
+
+type HealthResponse = {
+  status?: string;
+  dependencySummary?: { ready?: number; total?: number };
+  apiVersion?: string;
+};
+
+const healthResult = await fetchAdminJson<HealthResponse>(Astro.request, '/ready');
+const apiReady = healthResult.ok && healthResult.data?.status === 'ready';
+
+const primaryTools = [
+  { number: '01', title: 'Content studio', description: 'Create, edit, and publish content across the public site.', href: '/content', action: 'Open studio' },
+  { number: '02', title: 'Site settings', description: 'Control navigation, feature flags, forms, and publishing behavior.', href: '/app/settings', action: 'Open settings' },
+  { number: '03', title: 'Domains & routes', description: 'Review production domains, traffic rules, and Worker destinations.', href: '/admin/platform', action: 'Review platform' },
+  { number: '04', title: 'Integrations', description: 'Connect analytics, ads, payments, and automation services.', href: '/admin/integrations/all', action: 'Configure' },
+];
+
+const architecture = [
+  { label: 'Frontend', title: 'gs-web', description: 'Public pages and protected admin workspace' },
+  { label: 'Backend', title: 'gs-api', description: 'API, mail, queue, cron, and integration handlers' },
+  { label: 'Admin access', title: 'Protected', description: 'Cloudflare Access identity and application role required' },
+  { label: 'Deployments', title: 'Review-gated', description: 'Production changes move through reviewed pull requests' },
+];
+
+const quickLinks = [
+  ['Worker status', 'Health, requests, and routes', '/admin/workers/status'],
+  ['Lead submissions', 'Review incoming leads', '/admin/lead-submissions'],
+  ['Products', 'Manage product catalog', '/admin/products'],
+  ['Services', 'Manage service offerings', '/admin/services'],
+  ['Search console', 'Review search performance', '/admin/search-console'],
+  ['API status', 'Check API health', '/admin/api-status'],
+] as const;
 ---
-<BaseLayout title="Dashboard | GoldShore">
-    <section class="max-w-4xl mx-auto py-24 px-6">
-        <h1 class="text-4xl gs-heading mb-4">User Dashboard</h1>
-        <p class="text-lg text-[var(--gs-text-secondary)]">
-            Dashboard features will be added here soon.
+
+<AdminLayout title="Gold Shore Admin | Dashboard">
+  <div class="admin-dashboard">
+    <header class="dashboard-header">
+      <div>
+        <h1>Good morning, operator.</h1>
+        <p>Manage the public site, content, domains, integrations, and platform systems from one protected workspace.</p>
+      </div>
+      <div class="runtime-states">
+        <div class="session-state" aria-label="Authenticated session"><i></i><span>Authenticated session</span><strong>Protected</strong></div>
+        <a class={`session-state ${apiReady ? '' : 'is-warning'}`} href="/admin/api-status" aria-label={`API connectivity: ${apiReady ? 'ready' : 'unavailable'}`}>
+          <i></i><span>API connectivity</span><strong>{apiReady ? 'Ready' : `Unavailable (${healthResult.status})`}</strong>
+        </a>
+      </div>
+    </header>
+
+    <main class="dashboard-content">
+      <section class="primary-tools" aria-labelledby="primary-tools-title">
+        <div class="section-heading">
+          <div><span>Workspace</span><h2 id="primary-tools-title">Primary controls</h2></div>
+          <a href="/content">View content studio <span aria-hidden="true">→</span></a>
+        </div>
+        <div class="tool-list">
+          {primaryTools.map((tool) => (
+            <a class="tool-row" href={tool.href}>
+              <span class="tool-number">{tool.number}</span>
+              <span class="tool-copy"><strong>{tool.title}</strong><small>{tool.description}</small></span>
+              <span class="tool-action">{tool.action}<b aria-hidden="true">→</b></span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section class="architecture" aria-labelledby="architecture-title">
+        <div class="section-heading">
+          <div><span>Canonical architecture</span><h2 id="architecture-title">Service ownership</h2></div>
+          <span class="contract-state"><i></i> Two-app contract</span>
+        </div>
+        <div class="architecture-flow">
+          {architecture.map((item, index) => (
+            <>
+              <article><span>{item.label}</span><strong>{item.title}</strong><small>{item.description}</small></article>
+              {index < architecture.length - 1 && <span class="flow-arrow" aria-hidden="true">→</span>}
+            </>
+          ))}
+        </div>
+        <p class="connection-proof">
+          <span>Network path</span>
+          <strong>gs-web <b aria-hidden="true">→</b> API service binding <b aria-hidden="true">→</b> gs-api</strong>
+          <small>{apiReady ? `${healthResult.data?.dependencySummary?.ready ?? '—'} of ${healthResult.data?.dependencySummary?.total ?? '—'} dependencies ready · ${healthResult.data?.apiVersion ?? 'version unavailable'}` : 'Readiness response unavailable; open API status for details.'}</small>
         </p>
-    </section>
-</BaseLayout>
+      </section>
+
+      <section class="shortcuts" aria-labelledby="shortcuts-title">
+        <div class="section-heading"><div><span>Operator shortcuts</span><h2 id="shortcuts-title">Quick access</h2></div></div>
+        <nav class="shortcut-list" aria-label="Admin shortcuts">
+          {quickLinks.map(([label, description, href]) => (
+            <a href={href}><span><strong>{label}</strong><small>{description}</small></span><b aria-hidden="true">↗</b></a>
+          ))}
+        </nav>
+      </section>
+    </main>
+  </div>
+</AdminLayout>
+
+<style>
+  .admin-dashboard { min-height: 100vh; color: var(--admin-text); background: var(--admin-bg); }
+  .dashboard-header { min-height: 218px; box-sizing: border-box; display: flex; align-items: end; justify-content: space-between; gap: 3rem; padding: 56px clamp(28px, 5vw, 76px) 38px; border-bottom: 1px solid var(--admin-line); }
+  .dashboard-header h1 { margin: 0 0 14px; color: #f4f1ec; font: 650 clamp(2.35rem, 4.5vw, 4.7rem)/.98 var(--admin-display); letter-spacing: -.055em; }
+  .dashboard-header p { max-width: 670px; margin: 0; color: var(--admin-muted); font-size: .95rem; line-height: 1.65; }
+  .session-state { min-width: 205px; display: grid; grid-template-columns: 8px 1fr; gap: 5px 9px; padding: 13px 15px; border: 1px solid var(--admin-line-strong); background: rgba(8,18,28,.7); font: .66rem/1.25 var(--admin-mono); }
+  .session-state i { grid-row: 1 / 3; align-self: center; width: 7px; height: 7px; border-radius: 50%; background: var(--admin-success); }
+  .session-state span { color: var(--admin-faint); text-transform: uppercase; letter-spacing: .06em; }
+  .session-state strong { color: #c2d9c7; font-weight: 600; }
+  .runtime-states { display: grid; gap: 8px; }
+  a.session-state { color: inherit; text-decoration: none; transition: border-color 150ms ease, background 150ms ease; }
+  a.session-state:hover { border-color: rgba(224,139,72,.5); background: rgba(224,139,72,.06); }
+  .session-state.is-warning i { background: #e0a448; }
+  .session-state.is-warning strong { color: #e6c384; }
+  .dashboard-content { max-width: 1460px; padding: 34px clamp(28px, 5vw, 76px) 72px; }
+  section { margin-bottom: 36px; }
+  .section-heading { display: flex; align-items: end; justify-content: space-between; gap: 1.5rem; margin-bottom: 13px; }
+  .section-heading > div > span { display: block; margin-bottom: 5px; color: var(--admin-accent); font: 700 .61rem/1 var(--admin-mono); letter-spacing: .13em; text-transform: uppercase; }
+  .section-heading h2 { margin: 0; color: #e8e8e5; font: 600 1.05rem/1.2 var(--admin-display); letter-spacing: -.015em; }
+  .section-heading > a { color: var(--admin-muted); font: 600 .7rem/1 var(--admin-ui); text-decoration: none; }
+  .section-heading > a span { margin-left: 8px; color: var(--admin-accent); }
+  .tool-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--admin-line-strong); border-left: 1px solid var(--admin-line-strong); }
+  .tool-row { min-height: 122px; box-sizing: border-box; display: grid; grid-template-columns: 40px minmax(0,1fr) auto; align-items: center; gap: 18px; padding: 22px 24px; border-right: 1px solid var(--admin-line-strong); border-bottom: 1px solid var(--admin-line-strong); color: inherit; text-decoration: none; transition: background 150ms ease; }
+  .tool-row:hover { background: rgba(224,139,72,.055); }
+  .tool-number { color: var(--admin-accent); font: 600 .7rem/1 var(--admin-mono); }
+  .tool-copy { display: flex; flex-direction: column; gap: 8px; }
+  .tool-copy strong { color: #f0efeb; font-size: .93rem; }
+  .tool-copy small { max-width: 390px; color: var(--admin-muted); font-size: .73rem; line-height: 1.5; }
+  .tool-action { align-self: end; color: var(--admin-faint); font: 600 .66rem/1 var(--admin-ui); }
+  .tool-action b { margin-left: 9px; color: var(--admin-accent); font-size: .9rem; }
+  .contract-state { display: inline-flex; align-items: center; gap: 8px; color: #adcbb4; font: 600 .66rem/1 var(--admin-mono); }
+  .contract-state i { width: 6px; height: 6px; border-radius: 50%; background: var(--admin-success); }
+  .architecture-flow { display: grid; grid-template-columns: minmax(0,1fr) 28px minmax(0,1fr) 28px minmax(0,1fr) 28px minmax(0,1fr); align-items: stretch; border: 1px solid var(--admin-line-strong); background: #09141f; }
+  .architecture-flow article { min-height: 150px; display: flex; flex-direction: column; justify-content: center; padding: 24px; }
+  .architecture-flow article > span { color: var(--admin-faint); font: 600 .62rem/1 var(--admin-mono); text-transform: uppercase; letter-spacing: .09em; }
+  .architecture-flow strong { margin: 12px 0 9px; color: var(--admin-accent); font: 650 1.18rem/1 var(--admin-mono); }
+  .architecture-flow small { color: var(--admin-muted); font-size: .7rem; line-height: 1.5; }
+  .flow-arrow { display: flex; align-items: center; justify-content: center; color: var(--admin-accent); font-size: 1.2rem; }
+  .connection-proof { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 18px; margin: 0; padding: 13px 18px; border: 1px solid var(--admin-line-strong); border-top: 0; background: rgba(8,18,28,.78); }
+  .connection-proof > span { color: var(--admin-faint); font: 600 .61rem/1 var(--admin-mono); letter-spacing: .08em; text-transform: uppercase; }
+  .connection-proof strong { color: #dce5e5; font: 600 .7rem/1.4 var(--admin-mono); }
+  .connection-proof b { margin: 0 6px; color: var(--admin-accent); }
+  .connection-proof small { color: var(--admin-muted); font-size: .67rem; text-align: right; }
+  .shortcut-list { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); border-top: 1px solid var(--admin-line); border-left: 1px solid var(--admin-line); }
+  .shortcut-list a { min-height: 76px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 18px; border-right: 1px solid var(--admin-line); border-bottom: 1px solid var(--admin-line); color: inherit; text-decoration: none; transition: background 150ms ease; }
+  .shortcut-list a:hover { background: rgba(255,255,255,.025); }
+  .shortcut-list a > span { display: flex; flex-direction: column; gap: 6px; }
+  .shortcut-list strong { color: #dfe3e4; font-size: .78rem; }
+  .shortcut-list small { color: var(--admin-faint); font-size: .67rem; }
+  .shortcut-list b { color: var(--admin-accent); font-size: .9rem; }
+  @media (max-width: 1120px) { .architecture-flow { grid-template-columns: repeat(2, minmax(0,1fr)); } .flow-arrow { display: none; } .architecture-flow article { min-height: 125px; border-bottom: 1px solid var(--admin-line); } .architecture-flow article:nth-of-type(odd) { border-right: 1px solid var(--admin-line); } }
+  @media (max-width: 720px) {
+    .dashboard-header { min-height: auto; align-items: flex-start; flex-direction: column; padding-top: 78px; gap: 24px; }
+    .runtime-states, .session-state { width: 100%; box-sizing: border-box; }
+    .tool-list, .shortcut-list, .architecture-flow { grid-template-columns: 1fr; }
+    .tool-row { grid-template-columns: 30px minmax(0,1fr); padding: 19px 17px; }
+    .tool-action { grid-column: 2; justify-self: start; }
+    .architecture-flow article:nth-of-type(odd) { border-right: 0; }
+    .connection-proof { grid-template-columns: 1fr; gap: 8px; }
+    .connection-proof small { text-align: left; }
+    .section-heading { align-items: flex-start; }
+  }
+</style>

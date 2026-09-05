@@ -1,78 +1,138 @@
-# Agent Instructions
+# Agent Coordination & Troubleshooting Guide
 
-This file contains instructions for AI agents working in this repository.
+**Purpose**: Define agent roles, communication patterns, and escalation for goldshore-ai troubleshooting.
 
-## 🚨 CRITICAL ARCHITECTURE RULE (For Jules, Claude, Codex, etc.)
+**Audience**: Claude, Codex, Copilot, Gemini, and future agents working on goldshore  
+**Updated**: 2026-09-03
 
-**THE GREAT CONSOLIDATION (2026-03-29) HAS OCCURRED.**
-This repository is strictly a **TWO-APP MONOREPO**:
-1. `apps/gs-web` (Astro Frontend)
-2. `apps/gs-api` (Unified API Worker)
+---
 
-**DO NOT** create any new Cloudflare workers inside `apps/`.
-**DO NOT** create any new `deploy-*.yml` workflow files in `.github/workflows`.
-All routing, cron jobs, DB operations, AI logic, and queues MUST be piped into the singular `gs-api` flow. All frontend pages MUST be placed in `gs-web`. Any pull request attempting to re-introduce `gs-agent`, `gs-gateway`, `gs-mail`, `gs-control`, etc., will be rejected.
+## 🤖 Agent Registry
 
-### Rules
-1. **Frontend Only in gs-web**: All visual components, pages, Astro routes, and client-side logic must reside inside `apps/gs-web`. No separate admin or documentation frontend apps are permitted. Use sub-routes (e.g., `/admin`, `/docs`).
-2. **Backend Only in gs-api**: All server-side logic, scheduled crons, email receivers, queues, auth middleware, and proxy code must be inside `apps/gs-api`. Do not construct satellite workers.
-3. **No Deploy Sprawl**: The `.github/workflows` folder is locked to two production deploy files: `deploy-gs-web.yml` and `deploy-gs-api.yml`.
+### Claude (Primary)
+- **Primary Session**: Claude Code web/CLI
+- **Specialization**: Architecture, git operations, build coordination
+- **Availability**: 24/7 web sessions + local Claude Code
+- **Responsibilities**:
+  - Manage PROJECT_ORGANIZATION.md
+  - Coordinate multi-repo PRs
+  - Rebase feature branches on main drift
+  - Run diagnostic workflows
+  - Consolidate chat context
 
-### Edge Cases
-1. **Third-party integrations requiring unique entry points (e.g., Mail Webhooks):** Handle these via dedicated sub-routers under `apps/gs-api/src/routes/` and export specific event handlers (like Cloudflare `email()` bounds) directly from `gs-api/src/index.ts`. Do not spin up a separate "mail worker".
-2. **Heavy AI workloads exceeding Cloudflare Worker time limits:** Implement Cloudflare Queues connected to `gs-api`, where the `queue()` handler in `gs-api/src/index.ts` processes payloads asynchronously. Do not start a "long-running instance worker".
+### Codex (Secondary)  
+- **Primary Session**: Antigravity IDE (Google)
+- **Specialization**: Infrastructure, Wrangler configs, CI/CD
+- **Availability**: Local machine (D:\goldshore)
+- **Responsibilities**:
+  - Fix Wrangler.toml bindings
+  - Repair Cloudflare Access configs
+  - Debug worker routing issues
+  - Investigate deploy failures
+  - Rotate secrets and credentials
 
-### Guards
-1. **Workspace Guard:** `pnpm-workspace.yaml` only identifies `apps/gs-web` and `apps/gs-api`. If you attempt to use any other `apps/` directory, Turborepo will ignore it.
-2. **Workflow Guard:** If you create a `.github/workflows/deploy-XYZ.yml` file, the CI platform checks will aggressively fail the PR. You are strongly guarded against deployment fragmentation.
+### Copilot (Inline)
+- **Specialization**: Code review, simplification
+- **Responsibilities**:
+  - Catch syntax errors before commit
+  - Suggest refactoring opportunities
+  - Validate TypeScript types
 
-## Commit / PR Description Requirement
+### Gemini (Testing)
+- **Specialization**: Local testing, preview validation
+- **Responsibilities**:
+  - Run `wrangler dev` locally
+  - Test preview URLs
+  - Screenshot production issues
+  - Validate env variable configs
 
-At the top of every commit description (and corresponding PR description), include a short line that explicitly states whether the PR branch should be **merged** or **squashed**.
+---
 
-Example format:
+## 🚨 Troubleshooting Escalation
 
-* `Merge strategy: merge`
-* `Merge strategy: squash`
+### "Main is Broken" Workflow
+1. **Claude** → Run diagnostic: `git fetch && git checkout main && git reset --hard && pnpm install --force && pnpm build`
+2. **Codex** → Check for recent breaking commits: `git log -5 --oneline`
+3. **Codex** → If pnpm issue: restore lock from main
+4. **Codex** → If Wrangler issue: validate bindings match Cloudflare
+5. **Gemini** → Test `wrangler dev` locally
+6. **Result** → Revert commit or merge hotfix
 
-## Build Configuration
+### "PR Passes CI but Deploy Fails" Workflow
+1. **Claude** → Check GitHub Actions logs
+2. **Codex** → Review Cloudflare worker logs: `wrangler tail <worker> --env production`
+3. **Codex** → Check if secrets/bindings are missing
+4. **Result** → Rollback or hotfix
 
-All API services and workers must use the `gs-control` build token for Cloudflare Worker Builds. When updating build settings in the Cloudflare Dashboard, ensure that the token used corresponds to the `gs-control` service.
+### "Feature Branch Behind Main" Workflow
+1. **Claude** → `git fetch && git rebase origin/main` (or merge if many conflicts)
+2. **Claude** → `git push -u origin <branch> --force-with-lease`
+3. **Claude** → Re-run pre-push checklist
+4. **Result** → Branch synced, ready to merge
 
-## Tagging for Review
+---
 
-### Claude/Codex issue handoff contract
+## 📋 Pre-Push Checklist
 
-GitHub issues are the shared source of truth between local and remote agent sessions. Before starting work, read the issue's latest comments and labels; before handing work off, comment with the branch, commit, checks, deployment URLs, blockers, and next action.
+Before ANY push to goldshore-ai:
 
-Use these inline tags in issue bodies or comments; `.github/workflows/issue-agent-triage.yml` mirrors them to labels:
+```bash
+git fetch origin
+git rebase origin/main  # or merge if needed
+pnpm install --force
+pnpm build
+pnpm tsc --noEmit --workspace
+cd apps/gs-api && wrangler deploy --dry-run
+```
 
-* `@codex` or `[agent:codex]`
-* `@claude` or `[agent:claude]`
-* `[env:local]`, `[env:preview]`, or `[env:production]`
-* `[status:ready]` or `[status:blocked]`
-* `[handoff:needed]`
+**Failure handling**: Fix locally, do NOT force-push.
 
-Never assume an unpushed local change exists remotely. A handoff is complete only when its commit SHA and remote branch or PR are recorded on the issue.
+---
 
-To request a review of an error or issue, please use the following tags in your comments or pull request descriptions:
+## 🔍 Common Fixes
 
-*   **@Jules-Bot `[review-request]`**: For a general code review.
-*   **@Jules-Bot `[error-analysis]`**: For help in diagnosing and fixing a specific error.
-*   **@Jules-Bot `[issue-repro]`**: For assistance in reproducing a reported issue.
+| Issue | Root Cause | Fix |
+|-------|-----------|-----|
+| `pnpm install` fails | pnpm lock corruption | `git checkout origin/main -- pnpm-lock.yaml` |
+| Build type errors | Main has breaking changes | `git rebase origin/main`, resolve conflicts |
+| Deploy hangs | Stale Wrangler cache | `rm -rf .wrangler` |
+| Worker 502 errors | Missing env binding | Codex verifies wrangler.toml bindings |
+| Feature branch 50 commits behind | Branch not synced | Claude rebases on main |
 
-Please provide as much context as possible when using these tags, including:
+---
 
-*   A clear description of the issue or the code to be reviewed.
-*   Steps to reproduce the error or issue.
-*   Any relevant logs or error messages.
-*   The expected outcome.
+## 💬 Chat Consolidation
 
-## Commit / PR Description Header
+**Keep in repo** (durable):
+- PROJECT_ORGANIZATION.md
+- AGENTS.md (this file)
+- CLAUDE.md
+- TROUBLESHOOTING.md
 
-At the top of every commit description or PR description, include a one-line merge strategy note that clearly states whether the branch should be merged with a standard merge commit or squashed.
+**Keep in chat** (real-time):
+- Decision logs
+- Pair programming notes
+- One-off questions
 
-Example:
+**Consolidate to GitHub** (shareable):
+- Recurring issues → Create issue, tag agents
+- Blockers → Create issue, mention in PR
 
-*   `Merge Strategy: Squash`
-*   `Merge Strategy: Merge Commit`
+---
+
+## ✅ Health Check
+
+**Current Status** (2026-09-03):
+- Main: ✅ Passing (6d60fb1a)
+- Feature branches: ⚠️ 50 commits behind
+- Preview: 🔧 Needs sync
+- Production: ✅ Deploying
+
+**Next actions**:
+1. Claude: Rebase feature branches on main
+2. Codex: Verify all Wrangler configs
+3. All: Follow pre-push checklist before next push
+
+---
+
+**Maintainer**: Claude | **Last Review**: 2026-09-03 | **Next Review**: Weekly

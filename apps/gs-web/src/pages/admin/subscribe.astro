@@ -1,0 +1,5 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro'; import AdminWorkspaceManager from '../../components/AdminWorkspaceManager.astro';
+if (!Astro.locals.adminSession?.isAuthenticated) return Astro.redirect('/login');
+---
+<AdminLayout title="Subscribe CTA" requiredPermission="system:read"><AdminWorkspaceManager type="subscribe_ctas" title="Subscribe CTA" description="Manage CTA copy, destinations, consent language, and analytics events." fields={['headline','button_label','destination','consent_copy','analytics_event','status']}/></AdminLayout>

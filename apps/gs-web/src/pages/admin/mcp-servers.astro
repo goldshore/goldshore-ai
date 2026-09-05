@@ -1,0 +1,68 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import MCPServerManager from '../../components/admin/MCPServerManager';
+
+const jwtToken = Astro.request.headers.get('CF-Access-JWT-Assertion') || '';
+---
+
+<AdminLayout title="Admin | MCP Servers">
+  <div class="gs-page gs-stack">
+    <div class="gs-stack-sm">
+      <h1 class="gs-heading gs-text-accent">MCP Server Management</h1>
+      <p class="gs-text-subtle gs-text-lg">Configure and execute Model Context Protocol servers for automation workflows.</p>
+    </div>
+
+    <div class="gs-grid columns-3">
+      <div class="gs-card gs-stack-sm">
+        <h2>GitHub PR Manager</h2>
+        <p class="gs-text-subtle gs-text-sm">Automate PR reviews, merges, and CI status monitoring</p>
+        <div class="gs-badge success">Active</div>
+      </div>
+      <div class="gs-card gs-stack-sm">
+        <h2>Email Mailbox Manager</h2>
+        <p class="gs-text-subtle gs-text-sm">Send campaigns, manage templates, track delivery</p>
+        <div class="gs-badge success">Active</div>
+      </div>
+      <div class="gs-card gs-stack-sm">
+        <h2>Cloudflare Config Sync</h2>
+        <p class="gs-text-subtle gs-text-sm">Sync and verify infrastructure configuration</p>
+        <div class="gs-badge success">Active</div>
+      </div>
+    </div>
+
+    <div class="gs-card gs-stack-sm">
+      <h2>Server Control Panel</h2>
+      <p class="gs-text-subtle gs-text-sm">Select a server and execute tools to manage your platform</p>
+      <MCPServerManager client:load jwtToken={jwtToken} />
+    </div>
+
+    <div class="gs-grid columns-2">
+      <div class="gs-card gs-stack-sm">
+        <h3 class="gs-text-lg">Recent Activities</h3>
+        <div class="gs-text-subtle gs-stack-sm gs-text-sm">
+          <p>• No recent MCP executions</p>
+          <p>• Servers are idle</p>
+        </div>
+      </div>
+      <div class="gs-card gs-stack-sm">
+        <h3 class="gs-text-lg">Workflow Status</h3>
+        <div class="gs-stack-sm gs-text-sm">
+          <div class="gs-row gs-row--between">
+            <span>Active Workflows</span>
+            <span class="gs-text-info">0</span>
+          </div>
+          <div class="gs-row gs-row--between">
+            <span>Completed Today</span>
+            <span class="gs-text-info">0</span>
+          </div>
+          <div class="gs-row gs-row--between">
+            <span>Failed Tasks</span>
+            <span class="gs-field-error">0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</AdminLayout>

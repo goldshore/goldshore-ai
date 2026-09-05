@@ -8,8 +8,6 @@ const required = [
 ];
 
 const driftPatterns = [
-  "apps/gs-admin/src/assets/logo.svg",
-  "apps/gs-admin/public/assets/logo.svg",
   "apps/gs-web/src/assets/logo.svg"
 ];
 

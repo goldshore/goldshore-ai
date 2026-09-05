@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "allowedBaseBranches": ["main"],
+  "canonicalApps": ["gs-web", "gs-api"],
+  "allowedDeployWorkflows": [
+    ".github/workflows/deploy-gs-api.yml",
+    ".github/workflows/deploy-gs-web.yml",
+    ".github/workflows/deploy-workers.yml"
+  ],
+  "maxChangedFiles": 40,
+  "approvalLabels": {
+    "largeChange": "triage:large-approved",
+    "revert": "triage:revert-approved",
+    "reapply": "triage:reapply-approved",
+    "baseRepair": "triage:base-repair"
+  },
+  "revertBranchPrefixes": ["revert-"]
+}

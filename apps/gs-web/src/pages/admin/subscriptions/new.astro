@@ -1,0 +1,150 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { fetchAdminJson } from '../../../lib/api-proxy';
+// Fetch available customers
+let customers: any[] = [];
+try {
+  const result = await fetchAdminJson<{ customers: any[] }>(
+    Astro.request,
+    '/admin/customers?limit=1000'
+  );
+  if (result.ok && result.data) {
+    customers = result.data.customers || [];
+  }
+} catch (error) {
+  console.error('Failed to fetch customers:', error);
+}
+---
+
+<AdminLayout title="Create Subscription | GoldShore Admin">
+  <div class="gs-page gs-stack">
+    <div class="gs-stack-sm">
+      <h1 class="gs-heading gs-text-accent">Create New Subscription</h1>
+      <p class="gs-text-subtle gs-text-lg">Assign a subscription plan to a customer</p>
+    </div>
+
+    <div class="gs-card gs-measure">
+      <form id="createSubscriptionForm" class="gs-stack">
+        <div>
+          <label for="customer_id" class="gs-text-sm gs-text-subtle">
+            Customer *
+          </label>
+          <select
+            id="customer_id"
+            name="customer_id"
+            required
+            class="gs-input"
+          >
+            <option value="">-- Select a customer --</option>
+            {customers.map((customer) => (
+              <option value={customer.id}>{customer.name} ({customer.email})</option>
+            ))}
+          </select>
+          <span class="gs-field-error" id="customerError"></span>
+        </div>
+
+        <div>
+          <label for="plan_id" class="gs-text-sm gs-text-subtle">
+            Plan ID *
+          </label>
+          <input
+            type="text"
+            id="plan_id"
+            name="plan_id"
+            required
+            class="gs-input"
+            placeholder="e.g., pro, enterprise"
+          />
+          <span class="gs-field-error" id="planError"></span>
+        </div>
+
+        <div>
+          <label for="status" class="gs-text-sm gs-text-subtle">
+            Status *
+          </label>
+          <select
+            id="status"
+            name="status"
+            class="gs-input"
+          >
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="suspended">Suspended</option>
+          </select>
+        </div>
+
+        <div id="successMessage" class="gs-alert gs-alert--success">
+          Subscription created successfully! Redirecting...
+        </div>
+
+        <div id="errorMessage" class="gs-alert gs-alert--error"></div>
+
+        <div class="gs-row">
+          <button
+            type="submit"
+            class="gs-button"
+          >
+            Create Subscription
+          </button>
+          <a
+            href="/admin/subscriptions"
+            class="gs-button gs-button--secondary"
+          >
+            Cancel
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('createSubscriptionForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const form = e.target as HTMLFormElement;
+      const customer_id = (form.querySelector('#customer_id') as HTMLSelectElement).value;
+      const plan_id = (form.querySelector('#plan_id') as HTMLInputElement).value.trim();
+      const status = (form.querySelector('#status') as HTMLSelectElement).value;
+      // Clear previous errors
+      document.getElementById('customerError')!.textContent = '';
+      document.getElementById('planError')!.textContent = '';
+      document.getElementById('errorMessage')!.classList.add('hidden');
+      // Validate
+      if (!customer_id) {
+        document.getElementById('customerError')!.textContent = 'Please select a customer';
+        return;
+      }
+
+      if (!plan_id) {
+        document.getElementById('planError')!.textContent = 'Plan ID is required';
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/admin/subscriptions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ customer_id, plan_id, status }),
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to create subscription');
+        }
+
+        document.getElementById('successMessage')!.classList.remove('hidden');
+        setTimeout(() => {
+          window.location.href = '/admin/subscriptions';
+        }, 1500);
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : 'An error occurred';
+        document.getElementById('errorMessage')!.textContent = errorMsg;
+        document.getElementById('errorMessage')!.classList.remove('hidden');
+      }
+    });
+  </script>
+</AdminLayout>
