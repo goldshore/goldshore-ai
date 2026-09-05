@@ -5,14 +5,17 @@ name: DNS desired-state inventory
 # and mutates nothing: production DNS is dashboard-owned, per AGENTS.md.
 #
 # This workflow used to also reconcile live records against the desired state.
-# Those steps were removed because they could never run: they referenced
-# $CF_API and $CF_TOKEN, which the workflow never defined and never wired to any
-# secret, so `set -u` aborted the job on the first expansion. The reconcile loop
-# was also structurally broken -- it read an unassigned $ZID_AI three times and
-# passed two stacked URL arguments to a single curl -- so it was restored as
-# dead code by a bad merge rather than deliberately written. Re-adding
-# reconciliation means a deliberate decision to give this workflow credentials,
-# which contradicts the dashboard-only rule above.
+# Those steps were removed because they could never run: they read two Cloudflare
+# API environment variables that the workflow never defined and never wired to
+# any secret, so `set -u` aborted the job on the first expansion. The reconcile
+# loop was also structurally broken -- it read an unassigned $ZID_AI three times
+# and passed two stacked URL arguments to a single request -- so it was restored
+# as dead code by a bad merge rather than deliberately written.
+#
+# The "Verify dashboard-only inventories cannot mutate Cloudflare" guard in
+# infrastructure-guard.yml enforces this: it scans this file's raw text and
+# fails if it finds a Cloudflare credential or mutation path, comments included.
+# Keep credential and request identifiers out of this file, prose and all.
 #
 # The desired-state file is authoritative for both goldshore.ai and goldshore.org.
 # goldshore.org and www.goldshore.org are intentionally excluded below. Three repo
