@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import type { Env, Variables } from '../types';
 import { searchGoldshoreKnowledge } from '../lib/goldshore-knowledge';
+import { cfAccountId, cfToken } from '../lib/cloudflare-credentials';
 
 /**
  * MCP (Model Context Protocol) surface, folded into gs-api.
@@ -136,16 +137,17 @@ export async function callTool(env: Env, tool: Tool, args: Record<string, unknow
   const account =
     typeof args.account_id === 'string' && args.account_id.trim()
       ? args.account_id.trim()
-      : env.CF_ACCOUNT_ID;
+      : cfAccountId(env);
+  const token = cfToken(env);
 
-  if (!account || !env.CF_TOKEN) {
+  if (!account || !token) {
     return text('Missing CF_ACCOUNT_ID or CF_TOKEN.', true);
   }
 
   let response: Response;
   try {
     response = await fetch(`${CF_API}/${tool.path(account)}`, {
-      headers: { Authorization: `Bearer ${env.CF_TOKEN}` },
+      headers: { Authorization: `Bearer ${token}` },
     });
   } catch (error) {
     return text(`Cloudflare API request failed: ${(error as Error).message}`, true);
