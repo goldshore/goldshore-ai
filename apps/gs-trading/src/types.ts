@@ -16,7 +16,7 @@ export interface TradingEnv {
   NOTIFY_SMS_WEBHOOK?: string;
 }
 
-export type BrokerName = 'schwab' | 'robinhood' | 'tos';
+export type BrokerName = 'schwab' | 'robinhood';
 
 export interface Position {
   symbol: string;
