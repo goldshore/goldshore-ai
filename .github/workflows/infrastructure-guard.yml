@@ -48,10 +48,19 @@ jobs:
             fi
 
             WORKER_NAME=$(grep '^name = ' "$toml" | head -1 | sed 's/name = "\(.*\)"/\1/')
-            if [ -n "$WORKER_NAME" ] && ! echo "$CANONICAL_WORKERS" | grep -qx "$WORKER_NAME"; then
-              echo "FAIL: $toml references unrecognized worker '$WORKER_NAME'"
-              exit 1
-            fi
+            # Match against the space-separated allowlist with a case glob.
+            # `grep -qx` matched whole *lines*, so a single-line list like
+            # "gs-web gs-api" never matched either entry and this check failed
+            # for every possible repo state.
+            case " $CANONICAL_WORKERS " in
+              *" $WORKER_NAME "*) ;;
+              *)
+                if [ -n "$WORKER_NAME" ]; then
+                  echo "FAIL: $toml references unrecognized worker '$WORKER_NAME'"
+                  exit 1
+                fi
+                ;;
+            esac
           done
 
           echo "All canonical wrangler configs reference recognized canonical workers."
