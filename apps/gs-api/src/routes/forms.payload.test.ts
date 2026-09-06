@@ -10,3 +10,11 @@ test('contact submissions accept the JSON payload sent by gs-web', async () => {
   assert.match(source, /c\.req\.parseBody\(\)/);
   assert.match(source, /Invalid submission payload/);
 });
+
+
+test('Turnstile validation fails closed when the secret is missing', async () => {
+  const source = await readFile(new URL('../lib/turnstile.ts', import.meta.url), 'utf8');
+
+  assert.match(source, /if \(!secretKey\)/);
+  assert.match(source, /valid: false, error: 'Turnstile secret is not configured'/);
+});
