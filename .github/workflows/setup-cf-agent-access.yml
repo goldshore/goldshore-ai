@@ -1,28 +1,32 @@
-name: Inventory Access configuration
+name: Provision Cloudflare Access
 
-# Read-only drift inventory. Cloudflare production configuration is changed only
-# by an approved human in the dashboard; this workflow has no Cloudflare credentials.
+# Sanctioned Cloudflare mutation path, run deliberately by an operator.
+#
+# This workflow is NOT an inventory: it revokes and re-creates the
+# goldshore-agents service token, upserts Access applications and policies, and
+# writes the resulting credentials into repository and Worker secrets. Its name,
+# job name and header previously described a read-only export, which is why the
+# "Verify dashboard-only inventories cannot mutate Cloudflare" guard in
+# infrastructure-guard.yml listed it alongside the real inventory workflows and
+# reported it as an offender.
+#
+# Two things keep that mutation deliberate:
+#   - `workflow_dispatch` only. It used to also fire on `push` to main and on
+#     `pull_request`, so a merge touching any of three paths could revoke a live
+#     service token with no human in the loop.
+#   - `environment: production`, the same approval gate deploy-gs-web.yml and
+#     deploy-gs-api.yml use, per the deployment rule in AGENTS.md.
 on:
-  pull_request:
-    paths:
-      - 'infra/Cloudflare/dashboard-inventory.json'
-      - 'scripts/export-cloudflare-inventory.py'
-      - '.github/workflows/setup-cf-agent-access.yml'
-  push:
-    branches: [main]
-    paths:
-      - 'infra/Cloudflare/dashboard-inventory.json'
-      - 'scripts/export-cloudflare-inventory.py'
-      - '.github/workflows/setup-cf-agent-access.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  inventory:
-    name: Export redacted expected state
+  provision-access:
+    name: Provision Cloudflare Access applications and service tokens
     runs-on: ubuntu-latest
+    environment: production
     steps:
       # ------------------------------------------------------------------ #
       # 0. Verify CLOUDFLARE_API_TOKEN has Access permissions
