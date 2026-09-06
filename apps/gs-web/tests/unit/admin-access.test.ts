@@ -22,6 +22,12 @@ import {
  * Admin links whose target page has not been built yet. Each needs a real page
  * or the link removed; until then this list keeps the count from growing
  * silently. Do not add to it to make a test pass — build the page instead.
+ *
+ * Empty, and worth keeping that way: pii-scans.astro, repo-health/findings.astro
+ * and users/list.astro have all since been built, and the last two broken links
+ * are gone — /admin/logs now points at the real /app/logs page, and the
+ * "Trading Signals" card that linked to an unbuilt /admin/trading-signals was
+ * removed. Every /admin link in the site now resolves.
  */
 const KNOWN_UNBUILT_ADMIN_ROUTES: string[] = [];
 
@@ -217,7 +223,7 @@ test('a prefix is never in both rewrite tables', () => {
 });
 
 test('every /admin link in the site resolves to a page', () => {
-  const srcRoot = fileURLToPath(new URL('../../src', import.meta.url));
+  const srcRoot = new URL('../../src', import.meta.url).pathname;
   const linked = new Set<string>();
   const walk = (dir: string) => {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -233,12 +239,12 @@ test('every /admin link in the site resolves to a page', () => {
   };
   walk(srcRoot);
 
-  const pagesRoot = fileURLToPath(new URL('../../src/pages', import.meta.url));
+  const pagesRoot = new URL('../../src/pages', import.meta.url).pathname;
   const broken = [...linked].filter((route) => {
     const relative = route.replace(/^\//, '');
     return !(
-      existsSync(join(pagesRoot, `${relative}.astro`)) ||
-      existsSync(join(pagesRoot, relative, 'index.astro'))
+      existsSync(new URL(`${pagesRoot}/${relative}.astro`, import.meta.url)) ||
+      existsSync(new URL(`${pagesRoot}/${relative}/index.astro`, import.meta.url))
     );
   });
 

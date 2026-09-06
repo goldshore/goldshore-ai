@@ -68,7 +68,7 @@ const initialTab = (TABS as readonly string[]).includes(requestedTab ?? '') ? re
 
       <div id="bd-bindings-error" class="gs-card" style="display: none;">
         <p id="bd-bindings-error-msg" class="gs-text-sm gs-text-danger"></p>
-        <p class="gs-text-subtle gs-text-sm">Ensure <code>CLOUDFLARE_ACCOUNT_ID</code> and <code>CLOUDFLARE_API_TOKEN</code> are configured on gs-api.</p>
+        <p class="gs-text-subtle gs-text-sm">Ensure <code>CF_ACCOUNT_ID</code> and <code>CF_TOKEN</code> are configured on gs-api.</p>
       </div>
     </div>
 
@@ -102,7 +102,7 @@ const initialTab = (TABS as readonly string[]).includes(requestedTab ?? '') ? re
 
       <div id="rt-routes-error" class="gs-card" style="display: none;">
         <p id="rt-routes-error-msg" class="gs-text-sm gs-text-danger"></p>
-        <p class="gs-text-subtle gs-text-sm">Ensure <code>CF_ACCOUNT_ID</code> and <code>CF_API_TOKEN</code> are set in your environment.</p>
+        <p class="gs-text-subtle gs-text-sm">Ensure <code>CF_ACCOUNT_ID</code> and <code>CF_TOKEN</code> are set in your environment.</p>
       </div>
     </div>
 
@@ -166,7 +166,7 @@ const initialTab = (TABS as readonly string[]).includes(requestedTab ?? '') ? re
 
     function stRenderError(message: string) {
       if (stTableBody) {
-        stTableBody.innerHTML = `<tr><td class="gs-text-sm gs-text-danger" colspan="3">${message}<br/><span class="gs-text-subtle gs-text-sm">Set <code>CF_ACCOUNT_ID</code> and <code>CF_API_TOKEN</code> in your environment to enable this page.</span></td></tr>`;
+        stTableBody.innerHTML = `<tr><td class="gs-text-sm gs-text-danger" colspan="3">${message}<br/><span class="gs-text-subtle gs-text-sm">Set <code>CF_ACCOUNT_ID</code> and <code>CF_TOKEN</code> in your environment to enable this page.</span></td></tr>`;
       }
     }
 

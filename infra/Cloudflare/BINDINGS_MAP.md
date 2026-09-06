@@ -95,8 +95,9 @@ the current Wrangler contract.
 - Transport: Streamable HTTP — JSON-RPC 2.0 over `POST /mcp`. `GET` returns 405;
   the surface is stateless, so it issues no `Mcp-Session-Id` and needs no KV or
   Durable Object binding.
-- Bindings consumed: `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` (read-only
-  Cloudflare API access for the four inventory tools).
+- Bindings consumed: `CF_ACCOUNT_ID`, `CF_TOKEN` (read-only Cloudflare API
+  access for the four inventory tools). The pre-rename `CLOUDFLARE_ACCOUNT_ID`
+  and `CLOUDFLARE_API_TOKEN` names are still accepted as a fallback.
 - Notes:
   - Keep anonymous prompts and changes out of the surface.
   - Use a dedicated service identity path for agent automation.
