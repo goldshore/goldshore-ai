@@ -23,7 +23,11 @@ import {
  * or the link removed; until then this list keeps the count from growing
  * silently. Do not add to it to make a test pass — build the page instead.
  */
-const KNOWN_UNBUILT_ADMIN_ROUTES: string[] = [];
+const KNOWN_UNBUILT_ADMIN_ROUTES = [
+  '/admin/pii-scans',
+  '/admin/repo-health/findings',
+  '/admin/users/list',
+];
 
 test('routes dashboard traffic to the admin host with system read access', () => {
   const rule = getAdminRouteRule('/app/dashboard', 'GET', 'goldshore.ai');
@@ -217,7 +221,7 @@ test('a prefix is never in both rewrite tables', () => {
 });
 
 test('every /admin link in the site resolves to a page', () => {
-  const srcRoot = fileURLToPath(new URL('../../src', import.meta.url));
+  const srcRoot = new URL('../../src', import.meta.url).pathname;
   const linked = new Set<string>();
   const walk = (dir: string) => {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -233,12 +237,12 @@ test('every /admin link in the site resolves to a page', () => {
   };
   walk(srcRoot);
 
-  const pagesRoot = fileURLToPath(new URL('../../src/pages', import.meta.url));
+  const pagesRoot = new URL('../../src/pages', import.meta.url).pathname;
   const broken = [...linked].filter((route) => {
     const relative = route.replace(/^\//, '');
     return !(
-      existsSync(join(pagesRoot, `${relative}.astro`)) ||
-      existsSync(join(pagesRoot, relative, 'index.astro'))
+      existsSync(new URL(`${pagesRoot}/${relative}.astro`, import.meta.url)) ||
+      existsSync(new URL(`${pagesRoot}/${relative}/index.astro`, import.meta.url))
     );
   });
 

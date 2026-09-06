@@ -26,7 +26,7 @@ const can = (permission: string) => permissions.includes(permission as never);
             <Card>
                 <h2 class="text-lg font-semibold mb-2">Audit Trail</h2>
                 <p class="gs-helper mb-4">Track administrative changes and approvals.</p>
-                {can('audit:read') && <a class="gs-link" href="/admin/audit/access-changes">View audit logs →</a>}
+                {can('audit:read') && <a class="gs-link" href="/app/logs">View audit logs →</a>}
             </Card>
         </div>
     </section>
