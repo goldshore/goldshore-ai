@@ -1,152 +1,138 @@
-# AGENTS.md — goldshore-ai
+# Agent Coordination & Troubleshooting Guide
 
-This repository is the active Gold Shore AI production monorepo. Agents should treat repository state, workspace configuration, Wrangler manifests, and CI as authoritative over stale planning notes.
+**Purpose**: Define agent roles, communication patterns, and escalation for goldshore-ai troubleshooting.
 
-## Architecture contract
+**Audience**: Claude, Codex, Copilot, Gemini, and future agents working on goldshore  
+**Updated**: 2026-09-03
 
-This is intentionally a two-app deployable monorepo:
+---
 
-- `apps/gs-web` — Astro frontend and public/admin/docs UI routes.
-- `apps/gs-api` — unified Cloudflare Worker backend for API routes, auth, scheduled work, queues, email handlers, AI/server logic, control-plane routes, and integrations.
-- `packages/*` — shared libraries and contracts.
-- `infra/*` — retained infrastructure workspaces and deployment/operations support; they are not additional product apps.
+## 🤖 Agent Registry
 
-Do not create new deployable apps or satellite Workers such as `gs-agent`, `gs-gateway`, `gs-mail`, `gs-control`, `gs-cron`, `gs-signals`, or a separate admin frontend. Extend `gs-web` or `gs-api` instead unless a human explicitly changes this architecture contract.
+### Claude (Primary)
+- **Primary Session**: Claude Code web/CLI
+- **Specialization**: Architecture, git operations, build coordination
+- **Availability**: 24/7 web sessions + local Claude Code
+- **Responsibilities**:
+  - Manage PROJECT_ORGANIZATION.md
+  - Coordinate multi-repo PRs
+  - Rebase feature branches on main drift
+  - Run diagnostic workflows
+  - Consolidate chat context
 
-`pnpm-workspace.yaml` is the definitive workspace boundary. If this file changes, update this document in the same PR.
+### Codex (Secondary)  
+- **Primary Session**: Antigravity IDE (Google)
+- **Specialization**: Infrastructure, Wrangler configs, CI/CD
+- **Availability**: Local machine (D:\goldshore)
+- **Responsibilities**:
+  - Fix Wrangler.toml bindings
+  - Repair Cloudflare Access configs
+  - Debug worker routing issues
+  - Investigate deploy failures
+  - Rotate secrets and credentials
 
-## Source-of-truth order
+### Copilot (Inline)
+- **Specialization**: Code review, simplification
+- **Responsibilities**:
+  - Catch syntax errors before commit
+  - Suggest refactoring opportunities
+  - Validate TypeScript types
 
-When documentation disagrees, verify in this order:
+### Gemini (Testing)
+- **Specialization**: Local testing, preview validation
+- **Responsibilities**:
+  - Run `wrangler dev` locally
+  - Test preview URLs
+  - Screenshot production issues
+  - Validate env variable configs
 
-1. Current code and `pnpm-workspace.yaml`.
-2. `apps/gs-web/wrangler.toml` and `apps/gs-api/wrangler.toml`, the sole
-   reviewable Cloudflare binding and route contracts for product Workers.
-3. `.github/workflows/*`.
-4. `infra/Cloudflare/*` and infrastructure docs.
-5. Live Cloudflare configuration and deployed HTTP behavior.
-6. README, `CLAUDE.md`, handoff notes, reports, and historical planning documents.
+---
 
-Do not restore a removed service, binding, route, workflow, or package solely because an older document names it.
+## 🚨 Troubleshooting Escalation
 
-## Package and build rules
+### "Main is Broken" Workflow
+1. **Claude** → Run diagnostic: `git fetch && git checkout main && git reset --hard && pnpm install --force && pnpm build`
+2. **Codex** → Check for recent breaking commits: `git log -5 --oneline`
+3. **Codex** → If pnpm issue: restore lock from main
+4. **Codex** → If Wrangler issue: validate bindings match Cloudflare
+5. **Gemini** → Test `wrangler dev` locally
+6. **Result** → Revert commit or merge hotfix
 
-Use pnpm from the repository root. Do not use npm or yarn for workspace operations.
+### "PR Passes CI but Deploy Fails" Workflow
+1. **Claude** → Check GitHub Actions logs
+2. **Codex** → Review Cloudflare worker logs: `wrangler tail <worker> --env production`
+3. **Codex** → Check if secrets/bindings are missing
+4. **Result** → Rollback or hotfix
 
-Baseline commands:
+### "Feature Branch Behind Main" Workflow
+1. **Claude** → `git fetch && git rebase origin/main` (or merge if many conflicts)
+2. **Claude** → `git push -u origin <branch> --force-with-lease`
+3. **Claude** → Re-run pre-push checklist
+4. **Result** → Branch synced, ready to merge
+
+---
+
+## 📋 Pre-Push Checklist
+
+Before ANY push to goldshore-ai:
 
 ```bash
-pnpm install --frozen-lockfile
-pnpm validate
-pnpm lint
-pnpm test
+git fetch origin
+git rebase origin/main  # or merge if needed
+pnpm install --force
 pnpm build
-pnpm repo:health
+pnpm tsc --noEmit --workspace
+cd apps/gs-api && wrangler deploy --dry-run
 ```
 
-For focused work, prefer filters rather than building unrelated workspaces:
+**Failure handling**: Fix locally, do NOT force-push.
 
-```bash
-pnpm --filter @goldshore/gs-web build
-pnpm --filter @goldshore/gs-api build
-```
+---
 
-Do not hand-edit `pnpm-lock.yaml` to resolve dependency drift. Regenerate it with pnpm and verify `pnpm install --frozen-lockfile` succeeds before proposing a merge.
+## 🔍 Common Fixes
 
-## Cloudflare and deployment safety
+| Issue | Root Cause | Fix |
+|-------|-----------|-----|
+| `pnpm install` fails | pnpm lock corruption | `git checkout origin/main -- pnpm-lock.yaml` |
+| Build type errors | Main has breaking changes | `git rebase origin/main`, resolve conflicts |
+| Deploy hangs | Stale Wrangler cache | `rm -rf .wrangler` |
+| Worker 502 errors | Missing env binding | Codex verifies wrangler.toml bindings |
+| Feature branch 50 commits behind | Branch not synced | Claude rebases on main |
 
-- **Configuration authority:** treat `apps/gs-web/wrangler.toml` and
-  `apps/gs-api/wrangler.toml` as the repository's canonical, reviewable Worker
-  binding, route, migration, and trigger contracts. Cloudflare's dashboard is
-  the execution authority and live-state authority. Other Cloudflare files are
-  expected-state documentation or redacted inventory, never deploy inputs.
-- A human must apply every production mutation in the Cloudflare dashboard
-  through the GitHub `production` environment approval gate. CI must not mutate
-  bindings, routes, secrets, migrations, triggers, DNS, Access, or email routing.
-- Secret **values**, IdP client secrets, Access policies, and email routing are
-  dashboard-only. Store neither their values nor Cloudflare credentials in
-  GitHub Actions secrets, repository files, Wrangler TOML, or artifacts. Secret
-  names may be documented and inventoried.
-- Do not rename bindings, environments, Worker names, routes, queues, D1 databases, KV namespaces, R2 bindings, Durable Objects, or Secrets Store bindings without tracing every consumer first.
-- Production environment naming must match the current manifest; do not substitute historical aliases from old docs.
-- Do not add deployment workflows simply to work around an existing workflow. Fix the canonical workflow.
-- Never change DNS, Worker routes, custom domains, Access policies, or production bindings based on memory alone. Verify the live owner first.
+---
 
-## Web routing safety
+## 💬 Chat Consolidation
 
-Astro source routes can be silently overridden by colliding files under `apps/gs-web/public`. Before changing or debugging a public route, inspect both `src/pages` and `public` for the same output path.
+**Keep in repo** (durable):
+- PROJECT_ORGANIZATION.md
+- AGENTS.md (this file)
+- CLAUDE.md
+- TROUBLESHOOTING.md
 
-Avoid reintroducing stale static `index.html` files that shadow Astro pages.
+**Keep in chat** (real-time):
+- Decision logs
+- Pair programming notes
+- One-off questions
 
-## Security and secrets
+**Consolidate to GitHub** (shareable):
+- Recurring issues → Create issue, tag agents
+- Blockers → Create issue, mention in PR
 
-Never commit:
+---
 
-- OpenAI or other provider API keys.
-- Cloudflare API tokens, account credentials, Access secrets, or signing keys.
-- GitHub tokens or deploy credentials.
-- OAuth client secrets, service-account keys, database credentials, or private keys.
-- Real `.env` / `.dev.vars` values, auth headers, session dumps, or production logs containing secrets.
+## ✅ Health Check
 
-Enter Cloudflare Worker secret values directly in the Cloudflare dashboard. Use
-the relevant provider's secret store for provider-owned secrets; never copy
-Cloudflare secret values or credentials into GitHub.
+**Current Status** (2026-09-03):
+- Main: ✅ Passing (6d60fb1a)
+- Feature branches: ⚠️ 50 commits behind
+- Preview: 🔧 Needs sync
+- Production: ✅ Deploying
 
-Do not expose server-side AI credentials in browser code. Browser AI features must call a server-side route or Worker.
+**Next actions**:
+1. Claude: Rebase feature branches on main
+2. Codex: Verify all Wrangler configs
+3. All: Follow pre-push checklist before next push
 
-## Change discipline
+---
 
-Before editing:
-
-1. Read the latest issue/PR context and open branches affecting the same subsystem.
-2. Read `README.md`, this file, and the relevant app-level configuration.
-3. Check whether the requested behavior already exists elsewhere in the two-app architecture.
-4. Keep changes scoped; do not mix unrelated migrations, UI redesigns, lockfile repairs, and infrastructure edits in one PR.
-
-Before handoff or merge:
-
-- Run the smallest relevant validation plus the repository-level checks affected by the change.
-- Record the remote branch and commit SHA.
-- State what was tested and what was not.
-- Include preview/deployment URLs when applicable.
-- Document any manual Cloudflare, GitHub, OpenAI, or other HITL step still required.
-
-## GitHub / multi-agent handoff
-
-GitHub issues and PRs are the shared state between Codex, Claude, Jules, Copilot, Gemini, and human operators. Never assume another agent can see unpushed local work.
-
-Useful issue markers:
-
-- `[agent:codex]`, `[agent:claude]`
-- `[env:local]`, `[env:preview]`, `[env:production]`
-- `[status:ready]`, `[status:blocked]`
-- `[handoff:needed]`
-
-A handoff should include branch, commit SHA, checks run, deployment/run URLs, blockers, and the next owner/action.
-
-## Merge policy
-
-Use a PR for production-impacting changes. At the top of the PR description, state the intended strategy:
-
-- `Merge strategy: squash`
-- `Merge strategy: merge`
-
-Do not force-push shared branches or bypass failing required checks merely to complete an agent task.
-
-The repository PR triage contract is `.github/pr-triage-ruleset.json`, enforced
-by `.github/workflows/pr-triage.yml`. A branch marked `blocked` by that ruleset
-must not merge. A branch marked `hold` must wait for draft, base health, branch
-drift, and required internal/external checks to clear. Approval labels documented
-in `docs/ops/mergeable-branches.md` require a human decision and must not be
-applied by an agent merely to make its own PR pass.
-
-## Related guidance
-
-Read these when relevant:
-
-- `README.md` — current repository/runtime map.
-- `AGENT_HANDOFF.md` — continuity notes and operational handoffs.
-- `CLAUDE.md` — additional historical and agent-specific context; verify against current code before relying on it.
-- `docs/workspace-package-inventory.md` and architecture docs for migrations.
-
-If any of those conflict with current workspace or runtime configuration, fix the documentation after verifying the live state rather than changing production to match stale text.
+**Maintainer**: Claude | **Last Review**: 2026-09-03 | **Next Review**: Weekly

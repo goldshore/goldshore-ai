@@ -1,0 +1,50 @@
+name: Repo Maintenance
+on:
+  workflow_dispatch:
+    inputs:
+      log_ref:
+        description: 'Target ref for report'
+        default: 'origin/main'
+      log_limit:
+        description: 'Number of logs'
+        default: '20'
+      confirm_apply:
+        description: 'Set to true to run reconciliation'
+        type: boolean
+        default: false
+
+jobs:
+  maintenance:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Health Check
+        run: pnpm run repo:health
+
+      - name: Build
+        run: pnpm -r build
+
+      - name: Report
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LOG_REF: ${{ github.event.inputs.log_ref }}
+          LOG_LIMIT: ${{ github.event.inputs.log_limit }}
+        run: bash scripts/maintenance/branch-report.sh

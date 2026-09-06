@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { SchwabClient } from '../brokers/schwab';
 import { RobinhoodClient } from '../brokers/robinhood';
+import { ThinkorswimClient } from '../brokers/thinkorswim';
 import { checkOrderRisk, getPortfolioRiskMetrics } from '../agents/riskAgent';
 import type { TradingEnv, BrokerName } from '../types';
 
@@ -15,6 +16,10 @@ tradingRoutes.get('/accounts', async (c) => {
   if (c.env.SCHWAB_CLIENT_ID) {
     try { results.push(await new SchwabClient(c.env).getAccount()); }
     catch (e: any) { errors.push({ broker: 'schwab', error: e.message }); }
+  }
+  if (c.env.SCHWAB_ACCOUNT_HASH) {
+    try { results.push(await new ThinkorswimClient(c.env).getAccount()); }
+    catch (e: any) { errors.push({ broker: 'tos', error: e.message }); }
   }
   if (c.env.ROBINHOOD_TOKEN) {
     try { results.push(await new RobinhoodClient(c.env).getAccount()); }
@@ -32,6 +37,12 @@ tradingRoutes.get('/positions', async (c) => {
     if (c.env.SCHWAB_CLIENT_ID) {
       try { positions.push(...await new SchwabClient(c.env).getPositions()); }
       catch (e: any) { errors.push({ broker: 'schwab', error: e.message }); }
+    }
+  }
+  if (!broker || broker === 'tos') {
+    if (c.env.SCHWAB_ACCOUNT_HASH) {
+      try { positions.push(...await new ThinkorswimClient(c.env).getPositions()); }
+      catch (e: any) { errors.push({ broker: 'tos', error: e.message }); }
     }
   }
   if (!broker || broker === 'robinhood') {
@@ -57,6 +68,12 @@ tradingRoutes.get('/orders', async (c) => {
       catch (e: any) { errors.push({ broker: 'schwab', error: e.message }); }
     }
   }
+  if (!broker || broker === 'tos') {
+    if (c.env.SCHWAB_ACCOUNT_HASH) {
+      try { orders.push(...await new ThinkorswimClient(c.env).getOrders()); }
+      catch (e: any) { errors.push({ broker: 'tos', error: e.message }); }
+    }
+  }
   if (!broker || broker === 'robinhood') {
     if (c.env.ROBINHOOD_TOKEN) {
       try { orders.push(...await new RobinhoodClient(c.env).getOrders()); }
@@ -80,6 +97,10 @@ tradingRoutes.get('/quotes', async (c) => {
     const quotes = await new SchwabClient(c.env).getQuotes(symbols);
     return c.json({ quotes });
   }
+  if ((!broker || broker === 'tos') && c.env.SCHWAB_ACCOUNT_HASH) {
+    const quotes = await new ThinkorswimClient(c.env).getQuotes(symbols);
+    return c.json({ quotes });
+  }
   if ((!broker || broker === 'robinhood') && c.env.ROBINHOOD_TOKEN) {
     const quotes = await new RobinhoodClient(c.env).getQuotes(symbols);
     return c.json({ quotes });
@@ -98,12 +119,15 @@ tradingRoutes.post('/orders', async (c) => {
     return c.json({ error: 'Missing required fields: broker, symbol, side, quantity, orderType' }, 400);
   }
   if (!['BUY', 'SELL'].includes(side)) return c.json({ error: 'side must be BUY or SELL' }, 400);
-  if (!['schwab', 'robinhood'].includes(broker)) return c.json({ error: 'broker must be schwab or robinhood' }, 400);
+  if (!['schwab', 'tos', 'robinhood'].includes(broker)) return c.json({ error: 'broker must be schwab, tos, or robinhood' }, 400);
   if (quantity <= 0 || !Number.isFinite(quantity)) return c.json({ error: 'quantity must be a positive number' }, 400);
 
   if (!isDemoMode(c.env)) {
     if (broker === 'schwab' && !c.env.SCHWAB_CLIENT_ID) {
       return c.json({ error: 'Schwab is not configured on this deployment' }, 503);
+    }
+    if (broker === 'tos' && !c.env.SCHWAB_ACCOUNT_HASH) {
+      return c.json({ error: 'thinkorswim is not configured on this deployment' }, 503);
     }
     if (broker === 'robinhood' && !c.env.ROBINHOOD_TOKEN) {
       return c.json({ error: 'Robinhood is not configured on this deployment' }, 503);
@@ -139,6 +163,24 @@ tradingRoutes.post('/orders', async (c) => {
           if (needsQuote && broker === 'schwab') {
             const q = (quoteArr as any)?.[0];
             // Use ask for BUY, bid for SELL; check > 0 to fall through zero values
+            estimatedPrice = side === 'BUY'
+              ? (q?.ask > 0 ? q.ask : 0)
+              : (q?.bid > 0 ? q.bid : 0);
+          }
+        })());
+      }
+
+      if (c.env.SCHWAB_ACCOUNT_HASH) {
+        tasks.push((async () => {
+          const client = new ThinkorswimClient(c.env);
+          const [acct, pos, quoteArr] = await Promise.all([
+            client.getAccount(),
+            client.getPositions(),
+            needsQuote && broker === 'tos' ? client.getQuotes([symbol]) : Promise.resolve(null),
+          ]);
+          accounts.push(acct); positions.push(...pos);
+          if (needsQuote && broker === 'tos') {
+            const q = (quoteArr as any)?.[0];
             estimatedPrice = side === 'BUY'
               ? (q?.ask > 0 ? q.ask : 0)
               : (q?.bid > 0 ? q.bid : 0);
@@ -195,6 +237,10 @@ tradingRoutes.post('/orders', async (c) => {
       const result = await new SchwabClient(c.env).placeOrder({ symbol, side, quantity, orderType, limitPrice: Number(limitPrice) });
       return c.json({ success: true, ...result, broker, warnings: riskCheck.warnings });
     }
+    if (broker === 'tos') {
+      const result = await new ThinkorswimClient(c.env).placeOrder({ symbol, side, quantity, orderType, limitPrice: Number(limitPrice) });
+      return c.json({ success: true, ...result, broker, warnings: riskCheck.warnings });
+    }
     return c.json({ error: 'Robinhood order placement requires instrument URL resolution' }, 400);
   } catch (e: any) {
     return c.json({ error: e.message }, 500);
@@ -204,11 +250,12 @@ tradingRoutes.post('/orders', async (c) => {
 tradingRoutes.delete('/orders/:id', async (c) => {
   const id = c.req.param('id');
   const broker = c.req.query('broker') as BrokerName | undefined;
-  if (!broker || !['schwab', 'robinhood'].includes(broker)) {
-    return c.json({ error: 'broker query param is required (schwab | robinhood)' }, 400);
+  if (!broker || !['schwab', 'tos', 'robinhood'].includes(broker)) {
+    return c.json({ error: 'broker query param is required (schwab | tos | robinhood)' }, 400);
   }
   try {
     if (broker === 'schwab') await new SchwabClient(c.env).cancelOrder(id);
+    else if (broker === 'tos') await new ThinkorswimClient(c.env).cancelOrder(id);
     else if (broker === 'robinhood') await new RobinhoodClient(c.env).cancelOrder(id);
     return c.json({ success: true, orderId: id });
   } catch (e: any) {
@@ -227,6 +274,13 @@ tradingRoutes.get('/risk', async (c) => {
       const [acct, pos] = await Promise.all([s.getAccount(), s.getPositions()]);
       accounts.push(acct); positions.push(...pos);
     } catch (e: any) { errors.push({ broker: 'schwab', error: e.message }); }
+  }
+  if (c.env.SCHWAB_ACCOUNT_HASH) {
+    try {
+      const t = new ThinkorswimClient(c.env);
+      const [acct, pos] = await Promise.all([t.getAccount(), t.getPositions()]);
+      accounts.push(acct); positions.push(...pos);
+    } catch (e: any) { errors.push({ broker: 'tos', error: e.message }); }
   }
   if (c.env.ROBINHOOD_TOKEN) {
     try {
@@ -262,6 +316,12 @@ tradingRoutes.get('/auth/status', async (c) => {
   } else {
     status.schwab = { configured: false };
   }
+  if (c.env.SCHWAB_ACCOUNT_HASH) {
+    try { status.tos = await new ThinkorswimClient(c.env).getTokenStatus(); }
+    catch (e: any) { status.tos = { error: e.message }; }
+  } else {
+    status.tos = { configured: false };
+  }
   status.robinhood = { configured: !!c.env.ROBINHOOD_TOKEN };
   status.demoMode = isDemoMode(c.env);
   return c.json(status);
@@ -271,6 +331,7 @@ tradingRoutes.get('/auth/status', async (c) => {
 function getMockAccounts() {
   return [
     { broker: 'schwab', accountId: '****1234', totalValue: 125430.50, cashBalance: 12500.00, buyingPower: 25000.00, dayPL: 834.22, dayPLPct: 0.67, totalPL: 23450.75 },
+    { broker: 'tos', accountId: '****5432', totalValue: 87650.25, cashBalance: 8500.00, buyingPower: 17000.00, dayPL: 521.15, dayPLPct: 0.59, totalPL: 12340.50 },
     { broker: 'robinhood', accountId: '****5678', totalValue: 18750.25, cashBalance: 2200.00, buyingPower: 4400.00, dayPL: -142.30, dayPLPct: -0.75, totalPL: 3210.40 },
   ];
 }

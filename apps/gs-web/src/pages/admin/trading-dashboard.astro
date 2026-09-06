@@ -1,0 +1,162 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+
+interface TradingAccount {
+  broker: 'schwab' | 'tos' | 'robinhood';
+  accountId: string;
+  totalValue: number;
+  cashBalance: number;
+  buyingPower: number;
+  dayPL: number;
+  dayPLPct: number;
+  totalPL: number;
+}
+
+const tradingAccounts: TradingAccount[] = [];
+let error = '';
+
+// In production, fetch from /api/trading/accounts
+try {
+  const response = await fetch('/api/trading/accounts', { headers: { 'cf-access-client-id': '', 'cf-access-client-secret': '' } }).catch(() => null);
+  if (response?.ok) {
+    const data = await response.json();
+    tradingAccounts.push(...(data.accounts || []));
+  }
+} catch (e) {
+  error = 'Failed to load trading accounts';
+}
+
+const totalValue = tradingAccounts.reduce((sum, acc) => sum + acc.totalValue, 0);
+const totalDayPL = tradingAccounts.reduce((sum, acc) => sum + acc.dayPL, 0);
+const totalDayPLPct = totalValue > 0 ? (totalDayPL / totalValue) * 100 : 0;
+---
+
+<AdminLayout title="Trading Dashboard">
+  <div class="space-y-6">
+    <!-- Header -->
+    <div>
+      <h1 class="text-3xl font-bold text-gray-900">Trading Dashboard</h1>
+      <p class="text-gray-600 mt-2">Real-time portfolio metrics across all connected brokers</p>
+    </div>
+
+    {error && (
+      <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p class="text-red-800">{error}</p>
+      </div>
+    )}
+
+    {!error && tradingAccounts.length === 0 && (
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <p class="text-blue-800">No trading accounts connected. Configure Schwab, thinkorswim, or Robinhood API credentials to get started.</p>
+      </div>
+    )}
+
+    {tradingAccounts.length > 0 && (
+      <>
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white rounded-lg shadow p-6">
+            <p class="text-sm font-medium text-gray-600">Total Portfolio Value</p>
+            <p class="text-3xl font-bold text-gray-900 mt-2">${totalValue.toLocaleString('en-US', { maximumFractionDigits: 2 })}</p>
+          </div>
+
+          <div class="bg-white rounded-lg shadow p-6">
+            <p class="text-sm font-medium text-gray-600">Day P&L</p>
+            <p class={`text-3xl font-bold mt-2 ${totalDayPL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              ${totalDayPL.toLocaleString('en-US', { maximumFractionDigits: 2 })}
+            </p>
+            <p class={`text-sm mt-1 ${totalDayPLPct >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {totalDayPLPct.toFixed(2)}%
+            </p>
+          </div>
+
+          <div class="bg-white rounded-lg shadow p-6">
+            <p class="text-sm font-medium text-gray-600">Cash Balance</p>
+            <p class="text-3xl font-bold text-gray-900 mt-2">
+              ${tradingAccounts.reduce((sum, acc) => sum + acc.cashBalance, 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}
+            </p>
+          </div>
+
+          <div class="bg-white rounded-lg shadow p-6">
+            <p class="text-sm font-medium text-gray-600">Buying Power</p>
+            <p class="text-3xl font-bold text-gray-900 mt-2">
+              ${tradingAccounts.reduce((sum, acc) => sum + acc.buyingPower, 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}
+            </p>
+          </div>
+        </div>
+
+        <!-- Accounts Table -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+          <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Connected Accounts</h2>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">Broker</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">Account ID</th>
+                  <th class="px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase">Total Value</th>
+                  <th class="px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase">Cash</th>
+                  <th class="px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase">Buying Power</th>
+                  <th class="px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase">Day P&L</th>
+                  <th class="px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase">Total P&L</th>
+                  <th class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200">
+                {tradingAccounts.map((account) => (
+                  <tr class="hover:bg-gray-50 transition">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 capitalize">
+                        {account.broker === 'tos' ? 'thinkorswim' : account.broker}
+                      </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{account.accountId}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900">
+                      ${account.totalValue.toLocaleString('en-US', { maximumFractionDigits: 2 })}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-700">
+                      ${account.cashBalance.toLocaleString('en-US', { maximumFractionDigits: 2 })}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-700">
+                      ${account.buyingPower.toLocaleString('en-US', { maximumFractionDigits: 2 })}
+                    </td>
+                    <td class={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${account.dayPL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      ${account.dayPL.toLocaleString('en-US', { maximumFractionDigits: 2 })}
+                      <span class="text-xs ml-1">({account.dayPLPct.toFixed(2)}%)</span>
+                    </td>
+                    <td class={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${account.totalPL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      ${account.totalPL.toLocaleString('en-US', { maximumFractionDigits: 2 })}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
+                      <a href={`/admin/trading-positions?broker=${account.broker}`} class="text-blue-600 hover:text-blue-800 font-medium">
+                        View Positions
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Quick Links -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <a href="/admin/trading-positions" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition">
+            <h3 class="text-lg font-semibold text-gray-900">View Positions</h3>
+            <p class="text-gray-600 mt-2">Monitor holdings across all accounts</p>
+          </a>
+          <a href="/admin/trading-orders" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition">
+            <h3 class="text-lg font-semibold text-gray-900">Manage Orders</h3>
+            <p class="text-gray-600 mt-2">Place and track trades across brokers</p>
+          </a>
+          <a href="/admin/trading-signals" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition">
+            <h3 class="text-lg font-semibold text-gray-900">Trading Signals</h3>
+            <p class="text-gray-600 mt-2">AI-generated trading recommendations</p>
+          </a>
+        </div>
+      </>
+    )}
+  </div>
+</AdminLayout>
