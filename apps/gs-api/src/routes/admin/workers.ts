@@ -2,6 +2,7 @@ import type { Env, Variables } from '../../types';
 import { Hono } from 'hono';
 import { verifyAdminAuth, errorHandler } from './middleware/auth';
 import layoutPreferences from './layout-preferences';
+import { cfAccountId, cfToken, cfZoneId, requireCloudflare } from '../../lib/cloudflare-credentials';
 
 const workers = new Hono<{
   Bindings: Env;
@@ -11,18 +12,6 @@ const workers = new Hono<{
 workers.use('*', verifyAdminAuth);
 workers.route('/layout', layoutPreferences);
 
-const cfToken = (env: Env) => env.CF_TOKEN || env.CLOUDFLARE_API_TOKEN;
-const cfAccountId = (env: Env) => env.CF_ACCOUNT_ID || env.CLOUDFLARE_ACCOUNT_ID;
-const cfZoneId = (env: Env) => env.CF_ZONE_ID || env.CLOUDFLARE_ZONE_ID;
-const requireCloudflare = (env: Env) => {
-  const token = cfToken(env);
-  const accountId = cfAccountId(env);
-  if (!token || !accountId) {
-    const missing = [!accountId && 'CF_ACCOUNT_ID', !token && 'CF_TOKEN'].filter(Boolean).join(', ');
-    throw new Error(`Cloudflare API credentials not configured: ${missing}`);
-  }
-  return { token, accountId };
-};
 
 const cfRequest = async (env: Env, path: string, init: RequestInit = {}) => {
   const { token } = requireCloudflare(env);
