@@ -22,12 +22,14 @@ import {
  * Admin links whose target page has not been built yet. Each needs a real page
  * or the link removed; until then this list keeps the count from growing
  * silently. Do not add to it to make a test pass — build the page instead.
+ *
+ * Empty, and worth keeping that way: pii-scans.astro, repo-health/findings.astro
+ * and users/list.astro have all since been built, and the last two broken links
+ * are gone — /admin/logs now points at the real /app/logs page, and the
+ * "Trading Signals" card that linked to an unbuilt /admin/trading-signals was
+ * removed. Every /admin link in the site now resolves.
  */
-const KNOWN_UNBUILT_ADMIN_ROUTES = [
-  '/admin/pii-scans',
-  '/admin/repo-health/findings',
-  '/admin/users/list',
-];
+const KNOWN_UNBUILT_ADMIN_ROUTES: string[] = [];
 
 test('routes dashboard traffic to the admin host with system read access', () => {
   const rule = getAdminRouteRule('/app/dashboard', 'GET', 'goldshore.ai');
