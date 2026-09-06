@@ -73,9 +73,19 @@ test('home page renders core layout and CTA navigation', async ({ page }) => {
   await expect(page.locator('header.topbar')).toBeVisible();
   await expect(page.locator('footer')).toBeVisible();
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+  // The homepage converts in place rather than routing to /contact: the hero
+  // CTA scrolls to the "Engage" section, which carries its own inquiry form
+  // posting to /api/contact. Assert the whole path, not just the href, so a
+  // future change that breaks the anchor or drops the form is caught here.
   await expect(
     page.getByRole('link', { name: 'Request Briefing' }).first(),
-  ).toHaveAttribute('href', /contact\/?/);
+  ).toHaveAttribute('href', '#engage');
+  await expect(page.locator('#engage')).toBeAttached();
+  await expect(page.locator('#engage form#quick-form')).toHaveAttribute(
+    'action',
+    '/api/contact',
+  );
 
 
   assertHealthyPage(monitors);
@@ -111,8 +121,8 @@ test('contact form submits and shows success message', async ({ page }) => {
 
   await page.goto('/contact', { waitUntil: 'networkidle' });
 
-  // Mock the form submission endpoint
-  await page.route('/api/forms/contact/submissions', async (route) => {
+  // The form posts to /api/contact, not /api/forms/contact/submissions.
+  await page.route('/api/contact', async (route) => {
     await route.fulfill({
       status: 200,
       headers: {
@@ -125,18 +135,29 @@ test('contact form submits and shows success message', async ({ page }) => {
     });
   });
 
-  await page.getByLabel('Name').fill('Test User');
-  await page.getByLabel('Email').fill('test@example.com');
-  await page.getByLabel('Subject').fill('Inquiry');
-  await page.getByLabel('Message').fill('Interested in GoldShore services.');
+  // Every field below is `required`; omitting sector or the engagement type
+  // leaves the form invalid and the submit handler never runs.
+  // Scope to #contact-form: the page also renders a secondary form with its
+  // own "Name" field, so page-wide label lookups are ambiguous.
+  const form = page.locator('#contact-form');
+  await form.getByLabel('Name', { exact: true }).fill('Test User');
+  await form.getByLabel('Email').fill('test@example.com');
+  await form.getByLabel('Project or company').fill('Test Co');
+  await form.getByLabel('Sector').selectOption('Financial services');
+  await form.getByRole('radio', { name: 'Advisory' }).check();
+  await form
+    .getByLabel('What is the problem?')
+    .fill('Interested in GoldShore services.');
 
-  // Mock alert since Playwright can't directly handle browser alerts
-  page.on('dialog', (dialog) => {
-    expect(dialog.message()).toContain('Thank you');
-    dialog.accept();
-  });
+  await form.getByRole('button', { name: 'Send message' }).click();
 
-  await page.getByRole('button', { name: 'Send message' }).click();
+  // Success is reported in an aria-live region on the page, not a browser
+  // dialog, so wait for that status text rather than a `dialog` event -- a
+  // dialog listener that never fires would let this test pass without ever
+  // confirming the submission succeeded.
+  await expect(page.locator('#contact-form-status')).toContainText(
+    'Thank you!',
+  );
 
   assertHealthyPage(monitors);
 });
@@ -147,13 +168,18 @@ test('contact page loads and renders form', async ({ page }) => {
   await page.goto('/contact', { waitUntil: 'networkidle' });
 
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Contact GoldShore' }),
+    page.getByRole('heading', { level: 1, name: 'Tell us what is not working.' }),
   ).toBeVisible();
-  await expect(page.getByLabel('Name')).toBeVisible();
-  await expect(page.getByLabel('Email')).toBeVisible();
-  await expect(page.getByLabel('Subject')).toBeVisible();
-  await expect(page.getByLabel('Message')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Send message' })).toBeVisible();
+  // Scope to #contact-form: the page also renders a secondary form with its
+  // own "Name" field, so page-wide label lookups are ambiguous.
+  const form = page.locator('#contact-form');
+  await expect(form.getByLabel('Name', { exact: true })).toBeVisible();
+  await expect(form.getByLabel('Email')).toBeVisible();
+  await expect(form.getByLabel('Project or company')).toBeVisible();
+  await expect(form.getByLabel('Sector')).toBeVisible();
+  await expect(form.getByRole('group', { name: 'Engagement type' })).toBeVisible();
+  await expect(form.getByLabel('What is the problem?')).toBeVisible();
+  await expect(form.getByRole('button', { name: 'Send message' })).toBeVisible();
 
   assertHealthyPage(monitors);
 });
