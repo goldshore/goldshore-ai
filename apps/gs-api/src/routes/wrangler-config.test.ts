@@ -74,11 +74,46 @@ describe('two-app Cloudflare binding contract', () => {
     assert.match(webConfig, /\[\[env\.prod\.services\]\]\s*binding = "API"\s*service = "gs-api"/);
   });
 
-  it('declares no dedicated preview Worker environments', () => {
-    assert.doesNotMatch(apiConfig, /\[env\.preview(?:\.|\])/);
-    assert.doesNotMatch(webConfig, /\[env\.preview(?:\.|\])/);
-    assert.doesNotMatch(apiConfig + webConfig, /name\s*=\s*"(?:gs-api|gs-web)-preview"/);
-    assert.doesNotMatch(apiConfig + webConfig, /pattern\s*=\s*"(?:api|admin)-preview\./);
-    assert.doesNotMatch(apiConfig + webConfig, /(?:queue|bucket_name|workflow_name)\s*=\s*"[^"]*-preview"/);
+  it('keeps gs-web free of a preview Worker environment', () => {
+    // Only gs-api has one. gs-web previews are Worker Versions off the prod
+    // manifest, so a [env.preview] here would create a second gs-web Worker.
+    assert.doesNotMatch(webConfig, /^\s*\[env\.preview(?:\.|\])/m);
+    assert.doesNotMatch(webConfig, /^\s*name\s*=\s*"gs-web-preview"/m);
+    assert.doesNotMatch(webConfig, /^\s*pattern\s*=\s*"admin-preview\./m);
+  });
+
+  it('pins the gs-api preview environment to its own Worker and route', () => {
+    assert.match(apiConfig, /^\s*\[env\.preview\]/m);
+    assert.match(apiConfig, /^\s*name\s*=\s*"gs-api-preview"/m);
+    assert.match(apiConfig, /pattern\s*=\s*"api-preview\.goldshore\.ai\/\*"/);
+  });
+
+  it('never points a gs-api preview binding at a production resource', () => {
+    // The whole point of the preview environment is that a preview deploy
+    // cannot touch live data. Compare the two blocks directly rather than
+    // trusting the -preview suffix, which is a convention and not a guarantee.
+    const block = (env) => {
+      const start = apiConfig.indexOf(`[env.${env}]`);
+      const rest = apiConfig.slice(start + 1);
+      const nextEnv = rest.search(/\n\[env\.(?!\s*$)[a-z]+\]/);
+      return nextEnv === -1 ? apiConfig.slice(start) : apiConfig.slice(start, start + 1 + nextEnv);
+    };
+    const values = (text, field) =>
+      new Set([...text.matchAll(new RegExp(`^\\s*${field}\\s*=\\s*"([^"]+)"`, 'gm'))].map((m) => m[1]));
+
+    const prod = block('prod');
+    const preview = block('preview');
+
+    for (const field of ['id', 'bucket_name', 'database_id', 'queue']) {
+      const shared = [...values(preview, field)].filter((v) => values(prod, field).has(v));
+      assert.deepEqual(shared, [], `preview reuses production ${field}: ${shared.join(', ')}`);
+    }
+  });
+
+  it('gives the gs-api preview environment no cron triggers', () => {
+    // The production cron rotates live OAuth tokens daily. Anchored to line
+    // start: the manifest's own comment names this table to explain why it is
+    // absent, and an unanchored pattern matches that comment.
+    assert.doesNotMatch(apiConfig, /^\s*\[env\.preview\.triggers\]/m);
   });
 });
