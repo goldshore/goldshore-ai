@@ -1,0 +1,33 @@
+# wrangler.toml for the background Agent Worker
+
+name = "gs-agent"
+compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+# This worker is queue-driven, so we define the consumer here at top level.
+[[queues.consumers]]
+queue = "goldshore-jobs"
+max_batch_size = 10
+max_batch_timeout = 5
+
+[env.dev]
+name = "gs-agent-dev"
+
+[env.preview]
+name = "gs-agent-preview"
+
+[env.prod]
+main = "../../apps/gs-agent/src/index.ts"
+tsconfig = "../../apps/gs-agent/tsconfig.json"
+[[env.prod.queues.consumers]]
+queue = "goldshore-jobs"
+max_batch_size = 10
+max_batch_timeout = 5
+
+[env.production]
+main = "../../apps/gs-agent/src/index.ts"
+tsconfig = "../../apps/gs-agent/tsconfig.json"
+[[env.production.queues.consumers]]
+queue = "goldshore-jobs"
+max_batch_size = 10
+max_batch_timeout = 5

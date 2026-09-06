@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "document": "Gate 2 control-plane desired state",
+  "mode": "review-only",
+  "apply": false,
+  "secret_policy": "No secret values, client secrets, private keys, tokens, mailbox credentials, or OAuth codes belong in this file.",
+  "evidence_date": "2026-09-01",
+  "cloudflare": {
+    "account": "Gold Shore Labs",
+    "gearswipe": {
+      "zone": "gearswipe.com",
+      "worker": "gearswipe",
+      "custom_domains": ["gearswipe.com", "www.gearswipe.com"],
+      "required_state": "Both apex and www remain production Custom Domains for the gearswipe Worker. No zone-route or DNS change is required for the Google callback."
+    },
+    "goldshore_admin": {
+      "application": "Gold Shore Admin Production",
+      "hostname": "admin.goldshore.ai/*",
+      "session_duration": "24h",
+      "identity_provider_set": ["GitHub", "Cloudflare account membership", "Google Workspace SAML"],
+      "policy_order": ["AI Agent & MCP", "Admin", "Editor", "CF - GitHub GS Developers"],
+      "required_state": "Keep human roles separate from machine/service-token access. A Workspace email alias is mailbox-only until explicitly added to an authorization group."
+    },
+    "public_pages": {
+      "hostname_path": "api.goldshore.ai/pages/public*",
+      "policy": "Public pages read bypass",
+      "required_state": "Only published-content reads may bypass Access. Admin and write routes remain application-authorized."
+    }
+  },
+  "google_oauth": {
+    "gearswipe": {
+      "current_project": "mercurial-time-320220",
+      "current_client_id": "108681561977-r7h4b0hsokdelhbctvptajmnp7e9j2cs.apps.googleusercontent.com",
+      "callback": "https://gearswipe.com/api/auth/callback/google",
+      "desired_scopes": ["openid", "email", "profile"],
+      "required_state": "GearSwipe login has an OIDC-only client. Sensitive Google API integrations must not share its consent surface.",
+      "cutover": {
+        "owner_action": "Create the approved dedicated web OAuth client in the selected Google Cloud project through a secure owner session. Do not copy the client secret into chat, source, KV, or this file.",
+        "operator_action": "Set AUTH_GOOGLE_ID and AUTH_GOOGLE_SECRET through the Worker secret interface, deploy only after the owner confirms the secure secret handoff, then validate with a non-Workspace account.",
+        "rollback": "Restore the previous AUTH_GOOGLE_ID and AUTH_GOOGLE_SECRET bindings; retain the prior client until successful non-Workspace validation is recorded."
+      }
+    }
+  },
+  "identity_and_secrets": {
+    "key_migrations": [
+      {
+        "project": "mercurial-time-320220",
+        "principal": "github-storage-access service account",
+        "current_state": "three user-managed keys",
+        "desired_state": "one named workload identity or another non-key mechanism; revoke keys only after its consumer proves live access"
+      },
+      {
+        "project": "mercurial-time-320220",
+        "principal": "default Compute Engine service account",
+        "current_state": "one user-managed key",
+        "desired_state": "identify the workload, replace its key dependency, then revoke after live validation"
+      },
+      {
+        "project": "goldshore-ai",
+        "principal": "claude service account",
+        "current_state": "one user-managed key",
+        "desired_state": "identify the workload, replace its key dependency, then revoke after live validation"
+      }
+    ],
+    "worker_secret_migration": {
+      "required_state": "Map every direct token binding to a source consumer, human owner, rotation interval, test, and rollback before moving it to Secrets Store or a workload identity.",
+      "prohibited": ["KV credential storage", "source-controlled secret values", "blind token deletion", "bulk secret rotation"]
+    }
+  },
+  "approval_gates": {
+    "oauth_client_creation": "Requires the selected GCP project, client name, branding/support contacts, and an owner-approved secure client-secret handoff.",
+    "worker_secret_cutover": "Requires a value-free binding change plan plus a rollback owner.",
+    "service_account_key_revocation": "Requires workload evidence, minimum IAM roles, and a successful live replacement test.",
+    "cloudflare_access_or_routing": "No change is currently indicated; any future change requires a target application/route and a recovery test."
+  }
+}
