@@ -68,9 +68,10 @@ export async function validateFormTurnstile(
   secretKey?: string,
   request?: Request,
 ): Promise<{ valid: boolean; error?: string }> {
-  // Skip validation if no secret key is configured
+  // Fail closed when protection is not configured; accepting requests here
+  // would silently disable bot protection in production.
   if (!secretKey) {
-    return { valid: true };
+    return { valid: false, error: 'Turnstile secret is not configured' };
   }
 
   const token = formData.get('cf-turnstile-response');
