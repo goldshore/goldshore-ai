@@ -4,7 +4,64 @@ import { Env, Variables } from '../../types';
 import { searchGitHubFrameworks } from '../../lib/github-framework-search';
 import { rankFrameworksWithClaude } from '../../lib/claude-framework-ranker';
 import { validateWranglerConfig } from '../../lib/wrangler-validator';
+import secrets from './secrets';
+import cockpit from './merge-cockpit';
+import repoHealth from './repo-health';
+import chat from './chat';
+import rbacRoles from './rbac-roles';
+import rbacUsers from './rbac-users';
+import rbacPermissions from './rbac-permissions';
+import rbacAudit from './rbac-audit';
+import workflows from './workflows';
+import aiSearch from './ai-search';
+import prManager from './pr-manager';
+import workers from './workers';
+import mcpServers from './mcp-servers';
+import customers from './customers';
+import subscriptions from './subscriptions';
+import social from './social';
 
+const admin = new Hono<{
+  Bindings: Env;
+  Variables: Variables;
+}>();
+
+// Mount admin feature sub-routers
+//
+// entries, users, settings, tokens, pii-scans, and analytics used to be
+// mounted here too, which put them at /admin/deploy/{name} once this whole
+// router is nested under admin.ts's /deploy mount. No frontend code calls
+// that path for any of them: users and settings are shadowed by admin.ts's
+// own live inline handlers (this router's copies were dead code), and
+// entries/tokens/pii-scans/analytics are real, working routers whose only
+// caller expects them directly at /admin/{name} — so they're now mounted
+// there instead, in admin.ts. email joined that list too (see admin.ts).
+admin.route('/secrets', secrets);
+admin.route('/merge-cockpit', cockpit);
+admin.route('/repo-health', repoHealth);
+admin.route('/chat', chat);
+admin.route('/cf', workers);
+admin.route('/mcp', mcpServers);
+
+// Phase 2: Customer and subscription management (consolidation from goldshore-admin)
+admin.route('/customers', customers);
+admin.route('/subscriptions', subscriptions);
+admin.route('/social', social);
+
+// Phase 2a: RBAC access control routes
+admin.route('/rbac/roles', rbacRoles);
+admin.route('/rbac/users', rbacUsers);
+admin.route('/rbac/permissions', rbacPermissions);
+admin.route('/rbac/audit', rbacAudit);
+
+// Phase 3: Workflow management
+admin.route('/workflows', workflows);
+
+// Phase 4: Enterprise features
+admin.route('/ai-search', aiSearch);
+admin.route('/pr-manager', prManager);
+
+// Deployment routes (existing)
 const deploy = new Hono<{
   Bindings: Env;
   Variables: Variables;
@@ -33,7 +90,7 @@ deploy.post('/search', async (c) => {
     return c.json({ error: 'Query is required.' }, 400);
   }
 
-  const githubToken = c.env.GITHUB_API_TOKEN as string | undefined;
+  const githubToken = c.env.GH_PAT as string | undefined;
   const claudeToken = c.env.ANTHROPIC_API_KEY as string | undefined;
 
   if (!githubToken) {
@@ -129,7 +186,7 @@ deploy.post('/dry-run', async (c) => {
     return c.json({ error: 'Framework and repo are required.' }, 400);
   }
 
-  const githubToken = c.env.GITHUB_API_TOKEN as string | undefined;
+  const githubToken = c.env.GH_PAT as string | undefined;
   if (!githubToken) {
     return c.json({ error: 'GitHub API token not configured.' }, 500);
   }
@@ -283,4 +340,7 @@ deploy.post('/create-pr', async (c) => {
   });
 });
 
-export default deploy;
+// Mount deployment routes
+admin.route('/deployments', deploy);
+
+export default admin;

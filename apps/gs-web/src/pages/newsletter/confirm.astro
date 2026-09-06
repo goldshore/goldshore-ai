@@ -38,9 +38,15 @@ const apiBase = (import.meta.env.PUBLIC_API || 'https://api.goldshore.ai').repla
     if (manage) target.searchParams.set('manage', manage);
 
     fetch(target)
-      .then((response) => {
+      .then(async (response) => {
         if (!response.ok) throw new Error('confirmation rejected');
+        const result = await response.json().catch(() => ({}));
         showResult('Subscription confirmed', 'Your subscription is confirmed. A welcome email is on its way.');
+        const returnLink = container.querySelector<HTMLAnchorElement>('a');
+        if (returnLink && result.settingsUrl) {
+          returnLink.href = result.settingsUrl;
+          returnLink.textContent = 'Choose preferences';
+        }
       })
       .catch(() => {
         showResult('Unable to confirm', 'This confirmation link is invalid, expired, or temporarily unavailable.');

@@ -1,0 +1,195 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { fetchAdminJson } from '../../../lib/api-proxy';
+
+interface Entry {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  company?: string;
+  message?: string;
+  status: 'new' | 'contacted' | 'qualified' | 'rejected';
+  created_at: string;
+  updated_at?: string;
+  type?: 'contact' | 'lead';
+}
+
+const entryId = new URL(Astro.request.url).searchParams.get('id');
+const entryType = (new URL(Astro.request.url).searchParams.get('type') || 'lead') as 'contact' | 'lead';
+
+if (!entryId) {
+  return Astro.redirect('/admin/entries');
+}
+
+let entry: Entry | null = null;
+let error: string | null = null;
+
+try {
+  const endpoint = entryType === 'contact' ? 'contacts' : 'leads';
+  const result = await fetchAdminJson<Entry>(Astro.request, `/admin/entries/${endpoint}/${entryId}`);
+
+  if (result.ok) {
+    entry = result.data;
+    if (entry) entry.type = entryType;
+  } else if (result.status === 404) {
+    error = `${entryType === 'contact' ? 'Contact' : 'Lead'} not found`;
+  } else {
+    error = `Failed to load ${entryType} (HTTP ${result.status})`;
+  }
+} catch (e) {
+  error = e instanceof Error ? e.message : `Failed to load ${entryType}`;
+}
+
+const statusColors: Record<string, { panel: string; badge: string }> = {
+  new: { panel: 'gs-alert--info', badge: 'info' },
+  contacted: { panel: 'gs-alert--warning', badge: 'warning' },
+  qualified: { panel: 'gs-alert--success', badge: 'success' },
+  rejected: { panel: 'gs-alert--error', badge: 'danger' },
+};
+
+const colors = entry ? statusColors[entry.status] : statusColors.new;
+const typeLabel = entryType === 'contact' ? 'Contact Form Submission' : 'Lead';
+---
+
+<AdminLayout title={entry ? `${entry.name} | ${typeLabel}` : `${typeLabel} | GoldShore`}>
+  <div class="gs-page">
+    {error && (
+      <div class="gs-alert gs-alert--error">
+        {error}
+      </div>
+    )}
+
+    {!error && entry && (
+      <>
+        <div class="gs-row gs-row--between">
+          <div>
+            <h1 class="gs-heading">{entry.name}</h1>
+            <p class="gs-text-subtle">{typeLabel} ID: {entry.id.slice(0, 8)}...</p>
+          </div>
+          <a href="/admin/entries" >← Back to Entries</a>
+        </div>
+
+        <div class={`gs-alert ${colors.panel} gs-stack`}>
+          <div class="gs-grid columns-4">
+            <div>
+              <p class="gs-text-sm">Status</p>
+              <p class={`gs-badge ${colors.badge}`}>
+                {entry.status.charAt(0).toUpperCase() + entry.status.slice(1)}
+              </p>
+            </div>
+            <div>
+              <p class="gs-text-sm">Email</p>
+              <p class="gs-text-lg">
+                <a href={`mailto:${entry.email}`} >{entry.email}</a>
+              </p>
+            </div>
+            {entry.phone && (
+              <div>
+                <p class="gs-text-sm">Phone</p>
+                <p class="gs-text-lg">
+                  <a href={`tel:${entry.phone}`} >{entry.phone}</a>
+                </p>
+              </div>
+            )}
+            {entry.company && (
+              <div>
+                <p class="gs-text-sm">Company</p>
+                <p class="gs-text-lg">{entry.company}</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div class="gs-grid columns-2">
+          <div class="gs-card">
+            <h2 class="gs-text-lg">Timeline</h2>
+            <div class="gs-stack-sm gs-text-sm">
+              <div>
+                <p class="gs-text-subtle">Submitted</p>
+                <p>{new Date(entry.created_at).toLocaleString()}</p>
+              </div>
+              {entry.updated_at && (
+                <div>
+                  <p class="gs-text-subtle">Last Updated</p>
+                  <p>{new Date(entry.updated_at).toLocaleString()}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div class="gs-card">
+            <h2 class="gs-text-lg">Summary</h2>
+            <div class="gs-stack-sm gs-text-sm">
+              <div>
+                <p class="gs-text-subtle">Type</p>
+                <p>{typeLabel}</p>
+              </div>
+              <div>
+                <p class="gs-text-subtle">Entry ID</p>
+                <p class="gs-mono">{entry.id}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {entry.message && (
+          <div class="gs-card">
+            <h2 class="gs-text-lg">Message</h2>
+            <p class="gs-text-subtle">{entry.message}</p>
+          </div>
+        )}
+
+        <div class="gs-card">
+          <h2 class="gs-text-lg">Quick Actions</h2>
+          <div class="gs-row">
+            <a href={`mailto:${entry.email}`} class="gs-button">
+              Send Email
+            </a>
+            {entry.phone && (
+              <a href={`tel:${entry.phone}`} class="gs-button">
+                Call
+              </a>
+            )}
+            {entry.status !== 'contacted' && (
+              <button
+                hx-post={`/api/admin/entries/${entryType === 'contact' ? 'contacts' : 'leads'}/${entry.id}`}
+                hx-vals='{"status": "contacted"}'
+                hx-target="this"
+                class="gs-button"
+              >
+                Mark Contacted
+              </button>
+            )}
+            {entryType === 'lead' && entry.status !== 'qualified' && (
+              <button
+                hx-post={`/api/admin/entries/leads/${entry.id}/qualify`}
+                hx-target="this"
+                class="gs-button"
+              >
+                Mark Qualified
+              </button>
+            )}
+            {entry.status !== 'rejected' && (
+              <button
+                hx-post={`/api/admin/entries/${entryType === 'contact' ? 'contacts' : 'leads'}/${entry.id}`}
+                hx-vals='{"status": "rejected"}'
+                hx-target="this"
+              >
+                Reject
+              </button>
+            )}
+          </div>
+        </div>
+      </>
+    )}
+
+    {!error && !entry && (
+      <div>
+        <p class="gs-text-subtle">Loading {typeLabel.toLowerCase()}...</p>
+      </div>
+    )}
+  </div>
+</AdminLayout>

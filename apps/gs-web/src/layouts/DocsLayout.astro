@@ -1,7 +1,6 @@
 ---
 import WebLayout from './WebLayout.astro';
 import DocsSidebar from '../components/DocsSidebar.astro';
-import DocsSearch from '../components/DocsSearch.astro';
 
 const { title, page, canonicalPath, ogTitle, ogDescription } = Astro.props;
 const currentSlug = page
@@ -17,19 +16,11 @@ const currentSlug = page
   ogDescription={ogDescription}
 >
   <section class="gs-section docs-shell">
-    <aside class="gs-card docs-sidebar" aria-label="Documentation navigation">
-      <DocsSearch />
-      <h3 class="section-title"><span>&#9675;</span>Documentation</h3>
-      <ul class="docs-nav">
-        <li><a href="/developer/docs/intro">Introduction</a></li>
-        <li><a href="/developer/docs/getting-started">Getting Started</a></li>
-      </ul>
-    </aside>
     <div class="sidebar-wrapper">
-       <DocsSearch />
+       <p class="docs-label">Documentation</p>
        <DocsSidebar currentSlug={currentSlug} />
     </div>
-    <article class="gs-card docs-main">
+    <article class="docs-main">
       <h1>{title}</h1>
       <slot />
     </article>
@@ -37,15 +28,25 @@ const currentSlug = page
 </WebLayout>
 
 <style>
-  .docs-shell { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: var(--gs-space-5); }
+  .docs-shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: clamp(2rem, 6vw, 6rem); align-items:start; padding-top:5rem; }
 
   .sidebar-wrapper {
     display: flex;
     flex-direction: column;
     gap: var(--gs-space-4);
+    position:sticky;
+    top:7rem;
   }
+  .docs-label { margin:0; color:#d3743e; font:500 .67rem/1 'DM Mono',monospace; letter-spacing:.14em; text-transform:uppercase; }
+  .docs-main { border:0; border-left:1px solid rgba(255,255,255,.08); border-radius:0; background:transparent; padding:0 0 5rem clamp(2rem,5vw,5rem); max-width:860px; }
+  .docs-main[data-reveal] { opacity:1; transform:none; }
+  .docs-main > h1 { margin:0 0 2.5rem; max-width:11ch; font:800 clamp(2.8rem,6vw,5.8rem)/.9 'Syne',sans-serif; letter-spacing:-.06em; text-transform:uppercase; }
+  .docs-main :global(h2) { margin-top:3.5rem; font-family:'Syne',sans-serif; text-transform:uppercase; }
+  .docs-main :global(code) { font-family:'DM Mono',monospace; }
 
   @media (max-width: 900px) {
-    .docs-shell { grid-template-columns: 1fr; }
+    .docs-shell { grid-template-columns: 1fr; padding-top:2rem; }
+    .sidebar-wrapper { position:static; }
+    .docs-main { border-left:0; border-top:1px solid rgba(255,255,255,.08); padding:2rem 0 4rem; }
   }
 </style>

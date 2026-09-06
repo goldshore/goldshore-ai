@@ -1,6 +1,8 @@
 import { Hono } from 'hono';
 import type { Env, Variables } from '../types';
-import { isValidEmail } from '@goldshore/utils';
+import { escapeHtml, isValidEmail } from '@goldshore/utils';
+import { enqueueMailJob } from '../lib/mail-queue';
+import { validateFormTurnstile } from '../lib/turnstile';
 
 const mail = new Hono<{ Bindings: Env; Variables: Variables }>();
 

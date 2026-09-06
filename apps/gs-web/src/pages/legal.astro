@@ -2,22 +2,44 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 export const prerender = false;
 ---
-<BaseLayout title="Legal | GoldShore" description="Legal documents and policies">
+<BaseLayout title="Legal & Trust | GoldShore" description="GoldShore website terms, privacy practices, accessibility commitments, and editorial standards." canonicalPath="/legal/">
   <section class="gs-section gs-section--padded">
-    <div class="max-w-3xl mx-auto">
-      <h1 class="gs-heading text-4xl mb-8">Legal</h1>
+    <div class="legal-shell">
+      <p class="gs-eyebrow">Policies and standards</p>
+      <h1 class="gs-heading text-4xl mb-4">Legal &amp; trust</h1>
+      <p class="text-[var(--gs-text-secondary)] mb-8">Plain-language information about using this site, how we handle submitted information, and the standards behind our public work.</p>
 
-      <div class="grid gap-6">
-        <a href="/legal/privacy" class="block p-6 border border-[var(--gs-border-color)] rounded-lg hover:border-[var(--gs-color-primary)] transition-colors">
-          <h2 class="text-xl font-semibold mb-2">Privacy Policy</h2>
-          <p class="text-[var(--gs-text-secondary)]">How we handle and protect your data.</p>
+      <div class="legal-grid">
+        <a href="/privacy/" class="legal-card">
+          <h2 class="text-xl font-semibold mb-2">Privacy Notice</h2>
+          <p class="text-[var(--gs-text-secondary)]">What we collect, why we use it, who helps us process it, and the choices available to you.</p>
         </a>
 
-        <a href="/legal/terms" class="block p-6 border border-[var(--gs-border-color)] rounded-lg hover:border-[var(--gs-color-primary)] transition-colors">
+        <a href="/terms/" class="legal-card">
           <h2 class="text-xl font-semibold mb-2">Terms of Service</h2>
-          <p class="text-[var(--gs-text-secondary)]">Service agreements and usage guidelines.</p>
+          <p class="text-[var(--gs-text-secondary)]">Rules for using GoldShore websites, content, forms, and protected services.</p>
+        </a>
+
+        <a href="/legal/accessibility" class="legal-card">
+          <h2 class="text-xl font-semibold mb-2">Accessibility</h2>
+          <p class="text-[var(--gs-text-secondary)]">Our approach to accessible experiences and how to report a barrier.</p>
+        </a>
+
+        <a href="/legal/editorial" class="legal-card">
+          <h2 class="text-xl font-semibold mb-2">Editorial &amp; Advertising Standards</h2>
+          <p class="text-[var(--gs-text-secondary)]">How we label analysis, opinion, sponsorships, affiliate relationships, and corrections.</p>
         </a>
       </div>
     </div>
   </section>
 </BaseLayout>
+
+<style>
+  .legal-shell { max-width: 70rem; margin-inline: auto; }
+  .legal-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+  .legal-card { display: block; padding: 1.5rem; border: 1px solid rgba(211, 116, 62, .24); background: rgba(17, 16, 25, .82); color: inherit; text-decoration: none; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; }
+  .legal-card:hover, .legal-card:focus-visible { border-color: #d3743e; background: rgba(211, 116, 62, .08); transform: translateY(-2px); }
+  .legal-card h2 { margin: 0 0 .65rem; font-size: clamp(1.25rem, 2vw, 1.65rem); }
+  .legal-card p { margin: 0; line-height: 1.65; }
+  @media (max-width: 720px) { .legal-grid { grid-template-columns: 1fr; } }
+</style>

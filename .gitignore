@@ -19,6 +19,7 @@ htmlcov/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+*.synchronized
 
 # Environment & secrets
 .env
@@ -82,3 +83,16 @@ Thumbs.db
 .codex-remote-attachments/
 .jules/
 .mcp.json
+
+# Auto-generated files (should be generated at build time, not committed)
+**/worker-configuration.d.ts
+git_log.txt
+*_log.txt
+
+# One-off scripts (use scripts/ directory instead)
+verify_*.py
+update_*.js
+fix_*.js
+
+# Temporary working directories
+tmp-chrome-profile/

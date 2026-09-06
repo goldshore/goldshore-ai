@@ -105,15 +105,15 @@
 
 .gs-shell-v284 .main-nav .nav-cta,
 .gs-shell-v284 .mobile-nav a:last-child {
-  color: #050507;
-  background: linear-gradient(135deg, #fff, #b9d8ff);
-  border: 1px solid rgba(255,255,255,0.55);
-  box-shadow: 0 18px 42px rgba(115,171,255,0.2);
   color: var(--gs-bg, #06060a);
   background: var(--gs-primary, #d96a32);
-  border: 1px solid rgba(217, 106, 50, 0.55);
-  box-shadow: 0 4px 18px rgba(217, 106, 50, 0.25);
-  font-weight: 700;
+  border: 1px solid var(--gs-primary, #d96a32);
+  box-shadow: none;
+  font-family: 'DM Mono', ui-monospace, monospace;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
   white-space: nowrap;
 }
 

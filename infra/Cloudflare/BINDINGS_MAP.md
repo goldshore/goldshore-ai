@@ -1,8 +1,40 @@
 # Gold Shore Labs — Cloudflare Bindings Map
 
+**Last Updated**: 2026-09-01 (live Worker inventory reconciled; `gs-api-prod` →
+`gs-api` and `gs-web-prod` → `gs-web` renames recorded)
+
+> **Note**: `marzton/goldshore-core` repository has been archived. See Phase 4 decision in `docs/PHASE4_DECISION_2026_08.md`. 
+> banproof-me continues as an independent product on banproof.me domain.
+
 ## Zones
 
 - `goldshore.ai` — primary zone
+
+---
+
+## Live Worker inventory
+
+Verified against the Cloudflare API for account `f77de112…` on **2026-09-01**.
+These are the only Workers that exist in the account; script ids are stable
+across renames, which is how the renames below were confirmed.
+
+| Worker | Script id | In this repo |
+|--------|-----------|--------------|
+| `gs-api` | `a5322bde…` | `apps/gs-api` — renamed from `gs-api-prod` |
+| `gs-web` | `7510e007…` | `apps/gs-web` — renamed from `gs-web-prod` |
+| `goldclaw` | `8cb1347a…` | no |
+| `armsway-com` | `f76fe989…` | no |
+| `gearswipe` | `e801a6d5…` | no — renamed from `gearswipe-com` |
+| `partners-in-pools` | `42d253a9…` | no |
+| `banproof-me-prod` | `5d098901…` | no — separate product |
+| `goldshore-{r2-explorer,workflows,agent-visibility}-reference` | — | no — reference samples |
+
+**No longer in the account:** `gs-gateway`, `gs-gateway-prod`, `gs-signals-prod`,
+`gs-control`, `banproof-me`, `gs-admin`, `gs-mail`, `gs-trading-prod`,
+`gs-risk-radar`, `gs-www-redirect{,-prod,-production}`, `gs-api-{preview,staging}`,
+`gs-todo`, `goldshore-ai`, `gs-email-router`. Sections below that still describe
+these are retained for design history and are marked accordingly — do not treat
+them as live infrastructure.
 
 ---
 
@@ -11,11 +43,17 @@
 ### 1. Web and admin UI
 
 `apps/gs-web` is **not** a Pages project. It is an SSR Astro app served by the
-`gs-web-prod` Worker, deployed by the Cloudflare Workers Build git integration.
+`gs-web` Worker, deployed by the Cloudflare Workers Build git integration.
 Hostnames are attached via the `routes` list in `apps/gs-web/wrangler.toml`, not
 via Pages custom domains.
 
-- Worker: `gs-web-prod`
+> **Renamed:** this Worker was `gs-web-prod` until it was renamed to `gs-web` in
+> the dashboard (same script id, `7510e007…`). `[env.prod]` in
+> `apps/gs-web/wrangler.toml` pins `name = "gs-web"` for that reason — without
+> the pin, Wrangler derives `<name>-<env>` and `deploy --env prod` would
+> recreate `gs-web-prod` and move the routes onto it, orphaning the live Worker.
+
+- Worker: `gs-web` _(historical name: `gs-web-prod`)_
 - Repo: `goldshore-ai`
 - Root: `apps/gs-web`
 - Routes (see `[env.prod]` in `apps/gs-web/wrangler.toml` for the authoritative list):
@@ -51,7 +89,7 @@ the current Wrangler contract.
 ### 2. MCP Access Surface
 
 - Host: `mcp.goldshore.ai`
-- Worker: `gs-api-prod` (route `mcp.goldshore.ai/*`), handler at `/mcp`
+- Worker: `gs-api` (route `mcp.goldshore.ai/*`), handler at `/mcp` _(historical name: `gs-api-prod`)_
 - Purpose: private MCP endpoint for approved humans and approved agents
 - Access: Cloudflare Access required before any private tool loads
 - Transport: Streamable HTTP — JSON-RPC 2.0 over `POST /mcp`. `GET` returns 405;
@@ -73,7 +111,10 @@ the current Wrangler contract.
 
 ### 3. API Worker
 
-- Service Name: `gs-api`
+- Service Name: `gs-api` _(historical name: `gs-api-prod`; renamed in the
+  dashboard, same script id `a5322bde…`. `[env.prod]` in
+  `apps/gs-api/wrangler.toml` pins `name = "gs-api"` so `deploy --env prod`
+  does not recreate `gs-api-prod` and move these routes onto it.)_
 - Code: `apps/gs-api`
 - Routes:
   - `api.goldshore.ai/*`
@@ -93,6 +134,8 @@ the current Wrangler contract.
   - Namespace: `gs_api_kv_001` _(canonical; historical alias: `goldshore-api-kv`)_
   - Binding: `RISK_RADAR_CACHE`
   - Namespace: `gs-risk-radar-cache` / `gs-risk-radar-cache-preview` _(Risk Radar response and signal cache; API-only)_
+  - Binding: `MCP_WORKERS_PROMPT`
+  - Namespace: `mcp-workers-prompt-prod` / `mcp-workers-prompt-preview` _(MCP worker prompt templates and system instructions)_
 - D1:
   - Binding: `PLATFORM_DB`
   - Database: `gs_platform_db` _(canonical platform database)_
@@ -124,10 +167,16 @@ the current Wrangler contract.
 
 ---
 
-### 4. Gateway Worker
+### 4. Gateway Worker — RETIRED, not live
 
-- Service Name: `gs-gateway`
-- Code: `apps/gs-gateway`
+> Neither `gs-gateway` nor `gs-gateway-prod` exists in the account as of
+> 2026-09-01, and there is no `apps/gs-gateway` in this repo — CLAUDE.md lists
+> `gs-gateway` among the unsupported legacy app names, and
+> `marzton/goldshore-gateway` was archived 2026-08-22. Gateway responsibilities
+> belong in `apps/gs-api`. Kept for design history only.
+
+- Service Name: `gs-gateway` _(retired)_
+- Code: `apps/gs-gateway` _(no longer present in this repo)_
 - Routes:
   - `gw.goldshore.ai/*`
   - `agent.goldshore.ai/*`
@@ -152,10 +201,15 @@ the current Wrangler contract.
 
 ---
 
-### 5. Control Worker
+### 5. Control Worker — RETIRED, not live
 
-- Service Name: `gs-control`
-- Code: `apps/gs-control`
+> `gs-control` does not exist in the account as of 2026-09-01, and
+> `apps/gs-control` was removed from this repo in the Phase 1-3 cleanup
+> (2026-08-22, see CLAUDE.md). `ops.goldshore.ai/*` is served by `gs-api`.
+> Kept for design history only.
+
+- Service Name: `gs-control` _(retired)_
+- Code: `apps/gs-control` _(no longer present in this repo)_
 - Routes:
   - `ops.goldshore.ai/*`
 
@@ -170,10 +224,12 @@ the current Wrangler contract.
 
 ### 6. Banproof-Me Security Worker
 
-- Service Name: `banproof-me`
-- Config: `apps/banproof-me/wrangler.toml`
-- External domain: `banproof.me`
-- Bound as `SECURITY` in `gs-gateway`
+- Service Name: `banproof-me-prod` _(the `banproof-me` Worker no longer exists
+  in the account as of 2026-09-01; `banproof-me-prod` is the live one)_
+- Config: `marzton/goldshore-core/apps/banproof-me/wrangler.toml`
+- External domain: `banproof.me` (independent product, not part of goldshore-ai platform)
+- Status: **Independent standalone service** (Phase 4: 2026-08-22)
+- Note: banproof-me is deployed separately; it shares platform infrastructure (gs_platform_db, INFRA_SECRETS) but is not consolidated into goldshore-ai
 
 **Bindings (9 platform bindings):**
 
@@ -194,12 +250,17 @@ the current Wrangler contract.
 
 ---
 
-### 7. Gateway Worker — Phase 2 Joinery Bindings
+### 7. Gateway Worker — Phase 2 Joinery Bindings — RETIRED, not live
+
+> Superseded along with section 4: the `gs-gateway` Worker it binds to is gone,
+> and so are two of its three targets — `gs-signals-prod` and `banproof-me` are
+> both absent from the account as of 2026-09-01 (`banproof-me-prod` is the live
+> ban-check Worker). Kept for design history only.
 
 Additional bindings added to `gs-gateway` (`apps/gs-gateway/wrangler.toml`) for Phase 2:
 
 - Service:
-  - Binding: `SECURITY` — `banproof-me` (ban / security checks)
-  - Binding: `SIGNALS` — `gs-signals-prod` (trading signals worker)
+  - Binding: `SECURITY` — `banproof-me` (ban / security checks) _(target retired; live Worker is `banproof-me-prod`)_
+  - Binding: `SIGNALS` — `gs-signals-prod` (trading signals worker) _(target retired)_
 - Queue (producer):
   - Binding: `MAIL_QUEUE` — `gs-mail-jobs` queue

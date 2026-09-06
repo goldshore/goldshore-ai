@@ -1,0 +1,43 @@
+---
+interface Props {
+  headers: string[];
+  selectable?: boolean;
+  label?: string;
+}
+const { headers, selectable = true, label = 'Data listing' } = Astro.props;
+---
+<div class="gs-data-wrap">
+  <table class="gs-data-table" aria-label={label}>
+    <thead>
+      <tr>
+        {selectable && <th class="gs-select-cell"><input type="checkbox" data-select-all aria-label="Select all rows" /></th>}
+        {headers.map((header) => <th>{header}</th>)}
+      </tr>
+    </thead>
+    <tbody><slot /></tbody>
+  </table>
+</div>
+
+<style>
+  .gs-select-cell { width:34px; }
+</style>
+
+<script>
+  for (const table of document.querySelectorAll<HTMLTableElement>('.gs-data-table')) {
+    const selectAll = table.querySelector<HTMLInputElement>('[data-select-all]');
+    const rows = () => [...table.querySelectorAll<HTMLInputElement>('tbody input[type="checkbox"][data-row-select]')];
+    selectAll?.addEventListener('change', () => {
+      for (const checkbox of rows()) checkbox.checked = selectAll.checked;
+      table.dispatchEvent(new CustomEvent('gs:selection-change', { bubbles: true }));
+    });
+    table.addEventListener('change', (event) => {
+      if (!(event.target instanceof HTMLInputElement) || !event.target.matches('[data-row-select]')) return;
+      const items = rows();
+      if (selectAll) {
+        selectAll.checked = items.length > 0 && items.every((item) => item.checked);
+        selectAll.indeterminate = items.some((item) => item.checked) && !selectAll.checked;
+      }
+      table.dispatchEvent(new CustomEvent('gs:selection-change', { bubbles: true }));
+    });
+  }
+</script>

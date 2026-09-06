@@ -1,5 +1,5 @@
 ---
-import AdminLayout from "../../layouts/AdminLayout.astro";
+import AdminLayout from '../../layouts/AdminLayout.astro';
 import { Card } from '@goldshore/ui';
 const permissions = Astro.locals.adminSession?.permissions ?? [];
 const can = (permission: string) => permissions.includes(permission as never);

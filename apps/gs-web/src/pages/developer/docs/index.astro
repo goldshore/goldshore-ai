@@ -67,6 +67,19 @@ const groups = [
     ],
   },
   {
+    title: 'Google Workspace SAML IdP',
+    description: 'Public identity-provider metadata for Cloudflare Access. Certificate bodies, private keys, and any administrator credentials are intentionally excluded.',
+    values: [
+      ['Cloudflare Access callback (ACS)', 'https://goldshore.cloudflareaccess.com/cdn-cgi/access/callback'],
+      ['Google IdP SSO URL', 'https://accounts.google.com/o/saml2/idp?idpid=C01ehcmvc'],
+      ['Google IdP Entity ID', 'https://accounts.google.com/o/saml2?idpid=C01ehcmvc'],
+      ['Google signing certificate 1 SHA-256', '41:17:21:59:59:6F:B9:BA:EF:A4:AC:09:57:2F:BA:D5:2A:24:4A:6D:FA:8B:BF:7D:2F:AB:86:32:52:6D:02:F4'],
+      ['Google signing certificate 1 expiry', '2029-03-21'],
+      ['Google signing certificate 2 SHA-256', 'EB:46:53:21:BB:86:53:80:E0:14:49:24:00:52:9C:B5:D3:45:AF:B9:41:0D:5F:B4:DC:04:CD:2C:BB:93:AB:78'],
+      ['Google signing certificate 2 expiry', '2031-08-21'],
+    ],
+  },
+  {
     title: 'Webhook endpoints',
     description: 'Configure only the event-specific endpoint needed by the provider. Every production webhook must use its matching signature secret.',
     values: [

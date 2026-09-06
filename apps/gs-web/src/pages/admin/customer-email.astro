@@ -1,76 +1,48 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
-
-const { redirect } = Astro;
-if (!Astro.locals.adminSession?.isAuthenticated) {
-  redirect('/login');
-}
+import AdminWorkspaceManager from '../../components/AdminWorkspaceManager.astro';
+if (!Astro.locals.adminSession?.isAuthenticated) return Astro.redirect('/login');
 ---
-
 <AdminLayout title="Customer Email" requiredPermission="system:read">
-  <div class="admin-page-header">
-    <h1>Customer Email</h1>
-    <p>Manage customer communication templates</p>
-  </div>
-
-  <div class="admin-content">
-    <section class="admin-section">
-      <h2>Email Templates</h2>
-      <div class="loading-state">
-        <p>Loading email templates...</p>
+  <AdminWorkspaceManager type="email_templates" title="Customer Email" description="Manage approved templates and queue transactional messages; provider credentials remain server-side." fields={['template_key','subject','from_address','reply_to','status']}/>
+  <section class="gs-section" style="padding-top: 0;">
+    <form id="email-sender" class="gs-card" style="max-width: 760px;">
+      <h2>Send customer email</h2>
+      <p>Messages are placed on the production mail queue and recorded without storing recipient addresses in audit metadata.</p>
+      <div class="gs-input-group"><label for="email-to">Recipient</label><input id="email-to" type="email" required /></div>
+      <div class="gs-input-group"><label for="email-subject">Subject</label><input id="email-subject" maxlength="200" required /></div>
+      <div class="gs-input-group"><label for="email-message">Message</label><textarea id="email-message" rows="10" maxlength="20000" required></textarea></div>
+      <p id="send-status" role="status"></p><button class="gs-button" type="submit">Queue email</button>
+    </form>
+    <div class="gs-card" style="margin-top:2rem; overflow-x:auto;">
+      <div style="display:flex; justify-content:space-between; gap:1rem; align-items:end;">
+        <div><h2>Delivery queue</h2><p>Operational metadata only; recipients and message content are not displayed.</p></div>
+        <div class="gs-input-group"><label for="job-filter">Status</label><select id="job-filter"><option value="">All</option><option>queued</option><option>processing</option><option>retrying</option><option>sent</option><option>failed</option></select></div>
       </div>
-    </section>
-
-    <section class="admin-section">
-      <h2>Send History</h2>
-      <div class="loading-state">
-        <p>Loading send history...</p>
-      </div>
-    </section>
-
-    <section class="admin-section">
-      <h2>Bounce & Complaint Rate</h2>
-      <div class="loading-state">
-        <p>Loading metrics...</p>
-      </div>
-    </section>
-  </div>
+      <table class="gs-table"><thead><tr><th>Created</th><th>Job</th><th>Status</th><th>Recipients</th><th>Attempts</th><th>Result</th></tr></thead><tbody id="mail-jobs"><tr><td colspan="6">Loading mail jobs…</td></tr></tbody></table>
+      <nav aria-label="Mail job pages" style="display:flex;justify-content:space-between;align-items:center;margin-top:1rem;"><button id="jobs-previous" class="gs-button" type="button">Previous</button><span id="jobs-page">Page 1</span><button id="jobs-next" class="gs-button" type="button">Next</button></nav>
+    </div>
+  </section>
 </AdminLayout>
-
-<style>
-  .admin-page-header {
-    padding: 24px;
-    border-bottom: 1px solid rgba(226, 232, 240, 0.1);
-  }
-
-  .admin-page-header h1 {
-    margin: 0 0 8px;
-    font-size: 28px;
-  }
-
-  .admin-page-header p {
-    margin: 0;
-    color: rgba(226, 232, 240, 0.7);
-  }
-
-  .admin-content {
-    padding: 24px;
-  }
-
-  .admin-section {
-    margin-bottom: 32px;
-  }
-
-  .admin-section h2 {
-    font-size: 18px;
-    margin: 0 0 16px;
-  }
-
-  .loading-state {
-    padding: 24px;
-    background: rgba(226, 232, 240, 0.05);
-    border-radius: 8px;
-    text-align: center;
-    color: rgba(226, 232, 240, 0.6);
-  }
-</style>
+<script>
+  const form = document.getElementById('email-sender') as HTMLFormElement;
+  const status = document.getElementById('send-status') as HTMLElement;
+  const jobsBody = document.getElementById('mail-jobs') as HTMLElement;
+  let jobsPage = 1; let jobsPages = 1;
+  const safe = (value: unknown) => String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' })[character] ?? character);
+  const loadJobs = async () => {
+    const filter = (document.getElementById('job-filter') as HTMLSelectElement).value;
+    const response = await fetch(`/api/admin/email/jobs?page=${jobsPage}&pageSize=25${filter ? `&status=${encodeURIComponent(filter)}` : ''}`);
+    if (!response.ok) { jobsBody.innerHTML = '<tr><td colspan="6">Mail queue unavailable.</td></tr>'; return; }
+    const payload = await response.json(); jobsPages = payload.pagination.pages;
+    jobsBody.innerHTML = payload.items.length ? payload.items.map((job: Record<string, unknown>) => `<tr><td>${new Date(String(job.created_at)).toLocaleString()}</td><td><code>${safe(job.id)}</code></td><td><span class="gs-badge">${safe(job.status)}</span></td><td>${safe(job.recipient_count)}</td><td>${safe(job.attempts)}</td><td>${safe(job.message_id || job.last_error_code || '—')}</td></tr>`).join('') : '<tr><td colspan="6">No matching jobs.</td></tr>';
+    document.getElementById('jobs-page')!.textContent = `Page ${jobsPage} of ${jobsPages}`; (document.getElementById('jobs-previous') as HTMLButtonElement).disabled = jobsPage <= 1; (document.getElementById('jobs-next') as HTMLButtonElement).disabled = jobsPage >= jobsPages;
+  };
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault(); status.textContent = 'Queuing…';
+    const response = await fetch('/api/admin/email/send', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ to: (document.getElementById('email-to') as HTMLInputElement).value, subject: (document.getElementById('email-subject') as HTMLInputElement).value, text: (document.getElementById('email-message') as HTMLTextAreaElement).value }) });
+    status.textContent = response.ok ? 'Email queued.' : (await response.json().catch(() => ({ error: 'Unable to queue email.' }))).error;
+    if (response.ok) { form.reset(); jobsPage = 1; await loadJobs(); }
+  });
+  document.getElementById('job-filter')!.addEventListener('change', () => { jobsPage = 1; loadJobs(); }); document.getElementById('jobs-previous')!.addEventListener('click', () => { if (jobsPage > 1) { jobsPage -= 1; loadJobs(); } }); document.getElementById('jobs-next')!.addEventListener('click', () => { if (jobsPage < jobsPages) { jobsPage += 1; loadJobs(); } }); loadJobs();
+</script>

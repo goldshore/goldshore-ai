@@ -16,6 +16,7 @@ jobs:
       github.event.deployment_status.state == 'success' &&
       contains(github.event.deployment.creator.login, 'cloudflare')
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       deployments: read

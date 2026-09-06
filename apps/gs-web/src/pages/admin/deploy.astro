@@ -58,12 +58,12 @@ if (!rule) {
               <button class="gs-button" id="assistant-search" type="button">Search GitHub</button>
               <button class="gs-button gs-button--secondary" id="assistant-stream" type="button">Stream ranking</button>
             </div>
-            <p id="assistant-summary" class="gs-text-sm gs-text-dim">Run a search to generate recommendations.</p>
+            <p id="assistant-summary" class="gs-text-sm gs-text-subtle">Run a search to generate recommendations.</p>
           </div>
 
           <div class="gs-card assistant-panel">
             <h2 class="section-title"><span>◆</span>Selected template</h2>
-            <div id="assistant-selected" class="assistant-selected gs-text-dim">No template selected.</div>
+            <div id="assistant-selected" class="assistant-selected gs-text-subtle">No template selected.</div>
             <div class="assistant-dry-run">
               <label class="gs-input-group">
                 <span>Workspace</span>
@@ -111,9 +111,7 @@ if (!rule) {
   </section>
 
   <script is:inline>
-    const page = document.querySelector('.deploy-assistant');
-    const apiBase = page?.dataset.apiBase || 'https://api.goldshore.ai';
-    const endpoint = (path) => `${apiBase}${path}`;
+    const endpoint = (path) => `/api/admin/deployments${path.replace(/^\/deployments/, '')}`;
 
     const state = {
       recommendations: [],
@@ -156,7 +154,7 @@ if (!rule) {
       if (!target) return;
 
       if (!items.length) {
-        target.innerHTML = '<p class="gs-text-dim">No recommendations found.</p>';
+        target.innerHTML = '<p class="gs-text-subtle">No recommendations found.</p>';
         return;
       }
 

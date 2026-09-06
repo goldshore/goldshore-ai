@@ -3,6 +3,7 @@ export const prerender = false;
 
 import AdminLayout from "../../layouts/AdminLayout.astro";
 import { GSButton } from '@goldshore/ui';
+import { fetchAdminJson } from '../../lib/api-proxy';
 
 interface RepoHealth {
   overall_health: 'critical' | 'warning' | 'healthy';
@@ -28,19 +29,12 @@ let health: RepoHealth | null = null;
 let error: string | null = null;
 
 try {
-  const apiUrl = process.env.PUBLIC_API_URL || 'https://api.goldshore.ai';
-  const response = await fetch(`${apiUrl}/admin/repo-health`, {
-    headers: {
-      'Authorization': `Bearer ${Astro.cookies.get('auth_token')?.value}`,
-      'Accept': 'application/json',
-    },
-  });
+  const result = await fetchAdminJson<any>(Astro.request, '/admin/repo-health');
 
-  if (!response.ok) {
-    error = `Failed to fetch repo health: ${response.status} ${response.statusText}`;
+  if (!result.ok) {
+    error = `Failed to fetch repo health: ${result.status}`;
   } else {
-    const data = await response.json();
-    health = data.data;
+    health = result.data?.data;
   }
 } catch (e) {
   error = e instanceof Error ? e.message : 'Unknown error fetching repo health';
@@ -63,93 +57,92 @@ const lastAudit = health?.last_audit ? new Date(health.last_audit).toLocaleStrin
 ---
 
 <AdminLayout title="Repo Health | GoldShore Admin">
-  <div class="max-w-7xl mx-auto p-8 space-y-8">
+  <div class="gs-page gs-stack">
     <div>
-      <h1 class="text-4xl gs-heading gs-text-accent">Repository Health</h1>
-      <p class="text-lg gs-text-subtle mt-2">Monitor audit findings, security issues, and deployment health.</p>
-      <p class="text-sm gs-text-muted mt-1">Last audited: {lastAudit}</p>
+      <h1 class="gs-heading gs-text-accent">Repository Health</h1>
+      <p class="gs-text-lg gs-text-subtle">Monitor audit findings, security issues, and deployment health.</p>
+      <p class="gs-text-sm gs-text-subtle">Last audited: {lastAudit}</p>
     </div>
 
     {error && (
-      <div class="gs-card border-l-4 border-red-500 bg-red-50">
-        <p class="gs-text-danger font-semibold">Error loading repo health</p>
-        <p class="text-sm gs-text-subtle mt-1">{error}</p>
+      <div class="gs-card">
+        <p class="gs-text-danger">Error loading repo health</p>
+        <p class="gs-text-sm gs-text-subtle">{error}</p>
       </div>
     )}
 
     {health && (
       <>
         {/* Health Scorecard */}
-        <div class="grid md:grid-cols-4 gap-6">
-          <div class="gs-card space-y-3">
-            <h2 class="text-sm font-semibold gs-text-muted uppercase tracking-wider">Health Score</h2>
-            <div class="text-5xl font-bold gs-text-accent">{health.health_score}</div>
-            <div class={`inline-block px-3 py-1 rounded text-sm font-semibold ${healthColors[health.overall_health]}`}>
+        <div class="gs-list-grid">
+          <div class="gs-card gs-stack-sm">
+            <h2 class="gs-text-sm gs-text-subtle">Health Score</h2>
+            <div class="gs-stat gs-text-accent">{health.health_score}</div>
+            <div class={`gs-text-sm ${healthColors[health.overall_health]}`}>
               {health.overall_health.charAt(0).toUpperCase() + health.overall_health.slice(1)}
             </div>
-            <p class="text-xs gs-text-subtle">Scale: 0–100</p>
+            <p class="gs-text-sm gs-text-subtle">Scale: 0–100</p>
           </div>
 
-          <div class="gs-card space-y-3">
-            <h2 class="text-sm font-semibold gs-text-muted uppercase tracking-wider">Critical Issues</h2>
-            <p class="text-5xl font-bold gs-text-critical">{health.security_summary.critical_issues}</p>
-            <p class="text-xs gs-text-subtle">Requires immediate action</p>
+          <div class="gs-card gs-stack-sm">
+            <h2 class="gs-text-sm gs-text-subtle">Critical Issues</h2>
+            <p class="gs-stat gs-text-critical">{health.security_summary.critical_issues}</p>
+            <p class="gs-text-sm gs-text-subtle">Requires immediate action</p>
           </div>
 
-          <div class="gs-card space-y-3">
-            <h2 class="text-sm font-semibold gs-text-muted uppercase tracking-wider">High Priority</h2>
-            <p class="text-5xl font-bold gs-text-warning">{health.security_summary.high_issues}</p>
-            <p class="text-xs gs-text-subtle">Address this sprint</p>
+          <div class="gs-card gs-stack-sm">
+            <h2 class="gs-text-sm gs-text-subtle">High Priority</h2>
+            <p class="gs-stat gs-text-warning">{health.security_summary.high_issues}</p>
+            <p class="gs-text-sm gs-text-subtle">Address this sprint</p>
           </div>
 
-          <div class="gs-card space-y-3">
-            <h2 class="text-sm font-semibold gs-text-muted uppercase tracking-wider">CVEs Open</h2>
-            <p class="text-5xl font-bold gs-text-danger">{health.security_summary.cves_open}</p>
-            <p class="text-xs gs-text-subtle">Vulnerability count</p>
+          <div class="gs-card gs-stack-sm">
+            <h2 class="gs-text-sm gs-text-subtle">CVEs Open</h2>
+            <p class="gs-stat gs-text-danger">{health.security_summary.cves_open}</p>
+            <p class="gs-text-sm gs-text-subtle">Vulnerability count</p>
           </div>
         </div>
 
         {/* Top Blockers */}
-        <div class="gs-card space-y-4">
-          <div class="flex justify-between items-center">
-            <h2 class="text-2xl font-semibold">Top Blockers</h2>
+        <div class="gs-card gs-stack">
+          <div class="gs-row gs-row--between">
+            <h2>Top Blockers</h2>
             <GSButton variant="secondary" href="/admin/repo-health/findings">View All</GSButton>
           </div>
 
           {health.findings.length === 0 ? (
-            <p class="gs-text-muted py-8 text-center">No audit findings — keep up the good work! ✨</p>
+            <p class="gs-text-subtle">No audit findings — keep up the good work! ✨</p>
           ) : (
-            <div class="space-y-3">
+            <div class="gs-stack-sm">
               {health.findings.slice(0, 5).map((finding) => (
                 <a
                   href={finding.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="block p-4 border border-gray-200 rounded hover:bg-gray-50 transition-colors"
                 >
-                  <div class="flex justify-between items-start gap-4">
-                    <div class="flex-1">
-                      <div class="flex items-center gap-2 mb-2">
-                        <span class={`inline-block px-2 py-0.5 text-xs font-semibold rounded ${severityColors[finding.severity]}`}>
+                  <div class="gs-row gs-row--between gs-row--start">
+                    <div class="gs-fill">
+                      <div class="gs-row">
+                        <span class={`gs-text-sm ${severityColors[finding.severity]}`}>
                           {finding.severity.toUpperCase()}
                         </span>
-                        <span class="text-xs gs-text-muted">
+                        <span class="gs-text-sm gs-text-subtle">
                           #{finding.issue_id}
                         </span>
                       </div>
-                      <p class="font-semibold gs-text-accent">{finding.title}</p>
-                      <div class="flex gap-2 mt-2 flex-wrap">
+                      <p class="gs-text-accent">{finding.title}</p>
+                      <div class="gs-row">
                         {finding.labels.map((label) => (
-                          <span class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                          <span class="gs-text-sm gs-text-subtle">
                             {label}
                           </span>
                         ))}
                       </div>
                     </div>
-                    <span class={`text-xs font-semibold px-2 py-1 rounded whitespace-nowrap ${
-                      finding.status === 'open' ? 'bg-red-100 text-red-700' :
-                      finding.status === 'in_progress' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-green-100 text-green-700'
+                    <span class={`gs-badge ${
+                      finding.status === 'open' ? 'danger' :
+                      finding.status === 'in_progress' ? 'warning' :
+                      'success'
                     }`}>
                       {finding.status === 'open' ? 'Open' :
                        finding.status === 'in_progress' ? 'In Progress' :
@@ -163,15 +156,15 @@ const lastAudit = health?.last_audit ? new Date(health.last_audit).toLocaleStrin
         </div>
 
         {/* Issues Summary Table */}
-        <div class="gs-card space-y-4">
-          <h2 class="text-2xl font-semibold">Issue Summary by Severity</h2>
-          <div class="overflow-x-auto">
-            <table class="w-full border-collapse">
+        <div class="gs-card gs-stack">
+          <h2>Issue Summary by Severity</h2>
+          <div class="gs-table-scroll">
+            <table>
               <thead>
-                <tr class="border-b border-gray-200">
-                  <th class="text-left py-3 px-4 font-semibold">Severity</th>
-                  <th class="text-left py-3 px-4 font-semibold">Count</th>
-                  <th class="text-left py-3 px-4 font-semibold">Status Breakdown</th>
+                <tr>
+                  <th>Severity</th>
+                  <th>Count</th>
+                  <th>Status Breakdown</th>
                 </tr>
               </thead>
               <tbody>
@@ -182,19 +175,19 @@ const lastAudit = health?.last_audit ? new Date(health.last_audit).toLocaleStrin
                   const resolvedCount = findingsOfSeverity.filter(f => f.status === 'resolved').length;
 
                   return (
-                    <tr class="border-b border-gray-100 hover:bg-gray-50">
-                      <td class="py-3 px-4">
-                        <span class={`inline-block px-2 py-1 text-xs font-semibold rounded ${severityColors[severity]}`}>
+                    <tr>
+                      <td>
+                        <span class={`gs-text-sm ${severityColors[severity]}`}>
                           {severity.toUpperCase()}
                         </span>
                       </td>
-                      <td class="py-3 px-4 font-bold">{findingsOfSeverity.length}</td>
-                      <td class="py-3 px-4 text-sm">
-                        <span class="text-red-600">{openCount} open</span>
+                      <td>{findingsOfSeverity.length}</td>
+                      <td class="gs-text-sm">
+                        <span class="gs-text-danger">{openCount} open</span>
                         {' · '}
-                        <span class="text-yellow-600">{inProgressCount} in progress</span>
+                        <span class="gs-status-warning">{inProgressCount} in progress</span>
                         {' · '}
-                        <span class="text-green-600">{resolvedCount} resolved</span>
+                        <span class="gs-status-ok">{resolvedCount} resolved</span>
                       </td>
                     </tr>
                   );
@@ -207,8 +200,7 @@ const lastAudit = health?.last_audit ? new Date(health.last_audit).toLocaleStrin
     )}
 
     {!health && !error && (
-      <div class="gs-card text-center py-12">
-        <div class="animate-spin inline-block w-8 h-8 border-4 border-gray-300 border-t-gray-900 rounded-full mb-4"></div>
+      <div class="gs-card">
         <p class="gs-text-subtle">Loading repository health...</p>
       </div>
     )}

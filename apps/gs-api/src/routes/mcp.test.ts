@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import mcp from './mcp';
 import type { Env } from '../types';
 
-const env = { CLOUDFLARE_ACCOUNT_ID: 'acct123', CLOUDFLARE_API_TOKEN: 'tok' } as unknown as Env;
+const env = { CF_ACCOUNT_ID: 'acct123', CF_TOKEN: 'tok' } as unknown as Env;
 
 const rpc = (body: unknown, bindings: Env = env) =>
   mcp.request(
@@ -46,6 +46,7 @@ describe('mcp route', () => {
         'cloudflare_list_r2_buckets',
         'cloudflare_list_workers',
         'goldshore_search_knowledge',
+        'goldshore_search_objects',
       ],
     );
     assert.ok(body.result.tools.every((t: { inputSchema: { type: string } }) => t.inputSchema.type === 'object'));
@@ -144,7 +145,7 @@ describe('mcp route', () => {
       )
     ).json()) as any;
     assert.equal(body.result.isError, true);
-    assert.match(body.result.content[0].text, /CLOUDFLARE_ACCOUNT_ID/);
+    assert.match(body.result.content[0].text, /CF_ACCOUNT_ID/);
   });
 
   it('surfaces a Cloudflare API failure status without echoing the response body', async () => {

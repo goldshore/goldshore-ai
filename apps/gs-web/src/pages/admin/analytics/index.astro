@@ -1,0 +1,597 @@
+---
+export const prerender = false;
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+
+const requestedTab = Astro.url.searchParams.get('tab');
+const TABS = ['revenue', 'subscriptions', 'events', 'market', 'seo', 'risk', 'opportunities'] as const;
+const initialTab = (TABS as readonly string[]).includes(requestedTab ?? '') ? requestedTab! : 'revenue';
+---
+
+<AdminLayout title="Analytics | GoldShore Admin">
+  <div class="analytics-shell">
+    <header>
+      <p class="eyebrow">Operations</p>
+      <h1>Analytics</h1>
+      <p class="lead">Revenue, subscriptions, events, market data, SEO, risk, and the opportunity pipeline — consolidated from seven separate pages into one.</p>
+    </header>
+
+    <nav class="gs-tabs" role="tablist" aria-label="Analytics sections">
+      <button type="button" class="gs-tab" data-tab="revenue" role="tab">Revenue</button>
+      <button type="button" class="gs-tab" data-tab="subscriptions" role="tab">Subscriptions</button>
+      <button type="button" class="gs-tab" data-tab="events" role="tab">Events</button>
+      <button type="button" class="gs-tab" data-tab="market" role="tab">Market</button>
+      <button type="button" class="gs-tab" data-tab="seo" role="tab">SEO</button>
+      <button type="button" class="gs-tab" data-tab="risk" role="tab">Risk</button>
+      <button type="button" class="gs-tab" data-tab="opportunities" role="tab">Opportunities</button>
+    </nav>
+
+    <!-- ============================== Revenue ============================== -->
+    <div class="gs-panel" data-panel="revenue">
+      <section class="panel">
+        <div class="head">
+          <div><h2>Revenue Metrics</h2><p>Aggregated from all transaction channels (last 30 days)</p></div>
+          <button id="rv-refresh" type="button">Refresh</button>
+        </div>
+        <div id="rv-metrics" class="metrics">Loading…</div>
+      </section>
+      <section class="panel">
+        <h2>By Type</h2>
+        <div class="table-wrapper">
+          <table class="gs-table">
+            <thead><tr><th>Revenue Type</th><th>Amount</th><th>Transactions</th><th>Avg Transaction</th></tr></thead>
+            <tbody id="rv-type-tbody"><tr><td colspan="4">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+      <section class="panel">
+        <h2>By Channel</h2>
+        <div class="table-wrapper">
+          <table class="gs-table">
+            <thead><tr><th>Channel</th><th>Amount</th><th>Transactions</th><th>Share</th></tr></thead>
+            <tbody id="rv-channel-tbody"><tr><td colspan="4">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+      <section class="panel">
+        <h2>By Status</h2>
+        <div class="table-wrapper">
+          <table class="gs-table">
+            <thead><tr><th>Status</th><th>Amount</th><th>Transactions</th></tr></thead>
+            <tbody id="rv-status-tbody"><tr><td colspan="3">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+      <p id="rv-error" class="err" role="alert"></p>
+    </div>
+
+    <!-- ============================== Subscriptions ============================== -->
+    <div class="gs-panel" data-panel="subscriptions">
+      <section class="panel">
+        <div class="head">
+          <div><h2>Subscription Tiers</h2><p>Active subscribers by tier and status</p></div>
+          <button id="sb-refresh" type="button">Refresh</button>
+        </div>
+        <div class="table-wrapper">
+          <table class="gs-table">
+            <thead><tr><th>Tier</th><th>Price</th><th>Billing</th><th>Active</th><th>Cancelled</th><th>Paused</th><th>Total</th></tr></thead>
+            <tbody id="sb-tiers-tbody"><tr><td colspan="7">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+      <section class="panel">
+        <h2>Summary</h2>
+        <div id="sb-summary" class="metrics">Loading…</div>
+      </section>
+      <p id="sb-error" class="err" role="alert"></p>
+    </div>
+
+    <!-- ============================== Events ============================== -->
+    <div class="gs-panel" data-panel="events">
+      <section class="panel">
+        <div class="head">
+          <div><h2>Event Metrics</h2><p>Aggregated by time period and event type</p></div>
+          <div class="controls">
+            <select id="ev-granularity"><option value="hourly">Hourly</option><option value="daily" selected>Daily</option><option value="monthly">Monthly</option></select>
+            <select id="ev-days"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option></select>
+            <button id="ev-refresh" type="button">Refresh</button>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="gs-table">
+            <thead><tr><th>Time Period</th><th>Event Type</th><th>Total Events</th><th>Unique Users</th></tr></thead>
+            <tbody id="ev-events-tbody"><tr><td colspan="4">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+      <section class="panel">
+        <h2>Summary</h2>
+        <div id="ev-summary" class="metrics">Loading…</div>
+      </section>
+      <p id="ev-error" class="err" role="alert"></p>
+    </div>
+
+    <!-- ============================== Market ============================== -->
+    <div class="gs-panel" data-panel="market">
+      <section class="panel">
+        <div class="head">
+          <div><h2>Market Data Feeds</h2><p>Latest price data from market sources</p></div>
+          <div class="controls">
+            <input type="text" id="mk-symbol" placeholder="Filter by symbol (e.g., AAPL)" />
+            <button id="mk-refresh" type="button">Refresh</button>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="gs-table">
+            <thead><tr><th>Symbol</th><th>Price</th><th>Volume</th><th>Source</th><th>Timestamp</th></tr></thead>
+            <tbody id="mk-market-tbody"><tr><td colspan="5">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+      <section class="panel">
+        <h2>Summary</h2>
+        <div id="mk-summary" class="metrics">Loading…</div>
+      </section>
+      <p id="mk-error" class="err" role="alert"></p>
+    </div>
+
+    <!-- ============================== SEO ============================== -->
+    <div class="gs-panel" data-panel="seo">
+      <section class="panel">
+        <div class="head">
+          <div><h2>Rankings</h2><p>Top keywords by traffic potential</p></div>
+          <div class="controls">
+            <input type="text" id="se-domain" placeholder="Filter by domain" />
+            <button id="se-refresh" type="button">Refresh</button>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="gs-table">
+            <thead><tr><th>Domain</th><th>Keyword</th><th>Ranking</th><th>Volume</th><th>Difficulty</th><th>Traffic Potential</th></tr></thead>
+            <tbody id="se-seo-tbody"><tr><td colspan="6">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+      <section class="panel">
+        <h2>Summary</h2>
+        <div id="se-summary" class="metrics">Loading…</div>
+      </section>
+      <p id="se-error" class="err" role="alert"></p>
+    </div>
+
+    <!-- ============================== Risk ============================== -->
+    <div class="gs-panel" data-panel="risk">
+      <section class="panel">
+        <div class="head">
+          <div><h2>Recent Events</h2><p>Critical incidents and risk alerts</p></div>
+          <div class="controls">
+            <select id="rk-severity"><option value="">All severities</option><option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select>
+            <select id="rk-days"><option value="1">Last 1 day</option><option value="7" selected>Last 7 days</option><option value="30">Last 30 days</option></select>
+            <button id="rk-refresh" type="button">Refresh</button>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="gs-table">
+            <thead><tr><th>Severity</th><th>Event Type</th><th>Description</th><th>Flagged At</th></tr></thead>
+            <tbody id="rk-risks-tbody"><tr><td colspan="4">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+      <section class="panel">
+        <h2>Summary</h2>
+        <div id="rk-summary" class="metrics">Loading…</div>
+      </section>
+      <p id="rk-error" class="err" role="alert"></p>
+    </div>
+
+    <!-- ============================== Opportunities ============================== -->
+    <div class="gs-panel" data-panel="opportunities">
+      <section class="panel">
+        <div class="head">
+          <div><h2>Opportunities</h2><p>Sorted by value and creation date</p></div>
+          <div class="controls">
+            <select id="op-status"><option value="">All statuses</option><option value="open">Open</option><option value="in_progress">In Progress</option><option value="closed">Closed</option><option value="archived">Archived</option></select>
+            <button id="op-refresh" type="button">Refresh</button>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="gs-table">
+            <thead><tr><th>Title</th><th>Value</th><th>Probability</th><th>Expected Value</th><th>Status</th><th>Close Date</th><th>Assigned To</th></tr></thead>
+            <tbody id="op-opps-tbody"><tr><td colspan="7">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+      <section class="panel">
+        <h2>Summary</h2>
+        <div id="op-summary" class="metrics">Loading…</div>
+      </section>
+      <p id="op-error" class="err" role="alert"></p>
+    </div>
+  </div>
+
+  <style>
+    .analytics-shell { max-width: 78rem; margin: auto; padding: 2rem; display: grid; gap: 1.5rem; }
+    .eyebrow { color: #d96a32; font-weight: 800; text-transform: uppercase; letter-spacing: .12em; font-size: .8rem; }
+    h1 { font-size: 2.5rem; margin: .2rem 0; }
+    .lead { opacity: .7; margin: 0; }
+
+    .gs-tabs { display: flex; gap: 8px; flex-wrap: wrap; border-bottom: 1px solid rgba(255,255,255,.14); padding-bottom: 4px; }
+    .gs-tab { font: 650 .85rem/1 inherit; padding: 8px 14px; border-radius: 999px 999px 0 0; border: 1px solid transparent; background: transparent; color: rgba(255,255,255,.6); cursor: pointer; }
+    .gs-tab:hover { color: #fff; }
+    .gs-tab[aria-selected="true"] { color: #d96a32; border-color: rgba(255,255,255,.14); border-bottom-color: transparent; background: rgba(255,255,255,.04); }
+    .gs-panel[hidden] { display: none; }
+    .gs-panel { display: grid; gap: 1.5rem; }
+
+    .panel { border: 1px solid rgba(255,255,255,.14); border-radius: 1rem; background: rgba(255,255,255,.04); padding: 1.2rem; }
+    .head { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .head div { flex: 1; min-width: 200px; }
+    .head h2 { margin: 0; font-size: 1.1rem; }
+    .head p { margin: .3rem 0 0 0; opacity: .7; font-size: .9rem; }
+    .panel > h2 { margin: 0 0 1rem; font-size: 1.1rem; }
+
+    .controls { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; }
+    select, input, button { border: 1px solid rgba(255,255,255,.2); border-radius: .65rem; padding: .65rem .9rem; background: #101014; color: inherit; cursor: pointer; font-size: .9rem; }
+    input { flex: 1; min-width: 200px; cursor: text; }
+    input::placeholder { opacity: .5; }
+    button:hover, select:focus { border-color: #d96a32; }
+
+    .table-wrapper { overflow-x: auto; }
+    .gs-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+    .gs-table th, .gs-table td { padding: .75rem; text-align: left; border-bottom: 1px solid rgba(255,255,255,.1); }
+    .gs-table th { background: rgba(255,255,255,.05); font-weight: 600; }
+    .gs-table td.number { text-align: right; font-family: 'Courier New', monospace; }
+
+    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+    .metrics article { border: 1px solid rgba(255,255,255,.1); border-radius: .65rem; padding: 1rem; background: rgba(255,255,255,.02); }
+    .metrics b { display: block; font-size: 1.5rem; }
+    .metrics span { display: block; opacity: .7; font-size: .85rem; margin-top: .5rem; }
+
+    .err { color: #d96a32; margin: 0; display: none; }
+    .err:not(:empty) { display: block; }
+
+    @media (max-width: 850px) { .metrics { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 560px) {
+      .metrics { grid-template-columns: 1fr; }
+      .controls { flex-direction: column; width: 100%; }
+      select, input, button { width: 100%; }
+      .gs-table { font-size: .8rem; }
+      .gs-table th, .gs-table td { padding: .5rem; }
+    }
+  </style>
+
+  <script define:vars={{ initialTab }}>
+    const tabs = Array.from(document.querySelectorAll('.gs-tab'));
+    const panels = Array.from(document.querySelectorAll('.gs-panel'));
+    function activate(tab) {
+      for (const t of tabs) t.setAttribute('aria-selected', String(t.dataset.tab === tab));
+      for (const p of panels) p.hidden = p.dataset.panel !== tab;
+    }
+    for (const t of tabs) {
+      t.addEventListener('click', () => {
+        const tab = t.dataset.tab;
+        activate(tab);
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', tab);
+        window.history.replaceState({}, '', url);
+      });
+    }
+    activate(initialTab);
+  </script>
+
+  <script is:inline>
+    // ---- Revenue (ported from the former revenue.astro) ----
+    (function () {
+      const formatCurrency = (cents) => `$${(cents / 100).toFixed(2)}`;
+      const formatPercent = (fraction) => `${(fraction * 100).toFixed(1)}%`;
+
+      async function load() {
+        try {
+          const response = await fetch('/api/admin/analytics/revenue-summary', { credentials: 'same-origin' });
+          if (!response.ok) throw new Error(`Request failed (${response.status})`);
+          const data = await response.json();
+          if (!data || !data.items) throw new Error('Invalid response');
+          const items = data.items || [];
+
+          const byType = {}, byChannel = {}, byStatus = {};
+          let totalAmount = 0, totalTransactions = 0;
+          items.forEach(item => {
+            totalAmount += item.total_revenue_cents || 0;
+            totalTransactions += item.total_transactions || 0;
+            const key = item.revenue_type || 'Unknown';
+            byType[key] = (byType[key] || 0) + (item.total_revenue_cents || 0);
+            const chKey = item.channel || 'direct';
+            byChannel[chKey] = (byChannel[chKey] || 0) + (item.total_revenue_cents || 0);
+            const stKey = item.status || 'pending';
+            byStatus[stKey] = (byStatus[stKey] || 0) + (item.total_revenue_cents || 0);
+          });
+
+          document.getElementById('rv-metrics').innerHTML = `
+            <article><b>${formatCurrency(totalAmount)}</b><span>Total Revenue</span></article>
+            <article><b>${totalTransactions.toLocaleString()}</b><span>Transactions</span></article>
+            <article><b>${formatCurrency(totalAmount / Math.max(totalTransactions, 1))}</b><span>Avg Transaction</span></article>
+            <article><b>${Object.keys(byChannel).length}</b><span>Channels</span></article>
+          `;
+
+          document.getElementById('rv-type-tbody').innerHTML = Object.entries(byType)
+            .sort(([, a], [, b]) => b - a)
+            .map(([type, amount]) => `<tr><td>${type.replace(/_/g, ' ').toUpperCase()}</td><td>${formatCurrency(amount)}</td><td>${(amount / (totalAmount || 1) * totalTransactions).toFixed(0)}</td><td>${formatCurrency(amount / (amount / (totalAmount || 1) / totalTransactions || 1))}</td></tr>`)
+            .join('') || '<tr><td colspan="4">No data</td></tr>';
+
+          document.getElementById('rv-channel-tbody').innerHTML = Object.entries(byChannel)
+            .sort(([, a], [, b]) => b - a)
+            .map(([channel, amount]) => `<tr><td>${channel.toUpperCase()}</td><td>${formatCurrency(amount)}</td><td>${(amount / (totalAmount || 1) * totalTransactions).toFixed(0)}</td><td>${formatPercent(amount / (totalAmount || 1))}</td></tr>`)
+            .join('') || '<tr><td colspan="4">No data</td></tr>';
+
+          document.getElementById('rv-status-tbody').innerHTML = Object.entries(byStatus)
+            .sort(([, a], [, b]) => b - a)
+            .map(([status, amount]) => `<tr><td>${status.toUpperCase()}</td><td>${formatCurrency(amount)}</td><td>${(amount / (totalAmount || 1) * totalTransactions).toFixed(0)}</td></tr>`)
+            .join('') || '<tr><td colspan="3">No data</td></tr>';
+
+          document.getElementById('rv-error').textContent = '';
+        } catch (err) {
+          document.getElementById('rv-error').textContent = err.message;
+        }
+      }
+      document.getElementById('rv-refresh').addEventListener('click', load);
+      load();
+    })();
+  </script>
+
+  <script is:inline>
+    // ---- Subscriptions (ported from the former subscriptions.astro) ----
+    (function () {
+      const formatCurrency = (cents) => cents ? `$${(cents / 100).toFixed(2)}` : '$0.00';
+
+      async function load() {
+        try {
+          const response = await fetch('/api/admin/analytics/subscription-stats', { credentials: 'same-origin' });
+          if (!response.ok) throw new Error(`Request failed (${response.status})`);
+          const data = await response.json();
+          if (!data || !data.items) throw new Error('Invalid response');
+          const items = data.items || [];
+
+          let totalActive = 0, totalCancelled = 0, totalPaused = 0, totalSubscribers = 0, totalMRR = 0;
+          const tbody = items.map(tier => {
+            const active = tier.active_subscribers || 0;
+            const cancelled = tier.cancelled_count || 0;
+            const paused = tier.paused_count || 0;
+            const total = active + cancelled + paused;
+            const mrr = (tier.price_cents || 0) * (tier.billing_period === 'annual' ? 1/12 : 1);
+            totalActive += active; totalCancelled += cancelled; totalPaused += paused;
+            totalSubscribers += total; totalMRR += mrr * active;
+            return `<tr><td>${tier.name}</td><td>${formatCurrency(tier.price_cents)}</td><td>${tier.billing_period || 'monthly'}</td><td class="number">${active.toLocaleString()}</td><td class="number">${cancelled.toLocaleString()}</td><td class="number">${paused.toLocaleString()}</td><td class="number">${total.toLocaleString()}</td></tr>`;
+          }).join('') || '<tr><td colspan="7">No subscription tiers found</td></tr>';
+          document.getElementById('sb-tiers-tbody').innerHTML = tbody;
+
+          document.getElementById('sb-summary').innerHTML = `
+            <article><b>${totalActive.toLocaleString()}</b><span>Active Subscribers</span></article>
+            <article><b>${totalSubscribers.toLocaleString()}</b><span>Total Subscribers</span></article>
+            <article><b>${formatCurrency(totalMRR * 100)}</b><span>Monthly Recurring Revenue</span></article>
+            <article><b>${(((totalCancelled + totalPaused) / Math.max(totalSubscribers, 1)) * 100).toFixed(1)}%</b><span>Churn Rate</span></article>
+          `;
+          document.getElementById('sb-error').textContent = '';
+        } catch (err) {
+          document.getElementById('sb-error').textContent = err.message;
+        }
+      }
+      document.getElementById('sb-refresh').addEventListener('click', load);
+      load();
+    })();
+  </script>
+
+  <script is:inline>
+    // ---- Events (ported from the former events.astro) ----
+    (function () {
+      async function load() {
+        try {
+          const granularity = document.getElementById('ev-granularity').value;
+          const days = document.getElementById('ev-days').value;
+          const response = await fetch(`/api/admin/analytics/events-rollup?granularity=${granularity}&days=${days}`, { credentials: 'same-origin' });
+          if (!response.ok) throw new Error(`Request failed (${response.status})`);
+          const data = await response.json();
+          if (!data || !data.items) throw new Error('Invalid response');
+          const items = data.items || [];
+
+          let totalEvents = 0, totalUsers = 0;
+          const eventTypes = new Set();
+          const tbody = items.map(item => {
+            totalEvents += item.total_events || 0;
+            totalUsers += item.unique_users || 0;
+            eventTypes.add(item.event_type);
+            return `<tr><td>${new Date(item.time_period).toLocaleString()}</td><td>${item.event_type || 'Unknown'}</td><td class="number">${(item.total_events || 0).toLocaleString()}</td><td class="number">${(item.unique_users || 0).toLocaleString()}</td></tr>`;
+          }).join('') || '<tr><td colspan="4">No events recorded</td></tr>';
+          document.getElementById('ev-events-tbody').innerHTML = tbody;
+
+          document.getElementById('ev-summary').innerHTML = `
+            <article><b>${totalEvents.toLocaleString()}</b><span>Total Events</span></article>
+            <article><b>${totalUsers.toLocaleString()}</b><span>Unique Users</span></article>
+            <article><b>${eventTypes.size}</b><span>Event Types</span></article>
+            <article><b>${(totalEvents / Math.max(totalUsers, 1)).toFixed(1)}</b><span>Avg Events/User</span></article>
+          `;
+          document.getElementById('ev-error').textContent = '';
+        } catch (err) {
+          document.getElementById('ev-error').textContent = err.message;
+        }
+      }
+      document.getElementById('ev-refresh').addEventListener('click', load);
+      document.getElementById('ev-granularity').addEventListener('change', load);
+      document.getElementById('ev-days').addEventListener('change', load);
+      load();
+    })();
+  </script>
+
+  <script is:inline>
+    // ---- Market (ported from the former market.astro) ----
+    (function () {
+      const formatPrice = (cents) => cents ? `$${(cents / 100).toFixed(2)}` : '$0.00';
+
+      async function load() {
+        try {
+          const symbol = document.getElementById('mk-symbol').value.trim();
+          const query = symbol ? `?symbol=${encodeURIComponent(symbol)}` : '';
+          const response = await fetch(`/api/admin/analytics/market-data${query}`, { credentials: 'same-origin' });
+          if (!response.ok) throw new Error(`Request failed (${response.status})`);
+          const data = await response.json();
+          if (!data || !data.items) throw new Error('Invalid response');
+          const items = data.items || [];
+
+          const tbody = items.map(item => `<tr><td><strong>${item.symbol || 'N/A'}</strong></td><td class="number">${formatPrice(item.price_cents)}</td><td class="number">${(item.volume || 0).toLocaleString()}</td><td>${item.source || 'Unknown'}</td><td><small>${new Date(item.timestamp).toLocaleString()}</small></td></tr>`)
+            .join('') || '<tr><td colspan="5">No market data available</td></tr>';
+          document.getElementById('mk-market-tbody').innerHTML = tbody;
+
+          const uniqueSymbols = new Set(items.map(i => i.symbol));
+          const totalVolume = items.reduce((sum, i) => sum + (i.volume || 0), 0);
+          const avgPrice = items.length > 0 ? items.reduce((sum, i) => sum + (i.price_cents || 0), 0) / items.length : 0;
+          document.getElementById('mk-summary').innerHTML = `
+            <article><b>${items.length}</b><span>Data Points</span></article>
+            <article><b>${uniqueSymbols.size}</b><span>Unique Symbols</span></article>
+            <article><b>${formatPrice(avgPrice)}</b><span>Avg Price</span></article>
+            <article><b>${totalVolume.toLocaleString()}</b><span>Total Volume</span></article>
+          `;
+          document.getElementById('mk-error').textContent = '';
+        } catch (err) {
+          document.getElementById('mk-error').textContent = err.message;
+        }
+      }
+      document.getElementById('mk-refresh').addEventListener('click', load);
+      document.getElementById('mk-symbol').addEventListener('keydown', (e) => { if (e.key === 'Enter') load(); });
+      load();
+    })();
+  </script>
+
+  <script is:inline>
+    // ---- SEO (ported from the former seo.astro) ----
+    (function () {
+      async function load() {
+        try {
+          const domain = document.getElementById('se-domain').value.trim();
+          const query = domain ? `?domain=${encodeURIComponent(domain)}` : '';
+          const response = await fetch(`/api/admin/analytics/seo-metrics${query}`, { credentials: 'same-origin' });
+          if (!response.ok) throw new Error(`Request failed (${response.status})`);
+          const data = await response.json();
+          if (!data || !data.items) throw new Error('Invalid response');
+          const items = data.items || [];
+
+          const tbody = items.map(item => {
+            const traffic = item.traffic_potential || 0;
+            const ranking = item.ranking_position || 999;
+            const volume = item.volume || 0;
+            const difficulty = item.difficulty || 0;
+            return `<tr><td>${item.domain || 'N/A'}</td><td><strong>${item.keyword || 'N/A'}</strong></td><td class="number">${ranking > 100 ? 'N/A' : ranking}</td><td class="number">${volume.toLocaleString()}</td><td class="number">${difficulty}/100</td><td class="number" data-traffic="${traffic}">${traffic.toFixed(1)}</td></tr>`;
+          }).join('') || '<tr><td colspan="6">No SEO metrics available</td></tr>';
+          document.getElementById('se-seo-tbody').innerHTML = tbody;
+
+          const domains = new Set(items.map(i => i.domain));
+          const totalVolume = items.reduce((sum, i) => sum + (i.volume || 0), 0);
+          const avgTraffic = items.length > 0 ? items.reduce((sum, i) => sum + (i.traffic_potential || 0), 0) / items.length : 0;
+          const ranked = items.filter(i => i.ranking_position && i.ranking_position <= 100);
+          const avgRanking = ranked.reduce((sum, i) => sum + (i.ranking_position || 0), 0) / Math.max(ranked.length, 1);
+          document.getElementById('se-summary').innerHTML = `
+            <article><b>${domains.size}</b><span>Tracked Domains</span></article>
+            <article><b>${items.length}</b><span>Keywords</span></article>
+            <article><b>${avgRanking > 100 ? 'N/A' : avgRanking.toFixed(0)}</b><span>Avg Ranking</span></article>
+            <article><b>${avgTraffic.toFixed(0)}</b><span>Avg Traffic Potential</span></article>
+          `;
+          document.getElementById('se-error').textContent = '';
+        } catch (err) {
+          document.getElementById('se-error').textContent = err.message;
+        }
+      }
+      document.getElementById('se-refresh').addEventListener('click', load);
+      document.getElementById('se-domain').addEventListener('keydown', (e) => { if (e.key === 'Enter') load(); });
+      load();
+    })();
+  </script>
+
+  <script is:inline>
+    // ---- Risk (ported from the former risk.astro) ----
+    (function () {
+      const severityColors = { critical: '#d32f2f', high: '#f57c00', medium: '#fbc02d', low: '#388e3c' };
+
+      async function load() {
+        try {
+          const severity = document.getElementById('rk-severity').value;
+          const days = document.getElementById('rk-days').value;
+          let query = `?days=${days}`;
+          if (severity) query += `&severity=${severity}`;
+          const response = await fetch(`/api/admin/analytics/risk-events${query}`, { credentials: 'same-origin' });
+          if (!response.ok) throw new Error(`Request failed (${response.status})`);
+          const data = await response.json();
+          if (!data || !data.items) throw new Error('Invalid response');
+          const items = data.items || [];
+
+          const tbody = items.map(item => {
+            const sev = item.severity || 'medium';
+            const color = severityColors[sev] || '#999';
+            return `<tr><td><span class="badge" style="background-color:${color};color:white;padding:.25rem .5rem;border-radius:.25rem;font-size:.85rem;">${sev.toUpperCase()}</span></td><td><strong>${item.event_type || 'Unknown'}</strong></td><td>${item.description || 'No description'}</td><td><small>${new Date(item.flagged_at).toLocaleString()}</small></td></tr>`;
+          }).join('') || '<tr><td colspan="4">No risk events found</td></tr>';
+          document.getElementById('rk-risks-tbody').innerHTML = tbody;
+
+          const bySeverity = { critical: 0, high: 0, medium: 0, low: 0 };
+          items.forEach(item => { const sev = item.severity || 'medium'; if (bySeverity.hasOwnProperty(sev)) bySeverity[sev]++; });
+          document.getElementById('rk-summary').innerHTML = `
+            <article style="border-left:3px solid #d32f2f;"><b>${bySeverity.critical}</b><span>Critical</span></article>
+            <article style="border-left:3px solid #f57c00;"><b>${bySeverity.high}</b><span>High</span></article>
+            <article style="border-left:3px solid #fbc02d;"><b>${bySeverity.medium}</b><span>Medium</span></article>
+            <article style="border-left:3px solid #388e3c;"><b>${bySeverity.low}</b><span>Low</span></article>
+          `;
+          document.getElementById('rk-error').textContent = '';
+        } catch (err) {
+          document.getElementById('rk-error').textContent = err.message;
+        }
+      }
+      document.getElementById('rk-refresh').addEventListener('click', load);
+      document.getElementById('rk-severity').addEventListener('change', load);
+      document.getElementById('rk-days').addEventListener('change', load);
+      load();
+    })();
+  </script>
+
+  <script is:inline>
+    // ---- Opportunities (ported from the former opportunities.astro) ----
+    (function () {
+      const formatCurrency = (cents) => cents ? `$${(cents / 100).toFixed(2)}` : '$0.00';
+      const formatPercent = (pct) => `${pct?.toFixed(0) || 0}%`;
+      const statusColors = { open: '#2196f3', in_progress: '#ff9800', closed: '#4caf50', archived: '#9e9e9e' };
+
+      async function load() {
+        try {
+          const status = document.getElementById('op-status').value;
+          const query = status ? `?status=${status}` : '';
+          const response = await fetch(`/api/admin/analytics/opportunities${query}`, { credentials: 'same-origin' });
+          if (!response.ok) throw new Error(`Request failed (${response.status})`);
+          const data = await response.json();
+          if (!data || !data.items) throw new Error('Invalid response');
+          const items = data.items || [];
+
+          let totalValue = 0, totalExpectedValue = 0;
+          const byStatus = { open: 0, in_progress: 0, closed: 0, archived: 0 };
+          const tbody = items.map(opp => {
+            const value = opp.value_cents || 0;
+            const prob = (opp.probability_percent || 0) / 100;
+            const expectedValue = value * prob;
+            totalValue += value; totalExpectedValue += expectedValue;
+            const st = opp.status || 'open';
+            if (byStatus.hasOwnProperty(st)) byStatus[st]++;
+            const closeDate = opp.target_close_date ? new Date(opp.target_close_date).toLocaleDateString() : 'No date';
+            const color = statusColors[st] || '#999';
+            return `<tr><td><strong>${opp.title || 'Untitled'}</strong><br><small>${opp.description?.substring(0, 50) || ''}</small></td><td class="number">${formatCurrency(value)}</td><td class="number">${formatPercent(opp.probability_percent)}</td><td class="number">${formatCurrency(expectedValue)}</td><td><span class="badge" style="background-color:${color};color:white;padding:.25rem .5rem;border-radius:.25rem;font-size:.85rem;">${st.replace(/_/g, ' ').toUpperCase()}</span></td><td><small>${closeDate}</small></td><td>${opp.assigned_to || 'Unassigned'}</td></tr>`;
+          }).join('') || '<tr><td colspan="7">No opportunities found</td></tr>';
+          document.getElementById('op-opps-tbody').innerHTML = tbody;
+
+          document.getElementById('op-summary').innerHTML = `
+            <article><b>${items.length}</b><span>Total Opportunities</span></article>
+            <article><b>${formatCurrency(totalValue)}</b><span>Total Value</span></article>
+            <article><b>${formatCurrency(totalExpectedValue)}</b><span>Expected Value</span></article>
+            <article><b>${byStatus.open + byStatus.in_progress}</b><span>Active Opportunities</span></article>
+          `;
+          document.getElementById('op-error').textContent = '';
+        } catch (err) {
+          document.getElementById('op-error').textContent = err.message;
+        }
+      }
+      document.getElementById('op-refresh').addEventListener('click', load);
+      document.getElementById('op-status').addEventListener('change', load);
+      load();
+    })();
+  </script>
+</AdminLayout>

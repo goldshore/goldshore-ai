@@ -4,6 +4,7 @@ import {
   isTransactionalMailJob,
   recordMailJobStatus,
 } from '../lib/mail-queue';
+import { isAutomationQueueJob, processAutomationJob } from '../lib/automation-jobs';
 
 const IDEMPOTENCY_TTL_SECONDS = 7 * 24 * 60 * 60;
 
@@ -18,12 +19,13 @@ const adapterFor = (type: string): string => {
   if (type === 'contact' || type === 'checkout' || type.startsWith('mail.')) return 'mail';
   if (type === 'signal' || type === 'atc' || type.startsWith('signal.')) return 'signals';
   if (type === 'trading' || type === 'trading-signal' || type === 'order') return 'trading';
+  if (type.startsWith('automation.')) return 'automation';
   return 'agent';
 };
 
 export async function processQueueBatch(
   batch: MessageBatch<unknown>,
-  env: Pick<Env, 'KV' | 'PLATFORM_DB' | 'EMAIL' | 'MAIL_FROM_EMAIL' | 'MAIL_FROM_NAME'>,
+  env: Pick<Env, 'KV' | 'PLATFORM_DB' | 'EMAIL' | 'MAIL_FROM_EMAIL' | 'MAIL_FROM_NAME' | 'BREVO_API_KEY'>,
 ): Promise<void> {
   for (const message of batch.messages) {
     const idempotencyKey = `queue:v1:${batch.queue}:${message.id}`;
@@ -35,6 +37,10 @@ export async function processQueueBatch(
       }
 
       const type = payloadType(message.body);
+
+      if (isAutomationQueueJob(message.body)) {
+        await processAutomationJob(env, message.body.jobId);
+      }
 
       if (isTransactionalMailJob(message.body)) {
         const job = message.body;

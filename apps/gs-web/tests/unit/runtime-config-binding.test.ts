@@ -35,6 +35,11 @@ test('gs-web retains its Astro SSR Worker-with-Assets deployment contract', () =
   assert.doesNotMatch(deployWorkflow, /^\s*run:.*wrangler pages deploy/m);
 });
 
+test('gs-web documents GS_CONFIG as an unbound proposed-only runtime store', () => {
+  assert.doesNotMatch(webWrangler, /binding\s*=\s*"GS_CONFIG"/);
+  assert.match(webReadme, /does not currently read `GS_CONFIG` directly/);
+});
+
 test('gs-web has no direct operational bindings beyond its session store', () => {
   assert.match(webWrangler, /\[assets\][\s\S]*?binding = "ASSETS"/);
 

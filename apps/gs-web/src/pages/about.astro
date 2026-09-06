@@ -1,138 +1,77 @@
 ---
-import PublicHeader from '../components/PublicHeader.astro';
-import PublicFooter from '../components/PublicFooter.astro';
+import { GSButton } from '@goldshore/ui';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import FlowSection from '../components/FlowSection.astro';
+
+export const prerender = false;
+
+const values = [
+  {
+    title: 'Transparency',
+    body: 'Clear engagement scopes, plain-language reporting, and no hidden fees in how we price or deliver work.',
+  },
+  {
+    title: 'Operational rigor',
+    body: 'Every system we run ships with observability, audit trails, and human checkpoints — nothing operates as a black box.',
+  },
+  {
+    title: 'Security by default',
+    body: 'Enterprise-grade encryption, least-privilege access, and Cloudflare Access-gated operator tooling across every environment we touch.',
+  },
+  {
+    title: 'Built to explain itself',
+    body: 'We don’t deploy AI or automation that can’t justify its own decisions to the operators responsible for them.',
+  },
+];
 ---
 
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Learn about GoldShore's mission to democratize financial data intelligence." />
-    <title>About GoldShore - Financial Data Intelligence Platform</title>
-    <link rel="stylesheet" href="../styles/public.css" />
-    <link rel="stylesheet" href="../styles/about.css" />
-  </head>
-  <body class="gs-public-page">
-    <PublicHeader />
-    
-    <main class="gs-about-page">
-      <section class="gs-hero-section">
-        <div class="gs-container">
-          <div class="gs-hero-content">
-            <h1>About GoldShore</h1>
-            <p class="gs-hero-subtitle">Democratizing Financial Data Intelligence</p>
-          </div>
+<BaseLayout
+  title="About GoldShore | Applied Intelligence"
+  description="GoldShore is an applied intelligence partner for institutions that need clarity under pressure — risk tooling, AI systems, and resilient infrastructure, built and operated end to end."
+  canonicalPath="/about"
+>
+  <FlowSection variant="hero">
+    <div>
+      <p class="gs-eyebrow">About</p>
+      <h1>About GoldShore</h1>
+      <p class="gs-text-lg">Applied intelligence for institutions that need clarity under pressure.</p>
+    </div>
+    <div class="gs-card">
+      <h3 class="section-title">Our mission</h3>
+      <p>
+        GoldShore builds and operates the software, risk tooling, and AI systems that institutions rely on when they
+        cannot afford surprises — cross-sector, full-stack, end to end.
+      </p>
+    </div>
+  </FlowSection>
+
+  <FlowSection>
+    <div class="gs-grid columns-2">
+      {values.map((value) => (
+        <div class="gs-card">
+          <h3 class="section-title">{value.title}</h3>
+          <p>{value.body}</p>
         </div>
-      </section>
+      ))}
+    </div>
+  </FlowSection>
 
-      <section class="gs-mission-section">
-        <div class="gs-container">
-          <h2>Our Mission</h2>
-          <p class="gs-section-text">
-            GoldShore is on a mission to make advanced financial data intelligence accessible to everyone. We believe that sophisticated trading tools and market insights shouldn't be limited to large institutions—every trader deserves access to enterprise-grade analytics and automation.
-          </p>
-        </div>
-      </section>
+  <FlowSection>
+    <div>
+      <h2>Our team</h2>
+      <p class="gs-text-lg">
+        GoldShore is built by operators focused on resilient systems, applied intelligence, and high-trust execution
+        — combining decades of experience across financial markets, software engineering, and production infrastructure.
+      </p>
+      <GSButton href="/team">Meet the team</GSButton>
+    </div>
+  </FlowSection>
 
-      <section class="gs-values-section">
-        <div class="gs-container">
-          <h2>Our Values</h2>
-          <div class="gs-values-grid">
-            <div class="gs-value-card">
-              <h3>Transparency</h3>
-              <p>We believe in open, honest communication with our users and in transparent pricing with no hidden fees.</p>
-            </div>
-            <div class="gs-value-card">
-              <h3>Innovation</h3>
-              <p>Continuously pushing the boundaries of what's possible in financial technology and data analysis.</p>
-            </div>
-            <div class="gs-value-card">
-              <h3>Security</h3>
-              <p>Your data security is our top priority. We employ enterprise-grade encryption and security protocols.</p>
-            </div>
-            <div class="gs-value-card">
-              <h3>Accessibility</h3>
-              <p>Making professional-grade tools available to traders of all skill levels, not just institutions.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="gs-team-section">
-        <div class="gs-container">
-          <h2>Our Team</h2>
-          <p class="gs-section-text">
-            GoldShore was founded by traders and engineers who saw a gap in the market for truly advanced, accessible financial data intelligence tools. Our team combines decades of experience in financial markets, software engineering, and data science.
-          </p>
-        </div>
-      </section>
-
-      <section class="gs-cta-section">
-        <div class="gs-container">
-          <h2>Ready to Transform Your Trading?</h2>
-          <a href="/subscribe" class="gs-btn gs-btn-primary gs-btn-lg">Get Started</a>
-        </div>
-      </section>
-    </main>
-
-    <PublicFooter />
-  </body>
-</html>
-
-<style>
-  .gs-about-page {
-    background: linear-gradient(135deg, #050b14 0%, #0f1622 100%);
-    color: rgba(226, 232, 240, 0.92);
-  }
-
-  .gs-mission-section,
-  .gs-values-section,
-  .gs-team-section,
-  .gs-cta-section {
-    padding: 80px 20px;
-    text-align: center;
-  }
-
-  .gs-mission-section h2,
-  .gs-values-section h2,
-  .gs-team-section h2,
-  .gs-cta-section h2 {
-    font-size: 36px;
-    margin-bottom: 24px;
-  }
-
-  .gs-section-text {
-    font-size: 16px;
-    line-height: 1.6;
-    color: rgba(226, 232, 240, 0.7);
-    max-width: 600px;
-    margin: 0 auto;
-  }
-
-  .gs-values-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 32px;
-    margin-top: 48px;
-  }
-
-  .gs-value-card {
-    padding: 32px;
-    background: rgba(15, 22, 34, 0.5);
-    border: 1px solid rgba(226, 232, 240, 0.1);
-    border-radius: 12px;
-    backdrop-filter: blur(10px);
-  }
-
-  .gs-value-card h3 {
-    font-size: 20px;
-    margin-bottom: 12px;
-  }
-
-  .gs-value-card p {
-    color: rgba(226, 232, 240, 0.6);
-    font-size: 14px;
-    line-height: 1.6;
-  }
-</style>
+  <FlowSection variant="hero">
+    <div>
+      <h2>Ready to operationalize?</h2>
+      <p class="gs-text-lg">GoldShore engagements are scoped to your operational constraints, with clear milestones and measurable outcomes.</p>
+      <GSButton href="/contact" data-analytics-id="about-cta">Request a briefing</GSButton>
+    </div>
+  </FlowSection>
+</BaseLayout>

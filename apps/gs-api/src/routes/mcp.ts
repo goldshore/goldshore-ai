@@ -58,7 +58,7 @@ const text = (value: string, isError = false) => ({
   ...(isError ? { isError: true } : {}),
 });
 
-const TOOLS = [
+export const TOOLS = [
   {
     name: 'cloudflare_list_workers',
     description: 'List all Cloudflare Workers in the account',
@@ -94,7 +94,7 @@ const TOOLS = [
   },
 ] as const;
 
-type Tool = (typeof TOOLS)[number];
+export type Tool = (typeof TOOLS)[number];
 
 /**
  * Every tool takes the same optional account_id and defaults to the binding, so
@@ -105,13 +105,13 @@ const ACCOUNT_ID_SCHEMA = {
   properties: {
     account_id: {
       type: 'string',
-      description: 'Cloudflare account ID (defaults to the CLOUDFLARE_ACCOUNT_ID binding)',
+      description: 'Cloudflare account ID (defaults to the CF_ACCOUNT_ID binding)',
     },
   },
   additionalProperties: false,
 } as const;
 
-const toolDescriptors = TOOLS.map((tool) => ({
+export const toolDescriptors = TOOLS.map((tool) => ({
   name: tool.name,
   description: tool.description,
   inputSchema: ACCOUNT_ID_SCHEMA,
@@ -126,21 +126,26 @@ toolDescriptors.push({
     additionalProperties: false,
   },
 });
+toolDescriptors.push({
+  name: 'goldshore_search_objects',
+  description: 'Search verified GearSwipe objects and their provenance metadata.',
+  inputSchema: { type: 'object', properties: { query: { type: 'string' }, limit: { type: 'number' } }, required: ['query'], additionalProperties: false },
+});
 
-async function callTool(env: Env, tool: Tool, args: Record<string, unknown>) {
+export async function callTool(env: Env, tool: Tool, args: Record<string, unknown>) {
   const account =
     typeof args.account_id === 'string' && args.account_id.trim()
       ? args.account_id.trim()
-      : env.CLOUDFLARE_ACCOUNT_ID;
+      : env.CF_ACCOUNT_ID;
 
-  if (!account || !env.CLOUDFLARE_API_TOKEN) {
-    return text('Missing CLOUDFLARE_ACCOUNT_ID or CLOUDFLARE_API_TOKEN.', true);
+  if (!account || !env.CF_TOKEN) {
+    return text('Missing CF_ACCOUNT_ID or CF_TOKEN.', true);
   }
 
   let response: Response;
   try {
     response = await fetch(`${CF_API}/${tool.path(account)}`, {
-      headers: { Authorization: `Bearer ${env.CLOUDFLARE_API_TOKEN}` },
+      headers: { Authorization: `Bearer ${env.CF_TOKEN}` },
     });
   } catch (error) {
     return text(`Cloudflare API request failed: ${(error as Error).message}`, true);
@@ -155,6 +160,34 @@ async function callTool(env: Env, tool: Tool, args: Record<string, unknown>) {
   const data = (await response.json()) as never;
   const lines = tool.format(data);
   return text(lines.length ? lines.join('\n') : tool.empty);
+}
+
+/** Shared by the MCP `tools/call` handler and the admin chat's tool-use loop. */
+export async function callKnowledgeTool(env: Env, args: Record<string, unknown>) {
+  const query = typeof args.query === 'string' ? args.query.trim() : '';
+  if (!query || query.length > 500) return text('query must be between 1 and 500 characters.', true);
+  try {
+    const matches = await searchGoldshoreKnowledge(env, query);
+    return text(matches.length
+      ? matches.map((match) => `${match.title} (${match.score.toFixed(3)})\n${match.text}`).join('\n\n')
+      : 'No indexed GoldShore knowledge matched this query. The AI Search source may still be indexing.');
+  } catch (error) {
+    return text(error instanceof Error ? error.message : 'Knowledge search failed.', true);
+  }
+}
+
+async function callObjectSearch(env: Env, args: Record<string, unknown>) {
+  const query = typeof args.query === 'string' ? args.query.trim() : '';
+  const limit = Math.min(Math.max(Number(args.limit) || 10, 1), 50);
+  if (!query || query.length > 500) return text('query must be between 1 and 500 characters.', true);
+  const rows = await env.PLATFORM_DB.prepare(
+    `SELECT o.id, o.title, o.description, o.status, o.provenance_json,
+            GROUP_CONCAT(s.uri, ' | ') AS sources
+       FROM gs_objects o LEFT JOIN gs_object_sources s ON s.object_id = o.id
+      WHERE o.title LIKE ? OR o.description LIKE ?
+      GROUP BY o.id ORDER BY o.updated_at DESC LIMIT ?`
+  ).bind(`%${query}%`, `%${query}%`, limit).all();
+  return text(JSON.stringify(rows.results ?? []));
 }
 
 async function dispatch(env: Env, request: JsonRpcRequest) {
@@ -177,18 +210,12 @@ async function dispatch(env: Env, request: JsonRpcRequest) {
     case 'tools/call': {
       const name = request.params?.name;
       if (name === 'goldshore_search_knowledge') {
-        const query = request.params?.arguments && typeof request.params.arguments.query === 'string'
-          ? request.params.arguments.query.trim()
-          : '';
-        if (!query || query.length > 500) return result(id, text('query must be between 1 and 500 characters.', true));
-        try {
-          const matches = await searchGoldshoreKnowledge(env, query);
-          return result(id, text(matches.length
-            ? matches.map((match) => `${match.title} (${match.score.toFixed(3)})\n${match.text}`).join('\n\n')
-            : 'No indexed GoldShore knowledge matched this query. The AI Search source may still be indexing.'));
-        } catch (error) {
-          return result(id, text(error instanceof Error ? error.message : 'Knowledge search failed.', true));
-        }
+        const args = (request.params?.arguments as Record<string, unknown> | undefined) ?? {};
+        return result(id, await callKnowledgeTool(env, args));
+      }
+      if (name === 'goldshore_search_objects') {
+        const args = (request.params?.arguments as Record<string, unknown> | undefined) ?? {};
+        return result(id, await callObjectSearch(env, args));
       }
       const tool = TOOLS.find((candidate) => candidate.name === name);
       if (!tool) {

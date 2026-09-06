@@ -1,0 +1,199 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { fetchAdminJson } from '../../../lib/api-proxy';
+
+const { id } = Astro.params;
+
+let subscriptionData: { subscription: any; customer: any; error: string | null } = {
+  subscription: null,
+  customer: null,
+  error: null
+};
+
+try {
+  const result = await fetchAdminJson<{ subscription: any }>(
+    Astro.request,
+    `/admin/subscriptions/${id}`
+  );
+
+  if (result.ok && result.data) {
+    subscriptionData.subscription = result.data.subscription;
+    // Fetch customer details
+    if (result.data.subscription.customer_id) {
+      const customerResult = await fetchAdminJson<{ customer: any }>(
+        Astro.request,
+        `/admin/customers/${result.data.subscription.customer_id}`
+      );
+      if (customerResult.ok && customerResult.data) {
+        subscriptionData.customer = customerResult.data.customer;
+      }
+    }
+  } else if (result.status === 404) {
+    subscriptionData.error = 'Subscription not found';
+  } else if (result.status === 401 || result.status === 403) {
+    subscriptionData.error = 'Authentication required';
+  } else if (!result.ok) {
+    subscriptionData.error = `Failed to load subscription (status ${result.status})`;
+  }
+} catch (error) {
+  subscriptionData.error = error instanceof Error ? error.message : 'Failed to load subscription';
+}
+---
+
+<AdminLayout title={`Subscription | GoldShore Admin`}>
+  <div class="gs-page gs-stack">
+    {subscriptionData.error ? (
+      <>
+        <div class="gs-stack-sm">
+          <h1 class="gs-heading gs-text-accent">Subscription Not Found</h1>
+        </div>
+        <div class="gs-alert gs-alert--error">
+          {subscriptionData.error}
+        </div>
+        <a href="/admin/subscriptions" class="gs-button">
+          ← Back to Subscriptions
+        </a>
+      </>
+    ) : (
+      <>
+        <div class="gs-stack-sm">
+          <h1 class="gs-heading gs-text-accent">Subscription Details</h1>
+          {subscriptionData.customer && (
+            <p class="gs-text-subtle gs-text-lg">
+              Customer: <span>{subscriptionData.customer.name}</span>
+            </p>
+          )}
+        </div>
+
+        <div class="gs-grid columns-3">
+          <div>
+            <div class="gs-card gs-stack">
+              <form id="updateSubscriptionForm" class="gs-stack">
+                <div>
+                  <label for="plan_id" class="gs-text-sm gs-text-subtle">
+                    Plan ID
+                  </label>
+                  <input
+                    type="text"
+                    id="plan_id"
+                    name="plan_id"
+                    value={subscriptionData.subscription?.plan_id}
+                    class="gs-input"
+                  />
+                </div>
+
+                <div>
+                  <label for="status" class="gs-text-sm gs-text-subtle">
+                    Status
+                  </label>
+                  <select
+                    id="status"
+                    name="status"
+                    value={subscriptionData.subscription?.status}
+                    class="gs-input"
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="suspended">Suspended</option>
+                  </select>
+                </div>
+
+                <div id="successMessage" class="gs-alert gs-alert--success">
+                  Subscription updated successfully!
+                </div>
+
+                <div id="errorMessage" class="gs-alert gs-alert--error"></div>
+
+                <div class="gs-row">
+                  <button
+                    type="submit"
+                    class="gs-button"
+                  >
+                    Save Changes
+                  </button>
+                  <a
+                    href="/admin/subscriptions"
+                    class="gs-button gs-button--secondary"
+                  >
+                    Back
+                  </a>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <div>
+            <div class="gs-card">
+              <h3 class="gs-text-lg">Subscription Details</h3>
+              <div class="gs-stack-sm gs-text-sm">
+                <div>
+                  <span class="gs-text-subtle">ID:</span>
+                  <p class="gs-mono">{subscriptionData.subscription?.id}</p>
+                </div>
+                <div>
+                  <span class="gs-text-subtle">Customer:</span>
+                  {subscriptionData.customer ? (
+                    <a
+                      href={`/admin/customers/${subscriptionData.customer.id}`}
+                    >
+                      {subscriptionData.customer.name}
+                    </a>
+                  ) : (
+                    <p class="gs-mono">{subscriptionData.subscription?.customer_id}</p>
+                  )}
+                </div>
+                <div>
+                  <span class="gs-text-subtle">Created:</span>
+                  <p>{new Date(subscriptionData.subscription?.created_at).toLocaleString()}</p>
+                </div>
+                <div>
+                  <span class="gs-text-subtle">Last Updated:</span>
+                  <p>{new Date(subscriptionData.subscription?.updated_at).toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </>
+    )}
+  </div>
+
+  <script define:vars={{ subscriptionId: id }}>
+    document.getElementById('updateSubscriptionForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const form = e.target as HTMLFormElement;
+      const plan_id = (form.querySelector('#plan_id') as HTMLInputElement).value.trim();
+      const status = (form.querySelector('#status') as HTMLSelectElement).value;
+      // Clear previous messages
+      document.getElementById('successMessage')!.classList.add('hidden');
+      document.getElementById('errorMessage')!.classList.add('hidden');
+
+      try {
+        const response = await fetch(`/api/admin/subscriptions/${subscriptionId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ plan_id, status }),
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to update subscription');
+        }
+
+        document.getElementById('successMessage')!.classList.remove('hidden');
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : 'An error occurred';
+        document.getElementById('errorMessage')!.textContent = errorMsg;
+        document.getElementById('errorMessage')!.classList.remove('hidden');
+      }
+    });
+  </script>
+</AdminLayout>

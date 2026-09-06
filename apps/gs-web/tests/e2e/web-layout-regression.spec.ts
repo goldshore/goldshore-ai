@@ -18,8 +18,8 @@ test('platform and Risk Radar retain the established theme without source leakag
 
   await page.goto('/platform/', { waitUntil: 'networkidle' });
   await expect(page).toHaveTitle('Platform | GoldShore');
-  await expect(page.locator('header.header')).toBeVisible();
-  await expect(page.locator('footer.gs-footer')).toBeVisible();
+  await expect(page.locator('header.topbar')).toBeVisible();
+  await expect(page.locator('footer.gs-theme-footer')).toBeVisible();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('The GoldShore Platform');
   await expect(page.locator('body')).not.toContainText(leakedSourcePattern);
   await page.screenshot({ path: testInfo.outputPath('platform-desktop.png'), fullPage: true });

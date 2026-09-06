@@ -1,9 +1,13 @@
 {
-  "name": "@goldshore/legacy-gs-agent-reference",
+  "name": "@goldshore/gs-agent",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Non-deployable historical reference; active agent behavior lives in apps/gs-api",
+  "scripts": {
+    "dev": "wrangler dev src/index.ts --bundle",
+    "deploy": "wrangler deploy --env prod --bundle",
+    "build": "wrangler deploy --env prod --dry-run --outdir=dist --bundle"
+  },
   "dependencies": {
     "@goldshore/auth": "workspace:*",
     "hono": "^4.12.25"

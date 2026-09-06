@@ -9,10 +9,15 @@
       "types": "./index.ts",
       "import": "./index.ts",
       "default": "./index.ts"
+    },
+    "./subscription-rbac": {
+      "types": "./subscription-rbac.ts",
+      "import": "./subscription-rbac.ts",
+      "default": "./subscription-rbac.ts"
     }
   },
   "dependencies": {
-    "jose": "^6.1.3"
+    "jose": "^6.2.10"
   },
   "scripts": {
     "test": "tsx --test verify.test.ts rbac.test.ts google-service-account.test.ts"
