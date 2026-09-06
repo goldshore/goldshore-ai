@@ -126,6 +126,11 @@ toolDescriptors.push({
     additionalProperties: false,
   },
 });
+toolDescriptors.push({
+  name: 'goldshore_search_objects',
+  description: 'Search verified GearSwipe objects and their provenance metadata.',
+  inputSchema: { type: 'object', properties: { query: { type: 'string' }, limit: { type: 'number' } }, required: ['query'], additionalProperties: false },
+});
 
 export async function callTool(env: Env, tool: Tool, args: Record<string, unknown>) {
   const account =
@@ -171,6 +176,20 @@ export async function callKnowledgeTool(env: Env, args: Record<string, unknown>)
   }
 }
 
+async function callObjectSearch(env: Env, args: Record<string, unknown>) {
+  const query = typeof args.query === 'string' ? args.query.trim() : '';
+  const limit = Math.min(Math.max(Number(args.limit) || 10, 1), 50);
+  if (!query || query.length > 500) return text('query must be between 1 and 500 characters.', true);
+  const rows = await env.PLATFORM_DB.prepare(
+    `SELECT o.id, o.title, o.description, o.status, o.provenance_json,
+            GROUP_CONCAT(s.uri, ' | ') AS sources
+       FROM gs_objects o LEFT JOIN gs_object_sources s ON s.object_id = o.id
+      WHERE o.title LIKE ? OR o.description LIKE ?
+      GROUP BY o.id ORDER BY o.updated_at DESC LIMIT ?`
+  ).bind(`%${query}%`, `%${query}%`, limit).all();
+  return text(JSON.stringify(rows.results ?? []));
+}
+
 async function dispatch(env: Env, request: JsonRpcRequest) {
   const id = request.id ?? null;
 
@@ -193,6 +212,10 @@ async function dispatch(env: Env, request: JsonRpcRequest) {
       if (name === 'goldshore_search_knowledge') {
         const args = (request.params?.arguments as Record<string, unknown> | undefined) ?? {};
         return result(id, await callKnowledgeTool(env, args));
+      }
+      if (name === 'goldshore_search_objects') {
+        const args = (request.params?.arguments as Record<string, unknown> | undefined) ?? {};
+        return result(id, await callObjectSearch(env, args));
       }
       const tool = TOOLS.find((candidate) => candidate.name === name);
       if (!tool) {

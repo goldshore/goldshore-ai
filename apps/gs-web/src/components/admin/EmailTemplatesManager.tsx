@@ -289,10 +289,10 @@ function EmailTemplatesContent({ jwtToken: _jwtToken }: Props) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold">Email Templates</h2>
-        <div className="flex gap-2">
+    <div className="gs-stack">
+      <div className="gs-row gs-row--between">
+        <h2>Email Templates</h2>
+        <div className="gs-row">
           <button
             onClick={() => {
               setSelectedTemplate(null);
@@ -306,7 +306,7 @@ function EmailTemplatesContent({ jwtToken: _jwtToken }: Props) {
               });
               setIsCreateModalOpen(true);
             }}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+            className="gs-button"
           >
             + Create Template
           </button>
@@ -323,7 +323,7 @@ function EmailTemplatesContent({ jwtToken: _jwtToken }: Props) {
               });
               setIsAdvancedEditorOpen(true);
             }}
-            className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600"
+            className="gs-button"
           >
             + WYSIWYG Editor
           </button>
@@ -331,43 +331,43 @@ function EmailTemplatesContent({ jwtToken: _jwtToken }: Props) {
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+        <div className="gs-alert gs-alert--error">
           {error}
         </div>
       )}
 
       {success && (
-        <div className="p-4 bg-green-50 border border-green-200 rounded text-green-700 text-sm">
+        <div className="gs-alert gs-alert--success">
           {success}
         </div>
       )}
 
-      <div className="grid gap-4">
+      <div className="gs-stack-sm">
         {templates.length === 0 ? (
-          <div className="p-8 text-center gs-card">
+          <div className="gs-card">
             <p className="gs-text-subtle">No templates created yet. Create your first template to get started.</p>
           </div>
         ) : (
           templates.map((template) => (
-            <div key={template.id} className="gs-card flex items-center justify-between p-4">
-              <div className="flex-1">
-                <h3 className="font-semibold">{template.name}</h3>
-                <p className="text-sm gs-text-subtle">{template.subject}</p>
-                <div className="mt-2 flex gap-2">
-                  <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
+            <div key={template.id} className="gs-card gs-row gs-row--between">
+              <div className="gs-fill">
+                <h3>{template.name}</h3>
+                <p className="gs-text-subtle">{template.subject}</p>
+                <div className="gs-row">
+                  <span className="gs-badge">
                     {template.category}
                   </span>
                   {template.variables && template.variables.length > 0 && (
-                    <span className="text-xs px-2 py-1 bg-gray-100 text-gray-800 rounded">
+                    <span className="gs-badge">
                       {template.variables.length} variables
                     </span>
                   )}
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="gs-row">
                 <button
                   onClick={() => handleEditTemplate(template)}
-                  className="text-blue-500 hover:text-blue-700 font-medium text-sm"
+                  className="gs-link-button"
                 >
                   Edit
                 </button>
@@ -384,13 +384,13 @@ function EmailTemplatesContent({ jwtToken: _jwtToken }: Props) {
                     });
                     setIsAdvancedEditorOpen(true);
                   }}
-                  className="text-indigo-500 hover:text-indigo-700 font-medium text-sm"
+                  className="gs-link-button"
                 >
                   WYSIWYG
                 </button>
                 <button
                   onClick={() => handleDeleteTemplate(template.id)}
-                  className="text-red-500 hover:text-red-700 font-medium text-sm"
+                  className="gs-link-button gs-link-button--danger"
                 >
                   Delete
                 </button>
@@ -412,12 +412,12 @@ function EmailTemplatesContent({ jwtToken: _jwtToken }: Props) {
         isLoading={isSaving}
       >
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
+          <div className="gs-alert gs-alert--error">
             {error}
           </div>
         )}
         {success && (
-          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
+          <div className="gs-alert gs-alert--success">
             {success}
           </div>
         )}
@@ -489,12 +489,12 @@ function EmailTemplatesContent({ jwtToken: _jwtToken }: Props) {
         isLoading={isSaving}
       >
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
+          <div className="gs-alert gs-alert--error">
             {error}
           </div>
         )}
         {success && (
-          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
+          <div className="gs-alert gs-alert--success">
             {success}
           </div>
         )}
@@ -554,16 +554,16 @@ function EmailTemplatesContent({ jwtToken: _jwtToken }: Props) {
       </Modal>
 
       {isAdvancedEditorOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
+        <div className="gs-row bg-opacity-50">
+          <div className="max-w-4xl">
+            <div>
               {error && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
+                <div className="gs-alert gs-alert--error">
                   {error}
                 </div>
               )}
               {success && (
-                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
+                <div className="gs-alert gs-alert--success">
                   {success}
                 </div>
               )}

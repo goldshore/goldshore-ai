@@ -159,6 +159,14 @@ export const fetchAdminJson = async <T = unknown>(
   if (!response.ok) {
     return { ok: false, status: response.status, data: null };
   }
-  const data = (await response.json()) as T;
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.toLowerCase().includes('application/json')) {
+    console.error(
+      `[fetchAdminJson] Expected JSON from ${apiPath}, received ${contentType || 'an unspecified content type'}`,
+    );
+    return { ok: false, status: 502, data: null };
+  }
+  const data = (await response.json().catch(() => null)) as T | null;
+  if (data === null) return { ok: false, status: 502, data: null };
   return { ok: true, status: response.status, data };
 };

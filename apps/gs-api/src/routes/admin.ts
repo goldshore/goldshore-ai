@@ -17,6 +17,7 @@ import adminEmail from './admin/email';
 import adminSecrets from './admin/secrets';
 import { escapeHtml, isValidEmail } from '@goldshore/utils';
 import { enqueueMailJob } from '../lib/mail-queue';
+import { buildInvitationEmail } from '../lib/mail';
 
 type UserRow = {
   id: string; email: string; display_name: string | null; status: string;
@@ -226,9 +227,28 @@ admin.post("/users/invite", requirePermission("users:invite"), async (c) => {
         .bind(invitationId, payload.email.trim().toLowerCase(), role.id, tokenHash, getActor(c.get("accessClaims"), c.req.raw))
     ]);
   } catch { return c.json({ error: "A user or pending invitation already exists." }, 409); }
-  await audit(c, "admin.users.invite", "success", { userId, invitationId, role: payload.role });
-  // The raw token is returned once for the mail delivery layer; only its hash is durable.
-  return c.json({ user: await getUser(c.env, userId), invitation: { id: invitationId, token } }, 201);
+  const publicSite = (c.env.PUBLIC_SITE_URL || 'https://goldshore.ai').replace(/\/$/, '');
+  // Keep the bearer token in the URL fragment so browsers do not transmit it
+  // in referrers or ordinary HTTP request logs.
+  const invitationUrl = `${publicSite}/activate#token=${encodeURIComponent(token)}`;
+  const message = buildInvitationEmail({ invitationUrl, role: payload.role });
+  const delivery = await enqueueMailJob(c.env, {
+    to: [{ email: payload.email.trim().toLowerCase() }],
+    subject: message.subject,
+    text: message.text,
+    html: message.html,
+    replyTo: { email: 'support@goldshore.ai', name: 'GoldShore Support' },
+  });
+  const queued = delivery.attempted && delivery.ok;
+  await audit(c, "admin.users.invite", queued ? "success" : "error", { userId, invitationId, role: payload.role, mailQueued: queued });
+  if (!queued) {
+    await c.env.PLATFORM_DB.batch([
+      c.env.PLATFORM_DB.prepare("UPDATE invitations SET status='revoked' WHERE id=?").bind(invitationId),
+      c.env.PLATFORM_DB.prepare("UPDATE users SET status='disabled',disabled_at=datetime('now'),updated_at=datetime('now') WHERE id=?").bind(userId),
+    ]);
+    return c.json({ error: 'The invitation could not be queued. No active invitation was created.' }, 503);
+  }
+  return c.json({ user: await getUser(c.env, userId), invitation: { id: invitationId, mailJobId: delivery.body } }, 201);
 });
 
 admin.patch("/users/:id", requirePermission("users:update"), async (c) => {

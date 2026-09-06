@@ -28,6 +28,8 @@ try {
     emailLogs = { ...emailLogs, ...logsResult.data };
   } else if (logsResult.status === 401 || logsResult.status === 403) {
     emailLogs.error = 'Authentication required. Please ensure you are logged in with the correct credentials.';
+  } else if (!logsResult.ok) {
+    emailLogs.error = `Failed to load email logs (status ${logsResult.status}).`;
   }
 } catch (error) {
   emailLogs.error = error instanceof Error ? error.message : 'Failed to load email logs';
@@ -40,6 +42,8 @@ try {
     templates = { ...templates, ...result.data };
   } else if (result.status === 401 || result.status === 403) {
     templates.error = 'Authentication required. Please ensure you are logged in with the correct credentials.';
+  } else if (!result.ok) {
+    templates.error = `Failed to load templates (status ${result.status}).`;
   }
 } catch (error) {
   templates.error = error instanceof Error ? error.message : 'Failed to load templates';
@@ -47,10 +51,10 @@ try {
 ---
 
 <AdminLayout title="Email | GoldShore Admin">
-  <div class="max-w-7xl mx-auto p-8 space-y-8">
-    <div class="space-y-2">
-      <h1 class="text-4xl gs-heading gs-text-accent">Email</h1>
-      <p class="text-lg gs-text-subtle">Queue, logs, and reusable templates — consolidated from two separate pages into one.</p>
+  <div class="gs-page gs-stack">
+    <div class="gs-stack-sm">
+      <h1 class="gs-heading gs-text-accent">Email</h1>
+      <p class="gs-text-lg gs-text-subtle">Queue, logs, and reusable templates — consolidated from two separate pages into one.</p>
     </div>
 
     <nav class="gs-tabs" role="tablist" aria-label="Email sections">
@@ -60,39 +64,39 @@ try {
 
     <!-- ============================== Logs ============================== -->
     <div class="gs-panel" data-panel="logs">
-      {emailLogs.error && <div class="p-4 bg-red-50 border border-red-200 rounded text-red-700 text-sm mb-4">{emailLogs.error}</div>}
-      <div class="grid md:grid-cols-4 gap-6">
-        <div class="gs-card space-y-3">
-          <h2 class="text-xl font-semibold">Queued</h2>
-          <p class="text-3xl font-bold gs-text-warning">{emailStats.queued}</p>
-          <p class="text-sm gs-text-subtle">Waiting to send</p>
+      {emailLogs.error && <div class="gs-text-danger gs-text-sm">{emailLogs.error}</div>}
+      <div class="gs-list-grid">
+        <div class="gs-card gs-stack-sm">
+          <h2>Queued</h2>
+          <p class="gs-stat gs-text-warning">{emailStats.queued}</p>
+          <p class="gs-text-sm gs-text-subtle">Waiting to send</p>
         </div>
-        <div class="gs-card space-y-3">
-          <h2 class="text-xl font-semibold">Sent</h2>
-          <p class="text-3xl font-bold gs-text-success">{emailStats.sent}</p>
-          <p class="text-sm gs-text-subtle">Successfully delivered</p>
+        <div class="gs-card gs-stack-sm">
+          <h2>Sent</h2>
+          <p class="gs-stat gs-text-success">{emailStats.sent}</p>
+          <p class="gs-text-sm gs-text-subtle">Successfully delivered</p>
         </div>
-        <div class="gs-card space-y-3">
-          <h2 class="text-xl font-semibold">Failed</h2>
-          <p class="text-3xl font-bold gs-text-danger">{emailStats.failed}</p>
-          <p class="text-sm gs-text-subtle">Require attention</p>
+        <div class="gs-card gs-stack-sm">
+          <h2>Failed</h2>
+          <p class="gs-stat gs-text-danger">{emailStats.failed}</p>
+          <p class="gs-text-sm gs-text-subtle">Require attention</p>
         </div>
-        <div class="gs-card space-y-3">
-          <h2 class="text-xl font-semibold">Total</h2>
-          <p class="text-3xl font-bold gs-text-info">{emailStats.total}</p>
-          <p class="text-sm gs-text-subtle">All emails</p>
+        <div class="gs-card gs-stack-sm">
+          <h2>Total</h2>
+          <p class="gs-stat gs-text-info">{emailStats.total}</p>
+          <p class="gs-text-sm gs-text-subtle">All emails</p>
         </div>
       </div>
 
-      <div class="gs-card space-y-4 mt-6">
-        <h2 class="text-2xl font-semibold">Email Logs</h2>
+      <div class="gs-card gs-stack">
+        <h2>Email Logs</h2>
         <EmailManager client:load jwtToken={jwtToken} initialLogs={emailLogs} />
       </div>
     </div>
 
     <!-- ============================== Templates ============================== -->
     <div class="gs-panel" data-panel="templates">
-      {templates.error && <div class="p-4 bg-red-50 border border-red-200 rounded text-red-700 text-sm mb-4">{templates.error}</div>}
+      {templates.error && <div class="gs-text-danger gs-text-sm">{templates.error}</div>}
       <EmailTemplatesManager client:load jwtToken={jwtToken} initialTemplates={templates} />
     </div>
   </div>

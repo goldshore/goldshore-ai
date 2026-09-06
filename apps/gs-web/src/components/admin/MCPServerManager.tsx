@@ -80,10 +80,10 @@ export default function MCPServerManager({ jwtToken }: Props) {
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div className="animate-pulse space-y-3">
+      <div className="gs-stack-sm">
+        <div>
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-24 bg-gray-200 rounded"></div>
+            <div key={i} ></div>
           ))}
         </div>
       </div>
@@ -91,79 +91,79 @@ export default function MCPServerManager({ jwtToken }: Props) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="gs-stack-sm">
       {servers.length === 0 ? (
-        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-amber-800">
-          <AlertCircle className="w-5 h-5 inline mr-2" />
+        <div>
+          <AlertCircle className="gs-icon gs-icon--lg gs-icon--inline" />
           No MCP servers available. Ensure servers are configured and running.
         </div>
       ) : (
         servers.map((server) => (
           <div
             key={server.name}
-            className="border rounded-lg overflow-hidden bg-white shadow-sm"
+            className="gs-panel"
           >
             <div
-              className="p-4 cursor-pointer hover:bg-gray-50 flex items-center justify-between"
+              className="gs-row gs-row--between"
               onClick={() =>
                 setExpandedServer(
                   expandedServer === server.name ? null : server.name
                 )
               }
             >
-              <div className="flex items-center gap-3 flex-1">
+              <div className="gs-row">
                 <div
-                  className={`w-3 h-3 rounded-full ${
+                  className={`gs-status-dot ${
                     server.status === 'active'
-                      ? 'bg-green-500'
+                      ? 'gs-status-dot--ok'
                       : server.status === 'error'
-                      ? 'bg-red-500'
-                      : 'bg-gray-300'
+                        ? 'gs-status-dot--error'
+                        : ''
                   }`}
                 ></div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">{server.name}</h3>
-                  <p className="text-sm text-gray-600">{server.description}</p>
+                  <h3>{server.name}</h3>
+                  <p className="gs-text-subtle">{server.description}</p>
                   {server.lastActive && (
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="gs-cell-meta">
                       Last active: {new Date(server.lastActive).toLocaleString()}
                     </p>
                   )}
                 </div>
               </div>
               <ChevronDown
-                className={`w-5 h-5 text-gray-400 transition-transform ${
-                  expandedServer === server.name ? 'rotate-180' : ''
+                className={`gs-icon gs-icon--lg gs-chevron ${
+                  expandedServer === server.name ? 'is-open' : ''
                 }`}
               />
             </div>
 
             {expandedServer === server.name && (
-              <div className="bg-gray-50 border-t p-4 space-y-4">
+              <div className="gs-stack-sm">
                 {server.status === 'error' && server.errorMessage && (
-                  <div className="p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+                  <div className="gs-alert gs-alert--error">
                     {server.errorMessage}
                   </div>
                 )}
 
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-2">
+                  <h4>
                     Available Tools ({server.tools.length})
                   </h4>
-                  <div className="space-y-2">
+                  <div className="gs-input-group">
                     {server.tools.map((tool) => (
                       <div
                         key={tool.name}
-                        className="p-3 bg-white border rounded hover:border-blue-300 cursor-pointer"
+                        className="gs-panel"
                         onClick={() => {
                           setSelectedServer(server.name);
                           setSelectedTool(tool.name);
                         }}
                       >
-                        <div className="font-mono text-sm text-blue-600 font-medium">
+                        <div className="gs-mono">
                           {tool.name}
                         </div>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <p className="gs-text-subtle">
                           {tool.description}
                         </p>
                       </div>
@@ -172,29 +172,29 @@ export default function MCPServerManager({ jwtToken }: Props) {
                 </div>
 
                 {selectedServer === server.name && selectedTool && (
-                  <div className="p-3 bg-blue-50 border border-blue-200 rounded space-y-2">
-                    <div className="flex items-center justify-between">
+                  <div className="gs-alert gs-alert--info gs-input-group">
+                    <div className="gs-row gs-row--between">
                       <div>
-                        <p className="text-sm font-medium text-blue-900">
+                        <p>
                           Execute: {selectedTool}
                         </p>
                       </div>
                       <button
                         onClick={() => executeTool(server.name, selectedTool)}
                         disabled={isExecuting}
-                        className="inline-flex items-center gap-2 px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:bg-gray-400"
+                        className="gs-button"
                       >
                         {isExecuting ? (
-                          <Loader className="w-4 h-4 animate-spin" />
+                          <Loader className="gs-icon gs-spin" />
                         ) : (
-                          <Play className="w-4 h-4" />
+                          <Play className="gs-icon" />
                         )}
                         Execute
                       </button>
                     </div>
 
                     {executionResult && (
-                      <div className="mt-3 p-2 bg-gray-900 text-green-400 font-mono text-xs rounded overflow-auto max-h-48">
+                      <div className="gs-mono">
                         <pre>{executionResult}</pre>
                       </div>
                     )}
@@ -206,12 +206,12 @@ export default function MCPServerManager({ jwtToken }: Props) {
         ))
       )}
 
-      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <h4 className="font-semibold text-blue-900 mb-2">
-          <CheckCircle className="w-5 h-5 inline mr-2" />
+      <div className="gs-alert gs-alert--info">
+        <h4>
+          <CheckCircle className="gs-icon gs-icon--lg gs-icon--inline" />
           Available Servers
         </h4>
-        <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+        <ul className="gs-input-group gs-list-tight">
           <li>GitHub PR Manager - Automate PR management and CI/CD</li>
           <li>Email Mailbox Manager - Send campaigns and manage templates</li>
           <li>Cloudflare Config Sync - Sync and verify infrastructure</li>

@@ -1,0 +1,205 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { fetchAdminJson } from '../../../lib/api-proxy';
+
+const { id } = Astro.params;
+
+let customerData: { customer: any; error: string | null } = {
+  customer: null,
+  error: null
+};
+
+try {
+  const result = await fetchAdminJson<{ customer: any }>(
+    Astro.request,
+    `/admin/customers/${id}`
+  );
+
+  if (result.ok && result.data) {
+    customerData.customer = result.data.customer;
+  } else if (result.status === 404) {
+    customerData.error = 'Customer not found';
+  } else if (result.status === 401 || result.status === 403) {
+    customerData.error = 'Authentication required';
+  } else if (!result.ok) {
+    customerData.error = `Failed to load customer (status ${result.status})`;
+  }
+} catch (error) {
+  customerData.error = error instanceof Error ? error.message : 'Failed to load customer';
+}
+---
+
+<AdminLayout title={`Customer: ${customerData.customer?.name || 'Not Found'} | GoldShore Admin`}>
+  <div class="gs-page gs-stack">
+    {customerData.error ? (
+      <>
+        <div class="gs-stack-sm">
+          <h1 class="gs-heading gs-text-accent">Customer Not Found</h1>
+        </div>
+        <div class="gs-alert gs-alert--error">
+          {customerData.error}
+        </div>
+        <a href="/admin/customers" class="gs-button">
+          ← Back to Customers
+        </a>
+      </>
+    ) : (
+      <>
+        <div class="gs-stack-sm">
+          <h1 class="gs-heading gs-text-accent">{customerData.customer?.name}</h1>
+          <p class="gs-text-subtle gs-text-lg">{customerData.customer?.email}</p>
+        </div>
+
+        <div class="gs-grid columns-3">
+          <div>
+            <div class="gs-card gs-stack">
+              <div>
+                <h2>Customer Information</h2>
+              </div>
+
+              <form id="updateCustomerForm" class="gs-stack">
+                <div>
+                  <label for="name" class="gs-text-sm gs-text-subtle">
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    value={customerData.customer?.name}
+                    class="gs-input"
+                  />
+                </div>
+
+                <div>
+                  <label for="email" class="gs-text-sm gs-text-subtle">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={customerData.customer?.email}
+                    class="gs-input"
+                  />
+                </div>
+
+                <div>
+                  <label for="status" class="gs-text-sm gs-text-subtle">
+                    Status
+                  </label>
+                  <select
+                    id="status"
+                    name="status"
+                    value={customerData.customer?.status}
+                    class="gs-input"
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="suspended">Suspended</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label for="notes" class="gs-text-sm gs-text-subtle">
+                    Notes
+                  </label>
+                  <textarea
+                    id="notes"
+                    name="notes"
+                    rows="4"
+                    class="gs-input"
+                  >
+                    {customerData.customer?.notes}
+                  </textarea>
+                </div>
+
+                <div id="successMessage" class="gs-alert gs-alert--success">
+                  Customer updated successfully!
+                </div>
+
+                <div id="errorMessage" class="gs-alert gs-alert--error"></div>
+
+                <div class="gs-row">
+                  <button
+                    type="submit"
+                    class="gs-button"
+                  >
+                    Save Changes
+                  </button>
+                  <a
+                    href="/admin/customers"
+                    class="gs-button gs-button--secondary"
+                  >
+                    Back
+                  </a>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <div>
+            <div class="gs-card">
+              <h3 class="gs-text-lg">Customer Details</h3>
+              <div class="gs-stack-sm gs-text-sm">
+                <div>
+                  <span class="gs-text-subtle">ID:</span>
+                  <p class="gs-mono">{customerData.customer?.id}</p>
+                </div>
+                <div>
+                  <span class="gs-text-subtle">Created:</span>
+                  <p>{new Date(customerData.customer?.created_at).toLocaleString()}</p>
+                </div>
+                <div>
+                  <span class="gs-text-subtle">Last Updated:</span>
+                  <p>{new Date(customerData.customer?.updated_at).toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </>
+    )}
+  </div>
+
+  <script define:vars={{ customerId: id }}>
+    document.getElementById('updateCustomerForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const form = e.target as HTMLFormElement;
+      const name = (form.querySelector('#name') as HTMLInputElement).value.trim();
+      const email = (form.querySelector('#email') as HTMLInputElement).value.trim();
+      const status = (form.querySelector('#status') as HTMLSelectElement).value;
+      const notes = (form.querySelector('#notes') as HTMLTextAreaElement).value.trim();
+      // Clear previous messages
+      document.getElementById('successMessage')!.classList.add('hidden');
+      document.getElementById('errorMessage')!.classList.add('hidden');
+
+      try {
+        const response = await fetch(`/api/admin/customers/${customerId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name, email, status, notes: notes || undefined }),
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to update customer');
+        }
+
+        document.getElementById('successMessage')!.classList.remove('hidden');
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : 'An error occurred';
+        document.getElementById('errorMessage')!.textContent = errorMsg;
+        document.getElementById('errorMessage')!.classList.remove('hidden');
+      }
+    });
+  </script>
+</AdminLayout>

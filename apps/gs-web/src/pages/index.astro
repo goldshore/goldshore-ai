@@ -8,18 +8,18 @@ export const prerender = false;
 
 const turnstileSiteKey = Astro.locals.TURNSTILE_SITE_KEY || import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || '';
 
-const services  = ['Digital Strategy','AI Implementation','Systems Integration','Design & Development','Enterprise Consulting'];
-const sectors   = ['Financial Services','Operations & Logistics','Media & Communications','Healthcare Systems','Public Sector'];
+const services  = ['Web Development','Design','Marketing & Advertising','SaaS Solutions','Digital Publishing'];
+const sectors   = ['Web','Product','Campaigns','Publishing','Multimedia'];
 const platform  = [['Risk Radar','Live'],['Financial Signals','Live'],['Workflow Engine','Live'],['Sentiment Engine','Beta'],['AI Oracle','Soon']];
-const metrics   = [['Uptime','99.98%','30-day avg'],['Signal Events','4.8B','Per month'],['Latency P99','<45ms','Gateway'],['Deploys','48/d','Verified']];
-const sectorCards = [['Financial Services','Risk · Signals · Trading'],['Operations & Logistics','Workflow · Automation'],['Media & Comms','Content · Analytics'],['Healthcare Systems','Compliance · AI'],['Public Sector','Gov · Infrastructure'],['Enterprise Tech','Dev · Design · Systems']];
-const telemetry = [['Platform Uptime','99.98%','30-day rolling'],['Signal Events/mo','4.8B','Validated telemetry'],['Operator Latency','<45ms','P99 gateway'],['Deploy Cadence','48/day','Verified releases']];
+const metrics   = [['Architecture','2 apps','Canonical'],['Data boundary','Private','By default'],['Delivery','Reviewed','Before release'],['Runtime','Edge','Cloudflare']];
+const sectorCards = [['Web Development','Sites · Apps · Integrations'],['Design','Brand · Product · Systems'],['Marketing','Strategy · Content · Measurement'],['Advertising','Creative · Media · Operations'],['SaaS Solutions','Products · Workflows · Automation'],['Digital Publishing','Editorial · Video · Multimedia']];
+const telemetry = [['Frontend','gs-web','Astro + Worker'],['Backend','gs-api','Unified API Worker'],['Admin Access','Protected','Cloudflare Access'],['Production Release','Approval gated','Human reviewed']];
 const capabilities: Array<[string, string, string[]]> = [
-  ['Risk Intelligence & Financial Signals','Continuous surveillance across positions, portfolios, and market conditions. Anomaly detection, threshold alerting, operator-in-loop review — built for institutions that cannot afford surprises.',['Risk Radar','Sentiment Engine','Market Feeds','Alpaca','Bloomberg']],
-  ['AI Systems & Workflow Automation',"End-to-end workflow design and execution with AI at every node. Queue-backed, auditable, with fallback paths and operator checkpoints. We don't deploy AI that cannot explain itself.",['Gemini','GPT-4','Workflow Engine','Cloudflare AI']],
-  ['Digital Strategy & Systems Consulting','Architecture planning, vendor evaluation, capability mapping — the upstream work that makes everything downstream coherent. Strategy that ships, not slides.',['Strategy','Architecture','Due Diligence','Roadmapping']],
-  ['Design, Development & Product','Full-cycle product and software delivery. Brand identity, design systems, Astro frontends, Cloudflare Workers, React Native — shipped on time, built to last.',['Astro','React Native','CF Workers','Design Systems']],
-  ['Resilient Infrastructure & Observability','Production-grade infrastructure with full observability. Cloudflare Access, D1 databases, KV audit trails, R2 storage — secure by default, traceable at every layer.',['Cloudflare','D1','Hono','JWKS Auth']],
+  ['Web Development & Design','Plan, design, build, and improve public websites, authenticated experiences, and digital products with one team responsible for the interface and the system behind it.',['Websites','Product Design','Design Systems','Accessibility']],
+  ['Marketing & Advertising','Connect campaign strategy, landing experiences, measurement, creative production, and advertising operations without blurring paid placements and editorial content.',['Campaigns','Creative','Measurement','Media Operations']],
+  ['SaaS Solutions & Automation','Build focused software and workflow tools with clear ownership, review steps, integrations, and operational visibility.',['SaaS','Workflow Engine','Integrations','Observability']],
+  ['Digital Publishing & Multimedia','Publish articles, analysis, video, social material, partner work, and sponsored content through a structured editorial system with source and disclosure fields.',['Editorial','Video','Social','Syndication']],
+  ['Applied AI & Data Systems','Use AI where it improves research, production, routing, or review—supported by audit trails, fallback paths, and human checkpoints.',['Analysis','Model Routing','Data Adapters','Review Workflows']],
 ];
 const stackRows = [
   ['gs-web','Astro website and authenticated admin routes','Canonical','Frontend'],
@@ -35,18 +35,26 @@ const canonicalUrl = new URL('/', Astro.url.origin).toString();
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Gold Shore Labs — applied intelligence, digital systems, and consulting." />
+  <meta name="description" content="GoldShore is a web development, design, marketing, advertising, SaaS, and digital publishing firm." />
   <link rel="canonical" href={canonicalUrl} />
   <meta property="og:type" content="website" />
   <meta property="og:url" content={canonicalUrl} />
   <meta property="og:title" content="Gold Shore Labs | Applied Intelligence" />
-  <meta property="og:description" content="Applied intelligence for institutions that need clarity under pressure." />
+  <meta property="og:description" content="Web development, design, marketing, advertising, SaaS solutions, and digital publishing." />
+  <meta property="og:image" content={new URL('/logo.png', Astro.url.origin).toString()} />
+  <meta property="og:site_name" content="GoldShore" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Gold Shore Labs | Applied Intelligence" />
+  <meta name="twitter:description" content="Applied intelligence, digital systems, and consulting." />
+  <meta name="robots" content="index,follow,max-image-preview:large" />
+  <meta name="theme-color" content="#06060a" />
+  <link rel="sitemap" href="/sitemap.xml" type="application/xml" />
   <title>Gold Shore Labs | Applied Intelligence</title>
   <meta name="google-adsense-account" content="ca-pub-5105781580031290" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@300;400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
-  <noscript><link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" /></noscript>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300&family=DM+Mono:wght@300;400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" /></noscript>
 </head>
 <body class="gs-home">
 
@@ -66,7 +74,7 @@ const canonicalUrl = new URL('/', Astro.url.origin).toString();
       <span class="outlined">Strategy</span>
       <span class="accent" data-text="Operates.">Operates.</span>
     </h1>
-    <p class="lead">Applied intelligence for institutions that need clarity under pressure. We build the software, run the strategy, and deploy the AI — cross-sector, full-stack, end to end.</p>
+    <p class="lead">GoldShore designs and builds websites, software, campaigns, and publishing systems. Strategy, creative, engineering, marketing, and applied AI work together as one delivery practice.</p>
     <div class="actions">
       <a class="btn primary magnetic" href="#engage">Request Briefing</a>
       <a class="btn magnetic" href="#services">View Platform</a>
@@ -97,8 +105,8 @@ const canonicalUrl = new URL('/', Astro.url.origin).toString();
 <section class="surface" data-reveal>
   <div class="section-head">
     <div>
-      <p class="kicker">Cross-Sector Deployment Surface</p>
-      <h2>5 active sectors</h2>
+      <p class="kicker">Connected digital practice</p>
+      <h2>Six ways we help</h2>
     </div>
   </div>
   <div class="sector-grid">
@@ -112,8 +120,8 @@ const canonicalUrl = new URL('/', Astro.url.origin).toString();
 <section class="telemetry" data-reveal>
   <div class="section-head">
     <div>
-      <p class="kicker">Platform Telemetry — Live</p>
-      <h2><span class="live-dot"></span>Live</h2>
+      <p class="kicker">Platform architecture</p>
+      <h2>Delivery boundaries</h2>
     </div>
   </div>
   <div class="telemetry-grid">
@@ -133,9 +141,9 @@ const canonicalUrl = new URL('/', Astro.url.origin).toString();
   <div class="section-head large">
     <div>
       <p class="kicker">01 — Capabilities</p>
-      <h2>Cross-<br />Sector.<br />Full-Stack.</h2>
+      <h2>Strategy.<br />Creative.<br />Technology.</h2>
     </div>
-    <p class="section-desc">We operate at the intersection of digital consulting, product engineering, and applied AI — building systems that hold under pressure across every sector we touch.</p>
+    <p class="section-desc">We connect the work that clients often have to coordinate across separate agencies, studios, developers, and software vendors.</p>
   </div>
   <div class="cap-list">
     {capabilities.map(([title,body,tags],i) => (

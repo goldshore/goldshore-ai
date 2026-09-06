@@ -26,10 +26,10 @@ export default function FormField({
   error,
 }: FormFieldProps) {
   return (
-    <div className="space-y-2">
-      <label htmlFor={name} className="block text-sm font-medium">
+    <div className="gs-input-group">
+      <label htmlFor={name} className="gs-label">
         {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
+        {required && <span className="gs-required">*</span>}
       </label>
 
       {type === 'select' && options ? (
@@ -38,7 +38,6 @@ export default function FormField({
           name={name}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           required={required}
         >
           <option value="">Select an option</option>
@@ -56,7 +55,6 @@ export default function FormField({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           rows={rows}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           required={required}
         />
       ) : (
@@ -67,12 +65,11 @@ export default function FormField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           required={required}
         />
       )}
 
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {error && <p className="gs-field-error">{error}</p>}
     </div>
   );
 }

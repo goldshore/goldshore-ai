@@ -1,4 +1,4 @@
-import { access, readFile } from 'node:fs/promises';
+import { access, readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 
 const DEFAULT_DIST_DIR = 'apps/gs-web/dist';
@@ -6,7 +6,7 @@ const DEFAULT_DIST_DIR = 'apps/gs-web/dist';
 const DEFAULT_ROUTES = ['/developer', '/apps/risk-radar', '/', '/platform', '/risk-radar', '/services', '/about', '/contact'];
 
 const baseDistDir = path.resolve(process.env.DIST_DIR ?? DEFAULT_DIST_DIR);
-const serverEntryFile = path.join(baseDistDir, 'server', 'entry.mjs');
+const serverDistDir = path.join(baseDistDir, 'server');
 // Cloudflare Pages adapter v13+ outputs pre-rendered pages to dist/client/
 const clientDistDir = path.join(baseDistDir, 'client');
 const distDir = await access(clientDistDir).then(() => clientDistDir, () => baseDistDir);
@@ -96,12 +96,20 @@ const normalizeManifestRoute = (pathname) => {
 };
 
 const failures = [];
-const serverEntry = await exists(serverEntryFile) ? await readFile(serverEntryFile, 'utf8') : '';
+// Astro 7 keeps the route manifest in a generated server chunk rather than in
+// entry.mjs. Search every emitted server module so SSR routes are recognized
+// regardless of where the adapter writes the manifest.
+const serverFiles = (await exists(serverDistDir))
+  ? (await readdir(serverDistDir, { recursive: true })).filter((file) => file.endsWith('.mjs'))
+  : [];
+const serverManifest = (await Promise.all(
+  serverFiles.map((file) => readFile(path.join(serverDistDir, file), 'utf8')),
+)).join('\n');
 
 const hasServerRoute = (route) => {
   const normalizedRoute = normalizeManifestRoute(route);
   const escapedRoute = normalizedRoute.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return new RegExp(`["']?route["']?\\s*:\\s*["']${escapedRoute}["']`).test(serverEntry);
+  return new RegExp(`["']?route["']?\\s*:\\s*["']${escapedRoute}["']`).test(serverManifest);
 };
 
 for (const sourceRoute of routes) {

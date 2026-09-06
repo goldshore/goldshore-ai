@@ -1,0 +1,14 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+export const prerender = false;
+const methods = [
+  ['Public routes', 'No credential', 'Documentation and explicitly public status resources can be read without an account.'],
+  ['Operator workspace', 'Cloudflare Access', 'Human operators authenticate at the protected admin origin. Authorization remains enforced by server middleware.'],
+  ['API clients', 'Bearer or provider credential', 'Use only credentials issued for the specific integration and environment. Send secrets in headers, never query strings.'],
+  ['Service identities', 'Access service token', 'Approved machine-to-machine clients may require both CF-Access-Client-Id and CF-Access-Client-Secret headers.'],
+];
+---
+<BaseLayout title="Authentication | GoldShore Developer" description="GoldShore authentication boundaries for public routes, operators, API clients, and service identities." canonicalPath="/developer/authentication/">
+  <section class="gs-section gs-section--padded developer-copy"><p class="gs-eyebrow">Developer hub</p><h1>Authentication</h1><p class="lead">Match the credential to the surface. GoldShore never asks you to paste a private token into public forms, documentation, or client-side code.</p><div class="method-grid">{methods.map(([title,method,body]) => <article><p class="method">{method}</p><h2>{title}</h2><p>{body}</p></article>)}</div><aside><strong>Secret boundary</strong><p>Store secrets in an encrypted provider store or Cloudflare Worker secret. Rotate a credential immediately if it appears in source, logs, screenshots, chat, or a URL.</p></aside></section>
+</BaseLayout>
+<style>.developer-copy{max-width:76rem;margin-inline:auto}.developer-copy h1{font-size:clamp(3.5rem,9vw,8rem)}.lead{max-width:68ch;color:var(--gs-text-dim);font-size:1.15rem;line-height:1.7}.method-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin-top:2rem}.method-grid article,aside{padding:1.5rem;border:1px solid rgba(211,116,62,.24);background:#111019}.method-grid h2{margin:.5rem 0}.method-grid p,aside p{color:var(--gs-text-dim);line-height:1.7}.method{color:#d3743e!important;text-transform:uppercase;font:600 .65rem 'DM Mono',monospace;letter-spacing:.08em}aside{margin-top:1rem}@media(max-width:720px){.method-grid{grid-template-columns:1fr}}</style>

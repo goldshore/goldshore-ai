@@ -3,6 +3,9 @@ compatibility_date = "2026-08-12"
 compatibility_flags = ["nodejs_compat"]
 
 workers_dev = false
+# Keep versioned preview URLs available even though the production Worker does
+# not receive a default `<worker>.<subdomain>.workers.dev` route.
+preview_urls = true
 main = "./src/worker.ts"
 
 routes = [
@@ -66,6 +69,9 @@ CONTACT_NOTIFICATION_EMAILS = "marstonr6@gmail.com"
 # explicitly. Without it, `wrangler deploy --env prod` recreates `gs-web-prod`
 # and moves the routes below onto that new Worker, orphaning the live one.
 name = "gs-web"
+# Repeat this in the named production environment: environment configuration is
+# the deployment contract used by CI.
+preview_urls = true
 routes = [
   { pattern = "goldshore.ai/*", zone_name = "goldshore.ai" },
   { pattern = "goldshore.org/*", zone_name = "goldshore.org" },

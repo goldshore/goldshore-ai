@@ -4,6 +4,11 @@ compatibility_date = "2026-08-12"
 compatibility_flags = ["nodejs_compat"]
 
 workers_dev = false
+# `gs-api` implements Durable Objects. Cloudflare does not generate Workers
+# preview URLs for Durable Object Workers, so keep this explicit rather than
+# implying the dashboard toggle can create one. Use an Access-protected staging
+# hostname with isolated bindings for shareable API testing.
+preview_urls = true
 
 # Deployments must always select a named environment so bindings cannot leak
 # between production and preview.
@@ -25,6 +30,9 @@ workers_dev = false
 # deploy` without `--env prod` would replace live gs-api with a bindingless
 # build. Every deploy path in this repo passes `--env prod`; keep it that way.
 name = "gs-api"
+# Match the top-level policy for the CI production target. This does not change
+# Durable Object preview support; Cloudflare currently does not provide it.
+preview_urls = false
 
 routes = [
   { pattern = "api.goldshore.ai/*", zone_name = "goldshore.ai" },
@@ -178,6 +186,16 @@ database_id = "af94f483-b98b-41c5-aa23-3fbed2764b52"
 [env.prod.ai]
 binding = "AI"
 
+# Live production AI Search resources. Keep both the instance and namespace
+# bindings explicit so deploys cannot silently fall back to the public endpoint.
+[[env.prod.ai_search]]
+binding = "AI_SEARCH"
+instance_name = "royal-wind-4649"
+
+[[env.prod.ai_search_namespaces]]
+binding = "SEARCH"
+namespace = "default"
+
 # Native Cloudflare Email Service. Domain onboarding and routing remain
 # dashboard-owned; there is no provider API key in Worker secrets.
 [[env.prod.send_email]]
@@ -191,6 +209,28 @@ allowed_sender_addresses = [
 [env.prod.observability]
 enabled = true
 head_sampling_rate = 1
+
+# Account-level Secrets Store bindings. Values remain outside Worker config
+# and are fetched asynchronously only by the Brevo integration paths.
+[[env.prod.secrets_store_secrets]]
+binding = "BREVO_API_KEY"
+store_id = "b9824d3280c54573a24137c7e7143b33"
+secret_name = "BREVO_API_KEY"
+
+[[env.prod.secrets_store_secrets]]
+binding = "BREVO_MCP_KEY"
+store_id = "b9824d3280c54573a24137c7e7143b33"
+secret_name = "BREVO_MCP_KEY"
+
+# Master key for lib/encryption.ts's AES-256-GCM encryption of integration_secrets
+# rows (admin dashboard "Manage Secrets" + /integrations/keys). This binding was
+# missing entirely - getMasterKey() has been throwing "binding is not configured"
+# on every call since the encryption module was written, silently swallowed by
+# integration-keys.ts's broad catch into a misleading 409 "already exists" error.
+[[env.prod.secrets_store_secrets]]
+binding = "INTEGRATION_MASTER_KEY"
+store_id = "b9824d3280c54573a24137c7e7143b33"
+secret_name = "INTEGRATION_MASTER_KEY"
 
 # ── Cron Triggers (Scheduled Jobs) ──────────────────────────────────────────────────────────────
 # Token rotation job: Runs daily at 2 AM UTC to refresh expiring OAuth tokens
@@ -244,6 +284,11 @@ dead_letter_queue = "gs-mail-dead-letter"
 binding = "GS_SIGNALS"
 name = "gs-signals-evaluator"
 class_name = "SignalsEvaluator"
+
+[[env.prod.workflows]]
+binding = "EDITORIAL_PRODUCTION"
+name = "editorial-production"
+class_name = "EditorialProductionWorkflow"
 
 # ── Durable Objects ──────────────────────────────────────────────────────────────
 [env.prod.durable_objects]

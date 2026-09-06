@@ -17,7 +17,7 @@
 | Page | Route | Component | Status | Notes |
 |------|-------|-----------|--------|-------|
 | Dashboard | `/admin/dashboard` | `AdminLayout` | ✅ Deployed | Entry point, SSR-enabled |
-| Overview | `/admin/overview` | DashboardClient | ✅ Ready | System status + metrics |
+| Overview | `/admin/overview` | `overview.astro` | ✅ Ready | System status + metrics; plain Astro, not a React client |
 | Admin Index | `/admin/index` | Redirect | ⚠️ Redirect | Routes to /app/dashboard |
 | Platform | `/admin/platform` | Platform mgmt | ✅ Ready | Domain/route configuration |
 | Workers | `/admin/workers/` | WorkersMgmt | ✅ Ready | Bindings, routes, status, tunnels |
@@ -187,16 +187,21 @@ All routes proxy to gs-api. Format: `/api/admin/{resource}/[...path]`
 
 ## Component Library Status
 
-✅ **Implemented & Tested:**
+✅ **In use:**
 - DataTable (sorting, pagination, filtering)
 - Modal (create, edit, delete dialogs)
+- FormField (input components)
 - Panel (collapsible sections)
 - PanelLayout (grid/sidebar layout)
-- Form + FormField (input components)
-- Pagination (offset/limit navigation)
 - AuthGuard (session verification)
-- AdminErrorBoundary (error handling)
-- FilterBar (search + faceting)
+
+🔴 **Removed — nothing imported them:**
+Form, Pagination, Table, FilterBar, DashboardClient and AdminErrorBoundary were
+listed here as implemented but had no import sites anywhere in the repo (no
+barrel file, no alias imports, no Astro islands). They were deleted rather than
+carried. An admin error boundary is still worth having; wiring one up means
+wrapping each React island individually, since Astro mounts them as separate
+roots.
 
 🟡 **Partially Implemented:**
 - CommandPalette (keyboard shortcuts)

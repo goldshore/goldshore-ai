@@ -27,6 +27,10 @@ try {
     settings = { ...settings, ...result.data.settings };
   } else if (result.status === 401 || result.status === 403) {
     settings.error = 'Authentication required. Please ensure you are logged in with the correct credentials.';
+  } else if (result.status === 503) {
+    settings.error = 'Admin API is temporarily unavailable.';
+  } else if (!result.ok) {
+    settings.error = `Failed to load settings (status ${result.status}).`;
   }
 } catch (error) {
   settings.error = error instanceof Error ? error.message : 'Failed to load settings';
@@ -34,14 +38,14 @@ try {
 ---
 
 <AdminLayout title="Admin | Settings">
-  <div class="max-w-7xl mx-auto p-8 space-y-8">
-    <div class="space-y-2">
-      <h1 class="text-4xl gs-heading gs-text-accent">Platform Settings</h1>
-      <p class="text-lg gs-text-subtle">Configure your platform, email, and API settings.</p>
+  <div class="gs-page gs-stack">
+    <div class="gs-stack-sm">
+      <h1 class="gs-heading gs-text-accent">Platform Settings</h1>
+      <p class="gs-text-subtle gs-text-lg">Configure your platform, email, and API settings.</p>
     </div>
 
     {settings.error && (
-      <div class="p-4 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+      <div class="gs-alert gs-alert--error gs-text-sm">
         {settings.error}
       </div>
     )}

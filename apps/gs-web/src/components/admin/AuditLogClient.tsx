@@ -69,18 +69,18 @@ export default function AuditLogClient() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="gs-stack">
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm">
+        <div className="gs-alert gs-alert--error">
           {error}
         </div>
       )}
 
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Filters</h2>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
+      <div className="gs-panel">
+        <h2>Filters</h2>
+        <div className="gs-list-grid">
+          <div className="gs-input-group">
+            <label>
               User Email
             </label>
             <input
@@ -88,17 +88,15 @@ export default function AuditLogClient() {
               value={filters.actorEmail}
               onChange={(e) => handleFilterChange('actorEmail', e.target.value)}
               placeholder="Filter by user..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
+          <div className="gs-input-group">
+            <label>
               Action
             </label>
             <select
               value={filters.action}
               onChange={(e) => handleFilterChange('action', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
             >
               <option value="">All actions</option>
               <option value="created_role">Created role</option>
@@ -109,32 +107,30 @@ export default function AuditLogClient() {
               <option value="restored_user">Restored user</option>
             </select>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
+          <div className="gs-input-group">
+            <label>
               From Date
             </label>
             <input
               type="date"
               value={filters.startDate}
               onChange={(e) => handleFilterChange('startDate', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
+          <div className="gs-input-group">
+            <label>
               To Date
             </label>
             <input
               type="date"
               value={filters.endDate}
               onChange={(e) => handleFilterChange('endDate', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
             />
           </div>
-          <div className="flex items-end">
+          <div className="gs-grid-cell-end">
             <button
               onClick={handleExport}
-              className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded"
+              className="gs-button gs-button--block"
             >
               Export
             </button>
@@ -142,26 +138,28 @@ export default function AuditLogClient() {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="gs-panel">
         <AuditLog entries={entries} isLoading={isLoading} onExport={handleExport} />
 
         {total > limit && (
-          <div className="mt-6 flex items-center justify-between">
-            <p className="text-sm text-gray-600">
+          <div className="gs-row gs-row--between">
+            <p className="gs-text-subtle">
               Showing {offset + 1} to {Math.min(offset + limit, total)} of {total} entries
             </p>
-            <div className="flex gap-2">
+            <div className="gs-row">
               <button
+                type="button"
                 onClick={() => setOffset(Math.max(0, offset - limit))}
                 disabled={offset === 0}
-                className="px-3 py-2 border border-gray-300 rounded text-sm disabled:opacity-50"
+                className="gs-button gs-button--secondary gs-button--small"
               >
                 Previous
               </button>
               <button
+                type="button"
                 onClick={() => setOffset(offset + limit)}
                 disabled={offset + limit >= total}
-                className="px-3 py-2 border border-gray-300 rounded text-sm disabled:opacity-50"
+                className="gs-button gs-button--secondary gs-button--small"
               >
                 Next
               </button>
