@@ -7,6 +7,7 @@ import {
 import { getActor, logAdminAction, requirePermission } from '../auth';
 import { Env, Variables } from '../types';
 import { getRuntimeVersion, withContractHeaders } from './contract';
+import { cfAccountId, cfToken, cfZoneId } from '../lib/cloudflare-credentials';
 import { parseConfig, resolveServiceStatusWithConfig } from './system.config';
 
 const system = new Hono<{ Bindings: Env; Variables: Variables }>();
@@ -88,14 +89,15 @@ system.post('/pages/deploy', requirePermission('system:write'), (c) => automatio
 system.post('/access/audit', requirePermission('system:write'), (c) => automationAccepted(c, 'access_audit'));
 
 const cloudflareRequest = async (env: Env, path: string, init: RequestInit = {}) => {
-  if (!env.CF_TOKEN) {
+  const token = cfToken(env);
+  if (!token) {
     throw new Error('Missing CF_TOKEN');
   }
 
   const response = await fetch(`https://api.cloudflare.com/client/v4${path}`, {
     ...init,
     headers: {
-      Authorization: `Bearer ${env.CF_TOKEN}`,
+      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
       ...(init.headers ?? {}),
     },
@@ -124,11 +126,13 @@ const publicBinding = (binding: WorkerBinding) => {
   return { name: binding.name, type: binding.type, resource, editable: binding.type === 'plain_text' || binding.type === 'json' };
 };
 const patchWorkerBindings = async (env: Env, script: string, bindings: WorkerBinding[]) => {
-  if (!env.CF_TOKEN || !env.CF_ACCOUNT_ID) throw new Error('Cloudflare credentials are not configured.');
+  const token = cfToken(env);
+  const accountId = cfAccountId(env);
+  if (!token || !accountId) throw new Error('Cloudflare credentials are not configured.');
   const form = new FormData();
   form.set('settings', JSON.stringify({ bindings }));
-  const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${env.CF_ACCOUNT_ID}/workers/scripts/${encodeURIComponent(script)}/settings`, {
-    method: 'PATCH', headers: { Authorization: `Bearer ${env.CF_TOKEN}` }, body: form,
+  const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/scripts/${encodeURIComponent(script)}/settings`, {
+    method: 'PATCH', headers: { Authorization: `Bearer ${token}` }, body: form,
   });
   const payload = await response.json().catch(() => null);
   if (!response.ok || payload?.success === false) throw new Error(payload?.errors?.[0]?.message ?? `Cloudflare request failed: ${response.status}`);
@@ -163,7 +167,8 @@ const executeAutomation = async (c: any, action: string, operation: () => Promis
 };
 
 const applyDns = async (env: Env) => {
-  if (!env.CLOUDFLARE_ZONE_ID) throw new Error('Missing CLOUDFLARE_ZONE_ID');
+  const zoneId = cfZoneId(env);
+  if (!zoneId) throw new Error('Missing CF_ZONE_ID');
   const table = (await env.KV.get('ROUTING_TABLE', 'json')) as Record<string, { target?: string }> | null;
   const entries = Object.entries(table ?? {}).filter(([, config]) => config.target);
 
@@ -173,47 +178,51 @@ const applyDns = async (env: Env) => {
     const name = env.CLOUDFLARE_ZONE_NAME ? hostname.replace(`.${env.CLOUDFLARE_ZONE_NAME}`, '') : hostname;
     const existing = await cloudflareRequest(
       env,
-      `/zones/${env.CLOUDFLARE_ZONE_ID}/dns_records?type=CNAME&name=${encodeURIComponent(hostname)}`,
+      `/zones/${zoneId}/dns_records?type=CNAME&name=${encodeURIComponent(hostname)}`,
     );
     const record = existing.result?.[0];
     const body = JSON.stringify({ type: 'CNAME', name, content: target, proxied: true, ttl: 1 });
     const updated = record
-      ? await cloudflareRequest(env, `/zones/${env.CLOUDFLARE_ZONE_ID}/dns_records/${record.id}`, { method: 'PATCH', body })
-      : await cloudflareRequest(env, `/zones/${env.CLOUDFLARE_ZONE_ID}/dns_records`, { method: 'POST', body });
+      ? await cloudflareRequest(env, `/zones/${zoneId}/dns_records/${record.id}`, { method: 'PATCH', body })
+      : await cloudflareRequest(env, `/zones/${zoneId}/dns_records`, { method: 'POST', body });
     results.push({ hostname, target, id: updated.result?.id });
   }
   return { updated: results.length, records: results };
 };
 
 const reconcileWorkers = async (env: Env) => {
-  if (!env.CLOUDFLARE_ACCOUNT_ID) throw new Error('Missing CLOUDFLARE_ACCOUNT_ID');
-  const deployments = await cloudflareRequest(env, `/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/workers/services/gs-api/environments/production/deployments`);
+  const accountId = cfAccountId(env);
+  if (!accountId) throw new Error('Missing CF_ACCOUNT_ID');
+  const deployments = await cloudflareRequest(env, `/accounts/${accountId}/workers/services/gs-api/environments/production/deployments`);
   return { checkedService: 'gs-api', latestDeployment: deployments.result?.[0]?.id ?? null };
 };
 
 const deployPages = async (env: Env) => {
-  if (!env.CLOUDFLARE_ACCOUNT_ID) throw new Error('Missing CLOUDFLARE_ACCOUNT_ID');
+  const accountId = cfAccountId(env);
+  if (!accountId) throw new Error('Missing CF_ACCOUNT_ID');
   const project = env.CLOUDFLARE_PAGES_PROJECT ?? 'gs-web';
-  return cloudflareRequest(env, `/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/pages/projects/${project}/deployments`, {
+  return cloudflareRequest(env, `/accounts/${accountId}/pages/projects/${project}/deployments`, {
     method: 'POST',
     body: JSON.stringify({}),
   });
 };
 
 const auditAccess = async (env: Env) => {
-  if (!env.CLOUDFLARE_ACCOUNT_ID) throw new Error('Missing CLOUDFLARE_ACCOUNT_ID');
-  const apps = await cloudflareRequest(env, `/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/access/apps`);
-  const policies = await cloudflareRequest(env, `/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/access/policies`);
+  const accountId = cfAccountId(env);
+  if (!accountId) throw new Error('Missing CF_ACCOUNT_ID');
+  const apps = await cloudflareRequest(env, `/accounts/${accountId}/access/apps`);
+  const policies = await cloudflareRequest(env, `/accounts/${accountId}/access/policies`);
   return { applications: apps.result?.length ?? 0, policies: policies.result?.length ?? 0 };
 };
 
 system.get('/cf/workers', requirePermission('system:read'), async (c) => {
-  if (!c.env.CLOUDFLARE_ACCOUNT_ID) {
-    return c.json({ success: false, error: 'Missing CLOUDFLARE_ACCOUNT_ID' }, 503);
+  const accountId = cfAccountId(c.env);
+  if (!accountId) {
+    return c.json({ success: false, error: 'Missing CF_ACCOUNT_ID' }, 503);
   }
   try {
-    const data = await cloudflareRequest(c.env, `/accounts/${c.env.CLOUDFLARE_ACCOUNT_ID}/workers/scripts`);
-    return c.json({ success: true, accountId: c.env.CLOUDFLARE_ACCOUNT_ID, workers: data.result ?? [] });
+    const data = await cloudflareRequest(c.env, `/accounts/${accountId}/workers/scripts`);
+    return c.json({ success: true, accountId, workers: data.result ?? [] });
   } catch (error) {
     return c.json({ success: false, error: error instanceof Error ? error.message : 'Failed to list workers' }, 502);
   }
@@ -221,22 +230,24 @@ system.get('/cf/workers', requirePermission('system:read'), async (c) => {
 
 system.get('/cf/workers/:name', requirePermission('system:read'), async (c) => {
   const name = c.req.param('name');
-  if (!c.env.CLOUDFLARE_ACCOUNT_ID) {
-    return c.json({ success: false, error: 'Missing CLOUDFLARE_ACCOUNT_ID' }, 503);
+  const accountId = cfAccountId(c.env);
+  if (!accountId) {
+    return c.json({ success: false, error: 'Missing CF_ACCOUNT_ID' }, 503);
   }
 
   try {
     const settings = await cloudflareRequest(
       c.env,
-      `/accounts/${c.env.CLOUDFLARE_ACCOUNT_ID}/workers/scripts/${encodeURIComponent(name)}/settings`,
+      `/accounts/${accountId}/workers/scripts/${encodeURIComponent(name)}/settings`,
     );
     const bindings = (settings.result?.bindings ?? []) as WorkerBinding[];
     const bindingsRevision = await bindingRevision(bindings);
 
     let routes: Array<{ pattern: string }> = [];
-    if (c.env.CLOUDFLARE_ZONE_ID) {
+    const zoneId = cfZoneId(c.env);
+    if (zoneId) {
       try {
-        const routesData = await cloudflareRequest(c.env, `/zones/${c.env.CLOUDFLARE_ZONE_ID}/workers/routes`);
+        const routesData = await cloudflareRequest(c.env, `/zones/${zoneId}/workers/routes`);
         routes = ((routesData.result ?? []) as Array<{ id?: string; pattern: string; script?: string }>)
           .filter((route) => route.script === name)
           .map((route) => ({ id: route.id, pattern: route.pattern, zone_name: c.env.CLOUDFLARE_ZONE_NAME ?? 'goldshore.ai' }));
@@ -287,11 +298,12 @@ const publicTunnel = (tunnel: Record<string, unknown>) => ({
 });
 
 system.get('/cf/tunnels', requirePermission('cloudflare_inventory:read'), async (c) => {
-  if (!c.env.CLOUDFLARE_ACCOUNT_ID) return c.json({ error: 'Missing CLOUDFLARE_ACCOUNT_ID.' }, 503);
+  const accountId = cfAccountId(c.env);
+  if (!accountId) return c.json({ error: 'Missing CF_ACCOUNT_ID.' }, 503);
   const page = Math.max(1, Number(c.req.query('page')) || 1);
   const perPage = Math.min(100, Math.max(1, Number(c.req.query('perPage')) || 25));
   try {
-    const data = await cloudflareRequest(c.env, `/accounts/${c.env.CLOUDFLARE_ACCOUNT_ID}/cfd_tunnel?is_deleted=false&page=${page}&per_page=${perPage}`);
+    const data = await cloudflareRequest(c.env, `/accounts/${accountId}/cfd_tunnel?is_deleted=false&page=${page}&per_page=${perPage}`);
     return c.json({ success: true, tunnels: (data.result ?? []).map(publicTunnel), pagination: data.result_info ?? { page, per_page: perPage } });
   } catch (error) {
     return c.json({ error: error instanceof Error ? error.message : 'Failed to list tunnels.' }, 502);
@@ -300,12 +312,13 @@ system.get('/cf/tunnels', requirePermission('cloudflare_inventory:read'), async 
 
 system.get('/cf/tunnels/:id/configuration', requirePermission('cloudflare_inventory:read'), async (c) => {
   const id = c.req.param('id');
-  if (!c.env.CLOUDFLARE_ACCOUNT_ID) return c.json({ error: 'Missing CLOUDFLARE_ACCOUNT_ID.' }, 503);
+  const accountId = cfAccountId(c.env);
+  if (!accountId) return c.json({ error: 'Missing CF_ACCOUNT_ID.' }, 503);
   if (!tunnelIdPattern.test(id)) return c.json({ error: 'Invalid tunnel identifier.' }, 400);
   try {
     const [tunnel, configuration] = await Promise.all([
-      cloudflareRequest(c.env, `/accounts/${c.env.CLOUDFLARE_ACCOUNT_ID}/cfd_tunnel/${id}`),
-      cloudflareRequest(c.env, `/accounts/${c.env.CLOUDFLARE_ACCOUNT_ID}/cfd_tunnel/${id}/configurations`),
+      cloudflareRequest(c.env, `/accounts/${accountId}/cfd_tunnel/${id}`),
+      cloudflareRequest(c.env, `/accounts/${accountId}/cfd_tunnel/${id}/configurations`),
     ]);
     return c.json({ success: true, tunnel: publicTunnel(tunnel.result ?? {}), config: configuration.result?.config ?? { ingress: [] } });
   } catch (error) {
@@ -314,13 +327,14 @@ system.get('/cf/tunnels/:id/configuration', requirePermission('cloudflare_invent
 });
 
 system.post('/cf/tunnels', requirePermission('cloudflare_inventory:manage'), async (c) => {
-  if (!c.env.CLOUDFLARE_ACCOUNT_ID) return c.json({ error: 'Missing CLOUDFLARE_ACCOUNT_ID.' }, 503);
+  const accountId = cfAccountId(c.env);
+  if (!accountId) return c.json({ error: 'Missing CF_ACCOUNT_ID.' }, 503);
   const body = await c.req.json<{ name?: string; confirm?: boolean }>().catch(() => null);
   const name = body?.name?.trim() ?? '';
   if (!body?.confirm) return c.json({ error: 'Explicit confirmation is required.' }, 409);
   if (!tunnelNamePattern.test(name)) return c.json({ error: 'Tunnel name must contain only letters, numbers, dots, underscores, and hyphens.' }, 400);
   try {
-    const data = await cloudflareRequest(c.env, `/accounts/${c.env.CLOUDFLARE_ACCOUNT_ID}/cfd_tunnel`, { method: 'POST', body: JSON.stringify({ name, config_src: 'cloudflare' }) });
+    const data = await cloudflareRequest(c.env, `/accounts/${accountId}/cfd_tunnel`, { method: 'POST', body: JSON.stringify({ name, config_src: 'cloudflare' }) });
     await logAdminAction(c.env, { action: 'cloudflare.tunnel.create', actor: getActor(c.get('accessClaims'), c.req.raw), status: 'success', metadata: { name, tunnelId: data.result?.id } });
     return c.json({ success: true, tunnel: publicTunnel(data.result ?? {}) }, 201);
   } catch (error) {
@@ -330,14 +344,15 @@ system.post('/cf/tunnels', requirePermission('cloudflare_inventory:manage'), asy
 
 system.put('/cf/tunnels/:id/configuration', requirePermission('cloudflare_inventory:manage'), async (c) => {
   const id = c.req.param('id');
-  if (!c.env.CLOUDFLARE_ACCOUNT_ID) return c.json({ error: 'Missing CLOUDFLARE_ACCOUNT_ID.' }, 503);
+  const accountId = cfAccountId(c.env);
+  if (!accountId) return c.json({ error: 'Missing CF_ACCOUNT_ID.' }, 503);
   const body = await c.req.json<{ ingress?: unknown; confirm?: boolean }>().catch(() => null);
   if (!body?.confirm) return c.json({ error: 'Explicit confirmation is required.' }, 409);
   if (!tunnelIdPattern.test(id) || !validateTunnelIngress(body.ingress)) return c.json({ error: 'A valid tunnel and GoldShore-only ingress rules ending in a safe catch-all are required.' }, 400);
   try {
-    const tunnel = await cloudflareRequest(c.env, `/accounts/${c.env.CLOUDFLARE_ACCOUNT_ID}/cfd_tunnel/${id}`);
+    const tunnel = await cloudflareRequest(c.env, `/accounts/${accountId}/cfd_tunnel/${id}`);
     if (tunnel.result?.config_src !== 'cloudflare') return c.json({ error: 'Locally managed tunnel configuration must be changed on its host.' }, 409);
-    const data = await cloudflareRequest(c.env, `/accounts/${c.env.CLOUDFLARE_ACCOUNT_ID}/cfd_tunnel/${id}/configurations`, { method: 'PUT', body: JSON.stringify({ config: { ingress: body.ingress } }) });
+    const data = await cloudflareRequest(c.env, `/accounts/${accountId}/cfd_tunnel/${id}/configurations`, { method: 'PUT', body: JSON.stringify({ config: { ingress: body.ingress } }) });
     await logAdminAction(c.env, { action: 'cloudflare.tunnel.configure', actor: getActor(c.get('accessClaims'), c.req.raw), status: 'success', metadata: { tunnelId: id, ingressRules: body.ingress.length } });
     return c.json({ success: true, config: data.result?.config ?? { ingress: body.ingress } });
   } catch (error) {
@@ -348,14 +363,15 @@ system.put('/cf/tunnels/:id/configuration', requirePermission('cloudflare_invent
 system.delete('/cf/tunnels/:id', requirePermission('cloudflare_inventory:manage'), async (c) => {
   const id = c.req.param('id');
   const expectedName = c.req.query('name')?.trim() ?? '';
-  if (!c.env.CLOUDFLARE_ACCOUNT_ID) return c.json({ error: 'Missing CLOUDFLARE_ACCOUNT_ID.' }, 503);
+  const accountId = cfAccountId(c.env);
+  if (!accountId) return c.json({ error: 'Missing CF_ACCOUNT_ID.' }, 503);
   if (c.req.query('confirm') !== 'true') return c.json({ error: 'Explicit confirmation is required.' }, 409);
   if (!tunnelIdPattern.test(id) || !tunnelNamePattern.test(expectedName)) return c.json({ error: 'Valid tunnel ID and name confirmation are required.' }, 400);
   try {
-    const tunnel = await cloudflareRequest(c.env, `/accounts/${c.env.CLOUDFLARE_ACCOUNT_ID}/cfd_tunnel/${id}`);
+    const tunnel = await cloudflareRequest(c.env, `/accounts/${accountId}/cfd_tunnel/${id}`);
     if (tunnel.result?.name !== expectedName) return c.json({ error: 'Tunnel name confirmation does not match.' }, 409);
     if (!['inactive', 'down'].includes(tunnel.result?.status)) return c.json({ error: 'Only inactive or down tunnels can be deleted from admin.' }, 409);
-    await cloudflareRequest(c.env, `/accounts/${c.env.CLOUDFLARE_ACCOUNT_ID}/cfd_tunnel/${id}`, { method: 'DELETE' });
+    await cloudflareRequest(c.env, `/accounts/${accountId}/cfd_tunnel/${id}`, { method: 'DELETE' });
     await logAdminAction(c.env, { action: 'cloudflare.tunnel.delete', actor: getActor(c.get('accessClaims'), c.req.raw), status: 'success', metadata: { tunnelId: id, name: expectedName } });
     return c.body(null, 204);
   } catch (error) {
@@ -367,14 +383,15 @@ const bindingNamePattern = /^[A-Za-z_$][A-Za-z0-9_$]{0,63}$/;
 system.put('/cf/workers/:name/bindings/:binding', requirePermission('cloudflare_inventory:manage'), async (c) => {
   const script = c.req.param('name');
   const bindingName = c.req.param('binding');
-  if (!c.env.CLOUDFLARE_ACCOUNT_ID) return c.json({ error: 'Missing CLOUDFLARE_ACCOUNT_ID.' }, 503);
+  const accountId = cfAccountId(c.env);
+  if (!accountId) return c.json({ error: 'Missing CF_ACCOUNT_ID.' }, 503);
   const body = await c.req.json<{ type?: 'plain_text' | 'json'; value?: unknown; expectedRevision?: string; confirm?: boolean }>().catch(() => null);
   if (!body?.confirm) return c.json({ error: 'Explicit confirmation is required.' }, 409);
   if (!workerNamePattern.test(script) || !bindingNamePattern.test(bindingName) || !['plain_text', 'json'].includes(body.type ?? '')) return c.json({ error: 'Invalid Worker, binding name, or binding type.' }, 400);
   const serialized = typeof body.value === 'string' ? body.value : JSON.stringify(body.value);
   if (!serialized || serialized.length > 16_384) return c.json({ error: 'Binding values must be between 1 and 16384 characters.' }, 400);
   try {
-    const settings = await cloudflareRequest(c.env, `/accounts/${c.env.CLOUDFLARE_ACCOUNT_ID}/workers/scripts/${encodeURIComponent(script)}/settings`);
+    const settings = await cloudflareRequest(c.env, `/accounts/${accountId}/workers/scripts/${encodeURIComponent(script)}/settings`);
     const current = (settings.result?.bindings ?? []) as WorkerBinding[];
     const revision = await bindingRevision(current);
     if (!body.expectedRevision || body.expectedRevision !== revision) return c.json({ error: 'Worker bindings changed since this page loaded. Refresh before retrying.', currentRevision: revision }, 409);
@@ -396,11 +413,12 @@ system.delete('/cf/workers/:name/bindings/:binding', requirePermission('cloudfla
   const script = c.req.param('name');
   const bindingName = c.req.param('binding');
   const expectedRevision = c.req.query('expectedRevision');
-  if (!c.env.CLOUDFLARE_ACCOUNT_ID) return c.json({ error: 'Missing CLOUDFLARE_ACCOUNT_ID.' }, 503);
+  const accountId = cfAccountId(c.env);
+  if (!accountId) return c.json({ error: 'Missing CF_ACCOUNT_ID.' }, 503);
   if (c.req.query('confirm') !== 'true') return c.json({ error: 'Explicit confirmation is required.' }, 409);
   if (!workerNamePattern.test(script) || !bindingNamePattern.test(bindingName)) return c.json({ error: 'Invalid Worker or binding name.' }, 400);
   try {
-    const settings = await cloudflareRequest(c.env, `/accounts/${c.env.CLOUDFLARE_ACCOUNT_ID}/workers/scripts/${encodeURIComponent(script)}/settings`);
+    const settings = await cloudflareRequest(c.env, `/accounts/${accountId}/workers/scripts/${encodeURIComponent(script)}/settings`);
     const current = (settings.result?.bindings ?? []) as WorkerBinding[];
     const revision = await bindingRevision(current);
     if (!expectedRevision || expectedRevision !== revision) return c.json({ error: 'Worker bindings changed since this page loaded. Refresh before retrying.', currentRevision: revision }, 409);
@@ -416,7 +434,8 @@ system.delete('/cf/workers/:name/bindings/:binding', requirePermission('cloudfla
 });
 
 system.post('/cf/routes', requirePermission('cloudflare_inventory:manage'), async (c) => {
-  if (!c.env.CLOUDFLARE_ZONE_ID) return c.json({ error: 'Missing CLOUDFLARE_ZONE_ID.' }, 503);
+  const zoneId = cfZoneId(c.env);
+  if (!zoneId) return c.json({ error: 'Missing CF_ZONE_ID.' }, 503);
   const body = await c.req.json<{ pattern?: string; script?: string; confirm?: boolean }>().catch(() => null);
   const pattern = body?.pattern?.trim() ?? '';
   const script = body?.script?.trim() ?? '';
@@ -425,7 +444,7 @@ system.post('/cf/routes', requirePermission('cloudflare_inventory:manage'), asyn
     return c.json({ error: 'A valid Worker and GoldShore route pattern are required.' }, 400);
   }
   try {
-    const result = await cloudflareRequest(c.env, `/zones/${c.env.CLOUDFLARE_ZONE_ID}/workers/routes`, {
+    const result = await cloudflareRequest(c.env, `/zones/${zoneId}/workers/routes`, {
       method: 'POST', body: JSON.stringify({ pattern, script }),
     });
     await logAdminAction(c.env, { action: 'cloudflare.route.create', actor: getActor(c.get('accessClaims'), c.req.raw), status: 'success', metadata: { pattern, script, routeId: result.result?.id } });
@@ -436,13 +455,14 @@ system.post('/cf/routes', requirePermission('cloudflare_inventory:manage'), asyn
 });
 
 system.delete('/cf/routes/:id', requirePermission('cloudflare_inventory:manage'), async (c) => {
-  if (!c.env.CLOUDFLARE_ZONE_ID) return c.json({ error: 'Missing CLOUDFLARE_ZONE_ID.' }, 503);
+  const zoneId = cfZoneId(c.env);
+  if (!zoneId) return c.json({ error: 'Missing CF_ZONE_ID.' }, 503);
   const confirm = c.req.query('confirm') === 'true';
   const routeId = c.req.param('id');
   if (!confirm) return c.json({ error: 'Explicit confirmation is required.' }, 409);
   if (!/^[a-f0-9]{16,64}$/i.test(routeId)) return c.json({ error: 'Invalid route identifier.' }, 400);
   try {
-    await cloudflareRequest(c.env, `/zones/${c.env.CLOUDFLARE_ZONE_ID}/workers/routes/${encodeURIComponent(routeId)}`, { method: 'DELETE' });
+    await cloudflareRequest(c.env, `/zones/${zoneId}/workers/routes/${encodeURIComponent(routeId)}`, { method: 'DELETE' });
     await logAdminAction(c.env, { action: 'cloudflare.route.delete', actor: getActor(c.get('accessClaims'), c.req.raw), status: 'success', metadata: { routeId } });
     return c.body(null, 204);
   } catch (error) {
