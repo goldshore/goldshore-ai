@@ -300,6 +300,165 @@ bindings = [
 tag = "v1"
 new_sqlite_classes = ["AuthSession"]
 
-# Preview deployments use Cloudflare Worker Versions generated from this
-# production manifest. They have no custom preview routes or event triggers;
-# request middleware rejects state-changing requests on workers.dev hosts.
+# ── Preview environment ──────────────────────────────────────────────────────
+#
+# api-preview.goldshore.ai, per policy/ROUTE_POLICY.md and the DNS desired
+# state, both of which have described a gs-api preview environment that had
+# never actually been declared here. preview-gs-api.yml requires this block.
+#
+# Every binding below points at a preview-suffixed resource. Nothing here
+# references a production namespace, bucket, database or queue: a preview
+# deploy must not be able to read or write live data.
+#
+# D1 is collapsed to a meta level. Production splits its data across six
+# databases, but the account is at Cloudflare's 10-database limit, so six
+# preview databases cannot exist. Only gs_platform_db_preview and
+# gs_audit_db_preview do. The remaining four bindings therefore share
+# gs_platform_db_preview as a single meta database rather than pointing at
+# production. Two of those four -- risk-radar-db and goldshore-paper-trading --
+# hold zero tables in production, so they lose nothing by collapsing. Split
+# them back out if the database limit is ever raised.
+[env.preview]
+name = "gs-api-preview"
+preview_urls = false
+
+routes = [
+  { pattern = "api-preview.goldshore.ai/*", zone_name = "goldshore.ai" }
+]
+
+[env.preview.vars]
+ENV = "preview"
+AI_SEARCH_PUBLIC_ENDPOINT = "https://f800ea69-7ef4-4094-ba29-de38736fd22f.search.ai.cloudflare.com"
+CLOUDFLARE_ACCESS_AUDIENCE = "8510d42c31fc791e295427031ffeef7c7ebc0f1b62d8634fbb284bf82562f528"
+
+[[env.preview.kv_namespaces]]
+binding = "KV"
+id = "e70a39202f31463b845b2089b9ca9d15"
+
+[[env.preview.kv_namespaces]]
+binding = "CONTROL_LOGS"
+id = "fb9d4f6c85d142edb0437e443d0cdce1"
+
+[[env.preview.kv_namespaces]]
+binding = "TRADING_KV"
+id = "167f9034c6a74e099a0e74ed4ef15bed"
+
+[[env.preview.kv_namespaces]]
+binding = "MCP_WORKERS_PROMPT"
+id = "87c047f6af92455bb3e7f47f0e2de156"
+
+[[env.preview.r2_buckets]]
+binding = "GS_ASSETS"
+bucket_name = "gs-assets-preview"
+
+[[env.preview.r2_buckets]]
+binding = "MAIL_ARCHIVE"
+bucket_name = "gs-assets-preview"
+
+[[env.preview.r2_buckets]]
+binding = "TELEMETRY"
+bucket_name = "gs-telemetry-storage-preview"
+
+[[env.preview.r2_buckets]]
+binding = "RISK_RADAR_R2"
+bucket_name = "gs-risk-radar-raw-preview"
+
+[[env.preview.d1_databases]]
+binding = "PLATFORM_DB"
+database_name = "gs_platform_db_preview"
+database_id = "2dc82951-cfff-45ba-8f77-4ecd42dd85dd"
+
+[[env.preview.d1_databases]]
+binding = "AUDIT_DB"
+database_name = "gs_audit_db_preview"
+database_id = "72920276-2581-4400-bf3f-78e465f93e67"
+
+# The four bindings below share the platform preview database. See the D1 note
+# in the header above.
+[[env.preview.d1_databases]]
+binding = "SIGNALS_DB"
+database_name = "gs_platform_db_preview"
+database_id = "2dc82951-cfff-45ba-8f77-4ecd42dd85dd"
+
+[[env.preview.d1_databases]]
+binding = "RISK_RADAR_DB"
+database_name = "gs_platform_db_preview"
+database_id = "2dc82951-cfff-45ba-8f77-4ecd42dd85dd"
+
+[[env.preview.d1_databases]]
+binding = "JOBS_DB"
+database_name = "gs_platform_db_preview"
+database_id = "2dc82951-cfff-45ba-8f77-4ecd42dd85dd"
+
+[[env.preview.d1_databases]]
+binding = "PAPER_DB"
+database_name = "gs_platform_db_preview"
+database_id = "2dc82951-cfff-45ba-8f77-4ecd42dd85dd"
+
+[env.preview.ai]
+binding = "AI"
+
+[[env.preview.ai_search]]
+binding = "AI_SEARCH"
+instance_name = "royal-wind-4649"
+
+[[env.preview.ai_search_namespaces]]
+binding = "SEARCH"
+namespace = "default"
+
+[env.preview.observability]
+enabled = true
+head_sampling_rate = 1
+
+[[env.preview.secrets_store_secrets]]
+binding = "BREVO_API_KEY"
+store_id = "b9824d3280c54573a24137c7e7143b33"
+secret_name = "BREVO_API_KEY"
+
+[[env.preview.secrets_store_secrets]]
+binding = "BREVO_MCP_KEY"
+store_id = "b9824d3280c54573a24137c7e7143b33"
+secret_name = "BREVO_MCP_KEY"
+
+[[env.preview.secrets_store_secrets]]
+binding = "INTEGRATION_MASTER_KEY"
+store_id = "b9824d3280c54573a24137c7e7143b33"
+secret_name = "INTEGRATION_MASTER_KEY"
+
+# No [env.preview.triggers]. The production cron rotates live OAuth tokens
+# daily; a preview Worker must never run it.
+
+# Producers only, on preview-suffixed queues. Consumers are deliberately
+# absent: the queues below still have to be created, and a preview consumer
+# attached to a production queue would take messages away from production.
+# Add the consumer blocks together with the queues themselves.
+[[env.preview.queues.producers]]
+binding = "JOBS_QUEUE"
+queue = "goldshore-jobs-preview"
+
+[[env.preview.queues.producers]]
+binding = "EVENTS_QUEUE"
+queue = "gs-events-preview"
+
+[[env.preview.queues.producers]]
+binding = "MAIL_JOBS_QUEUE"
+queue = "gs-mail-jobs-preview"
+
+[[env.preview.workflows]]
+binding = "GS_SIGNALS"
+name = "gs-signals-evaluator-preview"
+class_name = "SignalsEvaluator"
+
+[[env.preview.workflows]]
+binding = "EDITORIAL_PRODUCTION"
+name = "editorial-production-preview"
+class_name = "EditorialProductionWorkflow"
+
+[env.preview.durable_objects]
+bindings = [
+  { name = "AUTH_SESSION", class_name = "AuthSession" }
+]
+
+[[env.preview.migrations]]
+tag = "v1"
+new_sqlite_classes = ["AuthSession"]
