@@ -181,11 +181,13 @@ forms.post('/newsletter/submissions', async (c) => {
   const [emailHash, tokenHash, manageHash, codeHash] = await Promise.all([sha256(email), sha256(token), sha256(manage), sha256(code)]);
   const now = new Date().toISOString();
   const expiresAt = new Date(Date.now() + 15 * 60_000).toISOString();
+  const source = body?.source?.slice(0, 120) || 'header-subscribe';
+  const brand = source === 'gearswipe-subscribe' ? 'gearswipe' : 'goldshore';
   await c.env.PLATFORM_DB.prepare(`INSERT INTO newsletter_subscribers
     (id,email,email_hash,name,brand,list_name,source,status,consent_basis,confirmation_token_hash,manage_token_hash,verification_code_hash,verification_code_expires_at,subscribed_at,created_at,updated_at)
     VALUES(?,?,?,?,?,'newsletter',?,'pending','double_opt_in',?,?,?,?,?,?,?)
     ON CONFLICT(email) DO UPDATE SET name=excluded.name,source=excluded.source,status='pending',confirmation_token_hash=excluded.confirmation_token_hash,manage_token_hash=excluded.manage_token_hash,verification_code_hash=excluded.verification_code_hash,verification_code_expires_at=excluded.verification_code_expires_at,subscribed_at=excluded.subscribed_at,updated_at=excluded.updated_at`)
-    .bind(crypto.randomUUID(), email, emailHash, name, 'goldshore', body?.source?.slice(0, 120) || 'header-subscribe', tokenHash, manageHash, codeHash, expiresAt, now, now, now).run();
+    .bind(crypto.randomUUID(), email, emailHash, name, brand, source, tokenHash, manageHash, codeHash, expiresAt, now, now, now).run();
 
   const confirmationUrl = `${publicSiteUrl(c.env)}/newsletter/confirm?token=${encodeURIComponent(token)}&manage=${encodeURIComponent(manage)}`;
   const message = buildNewsletterConfirmation({ confirmationUrl, activationCode: code });
