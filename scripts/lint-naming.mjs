@@ -63,11 +63,18 @@ function lintWorkflows() {
 
   for (const workflowFile of workflowFiles) {
     const workflowBasename = workflowFile.split('/').pop().replace(/\.yml$/, '');
-    if (!kebabCasePattern.test(workflowBasename)) {
+    const workflow = YAML.parse(readFileSync(resolve(repoRoot, workflowFile), 'utf8'));
+
+    // A leading underscore marks a reusable workflow that is only ever invoked
+    // through `workflow_call`, which is the conventional way to keep it out of
+    // the Actions run list. Require kebab-case after that prefix rather than
+    // rejecting the prefix itself.
+    const isReusable = Object.hasOwn(workflow?.on ?? {}, 'workflow_call');
+    const nameToCheck = isReusable ? workflowBasename.replace(/^_/, '') : workflowBasename;
+    if (!kebabCasePattern.test(nameToCheck)) {
       fail.push(`${workflowFile}: workflow file name must be kebab-case`);
     }
 
-    const workflow = YAML.parse(readFileSync(resolve(repoRoot, workflowFile), 'utf8'));
     const jobs = workflow?.jobs ?? {};
     for (const jobName of Object.keys(jobs)) {
       if (!kebabCasePattern.test(jobName)) {
