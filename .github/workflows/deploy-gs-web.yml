@@ -40,6 +40,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
+      # The "Verify Cloudflare secrets" step below asserts this is non-empty,
+      # but only the `production` job below declared it, so `validate` failed
+      # on every run. Accept either source: this repo defines the account id
+      # as a variable in some workflows and as a secret in others.
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_ENV: prod
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
